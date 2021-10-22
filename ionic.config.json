@@ -1,0 +1,7 @@
+{
+  "name": "fulfillment",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue"
+}
