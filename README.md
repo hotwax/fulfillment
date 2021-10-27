@@ -49,3 +49,8 @@ ionic capacitor copy ios --no-build
 3. Open the Android Studio / XCode project:
 ionic capacitor open android   
 ionic capacitor open ios
+
+## Related Links
+* For UX Style information, check out [Ionic 5 Material UI Kit] on Figma
+
+[Ionic 5 Material UI Kit]: https://www.figma.com/community/file/885791511781717756/Ionic-5-Material-UI-Kit-(Community)
