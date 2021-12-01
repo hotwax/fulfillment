@@ -29,6 +29,7 @@
           currentFacility.facilityId ? currentFacility.facilityId : ""
         }}</ion-label>
         <ion-select
+          v-if="userProfile"
           interface="popover"
           :placeholder="$t('store name')"
           :selected-text="currentFacility.facilityId"
@@ -98,12 +99,14 @@ export default defineComponent({
   },
   methods: {
     setFacility(facility: any) {
-      this.userProfile.facilities.map((fac: any) => {
-        if (fac.facilityId == facility["detail"].value) {
-          this.store.dispatch("user/setFacility", { facility: fac });
-          console.log(fac);
-        }
-      });
+      if(this.userProfile) {
+        this.userProfile.facilities.map((fac: any) => {
+          if (fac.facilityId == facility["detail"].value) {
+            this.store.dispatch("user/setFacility", { facility: fac });
+            console.log(fac);
+          }
+        });
+      }
     },
     logout() {
       this.store.dispatch("user/logout").then(() => {

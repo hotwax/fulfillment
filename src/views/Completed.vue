@@ -12,7 +12,7 @@
 
     <!-- Main content of application Page -->
     <ion-content :fullscreen="true">
-      wORKING on Orders Page
+      wORKING on Completed Page
     </ion-content>
   </ion-page>
 </template>
