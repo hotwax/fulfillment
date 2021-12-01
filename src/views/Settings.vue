@@ -15,10 +15,10 @@
       <ion-item>
         <ion-icon :icon="personCircleOutline" slot="start" />
         <ion-label>{{
-          userProfile !== null ? userProfile.partyName : ""
+          userProfile !== null ? userProfile.partyName : ''
         }}</ion-label>
-        <ion-button slot="end" fill="outline" color="dark" @click="logout()">{{
-          $t("Logout")
+        <ion-button slot='end' fill='outline' color='dark' @click='logout()'>{{
+          $t('Logout')
         }}</ion-button>
       </ion-item>
 
@@ -74,7 +74,7 @@ import { mapGetters, useStore } from "vuex";
 import { useRouter } from "vue-router";
 
 export default defineComponent({
-  name: "Settings",
+  name: 'Settings',
   components: {
     IonButton,
     IonButtons,
@@ -92,15 +92,15 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      userProfile: "user/getUserProfile",
-      currentFacility: "user/getCurrentFacility",
+      userProfile: 'user/getUserProfile',
+      currentFacility: 'user/getCurrentFacility',
     }),
   },
   methods: {
     setFacility(facility: any) {
       this.userProfile.facilities.map((fac: any) => {
-        if (fac.facilityId == facility["detail"].value) {
-          this.store.dispatch("user/setFacility", { facility: fac });
+        if (fac.facilityId == facility['detail'].value) {
+          this.store.dispatch('user/setFacility', { facility: fac });
           console.log(fac);
         }
       });

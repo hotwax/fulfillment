@@ -8,14 +8,14 @@
 </template>
 
 <script lang="ts">
-import { IonApp, IonRouterOutlet, IonSplitPane } from "@ionic/vue";
-import Menu from "@/components/Menu.vue";
-import { defineComponent } from "vue";
-import { loadingController } from "@ionic/vue";
-import emitter from "@/event-bus";
+import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
+import Menu from '@/components/Menu.vue';
+import { defineComponent } from 'vue';
+import { loadingController } from '@ionic/vue';
+import emitter from '@/event-bus';
 
 export default defineComponent({
-  name: "App",
+  name: 'App',
   components: {
     IonApp,
     IonRouterOutlet,
@@ -43,12 +43,12 @@ export default defineComponent({
     },
   },
   mounted() {
-    emitter.on("presentLoader", this.presentLoader);
-    emitter.on("dismissLoader", this.dismissLoader);
+    emitter.on('presentLoader', this.presentLoader);
+    emitter.on('dismissLoader', this.dismissLoader);
   },
   unmounted() {
-    emitter.off("presentLoader", this.presentLoader);
-    emitter.off("dismissLoader", this.dismissLoader);
+    emitter.off('presentLoader', this.presentLoader);
+    emitter.off('dismissLoader', this.dismissLoader);
   },
 });
 </script>
