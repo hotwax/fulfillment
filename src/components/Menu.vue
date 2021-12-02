@@ -24,7 +24,7 @@
               slot="start"
               :ios="menu.iosIcon"
               :md="menu.mdIcon"
-            ></ion-icon>
+            />
             <ion-label>{{ menu.title }}</ion-label>
           </ion-item>
         </ion-menu-toggle>

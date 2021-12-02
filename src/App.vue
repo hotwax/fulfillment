@@ -23,7 +23,7 @@ export default defineComponent({
     Menu,
   },
   data() {
-    return {
+    return{
       loader: null as any
     }
   },
