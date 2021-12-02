@@ -1,14 +1,10 @@
 <template>
-  <!-- Application Navigation || Menubar -->
   <ion-menu content-id="main-content" type="overlay" :disabled="!isUserAuthenticated">
-    <!-- Menubar Header -->
     <ion-header>
       <ion-toolbar>
         <ion-title> FULFILLMENT </ion-title>
       </ion-toolbar>
     </ion-header>
-
-    <!-- Menubar Content -->
     <ion-content>
       <ion-list>
         <ion-menu-toggle
