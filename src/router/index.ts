@@ -1,27 +1,28 @@
-import { createRouter, createWebHistory } from '@ionic/vue-router';
-import { RouteRecordRaw } from 'vue-router';
-import Login from '../views/Login.vue';
-import Orders from '../views/Orders.vue';
-import InProgress from '../views/InProgress.vue';
-import Completed from '../views/Completed.vue';
-import Settings from '../views/Settings.vue';
-import store from '@/store';
+import { createRouter, createWebHistory } from '@ionic/vue-router'
+import { RouteRecordRaw } from 'vue-router'
+import Login from "@/views/Login.vue"
+import Orders from "@/views/Orders.vue"
+import InProgress from "@/views/InProgress.vue"
+import Completed from "@/views/Completed.vue"
+import Settings from "@/views/Settings.vue"
+import store from '@/store'
 
 const authGuard = (to: any, from: any, next: any) => {
   if (store.getters['user/isAuthenticated']) {
-    next();
+      next()
   } else {
-    next('/login');
+    next("/login")
   }
 };
 
 const loginGuard = (to: any, from: any, next: any) => {
   if (!store.getters['user/isAuthenticated']) {
-    next();
+      next()
   } else {
-    next('/');
+    next("/")
   }
 };
+
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -63,6 +64,6 @@ const routes: Array<RouteRecordRaw> = [
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
-});
+})
 
-export default router;
+export default router

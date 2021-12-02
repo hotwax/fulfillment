@@ -2,119 +2,78 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <!-- Menu Toogle -->
         <ion-buttons slot="start">
           <ion-menu-button></ion-menu-button>
         </ion-buttons>
         <ion-title>{{ $t("Settings") }}</ion-title>
       </ion-toolbar>
     </ion-header>
-
+    
     <ion-content :fullscreen="true">
       <!-- Profile of user logged in -->
       <ion-item>
         <ion-icon :icon="personCircleOutline" slot="start" />
-        <ion-label>{{
-          userProfile !== null ? userProfile.partyName : ''
-        }}</ion-label>
-        <ion-button slot='end' fill='outline' color='dark' @click='logout()'>{{
-          $t('Logout')
-        }}</ion-button>
+        <ion-label>{{ userProfile !== null ? userProfile.partyName : '' }}</ion-label>
+        <ion-button slot="end" fill="outline" color="dark" @click="logout()">{{ $t("Logout") }}</ion-button>
       </ion-item>
 
       <!-- Select store -->
-      <ion-item>
+       <ion-item>
         <ion-icon :icon="storefrontOutline" slot="start" />
-        <ion-label>{{
-          currentFacility.facilityId ? currentFacility.facilityId : ""
-        }}</ion-label>
-        <ion-select
-          v-if="userProfile"
-          interface="popover"
-          :placeholder="$t('store name')"
-          :selected-text="currentFacility.facilityId"
-          @ionChange="setFacility($event)"
-        >
-          <ion-select-option
-            v-for="facility in userProfile.facilities"
-            :key="facility.facilityId"
-            :value="facility.facilityId"
-            >{{ facility.facilityId }}</ion-select-option
-          >
-        </ion-select>
+        <ion-label>{{ currentFacility.facilityId ? currentFacility.facilityId : '' }}</ion-label>
+      <ion-select interface="popover" :placeholder="$t('store name')" :selected-text="currentFacility.facilityId" @ionChange="setFacility($event)">
+        <ion-select-option v-for="facility in userProfile.facilities" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.facilityId }}</ion-select-option>
+      </ion-select>
       </ion-item>
+
     </ion-content>
   </ion-page>
 </template>
 
 <script lang="ts">
-import {
-  alertController,
-  IonButton,
-  IonButtons,
-  IonMenuButton,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonPage,
-  IonSelect,
-  IonSelectOption,
-  IonTitle,
-  IonToolbar,
-  popoverController,
-} from "@ionic/vue";
-import { defineComponent } from "vue";
-import {
-  ellipsisVertical,
-  personCircleOutline,
-  storefrontOutline,
-} from "ionicons/icons";
-import { mapGetters, useStore } from "vuex";
-import { useRouter } from "vue-router";
+import { alertController, IonButton, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, popoverController } from '@ionic/vue';
+import { defineComponent } from 'vue';
+import { ellipsisVertical, personCircleOutline, storefrontOutline} from 'ionicons/icons'
+import { mapGetters, useStore } from 'vuex';
+import { useRouter } from 'vue-router';
 
 export default defineComponent({
   name: 'Settings',
   components: {
-    IonButton,
-    IonButtons,
-    IonMenuButton,
-    IonContent,
-    IonHeader,
+    IonButton, 
+    IonContent, 
+    IonHeader, 
     IonIcon,
-    IonItem,
-    IonLabel,
-    IonPage,
-    IonSelect,
+    IonItem, 
+    IonLabel, 
+    IonPage, 
+    IonSelect, 
     IonSelectOption,
-    IonTitle,
-    IonToolbar,
+    IonTitle, 
+    IonToolbar
   },
   computed: {
     ...mapGetters({
       userProfile: 'user/getUserProfile',
       currentFacility: 'user/getCurrentFacility',
-    }),
+    })
   },
   methods: {
-    setFacility(facility: any) {
-      if(this.userProfile) {
-        this.userProfile.facilities.map((fac: any) => {
+    setFacility (facility: any) {
+      this.userProfile.facilities.map((fac: any) => {
         if (fac.facilityId == facility['detail'].value) {
-          this.store.dispatch('user/setFacility', { facility: fac });
+          this.store.dispatch('user/setFacility', {'facility': fac});
           console.log(fac);
         }
-      });
-      }
+      })
     },
-    logout() {
-      this.store.dispatch("user/logout").then(() => {
-        this.router.push("/login");
-      });
-    },
+    logout () {
+      this.store.dispatch('user/logout').then(() => {
+        this.router.push('/login');
+      })
+    }
   },
-  setup() {
+  setup(){
     const store = useStore();
     const router = useRouter();
 
@@ -123,8 +82,8 @@ export default defineComponent({
       personCircleOutline,
       storefrontOutline,
       store,
-      router,
-    };
-  },
+      router
+    }
+  }
 });
 </script>
