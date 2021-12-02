@@ -2,7 +2,7 @@
   <ion-menu content-id="main-content" type="overlay" :disabled="!isUserAuthenticated">
     <ion-header>
       <ion-toolbar>
-        <ion-title> FULFILLMENT </ion-title>
+        <ion-title> {{$t("fulfillment")}} </ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content>
@@ -36,15 +36,15 @@
 <script lang="ts">
 import {
   IonContent,
-  IonIcon,
   IonHeader,
+  IonIcon,
   IonItem,
   IonLabel,
   IonList,
-  IonTitle,
-  IonToolbar,
   IonMenu,
   IonMenuToggle,
+  IonTitle,
+  IonToolbar,
 } from "@ionic/vue";
 import { mapGetters } from "vuex";
 import { defineComponent, ref } from "vue";
@@ -58,12 +58,12 @@ export default defineComponent({
     IonHeader,
     IonIcon,
     IonItem,
-    IonTitle,
     IonLabel,
     IonList,
-    IonToolbar,
     IonMenu,
     IonMenuToggle,
+    IonTitle,
+    IonToolbar,
   },
   created() {
     this.selectedIndex = this.appPages.findIndex((page) => {

@@ -3,12 +3,12 @@
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-menu-button></ion-menu-button>
+          <ion-menu-button />
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
     <ion-content :fullscreen="true">
-      wORKING on Completed Page
+      Completed Page
     </ion-content>
   </ion-page>
 </template>

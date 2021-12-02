@@ -8,7 +8,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content :fullscreen="true">
-      wORKING on Orders Page
+      Orders Page
     </ion-content>
   </ion-page>
 </template>
