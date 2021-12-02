@@ -14,16 +14,16 @@
 </template>
 
 <script lang="ts">
-import { IonButtons, IonHeader, IonMenuButton, IonPage, IonToolbar, IonContent } from "@ionic/vue";
+import { IonButtons, IonContent, IonHeader, IonMenuButton, IonPage, IonToolbar } from "@ionic/vue";
 export default {
   name: "InProgress",
   components: {
-    IonPage,
-    IonHeader,
-    IonToolbar,
     IonButtons,
-    IonMenuButton,
     IonContent,
+    IonHeader,
+    IonMenuButton,
+    IonPage,
+    IonToolbar,
   },
 };
 </script>

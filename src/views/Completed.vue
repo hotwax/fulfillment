@@ -14,16 +14,16 @@
 </template>
 
 <script lang="ts">
-import { IonButtons, IonHeader, IonMenuButton, IonPage, IonToolbar, IonContent } from "@ionic/vue";
+import { IonButtons, IonContent, IonHeader, IonMenuButton, IonPage, IonToolbar } from "@ionic/vue";
 export default {
   name: "Completed",
   components: {
-    IonPage,
-    IonHeader,
-    IonToolbar,
     IonButtons,
+    IonContent,
+    IonHeader,
     IonMenuButton,
-   IonContent
+    IonPage,
+    IonToolbar,
   },
 };
 </script>

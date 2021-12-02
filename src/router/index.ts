@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router'
 import { RouteRecordRaw } from 'vue-router'
-import Login from "@/views/Login.vue"
-import Orders from "@/views/Orders.vue"
-import InProgress from "@/views/InProgress.vue"
-import Completed from "@/views/Completed.vue"
-import Settings from "@/views/Settings.vue"
+import Login from '@/views/Login.vue'
+import Orders from '@/views/Orders.vue'
+import InProgress from '@/views/InProgress.vue'
+import Completed from '@/views/Completed.vue'
+import Settings from '@/views/Settings.vue'
 import store from '@/store'
 
 const authGuard = (to: any, from: any, next: any) => {
