@@ -4,6 +4,7 @@ import Home from '@/views/Home.vue'
 import Login from '@/views/Login.vue'
 import Settings from "@/views/Settings.vue"
 import store from '@/store'
+import Orders from '@/views/Orders.vue';
 
 const authGuard = (to: any, from: any, next: any) => {
   if (store.getters['user/isAuthenticated']) {
@@ -24,7 +25,7 @@ const loginGuard = (to: any, from: any, next: any) => {
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    redirect: '/settings'
+    redirect: '/orders'
   },
   {
     path: '/home',
@@ -43,7 +44,13 @@ const routes: Array<RouteRecordRaw> = [
     name: "Settings",
     component: Settings,
     beforeEnter: authGuard
-  }
+  },
+  {
+    path: '/orders',
+    name: 'orders',
+    component: Orders,
+    beforeEnter: authGuard
+  },
 ]
 
 const router = createRouter({
