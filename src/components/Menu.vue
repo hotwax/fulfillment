@@ -1,28 +1,28 @@
 <template>
-    <ion-menu content-id="main-content" type="overlay" :disabled="!isUserAuthenticated">
-        <ion-header>
-            <ion-toolbar>
-                <ion-title>{{ $t('Broadway Store') }}</ion-title>
-            </ion-toolbar>
-        </ion-header>
-        <ion-content>
-            <ion-list>
-                <ion-menu-toggle auto-hide="false" v-for="(menu, index) in appPages" :key="index">
-                    <ion-item 
-                        button 
-                        @click="selectedIndex = index"
-                        router-direction="root"
-                        :router-link="menu.url"
-                        class="hydrated"
-                        :class="{selected: selectedIndex === index}"
-                    >
-                        <ion-icon slot="start" :ios="menu.iosIcon" :md="menu.mdIcon" />
-                        <ion-label>{{menu.title}}</ion-label>
-                    </ion-item>
-                </ion-menu-toggle>
-            </ion-list>
-        </ion-content>
-    </ion-menu>
+  <ion-menu content-id="main-content" type="overlay" :disabled="!isUserAuthenticated">
+    <ion-header>
+        <ion-toolbar>
+            <ion-title>{{ $t('Broadway Store') }}</ion-title>
+        </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <ion-list>
+        <ion-menu-toggle auto-hide="false" v-for="(menu, index) in appPages" :key="index">
+          <ion-item 
+            button 
+            @click="selectedIndex = index"
+            router-direction="root"
+            :router-link="menu.url"
+            class="hydrated"
+            :class="{selected: selectedIndex === index}"
+          >
+            <ion-icon slot="start" :ios="menu.iosIcon" :md="menu.mdIcon" />
+            <ion-label>{{menu.title}}</ion-label>
+          </ion-item>
+        </ion-menu-toggle>
+      </ion-list>
+    </ion-content>
+  </ion-menu>
 </template>
 <script lang="ts">
 import {
