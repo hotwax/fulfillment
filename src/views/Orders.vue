@@ -62,7 +62,7 @@
                     </div>
                     <div class="m-actions">
                         <ion-button slot="ion-only" fill="clear">
-                            <ion-icon :icon="options" />
+                            <ion-icon :icon="refresh-circle" />
                         </ion-button>
                     </div>
                     <div class="customer">
@@ -109,7 +109,7 @@
 
 <script lang="ts">
 import { IonButton, IonButtons, IonCard, IonContent, IonHeader, IonIcon, IonLabel, IonMenuButton, IonPage, IonSearchbar, IonThumbnail, IonToolbar } from "@ionic/vue";
-import { options, print, pricetag } from "ionicons/icons";
+import { options, print, pricetag, refresh-circle } from "ionicons/icons";
 import Image from "@/components/Image.vue";
 import { defineComponent } from "vue"
 export default defineComponent({
@@ -131,7 +131,7 @@ export default defineComponent({
   },
   setup(){
       return{
-          options, print, pricetag
+          options, print, pricetag, refresh-circle
       }
   }
 });
