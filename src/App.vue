@@ -1,21 +1,27 @@
 <template>
   <ion-app>
-    <ion-router-outlet />
+    <ion-split-pane content-id="main-content" when="lg">
+      <Menu />
+      <ion-router-outlet id="main-content" />
+    </ion-split-pane>
   </ion-app>
 </template>
 
 <script lang="ts">
-import { IonApp, IonRouterOutlet } from '@ionic/vue';
+import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
+import Menu from '@/components/Menu.vue'
 
 
 export default defineComponent({
   name: 'App',
   components: {
     IonApp,
-    IonRouterOutlet
+    IonRouterOutlet,
+    IonSplitPane,
+    Menu,
   },
   data() {
     return {
