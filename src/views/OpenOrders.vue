@@ -3,10 +3,10 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-title>10 of 26 orders</ion-title>
-        <ion-buttons slot="end">
-        <ion-button>
+        <ion-buttons  slot="end">
+        <ion-menu-button>
           <ion-icon :icon="options" />
-        </ion-button>
+        </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
@@ -104,7 +104,7 @@
 </template>
 
 <script lang="ts">
-import { IonButton, IonButtons, IonCard, IonChip, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonLabel, IonIcon, IonItem, IonNote, IonPage, IonRow, IonSearchbar, IonThumbnail, IonTitle, IonToolbar } from '@ionic/vue';
+import { IonButton, IonButtons, IonCard, IonChip, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonLabel, IonIcon, IonItem, IonMenuButton, IonNote, IonPage, IonRow, IonSearchbar, IonThumbnail, IonTitle, IonToolbar } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { options, pricetag, print, refreshCircleOutline } from 'ionicons/icons'
 
@@ -123,6 +123,7 @@ export default defineComponent({
     IonLabel,
     IonIcon,
     IonItem,
+    IonMenuButton,
     IonNote,
     IonPage,
     IonRow,
