@@ -234,3 +234,13 @@ http://ionicframework.com/docs/theming/ */
     --ion-card-background: #1e1e1e;
   }
 }
+
+.positive-action {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.negative-action {
+  display: flex;
+  justify-content: flex-end;
+}
