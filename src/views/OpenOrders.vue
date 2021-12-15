@@ -40,7 +40,7 @@
         </ion-row>
       </div> 
 
-      <ion-button class="desktop-print" fill="outline">Print Picksheet</ion-button>
+      <ion-button class="desktop-print" fill="outline" @click="assignPickers">Print Picksheet</ion-button>
 
       <ion-card>
         <div class="card-header">
@@ -104,9 +104,10 @@
 </template>
 
 <script lang="ts">
-import { IonButton, IonButtons, IonCard, IonChip, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonLabel, IonIcon, IonItem, IonMenuButton, IonNote, IonPage, IonRow, IonSearchbar, IonThumbnail, IonTitle, IonToolbar } from '@ionic/vue';
+import { IonButton, IonButtons, IonCard, IonChip, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonLabel, IonIcon, IonItem, IonMenuButton, IonNote, IonPage, IonRow, IonSearchbar, IonThumbnail, IonTitle, IonToolbar, modalController } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { options, pricetag, print, refreshCircleOutline } from 'ionicons/icons'
+import { options, pricetag, print, refreshCircleOutline } from 'ionicons/icons';
+import AssignPickerModal from '@/views/AssignPickerModal.vue';
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -132,6 +133,15 @@ export default defineComponent({
     IonTitle,
     IonToolbar
   },
+  methods: {
+    async assignPickers() {
+      const bgjobmodal = await modalController.create({
+        component: AssignPickerModal,
+        cssClass: "my-custom-class",
+      });
+      return bgjobmodal.present();
+    },
+  },
   setup() {
     return{
       options,
@@ -144,15 +154,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-
-.filters {
-  display: flex;
-  overflow: scroll;
-}
-
-.filter-scroll {
-  flex-wrap: nowrap;
-}
 
 .filter-scroll > ion-item {
  border: 0.01px solid black;

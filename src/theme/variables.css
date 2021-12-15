@@ -235,6 +235,15 @@ http://ionicframework.com/docs/theming/ */
   }
 }
 
+.filters {
+  display: flex;
+  overflow: scroll;
+}
+
+.filter-scroll {
+  flex-wrap: nowrap;
+}
+
 .positive-action {
   display: flex;
   justify-content: flex-start;
