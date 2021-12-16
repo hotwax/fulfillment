@@ -264,7 +264,6 @@ http://ionicframework.com/docs/theming/ */
 }
 
 @media  (min-width: 991px){
-
   .desktop-only {
     display: block;
   }

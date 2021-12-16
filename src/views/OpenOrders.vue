@@ -194,7 +194,6 @@ ion-thumbnail> img {
 }
 
 @media (min-width: 991px) {
-
   .card-header {
     grid: "current tags next" / max-content 1fr max-content;
     justify-items: center;

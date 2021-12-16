@@ -18,13 +18,13 @@
    </div>
 
    <ion-list>
-     <ion-list-header> Staff</ion-list-header>
+     <ion-list-header>Staff</ion-list-header>
      <ion-item>
-       <ion-label> Name</ion-label>
+       <ion-label>Name</ion-label>
        <ion-checkbox />
      </ion-item>
      <ion-item>
-       <ion-label> Name</ion-label>
+       <ion-label>Name</ion-label>
        <ion-checkbox />
      </ion-item>
    </ion-list>
