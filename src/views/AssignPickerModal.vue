@@ -10,13 +10,11 @@
     </ion-toolbar>
   </ion-header>
 
- <ion-content class="ion-padding">
+ <ion-content>
    <ion-searchbar />  
    <div class="filters">
-     <ion-row class="filter-scroll">
-       <ion-chip><ion-label>Logged in user</ion-label></ion-chip>
-       <ion-chip><ion-label>picker 2</ion-label></ion-chip>    
-     </ion-row>
+     <ion-chip><ion-label>Logged in user</ion-label></ion-chip>
+     <ion-chip><ion-label>picker 2</ion-label></ion-chip>    
    </div>
 
    <ion-list>
@@ -46,7 +44,6 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
-  IonRow,
   IonSearchbar,
   IonTitle,
   IonToolbar,
@@ -68,7 +65,6 @@ export default defineComponent({
     IonLabel,
     IonList,
     IonListHeader,
-    IonRow,
     IonSearchbar,
     IonTitle,
     IonToolbar,
@@ -85,3 +81,10 @@ export default defineComponent({
   },
 });
 </script>
+
+<style scoped>
+.filters > ion-chip {
+  flex: 1 0 100%;
+  max-width: 120px;
+}
+</style>

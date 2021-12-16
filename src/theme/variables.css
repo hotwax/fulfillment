@@ -235,21 +235,41 @@ http://ionicframework.com/docs/theming/ */
   }
 }
 
+.overline {
+  font-weight: 500 !important;
+  font-size: 10px !important;
+  line-height: 16px !important;
+  letter-spacing: 1.5px;
+  color: #666;
+  text-transform: uppercase !important;
+}
+
 .filters {
   display: flex;
+  flex-wrap: nowrap;
   overflow: scroll;
 }
 
-.filter-scroll {
-  flex-wrap: nowrap;
+.actions {
+  display: flex;
+  justify-content: space-between;
 }
 
-.positive-action {
-  display: flex;
-  justify-content: flex-start;
+.desktop-only {
+  display: none;
 }
 
-.negative-action {
-  display: flex;
-  justify-content: flex-end;
+.mobile-only {
+  display: unset;
+}
+
+@media  (min-width: 991px){
+
+  .desktop-only {
+    display: block;
+  }
+
+  .mobile-only {
+    display: none;
+  }  
 }

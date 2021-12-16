@@ -15,38 +15,36 @@
       <ion-searchbar /> 
 
       <div class="filters">
-        <ion-row class="filter-scroll">
-          <ion-item lines="none">
-            <ion-checkbox slot="start"/>
-            <ion-label>
-              <h5>Same day</h5>
-              <p>37 orders, 40 items</p>
-            </ion-label>
-          </ion-item>
-          <ion-item lines="none">
-            <ion-checkbox slot="start"/>
-            <ion-label>
-              <h5>Next day</h5>
-              <p>37 orders, 40 items</p>
-            </ion-label>
-          </ion-item>
-          <ion-item lines="none">
-            <ion-checkbox slot="start"/>
-            <ion-label>
-              <h5>Loyalty</h5>
-              <p>37 orders, 40 items</p>
-            </ion-label>
-          </ion-item>
-        </ion-row>
+        <ion-item lines="none">
+          <ion-checkbox slot="start"/>
+          <ion-label>
+            Same Day
+            <p>37 orders, 40 items</p>
+          </ion-label>
+        </ion-item>
+        <ion-item lines="none">
+          <ion-checkbox slot="start"/>
+          <ion-label>
+            Next day
+            <p>37 orders, 40 items</p>
+          </ion-label>
+        </ion-item>
+        <ion-item lines="none">
+          <ion-checkbox slot="start"/>
+          <ion-label>
+            Loyalty
+            <p>37 orders, 40 items</p>
+          </ion-label>
+        </ion-item>
       </div> 
 
-      <ion-button class="desktop-print" fill="outline" @click="assignPickers">Print Picksheet</ion-button>
+      <ion-button class="desktop-only" fill="outline" @click="assignPickers">Print Picksheet</ion-button>
 
       <ion-card>
         <div class="card-header">
           <div class="order-primary-info">
             <ion-label>
-              <h2>Darooty Magwood</h2>
+              Darooty Magwood
               <p>Ordered 27th January 2020 9:24 PM EST</p>
             </ion-label>
           </div>
@@ -56,14 +54,14 @@
               <ion-icon :icon="pricetag" />
               <ion-label>NN10584</ion-label>
             </ion-chip>
-            <ion-button fill="clear" class="mobile-recycle" color="danger">
+            <ion-button fill="clear" class="mobile-only" color="danger">
               <ion-icon slot="icon-only" :icon="refreshCircleOutline" />
             </ion-button>
           </div>
 
           <div class="order-metadata">
             <ion-label>
-              <h2>Next Day Shipping</h2>
+              Next Day Shipping
               <p>Ordered 28th January 2020 2:32 PM EST</p>
             </ion-label>
           </div>
@@ -76,8 +74,8 @@
                 <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
               </ion-thumbnail>
               <ion-label>
-                <h6>WJ06-XL-PURPLE</h6>
-                <h3>Juno Jacket</h3>
+                <p class="overline">WJ06-XL-PURPLE</p>
+                Juno Jacket
                 <p>Blue XL</p>
               </ion-label>
             </ion-item>
@@ -87,15 +85,16 @@
           </div>
         </div>
 
-        <div class="positive-action"></div>
-
-        <div class="negative-action">
-          <ion-button fill="outline" color="danger">Recycle</ion-button>
+        <div class="actions">  
+          <div class="positive-action"></div>
+          <div class="negative-action">
+            <ion-button class="desktop-only" fill="outline" color="danger">Recycle</ion-button>
+          </div>
         </div>
       </ion-card>
 
-      <ion-fab class="mobile-print" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button>
+      <ion-fab class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button @click="assignPickers">
           <ion-icon :icon="print" />
         </ion-fab-button>
       </ion-fab> 
@@ -104,7 +103,7 @@
 </template>
 
 <script lang="ts">
-import { IonButton, IonButtons, IonCard, IonChip, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonLabel, IonIcon, IonItem, IonMenuButton, IonNote, IonPage, IonRow, IonSearchbar, IonThumbnail, IonTitle, IonToolbar, modalController } from '@ionic/vue';
+import { IonButton, IonButtons, IonCard, IonChip, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonLabel, IonIcon, IonItem, IonMenuButton, IonNote, IonPage, IonSearchbar, IonThumbnail, IonTitle, IonToolbar, modalController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { options, pricetag, print, refreshCircleOutline } from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
@@ -127,7 +126,6 @@ export default defineComponent({
     IonMenuButton,
     IonNote,
     IonPage,
-    IonRow,
     IonSearchbar,
     IonThumbnail,
     IonTitle,
@@ -136,8 +134,7 @@ export default defineComponent({
   methods: {
     async assignPickers() {
       const bgjobmodal = await modalController.create({
-        component: AssignPickerModal,
-        cssClass: "my-custom-class",
+        component: AssignPickerModal
       });
       return bgjobmodal.present();
     },
@@ -155,7 +152,9 @@ export default defineComponent({
 
 <style scoped>
 
-.filter-scroll > ion-item {
+.filters > ion-item {
+ flex: 1 0 100%;
+ max-width: 10px;
  border: 0.01px solid black;
  border-radius: 10px;
 }
@@ -194,24 +193,7 @@ ion-thumbnail> img {
   object-fit: contain;
 }
 
-.desktop-recycle {
-  display: none;
-}
-
-.desktop-print {
-  display: none;
-}
-
 @media (min-width: 991px) {
-
-  .desktop-print {
-    display: block;
-    margin: 0 10px;
-  }
-
-  .mobile-print {
-    display: none;
-  }
 
   .card-header {
     grid: "current tags next" / max-content 1fr max-content;
@@ -225,10 +207,6 @@ ion-thumbnail> img {
 
   .order-metadata {
     text-align: end;
-  }
-
-  .mobile-recycle {
-    display: none;
   }
 
   .order-item {
