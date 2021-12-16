@@ -154,7 +154,7 @@ export default defineComponent({
 
 .filters > ion-item {
  flex: 1 0 100%;
- max-width: 10px;
+ max-width: 200px;
  border: 0.01px solid black;
  border-radius: 10px;
 }
