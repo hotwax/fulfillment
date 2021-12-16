@@ -1,6 +1,6 @@
 <template>
   <ion-app>
-    <ion-menu side="end" type="overlay" menu-id="filter" content-id="main">
+    <ion-menu side="end" type="overlay" menu-id="picklist-size" content-id="main">
       <ion-header>
         <ion-toolbar>
           <ion-title>Picklist Size</ion-title>
