@@ -119,11 +119,11 @@
         </div>
 
         <div class="actions">  
-          <div class="desktop-only">
+          <div>
             <ion-button @click="reportIssueAlert">Pack</ion-button>
              <ion-button fill="outline">Save</ion-button>
           </div>
-          <div class="negative-action"></div>
+          <div></div>
         </div>
       </ion-card>
 
