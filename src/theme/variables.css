@@ -235,6 +235,36 @@ http://ionicframework.com/docs/theming/ */
   }
 }
 
+.overline {
+  font-weight: 500 !important;
+  font-size: 10px !important;
+  line-height: 16px !important;
+  letter-spacing: 1.5px;
+  color: #666;
+  text-transform: uppercase !important;
+}
+
+ion-thumbnail > img {
+  object-fit: contain;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow: scroll;
+}
+
+.filters > ion-item {
+  flex: 1 0 100%;
+  max-width: 200px;
+  border: 0.01px solid black;
+  border-radius: 10px;
+ }
+
+img {
+  object-fit: contain;
+}
+
 .actions {
   display: none;
 }
@@ -260,4 +290,4 @@ http://ionicframework.com/docs/theming/ */
   .mobile-only {
     display: none;
   }  
-}
+} 
