@@ -37,11 +37,11 @@
           <ion-label class="text-wrap">Broadway has 47 outstanding orders and 77 in progress orders.</ion-label>
         </ion-item>
         <div class="actions">
-          <div class="desktop-only">
+          <div>
             <ion-button fill="outline" color="secondary" size="medium">Recycle all open orders</ion-button>
             <ion-button fill="outline" color="secondary" size="medium">Recycle all orders</ion-button>
           </div>
-          <div class="desktop-only">
+          <div>
             <ion-button fill="outline" color="danger" size="medium">Turn off fulfillment</ion-button>
           </div>
         </div>

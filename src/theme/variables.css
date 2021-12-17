@@ -236,8 +236,7 @@ http://ionicframework.com/docs/theming/ */
 }
 
 .actions {
-  display: flex;
-  justify-content: space-between;
+  display: none;
 }
 
 .desktop-only {
@@ -249,6 +248,11 @@ http://ionicframework.com/docs/theming/ */
 }
 
 @media  (min-width: 991px){
+  .actions {
+    display: flex;
+    justify-content: space-between;
+  }
+
   .desktop-only {
     display: block;
   }
