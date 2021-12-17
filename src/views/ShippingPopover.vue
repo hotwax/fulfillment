@@ -2,15 +2,15 @@
   <ion-content>
     <ion-list>
       <ion-item button>
-        <ion-icon slot="start" :icon="print" />
+        <ion-icon slot="start" :icon="printOutline" />
         Shipping label
       </ion-item>
       <ion-item button>
-        <ion-icon slot="start" :icon="print" />
+        <ion-icon slot="start" :icon="printOutline" />
         Customer letter
       </ion-item>
       <ion-item button lines="none">
-        <ion-icon slot="start" :icon="lockOpen" />
+        <ion-icon slot="start" :icon="lockOpenOutline" />
         Unpack
       </ion-item>
     </ion-list>
@@ -25,7 +25,7 @@ import {
   IonList
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { print, lockOpen } from 'ionicons/icons'
+import { printOutline, lockOpenOutline } from 'ionicons/icons'
 export default defineComponent({
   name: "ShippingPopover",
   components: { 
@@ -36,8 +36,8 @@ export default defineComponent({
   },
   setup() {
     return {
-      print,
-      lockOpen    
+      printOutline,
+      lockOpenOutline    
     }
   }
 });

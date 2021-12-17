@@ -48,7 +48,7 @@
         <ion-item>
           <ion-label>50 shipments ready to ship</ion-label>
           <ion-button slot="end" fill="outline" size="large">
-            <ion-icon slot="start" :icon="download" />
+            <ion-icon slot="start" :icon="downloadOutline" />
             Download  
           </ion-button>
         </ion-item>
@@ -76,7 +76,7 @@ import {
   IonTitle, 
   IonToolbar } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { download } from 'ionicons/icons'
+import { downloadOutline } from 'ionicons/icons'
 
 export default defineComponent({
   name: 'UploadCsv',
@@ -99,7 +99,7 @@ export default defineComponent({
   },
   setup() {
     return {
-      download
+      downloadOutline
     }
   }
 });

@@ -19,7 +19,7 @@
             Fedex
             <p>30 packages</p>
           </ion-label>
-          <ion-icon :icon="print" />
+          <ion-icon :icon="printOutline" />
         </ion-item>
         <ion-item lines="none">
           <ion-checkbox slot="start"/>
@@ -27,7 +27,7 @@
             UPS
             <p>10 packages</p>
           </ion-label>
-          <ion-icon :icon="download" />
+          <ion-icon :icon="downloadOutline" />
         </ion-item>
       </div> 
 
@@ -44,7 +44,7 @@
 
           <div class="order-tags">
             <ion-chip outline>
-              <ion-icon :icon="pricetag" />
+              <ion-icon :icon="pricetagOutline" />
               <ion-label>NN10584</ion-label>
             </ion-chip>
           </div>
@@ -99,7 +99,7 @@
           <ion-item>
             <ion-button fill="clear" @click="shipOrderAlert">Ship Now</ion-button>
             <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover">
-              <ion-icon slot="icon-only" :icon="ellipsisVertical" />
+              <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
             </ion-button>
           </ion-item>
         </div>
@@ -118,7 +118,7 @@
 
       <ion-fab class="mobile-only" vertical="bottom" horizontal="end">
         <ion-fab-button  @click="shipOrderAlert">
-          <ion-icon :icon="checkmarkDone" />
+          <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
       
@@ -149,7 +149,7 @@ import {
   alertController, 
   popoverController } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { print, download, pricetag, ellipsisVertical, checkmarkDone } from 'ionicons/icons'
+import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline } from 'ionicons/icons'
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 
@@ -179,11 +179,12 @@ export default defineComponent({
     const router = useRouter();
 
     return {  
-      print,
-      download,
-      pricetag,
-      ellipsisVertical,
-      checkmarkDone, router
+      printOutline, 
+      downloadOutline, 
+      pricetagOutline, 
+      ellipsisVerticalOutline, 
+      checkmarkDoneOutline,
+      router
     }
   }, 
   methods: {
