@@ -244,6 +244,10 @@ http://ionicframework.com/docs/theming/ */
   text-transform: uppercase !important;
 }
 
+ion-thumbnail > img {
+  object-fit: contain;
+}
+
 .filters {
   display: flex;
   flex-wrap: nowrap;
