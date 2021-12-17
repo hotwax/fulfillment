@@ -108,7 +108,6 @@ export default defineComponent({
 <style scoped>
 .upload-csv {
   max-width: 732px;
-  margin-right: auto;
-  margin-left: auto;
+  margin: 0 auto;
 }
 </style>
