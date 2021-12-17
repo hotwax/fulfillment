@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { RouteRecordRaw } from 'vue-router';
+import Completed from '@/views/Completed.vue'
+import UploadCsv from '@/views/UploadCsv.vue'
 import InProgress from '@/views/InProgress.vue'
 import OpenOrders from "@/views/OpenOrders.vue"
 import Login from '@/views/Login.vue'
@@ -25,7 +27,7 @@ const loginGuard = (to: any, from: any, next: any) => {
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    redirect: '/open-orders'
+    redirect: '/completed'
   },
   {
     path: '/open-orders',
@@ -38,6 +40,17 @@ const routes: Array<RouteRecordRaw> = [
     name: 'InProgress',
     component: InProgress,
     beforeEnter: authGuard
+  },
+  {
+    path: '/completed',
+    name: 'Completed',
+    component: Completed,
+    beforeEnter: authGuard
+  },
+  {
+    path: '/upload-csv',
+    name: 'UploadCsv',
+    component: UploadCsv
   },
   {
     path: '/login',
