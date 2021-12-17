@@ -43,11 +43,11 @@
           </ion-item>
         </ion-list>
 
-        <ion-button expand="block">Save</ion-button>
+        <ion-button expand="block" size="large">Save</ion-button>
 
         <ion-item>
           <ion-label>50 shipments ready to ship</ion-label>
-          <ion-button slot="end" fill="outline" size="large">
+          <ion-button slot="end" fill="outline">
             <ion-icon slot="start" :icon="downloadOutline" />
             Download  
           </ion-button>

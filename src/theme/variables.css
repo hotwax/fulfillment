@@ -259,11 +259,14 @@ ion-thumbnail > img {
   max-width: 200px;
   border: 0.01px solid black;
   border-radius: 10px;
+ }
+
+img {
+  object-fit: contain;
 }
 
 .actions {
-  display: flex;
-  justify-content: space-between;
+  display: none;
 }
 
 .desktop-only {
@@ -275,6 +278,11 @@ ion-thumbnail > img {
 }
 
 @media  (min-width: 991px){
+  .actions {
+    display: flex;
+    justify-content: space-between;
+  }
+
   .desktop-only {
     display: block;
   }
