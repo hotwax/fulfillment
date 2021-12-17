@@ -126,26 +126,4 @@ export default defineComponent({
 .text-wrap {
   white-space: normal;
 }
-
-.actions {
-  display: flex;
-}
-
-.postive-action {
-  justify-content: flex-start;
-}
-
-.negative-action {
-  justify-content: flex-end;
-}
-
-@media (min-width: 991px) {
-  .postive-action {
-    justify-self: unset;
-  }
-
-  .negative-action {
-   justify-self: unset;
-  }
-}
 </style>
