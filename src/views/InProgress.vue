@@ -16,7 +16,7 @@
             John
             <p>2:30 PM</p>
           </ion-label>
-          <ion-icon :icon="print" />
+          <ion-icon :icon="printOutline" />
         </ion-item>
         <ion-item lines="none">
           <ion-checkbox slot="start"/>
@@ -24,7 +24,7 @@
             Aaron
             <p>2:04 PM</p>
           </ion-label>
-          <ion-icon :icon="print" />
+          <ion-icon :icon="printOutline" />
         </ion-item>
       </div> 
 
@@ -41,7 +41,7 @@
 
           <div class="order-tags">
             <ion-chip outline>
-              <ion-icon :icon="pricetag" />
+              <ion-icon :icon="pricetagOutline" />
               <ion-label>NN10584</ion-label>
             </ion-chip>
           </div>
@@ -54,8 +54,8 @@
           </div>
         </div>
 
-        <div class="desktop-only">
-          <ion-button fill="outline"><ion-icon :icon="add" />Add Box</ion-button>
+        <div class="box-type desktop-only">
+          <ion-button fill="outline"><ion-icon :icon="addOutline" />Add Box</ion-button>
           <ion-chip> Box A | Type 3</ion-chip>  
         </div>
 
@@ -113,7 +113,7 @@
           <ion-item>
             <ion-button fill="clear" @click="packOrdersAlert">Pack using default packaging</ion-button>
             <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
-              <ion-icon slot="icon-only" :icon="ellipsisVertical" />
+              <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
             </ion-button>
           </ion-item>
         </div>
@@ -129,7 +129,7 @@
 
       <ion-fab class="mobile-only" vertical="bottom" horizontal="end">
         <ion-fab-button  @click="packOrdersAlert">
-          <ion-icon :icon="checkmarkDone" />
+          <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
     </ion-content>
@@ -139,7 +139,7 @@
 <script lang="ts">
 import { IonButton, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonItem, IonIcon, IonLabel, IonNote, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonThumbnail, IonTitle, IonToolbar, alertController, popoverController } from '@ionic/vue';
 import { defineComponent, ref } from 'vue';
-import { print, add, ellipsisVertical, checkmarkDone, pricetag } from 'ionicons/icons'
+import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
 
 export default defineComponent({
@@ -186,12 +186,12 @@ export default defineComponent({
           header: 'Pack orders',
           message: 'You are packing 15 orders. Select additional documents that you would like to print.',
           inputs: [
-              {
+            {
               type: 'checkbox',
               label: 'Shipping labels',
               value: 'value1',
               checked: true,
-            },
+              },
             {
               type: 'checkbox',
               label: 'Packing slip',
@@ -206,7 +206,7 @@ export default defineComponent({
       const alert = await alertController
         .create({
           header: 'Report an Issue',
-          message: 'WJ06-XL-Purple, and 5 other products are identified as unfulfillable. 4 other orders  containing these products will be  unassigned  from this store and sent to be rebrokered.',       
+          message: 'WJ06-XL-Purple, and 5 other products are identified as unfulfillable.<br> 4 other orders  containing these products will be  unassigned  from this store and sent to be rebrokered.',       
           buttons: ['Cancel', 'Report'],
         });
       return alert.present();
@@ -216,12 +216,12 @@ export default defineComponent({
       const segment = ref("pack");
 
       return {
-          add,
-          print,
+          addOutline,
+          printOutline,
+          ellipsisVerticalOutline,
+          checkmarkDoneOutline,
+          pricetagOutline,
           segment,
-          ellipsisVertical,
-          checkmarkDone,
-          pricetag
       }
   }
 });
@@ -277,6 +277,10 @@ export default defineComponent({
     grid: "info tags metadata" / max-content 1fr max-content;
     justify-items: center;
     align-items: center;
+    border-bottom: 1px solid black;
+  }
+
+  .box-type {
     border-bottom: 1px solid black;
   }
 }

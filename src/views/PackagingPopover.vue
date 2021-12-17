@@ -40,16 +40,16 @@ export default defineComponent({
   },
   methods: {
     async editPackaging() {
-      const bgjobmodal = await modalController.create({
+      const editmodal = await modalController.create({
         component: EditPackagingModal
       });
-      return bgjobmodal.present();
+      return editmodal.present();
     },
      async reportIssue() {
-      const bgjobmodal = await modalController.create({
+      const reportmodal = await modalController.create({
         component: ReportIssueModal
       });
-      return bgjobmodal.present();
+      return reportmodal.present();
     }
   },
   setup() {
