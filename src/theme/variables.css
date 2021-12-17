@@ -254,6 +254,21 @@ ion-thumbnail > img {
   overflow: scroll;
 }
 
+.filters > ion-item {
+  flex: 1 0 100%;
+  max-width: 200px;
+  border: 0.01px solid black;
+  border-radius: 10px;
+ }
+
+img {
+  object-fit: contain;
+}
+
+.actions {
+  display: none;
+}
+
 .desktop-only {
   display: none;
 }
@@ -263,6 +278,11 @@ ion-thumbnail > img {
 }
 
 @media  (min-width: 991px){
+  .actions {
+    display: flex;
+    justify-content: space-between;
+  }
+
   .desktop-only {
     display: block;
   }
