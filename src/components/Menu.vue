@@ -7,7 +7,7 @@
     </ion-header>
 
     <ion-content>
-      <ion-list id="receiving-list">
+      <ion-list>
         <ion-menu-toggle auto-hide="false" v-for="(p, i) in appPages" :key="i">
           <ion-item
             button
