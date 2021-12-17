@@ -8,7 +8,7 @@
     </ion-header>
     
     <ion-content :fullscreen="true">
-      <div class="content">
+      <div class="upload-csv">
         <ion-item>
            <ion-label>Shipped orders</ion-label>
            <ion-input placeholder="Select CSV" />
@@ -47,7 +47,7 @@
 
         <ion-item>
           <ion-label>50 shipments ready to ship</ion-label>
-          <ion-button slot="end" fill="outline">
+          <ion-button slot="end" fill="outline" size="large">
             <ion-icon slot="start" :icon="download" />
             Download  
           </ion-button>
@@ -64,10 +64,15 @@ import {
   IonButton, 
   IonContent, 
   IonHeader, 
+  IonIcon,
   IonInput,
   IonItem, 
   IonLabel, 
+  IonList,
+  IonListHeader,
   IonPage, 
+  IonSelect,
+  IonSelectOption,
   IonTitle, 
   IonToolbar } from '@ionic/vue';
 import { defineComponent } from 'vue';
@@ -76,14 +81,19 @@ import { download } from 'ionicons/icons'
 export default defineComponent({
   name: 'UploadCsv',
   components: {
-    IonBackButton,  
+    IonBackButton,
     IonButton, 
     IonContent, 
     IonHeader, 
+    IonIcon,
     IonInput,
     IonItem, 
     IonLabel, 
+    IonList,
+    IonListHeader,
     IonPage, 
+    IonSelect,
+    IonSelectOption,
     IonTitle, 
     IonToolbar
   },
@@ -96,10 +106,9 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.content {
- max-width: 732px;
- margin-top: 20px;
- margin-right: auto;
- margin-left: auto;
+.upload-csv {
+  max-width: 732px;
+  margin-right: auto;
+  margin-left: auto;
 }
 </style>
