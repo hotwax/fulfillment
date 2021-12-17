@@ -262,8 +262,7 @@ img {
 }
 
 .actions {
-  display: flex;
-  justify-content: space-between;
+  display: none;
 }
 
 .desktop-only {
@@ -275,6 +274,11 @@ img {
 }
 
 @media  (min-width: 991px){
+  .actions {
+    display: flex;
+    justify-content: space-between;
+  }
+
   .desktop-only {
     display: block;
   }

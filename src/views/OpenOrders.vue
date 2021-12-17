@@ -88,7 +88,7 @@
         <div class="actions">  
           <div class="positive-action"></div>
           <div class="negative-action">
-            <ion-button class="desktop-only" fill="outline" color="danger">Recycle</ion-button>
+            <ion-button fill="outline" color="danger">Recycle</ion-button>
           </div>
         </div>
       </ion-card>
