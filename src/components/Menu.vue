@@ -84,7 +84,7 @@ export default defineComponent({
     const appPages = [
       {
         title: "Orders",
-        url: "/orders",
+        url: "/open-orders",
         iosIcon: mailUnreadOutline,
         mdIcon: mailUnreadOutline,
       },

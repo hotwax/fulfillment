@@ -18,8 +18,8 @@ import emitter from "@/event-bus"
 export default defineComponent({
   name: 'App',
   components: {
-    IonApp,
-    IonRouterOutlet,
+    IonApp,  
+    IonRouterOutlet, 
     IonSplitPane,
     Menu
   },
