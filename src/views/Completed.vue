@@ -4,7 +4,7 @@
       <ion-toolbar>
         <ion-title>10 to 26 orders</ion-title>
         <ion-buttons slot="end">
-            <ion-button fill="clear">Upload Csv</ion-button>
+            <ion-button fill="clear" @click="() => router.push('/upload-csv')">Upload Csv</ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
@@ -151,6 +151,7 @@ import {
 import { defineComponent } from 'vue';
 import { print, download, pricetag, ellipsisVertical, checkmarkDone } from 'ionicons/icons'
 import Popover from '@/views/ShippingPopover.vue'
+import { useRouter } from 'vue-router';
 
 export default defineComponent({
   name: 'Home',
@@ -175,12 +176,14 @@ export default defineComponent({
     IonToolbar,
   },
   setup() {
+    const router = useRouter();
+
     return {  
       print,
       download,
       pricetag,
       ellipsisVertical,
-      checkmarkDone
+      checkmarkDone, router
     }
   }, 
   methods: {

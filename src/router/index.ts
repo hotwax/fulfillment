@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { RouteRecordRaw } from 'vue-router';
 import Home from '@/views/Home.vue'
 import Completed from '@/views/Completed.vue'
+import UploadCsv from '@/views/UploadCsv.vue'
 import Login from '@/views/Login.vue'
 import Settings from "@/views/Settings.vue"
 import store from '@/store'
@@ -38,6 +39,11 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Completed',
     component: Completed,
     beforeEnter: authGuard
+  },
+  {
+    path: '/upload-csv',
+    name: 'UploadCsv',
+    component: UploadCsv
   },
   {
     path: '/login',
