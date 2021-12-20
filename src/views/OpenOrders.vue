@@ -13,7 +13,7 @@
       </ion-toolbar>
     </ion-header>
     
-    <ion-content :fullscreen="true"  id="picklist">
+    <ion-content :fullscreen="true">
       <ion-searchbar /> 
 
       <div class="filters">
