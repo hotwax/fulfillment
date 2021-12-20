@@ -12,7 +12,7 @@
     </ion-header>
     
     <ion-content :fullscreen="true">
-      <ion-searchbar /> 
+      <ion-searchbar />
 
       <div class="filters">
         <ion-item lines="none">
@@ -127,6 +127,8 @@ import {
 import { defineComponent } from 'vue';
 import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
+import { mapGetters, useStore } from 'vuex';
+
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -151,6 +153,12 @@ export default defineComponent({
     IonTitle,
     IonToolbar
   },
+  computed: {
+    ...mapGetters({
+      currentFacility: 'user/getCurrentFacility',
+      openOrders: 'order/getOpenOrders'
+    })
+  },
   methods: {
     async assignPickers() {
       const bgjobmodal = await modalController.create({
@@ -158,13 +166,37 @@ export default defineComponent({
       });
       return bgjobmodal.present();
     },
+    async fetchOpenOrders (vSize?: any, vIndex?: any) {
+      const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE
+      const viewIndex = vIndex ? vIndex : 0
+      const sortBy = ''
+      const payload = {
+        "json": {
+          "params": {
+            "rows": 10000,
+            "sort": `${sortBy ? sortBy:'reservedDatetime desc'}`
+          },
+          "query": "docType:OISGIR",
+          "filter": ["orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED", "isPicked:","-shipmentMethodTypeId : STOREPICKUP", "-facilityId:(NA OR 904 OR 905)","-picklistItemStatusId:PICKITEM_COMPLETED", "reservedDatetime: [ TO *]"],
+          "fields": "facilityId,shipmentMethodTypeDesc,reservedDatetime,orderIdentifications, '  ',orderId,virtualProductName,productName,goodIdentifications, ' ',isPicked,picklistItemStatusDesc"
+        }
+      }
+      this.store.dispatch('order/fetchOpenOrders', payload).then((resp) => console.log(resp)).catch(err => console.log(err))
+    }
+  },
+  mounted () {
+    this.fetchOpenOrders();
   },
   setup() {
+    const store = useStore();
+
     return{
       optionsOutline,
       pricetagOutline,
       printOutline,
-      refreshCircleOutline
+      refreshCircleOutline,
+      print,
+      store
     }
   }
 });
