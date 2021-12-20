@@ -10,6 +10,37 @@ import emitter from '@/event-bus'
 
 const actions: ActionTree<ProductState, RootState> = {
 
+  async fetchProducts ( { commit, state }, { productIds }) {
+    const cachedProductIds = Object.keys(state.cached);
+    const productIdFilter= productIds.reduce((filter: string, productId: any) => {
+      if (filter !== '') filter += ' OR '
+      // If product already exist in cached products skip
+      if (cachedProductIds.includes(productId)) {
+        return filter;
+      } else {
+        return filter += productId;
+      }
+    }, '');
+
+    // If there are no products skip the API call
+    if (productIdFilter === '') return;
+
+    // adding viewSize as by default we are having the viewSize of 10
+    const resp = await ProductService.fetchProducts({
+      "filters": ['productId: (' + productIdFilter + ')'],
+      "viewSize": productIds.length
+    })
+    if (resp.status === 200 && resp.data.response && !hasError(resp)) {
+      const products = resp.data.response.docs;
+      // Handled empty response in case of failed query
+      if (resp.data) commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
+    } else {
+      showToast(translate('Something went wrong'))
+    }
+    // TODO Handle specific error
+    return resp;
+  },
+
   // Find Product
   async findProduct ({ commit, state }, payload) {
 
@@ -47,15 +78,15 @@ const actions: ActionTree<ProductState, RootState> = {
     return resp;
   },
 
-  async getProductInformation ({ dispatch }, orders) {
+  async getProductInformation ({ dispatch }, { orders }) {
     let productIds: any = new Set();
-    orders.map((order: any) => {
+    orders.forEach((order: any) => {
       if (order.productId) productIds.add(order.productId)
     })
 
     productIds = [...productIds]
     if (productIds.length) {
-      this.dispatch('product/fetchProducts', { productIds })
+      dispatch('fetchProducts', { productIds })
     }
   }
 }

@@ -19,7 +19,7 @@ const actions: ActionTree<OrderState, RootState> = {
       resp = await OrderService.fetchOpenOrders(payload);
       if (resp.status === 200 && resp.data.response.numFound > 0 && !hasError(resp)) {
         commit(types.ORDER_OPEN_UPDATED, {open: resp.data.response.docs, total: resp.data.response.numFound})
-        this.dispatch('products/getProductInformation', {orders: resp.data.response.docs})
+        this.dispatch('product/getProductInformation', {orders: resp.data.response.docs})
       } else {
         showToast(translate('Something went wrong'))
       }
