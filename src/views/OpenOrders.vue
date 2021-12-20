@@ -5,7 +5,7 @@
         <ion-title>10 of 26 orders</ion-title>
         <ion-buttons  slot="end">
         <ion-menu-button>
-          <ion-icon :icon="options" />
+          <ion-icon :icon="optionsOutline" />
         </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
@@ -51,7 +51,7 @@
 
           <div class="order-tags">
             <ion-chip outline>
-              <ion-icon :icon="pricetag" />
+              <ion-icon :icon="pricetagOutline" />
               <ion-label>NN10584</ion-label>
             </ion-chip>
             <ion-button fill="clear" class="mobile-only" color="danger">
@@ -88,14 +88,14 @@
         <div class="actions">  
           <div class="positive-action"></div>
           <div class="negative-action">
-            <ion-button class="desktop-only" fill="outline" color="danger">Recycle</ion-button>
+            <ion-button fill="outline" color="danger">Recycle</ion-button>
           </div>
         </div>
       </ion-card>
 
       <ion-fab class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="assignPickers">
-          <ion-icon :icon="print" />
+          <ion-icon :icon="printOutline" />
         </ion-fab-button>
       </ion-fab> 
     </ion-content>
@@ -103,9 +103,29 @@
 </template>
 
 <script lang="ts">
-import { IonButton, IonButtons, IonCard, IonChip, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonLabel, IonIcon, IonItem, IonMenuButton, IonNote, IonPage, IonSearchbar, IonThumbnail, IonTitle, IonToolbar, modalController } from '@ionic/vue';
+import { 
+  IonButton, 
+  IonButtons, 
+  IonCard, 
+  IonChip, 
+  IonCheckbox, 
+  IonContent, 
+  IonFab, 
+  IonFabButton, 
+  IonHeader, 
+  IonLabel, 
+  IonIcon, 
+  IonItem, 
+  IonMenuButton, 
+  IonNote, 
+  IonPage, 
+  IonSearchbar, 
+  IonThumbnail, 
+  IonTitle, 
+  IonToolbar, 
+  modalController } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { options, pricetag, print, refreshCircleOutline } from 'ionicons/icons';
+import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 
 export default defineComponent({
@@ -141,9 +161,9 @@ export default defineComponent({
   },
   setup() {
     return{
-      options,
-      pricetag,
-      print,
+      optionsOutline,
+      pricetagOutline,
+      printOutline,
       refreshCircleOutline
     }
   }
@@ -152,24 +172,17 @@ export default defineComponent({
 
 <style scoped>
 
-.filters > ion-item {
- flex: 1 0 100%;
- max-width: 200px;
- border: 0.01px solid black;
- border-radius: 10px;
-}
-
 .card-header {
   display: grid;
   grid: "tags"
-        "current"
-        "next"/ 1fr;
+        "info"
+        "metadata"/ 1fr;
   justify-content: start;
   border-bottom: 1px solid black;        
 }
 
 .order-primary-info {
-  grid-area: current;
+  grid-area: info;
 }
 
 .order-tags {
@@ -180,7 +193,7 @@ export default defineComponent({
 }
 
 .order-metadata {
-  grid-area: next;
+  grid-area: metadata;
 }  
 
 .order-item {
@@ -189,18 +202,14 @@ export default defineComponent({
   align-items: center;
 }  
 
-ion-thumbnail> img {
-  object-fit: contain;
-}
-
 @media (min-width: 991px) {
   .card-header {
-    grid: "current tags next" / max-content 1fr max-content;
-    justify-items: center;
+    grid: "info tags metadata" / max-content 1fr max-content;
     align-items: center;
   }
 
   .order-tags {
+    justify-self: center;
     border-bottom: none;
   }
 
@@ -211,10 +220,5 @@ ion-thumbnail> img {
   .order-item {
     border-bottom: 1px solid black;
   }  
-
-  .desktop-recycle {
-    display: flex;
-    justify-content: flex-end;
-  }
 }
 </style>

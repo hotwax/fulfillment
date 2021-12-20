@@ -3,7 +3,7 @@
     <ion-toolbar>
       <ion-buttons slot="start">
         <ion-button @click="closeModal"> 
-          <ion-icon :icon="close" />
+          <ion-icon :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
       <ion-title>Assign Pickers</ion-title>
@@ -12,10 +12,10 @@
 
  <ion-content>
    <ion-searchbar />  
-   <div class="filters">
+   <ion-row>
      <ion-chip><ion-label>Logged in user</ion-label></ion-chip>
      <ion-chip><ion-label>picker 2</ion-label></ion-chip>    
-   </div>
+   </ion-row>
 
    <ion-list>
      <ion-list-header>Staff</ion-list-header>
@@ -49,7 +49,7 @@ import {
   IonToolbar,
   modalController } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { close } from "ionicons/icons";
+import { closeOutline } from "ionicons/icons";
 
 export default defineComponent({
   name: "AssignPickerModal",
@@ -76,15 +76,19 @@ export default defineComponent({
   },
   setup() {
     return {
-      close
+      closeOutline
     };
   },
 });
 </script>
 
 <style scoped>
-.filters > ion-chip {
-  flex: 1 0 100%;
-  max-width: 120px;
+ion-row {
+  flex-wrap: nowrap;
+  overflow: scroll;
+}
+
+ion-chip {
+  flex-shrink: 0;
 }
 </style>

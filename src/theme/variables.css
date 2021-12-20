@@ -244,15 +244,29 @@ http://ionicframework.com/docs/theming/ */
   text-transform: uppercase !important;
 }
 
+ion-thumbnail > img {
+  object-fit: contain;
+}
+
 .filters {
   display: flex;
   flex-wrap: nowrap;
   overflow: scroll;
 }
 
+.filters > ion-item {
+  flex: 1 0 100%;
+  max-width: 200px;
+  border: 0.01px solid black;
+  border-radius: 10px;
+ }
+
+img {
+  object-fit: contain;
+}
+
 .actions {
-  display: flex;
-  justify-content: space-between;
+  display: none;
 }
 
 .desktop-only {
@@ -264,6 +278,11 @@ http://ionicframework.com/docs/theming/ */
 }
 
 @media  (min-width: 991px){
+  .actions {
+    display: flex;
+    justify-content: space-between;
+  }
+
   .desktop-only {
     display: block;
   }
@@ -271,4 +290,4 @@ http://ionicframework.com/docs/theming/ */
   .mobile-only {
     display: none;
   }  
-}
+} 
