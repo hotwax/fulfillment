@@ -2,14 +2,14 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>Store Settings</ion-title>
+        <ion-title>{{ $t("Store Settings") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     
     <ion-content :fullscreen="true">
       <ion-item>
         <ion-label>Store</ion-label>
-        <ion-select placeholder="store name">
+        <ion-select :placeholder="$t('store name')">
           <ion-select-option>Broadway</ion-select-option>
           <ion-select-option>Garden City</ion-select-option>
         </ion-select>
@@ -20,34 +20,34 @@
           <ion-label class="text-wrap">Documents to print when packing orders</ion-label>
         </ion-item>
         <ion-item>
-          <ion-label>Shipping label</ion-label>
+          <ion-label>{{ $t("Shipping label") }}</ion-label>
           <ion-checkbox slot="end" />
         </ion-item>
         <ion-item lines="none">
-          <ion-label>Packing slip</ion-label>
+          <ion-label>{{ $t("Packing slip") }}</ion-label>
           <ion-checkbox slot="end" />
         </ion-item>
       </ion-card>
 
       <ion-card>
         <ion-item lines="none">
-          <ion-label>Fulfillment: On</ion-label>
+          <ion-label>{{ $t("Fulfillment") }}: {{ $t("On") }}</ion-label>
         </ion-item>
         <ion-item lines="none">
           <ion-label class="text-wrap">Broadway has 47 outstanding orders and 77 in progress orders.</ion-label>
         </ion-item>
         <div class="actions">
           <div>
-            <ion-button fill="outline" color="secondary" size="medium">Recycle all open orders</ion-button>
-            <ion-button fill="outline" color="secondary" size="medium">Recycle all orders</ion-button>
+            <ion-button fill="outline" color="secondary" size="medium">{{ $t("Recycle all open orders") }}</ion-button>
+            <ion-button fill="outline" color="secondary" size="medium">{{ $t("Recycle all orders") }}</ion-button>
           </div>
           <div>
-            <ion-button fill="outline" color="danger" size="medium">Turn off fulfillment</ion-button>
+            <ion-button fill="outline" color="danger" size="medium">{{ $t("Turn off fulfillment") }}</ion-button>
           </div>
         </div>
 
         <ion-item class="mobile-only">
-          <ion-button fill="clear">Recycle all open orders</ion-button>
+          <ion-button fill="clear">{{ $t("Recycle all open orders") }}</ion-button>
           <ion-button slot="end" fill="clear" color="medium" @click="RecyclePopover">
             <ion-icon :icon="ellipsisVerticalOutline" slot="icon-only" />
           </ion-button>
@@ -56,11 +56,11 @@
 
       <ion-item>
         <ion-label>Asia / Cullcutta</ion-label>
-        <ion-button fill="outline">Change</ion-button>
+        <ion-button fill="outline">{{ $t("Change") }}</ion-button>
       </ion-item>
       <ion-item>
         <ion-label>Aaron Wanger</ion-label>
-        <ion-button fill="outline" color="medium">Logout</ion-button>
+        <ion-button fill="outline" color="medium">{{ $t("Logout") }}</ion-button>
       </ion-item>
     </ion-content>
   </ion-page>

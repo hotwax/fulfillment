@@ -6,9 +6,9 @@
           <ion-icon :icon="close" />
         </ion-button>
       </ion-buttons>
-      <ion-title>Edit packaging</ion-title>
+      <ion-title>{{ $t("Edit packaging") }}</ion-title>
       <ion-buttons slot="end">
-        <ion-button fill="clear">Save</ion-button>
+        <ion-button fill="clear">{{ $t("Save") }}</ion-button>
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
@@ -54,10 +54,10 @@
 
         <div class="product-metadata">
           <ion-item lines="none">   
-            <ion-label>Select box</ion-label>
+            <ion-label>{{ $t("Select box") }}</ion-label>
             <ion-select>
-              <ion-select-option>Box A  Type3</ion-select-option>
-              <ion-select-option>Box B  Type2</ion-select-option>
+              <ion-select-option>{{ $t("Box A") }} {{ $t("Type 3") }}</ion-select-option>
+              <ion-select-option>{{ $t("Box B") }} {{ $t("Type 2") }}</ion-select-option>
             </ion-select>
           </ion-item>
         </div>
@@ -65,13 +65,13 @@
     </ion-card> 
 
     <ion-list>
-      <ion-list-header>Boxes</ion-list-header>
+      <ion-list-header>{{ $t("Boxes") }}</ion-list-header>
       <ion-item>
-        <ion-label>Box A</ion-label>
+        <ion-label>{{ $t("Box A") }}</ion-label>
         <ion-select value="3">
-          <ion-select-option value="1">Type 1</ion-select-option>
-          <ion-select-option value="2">Type 2</ion-select-option>
-          <ion-select-option value="3">Type 3</ion-select-option>  
+          <ion-select-option value="1">{{ $t("Type 1") }}</ion-select-option>
+          <ion-select-option value="2">{{ $t("Type 2") }}</ion-select-option>
+          <ion-select-option value="3">{{ $t("Type 3") }}</ion-select-option>  
         </ion-select>
       </ion-item>
     </ion-list>

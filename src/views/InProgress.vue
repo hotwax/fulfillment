@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>26 orders | 30 items</ion-title>
+        <ion-title>26 {{ $t("orders" )}} | 30 {{ $t("items") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     
@@ -28,14 +28,14 @@
         </ion-item>
       </div> 
 
-      <ion-button expand="block" class="desktop-only" fill="outline" @click="packOrdersAlert">Pack Orders</ion-button>
+      <ion-button expand="block" class="desktop-only" fill="outline" @click="packOrdersAlert">{{ $t("Pack Orders") }}</ion-button>
 
       <ion-card>
         <div class="card-header">
           <div class="order-primary-info">
             <ion-label>
               Darooty Magwood
-              <p>Ordered 27th January 2020 9:24 PM EST</p>
+              <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
             </ion-label>
           </div>
 
@@ -49,14 +49,14 @@
           <div class="order-metadata">
             <ion-label>
               Next Day Shipping
-              <p>Ordered 28th January 2020 2:32 PM EST</p>
+              <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
             </ion-label>
           </div>
         </div>
 
         <div class="box-type desktop-only">
-          <ion-button fill="outline"><ion-icon :icon="addOutline" />Add Box</ion-button>
-          <ion-chip> Box A | Type 3</ion-chip>  
+          <ion-button fill="outline"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
+          <ion-chip> {{ $t("Box A") }} | {{ $t("Type 3") }}</ion-chip>  
         </div>
 
         <div class="order-item">
@@ -76,28 +76,28 @@
           <div class="desktop-only">
               <ion-segment @ionChange="segmentChanged($event)" v-model="segment">
                 <ion-segment-button value="pack">
-                  <ion-label>Ready to Pack</ion-label>
+                  <ion-label>{{ $t("Ready to pack") }}</ion-label>
                 </ion-segment-button>
                 <ion-segment-button value="issue">
-                  <ion-label>Report an issue</ion-label>
+                  <ion-label>{{ $t("Report an issue") }}</ion-label>
                 </ion-segment-button>
               </ion-segment> 
               <div class="segments">
               <div v-if="segment == 'pack'">
                 <ion-item lines="none">
-                  <ion-label>Select box</ion-label>   
+                  <ion-label>{{ $t("Select box") }}</ion-label>   
                   <ion-select value="box1">
-                    <ion-select-option value="box1">Box A Type 3</ion-select-option>
-                    <ion-select-option value="box2">Box B Type 2</ion-select-option>
+                    <ion-select-option value="box1">{{ $t("Box A") }} {{ $t("Type 3") }}</ion-select-option>
+                    <ion-select-option value="box2">{{ $t("Box B") }} {{ $t("Type 2")}}</ion-select-option>
                   </ion-select>      
                 </ion-item>
               </div>
               <div v-if="segment == 'issue'">
                 <ion-item lines="none">  
-                  <ion-label>Select Issue</ion-label>  
+                  <ion-label>{{ $t("Select issue") }}</ion-label>  
                   <ion-select value="a">
-                    <ion-select-option value="a">Out of stock</ion-select-option>
-                    <ion-select-option value="b">Worn display</ion-select-option>
+                    <ion-select-option value="a">{{ $t("Out of stock") }}</ion-select-option>
+                    <ion-select-option value="b">{{ $t("Worn display") }}</ion-select-option>
                   </ion-select> 
                 </ion-item>
               </div>
@@ -105,13 +105,13 @@
           </div>
 
           <div class="product-metadata">
-            <ion-note>49 pieces in stock</ion-note>
+            <ion-note>49 {{ $t("pieces in stock") }}</ion-note>
           </div>
         </div>
 
         <div class="mobile-only">
           <ion-item>
-            <ion-button fill="clear" @click="packOrdersAlert">Pack using default packaging</ion-button>
+            <ion-button fill="clear" @click="packOrdersAlert">{{ $t("Pack using default packaging") }}</ion-button>
             <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
               <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
             </ion-button>
@@ -120,8 +120,8 @@
 
         <div class="actions">  
           <div>
-            <ion-button @click="reportIssueAlert">Pack</ion-button>
-             <ion-button fill="outline">Save</ion-button>
+            <ion-button @click="reportIssueAlert">{{ $t("Pack") }}</ion-button>
+             <ion-button fill="outline">{{ $t("Save") }}</ion-button>
           </div>
           <div></div>
         </div>

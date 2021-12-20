@@ -2,9 +2,9 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>10 to 26 orders</ion-title>
+        <ion-title>10 to 26 {{ $t("orders") }}</ion-title>
         <ion-buttons slot="end">
-            <ion-button fill="clear" @click="() => router.push('/upload-csv')">Upload Csv</ion-button>
+            <ion-button fill="clear" @click="() => router.push('/upload-csv')">{{ $t("Upload Csv") }}</ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
@@ -17,7 +17,7 @@
           <ion-checkbox slot="start"/>
           <ion-label>
             Fedex
-            <p>30 packages</p>
+            <p>30 {{ $t("packages") }}</p>
           </ion-label>
           <ion-icon :icon="printOutline" />
         </ion-item>
@@ -25,20 +25,20 @@
           <ion-checkbox slot="start"/>
           <ion-label>
             UPS
-            <p>10 packages</p>
+            <p>10 {{ $t("packages") }}</p>
           </ion-label>
           <ion-icon :icon="downloadOutline" />
         </ion-item>
       </div> 
 
-      <ion-button expand="block" class="desktop-only" fill="outline" @click="shipOrderAlert">Ship</ion-button>
+      <ion-button expand="block" class="desktop-only" fill="outline" @click="shipOrderAlert">{{ $t("Ship") }}</ion-button>
 
       <ion-card>
         <div class="card-header">
           <div class="order-primary-info">
             <ion-label>
               Darooty Magwood
-              <p>Ordered 27th January 2020 9:24 PM EST</p>
+              <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
             </ion-label>
           </div>
 
@@ -52,7 +52,7 @@
           <div class="order-metadata">
             <ion-label>
               Next Day Shipping
-              <p>Ordered 28th January 2020 2:32 PM EST</p>
+              <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
             </ion-label>
           </div>
         </div>
@@ -72,7 +72,7 @@
           </div>
 
           <div class="product-metadata mobile-only">
-            <ion-note>49 pieces in stock</ion-note>
+            <ion-note>49 {{ $t("pieces in stock") }}</ion-note>
           </div>
         </div>
 
@@ -91,13 +91,13 @@
           </div>
 
           <div class="product-metadata mobile-only">
-            <ion-note>49 pieces in stock</ion-note>
+            <ion-note>49 {{ $t("pieces in stock") }}</ion-note>
           </div>
         </div>
 
         <div class="mobile-only">
           <ion-item>
-            <ion-button fill="clear" @click="shipOrderAlert">Ship Now</ion-button>
+            <ion-button fill="clear" @click="shipOrderAlert">{{ $t("Ship Now") }}</ion-button>
             <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover">
               <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
             </ion-button>
@@ -106,12 +106,12 @@
 
         <div class="actions">  
           <div class="desktop-only">
-            <ion-button @click="shipOrderAlert">Ship now</ion-button>
-            <ion-button fill="outline">Print Shipping Label</ion-button>
-            <ion-button fill="outline">Print Customer Letter</ion-button>
+            <ion-button @click="shipOrderAlert">{{ $t("Ship Now") }}</ion-button>
+            <ion-button fill="outline">{{ $t("Print Shipping Label") }}</ion-button>
+            <ion-button fill="outline">{{ $t("Print Customer Letter") }}</ion-button>
           </div>
           <div class="desktop-only">
-            <ion-button fill="outline" color="danger">Unpack</ion-button>
+            <ion-button fill="outline" color="danger">{{ $t("Unpack") }}</ion-button>
           </div>
         </div>
       </ion-card>
@@ -121,7 +121,6 @@
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
-      
     </ion-content>
   </ion-page>
 </template>

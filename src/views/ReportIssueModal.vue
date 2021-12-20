@@ -6,9 +6,9 @@
           <ion-icon :icon="close" />
         </ion-button>
       </ion-buttons>
-      <ion-title>Report an issue</ion-title>
+      <ion-title>{{ $t("Report an issue") }}</ion-title>
       <ion-buttons slot="end">
-        <ion-button fill="clear">Save</ion-button>
+        <ion-button fill="clear">{{ $t("Save") }}</ion-button>
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
@@ -26,14 +26,14 @@
        <div class="order-primary-info">
          <ion-label>
            Darooty Magwood
-           <p>Ordered 27th January 2020 9:24 PM EST</p>
+           <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
          </ion-label>
        </div>
 
        <div class="order-metadata">
          <ion-label>
            Next Day Shipping
-           <p>Ordered 28th January 2020 2:32 PM EST</p>
+           <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
          </ion-label>
        </div>
      </div>
@@ -55,15 +55,15 @@
         </div>
 
         <div class="product-metadata">
-          <ion-note>49 pieces in stock</ion-note>
+          <ion-note>49 {{ $t("pieces in stock") }}</ion-note>
         </div>
       </div>
 
       <ion-item>
-        <ion-label>Select an issue</ion-label>
+        <ion-label>{{ $t("Select an issue") }}</ion-label>
         <ion-select value="a">
-          <ion-select-option value="a">Out of stock</ion-select-option>
-          <ion-select-option value="b">Worn display</ion-select-option>
+          <ion-select-option value="a">{{ $t("Out of stock") }}</ion-select-option>
+          <ion-select-option value="b">{{ $t("Worn display") }}</ion-select-option>
         </ion-select>
       </ion-item>
     </ion-card> 

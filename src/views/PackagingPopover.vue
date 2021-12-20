@@ -3,15 +3,15 @@
     <ion-list>
       <ion-item button @click="editPackaging">
         <ion-icon slot="start" :icon="pencil" />
-        Edit packaging
+        {{ $t("Edit packaging") }}
       </ion-item>
       <ion-item button @click="reportIssue">
         <ion-icon slot="start" :icon="warning" />
-        Report issue
+        {{ $t("Report an issue") }}
       </ion-item>
       <ion-item button lines="none">
         <ion-icon slot="start" :icon="refresh" />
-        Recycle order
+        {{ $t("Recycle order") }}
       </ion-item>
     </ion-list>
   </ion-content>
