@@ -183,31 +183,31 @@ export default defineComponent({
     async packOrdersAlert() {
       const alert = await alertController
         .create({
-          header: 'Pack orders',
-          message: 'You are packing 15 orders. Select additional documents that you would like to print.',
+          header: this.$t("Pack orders"),
+          message: this.$t("You are packing 15 orders. Select additional documents that you would like to print."),
           inputs: [
             {
               type: 'checkbox',
-              label: 'Shipping labels',
+              label: this.$t("Shipping labels"),
               value: 'value1',
               checked: true,
               },
             {
               type: 'checkbox',
-              label: 'Packing slip',
+              label: this.$t("Packing slip"),
               value: 'value2',
             },
           ],   
-          buttons: ['Cancel', 'Pack'],
+          buttons: [this.$t("Cancel"), this.$t("Pack")],
         });
       return alert.present();
     },
     async reportIssueAlert() {
       const alert = await alertController
         .create({
-          header: 'Report an Issue',
-          message: 'WJ06-XL-Purple, and 5 other products are identified as unfulfillable.<br> 4 other orders  containing these products will be  unassigned  from this store and sent to be rebrokered.',       
-          buttons: ['Cancel', 'Report'],
+          header: this.$t("Report an Issue"),
+          message: this.$t("WJ06-XL-Purple, and 5 other products are identified as unfulfillable. 4 other orders  containing these products will be  unassigned  from this store and sent to be rebrokered."),       
+          buttons: [this.$t("Cancel"), this.$t("Report")],
         });
       return alert.present();
     }

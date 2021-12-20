@@ -26,14 +26,14 @@
           <ion-checkbox slot="start"/>
           <ion-label>
             {{ $t("Next day") }}
-            <p>37 orders, 40 items</p>
+            <p>37 {{ $t("orders") }}, 40 {{ $t("items") }}</p>
           </ion-label>
         </ion-item>
         <ion-item lines="none">
           <ion-checkbox slot="start"/>
           <ion-label>
             {{ $t("Loyalty") }}
-            <p>37 orders, 40 items</p>
+            <p>37 {{ $t("orders") }}, 40 {{ $t("items") }}</p>
           </ion-label>
         </ion-item>
       </div> 

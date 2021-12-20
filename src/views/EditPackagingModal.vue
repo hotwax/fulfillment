@@ -26,14 +26,14 @@
         <div class="order-primary-info">
           <ion-label>
             Darooty Magwood
-            <p>Ordered 27th January 2020 9:24 PM EST</p>
+            <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
           </ion-label>
         </div>
 
         <div class="order-metadata">
           <ion-label>
             Next Day Shipping
-            <p>Ordered 28th January 2020 2:32 PM EST</p>
+            <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
           </ion-label>
         </div>
       </div>

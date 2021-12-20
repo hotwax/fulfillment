@@ -125,7 +125,7 @@ export default defineComponent({
 
 <style scoped>
 .order-tags {
-    border-bottom: 1px solid black;
+  border-bottom: 1px solid black;
 }
 
 .order-item {

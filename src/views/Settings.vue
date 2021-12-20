@@ -8,7 +8,7 @@
     
     <ion-content :fullscreen="true">
       <ion-item>
-        <ion-label>Store</ion-label>
+        <ion-label>{{ $t("Store") }}</ion-label>
         <ion-select :placeholder="$t('store name')">
           <ion-select-option>Broadway</ion-select-option>
           <ion-select-option>Garden City</ion-select-option>
@@ -17,7 +17,7 @@
 
       <ion-card>
         <ion-item lines="none">
-          <ion-label class="text-wrap">Documents to print when packing orders</ion-label>
+          <ion-label class="text-wrap">{{ $t("Documents to print when packing orders") }}</ion-label>
         </ion-item>
         <ion-item>
           <ion-label>{{ $t("Shipping label") }}</ion-label>
@@ -31,10 +31,10 @@
 
       <ion-card>
         <ion-item lines="none">
-          <ion-label>{{ $t("Fulfillment") }}: {{ $t("On") }}</ion-label>
+          <ion-label>{{ $t("Fulfillment") }} : {{ $t("On") }}</ion-label>
         </ion-item>
         <ion-item lines="none">
-          <ion-label class="text-wrap">Broadway has 47 outstanding orders and 77 in progress orders.</ion-label>
+          <ion-label class="text-wrap">{{ $t("Broadway has 47 outstanding orders and 77 in progress orders.") }}</ion-label>
         </ion-item>
         <div class="actions">
           <div>

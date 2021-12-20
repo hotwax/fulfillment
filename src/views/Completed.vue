@@ -190,9 +190,9 @@ export default defineComponent({
     async shipOrderAlert() {
       const alert = await alertController
         .create({
-           header: 'Ship orders',
-           message: 'You are shipping 15 orders. <br> You cannot unpack and edit orders after they have been  shipped. Are you sure you are ready to ship this orders.',       
-           buttons: ['Cancel', 'Ship'],
+           header: this. $t("Ship orders"),
+           message: this.$t("You are shipping 15 orders. You cannot unpack and edit orders after they have been  shipped. Are you sure you are ready to ship this orders."),       
+           buttons: [this.$t("Cancel"), this.$t("Ship")],
         });
       return alert.present();
     },
