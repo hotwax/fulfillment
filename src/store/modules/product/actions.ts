@@ -46,6 +46,18 @@ const actions: ActionTree<ProductState, RootState> = {
     // TODO Handle specific error
     return resp;
   },
+
+  async getProductInformation ({ dispatch }, orders) {
+    let productIds: any = new Set();
+    orders.map((order: any) => {
+      if (order.productId) productIds.add(order.productId)
+    })
+
+    productIds = [...productIds]
+    if (productIds.length) {
+      this.dispatch('product/fetchProducts', { productIds })
+    }
+  }
 }
 
 export default actions;

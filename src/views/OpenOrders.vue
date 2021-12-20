@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>10 of 26 orders</ion-title>
+        <ion-title>10 of {{ openOrders.total }} orders</ion-title>
         <ion-buttons  slot="end">
         <ion-menu-button>
           <ion-icon :icon="optionsOutline" />
@@ -36,23 +36,23 @@
             <p>37 orders, 40 items</p>
           </ion-label>
         </ion-item>
-      </div> 
+      </div>
 
       <ion-button class="desktop-only" fill="outline" @click="assignPickers">Print Picksheet</ion-button>
 
-      <ion-card>
+      <ion-card v-for="(order, index) in openOrders.list" :key="index">
         <div class="card-header">
           <div class="order-primary-info">
             <ion-label>
-              Darooty Magwood
-              <p>Ordered 27th January 2020 9:24 PM EST</p>
+              {{ order.customerName }}
+              <p>Ordered {{ $filters.formatUtcDate(order.orderDate, 'YYYY-MM-DDTHH:mm:ssZ') }}</p>
             </ion-label>
           </div>
 
           <div class="order-tags">
             <ion-chip outline>
               <ion-icon :icon="pricetagOutline" />
-              <ion-label>NN10584</ion-label>
+              <ion-label>{{ order.orderId }}</ion-label>
             </ion-chip>
             <ion-button fill="clear" class="mobile-only" color="danger">
               <ion-icon slot="icon-only" :icon="refreshCircleOutline" />
@@ -74,8 +74,8 @@
                 <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
               </ion-thumbnail>
               <ion-label>
-                <p class="overline">WJ06-XL-PURPLE</p>
-                Juno Jacket
+                <p class="overline">{{ order.productSku }}</p>
+                {{ order.productName }}
                 <p>Blue XL</p>
               </ion-label>
             </ion-item>
@@ -177,8 +177,8 @@ export default defineComponent({
             "sort": `${sortBy ? sortBy:'reservedDatetime desc'}`
           },
           "query": "docType:OISGIR",
-          "filter": ["orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED", "isPicked:","-shipmentMethodTypeId : STOREPICKUP", "-facilityId:(NA OR 904 OR 905)","-picklistItemStatusId:PICKITEM_COMPLETED", "reservedDatetime: [ TO *]"],
-          "fields": "facilityId,shipmentMethodTypeDesc,reservedDatetime,orderIdentifications, '  ',orderId,virtualProductName,productName,goodIdentifications, ' ',isPicked,picklistItemStatusDesc"
+          "filter": ["orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED","-shipmentMethodTypeId : STOREPICKUP", `facilityId:${this.currentFacility.facilityId}`,"-picklistItemStatusId:PICKITEM_COMPLETED",],
+          "fields": ""
         }
       }
       this.store.dispatch('order/fetchOpenOrders', payload).then((resp) => console.log(resp)).catch(err => console.log(err))
