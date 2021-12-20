@@ -26,7 +26,7 @@
   "packages": "packages",
   "Pack": "Pack",
   "Packing slip": "Packing slip",
-  "Pack Orders": "Pack Orders",
+  "Pack orders": "Pack orders",
   "Pack using default packaging": "Pack using default packaging",
   "Password": "Password",
   "Print Customer Letter": "Print Customer Letter",
@@ -52,6 +52,7 @@
   "Ship orders": "Ship orders",
   "Shipped orders": "Shipped orders",
   "Shipping label": "Shipping label",
+  "Shipping labels": "Shipping labels",
   "Staff": "Staff",
   "Store": "Store",
   "store name": "store name",
@@ -66,6 +67,7 @@
   "Upload Csv": "Upload Csv",
   "Username": "Username",
   "Worn display": "Worn display",
+  "You are packing 15 orders. Select additional documents that you would like to print.": "You are packing 15 orders. Select additional documents that you would like to print.",
   "You are shipping 15 orders.You cannot unpack and edit orders after they have been  shipped. Are you sure you are ready to ship this orders.": "You are shipping 15 orders. You cannot unpack and edit orders after they have been  shipped. Are you sure you are ready to ship this orders.",
   "WJ06-XL-Purple, and 5 other products are identified as unfulfillable. 4 other orders  containing these products will be  unassigned  from this store and sent to be rebrokered.":"WJ06-XL-Purple, and 5 other products are identified as unfulfillable. 4 other orders  containing these products will be  unassigned  from this store and sent to be rebrokered."
 }

@@ -28,7 +28,7 @@
         </ion-item>
       </div> 
 
-      <ion-button expand="block" class="desktop-only" fill="outline" @click="packOrdersAlert">{{ $t("Pack Orders") }}</ion-button>
+      <ion-button expand="block" class="desktop-only" fill="outline" @click="packOrdersAlert">{{ $t("Pack orders") }}</ion-button>
 
       <ion-card>
         <div class="card-header">
