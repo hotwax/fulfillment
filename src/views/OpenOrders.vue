@@ -1,17 +1,19 @@
 <template>
-  <ion-page>
+  <ion-page> 
     <ion-header :translucent="true">
       <ion-toolbar>
+        <ion-menu-button menu="start" slot="start" />
         <ion-title>10 of 26 orders</ion-title>
-        <ion-buttons  slot="end">
-        <ion-menu-button>
-          <ion-icon :icon="optionsOutline" />
-        </ion-menu-button>
+     
+        <ion-buttons slot="end">
+          <ion-menu-button menu="end">
+            <ion-icon :icon="optionsOutline" />
+          </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
     
-    <ion-content :fullscreen="true">
+    <ion-content :fullscreen="true"  id="picklist">
       <ion-searchbar /> 
 
       <div class="filters">
@@ -157,7 +159,7 @@ export default defineComponent({
         component: AssignPickerModal
       });
       return bgjobmodal.present();
-    },
+    }
   },
   setup() {
     return{

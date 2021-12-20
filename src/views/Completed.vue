@@ -2,6 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
+        <ion-menu-button slot="start" />
         <ion-title>10 to 26 orders</ion-title>
         <ion-buttons slot="end">
             <ion-button fill="clear" @click="() => router.push('/upload-csv')">Upload Csv</ion-button>

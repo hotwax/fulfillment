@@ -1,5 +1,5 @@
 <template>
-  <ion-menu content-id="main-content" type="overlay" :disabled="!isUserAuthenticated">
+  <ion-menu side="start" content-id="main-content" type="overlay" :disabled="!isUserAuthenticated">
     <ion-header>
       <ion-toolbar>
         <ion-title>Broadway Store</ion-title>

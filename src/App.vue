@@ -2,8 +2,10 @@
   <ion-app>
     <IonSplitPane content-id="main-content" when="lg">
       <Menu />
-      <ion-router-outlet id="main-content"></ion-router-outlet>
+      <ion-router-outlet id="main-content" />
     </IonSplitPane>
+
+    <PicklistMenu content-id="main-content" />
   </ion-app>
 </template>
 
@@ -11,6 +13,7 @@
 import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import Menu from '@/components/Menu.vue';
+import PicklistMenu from '@/components/PicklistMenu.vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
 
@@ -21,7 +24,8 @@ export default defineComponent({
     IonApp,  
     IonRouterOutlet, 
     IonSplitPane,
-    Menu
+    Menu,
+    PicklistMenu
   },
   data() {
     return {
