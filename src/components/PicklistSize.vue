@@ -2,7 +2,7 @@
   <ion-menu type="overlay" side="end">
     <ion-header>
       <ion-toolbar>
-        <ion-title>Picklist Size</ion-title>
+        <ion-title>{{ $t("Picklist Size") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -11,28 +11,28 @@
         <ion-radio-group value="a">
           <ion-item>
             <ion-radio value="a" slot="start" />  
-            <ion-label>10 orders</ion-label>
-            <ion-note slot="end">10 items</ion-note>
+            <ion-label>10 {{ $t("orders") }}</ion-label>
+            <ion-note slot="end">10 {{ $t("items") }}</ion-note>
           </ion-item>
           <ion-item>
             <ion-radio value="b" slot="start" />  
-            <ion-label>15 orders</ion-label>
-            <ion-note slot="end">17 items</ion-note>
+            <ion-label>15 {{ $t("orders") }}</ion-label>
+            <ion-note slot="end">17 {{ $t("items") }}</ion-note>
           </ion-item>
           <ion-item>
             <ion-radio value="c" slot="start" />  
-            <ion-label>20 orders</ion-label>
-            <ion-note slot="end">22 items</ion-note>
+            <ion-label>20 {{ $t("orders") }}</ion-label>
+            <ion-note slot="end">22 {{ $t("items") }}</ion-note>
           </ion-item>
           <ion-item>
             <ion-radio value="d" slot="start" />  
-            <ion-label>25 orders</ion-label>
-            <ion-note slot="end">28 items</ion-note>
+            <ion-label>25 {{ $t("orders") }}</ion-label>
+            <ion-note slot="end">28 {{ $t("items") }}</ion-note>
           </ion-item>
           <ion-item>
             <ion-radio value="e" slot="start" />  
-            <ion-label>30 orders</ion-label>
-            <ion-note slot="end">38 items</ion-note>
+            <ion-label>30 {{ $t("orders") }}</ion-label>
+            <ion-note slot="end">38 {{ $t("items") }}</ion-note>
           </ion-item>
         </ion-radio-group>
       </ion-list>

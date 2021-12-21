@@ -2,7 +2,7 @@
   <ion-menu side="start" content-id="main-content" type="overlay" :disabled="!isUserAuthenticated">
     <ion-header>
       <ion-toolbar>
-        <ion-title>Broadway Store</ion-title>
+        <ion-title>Broadway {{ $t("Store") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
