@@ -4,7 +4,7 @@ import * as types from './mutation-types'
 
 const mutations: MutationTree <PicklistState> = {
   [types.PICKLIST_SIZE] (state, payload) {
-    state = payload;
+    state.size = payload;
   }
 }
 export default mutations;

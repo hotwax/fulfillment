@@ -9,21 +9,13 @@
 
       <ion-content>
         <ion-list>
-          <ion-item>
-            <ion-radio slot="start" />
-            <ion-label>10 orders</ion-label>
-            <ion-note slot="end">10 items</ion-note>
-          </ion-item>
-          <ion-item>
-            <ion-radio slot="start" />
-            <ion-label>15 orders</ion-label>
-            <ion-note slot="end">17 items</ion-note>
-          </ion-item>
-          <ion-item>
-            <ion-radio slot="start" />
-            <ion-label>20 orders</ion-label>
-            <ion-note slot="end">22 items</ion-note>
-          </ion-item>
+          <ion-radio-group v-model="size" @ionChange="setPicklistSize()">
+            <ion-item v-for="count in preparePicklistSize()" :key="count">
+              <ion-radio slot="start" :value="count * 5"/>
+              <ion-label>{{ (count * 5) >= openOrders.total ? openOrders.total : count * 5}} orders</ion-label>
+              <ion-note slot="end">10 items</ion-note>
+            </ion-item>
+          </ion-radio-group>
         </ion-list>
       </ion-content>
     </ion-menu>
@@ -32,11 +24,11 @@
 </template>
 
 <script lang="ts">
-import { IonApp, IonContent, IonHeader, IonItem, IonLabel, IonList, IonMenu, IonNote, IonRadio, IonRouterOutlet, IonTitle, IonToolbar } from '@ionic/vue';
+import { IonApp, IonContent, IonHeader, IonItem, IonLabel, IonList, IonMenu, IonNote, IonRadio, IonRadioGroup, IonRouterOutlet, IonTitle, IonToolbar } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
-
+import { mapGetters, useStore } from 'vuex';
 
 export default defineComponent({
   name: 'App',
@@ -49,14 +41,22 @@ export default defineComponent({
     IonList, 
     IonMenu,
     IonNote,
-    IonRadio, 
+    IonRadio,
+    IonRadioGroup,
     IonRouterOutlet,
     IonTitle, 
     IonToolbar
   },
+  computed: {
+    ...mapGetters({
+      openOrders: 'order/getOpenOrders',
+      currentPicklistSize: 'picklist/getPicklistSize'
+    })
+  },
   data() {
     return {
-      loader: null as any
+      loader: null as any,
+      size: 0
     }
   },
   methods: {
@@ -73,6 +73,13 @@ export default defineComponent({
       if (this.loader) {
         this.loader.dismiss();
       }
+    },
+    preparePicklistSize () {
+      const size = Math.round(this.openOrders.total / 5)
+      return size;
+    },
+    setPicklistSize () {
+      this.store.dispatch('picklist/setPicklistSize', this.size)
     }
   },
   mounted() {
@@ -83,5 +90,12 @@ export default defineComponent({
     emitter.off('presentLoader', this.presentLoader);
     emitter.off('dismissLoader', this.dismissLoader);
   },
+  setup () {
+    const store = useStore();
+
+    return {
+      store
+    }
+  }
 });
 </script>

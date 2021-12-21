@@ -5,14 +5,14 @@ import { Module } from 'vuex'
 import PicklistState from './PicklistState'
 import RootState from '../../RootState'
 
-const productModule: Module<PicklistState, RootState> = {
-    namespaced: true,
-    state: {
-      size: 0
-    },
-    getters,
-    actions,
-    mutations,
+const picklistModule: Module<PicklistState, RootState> = {
+  namespaced: true,
+  state: {
+    size: process.env.VUE_APP_VIEW_SIZE
+  },
+  getters,
+  actions,
+  mutations
 }
 
-export default productModule;
+export default picklistModule;

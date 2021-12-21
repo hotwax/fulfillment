@@ -2,7 +2,7 @@
   <ion-page :fullscreen="true">
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>10 of {{ openOrders.total }} orders</ion-title>
+        <ion-title>{{ picklistSize }} of {{ openOrders.total }} orders</ion-title>
         <ion-buttons  slot="end">
         <ion-menu-button>
           <ion-icon :icon="optionsOutline" />
@@ -85,6 +85,7 @@
           </div>
         </div>
 
+        <!-- TODO: add functionality to the buttons-->
         <div class="actions">  
           <div class="positive-action"></div>
           <div class="negative-action">
@@ -158,7 +159,8 @@ export default defineComponent({
     ...mapGetters({
       currentFacility: 'user/getCurrentFacility',
       openOrders: 'order/getOpenOrders',
-      getProduct: 'product/getProduct'
+      getProduct: 'product/getProduct',
+      picklistSize: 'picklist/getPicklistSize'      
     })
   },
   methods: {
@@ -168,19 +170,18 @@ export default defineComponent({
       });
       return bgjobmodal.present();
     },
-    async fetchOpenOrders (vSize?: any, vIndex?: any) {
-      const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE
-      const viewIndex = vIndex ? vIndex : 0
+    async fetchOpenOrders () {
+      const viewSize = this.picklistSize
       const sortBy = ''
       const payload = {
         "json": {
           "params": {
-            "rows": 10000,
+            "rows": `${viewSize}`,
             "sort": `${sortBy ? sortBy:'reservedDatetime desc'}`
           },
           "query": "docType:OISGIR",
-          "filter": ["orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED","-shipmentMethodTypeId : STOREPICKUP", `facilityId:${this.currentFacility.facilityId}`,"-picklistItemStatusId:PICKITEM_COMPLETED",],
-          "fields": ""
+          "filter": ["orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED","-shipmentMethodTypeId : STOREPICKUP", "-picklistItemStatusId:PICKITEM_COMPLETED",],
+          "fields": "",
         }
       }
       this.store.dispatch('order/fetchOpenOrders', payload).then((resp) => console.log(resp)).catch(err => console.log(err))
@@ -188,6 +189,12 @@ export default defineComponent({
   },
   mounted () {
     this.fetchOpenOrders();
+  },
+  watch: {
+    // added a watcher in picklistSize to fetch the open orders whenever the size changes
+    picklistSize () {
+      this.fetchOpenOrders();
+    }
   },
   setup() {
     const store = useStore();
