@@ -16,7 +16,7 @@
 
       <div class="filters">
         <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
-          <ion-checkbox slot="start"/>
+          <ion-checkbox slot="start" @ionChange="fetchOpenOrders($event)"/>
           <ion-label>
             {{ method.val }}
             <p>{{ method.ordersCount }} orders, {{ method.count }} items</p>
@@ -26,19 +26,19 @@
 
       <ion-button class="desktop-only" fill="outline" @click="assignPickers">Print Picksheet</ion-button>
 
-      <ion-card v-for="(order, index) in openOrders.list" :key="index">
+      <ion-card v-for="(orders, index) in openOrders.list" :key="index">
         <div class="card-header">
           <div class="order-primary-info">
             <ion-label>
-              {{ order.customerName }}
-              <p>Ordered {{ $filters.formatUtcDate(order.orderDate, 'YYYY-MM-DDTHH:mm:ssZ', 'Do MMMM YYYY LT z') }}</p>
+              {{ orders.doclist.docs[0].customerName }}
+              <p>Ordered {{ $filters.formatUtcDate(orders.doclist.docs[0].orderDate, 'YYYY-MM-DDTHH:mm:ssZ', 'Do MMMM YYYY LT z') }}</p>
             </ion-label>
           </div>
 
           <div class="order-tags">
             <ion-chip outline>
               <ion-icon :icon="pricetagOutline" />
-              <ion-label>{{ order.orderId }}</ion-label>
+              <ion-label>{{ orders.doclist.docs[0].orderId }}</ion-label>
             </ion-chip>
             <ion-button fill="clear" class="mobile-only" color="danger">
               <ion-icon slot="icon-only" :icon="refreshCircleOutline" />
@@ -53,21 +53,23 @@
           </div>
         </div>
 
-        <div class="order-item">
-          <div class="product-info">
-            <ion-item lines="none">
-              <ion-thumbnail>
-                <Image :src="getProduct(order.productId).mainImageUrl" />
-              </ion-thumbnail>
-              <ion-label>
-                <p class="overline">{{ order.productSku }}</p>
-                {{ order.productName }}
-                <p>{{$filters.getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{$filters.getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
-              </ion-label>
-            </ion-item>
-          </div>
-          <div class="product-metadata">
-            <ion-note>49 pieces in stock</ion-note>
+        <div v-for="order in orders.doclist.docs" :key="order">
+          <div class="order-item">
+            <div class="product-info">
+              <ion-item lines="none">
+                <ion-thumbnail>
+                  <Image :src="getProduct(order.productId).mainImageUrl" />
+                </ion-thumbnail>
+                <ion-label>
+                  <p class="overline">{{ order.productSku }}</p>
+                  {{ order.productName }}
+                  <p>{{$filters.getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{$filters.getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
+                </ion-label>
+              </ion-item>
+            </div>
+            <div class="product-metadata">
+              <ion-note>49 pieces in stock</ion-note>
+            </div>
           </div>
         </div>
 
@@ -157,17 +159,21 @@ export default defineComponent({
       });
       return bgjobmodal.present();
     },
-    async fetchOpenOrders () {
+    async fetchOpenOrders (event?: any) {
       const viewSize = this.picklistSize
       const sortBy = ''
       const payload = {
         "json": {
           "params": {
             "rows": `${viewSize}`,
-            "sort": `${sortBy ? sortBy:'reservedDatetime desc'}`
+            "sort": `${sortBy ? sortBy:'reservedDatetime desc'}`,
+            "group": true,
+            "group.field": "orderId",
+            "group.limit": 1000,
+            "group.ngGroups": true
           },
           "query": "docType:OISGIR",
-          "filter": ["orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED","-shipmentMethodTypeId : STOREPICKUP", "-picklistItemStatusId:PICKITEM_COMPLETED",],
+          "filter": ["orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED","-shipmentMethodTypeId : STOREPICKUP", "-picklistItemStatusId:PICKITEM_COMPLETED", `facilityId: ${this.currentFacility.facilityId}`],
           "fields": "",
           "facet": {
             "shipmentMethodTypeIdFacet":{

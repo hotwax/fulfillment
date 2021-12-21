@@ -17,9 +17,9 @@ const actions: ActionTree<OrderState, RootState> = {
 
     try {
       resp = await OrderService.fetchOpenOrders(payload);
-      if (resp.status === 200 && resp.data.response.numFound > 0 && !hasError(resp)) {
-        commit(types.ORDER_OPEN_UPDATED, {open: resp.data.response.docs, total: resp.data.response.numFound, shipmentMethods: resp.data.facets.shipmentMethodTypeIdFacet.buckets})
-        this.dispatch('product/getProductInformation', {orders: resp.data.response.docs})
+      if (resp.status === 200 && resp.data.grouped.orderId.matches > 0 && !hasError(resp)) {
+        commit(types.ORDER_OPEN_UPDATED, {open: resp.data.grouped.orderId.groups, total: resp.data.grouped.orderId.matches, shipmentMethods: resp.data.facets.shipmentMethodTypeIdFacet.buckets})
+        this.dispatch('product/getProductInformation', {orders: resp.data.grouped.orderId.groups})
       } else {
         showToast(translate('Something went wrong'))
       }

@@ -79,8 +79,10 @@ const actions: ActionTree<ProductState, RootState> = {
 
   async getProductInformation ({ dispatch }, { orders }) {
     let productIds: any = new Set();
-    orders.forEach((order: any) => {
-      if (order.productId) productIds.add(order.productId)
+    orders.forEach((list: any) => {
+      list.doclist.docs.forEach((order: any) => {
+        if (order.productId) productIds.add(order.productId)
+      })
     })
 
     productIds = [...productIds]
