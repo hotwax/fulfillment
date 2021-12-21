@@ -1,6 +1,6 @@
 <template>
   <ion-page> 
-    <PicklistMenu content-id="main-content" />
+    <PicklistSize content-id="main-content" />
     
     <ion-header :translucent="true">
       <ion-toolbar>
@@ -131,7 +131,7 @@ import {
 import { defineComponent } from 'vue';
 import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
-import PicklistMenu from '@/components/PicklistMenu.vue';
+import PicklistSize from '@/components/PicklistSize.vue';
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -155,7 +155,7 @@ export default defineComponent({
     IonThumbnail,
     IonTitle,
     IonToolbar,
-    PicklistMenu
+    PicklistSize
   },
   methods: {
     async assignPickers() {
