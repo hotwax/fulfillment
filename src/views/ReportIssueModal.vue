@@ -62,8 +62,8 @@
       <ion-item>
         <ion-label>{{ $t("Select an issue") }}</ion-label>
         <ion-select value="a">
-          <ion-select-option value="a">{{ $t("Out of stock") }}</ion-select-option>
-          <ion-select-option value="b">{{ $t("Worn display") }}</ion-select-option>
+          <ion-select-option value="a">Out of stock</ion-select-option>
+          <ion-select-option value="b">Worn display</ion-select-option>
         </ion-select>
       </ion-item>
     </ion-card> 

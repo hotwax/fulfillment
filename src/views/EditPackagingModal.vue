@@ -56,8 +56,8 @@
           <ion-item lines="none">   
             <ion-label>{{ $t("Select box") }}</ion-label>
             <ion-select>
-              <ion-select-option>{{ $t("Box A") }} {{ $t("Type 3") }}</ion-select-option>
-              <ion-select-option>{{ $t("Box B") }} {{ $t("Type 2") }}</ion-select-option>
+              <ion-select-option>Box A Type 3</ion-select-option>
+              <ion-select-option>Box B Type 2</ion-select-option>
             </ion-select>
           </ion-item>
         </div>
@@ -67,11 +67,11 @@
     <ion-list>
       <ion-list-header>{{ $t("Boxes") }}</ion-list-header>
       <ion-item>
-        <ion-label>{{ $t("Box A") }}</ion-label>
+        <ion-label>Box A</ion-label>
         <ion-select value="3">
-          <ion-select-option value="1">{{ $t("Type 1") }}</ion-select-option>
-          <ion-select-option value="2">{{ $t("Type 2") }}</ion-select-option>
-          <ion-select-option value="3">{{ $t("Type 3") }}</ion-select-option>  
+          <ion-select-option value="1">Type 1</ion-select-option>
+          <ion-select-option value="2">Type 2</ion-select-option>
+          <ion-select-option value="3">Type 3</ion-select-option>  
         </ion-select>
       </ion-item>
     </ion-list>

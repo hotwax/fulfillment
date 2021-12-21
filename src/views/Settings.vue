@@ -34,7 +34,7 @@
           <ion-label>{{ $t("Fulfillment") }} : {{ $t("On") }}</ion-label>
         </ion-item>
         <ion-item lines="none">
-          <ion-label class="text-wrap">{{ $t("Broadway has 47 outstanding orders and 77 in progress orders.") }}</ion-label>
+          <ion-label class="text-wrap">{{ $t("has outstanding orders and in progress orders.", {storeName: "Broadway", outstandingOrder: 47, progressOrder: 77}) }}</ion-label>
         </ion-item>
         <div class="actions">
           <div>

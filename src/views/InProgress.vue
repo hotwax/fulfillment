@@ -56,7 +56,7 @@
 
         <div class="box-type desktop-only">
           <ion-button fill="outline"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
-          <ion-chip> {{ $t("Box A") }} | {{ $t("Type 3") }}</ion-chip>  
+          <ion-chip> Box A | Type 3</ion-chip>  
         </div>
 
         <div class="order-item">
@@ -87,8 +87,8 @@
                 <ion-item lines="none">
                   <ion-label>{{ $t("Select box") }}</ion-label>   
                   <ion-select value="box1">
-                    <ion-select-option value="box1">{{ $t("Box A") }} {{ $t("Type 3") }}</ion-select-option>
-                    <ion-select-option value="box2">{{ $t("Box B") }} {{ $t("Type 2")}}</ion-select-option>
+                    <ion-select-option value="box1">Box A Type 3</ion-select-option>
+                    <ion-select-option value="box2">Box B Type 2</ion-select-option>
                   </ion-select>      
                 </ion-item>
               </div>
@@ -96,8 +96,8 @@
                 <ion-item lines="none">  
                   <ion-label>{{ $t("Select issue") }}</ion-label>  
                   <ion-select value="a">
-                    <ion-select-option value="a">{{ $t("Out of stock") }}</ion-select-option>
-                    <ion-select-option value="b">{{ $t("Worn display") }}</ion-select-option>
+                    <ion-select-option value="a">Out of stock</ion-select-option>
+                    <ion-select-option value="b">Worn display</ion-select-option>
                   </ion-select> 
                 </ion-item>
               </div>
@@ -184,7 +184,7 @@ export default defineComponent({
       const alert = await alertController
         .create({
           header: this.$t("Pack orders"),
-          message: this.$t("You are packing 15 orders. Select additional documents that you would like to print."),
+          message: this.$t("You are packing orders. Select additional documents that you would like to print.", {count: 15, space: '<br /><br />'}),
           inputs: [
             {
               type: 'checkbox',
@@ -206,7 +206,7 @@ export default defineComponent({
       const alert = await alertController
         .create({
           header: this.$t("Report an Issue"),
-          message: this.$t("WJ06-XL-Purple, and 5 other products are identified as unfulfillable. 4 other orders  containing these products will be  unassigned  from this store and sent to be rebrokered."),       
+          message: this.$t(", and other products are identified as unfulfillable. other orders  containing these products will be  unassigned  from this store and sent to be rebrokered.", {productName: "WJ06-XL-Purple", products: 5, space: '<br /><br />', orders: 4}),       
           buttons: [this.$t("Cancel"), this.$t("Report")],
         });
       return alert.present();

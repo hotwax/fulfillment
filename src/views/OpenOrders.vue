@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>10 of 26 {{ $t("orders") }}</ion-title>
+        <ion-title>10 {{("of")}} 26 {{ $t("orders") }}</ion-title>
         <ion-buttons  slot="end">
         <ion-menu-button>
           <ion-icon :icon="optionsOutline" />
@@ -18,21 +18,21 @@
         <ion-item lines="none">
           <ion-checkbox slot="start"/>
           <ion-label>
-            {{ $t("Same Day") }}
+            Same Day
             <p>37 {{ $t("orders") }}, 40 {{ $t("items") }}</p>
           </ion-label>
         </ion-item>
         <ion-item lines="none">
           <ion-checkbox slot="start"/>
           <ion-label>
-            {{ $t("Next day") }}
+            Next day
             <p>37 {{ $t("orders") }}, 40 {{ $t("items") }}</p>
           </ion-label>
         </ion-item>
         <ion-item lines="none">
           <ion-checkbox slot="start"/>
           <ion-label>
-            {{ $t("Loyalty") }}
+            Loyalty
             <p>37 {{ $t("orders") }}, 40 {{ $t("items") }}</p>
           </ion-label>
         </ion-item>

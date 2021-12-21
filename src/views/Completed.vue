@@ -2,9 +2,9 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>10 to 26 {{ $t("orders") }}</ion-title>
+        <ion-title>10 {{("to")}} 26 {{ $t("orders") }}</ion-title>
         <ion-buttons slot="end">
-            <ion-button fill="clear" @click="() => router.push('/upload-csv')">{{ $t("Upload Csv") }}</ion-button>
+            <ion-button fill="clear" @click="() => router.push('/upload-csv')">{{ $t("Upload CSV") }}</ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
@@ -190,8 +190,8 @@ export default defineComponent({
     async shipOrderAlert() {
       const alert = await alertController
         .create({
-           header: this. $t("Ship orders"),
-           message: this.$t("You are shipping 15 orders. You cannot unpack and edit orders after they have been  shipped. Are you sure you are ready to ship this orders."),       
+           header: this.$t("Ship orders"),
+           message: this.$t("You are shipping orders. You cannot unpack and edit orders after they have been  shipped. Are you sure you are ready to ship this orders.", {count: 15, space: '<br /><br />'}),       
            buttons: [this.$t("Cancel"), this.$t("Ship")],
         });
       return alert.present();

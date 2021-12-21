@@ -3,7 +3,7 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-back-button slot="start" default-href="/" />
-        <ion-title>{{ $t("Upload Csv") }}</ion-title>
+        <ion-title>{{ $t("Upload CSV") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     
