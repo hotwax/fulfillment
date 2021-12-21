@@ -11,7 +11,8 @@ const orderModule: Module<OrderState, RootState> = {
       open: {
         list: {},
         total: 0
-      }
+      },
+      shipmentMethods: {}
     },
     getters,
     actions,

@@ -15,25 +15,11 @@
       <ion-searchbar />
 
       <div class="filters">
-        <ion-item lines="none">
+        <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
           <ion-checkbox slot="start"/>
           <ion-label>
-            Same Day
-            <p>37 orders, 40 items</p>
-          </ion-label>
-        </ion-item>
-        <ion-item lines="none">
-          <ion-checkbox slot="start"/>
-          <ion-label>
-            Next day
-            <p>37 orders, 40 items</p>
-          </ion-label>
-        </ion-item>
-        <ion-item lines="none">
-          <ion-checkbox slot="start"/>
-          <ion-label>
-            Loyalty
-            <p>37 orders, 40 items</p>
+            {{ method.val }}
+            <p>{{ method.ordersCount }} orders, {{ method.count }} items</p>
           </ion-label>
         </ion-item>
       </div>
@@ -160,7 +146,8 @@ export default defineComponent({
       currentFacility: 'user/getCurrentFacility',
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
-      picklistSize: 'picklist/getPicklistSize'      
+      picklistSize: 'picklist/getPicklistSize',
+      shipmentMethods: 'order/getShipmentMethods' 
     })
   },
   methods: {
@@ -182,6 +169,19 @@ export default defineComponent({
           "query": "docType:OISGIR",
           "filter": ["orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED","-shipmentMethodTypeId : STOREPICKUP", "-picklistItemStatusId:PICKITEM_COMPLETED",],
           "fields": "",
+          "facet": {
+            "shipmentMethodTypeIdFacet":{
+              "excludeTags":"shipmentMethodTypeIdFilter",
+              "field":"shipmentMethodTypeId",
+              "mincount":1,
+              "limit":-1,
+              "sort":"index",
+              "type":"terms",
+              "facet": {
+                "ordersCount": "uniqueBlock(orderId)"
+              }
+            }
+          }
         }
       }
       this.store.dispatch('order/fetchOpenOrders', payload).then((resp) => console.log(resp)).catch(err => console.log(err))
