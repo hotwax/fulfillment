@@ -1,5 +1,5 @@
 <template>
-  <ion-menu side="end">
+  <ion-menu type="overlay" side="end">
     <ion-header>
       <ion-toolbar>
         <ion-title>Picklist Size</ion-title>
@@ -73,8 +73,9 @@ export default defineComponent({
   },
 });
 </script>
+
 <style scoped>
 ion-menu::part(backdrop) {
-    background-color: transparent;
+  background-color: transparent;
 }
 </style>

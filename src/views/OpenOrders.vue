@@ -1,6 +1,6 @@
 <template>
   <ion-page> 
-    <PicklistSize content-id="main-content" />
+    <PicklistSize content-id="picklist-size" />
     
     <ion-header :translucent="true">
       <ion-toolbar>
@@ -15,7 +15,7 @@
       </ion-toolbar>
     </ion-header>
     
-    <ion-content :fullscreen="true">
+    <ion-content :fullscreen="true" id="picklist-size">
       <ion-searchbar /> 
 
       <div class="filters">
