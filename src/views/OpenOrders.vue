@@ -16,7 +16,7 @@
 
       <div class="filters">
         <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
-          <ion-checkbox slot="start" @ionChange="fetchOpenOrders($event)"/>
+          <ion-checkbox slot="start" @ionChange="updateShipmentMethodArray(method.val)"/>
           <ion-label>
             {{ method.val }}
             <p>{{ method.ordersCount }} orders, {{ method.count }} items</p>
@@ -152,7 +152,21 @@ export default defineComponent({
       shipmentMethods: 'order/getShipmentMethods' 
     })
   },
+  data () {
+    return {
+      selectedShipmentMethod: [] as Array<string>
+    }
+  },
   methods: {
+    updateShipmentMethodArray (method: string) {
+      const index = this.selectedShipmentMethod.indexOf(method)
+      if (index < 0) {
+        this.selectedShipmentMethod.push(method)
+      } else {
+        this.selectedShipmentMethod.splice(index)
+      }
+      this.fetchOpenOrders();
+    },
     async assignPickers() {
       const bgjobmodal = await modalController.create({
         component: AssignPickerModal
@@ -160,6 +174,7 @@ export default defineComponent({
       return bgjobmodal.present();
     },
     async fetchOpenOrders (event?: any) {
+      const arrays = this.selectedShipmentMethod.toString().replaceAll(",", " OR ")
       const viewSize = this.picklistSize
       const sortBy = ''
       const payload = {
@@ -173,7 +188,7 @@ export default defineComponent({
             "group.ngGroups": true
           },
           "query": "docType:OISGIR",
-          "filter": ["orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED","-shipmentMethodTypeId : STOREPICKUP", "-picklistItemStatusId:PICKITEM_COMPLETED", `facilityId: ${this.currentFacility.facilityId}`],
+          "filter": ["orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED","-shipmentMethodTypeId : STOREPICKUP",`shipmentMethodTypeId : ${arrays ? arrays : "*" }`,"-picklistItemStatusId:PICKITEM_COMPLETED", `facilityId: ${this.currentFacility.facilityId}`],
           "fields": "",
           "facet": {
             "shipmentMethodTypeIdFacet":{
