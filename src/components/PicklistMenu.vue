@@ -5,6 +5,7 @@
         <ion-title>Picklist Size</ion-title>
       </ion-toolbar>
     </ion-header>
+
     <ion-content>
       <ion-list>
         <ion-radio-group value="a">
@@ -48,6 +49,8 @@ import {
   IonList,
   IonMenu,
   IonNote,
+  IonRadio,
+  IonRadioGroup,
   IonTitle,
   IonToolbar
 } from "@ionic/vue";
@@ -63,8 +66,15 @@ export default defineComponent({
     IonList,
     IonMenu,
     IonNote,
+    IonRadio,
+    IonRadioGroup,
     IonTitle,
     IonToolbar
   },
 });
 </script>
+<style scoped>
+ion-menu::part(backdrop) {
+    background-color: transparent;
+}
+</style>
