@@ -1,6 +1,10 @@
 {
+ "Completed": "Completed",   
  "items": "items", 
+ "In Progress": "In Progress",
  "orders": "orders",
+ "Orders": "Orders",
  "Picklist Size": "Picklist Size",
- "Store": "Store"
+ "Store": "Store",
+ "Settings": "Settings"
 }

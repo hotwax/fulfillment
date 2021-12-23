@@ -8,16 +8,16 @@
 
     <ion-content>
       <ion-list>
-        <ion-menu-toggle auto-hide="false" v-for="(p, i) in appPages" :key="i">
+        <ion-menu-toggle auto-hide="false" v-for="(page, index) in appPages" :key="index">
           <ion-item
             button
-            @click="selectedIndex = i"
+            @click="selectedIndex = index"
             router-direction="root"
-            :router-link="p.url"
+            :router-link="page.url"
             class="hydrated"
-            :class="{ selected: selectedIndex === i }">
-            <ion-icon slot="start" :ios="p.iosIcon" :md="p.mdIcon" />
-            <ion-label>{{ p.title }}</ion-label>
+            :class="{ selected: selectedIndex === index }">
+            <ion-icon slot="start" :ios="page.iosIcon" :md="page.mdIcon" />
+            <ion-label>{{ $t(page.title) }}</ion-label>
           </ion-item>
         </ion-menu-toggle>
       </ion-list>
@@ -59,9 +59,9 @@ export default defineComponent({
     IonToolbar
   },
   created() {
-    // When open any specific page it should show that page selected
-    this.selectedIndex = this.appPages.findIndex((page) => {
-      return page.url === this.$router.currentRoute.value.path;
+    // When open any specific screen it should show that screen selected
+    this.selectedIndex = this.appPages.findIndex((screen) => {
+      return screen.url === this.$router.currentRoute.value.path;
     })
   },
   computed: {
