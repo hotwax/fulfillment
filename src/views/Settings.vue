@@ -13,7 +13,6 @@
             <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
           </ion-select>
         </ion-item>
-
       <ion-card>
         <ion-item lines="none">
           <ion-label class="text-wrap">Documents to print when packing orders</ion-label>
@@ -27,7 +26,6 @@
           <ion-checkbox slot="end" />
         </ion-item>
       </ion-card>
-
       <ion-card>
         <ion-item lines="none">
           <ion-label>Fulfillment: On</ion-label>
@@ -44,7 +42,6 @@
             <ion-button fill="outline" color="danger" size="medium">Turn off fulfillment</ion-button>
           </div>
         </div>
-
         <ion-item class="mobile-only">
           <ion-button fill="clear">Recycle all open orders</ion-button>
           <ion-button slot="end" fill="clear" color="medium" @click="RecyclePopover">
@@ -52,14 +49,13 @@
           </ion-button>
         </ion-item>
       </ion-card>
-
       <ion-item>
         <ion-label>Asia / Calcutta</ion-label>
         <ion-button fill="outline">Change</ion-button>
       </ion-item>
       <ion-item>
-        <ion-label>Aaron Wanger</ion-label>
-        <ion-button fill="outline" color="medium" @click="logout()">{{ $t("Logout") }}</ion-button>
+        <ion-label>{{ userProfile !== null ? userProfile.partyName : '' }}</ion-label>
+        <ion-button fill="outline" color="medium" @click="logout()">{{$t("Logout")}}</ion-button>
       </ion-item>
     </ion-content>
   </ion-page>
@@ -86,7 +82,6 @@ import { ellipsisVerticalOutline } from 'ionicons/icons'
 import Popover from '@/views/RecyclePopover.vue'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-
 
 export default defineComponent({
   name: 'Settings',
