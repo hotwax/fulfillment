@@ -8,12 +8,11 @@
     
     <ion-content :fullscreen="true">
       <ion-item>
-        <ion-label>Store</ion-label>
-        <ion-select placeholder="store name">
-          <ion-select-option>Broadway</ion-select-option>
-          <ion-select-option>Garden City</ion-select-option>
-        </ion-select>
-      </ion-item>
+          <ion-label>{{$t("Store")}}</ion-label>
+          <ion-select interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
+            <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
+          </ion-select>
+        </ion-item>
 
       <ion-card>
         <ion-item lines="none">
@@ -55,12 +54,12 @@
       </ion-card>
 
       <ion-item>
-        <ion-label>Asia / Cullcutta</ion-label>
+        <ion-label>Asia / Calcutta</ion-label>
         <ion-button fill="outline">Change</ion-button>
       </ion-item>
       <ion-item>
         <ion-label>Aaron Wanger</ion-label>
-        <ion-button fill="outline" color="medium">Logout</ion-button>
+        <ion-button fill="outline" color="medium" @click="logout()">{{ $t("Logout") }}</ion-button>
       </ion-item>
     </ion-content>
   </ion-page>
@@ -85,6 +84,9 @@ import {
 import { defineComponent } from 'vue';
 import { ellipsisVerticalOutline } from 'ionicons/icons'
 import Popover from '@/views/RecyclePopover.vue'
+import { mapGetters, useStore } from 'vuex';
+import { useRouter } from 'vue-router';
+
 
 export default defineComponent({
   name: 'Settings',
@@ -103,6 +105,12 @@ export default defineComponent({
     IonTitle, 
     IonToolbar
   },
+  computed: {
+    ...mapGetters({
+      userProfile: 'user/getUserProfile',
+      currentFacility: 'user/getCurrentFacility',
+    })
+  },
   methods: {
     async RecyclePopover(ev: Event) {
       const popover = await popoverController.create({
@@ -113,10 +121,25 @@ export default defineComponent({
       });
       return popover.present();
     },
+    setFacility (facility: any) {
+      if (this.userProfile)
+        this.store.dispatch('user/setFacility', {
+          'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
+        });
+    },
+    logout () {
+      this.store.dispatch('user/logout').then(() => {
+        this.router.push('/login');
+      })
+    }
   },
   setup() {
+    const store = useStore();
+    const router = useRouter();
     return {
-      ellipsisVerticalOutline
+      ellipsisVerticalOutline,
+      store,
+      router,
     }
   }
 });
