@@ -73,8 +73,6 @@ export default defineComponent({
       timeZoneId: ''
     }
   },
-  computed: {
-  },
   methods: {
     closeModal() {
       modalController.dismiss({ dismissed: true });

@@ -34,7 +34,7 @@
 import { IonApp, IonContent, IonHeader, IonItem, IonLabel, IonList, IonMenu, IonNote, IonRadio, IonRouterOutlet, IonTitle, IonToolbar, alertController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { loadingController } from '@ionic/vue';
-import { useStore } from './store'
+import { useStore } from '@/store'
 import emitter from "@/event-bus"
 
 export default defineComponent({

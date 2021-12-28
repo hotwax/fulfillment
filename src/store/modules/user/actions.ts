@@ -10,7 +10,6 @@ import emitter from '@/event-bus'
 import "moment-timezone";
 
 const actions: ActionTree<UserState, RootState> = {
-
   /**
  * Login user and return token
  */
@@ -39,16 +38,13 @@ const actions: ActionTree<UserState, RootState> = {
     }
     // return resp
   },
-
   /**
    * Logout user
    */
   async logout ({ commit }) {
     // TODO add any other tasks if need
     commit(types.USER_END_SESSION)
-    
   },
-
   /**
    * Get User profile
    */
@@ -62,14 +58,12 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_INFO_UPDATED, resp.data);
     }
   },
-
   /**
    * update current facility information
    */
   async setFacility ({ commit }, payload) {
     commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
   },
-  
   /**
    * Update user timeZone
    */

@@ -4,15 +4,14 @@
       <ion-toolbar>
         <ion-title>Store Settings</ion-title>
       </ion-toolbar>
-    </ion-header>
-    
+    </ion-header>    
     <ion-content :fullscreen="true">
       <ion-item>
-          <ion-label>{{$t("Store")}}</ion-label>
-          <ion-select interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
-            <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
-          </ion-select>
-        </ion-item>
+        <ion-label>{{$t("Store")}}</ion-label>
+        <ion-select interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
+          <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
+        </ion-select>
+      </ion-item>
       <ion-card>
         <ion-item lines="none">
           <ion-label class="text-wrap">Documents to print when packing orders</ion-label>
