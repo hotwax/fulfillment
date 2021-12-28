@@ -37,7 +37,6 @@ import { loadingController } from '@ionic/vue';
 import { useStore } from './store'
 import emitter from "@/event-bus"
 
-
 export default defineComponent({
   name: 'App',
   components: {
