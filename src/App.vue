@@ -6,7 +6,6 @@
           <ion-title>Picklist Size</ion-title>
         </ion-toolbar>
       </ion-header>
-
       <ion-content>
         <ion-list>
           <ion-item>
@@ -32,9 +31,10 @@
 </template>
 
 <script lang="ts">
-import { IonApp, IonContent, IonHeader, IonItem, IonLabel, IonList, IonMenu, IonNote, IonRadio, IonRouterOutlet, IonTitle, IonToolbar } from '@ionic/vue';
+import { IonApp, IonContent, IonHeader, IonItem, IonLabel, IonList, IonMenu, IonNote, IonRadio, IonRouterOutlet, IonTitle, IonToolbar, alertController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { loadingController } from '@ionic/vue';
+import { useStore } from './store'
 import emitter from "@/event-bus"
 
 
@@ -73,15 +73,51 @@ export default defineComponent({
       if (this.loader) {
         this.loader.dismiss();
       }
-    }
+    },
+    async timeZoneDifferentAlert(payload: any) {
+      const alert = await alertController.create({
+        header: this.$t("Change time zone"),
+        message: this.$t('Would you like to update your time zone to . Your profile is currently set to . This setting can always be changed from the settings menu.', { localTimeZone: payload.localTimeZone, profileTimeZone: payload.profileTimeZone }),
+        buttons: [
+            {
+              text: this.$t("Dismiss"),
+              role: 'cancel',
+              cssClass: 'secondary'
+            },
+            {
+              text: this.$t("Update time zone"),
+              handler: () => {
+                this.store.dispatch("user/setUserTimeZone", {
+                    "tzId": payload.localTimeZone
+                });
+              },
+            },
+          ],
+      });
+      return alert.present();
+    },
   },
-  mounted() {
+  async mounted() {
+    emitter.on('timeZoneDifferent', this.timeZoneDifferentAlert);
+    this.loader = await loadingController
+      .create({
+        message: this.$t("Click the backdrop to dismiss."),
+        translucent: true,
+        backdropDismiss: true
+      });
     emitter.on('presentLoader', this.presentLoader);
     emitter.on('dismissLoader', this.dismissLoader);
   },
   unmounted() {
+    emitter.off('timeZoneDifferent', this.timeZoneDifferentAlert);
     emitter.off('presentLoader', this.presentLoader);
     emitter.off('dismissLoader', this.dismissLoader);
+  },
+  setup() {
+    const store = useStore();
+    return {
+      store
+    };
   },
 });
 </script>

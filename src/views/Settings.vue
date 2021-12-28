@@ -50,8 +50,8 @@
         </ion-item>
       </ion-card>
       <ion-item>
-        <ion-label>Asia / Calcutta</ion-label>
-        <ion-button fill="outline">Change</ion-button>
+        <ion-label> {{ userProfile && userProfile.userTimeZone ? userProfile.userTimeZone : '-' }} </ion-label>
+        <ion-button @click="changeTimeZone()" fill="outline" color="dark">{{ $t("Change") }}</ion-button>
       </ion-item>
       <ion-item>
         <ion-label>{{ userProfile !== null ? userProfile.partyName : '' }}</ion-label>
@@ -76,12 +76,14 @@ import {
   IonSelectOption, 
   IonTitle, 
   IonToolbar,
-  popoverController } from '@ionic/vue';
+  popoverController,
+  modalController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { ellipsisVerticalOutline } from 'ionicons/icons'
 import Popover from '@/views/RecyclePopover.vue'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+import TimeZoneModal from '@/views/timezone-modal.vue'
 
 export default defineComponent({
   name: 'Settings',
@@ -126,7 +128,13 @@ export default defineComponent({
       this.store.dispatch('user/logout').then(() => {
         this.router.push('/login');
       })
-    }
+    },
+    async changeTimeZone() {
+      const timeZoneModal = await modalController.create({
+        component: TimeZoneModal,
+      });
+      return timeZoneModal.present();
+    },
   },
   setup() {
     const store = useStore();

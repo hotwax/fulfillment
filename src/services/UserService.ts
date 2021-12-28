@@ -10,7 +10,6 @@ const login = async (username: string, password: string): Promise <any> => {
     }
   });
 }
-
 const getProfile = async (): Promise <any>  => {
     return api({
       url: "user-profile", 
