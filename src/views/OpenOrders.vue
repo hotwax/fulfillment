@@ -188,7 +188,7 @@ export default defineComponent({
             "group.ngGroups": true
           },
           "query": "docType:OISGIR",
-          "filter": ["orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED","-shipmentMethodTypeId : STOREPICKUP",`shipmentMethodTypeId : ${arrays ? arrays : "*" }`,"-picklistItemStatusId:PICKITEM_COMPLETED", `facilityId: ${this.currentFacility.facilityId}`],
+          "filter": ["orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED","-shipmentMethodTypeId : STOREPICKUP",`shipmentMethodTypeId : (${arrays ? arrays : "*" })`,"-picklistItemStatusId:PICKITEM_COMPLETED", `facilityId: ${this.currentFacility.facilityId}`],
           "fields": "",
           "facet": {
             "shipmentMethodTypeIdFacet":{
