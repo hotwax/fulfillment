@@ -75,7 +75,7 @@ export default defineComponent({
       }
     },
     preparePicklistSize () {
-      const size = Math.round(this.openOrders.total / 5)
+      const size = Math.ceil(this.openOrders.total / 5)
       return size;
     },
     setPicklistSize () {

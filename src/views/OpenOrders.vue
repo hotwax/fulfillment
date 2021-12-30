@@ -2,7 +2,7 @@
   <ion-page :fullscreen="true">
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>{{ picklistSize }} of {{ openOrders.total }} orders</ion-title>
+        <ion-title>{{ picklistSize > openOrders.total ? openOrders.total : picklistSize }} of {{ openOrders.total }} orders</ion-title>
         <ion-buttons  slot="end">
         <ion-menu-button>
           <ion-icon :icon="optionsOutline" />

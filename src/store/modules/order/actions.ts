@@ -19,7 +19,9 @@ const actions: ActionTree<OrderState, RootState> = {
       resp = await OrderService.fetchOpenOrders(payload);
       if (resp.status === 200 && resp.data.grouped.orderId.matches > 0 && !hasError(resp)) {
         const shipmentMethods = state.shipmentMethods.length ? state.shipmentMethods.length < resp.data.facets.shipmentMethodTypeIdFacet.buckets.length ? resp.data.facets.shipmentMethodTypeIdFacet.buckets : state.shipmentMethods : resp.data.facets.shipmentMethodTypeIdFacet.buckets
-        commit(types.ORDER_OPEN_UPDATED, {open: resp.data.grouped.orderId.groups, total: resp.data.grouped.orderId.groups.length, shipmentMethods})
+        // TODO: find a better approach to get the order count
+        const total = resp.data.facets.shipmentMethodTypeIdFacet.buckets.reduce((initial: any, value: any) => ({ordersCount: initial.ordersCount + value.ordersCount }));
+        commit(types.ORDER_OPEN_UPDATED, {open: resp.data.grouped.orderId.groups, total: total.ordersCount, shipmentMethods})
         this.dispatch('product/getProductInformation', {orders: resp.data.grouped.orderId.groups})
       } else {
         showToast(translate('Something went wrong'))
