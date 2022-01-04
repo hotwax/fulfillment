@@ -8,7 +8,8 @@ import RootState from '../../RootState'
 const picklistModule: Module<PicklistState, RootState> = {
   namespaced: true,
   state: {
-    size: process.env.VUE_APP_VIEW_SIZE
+    size: process.env.VUE_APP_VIEW_SIZE,
+    availablePickers: {}
   },
   getters,
   actions,
