@@ -8,6 +8,7 @@ import userModule from './modules/user';
 import productModule from "./modules/product"
 import orderModule from "./modules/order"
 import picklistModule from "./modules/picklist"
+import stockModule from "./modules/stock"
 
 
 // TODO check how to register it from the components only
@@ -35,7 +36,8 @@ const store = createStore<RootState>({
         'user': userModule,
         'product': productModule,
         'order': orderModule,
-        'picklist': picklistModule
+        'picklist': picklistModule,
+        'stock': stockModule
     },
 })
 

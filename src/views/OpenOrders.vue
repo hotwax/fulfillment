@@ -68,7 +68,7 @@
               </ion-item>
             </div>
             <div class="product-metadata">
-              <ion-note>49 pieces in stock</ion-note>
+              <ion-note>{{ getProductStock(order.productId) }} {{ $t('pieces in stock') }}</ion-note>
             </div>
           </div>
         </div>
@@ -149,7 +149,8 @@ export default defineComponent({
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
       picklistSize: 'picklist/getPicklistSize',
-      shipmentMethods: 'order/getShipmentMethods' 
+      shipmentMethods: 'order/getShipmentMethods',
+      getProductStock: 'stock/getProductStock'
     })
   },
   data () {
