@@ -164,7 +164,7 @@ export default defineComponent({
       if (index < 0) {
         this.selectedShipmentMethod.push(method)
       } else {
-        this.selectedShipmentMethod.splice(index)
+        this.selectedShipmentMethod.splice(index, 1)
       }
       this.fetchOpenOrders();
     },
