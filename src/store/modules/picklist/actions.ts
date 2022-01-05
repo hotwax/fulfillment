@@ -14,13 +14,8 @@ const actions: ActionTree<PicklistState, RootState> = {
     let resp;
 
     try {
-      resp = await PicklistService.getAvailablePickers({
-        "viewSize": 10,
-        "viewIndex": 0,
-        "facilityId": "STORE_12"
-      });
+      resp = await PicklistService.getAvailablePickers(payload);
       if (resp.status === 200 && resp.data.count > 0 && !hasError(resp)) {
-        console.log(resp)
         commit(types.PICKLIST_PICKERS_UPDATED, {pickers: resp.data.docs})
       } else {
         showToast('Something went wrong')

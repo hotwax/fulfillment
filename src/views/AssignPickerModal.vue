@@ -7,11 +7,12 @@
         </ion-button>
       </ion-buttons>
       <ion-title>Assign Pickers</ion-title>
+      <ion-button fill="clear" slot="end" @click="printPicklist()">Print Picklist</ion-button>
     </ion-toolbar>
   </ion-header>
 
   <ion-content>
-    <ion-searchbar />
+    <ion-searchbar v-model="queryString" @keyup.enter="searchPicker()"/>
     <ion-row>
       <ion-chip v-for="pickerName in pickerSelected" :key="pickerName">
         <ion-label v-if="pickerName">{{ pickerName }}</ion-label>
@@ -20,9 +21,12 @@
 
     <ion-list>
       <ion-list-header>Staff</ion-list-header>
-      <ion-item v-for="(picker, index) in pickers" :key="index">
+      <!-- TODO: added click event on the item as when using the ionChange event then it's getting
+      called every time the v-for loop runs and then removes or adds the currently rendered picker
+      -->
+      <ion-item v-for="(picker, index) in currentPickers" :key="index" @click="pickerChanged(picker.name)">
         <ion-label>{{ picker.name }}</ion-label>
-        <ion-checkbox @ionChange="pickerChanged(picker.name)" :checked="picker.name === current.partyName"/>
+        <ion-checkbox :checked="pickerSelected.includes(picker.name)"/>
       </ion-item>
     </ion-list>
   </ion-content>
@@ -72,12 +76,16 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       pickers: 'picklist/getAvailablePickers',
-      current: 'user/getUserProfile'
+      current: 'user/getUserProfile',
+      currentFacility: 'user/getCurrentFacility',
+      openOrders: 'order/getOpenOrders'
     })
   },
   data () {
     return {
-      pickerSelected: []
+      pickerSelected: [],
+      queryString: '',
+      currentPickers: []
     }
   },
   methods: {
@@ -90,11 +98,32 @@ export default defineComponent({
       } else {
         this.pickerSelected.splice(this.pickerSelected.indexOf(picker), 1)
       }
+    },
+    searchPicker () {
+      this.currentPickers = []
+      if (this.queryString.length > 0) {
+        this.pickers.map((picker) => {
+          if (picker.name.toLowerCase().includes(this.queryString.toLowerCase())) this.currentPickers.push(picker)
+        })
+      } else {
+        this.currentPickers = this.pickers.map((picker) => picker)
+      }
+    },
+    printPicklist () {
+      // TODO: add API support to create a picklist
     }
   },
   mounted() {
-    this.store.dispatch('picklist/updateAvailablePickers')
-    this.pickerChanged(this.current.partyName)
+    // getting picker information on initial load
+    this.store.dispatch('picklist/updateAvailablePickers', {
+      vSize: 50,
+      vIndex: 0,
+      facilityId: this.currentFacility.facilityId,
+      roleTypeId: 'WAREHOUSE_PICKER'
+    }).then(() => {
+      this.pickerChanged(this.current.partyName)
+      this.searchPicker()
+    })
   },
   setup() {
     const store = useStore();
