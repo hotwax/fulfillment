@@ -8,6 +8,15 @@ const getAvailablePickers = async (query: any): Promise <any> => {
   })
 }
 
+const createPicklist = async (query: any): Promise <any> => {
+  return api({
+    url: 'createPicklist',
+    method: 'POST',
+    data: query
+  })
+}
+
 export const PicklistService = {
+  createPicklist,
   getAvailablePickers
 }

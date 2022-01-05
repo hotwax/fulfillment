@@ -110,7 +110,8 @@ export default defineComponent({
       }
     },
     printPicklist () {
-      // TODO: add API support to create a picklist
+      // TODO: update API support to create a picklist
+      this.store.dispatch('picklist/createPicklist', payload)
     }
   },
   mounted() {
