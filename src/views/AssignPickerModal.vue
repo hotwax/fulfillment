@@ -6,7 +6,7 @@
           <ion-icon :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
-      <ion-title>Assign Pickers</ion-title>
+      <ion-title>{{ $t("Assign Pickers") }}</ion-title>
     </ion-toolbar>
   </ion-header>
 
@@ -18,7 +18,7 @@
    </ion-row>
 
    <ion-list>
-     <ion-list-header>Staff</ion-list-header>
+     <ion-list-header>{{ $t("Staff") }}</ion-list-header>
      <ion-item>
        <ion-label>Name</ion-label>
        <ion-checkbox />
