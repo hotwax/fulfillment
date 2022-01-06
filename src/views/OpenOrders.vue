@@ -12,7 +12,7 @@
     </ion-header>
     
     <ion-content>
-      <ion-searchbar />
+      <ion-searchbar v-model="queryString" @keyup.enter="fetchOpenOrders()"/>
 
       <div class="filters">
         <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
@@ -155,7 +155,8 @@ export default defineComponent({
   },
   data () {
     return {
-      selectedShipmentMethod: [] as Array<string>
+      selectedShipmentMethod: [] as Array<string>,
+      queryString: ''
     }
   },
   methods: {
@@ -186,11 +187,13 @@ export default defineComponent({
             "group": true,
             "group.field": "orderId",
             "group.limit": 1000,
-            "group.ngGroups": true
+            "group.ngroups": true,
+            "defType": "edismax",
+            "q.op": "AND",
+            "qf": "orderId"
           },
-          "query": "docType:OISGIR",
-          "filter": ["orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED","-shipmentMethodTypeId : STOREPICKUP",`shipmentMethodTypeId : (${arrays ? arrays : "*" })`,"-picklistItemStatusId:PICKITEM_COMPLETED", `facilityId: ${this.currentFacility.facilityId}`],
-          "fields": "",
+          "query": `(*${this.queryString}*)`,
+          "filter": ["docType:ORDER","orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED","-shipmentMethodTypeId : STOREPICKUP",`shipmentMethodTypeId : (${arrays ? arrays : "*" })`,`facilityId: ${this.currentFacility.facilityId}`],
           "facet": {
             "shipmentMethodTypeIdFacet":{
               "excludeTags":"shipmentMethodTypeIdFilter",
@@ -200,7 +203,7 @@ export default defineComponent({
               "sort":"index",
               "type":"terms",
               "facet": {
-                "ordersCount": "uniqueBlock(orderId)"
+                "ordersCount": "unique(orderId)"
               }
             }
           }
