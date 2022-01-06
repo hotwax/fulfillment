@@ -53,6 +53,8 @@ import {
 import { defineComponent } from "vue";
 import { closeOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
+import { showToast } from "@/utils";
+import { translate } from "@/i18n";
 
 export default defineComponent({
   name: "AssignPickerModal",
@@ -111,7 +113,12 @@ export default defineComponent({
     },
     printPicklist () {
       // TODO: update API support to create a picklist
-      this.store.dispatch('picklist/createPicklist', payload)
+      const payload = this.openOrders;
+      if (this.pickerSelected.length) {
+        this.store.dispatch('picklist/createPicklist', payload)
+      } else {
+        showToast(translate('Select a picker'))
+      }
     }
   },
   mounted() {
