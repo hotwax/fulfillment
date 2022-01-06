@@ -24,7 +24,7 @@
 </template>
 
 <script lang="ts">
-import { IonApp, IonContent, IonHeader, IonItem, IonLabel, IonList, IonMenu, IonNote, IonRadio, IonRadioGroup, IonRouterOutlet, IonTitle, IonToolbar } from '@ionic/vue';
+import { IonApp, IonContent, IonHeader, IonItem, IonLabel, IonList, IonMenu, IonNote, IonRadio, IonRadioGroup, IonRouterOutlet, IonTitle, IonToolbar, menuController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
@@ -80,6 +80,8 @@ export default defineComponent({
     },
     setPicklistSize () {
       this.store.dispatch('picklist/setPicklistSize', this.size)
+      // closing the menu after selecting any picklist size
+      menuController.close()
     }
   },
   mounted() {
