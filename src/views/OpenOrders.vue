@@ -2,7 +2,7 @@
   <ion-page :fullscreen="true">
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>{{ picklistSize > openOrders.total ? openOrders.total : picklistSize }} of {{ openOrders.total }} orders</ion-title>
+        <ion-title>{{ picklistSize > openOrders.total ? openOrders.total : picklistSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
         <ion-buttons  slot="end">
         <ion-menu-button>
           <ion-icon :icon="optionsOutline" />
@@ -19,19 +19,19 @@
           <ion-checkbox slot="start" @ionChange="updateShipmentMethodArray(method.val)"/>
           <ion-label>
             {{ method.val }}
-            <p>{{ method.ordersCount }} orders, {{ method.count }} items</p>
+            <p>{{ method.ordersCount }} {{ $t("orders") }}, {{ method.count }} {{ $t("items") }}</p>
           </ion-label>
         </ion-item>
       </div>
 
-      <ion-button class="desktop-only" fill="outline" @click="assignPickers">Print Picksheet</ion-button>
+      <ion-button class="desktop-only" fill="outline" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
 
       <ion-card v-for="(orders, index) in openOrders.list" :key="index">
         <div class="card-header">
           <div class="order-primary-info">
             <ion-label>
               {{ orders.doclist.docs[0].customerName }}
-              <p>Ordered {{ $filters.formatUtcDate(orders.doclist.docs[0].orderDate, 'YYYY-MM-DDTHH:mm:ssZ', 'Do MMMM YYYY LT z') }}</p>
+              <p>{{ $t("Ordered") }} {{ $filters.formatUtcDate(orders.doclist.docs[0].orderDate, 'YYYY-MM-DDTHH:mm:ssZ', 'Do MMMM YYYY LT z') }}</p>
             </ion-label>
           </div>
 
@@ -48,7 +48,7 @@
           <div class="order-metadata">
             <ion-label>
               Next Day Shipping
-              <p>Ordered 28th January 2020 2:32 PM EST</p>
+              <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
             </ion-label>
           </div>
         </div>
@@ -77,7 +77,7 @@
         <div class="actions">  
           <div class="positive-action"></div>
           <div class="negative-action">
-            <ion-button fill="outline" color="danger">Recycle</ion-button>
+            <ion-button fill="outline" color="danger">{{ $t("Recycle") }}</ion-button>
           </div>
         </div>
       </ion-card>

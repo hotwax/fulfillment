@@ -6,7 +6,7 @@
           <ion-icon :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
-      <ion-title>Assign Pickers</ion-title>
+      <ion-title>{{ $t("Assign Pickers") }}</ion-title>
       <ion-button fill="clear" slot="end" @click="printPicklist()">Print Picklist</ion-button>
     </ion-toolbar>
   </ion-header>
@@ -20,7 +20,7 @@
     </ion-row>
 
     <ion-list>
-      <ion-list-header>Staff</ion-list-header>
+      <ion-list-header>{{ $t("Staff") }}</ion-list-header>
       <!-- TODO: added click event on the item as when using the ionChange event then it's getting
       called every time the v-for loop runs and then removes or adds the currently rendered picker
       -->
