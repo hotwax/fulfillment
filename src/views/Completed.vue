@@ -151,6 +151,7 @@ import { defineComponent } from 'vue';
 import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline } from 'ionicons/icons'
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
+import { useStore } from 'vuex';
 
 export default defineComponent({
   name: 'Home',
@@ -178,13 +179,12 @@ export default defineComponent({
     async shipOrderAlert() {
       const alert = await alertController
         .create({
-           header: this.$t("Ship orders"),
-           message: this.$t("You are shipping orders. You cannot unpack and edit orders after they have been  shipped. Are you sure you are ready to ship this orders.", {count: 15, space: '<br /><br />'}),       
-           buttons: [this.$t("Cancel"), this.$t("Ship")],
+          header: this.$t("Ship orders"),
+          message: this.$t("You are shipping orders. You cannot unpack and edit orders after they have been  shipped. Are you sure you are ready to ship this orders.", {count: 15, space: '<br /><br />'}),       
+          buttons: [this.$t("Cancel"), this.$t("Ship")],
         });
       return alert.present();
     },
-
     async shippingPopover(ev: Event) {
       const popover = await popoverController.create({
         component: Popover,
@@ -194,17 +194,24 @@ export default defineComponent({
       });
       return popover.present();
     },
+    async getCompletedOrders() {
+
+    }
+  },
+  mounted(){
+    this.getCompletedOrders();
   },
   setup() {
     const router = useRouter();
-
+    const store = useStore();
     return {  
-      printOutline, 
-      downloadOutline, 
-      pricetagOutline, 
-      ellipsisVerticalOutline, 
       checkmarkDoneOutline,
-      router
+      downloadOutline, 
+      ellipsisVerticalOutline, 
+      pricetagOutline, 
+      printOutline, 
+      router,
+      store
     }
   }
 });
