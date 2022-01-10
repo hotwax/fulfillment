@@ -3,15 +3,15 @@
     <ion-list>
       <ion-item button>
         <ion-icon slot="start" :icon="printOutline" />
-        Shipping label
+        {{ $t("Shipping label") }}
       </ion-item>
       <ion-item button>
         <ion-icon slot="start" :icon="printOutline" />
-        Customer letter
+        {{ $t("Customer letter") }}
       </ion-item>
       <ion-item button lines="none">
         <ion-icon slot="start" :icon="lockOpenOutline" />
-        Unpack
+        {{ $t("Unpack") }}
       </ion-item>
     </ion-list>
   </ion-content>
