@@ -1,17 +1,21 @@
 <template>
-  <ion-page>
+  <ion-page> 
+    <PicklistSize content-id="picklist-size" />
+    
     <ion-header :translucent="true">
       <ion-toolbar>
+        <ion-menu-button menu="start" slot="start" />
         <ion-title>10 {{("of")}} 26 {{ $t("orders") }}</ion-title>
-        <ion-buttons  slot="end">
-        <ion-menu-button>
-          <ion-icon :icon="optionsOutline" />
-        </ion-menu-button>
+     
+        <ion-buttons slot="end">
+          <ion-menu-button menu="end">
+            <ion-icon :icon="optionsOutline" />
+          </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
     
-    <ion-content :fullscreen="true">
+    <ion-content :fullscreen="true" id="picklist-size">
       <ion-searchbar /> 
 
       <div class="filters">
@@ -127,6 +131,7 @@ import {
 import { defineComponent } from 'vue';
 import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
+import PicklistSize from '@/components/PicklistSize.vue';
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -149,7 +154,8 @@ export default defineComponent({
     IonSearchbar,
     IonThumbnail,
     IonTitle,
-    IonToolbar
+    IonToolbar,
+    PicklistSize
   },
   methods: {
     async assignPickers() {
@@ -157,7 +163,7 @@ export default defineComponent({
         component: AssignPickerModal
       });
       return bgjobmodal.present();
-    },
+    }
   },
   setup() {
     return{
