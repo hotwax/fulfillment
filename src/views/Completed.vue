@@ -174,18 +174,6 @@ export default defineComponent({
     IonTitle, 
     IonToolbar,
   },
-  setup() {
-    const router = useRouter();
-
-    return {  
-      printOutline, 
-      downloadOutline, 
-      pricetagOutline, 
-      ellipsisVerticalOutline, 
-      checkmarkDoneOutline,
-      router
-    }
-  }, 
   methods: {
     async shipOrderAlert() {
       const alert = await alertController
@@ -206,6 +194,18 @@ export default defineComponent({
       });
       return popover.present();
     },
+  },
+  setup() {
+    const router = useRouter();
+
+    return {  
+      printOutline, 
+      downloadOutline, 
+      pricetagOutline, 
+      ellipsisVerticalOutline, 
+      checkmarkDoneOutline,
+      router
+    }
   }
 });
 </script>
