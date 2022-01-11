@@ -62,7 +62,6 @@ const actions: ActionTree<ProductState, RootState> = {
       "filters": ['productId: (' + productIdFilter + ')']
     })
     if (resp.status === 200 && !hasError(resp)) {
-      // console.log(resp)
       const products = resp.data.response?.docs;
       if (resp.data) commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
     }

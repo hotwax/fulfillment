@@ -13,7 +13,6 @@ const actions: ActionTree <OrderState, RootState> = {
       resp = await OrderService.fetchCompletedOrders( payload );
       if (resp.status === 200 && resp.data?.grouped.orderId.groups.length > 0 && !hasError(resp)) {
         const orders = resp.data?.grouped.orderId
-        console.log(resp)
         if (!orders.groups.length) showToast(translate("No more Orders found"));
         else {
           this.dispatch('product/getProductInformations', { orders })
