@@ -1,58 +1,26 @@
 <template>
   <ion-app>
-    <ion-menu side="end" type="overlay" menu-id="picklist-size" content-id="main">
-      <ion-header>
-        <ion-toolbar>
-          <ion-title>Picklist Size</ion-title>
-        </ion-toolbar>
-      </ion-header>
-
-      <ion-content>
-        <ion-list>
-          <ion-item>
-            <ion-radio slot="start" />
-            <ion-label>10 orders</ion-label>
-            <ion-note slot="end">10 items</ion-note>
-          </ion-item>
-          <ion-item>
-            <ion-radio slot="start" />
-            <ion-label>15 orders</ion-label>
-            <ion-note slot="end">17 items</ion-note>
-          </ion-item>
-          <ion-item>
-            <ion-radio slot="start" />
-            <ion-label>20 orders</ion-label>
-            <ion-note slot="end">22 items</ion-note>
-          </ion-item>
-        </ion-list>
-      </ion-content>
-    </ion-menu>
-    <ion-router-outlet id="main" />
+    <IonSplitPane content-id="main-content" when="lg">
+      <Menu />
+      <ion-router-outlet id="main-content" />
+    </IonSplitPane>
   </ion-app>
 </template>
 
 <script lang="ts">
-import { IonApp, IonContent, IonHeader, IonItem, IonLabel, IonList, IonMenu, IonNote, IonRadio, IonRouterOutlet, IonTitle, IonToolbar } from '@ionic/vue';
+import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
 import { defineComponent } from 'vue';
+import Menu from '@/components/Menu.vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
-
 
 export default defineComponent({
   name: 'App',
   components: {
-    IonApp, 
-    IonContent, 
-    IonHeader, 
-    IonItem, 
-    IonLabel,
-    IonList, 
-    IonMenu,
-    IonNote,
-    IonRadio, 
-    IonRouterOutlet,
-    IonTitle, 
-    IonToolbar
+    IonApp,  
+    IonRouterOutlet, 
+    IonSplitPane,
+    Menu
   },
   data() {
     return {
@@ -94,3 +62,9 @@ export default defineComponent({
   },
 });
 </script>
+
+<style scoped>
+ion-split-pane {
+  --side-width: 304px;
+}
+</style>

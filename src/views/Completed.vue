@@ -2,6 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
+        <ion-menu-button slot="start" />
         <ion-title>10 {{("to")}} 26 {{ $t("orders") }}</ion-title>
         <ion-buttons slot="end">
             <ion-button fill="clear" @click="() => router.push('/upload-csv')">{{ $t("Upload CSV") }}</ion-button>
@@ -128,6 +129,7 @@ import {
   IonInfiniteScrollContent,
   IonItem, 
   IonLabel, 
+  IonMenuButton,
   IonNote, 
   IonPage, 
   IonSearchbar, 
@@ -161,6 +163,7 @@ export default defineComponent({
     IonInfiniteScrollContent,
     IonItem, 
     IonLabel, 
+    IonMenuButton,
     IonNote, 
     IonPage, 
     IonSearchbar,
