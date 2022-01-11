@@ -32,9 +32,11 @@ import {
   IonRadio,
   IonRadioGroup,
   IonTitle,
-  IonToolbar
+  IonToolbar,
+  menuController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
+import { mapGetters, useStore } from 'vuex';
 
 export default defineComponent({
   name: "PicklistMenu",
@@ -50,7 +52,36 @@ export default defineComponent({
     IonRadioGroup,
     IonTitle,
     IonToolbar
+  },  
+  computed: {
+    ...mapGetters({
+      openOrders: 'order/getOpenOrders',
+      currentPicklistSize: 'picklist/getPicklistSize'
+    })
   },
+  data () {
+    return {
+      size: 0
+    }
+  },
+  methods: {
+    preparePicklistSize () {
+      const size = Math.ceil(this.openOrders.total / 5)
+      return size;
+    },
+    setPicklistSize () {
+      this.store.dispatch('picklist/setPicklistSize', this.size)
+      // closing the menu after selecting any picklist size
+      menuController.close()
+    }
+  },
+  setup () {
+    const store = useStore();
+
+    return {
+      store
+    }
+  }
 });
 </script>
 

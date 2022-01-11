@@ -8,42 +8,23 @@
 </template>
 
 <script lang="ts">
-import { IonApp, IonContent, IonHeader, IonItem, IonLabel, IonList, IonMenu, IonNote, IonRadio, IonRadioGroup, IonRouterOutlet, IonTitle, IonToolbar, IonSplitPane, menuController } from '@ionic/vue';
+import { IonApp, IonRouterOutlet, menuController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import Menu from '@/components/Menu.vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
-import { mapGetters, useStore } from 'vuex';
+import { useStore } from 'vuex';
 
 export default defineComponent({
   name: 'App',
   components: {
-    IonApp, 
-    IonContent, 
-    IonHeader, 
-    IonItem, 
-    IonLabel,
-    IonList, 
-    IonMenu,
-    IonNote,
-    IonRadio,
-    IonRadioGroup,
+    IonApp,
     IonRouterOutlet,
-    IonSplitPane,
-    IonTitle, 
-    IonToolbar,
     Menu
-  },
-  computed: {
-    ...mapGetters({
-      openOrders: 'order/getOpenOrders',
-      currentPicklistSize: 'picklist/getPicklistSize'
-    })
   },
   data() {
     return {
-      loader: null as any,
-      size: 0
+      loader: null as any
     }
   },
   methods: {
@@ -63,15 +44,6 @@ export default defineComponent({
         this.loader.dismiss();
         this.loader = null as any;
       }
-    },
-    preparePicklistSize () {
-      const size = Math.ceil(this.openOrders.total / 5)
-      return size;
-    },
-    setPicklistSize () {
-      this.store.dispatch('picklist/setPicklistSize', this.size)
-      // closing the menu after selecting any picklist size
-      menuController.close()
     }
   },
   async mounted() {
