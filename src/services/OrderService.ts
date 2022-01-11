@@ -5,6 +5,7 @@ const fetchCompletedOrders = async (payload: any): Promise<any> => {
     url: "/solr-query",
     method: "POST",
     data: payload,
+    cache: true
   });
 }
 

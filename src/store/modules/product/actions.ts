@@ -62,14 +62,15 @@ const actions: ActionTree<ProductState, RootState> = {
       "filters": ['productId: (' + productIdFilter + ')']
     })
     if (resp.status === 200 && !hasError(resp)) {
-      const products = resp.data.response.docs;
+      // console.log(resp)
+      const products = resp.data.response?.docs;
       if (resp.data) commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
     }
     return resp;
   },
   async getProductInformations(context, { orders }) {
     let productIds: any = new Set();
-    orders.forEach((order: any) => {
+    orders.groups.forEach((order: any) => {
       order.doclist.docs.forEach((item: any) => {
         if (item.productId) productIds.add(item.productId);
       })

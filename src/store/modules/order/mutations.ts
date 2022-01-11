@@ -4,8 +4,11 @@ import * as types from './mutation-types';
 
 const mutations: MutationTree <OrderState> = {
   [types.ORDER_COMPLETED_UPDATED] (state, payload) {
-    state.completedOrders = payload.orders;
-    state.completedOrderLength = payload.orders.length;
+    payload.orders.groups.forEach((order: any) => {
+      state.completedOrders.list[order.groupValue] = order
+    })
+    state.storedOrders += payload.orders.groups.length;
+    state.completedOrders.total += payload.orders.ngroups;
   }
 }
 export default mutations;

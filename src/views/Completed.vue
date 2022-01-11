@@ -3,7 +3,7 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button slot="start" />
-        <ion-title>10 {{("to")}} 26 {{ $t("orders") }}</ion-title>
+        <ion-title> {{ orderLength }} {{("of")}} {{ totalOrders }} {{ $t("orders") }}</ion-title>
         <ion-buttons slot="end">
             <ion-button fill="clear" @click="() => router.push('/upload-csv')">{{ $t("Upload CSV") }}</ion-button>
         </ion-buttons>
@@ -76,7 +76,7 @@
 
           <div class="product-metadata mobile-only">
             <!-- TODO: Handle for this property -->
-            <ion-note>{{ item.quantity }} {{ $t("pieces in stock") }}</ion-note>
+            <ion-note>{{ getProductStock(item.productId) }} {{ $t("pieces in stock") }}</ion-note>
           </div>
         </div>
 
@@ -176,7 +176,9 @@ export default defineComponent({
       orders: 'orders/getCompletedOrders',
       orderLength: 'orders/getcompletedOrderLength',
       getProduct: 'product/getProduct',
-      currentFacility: 'user/getCurrentFacility'
+      currentFacility: 'user/getCurrentFacility',
+      getProductStock: 'stock/getProductStock',
+      totalOrders: 'orders/getTotalNumberOfOrders'
     })
   },
   methods: {
@@ -217,7 +219,7 @@ export default defineComponent({
               "qf": "orderId"
             },
             "query": "(* *)",
-            "filter": ["docType:ORDER","orderTypeId: SALES_ORDER","orderStatusId:ORDER_COMPLETED","-shipmentMethodTypeId : STOREPICKUP",`facilityId: ${this.currentFacility}`],
+            "filter": ["docType:ORDER","orderTypeId: SALES_ORDER","orderStatusId:ORDER_COMPLETED","-shipmentMethodTypeId : STOREPICKUP",`facilityId: ${this.currentFacility.facilityId}`],
             "facet": {
               "shipmentMethodTypeIdFacet": {
                 "excludeTags": "shipmentMethodTypeIdFilter",
@@ -236,7 +238,7 @@ export default defineComponent({
         this.store.dispatch("orders/getCompletedOrders", payload)
     },
     async loadMoreOrders(event: any) {
-      this.getCompletedOrders(Math.ceil(this.orderLength/process.env.VUE_APP_VIEW_SIZE).toString())
+      this.getCompletedOrders(Math.ceil(this.orderLength/process.env.VUE_APP_VIEW_SIZE)*10)
         .then(()=> {
           event.target.complete();
         })

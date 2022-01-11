@@ -4,10 +4,13 @@ import RootState from "@/store/RootState";
 
 const getters: GetterTree <OrderState, RootState> = {
   getCompletedOrders(state) {
-    return state.completedOrders
+    return state.completedOrders.list ? state.completedOrders.list : {}
   },
   getcompletedOrderLength(state) {
-    return state.completedOrderLength
+    return state.storedOrders
+  },
+  getTotalNumberOfOrders(state) {
+    return state.completedOrders.total
   }
 }
 export default getters;

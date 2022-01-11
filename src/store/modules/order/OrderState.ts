@@ -1,4 +1,7 @@
 export default interface OrderState {
-  completedOrders: any;
-  completedOrderLength: number;
+  completedOrders: {
+    list: any;
+    total: number;  
+  };
+  storedOrders: number;
 }
