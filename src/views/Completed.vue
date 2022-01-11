@@ -175,7 +175,8 @@ export default defineComponent({
     ...mapGetters({
       orders: 'orders/getCompletedOrders',
       orderLength: 'orders/getcompletedOrderLength',
-      getProduct: 'product/getProduct'
+      getProduct: 'product/getProduct',
+      currentFacility: 'user/getCurrentFacility'
     })
   },
   methods: {
@@ -216,7 +217,7 @@ export default defineComponent({
               "qf": "orderId"
             },
             "query": "(* *)",
-            "filter": ["docType:ORDER","orderTypeId: SALES_ORDER","orderStatusId:ORDER_COMPLETED","-shipmentMethodTypeId : STOREPICKUP","facilityId: STORE_9"],
+            "filter": ["docType:ORDER","orderTypeId: SALES_ORDER","orderStatusId:ORDER_COMPLETED","-shipmentMethodTypeId : STOREPICKUP",`facilityId: ${this.currentFacility}`],
             "facet": {
               "shipmentMethodTypeIdFacet": {
                 "excludeTags": "shipmentMethodTypeIdFilter",
