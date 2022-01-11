@@ -7,7 +7,7 @@
         </ion-button>
       </ion-buttons>
       <ion-title>{{ $t("Assign Pickers") }}</ion-title>
-      <ion-button fill="clear" slot="end" @click="printPicklist()">Print Picklist</ion-button>
+      <ion-button fill="clear" slot="end" @click="printPicklist(); generatePdf();">Print Picklist</ion-button>
     </ion-toolbar>
   </ion-header>
 
@@ -30,6 +30,7 @@
       </ion-item>
     </ion-list>
   </ion-content>
+  <OpenOrdersPdf :openOrders="openOrders" v-show="false"/>
 </template>
 
 <script>
@@ -55,6 +56,10 @@ import { closeOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { showToast } from "@/utils";
 import { translate } from "@/i18n";
+import OpenOrdersPdf from './OpenOrdersPdf.vue';
+import pdfMake from 'pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
+import htmlToPdfmake from 'html-to-pdfmake';
 
 export default defineComponent({
   name: "AssignPickerModal",
@@ -74,6 +79,7 @@ export default defineComponent({
     IonSearchbar,
     IonTitle,
     IonToolbar,
+    OpenOrdersPdf
   },
   computed: {
     ...mapGetters({
@@ -119,6 +125,28 @@ export default defineComponent({
       } else {
         showToast(translate('Select a picker'))
       }
+    },
+    generatePdf(){
+      console.log(this.openOrders);
+      pdfMake.vfs = pdfFonts.pdfMake.vfs;
+      const pdfDocument =  document.getElementById('PDF');
+      const html =  htmlToPdfmake(pdfDocument.innerHTML);  
+      const docDefinition = {
+        content: [html],
+        info: {
+          title: 'bashu'
+        },
+        styles:{
+         'yellow':{
+            background:'yellow' // it will add a yellow background to all elements with class yellow
+          },
+          'one':{
+            background:'blue',
+            color:'pink'
+          }   
+        } 
+      }
+      pdfMake.createPdf(docDefinition).open();
     }
   },
   mounted() {
@@ -152,5 +180,10 @@ ion-row {
 
 ion-chip {
   flex-shrink: 0;
+}
+
+.one{
+  color: aqua;
+  background-color: blue;
 }
 </style>

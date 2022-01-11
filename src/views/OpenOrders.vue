@@ -210,6 +210,9 @@ export default defineComponent({
         }
       }
       this.store.dispatch('order/fetchOpenOrders', payload).then((resp) => console.log(resp)).catch(err => console.log(err))
+    },
+    pdfGenerator(){
+      console.log("pdf generation")
     }
   },
   mounted () {
