@@ -134,17 +134,17 @@ export default defineComponent({
       const docDefinition = {
         content: [html],
         info: {
-          title: 'bashu'
+          title: 'Open-Orders' // it provides the required title to our pdf
         },
-        styles:{
-         'yellow':{
-            background:'yellow' // it will add a yellow background to all elements with class yellow
-          },
-          'one':{
-            background:'blue',
-            color:'pink'
-          }   
-        } 
+        // styles:{
+        //  'yellow':{
+        //     background:'yellow' // it will add a yellow background to all elements with class yellow
+        //   },
+        //   'one':{
+        //     background:'blue', // it will add these css properties to all element with class one
+        //     color:'pink'
+        //   }   
+        // } 
       }
       pdfMake.createPdf(docDefinition).open();
     }

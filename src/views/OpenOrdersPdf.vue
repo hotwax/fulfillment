@@ -46,10 +46,3 @@ export default defineComponent ({
   }
 })
 </script> 
-
-<style scoped>
-.one{
-  color: aqua;
-  background-color: blue;
-}
-</style>
