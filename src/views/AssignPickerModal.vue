@@ -134,7 +134,7 @@ export default defineComponent({
       const docDefinition = {
         content: [html],
         info: {
-          title: 'Open-Orders' // it provides the required title to our pdf
+          title: this.$t("Picklist") // it provides the required title to our pdf
         },
         // styles:{
         //  'yellow':{
