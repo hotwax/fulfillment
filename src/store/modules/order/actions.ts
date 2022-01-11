@@ -33,8 +33,11 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     return resp;
-  }
+  },
 
+  async clearOrders ({ commit }) {
+    commit(types.ORDER_OPEN_UPDATED, {open: {}, total: 0, shipmentMethods: {}})
+  }
 }
 
 export default actions;

@@ -11,7 +11,7 @@
         <ion-radio-group v-model="size" @ionChange="setPicklistSize()">
           <ion-item v-for="count in preparePicklistSize()" :key="count">
             <ion-radio slot="start" :value="count * 5"/>
-            <ion-label>{{ (count * 5) >= openOrders.total ? openOrders.total : count * 5}} orders</ion-label>
+            <ion-label>{{ (count * 5) >= openOrders.total ? openOrders.total : count * 5}} {{ $t('orders') }}</ion-label>
             <ion-note slot="end">10 items</ion-note>
           </ion-item>
         </ion-radio-group>

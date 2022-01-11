@@ -1,5 +1,5 @@
 <template>
-  <ion-page> 
+  <ion-page :fullscreen="true">
     <PicklistSize content-id="picklist-size" />
     
     <ion-header :translucent="true">
@@ -15,7 +15,7 @@
       </ion-toolbar>
     </ion-header>
     
-    <ion-content :fullscreen="true" id="picklist-size">
+    <ion-content id="picklist-size">
       <ion-searchbar v-model="queryString" @keyup.enter="fetchOpenOrders()"/>
 
       <div class="filters">
@@ -181,8 +181,8 @@ export default defineComponent({
       });
       return bgjobmodal.present();
     },
-    async fetchOpenOrders (event?: any) {
-      const arrays = this.selectedShipmentMethod.toString().replaceAll(",", " OR ")
+    async fetchOpenOrders () {
+      const currentShipmentMethods = this.selectedShipmentMethod.toString().replaceAll(",", " OR ")
       const viewSize = this.picklistSize
       const sortBy = ''
       const payload = {
@@ -199,7 +199,7 @@ export default defineComponent({
             "qf": "orderId"
           },
           "query": `(*${this.queryString}*)`,
-          "filter": ["docType:ORDER","orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED","-shipmentMethodTypeId : STOREPICKUP",`shipmentMethodTypeId : (${arrays ? arrays : "*" })`,`facilityId: ${this.currentFacility.facilityId}`],
+          "filter": ["docType:ORDER","orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED","-shipmentMethodTypeId : STOREPICKUP",`shipmentMethodTypeId : (${currentShipmentMethods ? currentShipmentMethods : "*" })`,`facilityId: ${this.currentFacility.facilityId}`],
           "facet": {
             "shipmentMethodTypeIdFacet":{
               "excludeTags":"shipmentMethodTypeIdFilter",
@@ -215,7 +215,7 @@ export default defineComponent({
           }
         }
       }
-      this.store.dispatch('order/fetchOpenOrders', payload).then((resp) => console.log(resp)).catch(err => console.log(err))
+      this.store.dispatch('order/fetchOpenOrders', payload).catch(err => console.log(err))
     }
   },
   mounted () {
@@ -223,6 +223,10 @@ export default defineComponent({
   },
   watch: {
     // added a watcher in picklistSize to fetch the open orders whenever the size changes
+    // TODO: find a better way to get open orders when changing the picklistSize
+    // One way is to call the fetchOpenOrders action from the picklist component when picklist
+    // changed, but in this case we need to pass some data to picklist component using props
+    // Another way is to emit an event when picklist size change and catch that even in here.
     picklistSize () {
       this.fetchOpenOrders();
     }
@@ -235,7 +239,6 @@ export default defineComponent({
       pricetagOutline,
       printOutline,
       refreshCircleOutline,
-      print,
       store
     }
   }
