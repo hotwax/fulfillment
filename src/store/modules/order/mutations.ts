@@ -8,7 +8,7 @@ const mutations: MutationTree <OrderState> = {
       state.completedOrders.list[order.groupValue] = order
     })
     state.storedOrders += payload.orders.groups.length;
-    state.completedOrders.total += payload.orders.ngroups;
+    state.completedOrders.total = payload.orders.ngroups;
   }
 }
 export default mutations;
