@@ -1,31 +1,16 @@
 <template>
   <ion-app>
-    <ion-menu side="end" type="overlay" menu-id="picklist-size" content-id="main">
-      <ion-header>
-        <ion-toolbar>
-          <ion-title>Picklist Size</ion-title>
-        </ion-toolbar>
-      </ion-header>
-
-      <ion-content>
-        <ion-list>
-          <ion-radio-group v-model="size" @ionChange="setPicklistSize()">
-            <ion-item v-for="count in preparePicklistSize()" :key="count">
-              <ion-radio slot="start" :value="count * 5"/>
-              <ion-label>{{ (count * 5) >= openOrders.total ? openOrders.total : count * 5}} orders</ion-label>
-              <ion-note slot="end">10 items</ion-note>
-            </ion-item>
-          </ion-radio-group>
-        </ion-list>
-      </ion-content>
-    </ion-menu>
-    <ion-router-outlet id="main" />
+    <IonSplitPane content-id="main-content" when="lg">
+      <Menu />
+      <ion-router-outlet id="main-content" />
+    </IonSplitPane>
   </ion-app>
 </template>
 
 <script lang="ts">
-import { IonApp, IonContent, IonHeader, IonItem, IonLabel, IonList, IonMenu, IonNote, IonRadio, IonRadioGroup, IonRouterOutlet, IonTitle, IonToolbar, menuController } from '@ionic/vue';
+import { IonApp, IonContent, IonHeader, IonItem, IonLabel, IonList, IonMenu, IonNote, IonRadio, IonRadioGroup, IonRouterOutlet, IonTitle, IonToolbar, IonSplitPane, menuController } from '@ionic/vue';
 import { defineComponent } from 'vue';
+import Menu from '@/components/Menu.vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
 import { mapGetters, useStore } from 'vuex';
@@ -44,8 +29,10 @@ export default defineComponent({
     IonRadio,
     IonRadioGroup,
     IonRouterOutlet,
+    IonSplitPane,
     IonTitle, 
-    IonToolbar
+    IonToolbar,
+    Menu
   },
   computed: {
     ...mapGetters({
@@ -110,3 +97,9 @@ export default defineComponent({
   }
 });
 </script>
+
+<style scoped>
+ion-split-pane {
+  --side-width: 304px;
+}
+</style>

@@ -2,6 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
+        <ion-menu-button slot="start" />
         <ion-title>{{ $t("Store Settings") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -75,6 +76,7 @@ import {
   IonIcon, 
   IonItem, 
   IonLabel, 
+  IonMenuButton,
   IonPage, 
   IonSelect, 
   IonSelectOption, 
@@ -98,6 +100,7 @@ export default defineComponent({
     IonIcon,
     IonItem, 
     IonLabel, 
+    IonMenuButton,
     IonPage, 
     IonSelect, 
     IonSelectOption,

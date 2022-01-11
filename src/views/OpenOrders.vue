@@ -1,17 +1,21 @@
 <template>
-  <ion-page :fullscreen="true">
+  <ion-page> 
+    <PicklistSize content-id="picklist-size" />
+    
     <ion-header :translucent="true">
       <ion-toolbar>
+        <ion-menu-button menu="start" slot="start" />
         <ion-title>{{ picklistSize > openOrders.total ? openOrders.total : picklistSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
-        <ion-buttons  slot="end">
-        <ion-menu-button>
-          <ion-icon :icon="optionsOutline" />
-        </ion-menu-button>
+     
+        <ion-buttons slot="end">
+          <ion-menu-button menu="end">
+            <ion-icon :icon="optionsOutline" />
+          </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
     
-    <ion-content>
+    <ion-content :fullscreen="true" id="picklist-size">
       <ion-searchbar v-model="queryString" @keyup.enter="fetchOpenOrders()"/>
 
       <div class="filters">
@@ -118,6 +122,7 @@ import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } f
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import Image from '@/components/Image.vue'
+import PicklistSize from '@/components/PicklistSize.vue';
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -141,7 +146,8 @@ export default defineComponent({
     IonSearchbar,
     IonThumbnail,
     IonTitle,
-    IonToolbar
+    IonToolbar,
+    PicklistSize
   },
   computed: {
     ...mapGetters({
