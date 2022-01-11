@@ -11,7 +11,6 @@
     
     <ion-content :fullscreen="true">
       <ion-searchbar />  
-
       <div class="filters">
         <ion-item lines="none">
           <ion-checkbox slot="start"/>
@@ -33,65 +32,50 @@
 
       <ion-button expand="block" class="desktop-only" fill="outline" @click="shipOrderAlert">{{ $t("Ship") }}</ion-button>
 
-      <ion-card>
+      <ion-card v-for="(order, index) in orders" :key="index" >
         <div class="card-header">
           <div class="order-primary-info">
             <ion-label>
-              Darooty Magwood
-              <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
+              {{ order.doclist.docs[0]?.customerPartyName }}
+              <p v-if="order.doclist.docs[0]?.orderDate">
+                {{ $t("Ordered") }} {{ $filters.formatDate(order.doclist.docs[0]?.orderDate) }}
+              </p>
             </ion-label>
           </div>
 
-          <div class="order-tags">
+          <div class="order-tags" v-if="order.doclist.docs[0]?.orderId">
             <ion-chip outline>
               <ion-icon :icon="pricetagOutline" />
-              <ion-label>NN10584</ion-label>
+              <ion-label>{{ order.doclist.docs[0]?.orderId }}</ion-label>
             </ion-chip>
           </div>
 
           <div class="order-metadata">
             <ion-label>
-              Next Day Shipping
-              <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
+              {{ order.doclist.docs[0].shipmentMethodTypeId }}
+              <!-- TODO: handle for this property -->
+              <p>{{ $t("Last brokered") }} 28th January 2020 2:32 PM EST</p>
             </ion-label>
           </div>
         </div>
 
-        <div class="order-item">
+        <div class="order-item" v-for="(item, index) in order.doclist.docs" :key="index">
           <div class="product-info">
             <ion-item lines="none">
               <ion-thumbnail>
-                <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
+                <Image :src="getProduct(item.productId).mainImageUrl" />
               </ion-thumbnail>
               <ion-label>
-                <p class="overline">WJ06-XL-PURPLE</p>
-                Juno Jacket
-                <p>Blue XL</p>
+                <p class="overline">{{ item.internalName }}</p>
+                {{ getProduct(item.productId).parentProductName }}
+                <p> {{ $filters.getFeature(getProduct(item.productId).productFeatures, 'Color') }} {{ $filters.getFeature(getProduct(item.productId).productFeatures, 'Size') }} </p>
               </ion-label>
             </ion-item>
           </div>
 
           <div class="product-metadata mobile-only">
-            <ion-note>49 {{ $t("pieces in stock") }}</ion-note>
-          </div>
-        </div>
-
-        <div class="order-item">
-          <div class="product-info">
-            <ion-item lines="none">
-              <ion-thumbnail>
-                <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
-              </ion-thumbnail>
-              <ion-label>
-                <p class="overline">WJ06-XL-PURPLE</p>
-                Juno Jacket
-                <p>Blue XL</p>
-              </ion-label>
-            </ion-item>
-          </div>
-
-          <div class="product-metadata mobile-only">
-            <ion-note>49 {{ $t("pieces in stock") }}</ion-note>
+            <!-- TODO: Handle for this property -->
+            <ion-note>{{ item.quantity }} {{ $t("pieces in stock") }}</ion-note>
           </div>
         </div>
 
@@ -116,12 +100,15 @@
         </div>
       </ion-card>
 
-      <ion-fab class="mobile-only" vertical="bottom" horizontal="end">
-        <ion-fab-button  @click="shipOrderAlert">
-          <ion-icon :icon="checkmarkDoneOutline" />
-        </ion-fab-button>
-      </ion-fab>
+      <ion-infinite-scroll @ionInfinite="loadMoreOrders($event)" threshold="100px" :disabled="false" >
+        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')" />
+      </ion-infinite-scroll>
     </ion-content>
+    <ion-fab class="mobile-only" vertical="bottom" horizontal="end">
+      <ion-fab-button  @click="shipOrderAlert">
+        <ion-icon :icon="checkmarkDoneOutline" />
+      </ion-fab-button>
+    </ion-fab>
   </ion-page>
 </template>
 
@@ -137,6 +124,8 @@ import {
   IonFabButton, 
   IonHeader, 
   IonIcon, 
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
   IonItem, 
   IonLabel, 
   IonNote, 
@@ -151,11 +140,13 @@ import { defineComponent } from 'vue';
 import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline } from 'ionicons/icons'
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
-import { useStore } from 'vuex';
+import Image from "@/components/Image.vue";
+import { mapGetters, useStore } from 'vuex';
 
 export default defineComponent({
   name: 'Home',
   components: {
+    Image,
     IonButton,
     IonButtons, 
     IonCard, 
@@ -166,6 +157,8 @@ export default defineComponent({
     IonFabButton, 
     IonHeader, 
     IonIcon, 
+    IonInfiniteScroll,
+    IonInfiniteScrollContent,
     IonItem, 
     IonLabel, 
     IonNote, 
@@ -174,6 +167,13 @@ export default defineComponent({
     IonThumbnail, 
     IonTitle, 
     IonToolbar,
+  },
+  computed: {
+    ...mapGetters({
+      orders: 'orders/getCompletedOrders',
+      orderLength: 'orders/getcompletedOrderLength',
+      getProduct: 'product/getProduct'
+    })
   },
   methods: {
     async shipOrderAlert() {
@@ -194,8 +194,48 @@ export default defineComponent({
       });
       return popover.present();
     },
-    async getCompletedOrders() {
-
+    async getCompletedOrders(vStart?: any, vRow?: any) {
+      vRow = vRow ? vRow : process.env.VUE_APP_VIEW_SIZE;
+      vStart = vStart ? vStart : 0;
+      const payload = 
+        {
+          "json": {
+            "params": {
+              "start": vStart,
+              "rows": vRow,
+              "sort": "reservedDatetime desc",
+              "group": true,
+              "group.field": "orderId",
+              "group.limit": 1000,
+              "group.ngroups": true,
+              "defType": "edismax",
+              "q.op": "AND",
+              "qf": "orderId"
+            },
+            "query": "(* *)",
+            "filter": ["docType:ORDER","orderTypeId: SALES_ORDER","orderStatusId:ORDER_COMPLETED","-shipmentMethodTypeId : STOREPICKUP","facilityId: STORE_9"],
+            "facet": {
+              "shipmentMethodTypeIdFacet": {
+                "excludeTags": "shipmentMethodTypeIdFilter",
+                "field": "shipmentMethodTypeId",
+                "mincount": 1,
+                "limit": -1,
+                "sort": "index",
+                "type": "terms",
+                "facet": {
+                  "ordersCount": "unique(orderId)"
+                }
+              }
+            }
+          }
+        }
+        this.store.dispatch("orders/getCompletedOrders", payload)
+    },
+    async loadMoreOrders(event: any) {
+      this.getCompletedOrders(Math.ceil(this.orderLength/process.env.VUE_APP_VIEW_SIZE).toString())
+        .then(()=> {
+          event.target.complete();
+        })
     }
   },
   mounted(){
