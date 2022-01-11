@@ -51,7 +51,9 @@
 
           <div class="order-metadata">
             <ion-label>
-              Next Day Shipping
+              {{ orders.doclist.docs[0].shipmentMethodTypeId }}
+              <!-- TODO: add support to display the last brokered date, currently not getting
+              the date in API response -->
               <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
             </ion-label>
           </div>
