@@ -200,7 +200,7 @@ export default defineComponent({
       });
       return popover.present();
     },
-    async getCompletedOrders(vStart?: any, vRow?: any) {
+    async getCompletedOrders(vRow?: any, vStart?: any) {
       vRow = vRow ? vRow : process.env.VUE_APP_VIEW_SIZE;
       vStart = vStart ? vStart : 0;
       const payload = 
@@ -238,7 +238,7 @@ export default defineComponent({
         this.store.dispatch("orders/getCompletedOrders", payload)
     },
     async loadMoreOrders(event: any) {
-      this.getCompletedOrders(Math.ceil(this.orderLength/process.env.VUE_APP_VIEW_SIZE)*10)
+      this.getCompletedOrders(process.env.VUE_APP_VIEW_SIZE, Math.ceil(this.orderLength/process.env.VUE_APP_VIEW_SIZE)*10)
         .then(()=> {
           event.target.complete();
         })
