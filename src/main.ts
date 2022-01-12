@@ -54,7 +54,7 @@ app.config.globalProperties.$filters = {
     if (featureHierarchy) {
       const feature = featureHierarchy.find((featureItem: any) => featureItem.startsWith(featureKey))
       const featureSplit = feature ? feature.split('/') : [];
-      featureValue = featureSplit[1] ? featureSplit[1] : '';
+      featureValue = featureSplit[2] ? featureSplit[2] : '';
     }
     return featureValue;
   }

@@ -3,7 +3,7 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button slot="start" />
-        <ion-title> {{ orderLength }} {{("of")}} {{ totalOrders }} {{ $t("orders") }}</ion-title>
+        <ion-title> {{ orderLength }} {{ $t("of") }} {{ totalOrders }} {{ $t("orders") }}</ion-title>
         <ion-buttons slot="end">
             <ion-button fill="clear" @click="() => router.push('/upload-csv')">{{ $t("Upload CSV") }}</ion-button>
         </ion-buttons>
@@ -69,13 +69,12 @@
               <ion-label>
                 <p class="overline">{{ item.internalName }}</p>
                 {{ getProduct(item.productId).parentProductName }}
-                <p> {{ $filters.getFeature(getProduct(item.productId).productFeatures, 'Color') }} {{ $filters.getFeature(getProduct(item.productId).productFeatures, 'Size') }} </p>
+                <p> {{ $filters.getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/') }} {{ $filters.getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/') }} </p>
               </ion-label>
             </ion-item>
           </div>
 
           <div class="product-metadata mobile-only">
-            <!-- TODO: Handle for this property -->
             <ion-note>{{ getProductStock(item.productId) }} {{ $t("pieces in stock") }}</ion-note>
           </div>
         </div>
