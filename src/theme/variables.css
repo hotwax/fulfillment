@@ -251,7 +251,7 @@ ion-thumbnail > img {
 .filters {
   display: flex;
   flex-wrap: nowrap;
-  overflow: scroll;
+  overflow-x: scroll;
 }
 
 .filters > ion-item {
