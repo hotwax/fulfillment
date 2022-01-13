@@ -66,7 +66,7 @@
 
     <ion-list>
       <ion-item lines="none">
-        <ion-label>{{ $t('Boxes') }}</ion-label>
+        <ion-note slot="start">{{ $t('Boxes') }}</ion-note>
         <ion-button fill="clear" slot="end">
           {{ $t("Add") }}
           <ion-icon :icon="addCircleOutline"/>
@@ -96,6 +96,7 @@ import {
   IonItem,
   IonLabel,
   IonList,
+  IonNote,
   IonSelect,
   IonSelectOption,
   IonThumbnail,
@@ -117,6 +118,7 @@ export default defineComponent({
     IonItem,
     IonLabel,
     IonList,
+    IonNote,
     IonSelect,
     IonSelectOption,
     IonThumbnail,
