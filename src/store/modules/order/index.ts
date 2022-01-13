@@ -11,8 +11,7 @@ const orderModule: Module <OrderState, RootState> = {
     completedOrders: {
       list: {},
       total: 0
-    },
-    storedOrders: 0
+    }
   },
   actions,
   getters,

@@ -6,9 +6,6 @@ const getters: GetterTree <OrderState, RootState> = {
   getCompletedOrders(state) {
     return state.completedOrders.list ? state.completedOrders.list : {}
   },
-  getcompletedOrderLength(state) {
-    return state.storedOrders
-  },
   getTotalNumberOfOrders(state) {
     return state.completedOrders.total
   }

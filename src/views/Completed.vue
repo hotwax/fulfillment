@@ -3,7 +3,7 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button slot="start" />
-        <ion-title> {{ orderLength }} {{ $t("of") }} {{ totalOrders }} {{ $t("orders") }}</ion-title>
+        <ion-title> {{ Object.getOwnPropertyNames(orders).length }} {{ $t("of") }} {{ totalOrders }} {{ $t("orders") }}</ion-title>
         <ion-buttons slot="end">
             <ion-button fill="clear" @click="() => router.push('/upload-csv')">{{ $t("Upload CSV") }}</ion-button>
         </ion-buttons>
@@ -173,7 +173,6 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       orders: 'orders/getCompletedOrders',
-      orderLength: 'orders/getcompletedOrderLength',
       getProduct: 'product/getProduct',
       currentFacility: 'user/getCurrentFacility',
       getProductStock: 'stock/getProductStock',
@@ -237,7 +236,7 @@ export default defineComponent({
         this.store.dispatch("orders/getCompletedOrders", payload)
     },
     async loadMoreOrders(event: any) {
-      this.getCompletedOrders(process.env.VUE_APP_VIEW_SIZE, Math.ceil(this.orderLength/process.env.VUE_APP_VIEW_SIZE)*10)
+      this.getCompletedOrders(process.env.VUE_APP_VIEW_SIZE, Math.ceil(Object.getOwnPropertyNames(this.orders).length/process.env.VUE_APP_VIEW_SIZE)*10)
         .then(()=> {
           event.target.complete();
         })

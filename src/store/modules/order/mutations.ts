@@ -7,7 +7,6 @@ const mutations: MutationTree <OrderState> = {
     payload.orders.groups.forEach((order: any) => {
       state.completedOrders.list[order.groupValue] = order
     })
-    state.storedOrders += payload.orders.groups.length;
     state.completedOrders.total = payload.orders.ngroups;
   }
 }
