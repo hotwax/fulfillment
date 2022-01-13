@@ -13,8 +13,10 @@
     "baseUrl": ".",
     "types": [
       "webpack-env",
-      "jest"
+      "jest",
+      "pdfmake"
     ],
+    "typeRoots": ["./node_modules/@types"],
     "paths": {
       "@/*": [
         "src/*"
