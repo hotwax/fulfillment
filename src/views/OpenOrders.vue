@@ -1,18 +1,22 @@
 <template>
-  <ion-page :fullscreen="true">
+  <ion-page> 
+    <PicklistSize content-id="picklist-size" />
+    
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>{{ picklistSize > openOrders.total ? openOrders.total : picklistSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
-        <ion-buttons  slot="end">
-        <ion-menu-button>
-          <ion-icon :icon="optionsOutline" />
-        </ion-menu-button>
+        <ion-menu-button menu="start" slot="start" />
+        <ion-title>10 {{("of")}} 26 {{ $t("orders") }}</ion-title>
+     
+        <ion-buttons slot="end">
+          <ion-menu-button menu="end">
+            <ion-icon :icon="optionsOutline" />
+          </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
     
-    <ion-content>
-      <ion-searchbar v-model="queryString" @keyup.enter="fetchOpenOrders()"/>
+    <ion-content :fullscreen="true" id="picklist-size">
+      <ion-searchbar /> 
 
       <div class="filters">
         <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
@@ -116,8 +120,12 @@ import {
 import { defineComponent } from 'vue';
 import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
+<<<<<<< HEAD
 import { mapGetters, useStore } from 'vuex';
 import Image from '@/components/Image.vue'
+=======
+import PicklistSize from '@/components/PicklistSize.vue';
+>>>>>>> 2d2987b3db99ea2348a4fd4f164c43b608935ed5
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -141,7 +149,8 @@ export default defineComponent({
     IonSearchbar,
     IonThumbnail,
     IonTitle,
-    IonToolbar
+    IonToolbar,
+    PicklistSize
   },
   computed: {
     ...mapGetters({
@@ -174,6 +183,7 @@ export default defineComponent({
         component: AssignPickerModal
       });
       return bgjobmodal.present();
+<<<<<<< HEAD
     },
     async fetchOpenOrders (event?: any) {
       const arrays = this.selectedShipmentMethod.toString().replaceAll(",", " OR ")
@@ -222,6 +232,8 @@ export default defineComponent({
     // added a watcher in picklistSize to fetch the open orders whenever the size changes
     picklistSize () {
       this.fetchOpenOrders();
+=======
+>>>>>>> 2d2987b3db99ea2348a4fd4f164c43b608935ed5
     }
   },
   setup() {
