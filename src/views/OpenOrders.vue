@@ -120,12 +120,9 @@ import {
 import { defineComponent } from 'vue';
 import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
-<<<<<<< HEAD
 import { mapGetters, useStore } from 'vuex';
 import Image from '@/components/Image.vue'
-=======
 import PicklistSize from '@/components/PicklistSize.vue';
->>>>>>> 2d2987b3db99ea2348a4fd4f164c43b608935ed5
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -183,7 +180,6 @@ export default defineComponent({
         component: AssignPickerModal
       });
       return bgjobmodal.present();
-<<<<<<< HEAD
     },
     async fetchOpenOrders (event?: any) {
       const arrays = this.selectedShipmentMethod.toString().replaceAll(",", " OR ")
@@ -232,8 +228,6 @@ export default defineComponent({
     // added a watcher in picklistSize to fetch the open orders whenever the size changes
     picklistSize () {
       this.fetchOpenOrders();
-=======
->>>>>>> 2d2987b3db99ea2348a4fd4f164c43b608935ed5
     }
   },
   setup() {

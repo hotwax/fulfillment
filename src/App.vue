@@ -8,11 +8,12 @@
 </template>
 
 <script lang="ts">
-import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
+import { IonApp, IonRouterOutlet, IonSplitPane, menuController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import Menu from '@/components/Menu.vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
+import { mapGetters, useStore } from 'vuex';
 
 export default defineComponent({
   name: 'App',
@@ -21,6 +22,12 @@ export default defineComponent({
     IonRouterOutlet, 
     IonSplitPane,
     Menu
+  },
+  computed: {
+    ...mapGetters({
+      openOrders: 'order/getOpenOrders',
+      currentPicklistSize: 'picklist/getPicklistSize'
+    })
   },
   data() {
     return {
