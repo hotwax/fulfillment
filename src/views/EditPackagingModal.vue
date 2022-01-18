@@ -6,9 +6,9 @@
           <ion-icon :icon="close" />
         </ion-button>
       </ion-buttons>
-      <ion-title>Edit packaging</ion-title>
+      <ion-title>{{ $t("Edit packaging") }}</ion-title>
       <ion-buttons slot="end">
-        <ion-button fill="clear">Save</ion-button>
+        <ion-button fill="clear">{{ $t("Save") }}</ion-button>
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
@@ -26,14 +26,14 @@
         <div class="order-primary-info">
           <ion-label>
             Darooty Magwood
-            <p>Ordered 27th January 2020 9:24 PM EST</p>
+            <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
           </ion-label>
         </div>
 
         <div class="order-metadata">
           <ion-label>
             Next Day Shipping
-            <p>Ordered 28th January 2020 2:32 PM EST</p>
+            <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
           </ion-label>
         </div>
       </div>
@@ -54,10 +54,10 @@
 
         <div class="product-metadata">
           <ion-item lines="none">   
-            <ion-label>Select box</ion-label>
+            <ion-label>{{ $t("Select box") }}</ion-label>
             <ion-select>
-              <ion-select-option>Box A  Type3</ion-select-option>
-              <ion-select-option>Box B  Type2</ion-select-option>
+              <ion-select-option>Box A Type 3</ion-select-option>
+              <ion-select-option>Box B Type 2</ion-select-option>
             </ion-select>
           </ion-item>
         </div>
@@ -65,7 +65,13 @@
     </ion-card> 
 
     <ion-list>
-      <ion-list-header>Boxes</ion-list-header>
+      <ion-item lines="none">
+        <ion-note slot="start">{{ $t('Boxes') }}</ion-note>
+        <ion-button fill="clear" slot="end">
+          {{ $t("Add") }}
+          <ion-icon :icon="addCircleOutline"/>
+        </ion-button>
+      </ion-item>
       <ion-item>
         <ion-label>Box A</ion-label>
         <ion-select value="3">
@@ -90,7 +96,7 @@ import {
   IonItem,
   IonLabel,
   IonList,
-  IonListHeader,
+  IonNote,
   IonSelect,
   IonSelectOption,
   IonThumbnail,
@@ -98,7 +104,7 @@ import {
   IonToolbar,
   modalController } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { close, pricetag } from "ionicons/icons";
+import { addCircleOutline, close, pricetag } from "ionicons/icons";
 export default defineComponent({
   name: "EditPackagingModal",
   components: { 
@@ -112,7 +118,7 @@ export default defineComponent({
     IonItem,
     IonLabel,
     IonList,
-    IonListHeader,
+    IonNote,
     IonSelect,
     IonSelectOption,
     IonThumbnail,
@@ -126,6 +132,7 @@ export default defineComponent({
   },
   setup() {
     return {
+      addCircleOutline,
       close,
       pricetag
     };

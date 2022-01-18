@@ -1,17 +1,21 @@
 <template>
-  <ion-page>
+  <ion-page> 
+    <PicklistSize content-id="picklist-size" />
+    
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>10 of 26 orders</ion-title>
-        <ion-buttons  slot="end">
-        <ion-menu-button>
-          <ion-icon :icon="optionsOutline" />
-        </ion-menu-button>
+        <ion-menu-button menu="start" slot="start" />
+        <ion-title>10 {{("of")}} 26 {{ $t("orders") }}</ion-title>
+     
+        <ion-buttons slot="end">
+          <ion-menu-button menu="end">
+            <ion-icon :icon="optionsOutline" />
+          </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
     
-    <ion-content :fullscreen="true">
+    <ion-content :fullscreen="true" id="picklist-size">
       <ion-searchbar /> 
 
       <div class="filters">
@@ -19,33 +23,33 @@
           <ion-checkbox slot="start"/>
           <ion-label>
             Same Day
-            <p>37 orders, 40 items</p>
+            <p>37 {{ $t("orders") }}, 40 {{ $t("items") }}</p>
           </ion-label>
         </ion-item>
         <ion-item lines="none">
           <ion-checkbox slot="start"/>
           <ion-label>
             Next day
-            <p>37 orders, 40 items</p>
+            <p>37 {{ $t("orders") }}, 40 {{ $t("items") }}</p>
           </ion-label>
         </ion-item>
         <ion-item lines="none">
           <ion-checkbox slot="start"/>
           <ion-label>
             Loyalty
-            <p>37 orders, 40 items</p>
+            <p>37 {{ $t("orders") }}, 40 {{ $t("items") }}</p>
           </ion-label>
         </ion-item>
       </div> 
 
-      <ion-button class="desktop-only" fill="outline" @click="assignPickers">Print Picksheet</ion-button>
+      <ion-button class="desktop-only" fill="outline" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
 
       <ion-card>
         <div class="card-header">
           <div class="order-primary-info">
             <ion-label>
               Darooty Magwood
-              <p>Ordered 27th January 2020 9:24 PM EST</p>
+              <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
             </ion-label>
           </div>
 
@@ -62,7 +66,7 @@
           <div class="order-metadata">
             <ion-label>
               Next Day Shipping
-              <p>Ordered 28th January 2020 2:32 PM EST</p>
+              <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
             </ion-label>
           </div>
         </div>
@@ -81,14 +85,14 @@
             </ion-item>
           </div>
           <div class="product-metadata">
-            <ion-note>49 pieces in stock</ion-note>
+            <ion-note>49 {{ $t("pieces in stock") }}</ion-note>
           </div>
         </div>
 
         <div class="actions">  
           <div class="positive-action"></div>
           <div class="negative-action">
-            <ion-button fill="outline" color="danger">Recycle</ion-button>
+            <ion-button fill="outline" color="danger">{{ $t("Recycle") }}</ion-button>
           </div>
         </div>
       </ion-card>
@@ -127,6 +131,7 @@ import {
 import { defineComponent } from 'vue';
 import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
+import PicklistSize from '@/components/PicklistSize.vue';
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -149,7 +154,8 @@ export default defineComponent({
     IonSearchbar,
     IonThumbnail,
     IonTitle,
-    IonToolbar
+    IonToolbar,
+    PicklistSize
   },
   methods: {
     async assignPickers() {
@@ -157,7 +163,7 @@ export default defineComponent({
         component: AssignPickerModal
       });
       return bgjobmodal.present();
-    },
+    }
   },
   setup() {
     return{

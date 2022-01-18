@@ -33,6 +33,7 @@
 <script lang="ts">
 import { IonApp, IonContent, IonHeader, IonItem, IonLabel, IonList, IonMenu, IonNote, IonRadio, IonRouterOutlet, IonTitle, IonToolbar, alertController } from '@ionic/vue';
 import { defineComponent } from 'vue';
+import Menu from '@/components/Menu.vue';
 import { loadingController } from '@ionic/vue';
 import { useStore } from '@/store'
 import emitter from "@/event-bus"
@@ -40,7 +41,7 @@ import emitter from "@/event-bus"
 export default defineComponent({
   name: 'App',
   components: {
-    IonApp, 
+    IonApp,  
     IonContent, 
     IonHeader, 
     IonItem, 
@@ -60,17 +61,20 @@ export default defineComponent({
   },
   methods: {
     async presentLoader() {
-      this.loader = await loadingController
-        .create({
-          message: this.$t("Click the backdrop to dismiss."),
-          translucent: true,
-          backdropDismiss: true
-        });
-      await this.loader.present();
+      if (!this.loader) {
+        this.loader = await loadingController
+          .create({
+            message: this.$t("Click the backdrop to dismiss."),
+            translucent: true,
+            backdropDismiss: true
+          });
+      }
+      this.loader.present();
     },
     dismissLoader() {
       if (this.loader) {
         this.loader.dismiss();
+        this.loader = null as any;
       }
     },
     async timeZoneDifferentAlert(payload: any) {
@@ -120,3 +124,9 @@ export default defineComponent({
   },
 });
 </script>
+
+<style scoped>
+ion-split-pane {
+  --side-width: 304px;
+}
+</style>
