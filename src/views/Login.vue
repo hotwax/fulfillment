@@ -59,7 +59,7 @@ export default defineComponent({
       instanceUrl: ""
     };
   },
-    computed: {
+  computed: {
     ...mapGetters({
       currentInstanceUrl: 'user/getInstanceUrl'
     })
