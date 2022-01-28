@@ -196,12 +196,11 @@ export default defineComponent({
             "group.field": "orderId",
             "group.limit": 1000,
             "group.ngroups": true,
-            "defType": "edismax",
             "q.op": "AND",
             "qf": "orderId"
           },
-          "query": `(*${this.queryString}*)`,
-          "filter": ["docType:ORDER","orderTypeId: SALES_ORDER","orderStatusId:ORDER_APPROVED","-shipmentMethodTypeId : STOREPICKUP",`shipmentMethodTypeId : (${currentShipmentMethods ? currentShipmentMethods : "*" })`,`facilityId: ${this.currentFacility.facilityId}`],
+          "query": `(*${this.queryString ? this.queryString : ':'}*)`,
+          "filter" : `docType: OISGIR AND quantityNotAvailable: 0 AND orderTypeId: SALES_ORDER AND orderStatusId: ORDER_APPROVED AND isPicked: N AND -shipmentMethodTypeId: STOREPICKUP AND -fulfillmentStatus: Cancelled AND shipmentMethodTypeId: (${currentShipmentMethods ? currentShipmentMethods : "*" }) AND facilityId: ${this.currentFacility.facilityId}`,
           "facet": {
             "shipmentMethodTypeIdFacet":{
               "excludeTags":"shipmentMethodTypeIdFilter",
