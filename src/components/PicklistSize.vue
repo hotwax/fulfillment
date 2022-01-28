@@ -12,7 +12,8 @@
           <ion-item v-for="count in preparePicklistSize()" :key="count">
             <ion-radio slot="start" :value="count * 5"/>
             <ion-label>{{ (count * 5) >= openOrders.total ? openOrders.total : count * 5}} {{ $t('orders') }}</ion-label>
-            <ion-note slot="end">10 items</ion-note>
+            <!-- TODO: add support to display the order items count -->
+            <!-- <ion-note slot="end">10 items</ion-note> -->
           </ion-item>
         </ion-radio-group>
       </ion-list>
@@ -28,7 +29,6 @@ import {
   IonLabel,
   IonList,
   IonMenu,
-  IonNote,
   IonRadio,
   IonRadioGroup,
   IonTitle,
@@ -47,7 +47,6 @@ export default defineComponent({
     IonLabel,
     IonList,
     IonMenu,
-    IonNote,
     IonRadio,
     IonRadioGroup,
     IonTitle,
