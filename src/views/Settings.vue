@@ -55,8 +55,8 @@
       </ion-card>
 
       <ion-item>
-        <ion-label>Asia / Cullcutta</ion-label>
-        <ion-button fill="outline">{{ $t("Change") }}</ion-button>
+        <ion-label> {{ userProfile && userProfile.userTimeZone ? userProfile.userTimeZone : '-' }} </ion-label>
+        <ion-button @click="changeTimeZone()" fill="outline" color="dark">{{ $t("Change") }}</ion-button>
       </ion-item>
       <ion-item>
         <ion-label>{{ userProfile !== null ? userProfile.partyName : '' }}</ion-label>
@@ -82,12 +82,14 @@ import {
   IonSelectOption, 
   IonTitle, 
   IonToolbar,
-  popoverController } from '@ionic/vue';
+  popoverController,
+  modalController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { ellipsisVerticalOutline } from 'ionicons/icons'
 import Popover from '@/views/RecyclePopover.vue'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+import TimeZoneModal from '@/views/timezone-modal.vue'
 
 export default defineComponent({
   name: 'Settings',
@@ -123,21 +125,23 @@ export default defineComponent({
       });
       return popover.present();
     },
+    setFacility (facility: any) {
+      if (this.userProfile)
+        this.store.dispatch('user/setFacility', {
+          'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
+        });
+    },
     logout () {
       this.store.dispatch('user/logout').then(() => {
-        this.store.dispatch('picklist/clearPicklist')
         this.router.push('/login');
       })
     },
-    setFacility (facility: any) {
-      if (this.userProfile){
-        this.userProfile.facilities.map((fac: any) => {
-          if (fac.facilityId == facility['detail'].value) {
-            this.store.dispatch('user/setFacility', {'facility': fac});
-          }
-        })
-      }
-    }
+    async changeTimeZone() {
+      const timeZoneModal = await modalController.create({
+        component: TimeZoneModal,
+      });
+      return timeZoneModal.present();
+    },
   },
   setup() {
     const store = useStore();
