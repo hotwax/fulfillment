@@ -3,7 +3,7 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button slot="start" />
-        <ion-title> {{ Object.getOwnPropertyNames(orders).length }} {{ $t("of") }} {{ totalOrders }} {{ $t("orders") }}</ion-title>
+        <ion-title>{{ Object.getOwnPropertyNames(orders).length }} {{ $t("of") }} {{ totalOrders }} {{ $t("orders") }}</ion-title>
         <ion-buttons slot="end">
             <ion-button fill="clear" @click="() => router.push('/upload-csv')">{{ $t("Upload CSV") }}</ion-button>
         </ion-buttons>
@@ -201,39 +201,38 @@ export default defineComponent({
     async getCompletedOrders(vRow?: any, vStart?: any) {
       vRow = vRow ? vRow : process.env.VUE_APP_VIEW_SIZE;
       vStart = vStart ? vStart : 0;
-      const payload = 
-        {
-          "json": {
-            "params": {
-              "start": vStart,
-              "rows": vRow,
-              "sort": "reservedDatetime desc",
-              "group": true,
-              "group.field": "orderId",
-              "group.limit": 1000,
-              "group.ngroups": true,
-              "defType": "edismax",
-              "q.op": "AND",
-              "qf": "orderId"
-            },
-            "query": "(* *)",
-            "filter": ["docType:ORDER","orderTypeId: SALES_ORDER","orderStatusId:ORDER_COMPLETED","-shipmentMethodTypeId : STOREPICKUP",`facilityId: ${this.currentFacility.facilityId}`],
-            "facet": {
-              "shipmentMethodTypeIdFacet": {
-                "excludeTags": "shipmentMethodTypeIdFilter",
-                "field": "shipmentMethodTypeId",
-                "mincount": 1,
-                "limit": -1,
-                "sort": "index",
-                "type": "terms",
-                "facet": {
-                  "ordersCount": "unique(orderId)"
-                }
+      const payload = {
+        "json": {
+          "params": {
+            "start": vStart,
+            "rows": vRow,
+            "sort": "reservedDatetime desc",
+            "group": true,
+            "group.field": "orderId",
+            "group.limit": 1000,
+            "group.ngroups": true,
+            "defType": "edismax",
+            "q.op": "AND",
+            "qf": "orderId"
+          },
+          "query": "(* *)",
+          "filter": ["docType:ORDER","orderTypeId: SALES_ORDER","orderStatusId:ORDER_COMPLETED","-shipmentMethodTypeId : STOREPICKUP",`facilityId: ${this.currentFacility.facilityId}`],
+          "facet": {
+            "shipmentMethodTypeIdFacet": {
+              "excludeTags": "shipmentMethodTypeIdFilter",
+              "field": "shipmentMethodTypeId",
+              "mincount": 1,
+              "limit": -1,
+              "sort": "index",
+              "type": "terms",
+              "facet": {
+                "ordersCount": "unique(orderId)"
               }
             }
           }
         }
-        this.store.dispatch("orders/getCompletedOrders", payload)
+      }
+      this.store.dispatch("orders/getCompletedOrders", payload)
     },
     async loadMoreOrders(event: any) {
       this.getCompletedOrders(process.env.VUE_APP_VIEW_SIZE, Math.ceil(Object.getOwnPropertyNames(this.orders).length/process.env.VUE_APP_VIEW_SIZE)*10)
