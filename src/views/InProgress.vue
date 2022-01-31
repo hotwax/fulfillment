@@ -142,6 +142,7 @@ import { IonButton, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabBut
 import { defineComponent, ref } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
+import { mapGetters, useStore } from 'vuex';
 
 export default defineComponent({
   name: 'InProgress',
@@ -168,6 +169,12 @@ export default defineComponent({
     IonThumbnail,   
     IonTitle,
     IonToolbar
+  },
+  computed: {
+    ...mapGetters({
+      currentFacility: 'user/getCurrentFacility',
+      openOrders: 'order/getInProgressOrders'
+    })
   },
   methods: {
     segmentChanged(ev: CustomEvent) {
@@ -212,9 +219,25 @@ export default defineComponent({
           buttons: [this.$t("Cancel"), this.$t("Report")],
         });
       return alert.present();
+    },
+    async fetchInProgressOrders (vSize?: any, vIndex?: any) {
+      const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE
+      const viewIndex = vIndex ? vIndex : 0
+      const sortBy = ''
+      const payload = {     
+        "json": {        
+        "query": "*:*",         
+        "filter" : "docType: OISGIR AND facilityTypeId : RETAIL_STORE AND picklistItemStatusId: PICKITEM_PENDING AND -fulfillmentStatus: Rejected AND -shipmentMethodTypeId : STOREPICKUP"        
+      } 
+} 
+      this.store.dispatch('order/fetchInProgressOrders', payload).then((resp: any) => console.log(resp)).catch((err: any) => console.log(err))
     }
   },
+  mounted(){
+    this.fetchInProgressOrders();
+  },
   setup() {
+      const store = useStore();
       const segment = ref("pack");
 
       return {
@@ -224,6 +247,7 @@ export default defineComponent({
           checkmarkDoneOutline,
           pricetagOutline,
           segment,
+          store
       }
   }
 });
