@@ -60,7 +60,7 @@ export default defineComponent({
   },
   data () {
     return {
-      size: 0
+      size: 10
     }
   },
   methods: {
