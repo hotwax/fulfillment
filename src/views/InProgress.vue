@@ -1,13 +1,13 @@
 <template>
-  <ion-page>
+  <ion-page :fullscreen="true">
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button slot="start" />
-        <ion-title>26 {{ $t("orders" )}} | 30 {{ $t("items") }}</ion-title>
+        <ion-title>{{ inProgressOrders.total }} {{ $t("orders" )}} | 30 {{ $t("items") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     
-    <ion-content :fullscreen="true">
+    <ion-content>
       <ion-searchbar />  
 
       <div class="filters">
@@ -31,19 +31,20 @@
 
       <ion-button expand="block" class="desktop-only" fill="outline" @click="packOrdersAlert">{{ $t("Pack orders") }}</ion-button>
 
-      <ion-card>
+      <ion-card v-for="(order, index) in inProgressOrders.list" :key="index">
+        <p>{{order}}</p>
         <div class="card-header">
           <div class="order-primary-info">
             <ion-label>
-              Darooty Magwood
-              <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
+              {{ order.customerName }}
+              <p>Ordered {{ $filters.formatUtcDate(order.orderDate, 'YYYY-MM-DDTHH:mm:ssZ', 'Do MMMM YYYY LT z') }}</p>
             </ion-label>
           </div>
 
           <div class="order-tags">
             <ion-chip outline>
               <ion-icon :icon="pricetagOutline" />
-              <ion-label>NN10584</ion-label>
+              <ion-label>{{ order.orderId }}</ion-label>
             </ion-chip>
           </div>
 
@@ -64,12 +65,12 @@
           <div class="product-info">
             <ion-item lines="none">
               <ion-thumbnail>
-                <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
+                <Image :src="getProduct(order.productId).mainImageUrl" />
               </ion-thumbnail>
               <ion-label>
-                <p class="overline">WJ06-XL-PURPLE</p>
-                Juno Jacket
-                <p>Blue XL</p>
+                <p class="overline">{{ order.productSku }}</p>
+                {{ order.productName }}
+                <p>{{$filters.getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{$filters.getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
               </ion-label>
             </ion-item>
           </div>
@@ -143,10 +144,12 @@ import { defineComponent, ref } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
+import Image from '@/components/Image.vue'
 
 export default defineComponent({
   name: 'InProgress',
   components: {
+    Image,
     IonButton,  
     IonCard,
     IonCheckbox,
@@ -173,7 +176,8 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       currentFacility: 'user/getCurrentFacility',
-      openOrders: 'order/getInProgressOrders'
+      inProgressOrders: 'order/getInProgressOrders',
+      getProduct: 'product/getProduct'
     })
   },
   methods: {
