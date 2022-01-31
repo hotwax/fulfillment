@@ -86,6 +86,7 @@ const actions: ActionTree<ProductState, RootState> = {
     productIds = [...productIds]
     if (productIds.length) {
       dispatch('fetchProducts', { productIds })
+      this.dispatch('stock/addProducts', { productIds })
     }
   }
 }
