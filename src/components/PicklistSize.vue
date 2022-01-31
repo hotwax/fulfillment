@@ -8,31 +8,11 @@
 
     <ion-content>
       <ion-list>
-        <ion-radio-group value="a">
-          <ion-item>
-            <ion-radio value="a" slot="start" />  
-            <ion-label>10 {{ $t("orders") }}</ion-label>
-            <ion-note slot="end">10 {{ $t("items") }}</ion-note>
-          </ion-item>
-          <ion-item>
-            <ion-radio value="b" slot="start" />  
-            <ion-label>15 {{ $t("orders") }}</ion-label>
-            <ion-note slot="end">17 {{ $t("items") }}</ion-note>
-          </ion-item>
-          <ion-item>
-            <ion-radio value="c" slot="start" />  
-            <ion-label>20 {{ $t("orders") }}</ion-label>
-            <ion-note slot="end">22 {{ $t("items") }}</ion-note>
-          </ion-item>
-          <ion-item>
-            <ion-radio value="d" slot="start" />  
-            <ion-label>25 {{ $t("orders") }}</ion-label>
-            <ion-note slot="end">28 {{ $t("items") }}</ion-note>
-          </ion-item>
-          <ion-item>
-            <ion-radio value="e" slot="start" />  
-            <ion-label>30 {{ $t("orders") }}</ion-label>
-            <ion-note slot="end">38 {{ $t("items") }}</ion-note>
+        <ion-radio-group v-model="size" @ionChange="setPicklistSize()">
+          <ion-item v-for="count in preparePicklistSize()" :key="count">
+            <ion-radio slot="start" :value="count * 5"/>
+            <ion-label>{{ (count * 5) >= openOrders.total ? openOrders.total : count * 5}} {{ $t('orders') }}</ion-label>
+            <ion-note slot="end">10 items</ion-note>
           </ion-item>
         </ion-radio-group>
       </ion-list>
@@ -52,9 +32,11 @@ import {
   IonRadio,
   IonRadioGroup,
   IonTitle,
-  IonToolbar
+  IonToolbar,
+  menuController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
+import { mapGetters, useStore } from 'vuex';
 
 export default defineComponent({
   name: "PicklistMenu",
@@ -70,7 +52,36 @@ export default defineComponent({
     IonRadioGroup,
     IonTitle,
     IonToolbar
+  },  
+  computed: {
+    ...mapGetters({
+      openOrders: 'order/getOpenOrders',
+      currentPicklistSize: 'picklist/getPicklistSize'
+    })
   },
+  data () {
+    return {
+      size: 0
+    }
+  },
+  methods: {
+    preparePicklistSize () {
+      const size = Math.ceil(this.openOrders.total / 5)
+      return size;
+    },
+    setPicklistSize () {
+      this.store.dispatch('picklist/setPicklistSize', this.size)
+      // closing the menu after selecting any picklist size
+      menuController.close()
+    }
+  },
+  setup () {
+    const store = useStore();
+
+    return {
+      store
+    }
+  }
 });
 </script>
 

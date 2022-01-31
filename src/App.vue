@@ -8,18 +8,18 @@
 </template>
 
 <script lang="ts">
-import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
+import { IonApp, IonRouterOutlet } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import Menu from '@/components/Menu.vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
+import { useStore } from 'vuex';
 
 export default defineComponent({
   name: 'App',
   components: {
-    IonApp,  
-    IonRouterOutlet, 
-    IonSplitPane,
+    IonApp,
+    IonRouterOutlet,
     Menu
   },
   data() {
@@ -60,6 +60,13 @@ export default defineComponent({
     emitter.off('presentLoader', this.presentLoader);
     emitter.off('dismissLoader', this.dismissLoader);
   },
+  setup () {
+    const store = useStore();
+
+    return {
+      store
+    }
+  }
 });
 </script>
 

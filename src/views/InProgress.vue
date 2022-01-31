@@ -134,14 +134,19 @@
         </ion-fab-button>
       </ion-fab>
     </ion-content>
+    <PackingSlipPdf v-show="false" />
   </ion-page>
 </template>
 
-<script lang="ts">
+<script>
 import { IonButton, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonItem, IonIcon, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonThumbnail, IonTitle, IonToolbar, alertController, popoverController } from '@ionic/vue';
 import { defineComponent, ref } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
+import PackingSlipPdf from './PackingSlipPdf.vue';
+import pdfMake from 'pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
+import htmlToPdfmake from 'html-to-pdfmake';
 
 export default defineComponent({
   name: 'InProgress',
@@ -167,13 +172,14 @@ export default defineComponent({
     IonSelectOption,
     IonThumbnail,   
     IonTitle,
-    IonToolbar
+    IonToolbar,
+    PackingSlipPdf
   },
   methods: {
-    segmentChanged(ev: CustomEvent) {
+    segmentChanged(ev) {
       this.segment = ev.detail.value;
     },
-    async packagingPopover(ev: Event) {
+    async packagingPopover(ev) {
       const popover = await popoverController.create({
         component: Popover,
         event: ev,
@@ -193,14 +199,30 @@ export default defineComponent({
               label: this.$t("Shipping labels"),
               value: 'value1',
               checked: true,
-              },
+              
+            },
             {
               type: 'checkbox',
               label: this.$t("Packing slip"),
               value: 'value2',
             },
           ],   
-          buttons: [this.$t("Cancel"), this.$t("Pack")],
+          buttons: [
+            {
+              text: this.$t("Cancel"),
+              handler: () => {
+                console.log('Confirm Cancel')
+              }
+            },
+            {
+              text: this.$t("Pack"),
+              handler: (event) => {
+                if(event.includes('value2')){
+                  this.generatePackingSlip();
+                }
+              }
+            }
+          ],
         });
       return alert.present();
     },
@@ -212,6 +234,32 @@ export default defineComponent({
           buttons: [this.$t("Cancel"), this.$t("Report")],
         });
       return alert.present();
+    },
+    generatePackingSlip(){
+      console.log("Packing slip will be generated")
+      pdfMake.vfs = pdfFonts.pdfMake.vfs;
+      const pdfDocument =  document.getElementById('PDF');
+      let html;
+      if(pdfDocument && pdfDocument.innerHTML !== null){
+        html =  htmlToPdfmake(pdfDocument.innerHTML); 
+      }
+      const docDefinition = {
+        content: [html],
+        info: {
+          title: 'PackingSlip'
+        },
+        styles:{
+         'yellow':{
+            background:'yellow' // it will add a yellow background to all elements with class yellow
+          },
+          'one':{
+            background:'blue',
+            color:'pink'
+          }   
+        } 
+      }
+      console.log(pdfMake)
+      pdfMake.createPdf(docDefinition).open();
     }
   },
   setup() {
