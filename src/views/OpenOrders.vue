@@ -1,11 +1,11 @@
 <template>
-  <ion-page> 
+  <ion-page :fullscreen="true">
     <PicklistSize content-id="picklist-size" />
     
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button menu="start" slot="start" />
-        <ion-title>10 {{("of")}} 26 {{ $t("orders") }}</ion-title>
+        <ion-title>{{ picklistSize > openOrders.total ? openOrders.total : picklistSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
      
         <ion-buttons slot="end">
           <ion-menu-button menu="end">
@@ -15,48 +15,34 @@
       </ion-toolbar>
     </ion-header>
     
-    <ion-content :fullscreen="true" id="picklist-size">
-      <ion-searchbar /> 
+    <ion-content id="picklist-size">
+      <ion-searchbar v-model="queryString" @keyup.enter="fetchOpenOrders()"/>
 
       <div class="filters">
-        <ion-item lines="none">
-          <ion-checkbox slot="start"/>
+        <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
+          <ion-checkbox slot="start" @ionChange="updateShipmentMethodArray(method.val)"/>
           <ion-label>
-            Same Day
-            <p>37 {{ $t("orders") }}, 40 {{ $t("items") }}</p>
+            {{ method.val }}
+            <p>{{ method.ordersCount }} {{ $t("orders") }}, {{ method.count }} {{ $t("items") }}</p>
           </ion-label>
         </ion-item>
-        <ion-item lines="none">
-          <ion-checkbox slot="start"/>
-          <ion-label>
-            Next day
-            <p>37 {{ $t("orders") }}, 40 {{ $t("items") }}</p>
-          </ion-label>
-        </ion-item>
-        <ion-item lines="none">
-          <ion-checkbox slot="start"/>
-          <ion-label>
-            Loyalty
-            <p>37 {{ $t("orders") }}, 40 {{ $t("items") }}</p>
-          </ion-label>
-        </ion-item>
-      </div> 
+      </div>
 
       <ion-button class="desktop-only" fill="outline" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
 
-      <ion-card>
+      <ion-card v-for="(orders, index) in openOrders.list" :key="index">
         <div class="card-header">
           <div class="order-primary-info">
             <ion-label>
-              Darooty Magwood
-              <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
+              {{ orders.doclist.docs[0].customerName }}
+              <p>{{ $t("Ordered") }} {{ $filters.formatUtcDate(orders.doclist.docs[0].orderDate, 'YYYY-MM-DDTHH:mm:ssZ', 'Do MMMM YYYY LT z') }}</p>
             </ion-label>
           </div>
 
           <div class="order-tags">
             <ion-chip outline>
               <ion-icon :icon="pricetagOutline" />
-              <ion-label>NN10584</ion-label>
+              <ion-label>{{ orders.doclist.docs[0].orderId }}</ion-label>
             </ion-chip>
             <ion-button fill="clear" class="mobile-only" color="danger">
               <ion-icon slot="icon-only" :icon="refreshCircleOutline" />
@@ -65,30 +51,35 @@
 
           <div class="order-metadata">
             <ion-label>
-              Next Day Shipping
-              <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
+              {{ orders.doclist.docs[0].shipmentMethodTypeId }}
+              <!-- TODO: add support to display the last brokered date, currently not getting
+              the date in API response -->
+              <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
             </ion-label>
           </div>
         </div>
 
-        <div class="order-item">
-          <div class="product-info">
-            <ion-item lines="none">
-              <ion-thumbnail>
-                <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
-              </ion-thumbnail>
-              <ion-label>
-                <p class="overline">WJ06-XL-PURPLE</p>
-                Juno Jacket
-                <p>Blue XL</p>
-              </ion-label>
-            </ion-item>
-          </div>
-          <div class="product-metadata">
-            <ion-note>49 {{ $t("pieces in stock") }}</ion-note>
+        <div v-for="order in orders.doclist.docs" :key="order">
+          <div class="order-item">
+            <div class="product-info">
+              <ion-item lines="none">
+                <ion-thumbnail>
+                  <Image :src="getProduct(order.productId).mainImageUrl" />
+                </ion-thumbnail>
+                <ion-label>
+                  <p class="overline">{{ order.productSku }}</p>
+                  {{ order.productName }}
+                  <p>{{$filters.getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{$filters.getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
+                </ion-label>
+              </ion-item>
+            </div>
+            <div class="product-metadata">
+              <ion-note>{{ getProductStock(order.productId) }} {{ $t('pieces in stock') }}</ion-note>
+            </div>
           </div>
         </div>
 
+        <!-- TODO: add functionality to the buttons-->
         <div class="actions">  
           <div class="positive-action"></div>
           <div class="negative-action">
@@ -131,11 +122,14 @@ import {
 import { defineComponent } from 'vue';
 import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
+import { mapGetters, useStore } from 'vuex';
+import Image from '@/components/Image.vue'
 import PicklistSize from '@/components/PicklistSize.vue';
 
 export default defineComponent({
   name: 'OpenOrders',
   components: {
+    Image,
     IonButton,
     IonButtons,  
     IonCard,
@@ -157,20 +151,97 @@ export default defineComponent({
     IonToolbar,
     PicklistSize
   },
+  computed: {
+    ...mapGetters({
+      currentFacility: 'user/getCurrentFacility',
+      openOrders: 'order/getOpenOrders',
+      getProduct: 'product/getProduct',
+      picklistSize: 'picklist/getPicklistSize',
+      shipmentMethods: 'order/getShipmentMethods',
+      getProductStock: 'stock/getProductStock'
+    })
+  },
+  data () {
+    return {
+      selectedShipmentMethod: [] as Array<string>,
+      queryString: ''
+    }
+  },
   methods: {
+    updateShipmentMethodArray (method: string) {
+      const index = this.selectedShipmentMethod.indexOf(method)
+      if (index < 0) {
+        this.selectedShipmentMethod.push(method)
+      } else {
+        this.selectedShipmentMethod.splice(index, 1)
+      }
+      this.fetchOpenOrders();
+    },
     async assignPickers() {
       const bgjobmodal = await modalController.create({
         component: AssignPickerModal
       });
       return bgjobmodal.present();
+    },
+    async fetchOpenOrders () {
+      const currentShipmentMethods = this.selectedShipmentMethod.toString().replaceAll(",", " OR ")
+      const viewSize = this.picklistSize
+      const sortBy = ''
+      const payload = {
+        "json": {
+          "params": {
+            "rows": `${viewSize}`,
+            "sort": `${sortBy ? sortBy:'reservedDatetime desc'}`,
+            "group": true,
+            "group.field": "orderId",
+            "group.limit": 1000,
+            "group.ngroups": true,
+            "defType": "edismax",
+            "q.op": "AND",
+            "qf": "orderId"
+          },
+          "query": `(*${this.queryString}*) OR "${this.queryString}"^100`,
+          "filter" : ["docType: OISGIR", "quantityNotAvailable: 0", "orderTypeId: SALES_ORDER", "orderStatusId: ORDER_APPROVED", "isPicked: N", "-shipmentMethodTypeId: STOREPICKUP", "-fulfillmentStatus: Cancelled", `shipmentMethodTypeId: (${currentShipmentMethods ? currentShipmentMethods : '*' })`, `facilityId: ${this.currentFacility.facilityId}`],
+          "facet": {
+            "shipmentMethodTypeIdFacet":{
+              "excludeTags":"shipmentMethodTypeIdFilter",
+              "field":"shipmentMethodTypeId",
+              "mincount":1,
+              "limit":-1,
+              "sort":"index",
+              "type":"terms",
+              "facet": {
+                "ordersCount": "unique(orderId)"
+              }
+            }
+          }
+        }
+      }
+      this.store.dispatch('order/fetchOpenOrders', payload).catch(err => console.log(err))
+    }
+  },
+  mounted () {
+    this.fetchOpenOrders();
+  },
+  watch: {
+    // added a watcher in picklistSize to fetch the open orders whenever the size changes
+    // TODO: find a better way to get open orders when changing the picklistSize
+    // One way is to call the fetchOpenOrders action from the picklist component when picklist
+    // changed, but in this case we need to pass some data to picklist component using props
+    // Another way is to emit an event when picklist size change and catch that even in here.
+    picklistSize () {
+      this.fetchOpenOrders();
     }
   },
   setup() {
+    const store = useStore();
+
     return{
       optionsOutline,
       pricetagOutline,
       printOutline,
-      refreshCircleOutline
+      refreshCircleOutline,
+      store
     }
   }
 });
