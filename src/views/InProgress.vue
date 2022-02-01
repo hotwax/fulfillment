@@ -45,12 +45,12 @@
             </ion-chip>
           </div>
 
-          <!-- <div class="order-metadata">
-            <ion-label>
+          <div class="order-metadata">
+            <!-- <ion-label>
               Next Day Shipping
               <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
-            </ion-label>
-          </div> -->
+            </ion-label> -->
+          </div>
         </div>
 
         <div class="box-type desktop-only">
@@ -58,8 +58,7 @@
           <ion-chip> Box A | Type 3</ion-chip>  
         </div>
 
-        <div v-for="order in orders.doclist.docs" :key="order">
-          <div class="order-item">
+        <div v-for="order in orders.doclist.docs" :key="order" class="order-item">
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail>
@@ -72,7 +71,6 @@
                 </ion-label>
               </ion-item>
             </div>
-          </div> 
 
           <div class="desktop-only">
               <ion-segment @ionChange="segmentChanged($event)" v-model="segment">
