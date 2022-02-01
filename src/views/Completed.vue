@@ -216,7 +216,7 @@ export default defineComponent({
             "qf": "orderId"
           },
           "query": "(* *)",
-          "filter": ["docType:ORDER","orderTypeId: SALES_ORDER","orderStatusId:ORDER_COMPLETED","-shipmentMethodTypeId : STOREPICKUP",`facilityId: ${this.currentFacility.facilityId}`],
+          "filter": ["docType:OISGIR", "picklistItemStatusId: (PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))", "-shipmentMethodTypeId : STOREPICKUP", `facilityId: ${this.currentFacility.facilityId}`],
           "facet": {
             "shipmentMethodTypeIdFacet": {
               "excludeTags": "shipmentMethodTypeIdFilter",
@@ -241,7 +241,7 @@ export default defineComponent({
         })
     }
   },
-  mounted(){
+  mounted() {
     this.getCompletedOrders();
   },
   setup() {

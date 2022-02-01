@@ -49,11 +49,11 @@ const actions: ActionTree<ProductState, RootState> = {
   async fetchProductDetails({ commit, state }, { productIds }) {
     const cachedProductIds = Object.keys(state.cached);
     const productIdFilter = productIds.reduce((filter: string, productId: any) => {
-      if(filter !== '') filter += ' OR '
       if(cachedProductIds.includes(productId)) {
         return filter;
       }
       else {
+        if(filter !== '') filter += ' OR '
         return filter += productId;
       }
     }, '');

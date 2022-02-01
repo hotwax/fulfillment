@@ -16,7 +16,7 @@ const actions: ActionTree <OrderState, RootState> = {
         if (!orders.groups.length) showToast(translate("No more Orders found"));
         else {
           this.dispatch('product/getProductInformations', { orders })
-          commit(types.ORDER_COMPLETED_UPDATED, { orders })
+          commit(types.ORDER_COMPLETE_UPDATED, { orders })
         }
       } else {
         showToast(translate("Orders not found"))
