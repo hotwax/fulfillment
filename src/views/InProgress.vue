@@ -45,12 +45,12 @@
             </ion-chip>
           </div>
 
-          <div class="order-metadata">
+          <!-- <div class="order-metadata">
             <ion-label>
               Next Day Shipping
               <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
             </ion-label>
-          </div>
+          </div> -->
         </div>
 
         <div class="box-type desktop-only">
@@ -62,7 +62,6 @@
           <div class="order-item">
             <div class="product-info">
               <ion-item lines="none">
-                <p>{{ order }}</p>  
                 <ion-thumbnail>
                   <Image :src="getProduct(order.productId).mainImageUrl" />
                 </ion-thumbnail>
