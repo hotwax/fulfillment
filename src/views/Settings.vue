@@ -125,16 +125,17 @@ export default defineComponent({
       });
       return popover.present();
     },
+    logout () {
+      this.store.dispatch('user/logout').then(() => {
+        this.store.dispatch('picklist/clearPicklist')
+        this.router.push('/login');
+      })
+    },
     setFacility (facility: any) {
       if (this.userProfile)
         this.store.dispatch('user/setFacility', {
           'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
         });
-    },
-    logout () {
-      this.store.dispatch('user/logout').then(() => {
-        this.router.push('/login');
-      })
     },
     async changeTimeZone() {
       const timeZoneModal = await modalController.create({
