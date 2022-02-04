@@ -15,6 +15,12 @@
         </ion-select>
       </ion-item>
 
+      <ion-item>
+        <ion-icon :icon="codeWorkingOutline" slot="start"/>
+        <ion-label>{{ $t("OMS") }}</ion-label>
+        <p slot="end">{{ instanceUrl }}</p>
+      </ion-item>
+
       <ion-card>
         <ion-item lines="none">
           <ion-label class="text-wrap">{{ $t("Documents to print when packing orders") }}</ion-label>
@@ -84,7 +90,7 @@ import {
   IonToolbar,
   popoverController } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { ellipsisVerticalOutline } from 'ionicons/icons'
+import { codeWorkingOutline, ellipsisVerticalOutline } from 'ionicons/icons'
 import Popover from '@/views/RecyclePopover.vue'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
@@ -111,6 +117,7 @@ export default defineComponent({
     ...mapGetters({
       userProfile: 'user/getUserProfile',
       currentFacility: 'user/getCurrentFacility',
+      instanceUrl: 'user/getInstanceUrl',
       userPreference: 'user/getUserPreferences'
     })
   },
@@ -151,6 +158,7 @@ export default defineComponent({
     const router = useRouter();
 
     return {
+      codeWorkingOutline,
       ellipsisVerticalOutline,
       router,
       store
