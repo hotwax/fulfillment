@@ -8,11 +8,12 @@
 </template>
 
 <script lang="ts">
-import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
+import { IonApp, IonRouterOutlet, IonSplitPane, menuController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import Menu from '@/components/Menu.vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
+import { mapGetters, useStore } from 'vuex';
 
 export default defineComponent({
   name: 'App',
@@ -22,9 +23,16 @@ export default defineComponent({
     IonSplitPane,
     Menu
   },
+  computed: {
+    ...mapGetters({
+      openOrders: 'order/getOpenOrders',
+      currentPicklistSize: 'picklist/getPicklistSize'
+    })
+  },
   data() {
     return {
-      loader: null as any
+      loader: null as any,
+      size: 0
     }
   },
   methods: {
@@ -44,6 +52,15 @@ export default defineComponent({
         this.loader.dismiss();
         this.loader = null as any;
       }
+    },
+    preparePicklistSize () {
+      const size = Math.ceil(this.openOrders.total / 5)
+      return size;
+    },
+    setPicklistSize () {
+      this.store.dispatch('picklist/setPicklistSize', this.size)
+      // closing the menu after selecting any picklist size
+      menuController.close()
     }
   },
   async mounted() {
@@ -60,6 +77,13 @@ export default defineComponent({
     emitter.off('presentLoader', this.presentLoader);
     emitter.off('dismissLoader', this.dismissLoader);
   },
+  setup () {
+    const store = useStore();
+
+    return {
+      store
+    }
+  }
 });
 </script>
 
