@@ -142,6 +142,7 @@ import { IonButton, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabBut
 import { defineComponent, ref } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
+import { mapGetters, useStore } from 'vuex';
 
 export default defineComponent({
   name: 'InProgress',
@@ -169,6 +170,11 @@ export default defineComponent({
     IonTitle,
     IonToolbar
   },
+  computed: {
+    ...mapGetters({
+      userPreference: 'user/getUserPreferences'
+    })
+  },
   methods: {
     segmentChanged(ev: CustomEvent) {
       this.segment = ev.detail.value;
@@ -191,13 +197,14 @@ export default defineComponent({
             {
               type: 'checkbox',
               label: this.$t("Shipping labels"),
-              value: 'value1',
-              checked: true,
-              },
+              value: 'shippingLabel',
+              checked: this.userPreference.shippingLabel
+            },
             {
               type: 'checkbox',
               label: this.$t("Packing slip"),
-              value: 'value2',
+              value: 'packingSlip',
+              checked: this.userPreference.packingSlip
             },
           ],   
           buttons: [this.$t("Cancel"), this.$t("Pack")],
@@ -216,6 +223,7 @@ export default defineComponent({
   },
   setup() {
       const segment = ref("pack");
+      const store = useStore();
 
       return {
           addOutline,
@@ -224,6 +232,7 @@ export default defineComponent({
           checkmarkDoneOutline,
           pricetagOutline,
           segment,
+          store
       }
   }
 });
