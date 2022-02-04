@@ -11,7 +11,11 @@ const userModule: Module<UserState, RootState> = {
       token: '',
       current: null,
       currentFacility: {},
-      instanceUrl: ''
+      instanceUrl: '',
+      userPreferences: {
+        shippingLabel: false,
+        packingSlip: true
+      }
     },
     getters,
     actions,
