@@ -3,7 +3,7 @@
     <ion-content :fullscreen="true">
       <div class="flex">
         <form class="login-container" @keyup.enter="login(form)" @submit.prevent="login(form)">
-          <img src="../assets/images/hc.png"/>
+          <Logo />
 
           <ion-item lines="full">
             <ion-label position="fixed">{{ $t("OMS") }}</ion-label>
@@ -11,11 +11,11 @@
           </ion-item>
           <ion-item lines="full">
             <ion-label position="fixed">{{ $t("Username") }}</ion-label>
-            <ion-input name="username" v-model="username" id="username"  type="text" required></ion-input>
+            <ion-input name="username" v-model="username" id="username"  type="text" required />
           </ion-item>
           <ion-item lines="none">
             <ion-label position="fixed">{{ $t("Password") }}</ion-label>
-            <ion-input name="password" v-model="password" id="password" type="password" required></ion-input>
+            <ion-input name="password" v-model="password" id="password" type="password" required />
           </ion-item>
 
           <div class="ion-padding">
@@ -39,6 +39,7 @@ import { defineComponent } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "@/store";
 import { mapGetters } from 'vuex';
+import Logo from '@/components/Logo.vue';
 
 export default defineComponent({
   name: "Login",
@@ -48,7 +49,8 @@ export default defineComponent({
     IonInput,
     IonItem,
     IonLabel,
-    IonPage
+    IonPage,
+    Logo
   },
   data() {
     return {
@@ -57,7 +59,7 @@ export default defineComponent({
       instanceUrl: ""
     };
   },
-   computed: {
+  computed: {
     ...mapGetters({
       currentInstanceUrl: 'user/getInstanceUrl'
     })
@@ -86,14 +88,8 @@ export default defineComponent({
 });
 </script>
 <style scoped>
-
 .login-container {
   width: 375px;
-}
-
-img {
-  margin-bottom: 25px;
-  padding: 16px;
 }
 
 .flex {
@@ -102,5 +98,4 @@ img {
   align-items: center;
   height: 100%;
 }
-
 </style>

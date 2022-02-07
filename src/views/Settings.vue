@@ -15,6 +15,12 @@
         </ion-select>
       </ion-item>
 
+      <ion-item>
+        <ion-icon :icon="codeWorkingOutline" slot="start"/>
+        <ion-label>{{ $t("OMS") }}</ion-label>
+        <p slot="end">{{ instanceUrl }}</p>
+      </ion-item>
+
       <ion-card>
         <ion-item lines="none">
           <ion-label class="text-wrap">{{ $t("Documents to print when packing orders") }}</ion-label>
@@ -55,8 +61,8 @@
       </ion-card>
 
       <ion-item>
-        <ion-label>Asia / Cullcutta</ion-label>
-        <ion-button fill="outline">{{ $t("Change") }}</ion-button>
+        <ion-label> {{ userProfile && userProfile.userTimeZone ? userProfile.userTimeZone : '-' }} </ion-label>
+        <ion-button @click="changeTimeZone()" fill="outline" color="dark">{{ $t("Change") }}</ion-button>
       </ion-item>
       <ion-item>
         <ion-label>{{ userProfile !== null ? userProfile.partyName : '' }}</ion-label>
@@ -82,12 +88,14 @@ import {
   IonSelectOption, 
   IonTitle, 
   IonToolbar,
-  popoverController } from '@ionic/vue';
+  popoverController,
+  modalController } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { ellipsisVerticalOutline } from 'ionicons/icons'
+import { codeWorkingOutline, ellipsisVerticalOutline } from 'ionicons/icons'
 import Popover from '@/views/RecyclePopover.vue'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+import TimeZoneModal from '@/views/timezone-modal.vue'
 
 export default defineComponent({
   name: 'Settings',
@@ -110,7 +118,8 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       userProfile: 'user/getUserProfile',
-      currentFacility: 'user/getCurrentFacility'
+      currentFacility: 'user/getCurrentFacility',
+      instanceUrl: 'user/getInstanceUrl'
     })
   },
   methods: {
@@ -137,13 +146,20 @@ export default defineComponent({
           }
         })
       }
-    }
+    },
+    async changeTimeZone() {
+      const timeZoneModal = await modalController.create({
+        component: TimeZoneModal,
+      });
+      return timeZoneModal.present();
+    },
   },
   setup() {
     const store = useStore();
     const router = useRouter();
 
     return {
+      codeWorkingOutline,
       ellipsisVerticalOutline,
       router,
       store
