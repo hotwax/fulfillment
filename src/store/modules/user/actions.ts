@@ -89,8 +89,8 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
   },
 
-  setUserPreferences ({ commit }, payload) {
-    commit(types.USER_PREFERENCES, payload)
+  setUserPreference ({ commit }, payload) {
+    commit(types.USER_PREFERENCE_UPDATED, payload)
   }
 }
 

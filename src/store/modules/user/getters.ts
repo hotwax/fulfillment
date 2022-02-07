@@ -22,7 +22,7 @@ const getters: GetterTree <UserState, RootState> = {
         return state.instanceUrl;
     },
     getUserPreferences (state) {
-        return state.userPreferences;
+        return state.preferences;
     }
 }
 export default getters;

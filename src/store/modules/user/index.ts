@@ -12,7 +12,7 @@ const userModule: Module<UserState, RootState> = {
       current: null,
       currentFacility: {},
       instanceUrl: '',
-      userPreferences: {
+      preferences: {
         shippingLabel: false,
         packingSlip: true
       }

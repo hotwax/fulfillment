@@ -27,11 +27,11 @@
         </ion-item>
         <ion-item>
           <ion-label>{{ $t("Shipping label") }}</ion-label>
-          <ion-checkbox slot="end" :checked="userPreference.shippingLabel" @ionChange="setPreference($event, 'shippingLabel')"/>
+          <ion-checkbox slot="end" :checked="userPreferences.shippingLabel" @ionChange="setPreference($event, 'shippingLabel')"/>
         </ion-item>
         <ion-item lines="none">
           <ion-label>{{ $t("Packing slip") }}</ion-label>
-          <ion-checkbox slot="end" :checked="userPreference.packingSlip" @ionChange="setPreference($event, 'packingSlip')"/>
+          <ion-checkbox slot="end" :checked="userPreferences.packingSlip" @ionChange="setPreference($event, 'packingSlip')"/>
         </ion-item>
       </ion-card>
 
@@ -118,7 +118,7 @@ export default defineComponent({
       userProfile: 'user/getUserProfile',
       currentFacility: 'user/getCurrentFacility',
       instanceUrl: 'user/getInstanceUrl',
-      userPreference: 'user/getUserPreferences'
+      userPreferences: 'user/getUserPreferences'
     })
   },
   methods: {
@@ -147,7 +147,7 @@ export default defineComponent({
       }
     },
     setPreference(event: CustomEvent, property: string) {
-      this.store.dispatch('user/setUserPreferences', {
+      this.store.dispatch('user/setUserPreference', {
         name: property,
         value: event.detail.checked
       })
