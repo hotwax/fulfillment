@@ -27,7 +27,7 @@ const actions: ActionTree<StockState, RootState> = {
       if (resp.data) commit(types.STOCK_ADD_PRODUCTS, { products: resp.data.docs })
     }
   },
-  async getInventoryInformations(context, { orders }) {
+  async getInventoryInformation(context, { orders }) {
     let productIds: any = new Set();
     orders.groups.forEach((order: any) => {
       order.doclist.docs.forEach((item: any) => {
