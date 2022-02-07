@@ -140,11 +140,9 @@ export default defineComponent({
     },
     setFacility (facility: any) {
       if (this.userProfile){
-        this.userProfile.facilities.map((fac: any) => {
-          if (fac.facilityId == facility['detail'].value) {
-            this.store.dispatch('user/setFacility', {'facility': fac});
-          }
-        })
+        this.store.dispatch('user/setFacility', {
+          'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
+        });
       }
     },
     async changeTimeZone() {
