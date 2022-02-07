@@ -8,16 +8,6 @@ import { hasError } from '@/utils'
 const actions: ActionTree<StockState, RootState> = {
 
   /**
-   * Add stocks of specific product
-   */
-  async addProduct({ commit }, { productId }) {
-    const resp: any = await StockService.checkInventory({ productId });
-    if (resp.status === 200) {
-      commit(types.STOCK_ADD_PRODUCT, { productId, stock: resp.data.docs })
-    }
-  },
-
-  /**
    * Add stocks of list of products
    */
   async addProducts({ commit }, { productIds }) {
@@ -36,7 +26,18 @@ const actions: ActionTree<StockState, RootState> = {
       // Handled empty response in case of failed query
       if (resp.data) commit(types.STOCK_ADD_PRODUCTS, { products: resp.data.docs })
     }
+  },
+  async getInventoryInformations(context, { orders }) {
+    let productIds: any = new Set();
+    orders.groups.forEach((order: any) => {
+      order.doclist.docs.forEach((item: any) => {
+        if (item.productId) productIds.add(item.productId);
+      })
+    })
+    productIds = [...productIds]
+    if (productIds.length) {
+      this.dispatch('stock/addProducts', { productIds })
+    }
   }
-
 }
 export default actions;
