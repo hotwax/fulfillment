@@ -8,7 +8,7 @@
     </ion-header>
     
     <ion-content>
-      <ion-searchbar /> 
+      <ion-searchbar v-model="queryString" @keyup.enter="fetchInProgressOrders()"/> 
 
       <div class="filters">
         <ion-item lines="none">
@@ -126,6 +126,10 @@
         </div>
       </ion-card>
 
+      <ion-infinite-scroll @ionInfinite="loadMoreOrders($event)" threshold="100px" :disabled="!isScrollable">
+        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"></ion-infinite-scroll-content>
+      </ion-infinite-scroll>
+
       <ion-fab class="mobile-only" vertical="bottom" horizontal="end">
         <ion-fab-button  @click="packOrdersAlert">
           <ion-icon :icon="checkmarkDoneOutline" />
@@ -136,7 +140,7 @@
 </template>
 
 <script lang="ts">
-import { IonButton, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonItem, IonIcon, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonThumbnail, IonTitle, IonToolbar, alertController, popoverController } from '@ionic/vue';
+import { IonButton, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonItem, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonThumbnail, IonTitle, IonToolbar, alertController, popoverController } from '@ionic/vue';
 import { defineComponent, ref } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
@@ -157,6 +161,8 @@ export default defineComponent({
     IonHeader,
     IonItem,
     IonIcon,
+    IonInfiniteScroll,
+    IonInfiniteScrollContent,
     IonLabel,
     IonMenuButton,
     IonNote,
@@ -175,8 +181,14 @@ export default defineComponent({
       currentFacility: 'user/getCurrentFacility',
       inProgressOrders: 'order/getInProgressOrders',
       getProduct: 'product/getProduct',
-      getProductStock: 'stock/getProductStock'
+      getProductStock: 'stock/getProductStock',
+      isScrollable: 'order/isScrollable'
     })
+  },
+  data () {
+    return {
+      queryString: ''
+    }
   },
   methods: {
     segmentChanged(ev: CustomEvent) {
@@ -226,22 +238,34 @@ export default defineComponent({
       const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE
       const viewIndex = vIndex ? vIndex : 0
       const sortBy = ''
-      const payload = {     
+      const payload = {
         "json": {
           "params": {
-            "rows": "10",
-            "sort": "reservedDatetime desc",
+            "rows": `${viewSize}`,
+            "start": `${viewIndex}`,
+            "sort": `${sortBy ? sortBy:'reservedDatetime desc'}`,
             "group": true,
             "group.field": "orderId",
             "group.limit": 1000,
-            "group.ngroups": true
+            "group.ngroups": true,
+            "defType": "edismax",
+            "q.op": "AND",
+            "qf": "orderId"
           },
-          "query": "*:*",         
+          "query": `(*${this.queryString}*) OR "${this.queryString}"^100`,         
           "filter" : `docType: OISGIR AND picklistItemStatusId: PICKITEM_PENDING AND -fulfillmentStatus: Rejected AND -shipmentMethodTypeId : STOREPICKUP AND facilityId: ${this.currentFacility.facilityId}`    
         } 
       } 
       this.store.dispatch('order/fetchInProgressOrders', payload).then((resp: any) => console.log(resp)).catch((err: any) => console.log(err))
-    }
+    },
+    async loadMoreOrders(event: any) {
+      this.fetchInProgressOrders(
+        undefined,
+        Math.ceil(this.inProgressOrders.list.inProgress.length / process.env.VUE_APP_VIEW_SIZE).toString()
+      ).then(() => {
+        event.target.complete();
+      })
+    },
   },
   mounted(){
     this.fetchInProgressOrders();
