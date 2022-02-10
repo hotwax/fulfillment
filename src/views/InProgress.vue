@@ -82,7 +82,7 @@
                 </ion-segment-button>
               </ion-segment> 
               <div class="segments">
-              <div v-if="order.segment === 'pack'">
+              <div v-if="!order.segment || order.segment === 'pack'">
                 <ion-item lines="none">
                   <ion-label>{{ $t("Select box") }}</ion-label>   
                   <ion-select value="box1">
