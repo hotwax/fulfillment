@@ -1,14 +1,14 @@
 <template>
-  <ion-page>
+  <ion-page :fullscreen="true">
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button slot="start" />
-        <ion-title>26 {{ $t("orders" )}} | 30 {{ $t("items") }}</ion-title>
+        <ion-title>{{ inProgressOrders.list.total  }} {{ $t("orders" )}} | {{ inProgressOrders.list.items }} {{ $t("items") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     
-    <ion-content :fullscreen="true">
-      <ion-searchbar />  
+    <ion-content>
+      <ion-searchbar v-model="queryString" @keyup.enter="fetchInProgressOrders()"/> 
 
       <div class="filters">
         <ion-item lines="none">
@@ -27,31 +27,29 @@
           </ion-label>
           <ion-icon :icon="printOutline" />
         </ion-item>
-      </div> 
-
+      </div>
       <ion-button expand="block" class="desktop-only" fill="outline" @click="packOrdersAlert">{{ $t("Pack orders") }}</ion-button>
-
-      <ion-card>
+      <ion-card v-for="(orders, index) in inProgressOrders.list.inProgress" :key="index">
         <div class="card-header">
           <div class="order-primary-info">
             <ion-label>
-              Darooty Magwood
-              <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
+              {{ orders.doclist.docs[0].customerName }}
+              <p>{{ $t("Ordered") }} {{ $filters.formatUtcDate(orders.doclist.docs[0].orderDate, 'YYYY-MM-DDTHH:mm:ssZ', 'Do MMMM YYYY LT z') }}</p>
             </ion-label>
           </div>
 
           <div class="order-tags">
             <ion-chip outline>
               <ion-icon :icon="pricetagOutline" />
-              <ion-label>NN10584</ion-label>
+              <ion-label>{{ orders.doclist.docs[0].orderId }}</ion-label>
             </ion-chip>
           </div>
 
           <div class="order-metadata">
-            <ion-label>
+            <!-- <ion-label>
               Next Day Shipping
               <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
-            </ion-label>
+            </ion-label> -->
           </div>
         </div>
 
@@ -60,22 +58,22 @@
           <ion-chip> Box A | Type 3</ion-chip>  
         </div>
 
-        <div class="order-item">
-          <div class="product-info">
-            <ion-item lines="none">
-              <ion-thumbnail>
-                <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
-              </ion-thumbnail>
-              <ion-label>
-                <p class="overline">WJ06-XL-PURPLE</p>
-                Juno Jacket
-                <p>Blue XL</p>
-              </ion-label>
-            </ion-item>
-          </div>
+        <div v-for="order in orders.doclist.docs" :key="order" class="order-item">
+            <div class="product-info">
+              <ion-item lines="none">
+                <ion-thumbnail>
+                  <Image :src="getProduct(order.productId).mainImageUrl" />
+                </ion-thumbnail>
+                <ion-label>
+                  <p class="overline">{{ order.productSku }}</p>
+                  {{ order.productName }}
+                  <p>{{$filters.getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{$filters.getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
+                </ion-label>
+              </ion-item>
+            </div>
 
           <div class="desktop-only">
-              <ion-segment @ionChange="segmentChanged($event)" v-model="segment">
+              <ion-segment @ionChange="segmentChanged($event)" v-model="order.segment">
                 <ion-segment-button value="pack">
                   <ion-label>{{ $t("Ready to pack") }}</ion-label>
                 </ion-segment-button>
@@ -84,7 +82,7 @@
                 </ion-segment-button>
               </ion-segment> 
               <div class="segments">
-              <div v-if="segment == 'pack'">
+              <div v-if="order.segment === 'pack'">
                 <ion-item lines="none">
                   <ion-label>{{ $t("Select box") }}</ion-label>   
                   <ion-select value="box1">
@@ -93,7 +91,7 @@
                   </ion-select>      
                 </ion-item>
               </div>
-              <div v-if="segment == 'issue'">
+              <div v-if="order.segment === 'issue'">
                 <ion-item lines="none">  
                   <ion-label>{{ $t("Select issue") }}</ion-label>  
                   <ion-select value="a">
@@ -106,13 +104,13 @@
           </div>
 
           <div class="product-metadata">
-            <ion-note>49 {{ $t("pieces in stock") }}</ion-note>
+            <ion-note>{{ getProductStock(order.productId) }} {{ $t('pieces in stock') }}</ion-note>
           </div>
         </div>
 
         <div class="mobile-only">
           <ion-item>
-            <ion-button fill="clear" @click="packOrdersAlert">{{ $t("Pack using default packaging") }}</ion-button>
+            <ion-button fill="clear" @click="packOrdersAlert(orders)">{{ $t("Pack using default packaging") }}</ion-button>
             <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
               <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
             </ion-button>
@@ -121,12 +119,15 @@
 
         <div class="actions">  
           <div>
-            <ion-button @click="reportIssueAlert">{{ $t("Pack") }}</ion-button>
-             <ion-button fill="outline">{{ $t("Save") }}</ion-button>
+            <ion-button @click="packOrdersAlert(orders)">{{ $t("Pack") }}</ion-button>
+            <ion-button fill="outline">{{ $t("Save") }}</ion-button>
           </div>
-          <div></div>
         </div>
       </ion-card>
+
+      <ion-infinite-scroll @ionInfinite="loadMoreOrders($event)" threshold="100px" :disabled="!isScrollable">
+        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"></ion-infinite-scroll-content>
+      </ion-infinite-scroll>
 
       <ion-fab class="mobile-only" vertical="bottom" horizontal="end">
         <ion-fab-button  @click="packOrdersAlert">
@@ -138,14 +139,17 @@
 </template>
 
 <script lang="ts">
-import { IonButton, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonItem, IonIcon, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonThumbnail, IonTitle, IonToolbar, alertController, popoverController } from '@ionic/vue';
+import { IonButton, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonItem, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonThumbnail, IonTitle, IonToolbar, alertController, popoverController } from '@ionic/vue';
 import { defineComponent, ref } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
+import { mapGetters, useStore } from 'vuex';
+import Image from '@/components/Image.vue'
 
 export default defineComponent({
   name: 'InProgress',
   components: {
+    Image,
     IonButton,  
     IonCard,
     IonCheckbox,
@@ -156,6 +160,8 @@ export default defineComponent({
     IonHeader,
     IonItem,
     IonIcon,
+    IonInfiniteScroll,
+    IonInfiniteScrollContent,
     IonLabel,
     IonMenuButton,
     IonNote,
@@ -168,6 +174,20 @@ export default defineComponent({
     IonThumbnail,   
     IonTitle,
     IonToolbar
+  },
+  computed: {
+    ...mapGetters({
+      currentFacility: 'user/getCurrentFacility',
+      inProgressOrders: 'order/getInProgressOrders',
+      getProduct: 'product/getProduct',
+      getProductStock: 'stock/getProductStock',
+      isScrollable: 'order/isScrollable'
+    })
+  },
+  data () {
+    return {
+      queryString: ''
+    }
   },
   methods: {
     segmentChanged(ev: CustomEvent) {
@@ -182,7 +202,7 @@ export default defineComponent({
       });
       return popover.present();
     },
-    async packOrdersAlert() {
+    async packOrdersAlert(orders: any) {
       const alert = await alertController
         .create({
           header: this.$t("Pack orders"),
@@ -200,7 +220,21 @@ export default defineComponent({
               value: 'value2',
             },
           ],   
-          buttons: [this.$t("Cancel"), this.$t("Pack")],
+          buttons: [{
+            role: 'cancel',
+            text: this.$t("Cancel")
+          }, {
+            text: this.$t("Pack"),
+            handler: async () => {
+              const params = {
+                'picklistBinId': orders.doclist.docs[0].picklistBinId,
+                'orderId': orders.doclist.docs[0].orderId
+              }
+              await this.store.dispatch('order/packOrder', params).then((resp) => {
+                this.fetchInProgressOrders();
+              })
+            }
+          }],
         });
       return alert.present();
     },
@@ -212,9 +246,45 @@ export default defineComponent({
           buttons: [this.$t("Cancel"), this.$t("Report")],
         });
       return alert.present();
+    },
+    async fetchInProgressOrders (vSize?: any, vIndex?: any) {
+      const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE
+      const viewIndex = vIndex ? vIndex : 0
+      const sortBy = ''
+      const payload = {
+        "json": {
+          "params": {
+            "rows": `${viewSize}`,
+            "start": `${viewIndex * viewSize}`,
+            "sort": `${sortBy ? sortBy:'reservedDatetime desc'}`,
+            "group": true,
+            "group.field": "orderId",
+            "group.limit": 1000,
+            "group.ngroups": true,
+            "defType": "edismax",
+            "q.op": "AND",
+            "qf": "orderId"
+          },
+          "query": `(*${this.queryString}*) OR "${this.queryString}"^100`,         
+          "filter" : `docType: OISGIR AND picklistItemStatusId: PICKITEM_PENDING AND -fulfillmentStatus: Rejected AND -shipmentMethodTypeId : STOREPICKUP AND facilityId: ${this.currentFacility.facilityId}`    
+        } 
+      } 
+      this.store.dispatch('order/fetchInProgressOrders', payload).then((resp: any) => console.log(resp)).catch((err: any) => console.log(err))
+    },
+    async loadMoreOrders(event: any) {
+      this.fetchInProgressOrders(
+        undefined,
+        Math.ceil(this.inProgressOrders.list.inProgress.length / process.env.VUE_APP_VIEW_SIZE).toString()
+      ).then(() => {
+        event.target.complete();
+      })
     }
   },
+  mounted(){
+    this.fetchInProgressOrders();
+  },
   setup() {
+      const store = useStore();
       const segment = ref("pack");
 
       return {
@@ -224,6 +294,7 @@ export default defineComponent({
           checkmarkDoneOutline,
           pricetagOutline,
           segment,
+          store
       }
   }
 });
