@@ -19,6 +19,9 @@ const mutations: MutationTree <UserState> = {
     },
     [types.USER_INSTANCE_URL_UPDATED] (state, payload) {
         state.instanceUrl = payload;
+    },
+    [types.USER_PREFERENCE_UPDATED] (state: any, payload: any) {
+        state.preferences[payload.name] = payload.value
     }
 }
 export default mutations;
