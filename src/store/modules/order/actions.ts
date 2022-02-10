@@ -23,8 +23,10 @@ const actions: ActionTree<OrderState, RootState> = {
       } else {
         showToast(translate('Something went wrong'))
       }
+      emitter.emit('dismissLoader');
     } catch (err) {
       showToast(translate('Something went wrong'))
+      emitter.emit('dismissLoader');
     }
     return resp;
   }
