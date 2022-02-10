@@ -73,7 +73,7 @@
             </div>
 
           <div class="desktop-only">
-              <ion-segment @ionChange="segmentChanged($event)" v-model="segment">
+              <ion-segment @ionChange="segmentChanged($event)" v-model="order.segment">
                 <ion-segment-button value="pack">
                   <ion-label>{{ $t("Ready to pack") }}</ion-label>
                 </ion-segment-button>
@@ -82,7 +82,7 @@
                 </ion-segment-button>
               </ion-segment> 
               <div class="segments">
-              <div v-if="segment == 'pack'">
+              <div v-if="order.segment === 'pack'">
                 <ion-item lines="none">
                   <ion-label>{{ $t("Select box") }}</ion-label>   
                   <ion-select value="box1">
@@ -91,7 +91,7 @@
                   </ion-select>      
                 </ion-item>
               </div>
-              <div v-if="segment == 'issue'">
+              <div v-if="order.segment === 'issue'">
                 <ion-item lines="none">  
                   <ion-label>{{ $t("Select issue") }}</ion-label>  
                   <ion-select value="a">
@@ -120,9 +120,8 @@
         <div class="actions">  
           <div>
             <ion-button @click="packOrdersAlert(orders)">{{ $t("Pack") }}</ion-button>
-             <ion-button fill="outline">{{ $t("Save") }}</ion-button>
+            <ion-button fill="outline">{{ $t("Save") }}</ion-button>
           </div>
-          <div></div>
         </div>
       </ion-card>
 
@@ -234,7 +233,6 @@ export default defineComponent({
               await this.store.dispatch('order/packOrder', params).then((resp) => {
                 this.fetchInProgressOrders();
               })
-              console.log('order packed', params)
             }
           }],
         });
@@ -257,7 +255,7 @@ export default defineComponent({
         "json": {
           "params": {
             "rows": `${viewSize}`,
-            "start": `${viewIndex}`,
+            "start": `${viewIndex * viewSize}`,
             "sort": `${sortBy ? sortBy:'reservedDatetime desc'}`,
             "group": true,
             "group.field": "orderId",
@@ -280,7 +278,7 @@ export default defineComponent({
       ).then(() => {
         event.target.complete();
       })
-    },
+    }
   },
   mounted(){
     this.fetchInProgressOrders();
