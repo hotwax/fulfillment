@@ -31,6 +31,24 @@ const actions: ActionTree<OrderState, RootState> = {
       showToast(translate('Something went wrong'))
     }
     return resp;
+  },
+
+  async packOrder ({ commit }, payload) {
+    emitter.emit('presentLoader');
+    let resp;
+
+    try {
+      resp = await OrderService.packOrder(payload);
+      if (resp.status === 200 && !hasError(resp)) {
+        showToast(translate(resp.data.successMessage));
+      } else {
+        showToast(translate('Something went wrong'))
+      }
+    } catch (err) {
+      showToast(translate('Something went wrong'))
+    }
+    emitter.emit('dismissLoader');
+    return resp;
   }
 
 }

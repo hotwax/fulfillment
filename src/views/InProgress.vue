@@ -110,7 +110,7 @@
 
         <div class="mobile-only">
           <ion-item>
-            <ion-button fill="clear" @click="packOrdersAlert">{{ $t("Pack using default packaging") }}</ion-button>
+            <ion-button fill="clear" @click="packOrdersAlert(orders)">{{ $t("Pack using default packaging") }}</ion-button>
             <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
               <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
             </ion-button>
@@ -119,7 +119,7 @@
 
         <div class="actions">  
           <div>
-            <ion-button @click="reportIssueAlert">{{ $t("Pack") }}</ion-button>
+            <ion-button @click="packOrdersAlert(orders)">{{ $t("Pack") }}</ion-button>
              <ion-button fill="outline">{{ $t("Save") }}</ion-button>
           </div>
           <div></div>
@@ -203,7 +203,7 @@ export default defineComponent({
       });
       return popover.present();
     },
-    async packOrdersAlert() {
+    async packOrdersAlert(orders: any) {
       const alert = await alertController
         .create({
           header: this.$t("Pack orders"),
@@ -221,7 +221,22 @@ export default defineComponent({
               value: 'value2',
             },
           ],   
-          buttons: [this.$t("Cancel"), this.$t("Pack")],
+          buttons: [{
+            role: 'cancel',
+            text: this.$t("Cancel")
+          }, {
+            text: this.$t("Pack"),
+            handler: async () => {
+              const params = {
+                'picklistBinId': orders.doclist.docs[0].picklistBinId,
+                'orderId': orders.doclist.docs[0].orderId
+              }
+              await this.store.dispatch('order/packOrder', params).then((resp) => {
+                this.fetchInProgressOrders();
+              })
+              console.log('order packed', params)
+            }
+          }],
         });
       return alert.present();
     },
