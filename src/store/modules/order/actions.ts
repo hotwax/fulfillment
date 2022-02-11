@@ -49,6 +49,29 @@ const actions: ActionTree<OrderState, RootState> = {
     }
     emitter.emit('dismissLoader');
     return resp;
+  },
+
+  async addShipmentBox(store, payload) {
+    let resp;
+
+    const params = {
+      'carrierPartyId': '',
+      'shipmentMethodTypeId': payload[0].shipmentMethodTypeId,
+      'picklistBinId': payload[0].picklistBinId,
+      'shipmentMethodBoxId': ''
+    }
+
+    try {
+      resp = await OrderService.addShipmentBox(params);
+
+      if (resp.status == 200) {
+        console.log(resp)
+      } else {
+        showToast(translate('Something went wrong'))
+      }
+    } catch(err) {
+      showToast(translate('Somthing went wrong'))
+    }
   }
 
 }

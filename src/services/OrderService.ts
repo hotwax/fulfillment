@@ -16,7 +16,16 @@ const packOrder = async (query: any): Promise <any> => {
   })
 }
 
+const addShipmentBox = async (query: any): Promise <any> => {
+  return api({
+    url : "addShipmentBox",
+    method: "get",
+    data: query
+  })
+}
+
 export const OrderService = {
+  addShipmentBox,
   fetchInProgressOrders,
   packOrder
 } 

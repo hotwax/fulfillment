@@ -134,8 +134,8 @@ export default defineComponent({
     closeModal() {
       modalController.dismiss({ dismissed: true });
     },
-    addBox() {
-      console.log(this.order)
+    async addBox() {
+      await this.store.dispatch('order/addShipmentBox', this.order)
     }
   },
   props: ["order"],
@@ -147,7 +147,8 @@ export default defineComponent({
       addCircleOutline,
       close,
       getProduct,
-      pricetag
+      pricetag,
+      store
     };
   },
 });
