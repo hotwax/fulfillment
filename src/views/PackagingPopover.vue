@@ -41,7 +41,8 @@ export default defineComponent({
   methods: {
     async editPackaging() {
       const editmodal = await modalController.create({
-        component: EditPackagingModal
+        component: EditPackagingModal,
+        componentProps: { order: this.order.doclist.docs }
       });
       return editmodal.present();
     },
@@ -52,6 +53,7 @@ export default defineComponent({
       return reportmodal.present();
     }
   },
+  props: ['order'],
   setup() {
     return {
         pencil,

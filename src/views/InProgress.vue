@@ -55,7 +55,7 @@
 
         <div class="box-type desktop-only">
           <ion-button fill="outline"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
-          <ion-chip> Box A | Type 3</ion-chip>  
+          <ion-chip>Box A | Type 3</ion-chip>  
         </div>
 
         <div v-for="order in orders.doclist.docs" :key="order" class="order-item">
@@ -111,7 +111,7 @@
         <div class="mobile-only">
           <ion-item>
             <ion-button fill="clear" @click="packOrdersAlert(orders)">{{ $t("Pack using default packaging") }}</ion-button>
-            <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
+            <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover($event, orders)">
               <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
             </ion-button>
           </ion-item>
@@ -130,7 +130,7 @@
       </ion-infinite-scroll>
 
       <ion-fab class="mobile-only" vertical="bottom" horizontal="end">
-        <ion-fab-button  @click="packOrdersAlert">
+        <ion-fab-button @click="packOrdersAlert">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -193,12 +193,13 @@ export default defineComponent({
     segmentChanged(ev: CustomEvent) {
       this.segment = ev.detail.value;
     },
-    async packagingPopover(ev: Event) {
+    async packagingPopover(ev: Event, order: any) {
       const popover = await popoverController.create({
         component: Popover,
         event: ev,
         translucent: true,
         showBackdrop: false,
+        componentProps: { order }
       });
       return popover.present();
     },

@@ -19,35 +19,35 @@
         <div class="order-tags">
           <ion-chip outline>
             <ion-icon :icon="pricetag" />
-            <ion-label>NN10584</ion-label>
+            <ion-label>{{ order[0].orderId }}</ion-label>
           </ion-chip>
         </div>
 
         <div class="order-primary-info">
           <ion-label>
-            Darooty Magwood
-            <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
+            {{ order[0].customerName }}
+            <p>{{ $t("Ordered") }} {{ $filters.formatUtcDate(order.orderDate, 'YYYY-MM-DDTHH:mm:ssZ', 'Do MMMM YYYY LT z') }}</p>
           </ion-label>
         </div>
 
         <div class="order-metadata">
-          <ion-label>
+          <!-- <ion-label>
             Next Day Shipping
             <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
-          </ion-label>
+          </ion-label> -->
         </div>
       </div>
 
       <div class="order-item">
         <div class="product-info">
-          <ion-item lines="none">
+          <ion-item lines="none" v-for="(item, index) in order" :key="index">
             <ion-thumbnail>
-              <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
+              <Image :src="getProduct(item.productId).mainImageUrl" />
             </ion-thumbnail>
             <ion-label>
-              <p class="overline">WJ06-XL-PURPLE</p>
-              Juno Jacket
-              <p>Blue XL</p>
+              <p class="overline">{{ item.productSku }}</p>
+              {{ item.virtualProductName }}
+              <p>{{$filters.getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{$filters.getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
             </ion-label>
           </ion-item>
         </div>
@@ -67,7 +67,7 @@
     <ion-list>
       <ion-item lines="none">
         <ion-note slot="start">{{ $t('Boxes') }}</ion-note>
-        <ion-button fill="clear" slot="end">
+        <ion-button fill="clear" @click="addBox()" slot="end">
           {{ $t("Add") }}
           <ion-icon :icon="addCircleOutline"/>
         </ion-button>
@@ -84,8 +84,8 @@
   </ion-content>
 </template>
 
-<script>
-import { 
+<script lang='ts'>
+import {
   IonButtons,
   IonButton,
   IonCard,
@@ -102,12 +102,17 @@ import {
   IonThumbnail,
   IonTitle,
   IonToolbar,
-  modalController } from "@ionic/vue";
-import { defineComponent } from "vue";
+  modalController
+} from "@ionic/vue";
+import Image from '@/components/Image.vue'
+import { defineComponent, computed } from "vue";
 import { addCircleOutline, close, pricetag } from "ionicons/icons";
+import { useStore } from 'vuex'
+
 export default defineComponent({
   name: "EditPackagingModal",
-  components: { 
+  components: {
+    Image,
     IonButtons,
     IonButton,
     IonCard,
@@ -129,11 +134,19 @@ export default defineComponent({
     closeModal() {
       modalController.dismiss({ dismissed: true });
     },
+    addBox() {
+      console.log(this.order)
+    }
   },
+  props: ["order"],
   setup() {
+    const store = useStore();
+    const getProduct = computed(() => store.getters['product/getProduct'])
+
     return {
       addCircleOutline,
       close,
+      getProduct,
       pricetag
     };
   },
