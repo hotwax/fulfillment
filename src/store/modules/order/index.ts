@@ -10,7 +10,8 @@ const orderModule: Module<OrderState, RootState> = {
     state: {
       inProgress: {
         list: {},
-        total: 0
+        total: 0,
+        items: 0
       }
     },
     getters,

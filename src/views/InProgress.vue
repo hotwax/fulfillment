@@ -3,7 +3,7 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button slot="start" />
-        <ion-title>{{ inProgressOrders.list.total  }} {{ $t("orders" )}} | {{ inProgressOrders.list.items }} {{ $t("items") }}</ion-title>
+        <ion-title>{{ inProgressOrders.total  }} {{ $t("orders" )}} | {{ inProgressOrders.items }} {{ $t("items") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     
@@ -29,7 +29,7 @@
         </ion-item>
       </div>
       <ion-button expand="block" class="desktop-only" fill="outline" @click="packOrdersAlert">{{ $t("Pack orders") }}</ion-button>
-      <ion-card v-for="(orders, index) in inProgressOrders.list.inProgress" :key="index">
+      <ion-card v-for="(orders, index) in inProgressOrders.list" :key="index">
         <div class="card-header">
           <div class="order-primary-info">
             <ion-label>
