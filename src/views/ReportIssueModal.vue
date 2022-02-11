@@ -8,7 +8,7 @@
       </ion-buttons>
       <ion-title>{{ $t("Report an issue") }}</ion-title>
       <ion-buttons slot="end">
-        <ion-button fill="clear">{{ $t("Save") }}</ion-button>
+        <ion-button fill="clear" @click="saveOrder()">{{ $t("Save") }}</ion-button>
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
@@ -61,9 +61,8 @@
 
       <ion-item>
         <ion-label>{{ $t("Select an issue") }}</ion-label>
-        <ion-select value="a">
-          <ion-select-option value="a">Out of stock</ion-select-option>
-          <ion-select-option value="b">Worn display</ion-select-option>
+        <ion-select v-model="item.reason">
+          <ion-select-option v-for="reason in unfillableReason" :value="reason.id" :key="reason.id">{{ reason.label }}</ion-select-option>
         </ion-select>
       </ion-item>
     </ion-card> 
@@ -88,7 +87,7 @@ import {
   IonThumbnail,
   IonToolbar,
   modalController } from "@ionic/vue";
-import { defineComponent, computed } from "vue";
+import { defineComponent, computed, reactive } from "vue";
 import { close, pricetag } from "ionicons/icons";
 import { useStore } from 'vuex'
 import Image from '@/components/Image.vue'
@@ -117,19 +116,24 @@ export default defineComponent({
     closeModal() {
       modalController.dismiss({ dismissed: true });
     },
+    saveOrder() {
+      this.closeModal();
+    }
   },
   props: ["order"],
   setup() {
     const store = useStore();
     const getProduct = computed(() => store.getters['product/getProduct'])
     const getProductStock = computed(() => store.getters['stock/getProductStock'])
+    const unfillableReason = reactive(JSON.parse(process.env.VUE_APP_UNFILLABLE_REASONS))
 
     return {
       close,
       getProduct,
       getProductStock,
       pricetag,
-      store
+      store,
+      unfillableReason
     };
   },
 });
