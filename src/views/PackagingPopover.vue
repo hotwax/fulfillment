@@ -48,7 +48,8 @@ export default defineComponent({
     },
      async reportIssue() {
       const reportmodal = await modalController.create({
-        component: ReportIssueModal
+        component: ReportIssueModal,
+        componentProps: { order: this.order.doclist.docs }
       });
       return reportmodal.present();
     }

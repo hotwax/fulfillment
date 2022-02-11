@@ -19,43 +19,43 @@
        <div class="order-tags">
          <ion-chip outline>
            <ion-icon :icon="pricetag" />
-           <ion-label>NN10584</ion-label>
+           <ion-label>{{ order[0].orderId }}</ion-label>
          </ion-chip>
        </div>
 
        <div class="order-primary-info">
          <ion-label>
-           Darooty Magwood
-           <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
+           {{ order[0].customerName }}
+           <p>{{ $t("Ordered") }} {{ $filters.formatUtcDate(order[0].orderDate, 'YYYY-MM-DDTHH:mm:ssZ', 'Do MMMM YYYY LT z') }}</p>
          </ion-label>
        </div>
 
        <div class="order-metadata">
-         <ion-label>
+         <!-- <ion-label>
            Next Day Shipping
            <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
-         </ion-label>
+         </ion-label> -->
        </div>
      </div>
     </ion-card>
 
-    <ion-card>
+    <ion-card v-for="(item, index) in order" :key="index">
       <div class="order-item">
         <div class="product-info">
           <ion-item lines="none">
             <ion-thumbnail>
-              <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
+              <Image :src="getProduct(item.productId).mainImageUrl" />
             </ion-thumbnail>
             <ion-label>
-              <p class="overline">WJ06-XL-PURPLE</p>
-              Juno Jacket
-              <p>Blue XL</p>
+              <p class="overline">{{ item.productSku }}</p>
+              {{ item.virtualProductName }}
+              <p>{{$filters.getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{$filters.getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
             </ion-label>
           </ion-item>
         </div>
 
         <div class="product-metadata">
-          <ion-note>49 {{ $t("pieces in stock") }}</ion-note>
+          <ion-note>{{ getProductStock(item.productId) }} {{ $t("pieces in stock") }}</ion-note>
         </div>
       </div>
 
@@ -70,7 +70,7 @@
   </ion-content>
 </template>
 
-<script>
+<script lang="ts">
 import { 
   IonCard,
   IonChip,  
@@ -88,11 +88,15 @@ import {
   IonThumbnail,
   IonToolbar,
   modalController } from "@ionic/vue";
-import { defineComponent } from "vue";
+import { defineComponent, computed } from "vue";
 import { close, pricetag } from "ionicons/icons";
+import { useStore } from 'vuex'
+import Image from '@/components/Image.vue'
+
 export default defineComponent({
   name: "ReportIssueModal",
-  components: { 
+  components: {
+    Image,
      IonCard,
      IonChip,  
      IonButtons,
@@ -114,10 +118,18 @@ export default defineComponent({
       modalController.dismiss({ dismissed: true });
     },
   },
+  props: ["order"],
   setup() {
+    const store = useStore();
+    const getProduct = computed(() => store.getters['product/getProduct'])
+    const getProductStock = computed(() => store.getters['stock/getProductStock'])
+
     return {
       close,
-      pricetag
+      getProduct,
+      getProductStock,
+      pricetag,
+      store
     };
   },
 });

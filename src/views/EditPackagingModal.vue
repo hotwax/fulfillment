@@ -26,7 +26,7 @@
         <div class="order-primary-info">
           <ion-label>
             {{ order[0].customerName }}
-            <p>{{ $t("Ordered") }} {{ $filters.formatUtcDate(order.orderDate, 'YYYY-MM-DDTHH:mm:ssZ', 'Do MMMM YYYY LT z') }}</p>
+            <p>{{ $t("Ordered") }} {{ $filters.formatUtcDate(order[0].orderDate, 'YYYY-MM-DDTHH:mm:ssZ', 'Do MMMM YYYY LT z') }}</p>
           </ion-label>
         </div>
 
@@ -38,9 +38,9 @@
         </div>
       </div>
 
-      <div class="order-item">
+      <div class="order-item" v-for="(item, index) in order" :key="index">
         <div class="product-info">
-          <ion-item lines="none" v-for="(item, index) in order" :key="index">
+          <ion-item lines="none">
             <ion-thumbnail>
               <Image :src="getProduct(item.productId).mainImageUrl" />
             </ion-thumbnail>
