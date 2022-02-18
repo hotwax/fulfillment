@@ -25,11 +25,13 @@ const actions: ActionTree<OrderState, RootState> = {
         commit(types.ORDER_IN_PROGRESS_UPDATED, {inProgress: orders, total: resp.data.grouped.orderId.ngroups, items: resp.data.grouped.orderId.matches })
         this.dispatch('product/getProductInformation', { orders })
       } else {
+        commit(types.ORDER_IN_PROGRESS_UPDATED, {inProgress: {}, total: 0, items: 0 })
         showToast(translate('Something went wrong'))
       }
     } catch (err) {
       showToast(translate('Something went wrong'))
     }
+    emitter.emit('dismissLoader');
     return resp;
   },
 
