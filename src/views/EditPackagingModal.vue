@@ -72,8 +72,8 @@
           <ion-icon :icon="addCircleOutline"/>
         </ion-button>
       </ion-item>
-      <ion-item>
-        <ion-label>Box A</ion-label>
+      <ion-item v-for="(box, index) in boxes" :key="index">
+        <ion-label>Box {{ box }}</ion-label>
         <ion-select value="3">
           <ion-select-option value="1">Type 1</ion-select-option>
           <ion-select-option value="2">Type 2</ion-select-option>
@@ -135,7 +135,13 @@ export default defineComponent({
       modalController.dismiss({ dismissed: true });
     },
     async addBox() {
+      this.boxes.push(String.fromCharCode(this.boxes[this.boxes.length-1].charCodeAt(0) + 1))
       await this.store.dispatch('order/addShipmentBox', this.order)
+    }
+  },
+  data() {
+    return {
+      boxes: ['A']
     }
   },
   props: ["order"],
