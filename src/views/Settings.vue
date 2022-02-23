@@ -7,7 +7,7 @@
       </ion-toolbar>
     </ion-header>
     
-    <ion-content :fullscreen="true">
+    <ion-content>
       <ion-item>
         <ion-label>{{ $t("Store") }}</ion-label>
         <ion-select :value="currentFacility.facilityId" @ionChange="setFacility($event)">
