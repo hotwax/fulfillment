@@ -1,6 +1,7 @@
 export default interface OrderState {
     inProgress: {
       list: any,
-      total: number
+      total: number,
+      orderShipmentBoxList: any;
     }
   }

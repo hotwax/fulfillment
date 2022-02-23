@@ -55,7 +55,7 @@
 
         <div class="box-type desktop-only">
           <ion-button fill="outline"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
-          <ion-chip>Box A | Type 3</ion-chip>  
+          <ion-chip v-for="box in getShipmentBoxInfo(orders.doclist.docs[0].orderId)" :key="box.shipmentId">Box {{ box.packageName}} | Type {{ box.shipmentBoxTypeId }}</ion-chip>
         </div>
 
         <div v-for="order in orders.doclist.docs" :key="order" class="order-item">
@@ -181,7 +181,8 @@ export default defineComponent({
       inProgressOrders: 'order/getInProgressOrders',
       getProduct: 'product/getProduct',
       getProductStock: 'stock/getProductStock',
-      isScrollable: 'order/isScrollable'
+      isScrollable: 'order/isScrollable',
+      getShipmentBoxInfo: 'order/getShipmentBoxInfo'
     })
   },
   data () {

@@ -11,7 +11,7 @@ import * as types from './mutation-types'
 const actions: ActionTree<OrderState, RootState> = {
 
   // get in progress orders
-  async fetchInProgressOrders ({ commit, state }, payload) {
+  async fetchInProgressOrders ({ commit, state, dispatch }, payload) {
     emitter.emit('presentLoader');
     let resp;
 
@@ -24,6 +24,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
         commit(types.ORDER_IN_PROGRESS_UPDATED, {inProgress: orders, total: resp.data.grouped.orderId.ngroups, items: resp.data.grouped.orderId.matches })
         this.dispatch('product/getProductInformation', { orders })
+        dispatch('getShipmentBoxInformation', { orders })
       } else {
         commit(types.ORDER_IN_PROGRESS_UPDATED, {inProgress: {}, total: 0, items: 0 })
         showToast(translate('Something went wrong'))
@@ -73,6 +74,27 @@ const actions: ActionTree<OrderState, RootState> = {
       }
     } catch(err) {
       showToast(translate('Somthing went wrong'))
+    }
+  },
+
+  async getShipmentBoxInformation({ commit }, payload) {
+    let resp;
+    try {
+      payload.orders.map(async (order: any) => {
+        const query = {
+          "entityName": "ShipmentPackageRouteSegDetail",
+          "inputFields": {
+            "primaryOrderId": order.doclist.docs[0].orderId
+          },
+          "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId"]
+        }
+        resp = await OrderService.getShipmentBoxInfo(query)
+        if (resp.status == 200 && resp.data.count > 0) {
+          commit(types.ORDER_SHIPMENT_BOX_INFO, { orderId: order.doclist.docs[0].orderId, boxInformation: resp.data.docs })
+        }
+      })
+    } catch(err) {
+      console.log(err)
     }
   }
 

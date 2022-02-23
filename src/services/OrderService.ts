@@ -24,8 +24,17 @@ const addShipmentBox = async (query: any): Promise <any> => {
   })
 }
 
+const getShipmentBoxInfo = async (query: any): Promise <any> => {
+  return api({
+    url: "performFind",
+    method: "post",
+    data: query
+  })
+}
+
 export const OrderService = {
   addShipmentBox,
   fetchInProgressOrders,
-  packOrder
+  packOrder,
+  getShipmentBoxInfo
 } 

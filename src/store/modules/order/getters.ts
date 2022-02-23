@@ -12,6 +12,9 @@ const getters: GetterTree<OrderState, RootState> = {
       state.inProgress.list.inProgress.length > 0 &&
       state.inProgress.list.inProgress.length < state.inProgress.list.total
     );
+  },
+  getShipmentBoxInfo: (state) => (orderId: string) => {
+    return state.inProgress.orderShipmentBoxList[orderId];
   }
 };
 export default getters; 
