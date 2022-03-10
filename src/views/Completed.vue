@@ -220,7 +220,7 @@ export default defineComponent({
 
 .order-tags {
   grid-area: tags;
-  border-bottom: 1px solid var();
+  border-bottom: 1px solid var(--ion-color-dark);
 }
 
 .order-metadata {
