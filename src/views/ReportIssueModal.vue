@@ -3,7 +3,7 @@
     <ion-toolbar>
       <ion-buttons slot="start">
         <ion-button @click="closeModal"> 
-          <ion-icon :icon="close" />
+          <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
       <ion-title>{{ $t("Report an issue") }}</ion-title>
@@ -89,7 +89,7 @@ import {
   IonToolbar,
   modalController } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { close, pricetag } from "ionicons/icons";
+import { closeOutline, pricetag } from "ionicons/icons";
 export default defineComponent({
   name: "ReportIssueModal",
   components: { 
@@ -116,7 +116,7 @@ export default defineComponent({
   },
   setup() {
     return {
-      close,
+      closeOutline,
       pricetag
     };
   },
