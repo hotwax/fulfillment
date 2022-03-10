@@ -184,7 +184,7 @@ export default defineComponent({
         "info"
         "metadata"/ 1fr;
   justify-content: start;
-  border-bottom: 1px solid black;        
+  border-bottom: 1px solid var(--ion-color-dark);        
 }
 
 .order-primary-info {
@@ -195,7 +195,7 @@ export default defineComponent({
   grid-area: tags;
   display: flex;
   justify-content: space-between;
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid var(--ion-color-dark);
 }
 
 .order-metadata {
@@ -224,7 +224,7 @@ export default defineComponent({
   }
 
   .order-item {
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid var(--ion-color-dark);
   }  
 }
 </style>

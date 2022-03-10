@@ -257,7 +257,7 @@ ion-thumbnail > img {
 .filters > ion-item {
   flex: 1 0 100%;
   max-width: 200px;
-  border: 0.01px solid black;
+  border: 0.01px solid var(--ion-color-dark);
   border-radius: 10px;
  }
 
@@ -291,3 +291,17 @@ img {
     display: none;
   }  
 } 
+
+@media (prefers-color-scheme: dark) {
+  ion-chip > ion-icon {
+    color: var(--ion-color-dark);
+  }
+
+  .chip-outline {
+    border-color: var(--ion-color-dark);
+  }
+
+  ion-item {
+    --border-color: var(--ion-color-medium)
+  }
+}

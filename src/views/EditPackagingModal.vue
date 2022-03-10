@@ -141,11 +141,11 @@ export default defineComponent({
 </script>
 <style scoped>
 .order-tags {
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid var(--ion-color-dark);
 }
 
 .order-metadata {
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid var(--ion-color-dark);
 }
 .order-item {
   display: flex;

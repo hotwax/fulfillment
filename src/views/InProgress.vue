@@ -233,7 +233,7 @@ export default defineComponent({
 .filters > ion-item {
   flex: 1 0 100%;
   max-width: 200px;
-  border: 0.01px solid black;
+  border: 0.01px solid var(--ion-color-dark);
   border-radius: 10px;
 }
 
@@ -243,12 +243,12 @@ export default defineComponent({
 
 .order-tags {
   grid-area: tags;
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid var(--ion-color-dark);
 }
 
 .order-metadata {
   grid-area: metadata;
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid var(--ion-color-dark);
 }
 
 .card-header {
@@ -262,7 +262,7 @@ export default defineComponent({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid var(--ion-color-dark);
 }  
 
 @media (min-width: 991px) {
@@ -279,11 +279,11 @@ export default defineComponent({
     grid: "info tags metadata" / max-content 1fr max-content;
     justify-items: center;
     align-items: center;
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid var(--ion-color-dark);
   }
 
   .box-type {
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid var(--ion-color-dark);
   }
 }
 </style>

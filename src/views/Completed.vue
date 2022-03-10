@@ -220,12 +220,12 @@ export default defineComponent({
 
 .order-tags {
   grid-area: tags;
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid var();
 }
 
 .order-metadata {
   grid-area: metadata;
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid var(--ion-color-dark);
 }
 
 .card-header {
@@ -239,7 +239,7 @@ export default defineComponent({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid var(--ion-color-dark);
 }  
 
 @media (min-width: 991px) {
@@ -256,7 +256,7 @@ export default defineComponent({
     grid: "info tags metadata" / max-content 1fr max-content;
     justify-items: center;
     align-items: center;
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid var(--ion-color-dark);
   }
 }
 </style>
