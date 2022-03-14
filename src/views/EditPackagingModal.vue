@@ -38,7 +38,7 @@
         </div>
       </div>
 
-      <div class="order-item">
+      <div class="open-order-item">
         <div class="product-info">
           <ion-item lines="none">
             <ion-thumbnail>
@@ -140,16 +140,25 @@ export default defineComponent({
 });
 </script>
 <style scoped>
-.order-tags {
-  border-bottom: 1px solid black;
-}
 
 .order-metadata {
   border-bottom: 1px solid black;
 }
-.order-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}  
+
+.card-header {
+  display: grid;
+  grid: "tags"
+        "info"
+        "metadata"/ 1fr;
+  justify-content: none;
+  border-bottom: none;        
+}
+
+.order-tags {
+  grid-area: tags;
+  display: none;
+  justify-content: none;
+  border-bottom: 1px solid black;
+}
+
 </style>

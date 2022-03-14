@@ -40,7 +40,7 @@
     </ion-card>
 
     <ion-card>
-      <div class="order-item">
+      <div class="open-order-item">
         <div class="product-info">
           <ion-item lines="none">
             <ion-thumbnail>
@@ -124,13 +124,11 @@ export default defineComponent({
 </script>
 
 <style scoped>
+
 .order-tags {
+  grid-area: tags;
+  display: none;
+  justify-content: none;
   border-bottom: 1px solid black;
 }
-
-.order-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}  
 </style>

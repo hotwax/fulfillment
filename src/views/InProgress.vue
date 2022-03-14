@@ -230,60 +230,17 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.filters > ion-item {
-  flex: 1 0 100%;
-  max-width: 200px;
-  border: 0.01px solid black;
-  border-radius: 10px;
-}
-
-.order-primary-info {
-  grid-area: info;
-}
 
 .order-tags {
   grid-area: tags;
+  display: none;
+  justify-content: none;
   border-bottom: 1px solid black;
 }
-
-.order-metadata {
-  grid-area: metadata;
-  border-bottom: 1px solid black;
-}
-
-.card-header {
-  display: grid;
-  grid: "tags"
-        "info"
-        "metadata" / 1fr;
-}
-
-.order-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid black;
-}  
 
 @media (min-width: 991px) {
-  .order-tags {
-    border-bottom: none;
-  }
-
-  .order-metadata {
-    text-align: end;
-    border-bottom: none
-  }
-
-  .card-header {
-    grid: "info tags metadata" / max-content 1fr max-content;
-    justify-items: center;
-    align-items: center;
-    border-bottom: 1px solid black;
-  }
-
-  .box-type {
-    border-bottom: 1px solid black;
+   .order-tags {
+    justify-self: none;
   }
 }
 </style>
