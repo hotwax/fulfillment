@@ -230,17 +230,7 @@ export default defineComponent({
 </script>
 
 <style scoped>
-
-.order-tags {
-  grid-area: tags;
-  display: none;
-  justify-content: none;
+.box-type {
   border-bottom: 1px solid black;
-}
-
-@media (min-width: 991px) {
-   .order-tags {
-    justify-self: none;
-  }
 }
 </style>

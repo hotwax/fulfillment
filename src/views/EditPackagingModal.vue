@@ -139,26 +139,3 @@ export default defineComponent({
   },
 });
 </script>
-<style scoped>
-
-.order-metadata {
-  border-bottom: 1px solid black;
-}
-
-.card-header {
-  display: grid;
-  grid: "tags"
-        "info"
-        "metadata"/ 1fr;
-  justify-content: none;
-  border-bottom: none;        
-}
-
-.order-tags {
-  grid-area: tags;
-  display: none;
-  justify-content: none;
-  border-bottom: 1px solid black;
-}
-
-</style>

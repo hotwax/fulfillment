@@ -122,13 +122,3 @@ export default defineComponent({
   },
 });
 </script>
-
-<style scoped>
-
-.order-tags {
-  grid-area: tags;
-  display: none;
-  justify-content: none;
-  border-bottom: 1px solid black;
-}
-</style>

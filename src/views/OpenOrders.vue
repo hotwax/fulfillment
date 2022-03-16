@@ -177,12 +177,14 @@ export default defineComponent({
 </script>
 
 <style scoped>
-
-.order-item {
+.order-tags{
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  border-bottom: none;
 }
 
+@media (max-width: 991px) {
+  .order-item {
+    border-bottom: none;
+  }
+}
 </style>

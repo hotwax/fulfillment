@@ -259,26 +259,10 @@ ion-thumbnail > img {
   max-width: 200px;
   border: 0.01px solid black;
   border-radius: 10px;
- }
+}
 
 img {
   object-fit: contain;
-}
-
-.actions {
-  display: none;
-}
-
-.order-tags {
-  grid-area: tags;
-  display: flex;
-  justify-content: space-between;
-  border-bottom: 1px solid black;
-}
-
-.order-metadata {
-  grid-area: metadata;
-  border-bottom: 1px solid black;
 }
 
 .card-header {
@@ -287,7 +271,20 @@ img {
         "info"
         "metadata"/ 1fr;
   justify-content: start;
-  border-bottom: 1px solid black;        
+}
+
+.order-primary-info {
+  grid-area: info;
+}
+
+.order-tags {
+  grid-area: tags;
+  border-bottom: 1px solid black;
+}
+
+.order-metadata {
+  grid-area: metadata;
+  border-bottom: 1px solid black;
 }
 
 .order-item {
@@ -297,38 +294,34 @@ img {
   border-bottom: 1px solid black;
 }   
 
-.order-primary-info {
-  grid-area: info;
-}
-
-.mobile-only {
-  display: unset;
+.actions {
+  display: none;
 }
 
 .desktop-only {
   display: none;
 }
 
-@media (min-width: 991px) {
-  .order-tags {
-    border-bottom: none;
-    justify-self: center;
-  }
+.mobile-only {
+  display: unset;
+}
 
-  .order-metadata {
-    text-align: end;
-    border-bottom: none
-  }
-  
-  .order-item {
-    border-bottom: 1px solid black;
-  }
-  
+@media (min-width: 991px) {
   .card-header {
     grid: "info tags metadata" / max-content 1fr max-content;
     justify-items: center;
     align-items: center;
     border-bottom: 1px solid black;
+  }
+
+  .order-tags {
+    justify-self: center;
+    border-bottom: none;
+  }
+
+  .order-metadata {
+    text-align: end;
+    border-bottom: none
   }
 
   .actions {
@@ -343,8 +336,4 @@ img {
   .mobile-only {
     display: none;
   }  
-
-  .box-type {
-    border-bottom: 1px solid black;
-  }
 }

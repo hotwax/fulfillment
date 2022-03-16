@@ -5,7 +5,7 @@
         <ion-menu-button slot="start" />
         <ion-title>10 {{("to")}} 26 {{ $t("orders") }}</ion-title>
         <ion-buttons slot="end">
-            <ion-button fill="clear" @click="() => router.push('/upload-csv')">{{ $t("Upload CSV") }}</ion-button>
+          <ion-button fill="clear" @click="() => router.push('/upload-csv')">{{ $t("Upload CSV") }}</ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
@@ -212,13 +212,3 @@ export default defineComponent({
   }
 });
 </script>
-
-.order-tags {
-  grid-area: tags;
-  display: none;
-  justify-content: none;
-  border-bottom: 1px solid black;
-}
-
-<style scoped>
-</style>
