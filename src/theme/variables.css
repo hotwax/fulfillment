@@ -257,7 +257,7 @@ ion-thumbnail > img {
 .filters > ion-item {
   flex: 1 0 100%;
   max-width: 200px;
-  border: 0.01px solid black;
+  border: 0.01px solid var(--ion-color-medium);
   border-radius: 10px;
 }
 
@@ -279,19 +279,19 @@ img {
 
 .order-tags {
   grid-area: tags;
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid var(--ion-color-medium);
 }
 
 .order-metadata {
   grid-area: metadata;
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid var(--ion-color-medium);
 }
 
 .order-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid black;
+  border-bottom: 1px solid var(--ion-color-medium);
 }   
 
 .actions {
@@ -311,7 +311,7 @@ img {
     grid: "info tags metadata" / max-content 1fr max-content;
     justify-items: center;
     align-items: center;
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid var(--ion-color-medium);
   }
 
   .order-tags {

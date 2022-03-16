@@ -40,7 +40,7 @@
     </ion-card>
 
     <ion-card>
-      <div class="open-order-item">
+      <div class="order-item">
         <div class="product-info">
           <ion-item lines="none">
             <ion-thumbnail>
