@@ -139,17 +139,3 @@ export default defineComponent({
   },
 });
 </script>
-<style scoped>
-.order-tags {
-  border-bottom: 1px solid black;
-}
-
-.order-metadata {
-  border-bottom: 1px solid black;
-}
-.order-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}  
-</style>

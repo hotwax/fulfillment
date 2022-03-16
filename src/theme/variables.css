@@ -257,13 +257,42 @@ ion-thumbnail > img {
 .filters > ion-item {
   flex: 1 0 100%;
   max-width: 200px;
-  border: 0.01px solid black;
+  border: 0.01px solid var(--ion-color-medium);
   border-radius: 10px;
- }
+}
 
 img {
   object-fit: contain;
 }
+
+.card-header {
+  display: grid;
+  grid: "tags"
+        "info"
+        "metadata"/ 1fr;
+  justify-content: start;
+}
+
+.order-primary-info {
+  grid-area: info;
+}
+
+.order-tags {
+  grid-area: tags;
+  border-bottom: 1px solid var(--ion-color-medium);
+}
+
+.order-metadata {
+  grid-area: metadata;
+  border-bottom: 1px solid var(--ion-color-medium);
+}
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--ion-color-medium);
+}   
 
 .actions {
   display: none;
@@ -277,7 +306,24 @@ img {
   display: unset;
 }
 
-@media  (min-width: 991px){
+@media (min-width: 991px) {
+  .card-header {
+    grid: "info tags metadata" / max-content 1fr max-content;
+    justify-items: center;
+    align-items: center;
+    border-bottom: 1px solid var(--ion-color-medium);
+  }
+
+  .order-tags {
+    justify-self: center;
+    border-bottom: none;
+  }
+
+  .order-metadata {
+    text-align: end;
+    border-bottom: none
+  }
+
   .actions {
     display: flex;
     justify-content: space-between;
@@ -290,4 +336,4 @@ img {
   .mobile-only {
     display: none;
   }  
-} 
+}

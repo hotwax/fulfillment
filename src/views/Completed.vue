@@ -5,7 +5,7 @@
         <ion-menu-button slot="start" />
         <ion-title>10 {{("to")}} 26 {{ $t("orders") }}</ion-title>
         <ion-buttons slot="end">
-            <ion-button fill="clear" @click="() => router.push('/upload-csv')">{{ $t("Upload CSV") }}</ion-button>
+          <ion-button fill="clear" @click="() => router.push('/upload-csv')">{{ $t("Upload CSV") }}</ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
@@ -212,51 +212,3 @@ export default defineComponent({
   }
 });
 </script>
-
-<style scoped>
-.order-primary-info {
-  grid-area: info;
-}
-
-.order-tags {
-  grid-area: tags;
-  border-bottom: 1px solid black;
-}
-
-.order-metadata {
-  grid-area: metadata;
-  border-bottom: 1px solid black;
-}
-
-.card-header {
-  display: grid;
-  grid: "tags"
-        "info"
-        "metadata" / 1fr;
-}
-
-.order-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid black;
-}  
-
-@media (min-width: 991px) {
-  .order-tags {
-    border-bottom: none;
-  }
-
-  .order-metadata {
-    text-align: end;
-    border-bottom: none
-  }
-
-  .card-header {
-    grid: "info tags metadata" / max-content 1fr max-content;
-    justify-items: center;
-    align-items: center;
-    border-bottom: 1px solid black;
-  }
-}
-</style>
