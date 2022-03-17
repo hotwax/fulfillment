@@ -236,7 +236,7 @@ http://ionicframework.com/docs/theming/ */
 }
 
 body {
-  --border-color: 1px solid var(--ion-color-medium);
+  --border-medium: 1px solid var(--ion-color-medium);
 }
 
 .overline {
@@ -283,19 +283,19 @@ img {
 
 .order-tags {
   grid-area: tags;
-  border-bottom: var(--border-color);
+  border-bottom: var(--border-medium);
 }
 
 .order-metadata {
   grid-area: metadata;
-  border-bottom: var(--border-color);
+  border-bottom: var(--border-medium);
 }
 
 .order-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: var(--border-color);
+  border-bottom: var(--border-medium);
 }   
 
 .actions {
@@ -315,7 +315,7 @@ img {
     grid: "info tags metadata" / max-content 1fr max-content;
     justify-items: center;
     align-items: center;
-    border-bottom: var(--border-color);
+    border-bottom: var(--border-medium);
   }
 
   .order-tags {
