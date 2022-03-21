@@ -235,6 +235,10 @@ http://ionicframework.com/docs/theming/ */
   }
 }
 
+body {
+  --border-medium: 1px solid var(--ion-color-medium);
+}
+
 .overline {
   font-weight: 500 !important;
   font-size: 10px !important;
@@ -257,7 +261,7 @@ ion-thumbnail > img {
 .filters > ion-item {
   flex: 1 0 100%;
   max-width: 200px;
-  border: 0.01px solid var(--ion-color-medium);
+  border: var(--border-medium);
   border-radius: 10px;
 }
 
@@ -279,19 +283,19 @@ img {
 
 .order-tags {
   grid-area: tags;
-  border-bottom: 1px solid var(--ion-color-medium);
+  border-bottom: var(--border-medium);
 }
 
 .order-metadata {
   grid-area: metadata;
-  border-bottom: 1px solid var(--ion-color-medium);
+  border-bottom: var(--border-medium);
 }
 
 .order-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--ion-color-medium);
+  border-bottom: var(--border-medium);
 }   
 
 .actions {
@@ -311,7 +315,7 @@ img {
     grid: "info tags metadata" / max-content 1fr max-content;
     justify-items: center;
     align-items: center;
-    border-bottom: 1px solid var(--ion-color-medium);
+    border-bottom: var(--border-medium);
   }
 
   .order-tags {
@@ -336,4 +340,18 @@ img {
   .mobile-only {
     display: none;
   }  
+} 
+
+@media (prefers-color-scheme: dark) {
+  ion-chip > ion-icon {
+    color: var(--ion-color-dark);
+  }
+
+  .chip-outline {
+    border-color: var(--ion-color-dark);
+  }
+
+  ion-item {
+    --border-color: var(--ion-color-medium)
+  }
 }

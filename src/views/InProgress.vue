@@ -231,6 +231,6 @@ export default defineComponent({
 
 <style scoped>
 .box-type {
-  border-bottom: 1px solid black;
+  border-bottom: var(--border-medium);
 }
 </style>
