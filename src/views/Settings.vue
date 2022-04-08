@@ -61,6 +61,7 @@
       </ion-card>
 
       <ion-item>
+        <ion-icon :icon="timeOutline" slot="start"/>                
         <ion-label> {{ userProfile && userProfile.userTimeZone ? userProfile.userTimeZone : '-' }} </ion-label>
         <ion-button @click="changeTimeZone()" fill="outline" color="dark">{{ $t("Change") }}</ion-button>
       </ion-item>
@@ -91,7 +92,7 @@ import {
   popoverController,
   modalController } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { codeWorkingOutline, ellipsisVerticalOutline } from 'ionicons/icons'
+import { codeWorkingOutline, ellipsisVerticalOutline, timeOutline } from 'ionicons/icons'
 import Popover from '@/views/RecyclePopover.vue'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
@@ -159,6 +160,7 @@ export default defineComponent({
     return {
       codeWorkingOutline,
       ellipsisVerticalOutline,
+      timeOutline,
       router,
       store
     }
