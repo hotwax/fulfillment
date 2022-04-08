@@ -1,17 +1,32 @@
 {
-    "hosting": {
-      "target": "commerce-hub-dev",
+  "hosting": [
+    {
+      "target": "hotwax-fulfillment",
       "public": "dist",
       "ignore": [
         "firebase.json",
         "**/.*",
         "**/node_modules/**"
       ],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ]
+      "rewrites": [ {
+        "source": "**",
+        "destination": "/index.html"
+      } ]
+
+    },
+    {
+      "target": "dev-fulfillment",
+      "public": "dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [ {
+        "source": "**",
+        "destination": "/index.html"
+      } ]
+
     }
-  }
+  ]
+}
