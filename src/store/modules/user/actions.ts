@@ -56,7 +56,6 @@ const actions: ActionTree<UserState, RootState> = {
   async getProfile ( { commit }) {
     const resp = await UserService.getProfile()
     if (resp.data.userTimeZone) {
-      console.log(resp);
       Settings.defaultZone = resp.data.userTimeZone;
     }
     if (resp.status === 200) {

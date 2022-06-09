@@ -13,8 +13,7 @@ import { defineComponent } from 'vue';
 import Menu from '@/components/Menu.vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus";
-import { useStore } from '@/store'
-import { mapGetters } from 'vuex';
+import { mapGetters, useStore } from 'vuex';
 import { Settings } from 'luxon'
 
 export default defineComponent({
