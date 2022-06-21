@@ -46,6 +46,44 @@ const actions: ActionTree<ProductState, RootState> = {
     // TODO Handle specific error
     return resp;
   },
+  async fetchProductDetails({ commit, state }, { productIds }) {
+    const cachedProductIds = Object.keys(state.cached);
+    let viewSize = 1;
+    const productIdFilter = productIds.reduce((filter: string, productId: any) => {
+      if(cachedProductIds.includes(productId)) {
+        return filter;
+      }
+      else {
+        if(filter !== '') {
+          filter += ' OR '
+          viewSize++;
+        }
+        return filter += productId;
+      }
+    }, '');
+    if (productIdFilter === '') return;
+    const resp = await ProductService.fetchProducts({
+      "filters": ['productId: (' + productIdFilter + ')'],
+      "viewSize": viewSize
+    })
+    if (resp.status === 200 && !hasError(resp)) {
+      const products = resp.data.response?.docs;
+      if (resp.data) commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
+    }
+    return resp;
+  },
+  async getProductInformations(context, { orders }) {
+    let productIds: any = new Set();
+    orders.groups.forEach((order: any) => {
+      order.doclist.docs.forEach((item: any) => {
+        if (item.productId) productIds.add(item.productId);
+      })
+    })
+    productIds = [...productIds]
+    if (productIds.length) {
+      this.dispatch('product/fetchProductDetails', { productIds })
+    }
+  }
 }
 
 export default actions;
