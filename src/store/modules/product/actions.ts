@@ -19,8 +19,9 @@ const actions: ActionTree<ProductState, RootState> = {
 
     try {
       resp = await fetchProducts({
-        // used sku as we are currently only using sku to search for the product
-        "filters": {'sku': { 'value': payload.queryString }},
+        // used sku in queryFields as we are currently only using sku to search for the product
+        "queryString": payload.queryString,
+        "queryFields": "sku",
         "viewSize": payload.viewSize,
         "viewIndex": payload.viewIndex
       })
