@@ -8,12 +8,12 @@
 </template>
 
 <script lang="ts">
-import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
+import { IonApp, IonRouterOutlet, IonSplitPane, loadingController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import Menu from '@/components/Menu.vue';
-import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus";
-import { useStore } from '@/store'
+import { useStore, mapGetters } from 'vuex';
+import { updateInstanceUrl, updateToken } from '@hotwax/oms-api';
 
 export default defineComponent({
   name: 'App',
@@ -56,10 +56,20 @@ export default defineComponent({
       });
     emitter.on('presentLoader', this.presentLoader);
     emitter.on('dismissLoader', this.dismissLoader);
+    updateToken(this.userToken)
+    updateInstanceUrl(this.instanceUrl)
   },
   unmounted() {
     emitter.off('presentLoader', this.presentLoader);
     emitter.off('dismissLoader', this.dismissLoader);
+    updateToken('')
+    updateInstanceUrl('')
+  },
+  computed: {
+    ...mapGetters({
+      userToken: 'user/getUserToken',
+      instanceUrl: 'user/getInstanceUrl'
+    })
   },
   setup() {
     const store = useStore();
