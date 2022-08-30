@@ -9,7 +9,7 @@
       <ion-title>{{ $t("Select time zone") }}</ion-title>
     </ion-toolbar>
     <ion-toolbar>
-      <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="$t('Search time zones')"  v-model="queryString" v-on:keyup.enter="findTimeZone()"></ion-searchbar>
+      <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="$t('Search time zones')"  v-model="queryString" @keyup.enter="findTimeZone()" />
     </ion-toolbar>
   </ion-header>
 
@@ -63,8 +63,7 @@ import { closeOutline, save } from "ionicons/icons";
 import { useStore } from "@/store";
 import { UserService } from "@/services/UserService";
 import { hasError } from '@/utils'
-import moment from 'moment';
-import "moment-timezone";
+import { DateTime } from 'luxon'
 
 export default defineComponent({
   name: "TimeZoneModal",
@@ -112,13 +111,13 @@ export default defineComponent({
     },
     async getAvailableTimeZones() {
       UserService.getAvailableTimeZones().then((resp: any) => {
-        if (resp.status === 200 && !hasError(resp)) {
+        if (resp.status === 200 && !hasError(resp) && resp.data?.length > 0) {
           this.timeZones = resp.data.filter((timeZone: any) => {
-            return moment.tz.zone(timeZone.id);
+            return DateTime.local().setZone(timeZone.id).isValid;
           });
           this.findTimeZone();
         }
-      })
+      });
     },
     selectSearchBarText(event: any) {
       event.target.getInputElement().then((element: any) => {
