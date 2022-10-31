@@ -12,7 +12,8 @@ import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import Menu from '@/components/Menu.vue';
 import { loadingController } from '@ionic/vue';
-import emitter from "@/event-bus"
+import emitter from "@/event-bus";
+import { useStore } from '@/store'
 
 export default defineComponent({
   name: 'App',
@@ -44,7 +45,7 @@ export default defineComponent({
         this.loader.dismiss();
         this.loader = null as any;
       }
-    }
+    },
   },
   async mounted() {
     this.loader = await loadingController
@@ -59,6 +60,12 @@ export default defineComponent({
   unmounted() {
     emitter.off('presentLoader', this.presentLoader);
     emitter.off('dismissLoader', this.dismissLoader);
+  },
+  setup() {
+    const store = useStore();
+    return {
+      store
+    };
   },
 });
 </script>

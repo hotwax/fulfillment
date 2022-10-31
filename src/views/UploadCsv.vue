@@ -7,7 +7,7 @@
       </ion-toolbar>
     </ion-header>
     
-    <ion-content :fullscreen="true">
+    <ion-content>
       <div class="upload-csv">
         <ion-item>
            <ion-label>{{ $t("Shipped orders") }}</ion-label>

@@ -15,7 +15,7 @@
       </ion-toolbar>
     </ion-header>
     
-    <ion-content :fullscreen="true" id="picklist-size">
+    <ion-content id="picklist-size">
       <ion-searchbar /> 
 
       <div class="filters">
@@ -177,54 +177,14 @@ export default defineComponent({
 </script>
 
 <style scoped>
-
-.card-header {
-  display: grid;
-  grid: "tags"
-        "info"
-        "metadata"/ 1fr;
-  justify-content: start;
-  border-bottom: 1px solid black;        
-}
-
-.order-primary-info {
-  grid-area: info;
-}
-
-.order-tags {
-  grid-area: tags;
+.order-tags{
   display: flex;
   justify-content: space-between;
-  border-bottom: 1px solid black;
 }
 
-.order-metadata {
-  grid-area: metadata;
-}  
-
-.order-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}  
-
-@media (min-width: 991px) {
-  .card-header {
-    grid: "info tags metadata" / max-content 1fr max-content;
-    align-items: center;
-  }
-
-  .order-tags {
-    justify-self: center;
+@media (max-width: 991px) {
+  .order-item {
     border-bottom: none;
   }
-
-  .order-metadata {
-    text-align: end;
-  }
-
-  .order-item {
-    border-bottom: 1px solid black;
-  }  
 }
 </style>

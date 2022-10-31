@@ -3,7 +3,7 @@
     <ion-toolbar>
       <ion-buttons slot="start">
         <ion-button @click="closeModal"> 
-          <ion-icon :icon="closeOutline" />
+          <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
       <ion-title>{{ $t("Assign Pickers") }}</ion-title>
@@ -44,6 +44,7 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
+  IonRow,
   IonSearchbar,
   IonTitle,
   IonToolbar,
@@ -65,6 +66,7 @@ export default defineComponent({
     IonLabel,
     IonList,
     IonListHeader,
+    IonRow,
     IonSearchbar,
     IonTitle,
     IonToolbar,
