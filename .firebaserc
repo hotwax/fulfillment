@@ -6,14 +6,17 @@
   "targets": {
     "hotwax-digital-commerce": {
       "hosting": {
-        "dev-fulfillment": [
+        "dev": [
           "dev-fulfillment"
+        ],
+        "uat": [
+          "uat-fulfillment"
         ]
       }
     },
     "digital-commerce-71eb8": {
       "hosting": {
-        "hotwax-fulfillment": [
+        "prod": [
           "hotwax-fulfillment"
         ]
       }
