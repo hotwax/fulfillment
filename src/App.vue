@@ -13,7 +13,9 @@ import { defineComponent } from 'vue';
 import Menu from '@/components/Menu.vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus";
-import { useStore } from '@/store'
+import { mapGetters, useStore } from 'vuex';
+import { init, resetConfig } from '@/adapter'
+import { useRouter } from 'vue-router';
 
 export default defineComponent({
   name: 'App',
@@ -25,8 +27,15 @@ export default defineComponent({
   },
   data() {
     return {
-      loader: null as any
+      loader: null as any,
+      maxAge: process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0
     }
+  },
+  computed: {
+    ...mapGetters({
+      userToken: 'user/getUserToken',
+      instanceUrl: 'user/getInstanceUrl'
+    })
   },
   methods: {
     async presentLoader() {
@@ -46,6 +55,13 @@ export default defineComponent({
         this.loader = null as any;
       }
     },
+    async unauthorized() {
+      this.store.dispatch("user/logout");
+      this.router.push("/login")
+    }
+  },
+  created() {
+    init(this.userToken, this.instanceUrl, this.maxAge)
   },
   async mounted() {
     this.loader = await loadingController
@@ -56,17 +72,22 @@ export default defineComponent({
       });
     emitter.on('presentLoader', this.presentLoader);
     emitter.on('dismissLoader', this.dismissLoader);
+    emitter.on('unauthorized', this.unauthorized);
   },
   unmounted() {
     emitter.off('presentLoader', this.presentLoader);
     emitter.off('dismissLoader', this.dismissLoader);
+    emitter.off('unauthorized', this.unauthorized);
+    resetConfig()
   },
   setup() {
     const store = useStore();
+    const router = useRouter();
     return {
+      router,
       store
-    };
-  },
+    }
+  }
 });
 </script>
 
