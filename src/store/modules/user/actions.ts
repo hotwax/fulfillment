@@ -5,7 +5,7 @@ import UserState from './UserState'
 import * as types from './mutation-types'
 import { hasError, showToast } from '@/utils'
 import { translate } from '@/i18n'
-import "moment-timezone";
+import { Settings } from 'luxon'
 import { updateInstanceUrl, updateToken, resetConfig } from '@/adapter'
 
 const actions: ActionTree<UserState, RootState> = {
@@ -83,6 +83,9 @@ const actions: ActionTree<UserState, RootState> = {
    */
   async getProfile ( { commit }) {
     const resp = await UserService.getProfile()
+    if (resp.data.userTimeZone) {
+      Settings.defaultZone = resp.data.userTimeZone;
+    }
     if (resp.status === 200) {
       commit(types.USER_INFO_UPDATED, resp.data);
       commit(types.USER_CURRENT_FACILITY_UPDATED, resp.data.facilities.length > 0 ? resp.data.facilities[0] : {});
