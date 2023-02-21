@@ -16,6 +16,7 @@ import emitter from "@/event-bus";
 import { mapGetters, useStore } from 'vuex';
 import { init, resetConfig } from '@/adapter'
 import { useRouter } from 'vue-router';
+import { Settings } from 'luxon'
 
 export default defineComponent({
   name: 'App',
@@ -34,7 +35,8 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       userToken: 'user/getUserToken',
-      instanceUrl: 'user/getInstanceUrl'
+      instanceUrl: 'user/getInstanceUrl',
+      userProfile: 'user/getUserProfile'
     })
   },
   methods: {
@@ -73,6 +75,12 @@ export default defineComponent({
     emitter.on('presentLoader', this.presentLoader);
     emitter.on('dismissLoader', this.dismissLoader);
     emitter.on('unauthorized', this.unauthorized);
+
+    // Handles case when user resumes or reloads the app
+    // Luxon timezzone should be set with the user's selected timezone
+    if (this.userProfile && this.userProfile.userTimeZone) {
+      Settings.defaultZone = this.userProfile.userTimeZone;
+    }
   },
   unmounted() {
     emitter.off('presentLoader', this.presentLoader);
