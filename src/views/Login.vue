@@ -1,17 +1,21 @@
 <template>
   <ion-page>
-    <ion-content :fullscreen="true">
+    <ion-content>
       <div class="flex">
         <form class="login-container" @keyup.enter="login(form)" @submit.prevent="login(form)">
-          <img src="../assets/images/hc.png"/>
+          <Logo />
 
+          <ion-item lines="full" v-if="!baseURL">
+            <ion-label position="fixed">{{ $t("OMS") }}</ion-label>
+            <ion-input name="instanceUrl" v-model="instanceUrl" id="instanceUrl" type="text" required />
+          </ion-item>
           <ion-item lines="full">
-            <ion-label>{{ $t("Username") }}</ion-label>
-            <ion-input name="username" v-model="username" id="username"  type="text" required></ion-input>
+            <ion-label position="fixed">{{ $t("Username") }}</ion-label>
+            <ion-input name="username" v-model="username" id="username"  type="text" required />
           </ion-item>
           <ion-item lines="none">
-            <ion-label>{{ $t("Password") }}</ion-label>
-            <ion-input name="password" v-model="password" id="password" type="password" required></ion-input>
+            <ion-label position="fixed">{{ $t("Password") }}</ion-label>
+            <ion-input name="password" v-model="password" id="password" type="password" required />
           </ion-item>
 
           <div class="ion-padding">
@@ -34,6 +38,8 @@ import {
 import { defineComponent } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "@/store";
+import { mapGetters } from 'vuex';
+import Logo from '@/components/Logo.vue';
 
 export default defineComponent({
   name: "Login",
@@ -43,16 +49,30 @@ export default defineComponent({
     IonInput,
     IonItem,
     IonLabel,
-    IonPage
+    IonPage,
+    Logo
   },
   data() {
     return {
       username: "",
-      password: ""
+      password: "",
+      instanceUrl: "",
+      baseURL: process.env.VUE_APP_BASE_URL,
+      alias: JSON.parse(process.env.VUE_APP_ALIAS)
     };
+  },
+  computed: {
+    ...mapGetters({
+      currentInstanceUrl: 'user/getInstanceUrl'
+    })
+  },
+  mounted() {
+    this.instanceUrl = this.currentInstanceUrl;
   },
   methods: {
     login: function () {
+      const instanceURL = this.instanceUrl.trim().toLowerCase();
+      if(!this.baseURL) this.store.dispatch("user/setUserInstanceUrl", this.alias[instanceURL] ? this.alias[instanceURL] : instanceURL);
       const { username, password } = this;
       this.store.dispatch("user/login", { username, password }).then((data: any) => {
         if (data.token) {
@@ -71,14 +91,8 @@ export default defineComponent({
 });
 </script>
 <style scoped>
-
 .login-container {
   width: 375px;
-}
-
-img {
-  margin-bottom: 25px;
-  padding: 16px;
 }
 
 .flex {
@@ -87,5 +101,4 @@ img {
   align-items: center;
   height: 100%;
 }
-
 </style>

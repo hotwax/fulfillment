@@ -3,7 +3,7 @@
     <ion-toolbar>
       <ion-buttons slot="start">
         <ion-button @click="closeModal"> 
-          <ion-icon :icon="close" />
+          <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
       <ion-title>{{ $t("Edit packaging") }}</ion-title>
@@ -65,7 +65,13 @@
     </ion-card> 
 
     <ion-list>
-      <ion-list-header>{{ $t("Boxes") }}</ion-list-header>
+      <ion-item lines="none">
+        <ion-note slot="start">{{ $t('Boxes') }}</ion-note>
+        <ion-button fill="clear" slot="end">
+          {{ $t("Add") }}
+          <ion-icon :icon="addCircleOutline"/>
+        </ion-button>
+      </ion-item>
       <ion-item>
         <ion-label>Box A</ion-label>
         <ion-select value="3">
@@ -90,7 +96,7 @@ import {
   IonItem,
   IonLabel,
   IonList,
-  IonListHeader,
+  IonNote,
   IonSelect,
   IonSelectOption,
   IonThumbnail,
@@ -98,7 +104,7 @@ import {
   IonToolbar,
   modalController } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { close, pricetag } from "ionicons/icons";
+import { addCircleOutline, closeOutline, pricetag } from "ionicons/icons";
 export default defineComponent({
   name: "EditPackagingModal",
   components: { 
@@ -112,7 +118,7 @@ export default defineComponent({
     IonItem,
     IonLabel,
     IonList,
-    IonListHeader,
+    IonNote,
     IonSelect,
     IonSelectOption,
     IonThumbnail,
@@ -126,23 +132,10 @@ export default defineComponent({
   },
   setup() {
     return {
-      close,
+      addCircleOutline,
+      closeOutline,
       pricetag
     };
   },
 });
 </script>
-<style scoped>
-.order-tags {
-  border-bottom: 1px solid black;
-}
-
-.order-metadata {
-  border-bottom: 1px solid black;
-}
-.order-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}  
-</style>

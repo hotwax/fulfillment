@@ -1,0 +1,7 @@
+---
+title: Updated color of ion-icon in ion-chip, ion-chip outline, ion-item line in dark
+  mode and used color variable instead of hardcoded color
+ticket_id: "#238p38r"
+merge_request: 54
+author: Azkya Khan
+type: changed
