@@ -48,7 +48,7 @@ app.config.globalProperties.$filters = {
   formatUtcDate(value: any, inFormat?: any, outFormat?: string) {
     // TODO Make default format configurable and from environment variables
     // TODO Fix this setDefault should set the default timezone instead of getting it everytiem and setting the tz
-    return DateTime.utc(value, inFormat).setZone(store.state.user.current.userTimeZone).toFormat(outFormat ? outFormat : 'MM-dd-yyyy')
+    return DateTime.fromISO(value, { zone: 'utc' }).setZone(store.state.user.current.userTimeZone).toFormat(outFormat ? outFormat : 'MM-dd-yyyy')
   },
   getFeature(featureHierarchy: any, featureKey: string) {
     let  featureValue = ''
