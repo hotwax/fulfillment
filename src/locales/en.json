@@ -1,4 +1,5 @@
 {
+  " doesn’t have any outstanding orders right now.": " doesn’t have any outstanding orders right now.",
   "Add Box": "Add Box",
   "Are you sure you want to change the time zone to?": "Are you sure you want to change the time zone to?",
   "Assign Pickers": "Assign Pickers",
@@ -67,6 +68,7 @@
   "Shipped orders": "Shipped orders",
   "Shipping label": "Shipping label",
   "Shipping labels": "Shipping labels",
+  "Something went wrong": "Something went wrong",
   "Staff": "Staff",
   "eCom Store": "eCom Store",
   "store name": "store name",

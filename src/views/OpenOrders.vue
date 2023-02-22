@@ -16,83 +16,88 @@
     </ion-header>
     
     <ion-content id="picklist-size">
-      <ion-searchbar v-model="queryString" @keyup.enter="fetchOpenOrders()"/>
+      <div v-if="openOrders.total">
+        <ion-searchbar v-model="queryString" @keyup.enter="fetchOpenOrders()"/>
 
-      <div class="filters">
-        <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
-          <ion-checkbox slot="start" @ionChange="updateShipmentMethodArray(method.val)"/>
-          <ion-label>
-            {{ method.val }}
-            <p>{{ method.ordersCount }} {{ $t("orders") }}, {{ method.count }} {{ $t("items") }}</p>
-          </ion-label>
-        </ion-item>
+        <div class="filters">
+          <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
+            <ion-checkbox slot="start" @ionChange="updateShipmentMethodArray(method.val)"/>
+            <ion-label>
+              {{ method.val }}
+              <p>{{ method.ordersCount }} {{ $t("orders") }}, {{ method.count }} {{ $t("items") }}</p>
+            </ion-label>
+          </ion-item>
+        </div>
+
+        <ion-button class="desktop-only" fill="outline" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
+
+        <ion-card v-for="(orders, index) in openOrders.list" :key="index">
+          <div class="card-header">
+            <div class="order-primary-info">
+              <ion-label>
+                {{ orders.doclist.docs[0].customerName }}
+                <p>{{ $t("Ordered") }} {{ $filters.formatUtcDate(orders.doclist.docs[0].orderDate, 'YYYY-MM-DDTHH:mm:ssZ', 'Do MMMM YYYY LT z') }}</p>
+              </ion-label>
+            </div>
+
+            <div class="order-tags">
+              <ion-chip outline>
+                <ion-icon :icon="pricetagOutline" />
+                <ion-label>{{ orders.doclist.docs[0].orderId }}</ion-label>
+              </ion-chip>
+              <ion-button fill="clear" class="mobile-only" color="danger">
+                <ion-icon slot="icon-only" :icon="refreshCircleOutline" />
+              </ion-button>
+            </div>
+
+            <div class="order-metadata">
+              <ion-label>
+                {{ orders.doclist.docs[0].shipmentMethodTypeId }}
+                <!-- TODO: add support to display the last brokered date, currently not getting
+                the date in API response -->
+                <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
+              </ion-label>
+            </div>
+          </div>
+
+          <div v-for="order in orders.doclist.docs" :key="order">
+            <div class="order-item">
+              <div class="product-info">
+                <ion-item lines="none">
+                  <ion-thumbnail>
+                    <Image :src="getProduct(order.productId).mainImageUrl" />
+                  </ion-thumbnail>
+                  <ion-label>
+                    <p class="overline">{{ order.productSku }}</p>
+                    {{ order.productName }}
+                    <p>{{$filters.getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{$filters.getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  </ion-label>
+                </ion-item>
+              </div>
+              <div class="product-metadata">
+                <ion-note>{{ getProductStock(order.productId) }} {{ $t('pieces in stock') }}</ion-note>
+              </div>
+            </div>
+          </div>
+
+          <!-- TODO: add functionality to the buttons-->
+          <div class="actions">
+            <div class="positive-action"></div>
+            <div class="negative-action">
+              <ion-button fill="outline" color="danger">{{ $t("Recycle") }}</ion-button>
+            </div>
+          </div>
+        </ion-card>
+
+        <ion-fab class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
+          <ion-fab-button @click="assignPickers">
+            <ion-icon :icon="printOutline" />
+          </ion-fab-button>
+        </ion-fab>
       </div>
-
-      <ion-button class="desktop-only" fill="outline" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
-
-      <ion-card v-for="(orders, index) in openOrders.list" :key="index">
-        <div class="card-header">
-          <div class="order-primary-info">
-            <ion-label>
-              {{ orders.doclist.docs[0].customerName }}
-              <p>{{ $t("Ordered") }} {{ $filters.formatUtcDate(orders.doclist.docs[0].orderDate, 'YYYY-MM-DDTHH:mm:ssZ', 'Do MMMM YYYY LT z') }}</p>
-            </ion-label>
-          </div>
-
-          <div class="order-tags">
-            <ion-chip outline>
-              <ion-icon :icon="pricetagOutline" />
-              <ion-label>{{ orders.doclist.docs[0].orderId }}</ion-label>
-            </ion-chip>
-            <ion-button fill="clear" class="mobile-only" color="danger">
-              <ion-icon slot="icon-only" :icon="refreshCircleOutline" />
-            </ion-button>
-          </div>
-
-          <div class="order-metadata">
-            <ion-label>
-              {{ orders.doclist.docs[0].shipmentMethodTypeId }}
-              <!-- TODO: add support to display the last brokered date, currently not getting
-              the date in API response -->
-              <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
-            </ion-label>
-          </div>
-        </div>
-
-        <div v-for="order in orders.doclist.docs" :key="order">
-          <div class="order-item">
-            <div class="product-info">
-              <ion-item lines="none">
-                <ion-thumbnail>
-                  <Image :src="getProduct(order.productId).mainImageUrl" />
-                </ion-thumbnail>
-                <ion-label>
-                  <p class="overline">{{ order.productSku }}</p>
-                  {{ order.productName }}
-                  <p>{{$filters.getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{$filters.getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
-                </ion-label>
-              </ion-item>
-            </div>
-            <div class="product-metadata">
-              <ion-note>{{ getProductStock(order.productId) }} {{ $t('pieces in stock') }}</ion-note>
-            </div>
-          </div>
-        </div>
-
-        <!-- TODO: add functionality to the buttons-->
-        <div class="actions">  
-          <div class="positive-action"></div>
-          <div class="negative-action">
-            <ion-button fill="outline" color="danger">{{ $t("Recycle") }}</ion-button>
-          </div>
-        </div>
-      </ion-card>
-
-      <ion-fab class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="assignPickers">
-          <ion-icon :icon="printOutline" />
-        </ion-fab-button>
-      </ion-fab> 
+      <div v-else>
+        {{ currentFacility.name }}{{ $t(' doesn’t have any outstanding orders right now.') }}
+      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -228,7 +233,7 @@ export default defineComponent({
     // TODO: find a better way to get open orders when changing the picklistSize
     // One way is to call the fetchOpenOrders action from the picklist component when picklist
     // changed, but in this case we need to pass some data to picklist component using props
-    // Another way is to emit an event when picklist size change and catch that even in here.
+    // Another way is to emit an event when picklist size change and catch that event in here.
     picklistSize () {
       this.fetchOpenOrders();
     }
