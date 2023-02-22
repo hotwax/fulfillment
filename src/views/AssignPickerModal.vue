@@ -24,10 +24,13 @@
       <!-- TODO: added click event on the item as when using the ionChange event then it's getting
       called every time the v-for loop runs and then removes or adds the currently rendered picker
       -->
-      <ion-item v-for="(picker, index) in currentPickers" :key="index" @click="pickerChanged(picker.name)">
-        <ion-label>{{ picker.name }}</ion-label>
-        <ion-checkbox :checked="pickerSelected.includes(picker.name)"/>
-      </ion-item>
+      <div v-if="!currentPickers.length">{{ 'No picker found' }}</div>
+      <div v-else>
+        <ion-item v-for="(picker, index) in currentPickers" :key="index" @click="pickerChanged(picker.name)">
+          <ion-label>{{ picker.name }}</ion-label>
+          <ion-checkbox :checked="pickerSelected.includes(picker.name)"/>
+        </ion-item>
+      </div>
     </ion-list>
   </ion-content>
 </template>
@@ -129,6 +132,7 @@ export default defineComponent({
       facilityId: this.currentFacility.facilityId,
       roleTypeId: 'WAREHOUSE_PICKER'
     }).then(() => {
+      // making the current user as a picker by default
       this.pickerChanged(this.current.partyName)
       this.searchPicker()
     })

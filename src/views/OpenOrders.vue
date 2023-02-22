@@ -81,12 +81,12 @@
           </div>
 
           <!-- TODO: add functionality to the buttons-->
-          <div class="actions">
+          <!-- <div class="actions">
             <div class="positive-action"></div>
             <div class="negative-action">
               <ion-button fill="outline" color="danger">{{ $t("Recycle") }}</ion-button>
             </div>
-          </div>
+          </div> -->
         </ion-card>
 
         <ion-fab class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
