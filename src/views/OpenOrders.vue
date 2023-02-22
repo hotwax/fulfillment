@@ -36,7 +36,7 @@
             <div class="order-primary-info">
               <ion-label>
                 {{ orders.doclist.docs[0].customerName }}
-                <p>{{ $t("Ordered") }} {{ $filters.formatUtcDate(orders.doclist.docs[0].orderDate, 'YYYY-MM-DDTHH:mm:ssZ', 'Do MMMM YYYY LT z') }}</p>
+                <p>{{ $t("Ordered") }} {{ formatUtcDate(orders.doclist.docs[0].orderDate, 'YYYY-MM-DDTHH:mm:ssZ', 'Do MMMM YYYY LT z') }}</p>
               </ion-label>
             </div>
 
@@ -70,7 +70,7 @@
                   <ion-label>
                     <p class="overline">{{ order.productSku }}</p>
                     {{ order.productName }}
-                    <p>{{$filters.getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{$filters.getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
+                    <p>{{ getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                 </ion-item>
               </div>
@@ -130,6 +130,7 @@ import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import Image from '@/components/Image.vue'
 import PicklistSize from '@/components/PicklistSize.vue';
+import { formatUtcDate, getFeature } from '@/utils'
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -242,6 +243,8 @@ export default defineComponent({
     const store = useStore();
 
     return{
+      formatUtcDate,
+      getFeature,
       optionsOutline,
       pricetagOutline,
       printOutline,
