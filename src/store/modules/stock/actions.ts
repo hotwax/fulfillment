@@ -30,6 +30,7 @@ const actions: ActionTree<StockState, RootState> = {
         "productId_op": "in",
         "facilityId": this.state.user.currentFacility.facilityId
       },
+      // TODO: need to display QOH in place of atp
       "fieldsToSelect": ["productId","atp"],
     });
     if (resp.status === 200 && !hasError(resp)) {
