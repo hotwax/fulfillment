@@ -35,7 +35,7 @@ const formatDate = (value: any, inFormat?: string, outFormat?: string) => {
   return DateTime.fromISO(value).toFormat(outFormat ? outFormat : 'MM-dd-yyyy');
 }
 
-const formatUtcDate = (value: any, inFormat?: any, outFormat?: string) => {
+const formatUtcDate = (value: any, outFormat: string) => {
   // TODO Make default format configurable and from environment variables
   // TODO Fix this setDefault should set the default timezone instead of getting it everytiem and setting the tz
   return DateTime.fromISO(value, { zone: 'utc' }).setZone(store.state.user.current.userTimeZone).toFormat(outFormat ? outFormat : 'MM-dd-yyyy')
