@@ -69,7 +69,7 @@
                   </ion-thumbnail>
                   <ion-label>
                     <p class="overline">{{ order.productSku }}</p>
-                    {{ order.productName }}
+                    {{ order.virtualProductName }}
                     <p>{{ getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                 </ion-item>
@@ -190,40 +190,18 @@ export default defineComponent({
       return bgjobmodal.present();
     },
     async fetchOpenOrders () {
-      const currentShipmentMethods = this.selectedShipmentMethod.toString().replaceAll(",", " OR ")
       const viewSize = this.picklistSize
-      const sortBy = ''
       const payload = {
-        "json": {
-          "params": {
-            "rows": `${viewSize}`,
-            "sort": `${sortBy ? sortBy:'reservedDatetime desc'}`,
-            "group": true,
-            "group.field": "orderId",
-            "group.limit": 1000,
-            "group.ngroups": true,
-            "defType": "edismax",
-            "q.op": "AND",
-            "qf": "orderId"
-          },
-          "query": `(*${this.queryString}*) OR "${this.queryString}"^100`,
-          "filter" : ["docType: OISGIR", "quantityNotAvailable: 0", "orderTypeId: SALES_ORDER", "orderStatusId: ORDER_APPROVED", "isPicked: N", "-shipmentMethodTypeId: STOREPICKUP", "-fulfillmentStatus: Cancelled", `shipmentMethodTypeId: (${currentShipmentMethods ? currentShipmentMethods : '*' })`, `facilityId: ${this.currentFacility.facilityId}`],
-          "facet": {
-            "shipmentMethodTypeIdFacet":{
-              "excludeTags":"shipmentMethodTypeIdFilter",
-              "field":"shipmentMethodTypeId",
-              "mincount":1,
-              "limit":-1,
-              "sort":"index",
-              "type":"terms",
-              "facet": {
-                "ordersCount": "unique(orderId)"
-              }
-            }
-          }
+        queryString: this.queryString,
+        viewSize
+      } as any
+
+      if(this.selectedShipmentMethod.length) {
+        payload['filters'] = {
+          shipmentMethodTypeId: { value: this.selectedShipmentMethod, op: 'OR'}
         }
       }
-      this.store.dispatch('order/fetchOpenOrders', payload).catch(err => console.log(err))
+      await this.store.dispatch('order/fetchOpenOrders', payload)
     }
   },
   mounted () {
