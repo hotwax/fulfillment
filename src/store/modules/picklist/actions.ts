@@ -19,10 +19,12 @@ const actions: ActionTree<PicklistState, RootState> = {
       if (resp.status === 200 && resp.data.count > 0 && !hasError(resp)) {
         commit(types.PICKLIST_PICKERS_UPDATED, {pickers: resp.data.docs})
       } else {
-        showToast(translate('Something went wrong'))
+        console.error(translate('Something went wrong'))
+        commit(types.PICKLIST_PICKERS_UPDATED, {pickers: []})
       }
     } catch (err) {
       console.error(translate('Something went wrong'))
+      commit(types.PICKLIST_PICKERS_UPDATED, {pickers: []})
     }
 
     return resp;

@@ -4,11 +4,13 @@ const getAvailablePickers = async (query: any): Promise <any> => {
   return api({
     url: 'warehouse-party',
     method: 'POST',
-    data: query
+    data: query,
+    cache: true
   })
 }
 
 const createPicklist = async (query: any): Promise <any> => {
+  // TODO: update the endpoint for creating picklist, we can use picklistDataSetup service-multi
   return api({
     url: 'createPicklist',
     method: 'POST',

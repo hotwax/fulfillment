@@ -12,10 +12,10 @@
   </ion-header>
 
   <ion-content>
-    <ion-searchbar v-model="queryString" @keyup.enter="searchPicker()"/>
+    <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; searchPicker()"/>
     <ion-row>
-      <ion-chip v-for="pickerName in pickerSelected" :key="pickerName">
-        <ion-label v-if="pickerName">{{ pickerName }}</ion-label>
+      <ion-chip v-for="picker in pickerSelected" :key="picker.partyId">
+        <ion-label>{{ picker.name }}</ion-label>
       </ion-chip>
     </ion-row>
 
@@ -26,9 +26,9 @@
       -->
       <div v-if="!currentPickers.length">{{ 'No picker found' }}</div>
       <div v-else>
-        <ion-item v-for="(picker, index) in currentPickers" :key="index" @click="pickerChanged(picker.name)">
+        <ion-item v-for="(picker, index) in currentPickers" :key="index" @click="pickerChanged(picker.partyId)">
           <ion-label>{{ picker.name }}</ion-label>
-          <ion-checkbox :checked="pickerSelected.includes(picker.name)"/>
+          <ion-checkbox :checked="isPickerSelected(picker.partyId)"/>
         </ion-item>
       </div>
     </ion-list>
@@ -94,25 +94,24 @@ export default defineComponent({
     }
   },
   methods: {
+    isPickerSelected(pickerId) {
+      return this.pickerSelected.some((picker) => picker.partyId == pickerId)
+    },
     closeModal() {
       modalController.dismiss({ dismissed: true });
     },
-    pickerChanged (picker) {
-      if (!this.pickerSelected.includes(picker)) {
-        this.pickerSelected.push(picker)
+    pickerChanged(pickerId) {
+      const picker = this.pickerSelected.some((picker) => picker.partyId == pickerId)
+      if (picker) {
+        // if picker is already selected then removing that picker from the list on click
+        this.pickerSelected = this.pickerSelected.filter((picker) => picker.partyId != pickerId)
       } else {
-        this.pickerSelected.splice(this.pickerSelected.indexOf(picker), 1)
+        this.pickerSelected.push(this.pickers.find((picker) => picker.partyId == pickerId))
       }
     },
-    searchPicker () {
+    async searchPicker () {
       this.currentPickers = []
-      if (this.queryString.length > 0) {
-        this.pickers.map((picker) => {
-          if (picker.name.toLowerCase().includes(this.queryString.toLowerCase())) this.currentPickers.push(picker)
-        })
-      } else {
-        this.currentPickers = this.pickers.map((picker) => picker)
-      }
+      this.fetchPickers()
     },
     printPicklist () {
       // TODO: update API support to create a picklist
@@ -122,20 +121,35 @@ export default defineComponent({
       } else {
         showToast(translate('Select a picker'))
       }
+    },
+    async fetchPickers() {
+      let filters = {}
+      if(this.queryString.length > 0) {
+        // TODO: enable searching on pickerName as well, currently the entity used in warehouse-party api does not
+        // support searching on name
+        filters['partyId'] = this.queryString
+        filters['partyId_op'] = 'contains'
+      }
+
+      const payload = {
+        vSize: 50,
+        vIndex: 0,
+        facilityId: this.currentFacility.facilityId,
+        roleTypeId: 'WAREHOUSE_PICKER',
+        filters
+      }
+
+      await this.store.dispatch('picklist/updateAvailablePickers', payload)
+      this.currentPickers = this.pickers
     }
   },
-  mounted() {
+  async mounted() {
     // getting picker information on initial load
-    this.store.dispatch('picklist/updateAvailablePickers', {
-      vSize: 50,
-      vIndex: 0,
-      facilityId: this.currentFacility.facilityId,
-      roleTypeId: 'WAREHOUSE_PICKER'
-    }).then(() => {
+    await this.fetchPickers()
+    if(this.pickers.length) {
       // making the current user as a picker by default
-      this.pickerChanged(this.current.partyName)
-      this.searchPicker()
-    })
+      this.pickerChanged(this.current.partyId)
+    }
   },
   setup() {
     const store = useStore();
