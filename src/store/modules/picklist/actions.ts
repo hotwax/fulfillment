@@ -17,7 +17,12 @@ const actions: ActionTree<PicklistState, RootState> = {
     try {
       resp = await PicklistService.getAvailablePickers(payload);
       if (resp.status === 200 && resp.data.count > 0 && !hasError(resp)) {
-        commit(types.PICKLIST_PICKERS_UPDATED, {pickers: resp.data.docs})
+        const pickers = resp.data.docs.map((picker: any) => ({
+          name: picker.firstName+ ' ' +picker.lastName,
+          id: picker.partyId
+        }))
+
+        commit(types.PICKLIST_PICKERS_UPDATED, { pickers })
       } else {
         console.error(translate('Something went wrong'))
         commit(types.PICKLIST_PICKERS_UPDATED, {pickers: []})

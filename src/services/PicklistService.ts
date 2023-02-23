@@ -2,7 +2,7 @@ import { api } from '@/adapter';
 
 const getAvailablePickers = async (query: any): Promise <any> => {
   return api({
-    url: 'warehouse-party',
+    url: 'performFind',
     method: 'POST',
     data: query,
     cache: true

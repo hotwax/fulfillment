@@ -14,7 +14,7 @@
   <ion-content>
     <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; searchPicker()"/>
     <ion-row>
-      <ion-chip v-for="picker in pickerSelected" :key="picker.partyId">
+      <ion-chip v-for="picker in pickerSelected" :key="picker.id">
         <ion-label>{{ picker.name }}</ion-label>
       </ion-chip>
     </ion-row>
@@ -26,9 +26,9 @@
       -->
       <div v-if="!currentPickers.length">{{ 'No picker found' }}</div>
       <div v-else>
-        <ion-item v-for="(picker, index) in currentPickers" :key="index" @click="pickerChanged(picker.partyId)">
+        <ion-item v-for="(picker, index) in currentPickers" :key="index" @click="pickerChanged(picker.id)">
           <ion-label>{{ picker.name }}</ion-label>
-          <ion-checkbox :checked="isPickerSelected(picker.partyId)"/>
+          <ion-checkbox :checked="isPickerSelected(picker.id)"/>
         </ion-item>
       </div>
     </ion-list>
@@ -94,19 +94,19 @@ export default defineComponent({
     }
   },
   methods: {
-    isPickerSelected(pickerId) {
-      return this.pickerSelected.some((picker) => picker.partyId == pickerId)
+    isPickerSelected(id) {
+      return this.pickerSelected.some((picker) => picker.id == id)
     },
     closeModal() {
       modalController.dismiss({ dismissed: true });
     },
-    pickerChanged(pickerId) {
-      const picker = this.pickerSelected.some((picker) => picker.partyId == pickerId)
+    pickerChanged(id) {
+      const picker = this.pickerSelected.some((picker) => picker.id == id)
       if (picker) {
         // if picker is already selected then removing that picker from the list on click
-        this.pickerSelected = this.pickerSelected.filter((picker) => picker.partyId != pickerId)
+        this.pickerSelected = this.pickerSelected.filter((picker) => picker.id != id)
       } else {
-        this.pickerSelected.push(this.pickers.find((picker) => picker.partyId == pickerId))
+        this.pickerSelected.push(this.pickers.find((picker) => picker.id == id))
       }
     },
     async searchPicker () {
@@ -123,20 +123,42 @@ export default defineComponent({
       }
     },
     async fetchPickers() {
-      let filters = {}
+      let inputFields = {}
+
       if(this.queryString.length > 0) {
-        // TODO: enable searching on pickerName as well, currently the entity used in warehouse-party api does not
-        // support searching on name
-        filters['partyId'] = this.queryString
-        filters['partyId_op'] = 'contains'
+        // TODO: having issue when creating more than 2 groups in performFind, searching always work on first two groups
+        inputFields = {
+          firstName_fld0_value: this.queryString,
+          firstName_fld0_op: 'contains',
+          firstName_fld0_ic: 'Y',
+          firstName_fld0_grp: '1',
+          lastName_fld1_value: this.queryString,
+          lastName_fld1_op: 'contains',
+          lastName_fld1_ic: 'Y',
+          lastName_fld1_grp: '2',
+          id_fld2_value: this.queryString,
+          id_fld2_op: 'contains',
+          id_fld2_ic: 'Y',
+          id_fld2_grp: '3',
+          externalId_fld3_value: this.queryString,
+          externalId_fld3_op: 'contains',
+          externalId_fld3_ic: 'Y',
+          externalId_fld3_grp: '4',
+        }
       }
 
       const payload = {
-        vSize: 50,
-        vIndex: 0,
-        facilityId: this.currentFacility.facilityId,
-        roleTypeId: 'WAREHOUSE_PICKER',
-        filters
+        inputFields: {
+          ...inputFields,
+          roleTypeIdTo: 'WAREHOUSE_PICKER'
+        },
+        viewSize: 50,
+        entityName: 'PartyRelationshipAndDetail',
+        noConditionFind: 'Y',
+        orderBy: "firstName ASC",
+        filterByDate: "Y",
+        distinct: "Y",
+        fieldList: ["firstName", "lastName", "partyId"]
       }
 
       await this.store.dispatch('picklist/updateAvailablePickers', payload)
