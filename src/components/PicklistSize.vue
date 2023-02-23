@@ -67,7 +67,11 @@ export default defineComponent({
   methods: {
     preparePicklistSize () {
       // creating an array of numbers using Array.keys method and then multiplying each by 5
-      return [ ...Array(Math.ceil(this.openOrders.total / 5)).keys() ].map( i => (i+1) * 5)
+      return [ ...Array(Math.ceil(this.openOrders.total / 5)).keys() ].map( i => {
+        const count = (i+1) * 5
+        // added check that if the count is greater than the total orders available then assigning orders total as picklistSize
+        return count > this.openOrders.total ? this.openOrders.total : count
+      })
     },
     setPicklistSize () {
       this.store.dispatch('picklist/setPicklistSize', this.size)

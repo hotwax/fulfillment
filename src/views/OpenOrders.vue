@@ -1,11 +1,11 @@
 <template>
-  <ion-page :fullscreen="true">
+  <ion-page>
     <PicklistSize content-id="picklist-size" />
     
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button menu="start" slot="start" />
-        <ion-title>{{ picklistSize > openOrders.total ? openOrders.total : picklistSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
+        <ion-title>{{ picklistSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
      
         <ion-buttons slot="end">
           <ion-menu-button menu="end">

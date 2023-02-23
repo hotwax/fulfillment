@@ -82,7 +82,6 @@ export default defineComponent({
     ...mapGetters({
       pickers: 'picklist/getAvailablePickers',
       current: 'user/getUserProfile',
-      currentFacility: 'user/getCurrentFacility',
       openOrders: 'order/getOpenOrders'
     })
   },
