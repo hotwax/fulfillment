@@ -81,7 +81,6 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       pickers: 'picklist/getAvailablePickers',
-      current: 'user/getUserProfile',
       openOrders: 'order/getOpenOrders'
     })
   },
@@ -94,7 +93,7 @@ export default defineComponent({
   },
   methods: {
     isPickerSelected(id) {
-      return this.pickerSelected.length ? this.pickerSelected.some((picker) => picker.id == id) : false
+      return this.pickerSelected.some((picker) => picker.id == id)
     },
     closeModal() {
       modalController.dismiss({ dismissed: true });
@@ -105,9 +104,7 @@ export default defineComponent({
         // if picker is already selected then removing that picker from the list on click
         this.pickerSelected = this.pickerSelected.filter((picker) => picker.id != id)
       } else {
-        // TODO: handled this to check if logged-in user data does not come in resp
-        const currentPicker = this.pickers.find((picker) => picker.id == id)
-        currentPicker && this.pickerSelected.push(this.pickers.find((picker) => picker.id == id))
+        this.pickerSelected.push(this.pickers.find((picker) => picker.id == id))
       }
     },
     async searchPicker () {
@@ -170,10 +167,6 @@ export default defineComponent({
   async mounted() {
     // getting picker information on initial load
     await this.fetchPickers()
-    if(this.pickers.length) {
-      // making the current user as a picker by default
-      this.pickerChanged(this.current.partyId)
-    }
   },
   setup() {
     const store = useStore();
