@@ -10,8 +10,9 @@
       <ion-list>
         <ion-radio-group v-model="size" @ionChange="setPicklistSize()">
           <ion-item v-for="count in preparePicklistSize()" :key="count">
-            <ion-radio slot="start" :value="count * 5"/>
-            <ion-label>{{ (count * 5) >= openOrders.total ? openOrders.total : count * 5}} {{ $t('orders') }}</ion-label>
+            <ion-radio slot="start" :value="count"/>
+            <!-- If the count is greater then length of openOrders then display the length of total orders -->
+            <ion-label>{{ count >= openOrders.total ? openOrders.total : count }} {{ $t('orders') }}</ion-label>
             <!-- TODO: add support to display the order items count -->
             <!-- <ion-note slot="end">10 items</ion-note> -->
           </ion-item>
@@ -65,8 +66,8 @@ export default defineComponent({
   },
   methods: {
     preparePicklistSize () {
-      const size = Math.ceil(this.openOrders.total / 5)
-      return size;
+      // creating an array of numbers using Array.keys method and then multiplying each by 5
+      return [ ...Array(Math.ceil(this.openOrders.total / 5)).keys() ].map( i => (i+1) * 5)
     },
     setPicklistSize () {
       this.store.dispatch('picklist/setPicklistSize', this.size)
