@@ -17,7 +17,7 @@
     
     <ion-content id="picklist-size">
       <div v-if="openOrders.total">
-        <ion-searchbar v-model="queryString" @keyup.enter="fetchOpenOrders()"/>
+        <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; fetchOpenOrders()"/>
 
         <div class="filters">
           <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
@@ -184,10 +184,10 @@ export default defineComponent({
       this.fetchOpenOrders();
     },
     async assignPickers() {
-      const bgjobmodal = await modalController.create({
+      const assignPickerModal = await modalController.create({
         component: AssignPickerModal
       });
-      return bgjobmodal.present();
+      return assignPickerModal.present();
     },
     async fetchOpenOrders () {
       const viewSize = this.picklistSize

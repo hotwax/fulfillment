@@ -94,7 +94,7 @@ export default defineComponent({
   },
   methods: {
     isPickerSelected(id) {
-      return this.pickerSelected.some((picker) => picker.id == id)
+      return this.pickerSelected.length ? this.pickerSelected.some((picker) => picker.id == id) : false
     },
     closeModal() {
       modalController.dismiss({ dismissed: true });
@@ -105,7 +105,9 @@ export default defineComponent({
         // if picker is already selected then removing that picker from the list on click
         this.pickerSelected = this.pickerSelected.filter((picker) => picker.id != id)
       } else {
-        this.pickerSelected.push(this.pickers.find((picker) => picker.id == id))
+        // TODO: handled this to check if logged-in user data does not come in resp
+        const currentPicker = this.pickers.find((picker) => picker.id == id)
+        currentPicker && this.pickerSelected.push(this.pickers.find((picker) => picker.id == id))
       }
     },
     async searchPicker () {
