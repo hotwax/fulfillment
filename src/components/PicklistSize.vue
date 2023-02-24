@@ -11,7 +11,6 @@
         <ion-radio-group :value="currentPicklistSize" @ionChange="setPicklistSize($event.detail.value)">
           <ion-item v-for="count in preparePicklistSizeOptions()" :key="count">
             <ion-radio slot="start" :value="count"/>
-            <!-- If the count is greater then length of openOrders then display the length of total orders -->
             <ion-label>{{ count }} {{ $t('orders') }}</ion-label>
             <!-- TODO: add support to display the order items count -->
             <!-- <ion-note slot="end">10 items</ion-note> -->
@@ -68,18 +67,17 @@ export default defineComponent({
         return count > this.openOrders.total ? this.openOrders.total : count
       })
 
-      // Added this check as if the picklistSize options only have a single option to select then by default selecting that option
+      // Added this check, if the picklistSize options only have a one or less option to select then making 0th index value as picklist size otherwise 0
       // This condition will become true only in case when the orders total is equal to or less than 5, as we are generating picklist options with a difference of 5
-      if(picklistSizeOptions.length === 1) {
-        this.setPicklistSize(picklistSizeOptions[0])
+      if(picklistSizeOptions.length <= 1) {
+        picklistSizeOptions.length == 1 ? this.setPicklistSize(picklistSizeOptions[0]) : this.setPicklistSize(0)
       } else {
         // Checking that whether the current picklist size exists in the options available
         // This scenario occurs when we have selected a shipping method having for example 3 orders, so we set the picklist size to 3
         // Now when we de-select the shipping method or select another shipping method than the orders totals will increase,
         // and thus 3 as an picklist option will not be available, thus checking for below condition
 
-        // Using + operator to convert string into number, as env entries always return a string
-        this.setPicklistSize(picklistSizeOptions.includes(this.currentPicklistSize) ? this.currentPicklistSize : +process.env.VUE_APP_VIEW_SIZE)
+        this.setPicklistSize(picklistSizeOptions.includes(this.currentPicklistSize) ? this.currentPicklistSize : process.env.VUE_APP_PICKLIST_SIZE)
       }
 
       return picklistSizeOptions;

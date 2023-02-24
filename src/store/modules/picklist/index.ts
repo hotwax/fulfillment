@@ -8,7 +8,7 @@ import RootState from '../../RootState'
 const picklistModule: Module<PicklistState, RootState> = {
   namespaced: true,
   state: {
-    size: process.env.VUE_APP_VIEW_SIZE, // size of picklist selected from filters on open orders page
+    size: process.env.VUE_APP_PICKLIST_SIZE, // size of picklist selected from filters on open orders page
     availablePickers: {}
   },
   getters,

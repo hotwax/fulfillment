@@ -6,17 +6,17 @@ import OrderState from './OrderState'
 import RootState from '../../RootState'
 
 const orderModule: Module<OrderState, RootState> = {
-    namespaced: true,
-    state: {
-      open: {
-        list: {},
-        total: 0
-      },
-      shipmentMethods: {}
+  namespaced: true,
+  state: {
+    open: {
+      list: {},
+      total: 0
     },
-    getters,
-    actions,
-    mutations,
+    shipmentMethods: {}
+  },
+  getters,
+  actions,
+  mutations
 }
 
 export default orderModule;
