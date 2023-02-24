@@ -14,7 +14,7 @@
   <ion-content>
     <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; searchPicker()"/>
     <ion-row>
-      <ion-chip v-for="picker in pickerSelected" :key="picker.id">
+      <ion-chip v-for="picker in selectedPickers" :key="picker.id">
         <ion-label>{{ picker.name }}</ion-label>
       </ion-chip>
     </ion-row>
@@ -24,9 +24,9 @@
       <!-- TODO: added click event on the item as when using the ionChange event then it's getting
       called every time the v-for loop runs and then removes or adds the currently rendered picker
       -->
-      <div v-if="!currentPickers.length">{{ 'No picker found' }}</div>
+      <div v-if="!availablePickers.length">{{ 'No picker found' }}</div>
       <div v-else>
-        <ion-item v-for="(picker, index) in currentPickers" :key="index" @click="pickerChanged(picker.id)">
+        <ion-item v-for="(picker, index) in availablePickers" :key="index" @click="pickerChanged(picker.id)">
           <ion-label>{{ picker.name }}</ion-label>
           <ion-checkbox :checked="isPickerSelected(picker.id)"/>
         </ion-item>
@@ -86,35 +86,35 @@ export default defineComponent({
   },
   data () {
     return {
-      pickerSelected: [],
+      selectedPickers: [],
       queryString: '',
-      currentPickers: []
+      availablePickers: []
     }
   },
   methods: {
     isPickerSelected(id) {
-      return this.pickerSelected.some((picker) => picker.id == id)
+      return this.selectedPickers.some((picker) => picker.id == id)
     },
     closeModal() {
       modalController.dismiss({ dismissed: true });
     },
     pickerChanged(id) {
-      const picker = this.pickerSelected.some((picker) => picker.id == id)
+      const picker = this.selectedPickers.some((picker) => picker.id == id)
       if (picker) {
         // if picker is already selected then removing that picker from the list on click
-        this.pickerSelected = this.pickerSelected.filter((picker) => picker.id != id)
+        this.selectedPickers = this.selectedPickers.filter((picker) => picker.id != id)
       } else {
-        this.pickerSelected.push(this.pickers.find((picker) => picker.id == id))
+        this.selectedPickers.push(this.pickers.find((picker) => picker.id == id))
       }
     },
     async searchPicker () {
-      this.currentPickers = []
+      this.availablePickers = []
       this.fetchPickers()
     },
     printPicklist () {
       // TODO: update API support to create a picklist
       const payload = this.openOrders;
-      if (this.pickerSelected.length) {
+      if (this.selectedPickers.length) {
         this.store.dispatch('picklist/createPicklist', payload)
       } else {
         showToast(translate('Select a picker'))
@@ -161,7 +161,7 @@ export default defineComponent({
       }
 
       await this.store.dispatch('picklist/updateAvailablePickers', payload)
-      this.currentPickers = this.pickers
+      this.availablePickers = this.pickers
     }
   },
   async mounted() {
