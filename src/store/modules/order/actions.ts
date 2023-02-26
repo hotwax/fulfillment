@@ -28,34 +28,20 @@ const actions: ActionTree<OrderState, RootState> = {
         orderTypeId: { value: 'SALES_ORDER' },
         facilityId: { value: this.state.user.currentFacility.facilityId },
         ...payload.filters
-      },
-      facet: {
-        "shipmentMethodTypeIdFacet":{
-          "excludeTags":"shipmentMethodTypeIdFilter",
-          "field":"shipmentMethodTypeId",
-          "mincount":1,
-          "limit":-1,
-          "sort":"index",
-          "type":"terms",
-          "facet": {
-            "ordersCount": "unique(orderId)"
-          }
-        }
       }
     })
 
     try {
       resp = await OrderService.fetchOpenOrders(orderQueryPayload);
       if (resp.status === 200 && resp.data.grouped.orderId.matches > 0 && !hasError(resp)) {
-        const shipmentMethods = state.shipmentMethods.length ? state.shipmentMethods.length < resp.data.facets.shipmentMethodTypeIdFacet.buckets.length ? resp.data.facets.shipmentMethodTypeIdFacet.buckets : state.shipmentMethods : resp.data.facets.shipmentMethodTypeIdFacet.buckets
-        // TODO: find a better approach to get the order count
-        const total = resp.data.facets.shipmentMethodTypeIdFacet.buckets.reduce((initial: any, value: any) => ({ordersCount: initial.ordersCount + value.ordersCount }));
-        commit(types.ORDER_OPEN_UPDATED, {open: resp.data.grouped.orderId.groups, total: total.ordersCount, shipmentMethods})
+        const total = state.open.total < resp.data.grouped.orderId.ngroups ? resp.data.grouped.orderId.ngroups : state.open.total 
+        commit(types.ORDER_OPEN_UPDATED, {open: resp.data.grouped.orderId.groups, total})
         this.dispatch('product/getProductInformation', {orders: resp.data.grouped.orderId.groups})
       } else {
-        showToast(translate('Something went wrong'))
+        console.error('No orders found')
       }
     } catch (err) {
+      console.error('error', err)
       showToast(translate('Something went wrong'))
     }
 
@@ -64,7 +50,7 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   async clearOrders ({ commit }) {
-    commit(types.ORDER_OPEN_UPDATED, {open: {}, total: 0, shipmentMethods: {}})
+    commit(types.ORDER_OPEN_UPDATED, {open: {}, total: 0})
   }
 }
 

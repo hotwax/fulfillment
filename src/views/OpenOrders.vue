@@ -18,7 +18,6 @@
     <ion-content id="picklist-size">
       <div v-if="openOrders.total">
         <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; fetchOpenOrders()"/>
-
         <div class="filters">
           <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
             <ion-checkbox slot="start" @ionChange="updateShipmentMethodArray(method.val)"/>
@@ -130,7 +129,9 @@ import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import Image from '@/components/Image.vue'
 import PicklistSize from '@/components/PicklistSize.vue';
-import { formatUtcDate, getFeature } from '@/utils'
+import { formatUtcDate, getFeature, hasError } from '@/utils'
+import { UtilService } from '@/services/UtilService';
+import { prepareOrderQuery } from '@/utils/solrHelper';
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -163,14 +164,14 @@ export default defineComponent({
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
       picklistSize: 'picklist/getPicklistSize',
-      shipmentMethods: 'order/getShipmentMethods',
       getProductStock: 'stock/getProductStock'
     })
   },
   data () {
     return {
       selectedShipmentMethod: [] as Array<string>,
-      queryString: ''
+      queryString: '',
+      shipmentMethods: [] as Array<any>
     }
   },
   methods: {
@@ -202,10 +203,51 @@ export default defineComponent({
         }
       }
       await this.store.dispatch('order/fetchOpenOrders', payload)
+    },
+    async fetchShipmentMethods() {
+      let resp: any;
+
+      const payload = prepareOrderQuery({
+        queryFields: 'orderId',
+        viewSize: 1,  // passed viewSize as 0 to not fetch any data
+        filters: {
+          quantityNotAvailable: { value: 0 },
+          isPicked: { value: 'N' },
+          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+          '-fulfillmentStatus': { value: 'Cancelled' },
+          orderStatusId: { value: 'ORDER_APPROVED' },
+          orderTypeId: { value: 'SALES_ORDER' },
+          facilityId: { value: this.currentFacility.facilityId },
+        },
+        facet: {
+          "shipmentMethodTypeIdFacet":{
+            "excludeTags":"shipmentMethodTypeIdFilter",
+            "field":"shipmentMethodTypeId",
+            "mincount":1,
+            "limit":-1,
+            "sort":"index",
+            "type":"terms",
+            "facet": {
+              "ordersCount": "unique(orderId)"
+            }
+          }
+        }
+      })
+
+      try {
+        resp = await UtilService.fetchShipmentMethods(payload);
+        if(resp.status == 200 && !hasError(resp) && resp.data.facets.count > 0) {
+          this.shipmentMethods = resp.data.facets.shipmentMethodTypeIdFacet.buckets
+        } else {
+          console.error('Failed to fetch shipment methods')
+        }
+      } catch(err) {
+        console.error('error', err)
+      }
     }
   },
-  mounted () {
-    this.fetchOpenOrders();
+  async mounted () {
+    await Promise.all([this.fetchOpenOrders(), this.fetchShipmentMethods()]);
   },
   watch: {
     // added a watcher in picklistSize to fetch the open orders whenever the size changes
