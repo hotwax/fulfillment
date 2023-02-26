@@ -83,7 +83,7 @@ export default defineComponent({
     const selectedIndex = ref(0);
     const appPages = [
       {
-        title: "Orders",
+        title: "Open",
         url: "/open-orders",
         iosIcon: mailUnreadOutline,
         mdIcon: mailUnreadOutline,
