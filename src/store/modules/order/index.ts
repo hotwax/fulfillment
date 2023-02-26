@@ -9,7 +9,7 @@ const orderModule: Module<OrderState, RootState> = {
   namespaced: true,
   state: {
     open: {
-      list: {},
+      list: [],
       total: 0
     }
   },

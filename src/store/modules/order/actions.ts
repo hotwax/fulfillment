@@ -34,7 +34,7 @@ const actions: ActionTree<OrderState, RootState> = {
     try {
       resp = await OrderService.fetchOpenOrders(orderQueryPayload);
       if (resp.status === 200 && resp.data.grouped.orderId.matches > 0 && !hasError(resp)) {
-        const total = state.open.total < resp.data.grouped.orderId.ngroups ? resp.data.grouped.orderId.ngroups : state.open.total 
+        const total = resp.data.grouped.orderId.ngroups
         commit(types.ORDER_OPEN_UPDATED, {open: resp.data.grouped.orderId.groups, total})
         this.dispatch('product/getProductInformation', {orders: resp.data.grouped.orderId.groups})
       } else {
