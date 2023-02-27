@@ -325,11 +325,12 @@ img {
 } 
 
 .product-metadata {
-  
+  padding-inline-end: var(--spacer-sm);
 }
 
 .actions {
   display: none;
+  padding: var(--spacer-xs);
 }
 
 /* shipment card layout end */
