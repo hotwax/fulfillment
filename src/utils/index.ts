@@ -1,3 +1,4 @@
+import store from '@/store';
 import { toastController } from '@ionic/vue';
 import { DateTime } from 'luxon';
 
@@ -26,4 +27,28 @@ const handleDateTimeInput = (dateTimeValue: any) => {
   return DateTime.fromISO(dateTime).toMillis()
 }
 
-export { handleDateTimeInput, showToast, hasError }
+const formatDate = (value: any, inFormat?: string, outFormat?: string) => {
+  // TODO Make default format configurable and from environment variables
+  if(inFormat){
+    return DateTime.fromFormat(value, inFormat).toFormat(outFormat ? outFormat : 'MM-dd-yyyy');
+  }
+  return DateTime.fromISO(value).toFormat(outFormat ? outFormat : 'MM-dd-yyyy');
+}
+
+const formatUtcDate = (value: any, outFormat: string) => {
+  // TODO Make default format configurable and from environment variables
+  // TODO Fix this setDefault should set the default timezone instead of getting it everytiem and setting the tz
+  return DateTime.fromISO(value, { zone: 'utc' }).setZone(store.state.user.current.userTimeZone).toFormat(outFormat ? outFormat : 'MM-dd-yyyy')
+}
+
+const getFeature = (featureHierarchy: any, featureKey: string) => {
+  let  featureValue = ''
+  if (featureHierarchy) {
+    const feature = featureHierarchy.find((featureItem: any) => featureItem.startsWith(featureKey))
+    const featureSplit = feature ? feature.split('/') : [];
+    featureValue = featureSplit[2] ? featureSplit[2] : '';
+  }
+  return featureValue;
+}
+
+export { formatDate, formatUtcDate, getFeature, handleDateTimeInput, showToast, hasError }
