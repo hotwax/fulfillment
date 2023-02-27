@@ -3,49 +3,60 @@ import { ActionTree } from 'vuex'
 import RootState from '@/store/RootState'
 import ProductState from './ProductState'
 import * as types from './mutation-types'
-import { hasError, showToast } from '@/utils'
-import { translate } from '@/i18n'
-import emitter from '@/event-bus'
-
+import { hasError } from '@/utils'
 
 const actions: ActionTree<ProductState, RootState> = {
 
-  // Find Product
-  async findProduct ({ commit, state }, payload) {
+  async fetchProducts ( { commit, state }, { productIds }) {
+    const cachedProductIds = Object.keys(state.cached);
+    let viewSize = 0;
+    const productIdFilter= productIds.reduce((filter: string, productId: any) => {
+      // If product already exist in cached products skip
+      if (cachedProductIds.includes(productId)) {
+        return filter;
+      } else {
+        // checking condition that if the filter is not empty then adding 'OR' to the filter
+        if (filter !== '') filter += ' OR '
+        viewSize++; // updating viewSize when productId is not found in the cache state
+        return filter += productId;
+      }
+    }, '');
 
-    // Show loader only when new query and not the infinite scroll
-    if (payload.viewIndex === 0) emitter.emit("presentLoader");
+    // If there are no products skip the API call
+    if (productIdFilter === '') return;
 
     let resp;
-
     try {
       resp = await ProductService.fetchProducts({
-        // used sku as we are currently only using sku to search for the product
-        "filters": ['sku: ' + payload.queryString],
-        "viewSize": payload.viewSize,
-        "viewIndex": payload.viewIndex
+        "filters": ['productId: (' + productIdFilter + ')'],
+        viewSize
       })
-
-      // resp.data.response.numFound tells the number of items in the response
-      if (resp.status === 200 && resp.data.response.numFound > 0 && !hasError(resp)) {
-        let products = resp.data.response.docs;
-        const totalProductsCount = resp.data.response.numFound;
-
-        if (payload.viewIndex && payload.viewIndex > 0) products = state.products.list.concat(products)
-        commit(types.PRODUCT_SEARCH_UPDATED, { products: products, totalProductsCount: totalProductsCount })
+      if (resp.status === 200 && resp.data?.response && !hasError(resp)) {
+        const products = resp.data.response.docs;
+        commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
       } else {
-        //showing error whenever getting no products in the response or having any other error
-        showToast(translate("Product not found"));
+        console.error('Something went wrong')
       }
-      // Remove added loader only when new query and not the infinite scroll
-      if (payload.viewIndex === 0) emitter.emit("dismissLoader");
-    } catch(error){
-      console.error(error)
-      showToast(translate("Something went wrong"));
+    } catch(err) {
+      console.error(err)
     }
-    // TODO Handle specific error
     return resp;
   },
+
+  async getProductInformation ({ dispatch }, { orders }) {
+    let productIds: any = new Set();
+    orders.forEach((list: any) => {
+      list.doclist.docs.forEach((order: any) => {
+        if (order.productId) productIds.add(order.productId)
+      })
+    })
+
+    productIds = [...productIds]
+    if (productIds.length) {
+      dispatch('fetchProducts', { productIds })
+      this.dispatch('stock/addProducts', { productIds })
+    }
+  }
 }
 
 export default actions;
