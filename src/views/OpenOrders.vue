@@ -132,6 +132,7 @@ import PicklistSize from '@/components/PicklistSize.vue';
 import { formatUtcDate, getFeature, hasError } from '@/utils'
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
+import emitter from '@/event-bus';
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -248,16 +249,10 @@ export default defineComponent({
   },
   async mounted () {
     await Promise.all([this.fetchOpenOrders(), this.fetchShipmentMethods()]);
+    emitter.on('picklistSizeChanged', this.fetchOpenOrders)
   },
-  watch: {
-    // added a watcher in picklistSize to fetch the open orders whenever the size changes
-    // TODO: find a better way to get open orders when changing the picklistSize
-    // One way is to call the fetchOpenOrders action from the picklist component when picklist
-    // changed, but in this case we need to pass some data to picklist component using props
-    // Another way is to emit an event when picklist size change and catch that event in here.
-    picklistSize () {
-      this.fetchOpenOrders();
-    }
+  unmounted() {
+    emitter.off('picklistSizeChanged', this.fetchOpenOrders)
   },
   setup() {
     const store = useStore();

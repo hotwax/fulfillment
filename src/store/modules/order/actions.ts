@@ -12,7 +12,7 @@ import { prepareOrderQuery } from '@/utils/solrHelper'
 const actions: ActionTree<OrderState, RootState> = {
 
   // get open orders
-  async fetchOpenOrders ({ commit, state }, payload) {
+  async fetchOpenOrders ({ commit }, payload) {
     emitter.emit('presentLoader');
     let resp;
 

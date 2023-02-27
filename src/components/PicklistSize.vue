@@ -22,6 +22,7 @@
 </template>
 
 <script lang="ts">
+import emitter from "@/event-bus";
 import {
   IonContent,
   IonHeader,
@@ -60,11 +61,12 @@ export default defineComponent({
   },
   methods: {
     preparePicklistSizeOptions () {
+      const total = this.openOrders.total
       // creating an array of numbers using Array.keys method and then multiplying each by 5
-      const picklistSizeOptions =  [ ...Array(Math.ceil(this.openOrders.total / 5)).keys() ].map( i => {
+      const picklistSizeOptions =  [ ...Array(Math.ceil(total / 5)).keys() ].map( i => {
         const count = (i+1) * 5
         // added check that if the count is greater than the total orders available then assigning orders total as picklistSize
-        return count > this.openOrders.total ? this.openOrders.total : count
+        return count > total ? total : count
       })
 
       // Added this check, if the picklistSize options only have one option to select then making 0th index value as picklist size, and if having empty picklist than making picklist size as 0
@@ -83,7 +85,11 @@ export default defineComponent({
       return picklistSizeOptions;
     },
     async setPicklistSize(size: number) {
+      if(this.currentPicklistSize === size) {
+        return;
+      }
       await this.store.dispatch('picklist/setPicklistSize', size)
+      emitter.emit('picklistSizeChanged')
       // closing the menu after selecting any picklist size
       menuController.close()
     }
