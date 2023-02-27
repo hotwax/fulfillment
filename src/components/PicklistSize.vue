@@ -79,7 +79,7 @@ export default defineComponent({
         // Now when we de-select the shipping method or select another shipping method than the orders totals will increase,
         // and thus 3 as an picklist option will not be available, thus checking for below condition
 
-        this.setPicklistSize(picklistSizeOptions.includes(this.currentPicklistSize) ? this.currentPicklistSize : process.env.VUE_APP_PICKLIST_SIZE)
+        picklistSizeOptions.includes(this.currentPicklistSize) || this.setPicklistSize(process.env.VUE_APP_PICKLIST_SIZE)
       }
 
       return picklistSizeOptions;

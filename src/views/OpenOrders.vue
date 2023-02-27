@@ -74,6 +74,7 @@
                 </ion-item>
               </div>
               <div class="product-metadata">
+                <!-- TODO: display QOH in place of ATP -->
                 <ion-note>{{ getProductStock(order.productId) }} {{ $t('pieces in stock') }}</ion-note>
               </div>
             </div>
