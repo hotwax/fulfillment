@@ -3,12 +3,12 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button slot="start" />
-        <ion-title>26 {{ $t("orders" )}} | 30 {{ $t("items") }}</ion-title>
+        <ion-title>{{ inProgressOrders.list.total  }} {{ $t("orders" )}} | {{ inProgressOrders.total }} {{ $t("items") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     
     <ion-content>
-      <ion-searchbar />  
+      <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; fetchInProgressOrders()"/>
 
       <div class="filters">
         <ion-item lines="none">
@@ -31,27 +31,28 @@
 
       <ion-button expand="block" class="desktop-only" fill="outline" @click="packOrdersAlert">{{ $t("Pack orders") }}</ion-button>
 
-      <ion-card>
+      <ion-card v-for="(orders, index) in inProgressOrders.list" :key="index">
         <div class="card-header">
           <div class="order-primary-info">
             <ion-label>
-              Darooty Magwood
-              <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
+              {{ orders.doclist.docs[0].customerName }}
+              <p>{{ $t("Ordered") }} {{ formatUtcDate(orders.doclist.docs[0].orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
             </ion-label>
           </div>
 
           <div class="order-tags">
             <ion-chip outline>
               <ion-icon :icon="pricetagOutline" />
-              <ion-label>NN10584</ion-label>
+              <ion-label>{{ orders.doclist.docs[0].orderId }}</ion-label>
             </ion-chip>
           </div>
 
           <div class="order-metadata">
-            <ion-label>
+            <!-- TODO: add shipping method and brokered date-->
+            <!-- <ion-label>
               Next Day Shipping
               <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
-            </ion-label>
+            </ion-label> -->
           </div>
         </div>
 
@@ -60,30 +61,30 @@
           <ion-chip> Box A | Type 3</ion-chip>  
         </div>
 
-        <div class="order-item">
+        <div v-for="order in orders.doclist.docs" :key="order.orderId" class="order-item">
           <div class="product-info">
             <ion-item lines="none">
               <ion-thumbnail>
-                <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
+                <Image :src="getProduct(order.productId).mainImageUrl" />
               </ion-thumbnail>
               <ion-label>
-                <p class="overline">WJ06-XL-PURPLE</p>
-                Juno Jacket
-                <p>Blue XL</p>
+                <p class="overline">{{ order.productSku }}</p>
+                {{ order.productSku }}
+                <p>{{ getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
               </ion-label>
             </ion-item>
           </div>
 
           <div class="desktop-only">
-              <ion-segment @ionChange="segmentChanged($event)" v-model="segment">
-                <ion-segment-button value="pack">
-                  <ion-label>{{ $t("Ready to pack") }}</ion-label>
-                </ion-segment-button>
-                <ion-segment-button value="issue">
-                  <ion-label>{{ $t("Report an issue") }}</ion-label>
-                </ion-segment-button>
-              </ion-segment> 
-              <div class="segments">
+            <ion-segment @ionChange="segmentChanged($event)" v-model="segment">
+              <ion-segment-button value="pack">
+                <ion-label>{{ $t("Ready to pack") }}</ion-label>
+              </ion-segment-button>
+              <ion-segment-button value="issue">
+                <ion-label>{{ $t("Report an issue") }}</ion-label>
+              </ion-segment-button>
+            </ion-segment>
+            <div class="segments">
               <div v-if="segment == 'pack'">
                 <ion-item lines="none">
                   <ion-label>{{ $t("Select box") }}</ion-label>   
@@ -106,7 +107,7 @@
           </div>
 
           <div class="product-metadata">
-            <ion-note>49 {{ $t("pieces in stock") }}</ion-note>
+            <ion-note>{{ getProductStock(order.productId) }} {{ $t("pieces in stock") }}</ion-note>
           </div>
         </div>
 
@@ -122,7 +123,7 @@
         <div class="actions">  
           <div>
             <ion-button @click="reportIssueAlert">{{ $t("Pack") }}</ion-button>
-             <ion-button fill="outline">{{ $t("Save") }}</ion-button>
+            <ion-button fill="outline">{{ $t("Save") }}</ion-button>
           </div>
           <div></div>
         </div>
@@ -142,10 +143,14 @@ import { IonButton, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabBut
 import { defineComponent, ref } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
+import { mapGetters, useStore } from 'vuex';
+import { formatUtcDate, getFeature } from '@/utils';
+import Image from '@/components/Image.vue'
 
 export default defineComponent({
   name: 'InProgress',
   components: {
+    Image,
     IonButton,  
     IonCard,
     IonCheckbox,
@@ -168,6 +173,19 @@ export default defineComponent({
     IonThumbnail,   
     IonTitle,
     IonToolbar
+  },
+  computed: {
+    ...mapGetters({
+      currentFacility: 'user/getCurrentFacility',
+      inProgressOrders: 'order/getInProgressOrders',
+      getProduct: 'product/getProduct',
+      getProductStock: 'stock/getProductStock'
+    })
+  },
+  data() {
+    return {
+      queryString: ''
+    }
   },
   methods: {
     segmentChanged(ev: CustomEvent) {
@@ -212,19 +230,37 @@ export default defineComponent({
           buttons: [this.$t("Cancel"), this.$t("Report")],
         });
       return alert.present();
-    }
+    },
+    async fetchInProgressOrders () {
+      // const viewSize = this.picklistSize
+      const viewSize = 50
+      const payload = {
+        queryString: this.queryString,
+        viewSize
+      } as any
+      await this.store.dispatch('order/fetchInProgressOrders', payload)
+    },
+  },
+  async mounted () {
+    // await Promise.all([this.fetch(), this.fetchShipmentMethods()]);
+    await this.fetchInProgressOrders();
+    // emitter.on('picklistSizeChanged', this.fetchOpenOrders)
   },
   setup() {
-      const segment = ref("pack");
+    const store = useStore();
+    const segment = ref("pack");
 
-      return {
-          addOutline,
-          printOutline,
-          ellipsisVerticalOutline,
-          checkmarkDoneOutline,
-          pricetagOutline,
-          segment,
-      }
+    return {
+      addOutline,
+      printOutline,
+      ellipsisVerticalOutline,
+      formatUtcDate,
+      getFeature,
+      checkmarkDoneOutline,
+      pricetagOutline,
+      segment,
+      store
+    }
   }
 });
 </script>
