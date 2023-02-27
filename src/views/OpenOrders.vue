@@ -190,8 +190,6 @@ export default defineComponent({
         queryString: this.queryString
       } as any
 
-      console.log('in fetch orders')
-
       await this.store.dispatch('order/fetchOpenOrders', payload)
     },
     async fetchShipmentMethods() {

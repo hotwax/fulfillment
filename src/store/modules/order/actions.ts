@@ -68,7 +68,6 @@ const actions: ActionTree<OrderState, RootState> = {
     } else {
       selectedShipmentMethods.splice(index, 1)
     }
-    console.log('updated selected shipment methods')
     commit(types.ORDER_SELECTED_SHIPMENT_METHODS_UPDATED, selectedShipmentMethods)
     dispatch('fetchOpenOrders');
   }
