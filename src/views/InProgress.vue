@@ -231,6 +231,9 @@ export default defineComponent({
 
 <style scoped>
 .box-type {
+  display: flex;
+  gap: var(--spacer-sm);
   border-bottom: var(--border-medium);
+  padding: var(--ion-item-like-padding);
 }
 </style>
