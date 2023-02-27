@@ -56,8 +56,9 @@ import {
 import { defineComponent } from "vue";
 import { closeOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
-import { showToast } from "@/utils";
+import { hasError, showToast } from "@/utils";
 import { translate } from "@/i18n";
+import { PicklistService } from "@/services/PicklistService";
 
 export default defineComponent({
   name: "AssignPickerModal",
@@ -80,7 +81,6 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      pickers: 'picklist/getAvailablePickers',
       openOrders: 'order/getOpenOrders'
     })
   },
@@ -104,7 +104,7 @@ export default defineComponent({
         // if picker is already selected then removing that picker from the list on click
         this.selectedPickers = this.selectedPickers.filter((picker) => picker.id != id)
       } else {
-        this.selectedPickers.push(this.pickers.find((picker) => picker.id == id))
+        this.selectedPickers.push(this.availablePickers.find((picker) => picker.id == id))
       }
     },
     async searchPicker () {
@@ -160,8 +160,19 @@ export default defineComponent({
         fieldList: ["firstName", "lastName", "partyId"]
       }
 
-      await this.store.dispatch('picklist/updateAvailablePickers', payload)
-      this.availablePickers = this.pickers
+      try {
+        const resp = await PicklistService.getAvailablePickers(payload);
+        if (resp.status === 200 && !hasError(resp) && resp.data.count > 0) {
+          this.availablePickers = resp.data.docs.map((picker) => ({
+            name: picker.firstName+ ' ' +picker.lastName,
+            id: picker.partyId
+          }))
+        } else {
+          console.error(translate('Something went wrong'))
+        }
+      } catch (err) {
+        console.error(translate('Something went wrong'))
+      }
     }
   },
   async mounted() {

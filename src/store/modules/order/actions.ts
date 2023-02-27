@@ -12,12 +12,13 @@ import { prepareOrderQuery } from '@/utils/solrHelper'
 const actions: ActionTree<OrderState, RootState> = {
 
   // get open orders
-  async fetchOpenOrders ({ commit }, payload) {
+  async fetchOpenOrders ({ commit, state }, payload) {
     emitter.emit('presentLoader');
     let resp;
 
-    const orderQueryPayload = prepareOrderQuery({
+    const params = {
       ...payload,
+      viewSize: this.state.picklist.size,
       queryFields: 'orderId',
       filters: {
         quantityNotAvailable: { value: 0 },
@@ -27,9 +28,15 @@ const actions: ActionTree<OrderState, RootState> = {
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
         facilityId: { value: this.state.user.currentFacility.facilityId },
-        ...payload.filters
       }
-    })
+    }
+
+    // only adding shipmentMethods when a method is selected
+    if(state.selectedShipmentMethods.length) {
+      params.filters['shipmentMethodTypeId'] = { value: state.selectedShipmentMethods, op: 'OR' }
+    }
+
+    const orderQueryPayload = prepareOrderQuery(params)
 
     try {
       resp = await OrderService.fetchOpenOrders(orderQueryPayload);
@@ -51,6 +58,19 @@ const actions: ActionTree<OrderState, RootState> = {
 
   async clearOrders ({ commit }) {
     commit(types.ORDER_OPEN_UPDATED, {open: {}, total: 0})
+  },
+
+  updateSelectedShipmentMethods({ commit, dispatch, state }, method) {
+    const selectedShipmentMethods = JSON.parse(JSON.stringify(state.selectedShipmentMethods))
+    const index = selectedShipmentMethods.indexOf(method)
+    if (index < 0) {
+      selectedShipmentMethods.push(method)
+    } else {
+      selectedShipmentMethods.splice(index, 1)
+    }
+    console.log('updated selected shipment methods')
+    commit(types.ORDER_SELECTED_SHIPMENT_METHODS_UPDATED, selectedShipmentMethods)
+    dispatch('fetchOpenOrders');
   }
 }
 

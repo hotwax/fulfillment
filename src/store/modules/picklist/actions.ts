@@ -9,30 +9,7 @@ import { translate } from '@/i18n'
 const actions: ActionTree<PicklistState, RootState> = {
   async setPicklistSize ({ commit }, payload) {
     commit(types.PICKLIST_SIZE, payload)
-  },
-
-  async updateAvailablePickers ({ commit }, payload) {
-    let resp;
-
-    try {
-      resp = await PicklistService.getAvailablePickers(payload);
-      if (resp.status === 200 && resp.data.count > 0 && !hasError(resp)) {
-        const pickers = resp.data.docs.map((picker: any) => ({
-          name: picker.firstName+ ' ' +picker.lastName,
-          id: picker.partyId
-        }))
-
-        commit(types.PICKLIST_PICKERS_UPDATED, { pickers })
-      } else {
-        console.error(translate('Something went wrong'))
-        commit(types.PICKLIST_PICKERS_UPDATED, {pickers: []})
-      }
-    } catch (err) {
-      console.error(translate('Something went wrong'))
-      commit(types.PICKLIST_PICKERS_UPDATED, {pickers: []})
-    }
-
-    return resp;
+    this.dispatch('order/fetchOpenOrders');
   },
 
   async createPicklist ({ commit }, payload) {

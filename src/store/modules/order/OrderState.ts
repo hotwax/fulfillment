@@ -3,4 +3,5 @@ export default interface OrderState {
     list: any,
     total: number
   }
+  selectedShipmentMethods: Array<string>;
 }

@@ -10,8 +10,9 @@ const orderModule: Module<OrderState, RootState> = {
   state: {
     open: {
       list: [],
-      total: 0
-    }
+      total: 0,
+    },
+    selectedShipmentMethods: []
   },
   getters,
   actions,

@@ -22,7 +22,6 @@
 </template>
 
 <script lang="ts">
-import emitter from "@/event-bus";
 import {
   IonContent,
   IonHeader,
@@ -85,11 +84,10 @@ export default defineComponent({
       return picklistSizeOptions;
     },
     async setPicklistSize(size: number) {
-      if(this.currentPicklistSize === size) {
+      if(this.currentPicklistSize == size) {
         return;
       }
       await this.store.dispatch('picklist/setPicklistSize', size)
-      emitter.emit('picklistSizeChanged')
       // closing the menu after selecting any picklist size
       menuController.close()
     }

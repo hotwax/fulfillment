@@ -20,7 +20,7 @@
         <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; fetchOpenOrders()"/>
         <div class="filters">
           <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
-            <ion-checkbox slot="start" @ionChange="updateShipmentMethodArray(method.val)"/>
+            <ion-checkbox slot="start" @ionChange="updateSelectedShipmentMethods(method.val)"/>
             <ion-label>
               {{ method.val }}
               <p>{{ method.ordersCount }} {{ $t("orders") }}, {{ method.count }} {{ $t("items") }}</p>
@@ -51,7 +51,7 @@
 
             <div class="order-metadata">
               <ion-label>
-                {{ orders.doclist.docs[0].shipmentMethodTypeId }}
+                {{ orders.doclist.docs[0].shipmentMethodTypeDesc }}
                 <!-- TODO: add support to display the last brokered date, currently not getting
                 the date in API response -->
                 <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
@@ -133,7 +133,6 @@ import PicklistSize from '@/components/PicklistSize.vue';
 import { formatUtcDate, getFeature, hasError } from '@/utils'
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
-import emitter from '@/event-bus';
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -177,14 +176,8 @@ export default defineComponent({
     }
   },
   methods: {
-    updateShipmentMethodArray (method: string) {
-      const index = this.selectedShipmentMethod.indexOf(method)
-      if (index < 0) {
-        this.selectedShipmentMethod.push(method)
-      } else {
-        this.selectedShipmentMethod.splice(index, 1)
-      }
-      this.fetchOpenOrders();
+    async updateSelectedShipmentMethods (method: string) {
+      await this.store.dispatch('order/updateSelectedShipmentMethods', method)
     },
     async assignPickers() {
       const assignPickerModal = await modalController.create({
@@ -193,17 +186,12 @@ export default defineComponent({
       return assignPickerModal.present();
     },
     async fetchOpenOrders () {
-      const viewSize = this.picklistSize
       const payload = {
-        queryString: this.queryString,
-        viewSize
+        queryString: this.queryString
       } as any
 
-      if(this.selectedShipmentMethod.length) {
-        payload['filters'] = {
-          shipmentMethodTypeId: { value: this.selectedShipmentMethod, op: 'OR'}
-        }
-      }
+      console.log('in fetch orders')
+
       await this.store.dispatch('order/fetchOpenOrders', payload)
     },
     async fetchShipmentMethods() {
@@ -250,10 +238,6 @@ export default defineComponent({
   },
   async mounted () {
     await Promise.all([this.fetchOpenOrders(), this.fetchShipmentMethods()]);
-    emitter.on('picklistSizeChanged', this.fetchOpenOrders)
-  },
-  unmounted() {
-    emitter.off('picklistSizeChanged', this.fetchOpenOrders)
   },
   setup() {
     const store = useStore();
