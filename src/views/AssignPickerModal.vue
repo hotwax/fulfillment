@@ -24,9 +24,9 @@
       <!-- TODO: added click event on the item as when using the ionChange event then it's getting
       called every time the v-for loop runs and then removes or adds the currently rendered picker
       -->
-      <div v-if="!availablePickers.length">{{ 'No picker found' }}</div>
+      <div v-if="!pickers.length">{{ 'No picker found' }}</div>
       <div v-else>
-        <ion-item v-for="(picker, index) in availablePickers" :key="index" @click="pickerChanged(picker.id)">
+        <ion-item v-for="(picker, index) in pickers" :key="index" @click="pickerChanged(picker.id)">
           <ion-label>{{ picker.name }}</ion-label>
           <ion-checkbox :checked="isPickerSelected(picker.id)"/>
         </ion-item>
@@ -88,7 +88,7 @@ export default defineComponent({
     return {
       selectedPickers: [],
       queryString: '',
-      availablePickers: []
+      pickers: []
     }
   },
   methods: {
@@ -104,11 +104,11 @@ export default defineComponent({
         // if picker is already selected then removing that picker from the list on click
         this.selectedPickers = this.selectedPickers.filter((picker) => picker.id != id)
       } else {
-        this.selectedPickers.push(this.availablePickers.find((picker) => picker.id == id))
+        this.selectedPickers.push(this.pickers.find((picker) => picker.id == id))
       }
     },
     async searchPicker () {
-      this.availablePickers = []
+      this.pickers = []
       this.fetchPickers()
     },
     printPicklist () {
@@ -163,7 +163,7 @@ export default defineComponent({
       try {
         const resp = await PicklistService.getAvailablePickers(payload);
         if (resp.status === 200 && !hasError(resp) && resp.data.count > 0) {
-          this.availablePickers = resp.data.docs.map((picker) => ({
+          this.pickers = resp.data.docs.map((picker) => ({
             name: picker.firstName+ ' ' +picker.lastName,
             id: picker.partyId
           }))
