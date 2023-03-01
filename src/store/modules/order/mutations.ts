@@ -4,7 +4,7 @@ import * as types from './mutation-types'
 
 const mutations: MutationTree <OrderState> = {
   [types.ORDER_INPROGRESS_UPDATED] (state, payload) {
-    state.inProgress.list = payload.inProgress;
+    state.inProgress.list = payload.orders;
     state.inProgress.total = payload.total;
   }
 }

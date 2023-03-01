@@ -18,6 +18,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const orderQueryPayload = prepareOrderQuery({
       ...payload,
+      viewSize: this.state.util.viewSize,
       queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
       sort: 'orderDate asc',
       groupBy: 'picklistBinId',
@@ -31,11 +32,11 @@ const actions: ActionTree<OrderState, RootState> = {
 
     try {
       resp = await OrderService.fetchInProgressOrders(orderQueryPayload);
-      console.log('resp', resp)
       if (resp.status === 200 && resp.data.grouped.picklistBinId.matches > 0 && !hasError(resp)) {
         const total = resp.data.grouped.picklistBinId.ngroups
-        commit(types.ORDER_INPROGRESS_UPDATED, {inProgress: resp.data.grouped.picklistBinId.groups, total})
-        this.dispatch('product/getProductInformation', {orders: resp.data.grouped.picklistBinId.groups})
+        const orders = resp.data.grouped.picklistBinId.groups
+        commit(types.ORDER_INPROGRESS_UPDATED, {orders, total})
+        this.dispatch('product/getProductInformation', { orders })
       } else {
         console.error('No orders found')
       }
@@ -49,7 +50,7 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   async clearOrders ({ commit }) {
-    commit(types.ORDER_INPROGRESS_UPDATED, {inProgress: {}, total: 0})
+    commit(types.ORDER_INPROGRESS_UPDATED, {orders: {}, total: 0})
   }
 }
 
