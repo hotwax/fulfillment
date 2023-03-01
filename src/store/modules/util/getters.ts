@@ -3,8 +3,8 @@ import UtilState from './UtilState'
 import RootState from '@/store/RootState'
 
 const getters: GetterTree <UtilState, RootState> = {
-  getViewSizeForInprogressPage (state) {
-    return state.inProgressViewSize;
+  getViewSize(state) {
+    return state.viewSize;
   }
 }
 export default getters;

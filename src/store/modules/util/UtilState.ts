@@ -1,3 +1,3 @@
 export default interface UtilState {
-  inProgressViewSize: number;
+  viewSize: number;
 }
