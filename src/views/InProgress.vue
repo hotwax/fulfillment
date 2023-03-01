@@ -29,7 +29,7 @@
         </ion-item>
       </div> 
 
-      <ion-button expand="block" class="desktop-only" fill="outline" @click="packOrdersAlert">{{ $t("Pack orders") }}</ion-button>
+      <ion-button expand="block" class="bulk-action desktop-only" fill="outline" @click="packOrdersAlert">{{ $t("Pack orders") }}</ion-button>
 
       <ion-card>
         <div class="card-header">
@@ -63,7 +63,7 @@
         <div class="order-item">
           <div class="product-info">
             <ion-item lines="none">
-              <ion-thumbnail>
+              <ion-thumbnail slot="start">
                 <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
               </ion-thumbnail>
               <ion-label>
@@ -235,5 +235,6 @@ export default defineComponent({
   gap: var(--spacer-sm);
   border-bottom: var(--border-medium);
   padding: var(--ion-item-like-padding);
+  align-items: center;
 }
 </style>

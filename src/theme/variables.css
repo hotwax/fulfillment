@@ -286,6 +286,10 @@ ion-thumbnail > img {
   margin-right: var(--spacer-xs);
 }
 
+.bulk-action {
+  margin: var(--spacer-sm) var(--spacer-sm) var(--spacer-xl);
+}
+
 img {
   object-fit: contain;
 }
@@ -301,6 +305,7 @@ img {
 
 .order-primary-info {
   grid-area: info;
+  padding: 10px var(--spacer-xs);
 }
 
 .order-tags {
@@ -321,6 +326,7 @@ img {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: var(--spacer-xs) 0;
   border-bottom: var(--border-medium);
 } 
 

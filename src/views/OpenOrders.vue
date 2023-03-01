@@ -42,7 +42,7 @@
         </ion-item>
       </div> 
 
-      <ion-button class="desktop-only" fill="outline" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
+      <ion-button class="bulk-action desktop-only" fill="outline" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
 
       <ion-card>
         <div class="card-header">
@@ -74,7 +74,7 @@
         <div class="order-item">
           <div class="product-info">
             <ion-item lines="none">
-              <ion-thumbnail>
+              <ion-thumbnail slot="start">
                 <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
               </ion-thumbnail>
               <ion-label>
