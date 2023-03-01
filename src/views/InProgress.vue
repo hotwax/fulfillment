@@ -20,6 +20,7 @@
       <div v-if="inProgressOrders.total">
         <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; fetchInProgressOrders()"/>
 
+        <!-- TODO: make pickers information dynamic -->
         <div class="filters">
           <ion-item lines="none">
             <ion-checkbox slot="start"/>
@@ -66,6 +67,7 @@
             </div>
           </div>
 
+          <!-- TODO: implement functionality to add new boxes and change its type -->
           <div class="box-type desktop-only">
             <ion-button fill="outline"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
             <ion-chip> Box A | Type 3</ion-chip>
@@ -79,14 +81,14 @@
                 </ion-thumbnail>
                 <ion-label>
                   <p class="overline">{{ order.productSku }}</p>
-                  {{ order.productSku }}
+                  {{ order.productName }}
                   <p>{{ getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
                 </ion-label>
               </ion-item>
             </div>
 
             <div class="desktop-only">
-              <ion-segment @ionChange="segmentChanged($event)" v-model="segment">
+              <ion-segment @ionChange="segmentChanged($event, order)" :value="order.segmentSelected">
                 <ion-segment-button value="pack">
                   <ion-label>{{ $t("Ready to pack") }}</ion-label>
                 </ion-segment-button>
@@ -95,7 +97,7 @@
                 </ion-segment-button>
               </ion-segment>
               <div class="segments">
-                <div v-if="segment == 'pack'">
+                <div v-if="order.segmentSelected === 'pack'">
                   <ion-item lines="none">
                     <ion-label>{{ $t("Select box") }}</ion-label>
                     <ion-select value="box1">
@@ -104,7 +106,7 @@
                     </ion-select>
                   </ion-item>
                 </div>
-                <div v-if="segment == 'issue'">
+                <div v-if="order.segmentSelected === 'issue'">
                   <ion-item lines="none">
                     <ion-label>{{ $t("Select issue") }}</ion-label>
                     <ion-select value="a">
@@ -140,7 +142,7 @@
         </ion-card>
 
         <ion-fab class="mobile-only" vertical="bottom" horizontal="end">
-          <ion-fab-button  @click="packOrdersAlert">
+          <ion-fab-button @click="packOrdersAlert">
             <ion-icon :icon="checkmarkDoneOutline" />
           </ion-fab-button>
         </ion-fab>
@@ -204,8 +206,8 @@ export default defineComponent({
     }
   },
   methods: {
-    segmentChanged(ev: CustomEvent) {
-      this.segment = ev.detail.value;
+    segmentChanged(ev: CustomEvent, order: any) {
+      order.segmentSelected = ev.detail.value;
     },
     async packagingPopover(ev: Event) {
       const popover = await popoverController.create({
