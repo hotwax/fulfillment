@@ -76,7 +76,7 @@ export default defineComponent({
         // This scenario occurs when we have selected a shipping method having for example 3 orders, so we set the size to 3
         // Now when we de-select the shipping method or select another shipping method than the orders totals will increase,
         // and thus 3 as an option will not be available, thus checking for below condition
-        viewSizeOptions.includes(this.viewSize) || this.setViewSize(process.env.VUE_APP_VIEW_SIZE)
+        viewSizeOptions.includes(this.viewSize) || (viewSizeOptions.includes(+process.env.VUE_APP_VIEW_SIZE) ? this.setViewSize(+process.env.VUE_APP_VIEW_SIZE) : this.setViewSize(viewSizeOptions[0]))
       }
       return viewSizeOptions;
     },
