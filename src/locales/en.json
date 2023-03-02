@@ -2,6 +2,7 @@
   " doesn't have any orders in progress right now.": " doesn't have any orders in progress right now.",
   "Add Box": "Add Box",
   "Are you sure you want to change the time zone to?": "Are you sure you want to change the time zone to?",
+  "Are you sure you want to perform this action?": "Are you sure you want to perform this action?",
   "Assign Pickers": "Assign Pickers",
   "Box A": "Box A",
   "Box B": "Box B",
@@ -22,7 +23,9 @@
   "Login": "Login",
   "Logout": "Logout",
   "Loyalty": "Loyalty",
+  "No reason": "No reason",
   "No time zone found": "No time zone found",
+  "Not in stock": "Not in stock",
   "of": "of",
   "OMS": "OMS",
   "On": "On",
@@ -89,5 +92,5 @@
   "Worn display": "Worn display",
   "You are packing orders. Select additional documents that you would like to print.": "You are packing { count } orders. { space } Select additional documents that you would like to print.",
   "You are shipping orders. You cannot unpack and edit orders after they have been  shipped. Are you sure you are ready to ship this orders.": "You are shipping { count } orders. { space } You cannot unpack and edit orders after they have been  shipped. Are you sure you are ready to ship this orders.",
-  ", and other products are identified as unfulfillable. other orders  containing these products will be  unassigned  from this store and sent to be rebrokered.": "{ productName }, and { products } other products are identified as unfulfillable. { space } { orders } other orders containing these products will be unassigned from this store and sent to be rebrokered."
+  ", and other products are identified as unfulfillable. other orders containing these products will be unassigned from this store and sent to be rebrokered.": "{ productName }, and { products } other products are identified as unfulfillable. { space } { orders } other orders containing these products will be unassigned from this store and sent to be rebrokered."
 }
