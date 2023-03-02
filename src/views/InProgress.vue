@@ -42,26 +42,26 @@
 
         <ion-button expand="block" class="desktop-only" fill="outline" @click="packOrdersAlert">{{ $t("Pack orders") }}</ion-button>
 
-        <ion-card v-for="(orders, index) in inProgressOrders.list" :key="index">
+        <ion-card v-for="(order, index) in inProgressOrders.list" :key="index">
           <div class="card-header">
             <div class="order-primary-info">
               <ion-label>
-                {{ orders.doclist.docs[0].customerName }}
-                <p>{{ $t("Ordered") }} {{ formatUtcDate(orders.doclist.docs[0].orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                {{ order.doclist.docs[0].customerName }}
+                <p>{{ $t("Ordered") }} {{ formatUtcDate(order.doclist.docs[0].orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
               </ion-label>
             </div>
 
             <div class="order-tags">
               <ion-chip outline>
                 <ion-icon :icon="pricetagOutline" />
-                <ion-label>{{ orders.doclist.docs[0].orderId }}</ion-label>
+                <ion-label>{{ order.doclist.docs[0].orderId }}</ion-label>
               </ion-chip>
             </div>
 
             <div class="order-metadata">
               <!-- TODO: add brokered date-->
               <ion-label>
-                {{ orders.doclist.docs[0].shipmentMethodTypeDesc }}
+                {{ order.doclist.docs[0].shipmentMethodTypeDesc }}
                 <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
               </ion-label>
             </div>
@@ -73,22 +73,22 @@
             <ion-chip> Box A | Type 3</ion-chip>
           </div>
 
-          <div v-for="order in orders.doclist.docs" :key="order.orderId" class="order-item">
+          <div v-for="(item, index) in order.doclist.docs" :key="index" class="order-item">
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail>
-                  <Image :src="getProduct(order.productId).mainImageUrl" />
+                  <Image :src="getProduct(item.productId).mainImageUrl" />
                 </ion-thumbnail>
                 <ion-label>
-                  <p class="overline">{{ order.productSku }}</p>
-                  {{ order.productName }}
-                  <p>{{ getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  <p class="overline">{{ item.productSku }}</p>
+                  {{ item.productName }}
+                  <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                 </ion-label>
               </ion-item>
             </div>
 
             <div class="desktop-only">
-              <ion-segment @ionChange="segmentChanged($event, order)" :value="order.segmentSelected">
+              <ion-segment @ionChange="segmentChanged($event, item)" :value="item.segmentSelected">
                 <ion-segment-button value="pack">
                   <ion-label>{{ $t("Ready to pack") }}</ion-label>
                 </ion-segment-button>
@@ -97,7 +97,8 @@
                 </ion-segment-button>
               </ion-segment>
               <div class="segments">
-                <div v-if="order.segmentSelected === 'pack'">
+                <!-- TODO: add functionality to update box type -->
+                <div v-if="item.segmentSelected === 'pack'">
                   <ion-item lines="none">
                     <ion-label>{{ $t("Select box") }}</ion-label>
                     <ion-select value="box1">
@@ -106,12 +107,11 @@
                     </ion-select>
                   </ion-item>
                 </div>
-                <div v-if="order.segmentSelected === 'issue'">
+                <div v-if="item.segmentSelected === 'issue'">
                   <ion-item lines="none">
                     <ion-label>{{ $t("Select issue") }}</ion-label>
-                    <ion-select value="a">
-                      <ion-select-option value="a">Out of stock</ion-select-option>
-                      <ion-select-option value="b">Worn display</ion-select-option>
+                    <ion-select @ionChange="updateRejectReason($event, item)" :value="item.rejectReason" >
+                      <ion-select-option v-for="reason in unfillableReason" :key="reason.id" :value="reason.id">{{ $t(reason.label) }}</ion-select-option>
                     </ion-select>
                   </ion-item>
                 </div>
@@ -119,7 +119,7 @@
             </div>
 
             <div class="product-metadata">
-              <ion-note>{{ getProductStock(order.productId) }} {{ $t("pieces in stock") }}</ion-note>
+              <ion-note>{{ getProductStock(item.productId) }} {{ $t("pieces in stock") }}</ion-note>
             </div>
           </div>
 
@@ -134,10 +134,9 @@
 
           <div class="actions">
             <div>
-              <ion-button @click="reportIssueAlert">{{ $t("Pack") }}</ion-button>
-              <ion-button fill="outline">{{ $t("Save") }}</ion-button>
+              <ion-button>{{ $t("Pack") }}</ion-button>
+              <ion-button fill="outline" @click="save(order)">{{ $t("Save") }}</ion-button>
             </div>
-            <div></div>
           </div>
         </ion-card>
 
@@ -161,6 +160,7 @@ import { mapGetters, useStore } from 'vuex';
 import { formatUtcDate, getFeature } from '@/utils';
 import Image from '@/components/Image.vue'
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue';
+import { OrderService } from '@/services/OrderService';
 
 export default defineComponent({
   name: 'InProgress',
@@ -202,12 +202,19 @@ export default defineComponent({
   },
   data() {
     return {
-      queryString: ''
+      queryString: '',
+      unfillableReason: JSON.parse(process.env.VUE_APP_UNFILLABLE_REASONS)
     }
   },
   methods: {
-    segmentChanged(ev: CustomEvent, order: any) {
-      order.segmentSelected = ev.detail.value;
+    segmentChanged(ev: CustomEvent, item: any) {
+      // when selecting the report segment for the first time defining the value for rejectReason,
+      // as in current flow once moving to reject segment we can't pack an order
+      if(ev.detail.value === 'issue' && !item.rejectReason) {
+        item.rejectReason = ''
+      }
+
+      item.segmentSelected = ev.detail.value;
     },
     async packagingPopover(ev: Event) {
       const popover = await popoverController.create({
@@ -222,30 +229,60 @@ export default defineComponent({
       const alert = await alertController
         .create({
           header: this.$t("Pack orders"),
-          message: this.$t("You are packing orders. Select additional documents that you would like to print.", {count: 15, space: '<br /><br />'}),
-          inputs: [
-            {
-              type: 'checkbox',
-              label: this.$t("Shipping labels"),
-              value: 'value1',
-              checked: true,
-              },
-            {
-              type: 'checkbox',
-              label: this.$t("Packing slip"),
-              value: 'value2',
-            },
-          ],   
+          message: this.$t("You are packing orders. Select additional documents that you would like to print.", {count: 15, space: '<br /><br />'}), 
           buttons: [this.$t("Cancel"), this.$t("Pack")],
         });
       return alert.present();
     },
-    async reportIssueAlert() {
+    async reportIssue(itemsToReject: any, outOfStockItem?: any) {
+      // TODO: update alert message when itemsToReject contains a single item and also in some specific conditions
+      let message;
+      if(!outOfStockItem) {
+        message = this.$t('Are you sure you want to perform this action?')
+      } else {
+        const productName = outOfStockItem.productName
+
+        // TODO: ordersCount is not correct as current we are identifying orders count by only checking items visible on UI and not other orders
+        const ordersCount = this.inProgressOrders.list.map((order: any) => order.doclist.docs.filter((item: any) => item.productSku === outOfStockItem.productSku))?.filter((item: any) => item.length).length
+
+        // displaying product count decrement by 1 as we are displaying one product sku directly.
+        message = this.$t(", and other products are identified as unfulfillable. other orders containing these products will be unassigned from this store and sent to be rebrokered.", {productName, products: itemsToReject.length - 1, space: '<br /><br />', orders: ordersCount})
+      }
       const alert = await alertController
         .create({
-          header: this.$t("Report an Issue"),
-          message: this.$t(", and other products are identified as unfulfillable. other orders  containing these products will be  unassigned  from this store and sent to be rebrokered.", {productName: "WJ06-XL-Purple", products: 5, space: '<br /><br />', orders: 4}),       
-          buttons: [this.$t("Cancel"), this.$t("Report")],
+          header: this.$t("Report an issue"),
+          message,
+          buttons: [{
+            text: this.$t("Cancel"),
+            role: 'cancel'
+          }, {
+            text: this.$t("Report"),
+            role: 'confirm',
+            handler: async () => {
+              const payload = {
+                'orderId': itemsToReject[0].orderId
+              }
+              const responses = [];
+
+              // https://blog.devgenius.io/using-async-await-in-a-foreach-loop-you-cant-c174b31999bd
+              // The forEach, map, reduce loops are not built to work with asynchronous callback functions.
+              // It doesn't wait for the promise of an iteration to be resolved before it goes on to the next iteration.
+              // We could use either the for…of the loop or the for(let i = 0;….)
+              for (const item of itemsToReject) {
+                const params = {
+                  ...payload,
+                  'rejectReason': item.rejectReason,
+                  'facilityId': item.facilityId,
+                  'orderItemSeqId': item.orderItemSeqId,
+                  'shipmentMethodTypeId': item.shipmentMethodTypeId,
+                  'quantity': parseInt(item.itemQuantity)
+                }
+                const resp = await OrderService.rejectOrderItem({'payload': params});
+                responses.push(resp);
+              }
+              return responses;
+            },
+          }],
         });
       return alert.present();
     },
@@ -255,6 +292,20 @@ export default defineComponent({
       } as any
       await this.store.dispatch('order/fetchInProgressOrders', payload)
     },
+    save(order: any) {
+      // added empty check as for 'No Reason' the value for issue will be empty string
+      const itemsToReject = order.doclist.docs.filter((item: any) => item.rejectReason || item.rejectReason === '')
+
+      // finding is there any item that is `out of stock` as we need to display the message conditionaly
+      const outOfStockItem = itemsToReject.find((item: any) => item.rejectReason === 'NOT_IN_STOCK')
+
+      if(itemsToReject.length) {
+        this.reportIssue(itemsToReject, outOfStockItem);
+      }      
+    },
+    updateRejectReason(ev: CustomEvent, item: any) {
+      item.rejectReason = ev.detail.value;
+    }
   },
   async mounted () {
     await this.fetchInProgressOrders();
