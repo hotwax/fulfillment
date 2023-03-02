@@ -35,7 +35,10 @@ const actions: ActionTree<OrderState, RootState> = {
       if (resp.status === 200 && resp.data.grouped.picklistBinId.matches > 0 && !hasError(resp)) {
         const total = resp.data.grouped.picklistBinId.ngroups
         const orders = resp.data.grouped.picklistBinId.groups
-        orders.map((order: any) => order.doclist.docs.map((item: any) => item.segmentSelected = 'pack'))
+        orders.map((order: any) => order.doclist.docs.map((item: any) => {
+          // assigning segmentSelected at item level as we have option to change segment for each item
+          item.segmentSelected = 'pack'
+        }))
 
         commit(types.ORDER_INPROGRESS_UPDATED, {orders, total})
         this.dispatch('product/getProductInformation', { orders })
