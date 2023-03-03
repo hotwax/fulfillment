@@ -1,6 +1,8 @@
 export default interface OrderState {
   inProgress: {
     list: any,
-    total: number
-  }
+    total: number,
+  },
+  selectedPicklists: Array<string>,
+  queryString: string
 }

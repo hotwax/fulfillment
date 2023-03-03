@@ -11,7 +11,9 @@ const orderModule: Module<OrderState, RootState> = {
     inProgress: {
       list: [],
       total: 0
-    }
+    },
+    selectedPicklists: [],
+    queryString: ''
   },
   getters,
   actions,
