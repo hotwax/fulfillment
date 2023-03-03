@@ -40,7 +40,7 @@
           </ion-item>
         </div>
 
-        <ion-button expand="block" class="desktop-only" fill="outline" @click="packOrdersAlert">{{ $t("Pack orders") }}</ion-button>
+        <ion-button expand="block" class="desktop-only" fill="outline" @click="packOrders()">{{ $t("Pack orders") }}</ion-button>
 
         <ion-card v-for="(order, index) in inProgressOrders.list" :key="index">
           <div class="card-header">
@@ -125,7 +125,7 @@
 
           <div class="mobile-only">
             <ion-item>
-              <ion-button fill="clear" @click="packOrdersAlert">{{ $t("Pack using default packaging") }}</ion-button>
+              <ion-button fill="clear" @click="packOrder(order)">{{ $t("Pack using default packaging") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -134,14 +134,14 @@
 
           <div class="actions">
             <div>
-              <ion-button>{{ $t("Pack") }}</ion-button>
+              <ion-button @click="packOrder(order)">{{ $t("Pack") }}</ion-button>
               <ion-button fill="outline" @click="save(order)">{{ $t("Save") }}</ion-button>
             </div>
           </div>
         </ion-card>
 
         <ion-fab class="mobile-only" vertical="bottom" horizontal="end">
-          <ion-fab-button @click="packOrdersAlert">
+          <ion-fab-button @click="packOrders()">
             <ion-icon :icon="checkmarkDoneOutline" />
           </ion-fab-button>
         </ion-fab>
@@ -157,10 +157,12 @@ import { defineComponent, ref } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline, optionsOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
-import { formatUtcDate, getFeature } from '@/utils';
+import { formatUtcDate, getFeature, hasError, showToast } from '@/utils';
 import Image from '@/components/Image.vue'
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue';
 import { OrderService } from '@/services/OrderService';
+import emitter from '@/event-bus';
+import { translate } from '@/i18n';
 
 export default defineComponent({
   name: 'InProgress',
@@ -225,7 +227,33 @@ export default defineComponent({
       });
       return popover.present();
     },
-    async packOrdersAlert() {
+    async packOrder(order: any) {
+      // TODO: implement support to print shipping labels and packing slip
+      const params = {
+        'picklistBinId': order.doclist.docs[0].picklistBinId,
+        'orderId': order.doclist.docs[0].orderId
+      }
+
+      emitter.emit('presentLoader');
+
+      try {
+        const resp = await OrderService.packOrder(params);
+        if (resp.status === 200 && !hasError(resp)) {
+          showToast(translate('Order packed successfully'));
+          // TODO: handle the case of fetching in progress orders after packing an order
+          // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
+          this.fetchInProgressOrders();
+        } else {
+          showToast(translate('Failed to pack order'))
+          console.error('error', resp)
+        }
+      } catch (err) {
+        showToast(translate('Failed to pack order'))
+        console.error(err)
+      }
+      emitter.emit('dismissLoader');
+    },
+    async packOrders() {
       const alert = await alertController
         .create({
           header: this.$t("Pack orders"),
@@ -279,6 +307,8 @@ export default defineComponent({
                 }
                 const resp = await OrderService.rejectOrderItem({'payload': params});
                 responses.push(resp);
+
+                // TODO: add toast messages for success and failure case
               }
               return responses;
             },

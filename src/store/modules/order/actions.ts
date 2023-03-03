@@ -47,7 +47,6 @@ const actions: ActionTree<OrderState, RootState> = {
       }
     } catch (err) {
       console.error('error', err)
-      showToast(translate('Something went wrong'))
     }
 
     emitter.emit('dismissLoader');
