@@ -139,7 +139,7 @@
           </ion-fab-button>
         </ion-fab>
       </div>
-      <div v-else>{{ currentFacility.name }} {{ $t(" doesn't have any orders in progress right now.") }} </div>
+      <div class="empty-state" v-else>{{ currentFacility.name }} {{ $t(" doesn't have any orders in progress right now.") }} </div>
     </ion-content>
   </ion-page>
 </template>

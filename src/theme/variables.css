@@ -310,6 +310,23 @@ img {
   display: unset;
 }
 
+.empty-state {
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+.empty-state > img {
+  object-fit: contain;
+}
+
+.empty-state > p {
+  text-align: center;
+}
+
 @media (min-width: 991px) {
   .card-header {
     grid: "info tags metadata" / max-content 1fr max-content;
