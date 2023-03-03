@@ -87,7 +87,8 @@ export default defineComponent({
       await this.store.dispatch('util/updateViewSize', size)
     },
     async updateViewSize(size: number) {
-      // not updating viewSize and calling solr-query when clicking on already selected
+      // TODO: multiple api calls being made as viewSize is updated after fetching the orders
+      // not updating viewSize and calling solr-query when size in state and clicked size are same
       if(this.viewSize == size) {
         return;
       }

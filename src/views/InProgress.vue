@@ -22,20 +22,13 @@
 
         <!-- TODO: make pickers information dynamic -->
         <div class="filters">
-          <ion-item lines="none">
-            <ion-checkbox slot="start"/>
-            <ion-label>
-              John
-              <p>2:30 PM</p>
+          <ion-item v-for="picklist in picklists" :key="picklist.id" lines="none">
+            <ion-checkbox :checked="selectedPicklists.includes(picklist.id)" slot="start" @ion-change="updateSelectedPicklists(picklist.id)"/>
+            <ion-label class="ion-text-wrap">
+              {{ picklist.pickersName }}
+              <p>{{ picklist.date }}</p>
             </ion-label>
-            <ion-icon :icon="printOutline" />
-          </ion-item>
-          <ion-item lines="none">
-            <ion-checkbox slot="start"/>
-            <ion-label>
-              Aaron
-              <p>2:04 PM</p>
-            </ion-label>
+            <!-- TODO: implement support to print picklist -->
             <ion-icon :icon="printOutline" />
           </ion-item>
         </div>
@@ -163,6 +156,9 @@ import ViewSizeSelector from '@/components/ViewSizeSelector.vue';
 import { OrderService } from '@/services/OrderService';
 import emitter from '@/event-bus';
 import { translate } from '@/i18n';
+import { prepareOrderQuery } from '@/utils/solrHelper';
+import { UtilService } from '@/services/UtilService';
+import { DateTime } from 'luxon';
 
 export default defineComponent({
   name: 'InProgress',
@@ -199,13 +195,15 @@ export default defineComponent({
       inProgressOrders: 'order/getInProgressOrders',
       getProduct: 'product/getProduct',
       getProductStock: 'stock/getProductStock',
-      viewSize: 'util/getViewSize'
+      viewSize: 'util/getViewSize',
+      selectedPicklists: 'order/getSelectedPicklists'
     })
   },
   data() {
     return {
       queryString: '',
-      unfillableReason: JSON.parse(process.env.VUE_APP_UNFILLABLE_REASONS)
+      unfillableReason: JSON.parse(process.env.VUE_APP_UNFILLABLE_REASONS),
+      picklists: [] as any
     }
   },
   methods: {
@@ -365,14 +363,100 @@ export default defineComponent({
     },
     updateRejectReason(ev: CustomEvent, item: any) {
       item.rejectReason = ev.detail.value;
+    },
+    async fetchPickersInformation() {
+      const orderQueryPayload = prepareOrderQuery({
+        viewSize: '0',  // passing viewSize as 0 as we don't need any data
+        groupBy: 'picklistBinId',
+        filters: {
+          picklistItemStatusId: { value: 'PICKITEM_PENDING' },
+          '-fulfillmentStatus': { value: 'Rejected' },
+          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+          facilityId: { value: this.currentFacility.facilityId }
+        },
+        facet: {
+          picklistFacet: {
+            excludeTags: 'picklistIdFilter',
+            field: 'picklistId',
+            mincount: 1,
+            limit: -1,
+            sort: 'index',
+            type: 'terms',
+            facet: {
+              pickerFacet: {
+                excludeTags: 'pickersFilter',
+                field: 'pickers',
+                mincount: 1,
+                limit: -1,
+                sort: 'index',
+                type: 'terms'
+              }
+            }
+          }
+        }
+      })
+
+      let resp;
+
+      try {
+        resp = await OrderService.fetchInProgressOrders(orderQueryPayload);
+        if (resp.status === 200 && !hasError(resp) && resp.data.facets.count > 0) {
+          const buckets = resp.data.facets.picklistFacet.buckets
+
+          const picklistIds = buckets.map((bucket: any) => bucket.val)
+
+          const payload = {
+            inputFields: {
+              picklistId: picklistIds,
+              picklistId_op: "in"
+            },
+            entityName: 'Picklist',
+            noConditionFind: 'Y',
+            viewSize: picklistIds.length
+          }
+
+          const picklistResp = await UtilService.fetchPicklistInformation(payload);
+
+          if(picklistResp.status == 200 && !hasError(picklistResp) && picklistResp.data.count > 0) {
+            picklistResp.data.docs.reduce((picklists: any, picklist: any) => {
+              const pickersInformation = buckets.find((bucket: any) => picklist.picklistId == bucket.val)
+
+              if(pickersInformation.count == 0) {
+                return picklists;
+              }
+
+              const pickersName = pickersInformation.pickerFacet.buckets.length ? pickersInformation.pickerFacet.buckets.reduce((pickers: Array<string>, picker: any) => {
+                pickers.push(picker.val.split('/')[1].split(' ')[0]) // having picker val in format 10001/FirstName LastName, we only need to display firstName
+                return pickers
+              }, []) : ['System Generated']
+
+              picklists.push({
+                id: picklist.picklistId,
+                pickersName: pickersName.join(', '),
+                date: DateTime.fromMillis(picklist.picklistDate).toLocaleString(DateTime.TIME_SIMPLE)
+              })
+
+              return picklists
+            }, this.picklists)
+          }
+        } else {
+          console.error('No picklist facets found')
+        }
+      } catch (err) {
+        console.error('error', err)
+      }
+    },
+    async updateSelectedPicklists(id: string) {
+      await this.store.dispatch('order/updateSelectedPicklists', id)
+      this.fetchInProgressOrders();
     }
   },
   async mounted () {
+    this.fetchPickersInformation();
     await this.fetchInProgressOrders();
   },
   setup() {
     const store = useStore();
-    const segment = ref("pack");
 
     return {
       addOutline,
@@ -383,7 +467,6 @@ export default defineComponent({
       getFeature,
       checkmarkDoneOutline,
       pricetagOutline,
-      segment,
       store
     }
   }

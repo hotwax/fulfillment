@@ -260,7 +260,7 @@ ion-thumbnail > img {
 
 .filters > ion-item {
   flex: 1 0 100%;
-  max-width: 200px;
+  max-width: fit-content;
   border: var(--border-medium);
   border-radius: 10px;
 }
