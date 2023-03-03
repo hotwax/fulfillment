@@ -17,6 +17,7 @@
   "Download": "Download",
   "Edit packaging": "Edit packaging",
   "Failed to pack order": "Failed to pack order",
+  "Failed to pack orders": "Failed to pack orders",
   "Fulfillment": "Fulfillment",
   "has outstanding orders and in progress orders.": "{ storeName } has { outstandingOrder } outstanding orders and { progressOrder } in progress orders.",
   "In Progress": "In Progress",

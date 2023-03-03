@@ -16,6 +16,14 @@ const packOrder = async (query: any): Promise <any> => {
   })
 }
 
+const packOrders = async (query: any): Promise <any> => {
+  return api({
+    url: "/service/bulkPackStoreFulfillmentOrders",
+    method: "post",
+    data: query
+  })
+}
+
 const rejectOrderItem = async (payload: any): Promise <any> => {
   return api({
     url: "rejectOrderItem",
@@ -27,5 +35,6 @@ const rejectOrderItem = async (payload: any): Promise <any> => {
 export const OrderService = {
   fetchInProgressOrders,
   packOrder,
+  packOrders,
   rejectOrderItem
 } 

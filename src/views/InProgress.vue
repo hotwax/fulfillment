@@ -257,8 +257,38 @@ export default defineComponent({
       const alert = await alertController
         .create({
           header: this.$t("Pack orders"),
-          message: this.$t("You are packing orders. Select additional documents that you would like to print.", {count: 15, space: '<br /><br />'}), 
-          buttons: [this.$t("Cancel"), this.$t("Pack")],
+          message: this.$t("You are packing orders. Select additional documents that you would like to print.", {count: this.inProgressOrders.list.length, space: '<br /><br />'}),
+          buttons: [{
+            text: this.$t("Cancel"),
+            role: 'cancel'
+          }, {
+            text: this.$t("Pack"),
+            role: 'confirm',
+            handler: async () => {
+              emitter.emit('presentLoader');
+
+              const shipmentIds = this.inProgressOrders.list.map((order: any) => order.doclist.docs[0].shipmentId)
+
+              try {
+                const resp = await OrderService.packOrders({
+                  shipmentIds
+                });
+                if (resp.status === 200 && !hasError(resp)) {
+                  showToast(translate('Orders packed successfully'));
+                  // TODO: handle the case of fetching in progress orders after packing multiple orders
+                  // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
+                  this.fetchInProgressOrders();
+                } else {
+                  showToast(translate('Failed to pack orders'))
+                  console.error('error', resp)
+                }
+              } catch (err) {
+                showToast(translate('Failed to pack orders'))
+                console.error(err)
+              }
+              emitter.emit('dismissLoader');
+            }
+          }]
         });
       return alert.present();
     },
