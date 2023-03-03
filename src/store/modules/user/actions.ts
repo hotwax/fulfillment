@@ -75,6 +75,7 @@ const actions: ActionTree<UserState, RootState> = {
   async logout ({ commit }) {
     // TODO add any other tasks if need
     commit(types.USER_END_SESSION)
+    this.dispatch('order/clearOrders')
     resetConfig();
   },
 
@@ -97,6 +98,7 @@ const actions: ActionTree<UserState, RootState> = {
    */
   async setFacility ({ commit }, payload) {
     commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
+    this.dispatch('order/clearOrders')
   },
   
   /**

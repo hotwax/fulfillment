@@ -8,7 +8,7 @@
 
     <ion-content>
       <ion-list>
-        <ion-radio-group :value="viewSize" @ionChange="setViewSize($event.detail.value)">
+        <ion-radio-group :value="viewSize" @ionChange="updateViewSize($event.detail.value)">
           <ion-item v-for="count in prepareViewSizeOptions()" :key="count">
             <ion-radio slot="start" :value="count"/>
             <ion-label>{{ count }} {{ $t('orders') }}</ion-label>
@@ -62,7 +62,7 @@ export default defineComponent({
     prepareViewSizeOptions () {
       const total = this.inProgressOrders.total
       // creating an array of numbers using Array.keys method and then multiplying each by 5
-      const viewSizeOptions =  [ ...Array(Math.ceil(total / 5)).keys() ].map( i => {
+      const viewSizeOptions = [ ...Array(Math.ceil(total / 5)).keys() ].map( i => {
         const count = (i+1) * 5
         // added check that if the count is greater than the total orders available then assigning orders total as size option
         return count > total ? total : count
@@ -84,7 +84,17 @@ export default defineComponent({
       if(this.viewSize == size) {
         return;
       }
-      await this.store.dispatch('util/updateViewSize', { size, page: this.$route.name })
+      await this.store.dispatch('util/updateViewSize', size)
+    },
+    async updateViewSize(size: number) {
+      // not updating viewSize and calling solr-query when clicking on already selected
+      if(this.viewSize == size) {
+        return;
+      }
+      await this.store.dispatch('util/updateViewSize', size)
+      if(this.$route.name === 'InProgress') {
+        this.store.dispatch('order/fetchInProgressOrders')
+      }
       // closing the menu after selecting any view size
       menuController.close()
     }

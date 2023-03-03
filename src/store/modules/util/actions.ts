@@ -5,10 +5,7 @@ import * as types from './mutation-types'
 
 const actions: ActionTree<UtilState, RootState> = {
   updateViewSize({ commit }, payload) {
-    commit(types.UTIL_VIEW_SIZE_UPDATED, payload.size)
-    if(payload.page === 'InProgress') {
-      this.dispatch('order/fetchInProgressOrders')
-    }
+    commit(types.UTIL_VIEW_SIZE_UPDATED, payload)
   }
 }
 
