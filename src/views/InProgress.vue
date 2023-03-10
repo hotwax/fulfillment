@@ -127,7 +127,7 @@
 
           <div class="actions">
             <div>
-              <ion-button @click="packOrder(order)">{{ $t("Pack") }}</ion-button>
+              <ion-button :disabled="isOrderReadyToReject(order)" @click="packOrder(order)">{{ $t("Pack") }}</ion-button>
               <ion-button fill="outline" @click="save(order)">{{ $t("Save") }}</ion-button>
             </div>
           </div>
@@ -207,6 +207,9 @@ export default defineComponent({
     }
   },
   methods: {
+    isOrderReadyToReject(order: any) {
+      return order.doclist.docs.some((item: any) => item.rejectReason || item.rejectReason === '')
+    },
     segmentChanged(ev: CustomEvent, item: any) {
       // when selecting the report segment for the first time defining the value for rejectReason,
       // as in current flow once moving to reject segment we can't pack an order

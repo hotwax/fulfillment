@@ -89,6 +89,8 @@ export default defineComponent({
     async updateViewSize(size: number) {
       // TODO: multiple api calls being made as viewSize is updated after fetching the orders
       // not updating viewSize and calling solr-query when size in state and clicked size are same
+
+      // TODO: adding this check handles issue of multiple api calls, but results in wrong behaviour
       if(this.viewSize == size) {
         return;
       }

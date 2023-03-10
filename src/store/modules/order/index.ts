@@ -12,7 +12,7 @@ const orderModule: Module<OrderState, RootState> = {
       list: [],
       total: 0
     },
-    selectedPicklists: [],
+    selectedPicklists: [],  // storing the selectedPicklists in state as when changing the viewSize or queryString we need to honor the selectedPicklists
     queryString: ''
   },
   getters,
