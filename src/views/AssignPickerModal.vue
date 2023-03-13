@@ -127,22 +127,22 @@ export default defineComponent({
         // TODO: having issue when creating more than 2 groups in performFind, searching always work on first two groups
         // For now enabled searching on first name and externalId
         inputFields = {
-          firstName_fld0_value: this.queryString,
-          firstName_fld0_op: 'contains',
-          firstName_fld0_ic: 'Y',
-          firstName_fld0_grp: '1',
-          externalId_fld1_value: this.queryString,
-          externalId_fld1_op: 'contains',
-          externalId_fld1_ic: 'Y',
-          externalId_fld1_grp: '2',
-          // lastName_fld2_value: this.queryString,
-          // lastName_fld2_op: 'contains',
-          // lastName_fld2_ic: 'Y',
-          // lastName_fld2_grp: '3',
-          // partyId_fld3_value: this.queryString,
-          // partyId_fld3_op: 'contains',
-          // partyId_fld3_ic: 'Y',
-          // partyId_fld3_grp: '4',
+          firstName_value: this.queryString,
+          firstName_op: 'contains',
+          firstName_ic: 'Y',
+          firstName_grp: '1',
+          externalId_value: this.queryString,
+          externalId_op: 'contains',
+          externalId_ic: 'Y',
+          externalId_grp: '2',
+          lastName_value: this.queryString,
+          lastName_op: 'contains',
+          lastName_ic: 'Y',
+          lastName_grp: '3',
+          partyId_value: this.queryString,
+          partyId_op: 'contains',
+          partyId_ic: 'Y',
+          partyId_grp: '4',
         }
       }
 
