@@ -58,7 +58,7 @@ import { closeOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { hasError, showToast } from "@/utils";
 import { translate } from "@/i18n";
-import { PicklistService } from "@/services/PicklistService";
+import { UtilService } from "@/services/UtilService";
 import emitter from "@/event-bus";
 
 export default defineComponent({
@@ -150,7 +150,7 @@ export default defineComponent({
       this.selectedPickers.map((picker) => formData.append("pickerIds", picker.id))
 
       try {
-        resp = await PicklistService.createPicklist(formData);
+        resp = await UtilService.createPicklist(formData);
         if (resp.status === 200 && !hasError(resp)) {
           this.closeModal();
           await this.store.dispatch('order/fetchOpenOrders')
@@ -205,7 +205,7 @@ export default defineComponent({
       }
 
       try {
-        const resp = await PicklistService.getAvailablePickers(payload);
+        const resp = await UtilService.getAvailablePickers(payload);
         if (resp.status === 200 && !hasError(resp) && resp.data.count > 0) {
           this.pickers = resp.data.docs.map((picker) => ({
             name: picker.firstName+ ' ' +picker.lastName,
