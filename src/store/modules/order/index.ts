@@ -12,7 +12,8 @@ const orderModule: Module<OrderState, RootState> = {
       list: [],
       total: 0,
     },
-    selectedShipmentMethods: []
+    selectedShipmentMethods: [],
+    queryString: ''
   },
   getters,
   actions,

@@ -9,6 +9,9 @@ const mutations: MutationTree <OrderState> = {
   },
   [types.ORDER_SELECTED_SHIPMENT_METHODS_UPDATED] (state, payload) {
     state.selectedShipmentMethods = payload;
+  },
+  [types.ORDER_QUERY_STRING_UPDATED](state, payload) {
+    state.queryString = payload
   }
 }
 export default mutations;

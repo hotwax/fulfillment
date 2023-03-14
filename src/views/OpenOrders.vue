@@ -17,7 +17,7 @@
     
     <ion-content id="view-size-selector">
       <div v-if="openOrders.total">
-        <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; fetchOpenOrders()"/>
+        <ion-searchbar :value="queryString" @keyup.enter="updateQueryString($event.target.value)"/>
         <div class="filters">
           <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
             <ion-checkbox slot="start" @ionChange="updateSelectedShipmentMethods(method.val)"/>
@@ -165,13 +165,13 @@ export default defineComponent({
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
       viewSize: 'util/getViewSize',
-      getProductStock: 'stock/getProductStock'
+      getProductStock: 'stock/getProductStock',
+      queryString: 'order/getQueryString'
     })
   },
   data () {
     return {
       selectedShipmentMethod: [] as Array<string>,
-      queryString: '',
       shipmentMethods: [] as Array<any>
     }
   },
@@ -186,11 +186,7 @@ export default defineComponent({
       return assignPickerModal.present();
     },
     async fetchOpenOrders () {
-      const payload = {
-        queryString: this.queryString
-      } as any
-
-      await this.store.dispatch('order/fetchOpenOrders', payload)
+      await this.store.dispatch('order/fetchOpenOrders')
     },
     async fetchShipmentMethods() {
       let resp: any;
@@ -232,6 +228,10 @@ export default defineComponent({
       } catch(err) {
         console.error('error', err)
       }
+    },
+    async updateQueryString(queryString: string) {
+      await this.store.dispatch('order/updateQueryString', queryString)
+      this.fetchOpenOrders();
     }
   },
   async mounted () {

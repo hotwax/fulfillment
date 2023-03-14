@@ -12,12 +12,13 @@ import { prepareOrderQuery } from '@/utils/solrHelper'
 const actions: ActionTree<OrderState, RootState> = {
 
   // get open orders
-  async fetchOpenOrders ({ commit, state }, payload) {
+  async fetchOpenOrders ({ commit, state }, payload = {}) {
     emitter.emit('presentLoader');
     let resp;
 
     const params = {
       ...payload,
+      queryString: state.queryString,
       viewSize: this.state.util.viewSize,
       queryFields: 'orderId',
       filters: {
@@ -70,6 +71,10 @@ const actions: ActionTree<OrderState, RootState> = {
     }
     commit(types.ORDER_SELECTED_SHIPMENT_METHODS_UPDATED, selectedShipmentMethods)
     dispatch('fetchOpenOrders');
+  },
+
+  updateQueryString({ commit }, queryString) {
+    commit(types.ORDER_QUERY_STRING_UPDATED, queryString)
   }
 }
 

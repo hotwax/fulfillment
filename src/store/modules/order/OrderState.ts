@@ -4,4 +4,5 @@ export default interface OrderState {
     total: number
   }
   selectedShipmentMethods: Array<string>;
+  queryString: string;
 }
