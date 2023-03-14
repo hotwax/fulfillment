@@ -8,7 +8,7 @@
 
     <ion-content>
       <ion-list>
-        <ion-radio-group :value="currentPicklistSize" @ionChange="setPicklistSize($event.detail.value)">
+        <ion-radio-group :value="currentPicklistSize" @ionChange="updatePicklistSize($event.detail.value)">
           <ion-item v-for="count in preparePicklistSizeOptions()" :key="count">
             <ion-radio slot="start" :value="count"/>
             <ion-label>{{ count }} {{ $t('orders') }}</ion-label>
@@ -78,7 +78,7 @@ export default defineComponent({
         // Now when we de-select the shipping method or select another shipping method than the orders totals will increase,
         // and thus 3 as an picklist option will not be available, thus checking for below condition
 
-        picklistSizeOptions.includes(this.currentPicklistSize) || this.setPicklistSize(process.env.VUE_APP_PICKLIST_SIZE)
+        picklistSizeOptions.includes(this.currentPicklistSize) || this.setPicklistSize(+process.env.VUE_APP_PICKLIST_SIZE)
       }
 
       return picklistSizeOptions;
@@ -88,7 +88,16 @@ export default defineComponent({
         return;
       }
       await this.store.dispatch('picklist/setPicklistSize', size)
-      // closing the menu after selecting any picklist size
+    },
+    async updatePicklistSize(size: number) {
+      if(this.currentPicklistSize == size) {
+        return;
+      }
+      await this.store.dispatch('picklist/setPicklistSize', size)
+      if(this.$route.name === 'OpenOrders') {
+        this.store.dispatch('order/fetchOpenOrders')
+      }
+      // closing the menu after selecting any view size
       menuController.close()
     }
   },
