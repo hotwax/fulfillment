@@ -39,11 +39,14 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const orderQueryPayload = prepareOrderQuery(params)
 
+    // clearning orders before again fetching the orders
+    commit(types.ORDER_OPEN_UPDATED, {list: {}, total: 0})
+
     try {
       resp = await OrderService.fetchOpenOrders(orderQueryPayload);
       if (resp.status === 200 && resp.data.grouped.orderId.matches > 0 && !hasError(resp)) {
         const total = resp.data.grouped.orderId.ngroups
-        commit(types.ORDER_OPEN_UPDATED, {open: resp.data.grouped.orderId.groups, total})
+        commit(types.ORDER_OPEN_UPDATED, {list: resp.data.grouped.orderId.groups, total})
         this.dispatch('product/getProductInformation', {orders: resp.data.grouped.orderId.groups})
       } else {
         console.error('No orders found')
@@ -58,7 +61,7 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   async clearOrders ({ commit }) {
-    commit(types.ORDER_OPEN_UPDATED, {open: {}, total: 0})
+    commit(types.ORDER_OPEN_UPDATED, {list: {}, total: 0})
   },
 
   updateSelectedShipmentMethods({ commit, dispatch, state }, method) {

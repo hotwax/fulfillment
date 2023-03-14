@@ -35,7 +35,7 @@ import {
   IonToolbar,
   menuController
 } from "@ionic/vue";
-import { defineComponent, ref } from "vue";
+import { defineComponent } from "vue";
 import { useRoute } from "vue-router";
 import { mapGetters, useStore } from 'vuex';
 

@@ -95,7 +95,7 @@
           </ion-fab-button>
         </ion-fab>
       </div>
-      <div v-else>
+      <div class="empty-state" v-else>
         {{ currentFacility.name }}{{ $t(' doesn’t have any outstanding orders right now.') }}
       </div>
     </ion-content>
@@ -193,7 +193,7 @@ export default defineComponent({
 
       const payload = prepareOrderQuery({
         queryFields: 'orderId',
-        viewSize: 1,  // passed viewSize as 0 to not fetch any data
+        viewSize: '0',  // passed viewSize as 0 to not fetch any data
         filters: {
           quantityNotAvailable: { value: 0 },
           isPicked: { value: 'N' },

@@ -141,6 +141,7 @@ export default defineComponent({
     logout () {
       this.store.dispatch('user/logout').then(() => {
         this.store.dispatch('order/clearOrders')
+        this.store.dispatch('orders/updateQueryString', '')
         this.router.push('/login');
       })
     },
@@ -149,6 +150,7 @@ export default defineComponent({
         this.userProfile.facilities.map((fac: any) => {
           if (fac.facilityId == facility['detail'].value) {
             this.store.dispatch('order/clearOrders')
+            this.store.dispatch('order/updateQueryString', '')
             this.store.dispatch('user/setFacility', {'facility': fac});
           }
         })

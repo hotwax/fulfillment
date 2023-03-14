@@ -168,8 +168,6 @@ export default defineComponent({
       let inputFields = {}
 
       if(this.queryString.length > 0) {
-        // TODO: having issue when creating more than 2 groups in performFind, searching always work on first two groups
-        // For now enabled searching on first name and externalId
         inputFields = {
           firstName_value: this.queryString,
           firstName_op: 'contains',
