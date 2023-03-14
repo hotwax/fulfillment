@@ -1,11 +1,11 @@
 <template>
   <ion-page>
-    <PicklistSize content-id="picklist-size" />
+    <ViewSizeSelector content-id="view-size-selector" />
     
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button menu="start" slot="start" />
-        <ion-title>{{ picklistSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
+        <ion-title>{{ viewSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
      
         <ion-buttons slot="end">
           <ion-menu-button menu="end">
@@ -15,7 +15,7 @@
       </ion-toolbar>
     </ion-header>
     
-    <ion-content id="picklist-size">
+    <ion-content id="view-size-selector">
       <div v-if="openOrders.total">
         <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; fetchOpenOrders()"/>
         <div class="filters">
@@ -129,10 +129,10 @@ import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } f
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import Image from '@/components/Image.vue'
-import PicklistSize from '@/components/PicklistSize.vue';
 import { formatUtcDate, getFeature, hasError } from '@/utils'
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
+import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -157,14 +157,14 @@ export default defineComponent({
     IonThumbnail,
     IonTitle,
     IonToolbar,
-    PicklistSize
+    ViewSizeSelector
   },
   computed: {
     ...mapGetters({
       currentFacility: 'user/getCurrentFacility',
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
-      picklistSize: 'picklist/getPicklistSize',
+      viewSize: 'util/getViewSize',
       getProductStock: 'stock/getProductStock'
     })
   },

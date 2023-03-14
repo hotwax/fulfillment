@@ -7,7 +7,7 @@
         </ion-button>
       </ion-buttons>
       <ion-title>{{ $t("Assign Pickers") }}</ion-title>
-      <ion-button fill="clear" slot="end" @click="printPicklist()">Print Picklist</ion-button>
+      <ion-button fill="clear" slot="end" @click="printPicklist()">{{ $t('Print Picklist') }}</ion-button>
     </ion-toolbar>
   </ion-header>
 

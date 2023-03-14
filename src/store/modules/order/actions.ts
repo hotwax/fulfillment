@@ -18,7 +18,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const params = {
       ...payload,
-      viewSize: this.state.picklist.size,
+      viewSize: this.state.util.viewSize,
       queryFields: 'orderId',
       filters: {
         quantityNotAvailable: { value: 0 },
