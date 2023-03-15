@@ -141,7 +141,7 @@ export default defineComponent({
     logout () {
       this.store.dispatch('user/logout').then(() => {
         this.store.dispatch('order/clearOrders')
-        this.store.dispatch('orders/updateQueryString', '')
+        this.store.dispatch('order/updateQueryString', '')
         this.router.push('/login');
       })
     },

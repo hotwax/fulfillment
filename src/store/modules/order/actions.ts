@@ -39,9 +39,6 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const orderQueryPayload = prepareOrderQuery(params)
 
-    // clearning orders before again fetching the orders
-    commit(types.ORDER_OPEN_UPDATED, {list: {}, total: 0})
-
     try {
       resp = await OrderService.fetchOpenOrders(orderQueryPayload);
       if (resp.status === 200 && resp.data.grouped.orderId.matches > 0 && !hasError(resp)) {
@@ -50,10 +47,12 @@ const actions: ActionTree<OrderState, RootState> = {
         this.dispatch('product/getProductInformation', {orders: resp.data.grouped.orderId.groups})
       } else {
         console.error('No orders found')
+        commit(types.ORDER_OPEN_UPDATED, {list: {}, total: 0}) // clearning orders in case of errors as clearning them beforehand results in wrong viewSize displayed on UI
       }
     } catch (err) {
       console.error('error', err)
       showToast(translate('Something went wrong'))
+      commit(types.ORDER_OPEN_UPDATED, {list: {}, total: 0})
     }
 
     emitter.emit('dismissLoader');
