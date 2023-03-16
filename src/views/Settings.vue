@@ -16,6 +16,14 @@
       </ion-item>
 
       <ion-item>
+        <ion-icon :icon="globeOutline" slot="start" />
+        <ion-label>{{$t("eCom Store")}}</ion-label>
+        <ion-select interface="popover" :value="currentEComStore.productStoreId" @ionChange="setEComStore($event)">
+          <ion-select-option v-for="store in (userProfile ? userProfile.stores : [])" :key="store.productStoreId" :value="store.productStoreId" >{{ store.storeName }}</ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-item>
         <ion-icon :icon="codeWorkingOutline" slot="start"/>
         <ion-label>{{ $t("OMS") }}</ion-label>
         <p slot="end">{{ baseURL ? baseURL : instanceUrl }}</p>
@@ -96,7 +104,7 @@ import {
   modalController,
 alertController} from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { codeWorkingOutline, ellipsisVerticalOutline, timeOutline } from 'ionicons/icons'
+import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, timeOutline } from 'ionicons/icons'
 import Popover from '@/views/RecyclePopover.vue'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
@@ -135,7 +143,8 @@ export default defineComponent({
     ...mapGetters({
       userProfile: 'user/getUserProfile',
       currentFacility: 'user/getCurrentFacility',
-      instanceUrl: 'user/getInstanceUrl'
+      instanceUrl: 'user/getInstanceUrl',
+      currentEComStore: 'user/getCurrentEComStore'
     }),
     isStoreFulfillmentTurnOn() {
       // considered that if facility details are not available then also fulfillment will be turned on
@@ -390,6 +399,13 @@ export default defineComponent({
       });
 
       await alert.present();
+    },
+    setEComStore(store: any) {
+      if(this.userProfile) {
+        this.store.dispatch('user/setEComStore', {
+          'eComStore': this.userProfile.stores.find((str: any) => str.productStoreId == store['detail'].value)
+        })
+      }
     }
   },
   setup() {
@@ -399,6 +415,7 @@ export default defineComponent({
     return {
       codeWorkingOutline,
       ellipsisVerticalOutline,
+      globeOutline,
       timeOutline,
       router,
       store

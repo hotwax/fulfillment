@@ -81,7 +81,7 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    * Get User profile
    */
-  async getProfile ( { commit }) {
+  async getProfile ( { commit, dispatch }) {
     const resp = await UserService.getProfile()
     if (resp.data.userTimeZone) {
       Settings.defaultZone = resp.data.userTimeZone;
@@ -90,13 +90,18 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_INFO_UPDATED, resp.data);
       commit(types.USER_CURRENT_FACILITY_UPDATED, resp.data.facilities.length > 0 ? resp.data.facilities[0] : {});
     }
+
+    if (resp.data.facilities.length > 0) {
+      await dispatch('getEComStores', { facilityId: resp.data.facilities[0].facilityId })
+    }
   },
 
   /**
    * update current facility information
    */
-  async setFacility ({ commit }, payload) {
+  async setFacility ({ commit, dispatch }, payload) {
     commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
+    await dispatch("getEComStores", { facilityId: payload.facility.facilityId });
   },
   
   /**
@@ -113,10 +118,64 @@ const actions: ActionTree<UserState, RootState> = {
   },
 
   // Set User Instance Url
-  setUserInstanceUrl ({ state, commit }, payload){
+  setUserInstanceUrl ({ commit }, payload){
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
     updateInstanceUrl(payload)
-  }
+  },
+
+  async getEComStores({ state, commit, dispatch }, payload) {
+    let resp;
+
+    try {
+      const param = {
+        "inputFields": {
+          "facilityId": payload.facilityId,
+          "storeName_op": "not-empty"
+        },
+        "fieldList": ["productStoreId", "storeName"],
+        "entityName": "ProductStoreFacilityDetail",
+        "distinct": "Y",
+        "noConditionFind": "Y"
+      }
+
+      resp = await UserService.getEComStores(param);
+      if(resp.status === 200 && !hasError(resp) && resp.data.docs?.length > 0) {
+        const user = state.current as any;
+        user.stores = [...(resp.data.docs ? resp.data.docs : [])]
+
+        let userPrefStore = ''
+
+        try {
+          const userPref =  await UserService.getUserPreference({
+           'userPrefTypeId': 'SELECTED_BRAND'
+          });
+          userPrefStore = user.stores.find((store: any) => store.productStoreId == userPref.data.userPrefValue)
+        } catch (err) {
+          console.error(err)
+        }
+
+        dispatch('setEComStore', { eComStore: userPrefStore ? userPrefStore : user.stores.length > 0 ? user.stores[0] : {} });
+        commit(types.USER_INFO_UPDATED, user);
+        return user.stores
+      } else {
+        console.error(resp);
+      }
+    } catch(error) {
+      console.error(error);
+    }
+    return []
+  },
+
+  /**
+   *  update current eComStore information
+  */
+  async setEComStore({ commit, dispatch }, payload) {
+    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, payload.eComStore);
+    await UserService.setUserPreference({
+      'userPrefTypeId': 'SELECTED_BRAND',
+      'userPrefValue': payload.eComStore.productStoreId
+    });
+  },
 }
 
 export default actions;
