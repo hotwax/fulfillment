@@ -41,7 +41,7 @@
           <ion-label>{{ $t("Fulfillment") }} : {{ isStoreFulfillmentTurnOn ? $t("On") : $t("Off") }}</ion-label>
         </ion-item>
         <ion-item lines="none">
-          <ion-label class="text-wrap">{{ $t("has outstanding orders and in progress orders.", {storeName: "Broadway", outstandingOrder: 47, progressOrder: 77}) }}</ion-label>
+          <ion-label class="text-wrap">{{ $t("has outstanding orders and in progress orders.", {storeName: currentFacility.name, outstandingOrdersCount, inProgressOrdersCount}) }}</ion-label>
         </ion-item>
         <div class="actions">
           <div>
@@ -57,7 +57,7 @@
 
         <ion-item class="mobile-only">
           <ion-button fill="clear">{{ $t("Recycle all open orders") }}</ion-button>
-          <ion-button slot="end" fill="clear" color="medium" @click="RecyclePopover">
+          <ion-button slot="end" fill="clear" color="medium" @click="recyclePopover">
             <ion-icon :icon="ellipsisVerticalOutline" slot="icon-only" />
           </ion-button>
         </ion-item>
@@ -126,7 +126,9 @@ export default defineComponent({
   data() {
     return {
       baseURL: process.env.VUE_APP_BASE_URL,
-      currentFacilityDetails: {} as any
+      currentFacilityDetails: {} as any,
+      outstandingOrdersCount: 0,
+      inProgressOrdersCount: 0
     };
   },
   computed: {
@@ -141,9 +143,71 @@ export default defineComponent({
     }
   },
   mounted() {
-    this.getCurrentFacilityDetails();
+    this.getCurrentFacilityDetails()
+    this.getOutstandingOrdersCount()
+    this.getInProgressOrdersCount()
   },
   methods: {
+    async getOutstandingOrdersCount() {
+      let resp;
+
+      try {
+        const payload = {
+          "json": {
+            "params": {
+              "group": true,
+              "group.field": "orderId",
+              "group.limit": 10000,
+              "group.ngroups": true,
+              "q.op": "AND"
+            },
+            "query": "(*:*)",
+            "filter": ["docType: OISGIR", "quantityNotAvailable: 0", "isPicked: N", "-shipmentMethodTypeId: STOREPICKUP", "-fulfillmentStatus: Cancelled", "orderStatusId: ORDER_APPROVED", "orderTypeId: SALES_ORDER", `facilityId: ${this.currentFacility.facilityId}`]
+          }
+        }
+
+        resp = await UserService.getOutstandingOrdersCount(payload)
+
+        if(resp.status == 200 && !hasError(resp) && resp.data.grouped.orderId.ngroups) {
+          this.outstandingOrdersCount = resp.data.grouped.orderId.ngroups
+        } else {
+          this.outstandingOrdersCount = 0
+        }
+      } catch(err) {
+        this.outstandingOrdersCount = 0
+        console.error(err)
+      }
+    },
+    async getInProgressOrdersCount() {
+      let resp;
+
+      try {
+        const payload = {
+          "json": {
+            "params": {
+              "group": true,
+              "group.field": "picklistBinId",
+              "group.limit": 10000,
+              "group.ngroups": true,
+              "q.op": "AND"
+            },
+            "query": "(*:*)",
+            "filter": ["docType: OISGIR", "picklistItemStatusId: PICKITEM_PENDING", "-shipmentMethodTypeId: STOREPICKUP", "-fulfillmentStatus: Rejected", `facilityId: ${this.currentFacility.facilityId}`]
+          }
+        }
+
+        resp = await UserService.getInProgressOrdersCount(payload)
+
+        if(resp.status == 200 && !hasError(resp) && resp.data.grouped.picklistBinId.ngroups) {
+          this.inProgressOrdersCount = resp.data.grouped.picklistBinId.ngroups
+        } else {
+          this.inProgressOrdersCount = 0
+        }
+      } catch(err) {
+        console.error(err)
+        this.inProgressOrdersCount = 0
+      }
+    },
     async getCurrentFacilityDetails() {
       let resp: any;
       try {
@@ -164,7 +228,7 @@ export default defineComponent({
         console.error(err)
       }
     },
-    async RecyclePopover(ev: Event) {
+    async recyclePopover(ev: Event) {
       const popover = await popoverController.create({
         component: Popover,
         event: ev,
@@ -185,6 +249,8 @@ export default defineComponent({
           'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
         });
         this.getCurrentFacilityDetails();
+        this.getOutstandingOrdersCount();
+        this.getInProgressOrdersCount();
       }
     },
     async changeTimeZone() {

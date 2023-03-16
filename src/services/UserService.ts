@@ -77,10 +77,28 @@ const recycleOutstandingOrders = async(payload: any): Promise<any> => {
   })
 }
 
+const getInProgressOrdersCount = async(payload: any): Promise<any> => {
+  return api({
+    url: "solr-query",
+    method: "post",
+    data: payload
+  })
+}
+
+const getOutstandingOrdersCount = async(payload: any): Promise<any> => {
+  return api({
+    url: "solr-query",
+    method: "post",
+    data: payload
+  })
+}
+
 export const UserService = {
     login,
     getAvailableTimeZones,
     getFacilityDetails,
+    getInProgressOrdersCount,
+    getOutstandingOrdersCount,
     getProfile,
     recycleInProgressOrders,
     recycleOutstandingOrders,
