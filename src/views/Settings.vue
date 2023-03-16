@@ -49,8 +49,8 @@
             <ion-button fill="outline" color="secondary" size="medium">{{ $t("Recycle all orders") }}</ion-button>
           </div>
           <div>
-            <ion-button v-if="isStoreFulfillmentTurnOn" fill="outline" color="danger" size="medium">{{ $t("Turn off fulfillment") }}</ion-button>
-            <ion-button v-else fill="outline" color="success" size="medium">{{ $t("Turn on fulfillment") }}</ion-button>
+            <ion-button v-if="isStoreFulfillmentTurnOn" fill="outline" color="danger" size="medium" @click="turnOffFulfillment()">{{ $t("Turn off fulfillment") }}</ion-button>
+            <ion-button v-else fill="outline" color="success" size="medium" @click="turnOnFulfillment()">{{ $t("Turn on fulfillment") }}</ion-button>
           </div>
         </div>
 
@@ -92,7 +92,8 @@ import {
   IonTitle, 
   IonToolbar,
   popoverController,
-  modalController } from '@ionic/vue';
+  modalController,
+alertController} from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { codeWorkingOutline, ellipsisVerticalOutline, timeOutline } from 'ionicons/icons'
 import Popover from '@/views/RecyclePopover.vue'
@@ -100,7 +101,8 @@ import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import TimeZoneModal from '@/views/timezone-modal.vue'
 import { UserService } from '@/services/UserService';
-import { hasError } from '@/utils';
+import { hasError, showToast } from '@/utils';
+import { translate } from '@/i18n';
 
 export default defineComponent({
   name: 'Settings',
@@ -190,6 +192,68 @@ export default defineComponent({
       });
       return timeZoneModal.present();
     },
+    async updateFacility(maximumOrderLimit: number) {
+      let resp;
+
+      try {
+        resp = await UserService.updateFacility({
+          "facilityId": this.currentFacility.facilityId,
+          maximumOrderLimit
+        })
+
+        if(resp.status == 200 && !hasError) {
+          this.currentFacilityDetails.maximumOrderLimit = maximumOrderLimit
+          showToast(translate('Facility updated successfully'))
+        } else {
+          showToast(translate('Failed to update facility'))
+          console.error(resp.data)
+        }
+      } catch(err) {
+        showToast(translate('Failed to update facility'))
+        console.error(err)
+      }
+    },
+    async turnOnFulfillment() {
+      const alert = await alertController.create({
+        header: translate(`Turn on fulfillment for ${this.currentFacility.name}`),
+        buttons: [{
+          text: translate('Cancel'),
+          role: 'cancel'
+        }, {
+          text: translate('Save')
+        }],
+        inputs: [{
+          type: 'number',
+          placeholder: translate('Set Limit'),
+        }],
+      });
+
+      alert.onDidDismiss().then((data) => {
+        if(data.role !== 'cancel') {
+          // using 0 index as we only have a single input in alert
+          this.updateFacility(data.data.values[0])
+        }
+      });
+
+      await alert.present();
+    },
+    async turnOffFulfillment() {
+      const alert = await alertController.create({
+        header: translate(`Turn off fulfillment for ${this.currentFacility.name}`),
+        message: translate('Are you sure you want perform this action?'),
+        buttons: [{
+          text: translate('Cancel'),
+          role: 'cancel'
+        }, {
+          text: translate('Save'),
+          handler: () => {
+            this.updateFacility(0);
+          }
+        }]
+      });
+
+      await alert.present();
+    }
   },
   setup() {
     const store = useStore();

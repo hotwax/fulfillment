@@ -52,11 +52,20 @@ const getFacilityDetails = async (payload: any): Promise<any> => {
   })
 }
 
+const updateFacility = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateFacility",
+    method: "post",
+    data: payload
+  })
+}
+
 export const UserService = {
     login,
     getAvailableTimeZones,
     getFacilityDetails,
     getProfile,
     setUserTimeZone,
-    checkPermission
+    checkPermission,
+    updateFacility
 }

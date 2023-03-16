@@ -14,6 +14,7 @@
   "Documents to print when packing orders": "Documents to print when packing orders",
   "Download": "Download",
   "Edit packaging": "Edit packaging",
+  "Failed to update facility": "Failed to update facility",
   "Fulfillment": "Fulfillment",
   "has outstanding orders and in progress orders.": "{ storeName } has { outstandingOrder } outstanding orders and { progressOrder } in progress orders.",
   "In Progress": "In Progress",
