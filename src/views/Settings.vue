@@ -45,8 +45,9 @@
         </ion-item>
         <div class="actions">
           <div>
-            <ion-button fill="outline" color="secondary" size="medium">{{ $t("Recycle all open orders") }}</ion-button>
-            <ion-button fill="outline" color="secondary" size="medium">{{ $t("Recycle all orders") }}</ion-button>
+            <ion-button fill="outline" color="secondary" size="medium" @click="recycleOutstandingOrders()">{{ $t("Recycle all open orders") }}</ion-button>
+            <ion-button fill="outline" color="secondary" size="medium" @click="recycleInProgressOrders()">{{ $t("Recycle all in progress orders") }}</ion-button>
+            <!-- <ion-button fill="outline" color="secondary" size="medium">{{ $t("Recycle all orders") }}</ion-button> -->
           </div>
           <div>
             <ion-button v-if="isStoreFulfillmentTurnOn" fill="outline" color="danger" size="medium" @click="turnOffFulfillment()">{{ $t("Turn off fulfillment") }}</ion-button>
@@ -215,7 +216,7 @@ export default defineComponent({
     },
     async turnOnFulfillment() {
       const alert = await alertController.create({
-        header: translate(`Turn on fulfillment for ${this.currentFacility.name}`),
+        header: this.$t('Turn on fulfillment for ', { facilityName: this.currentFacility.name }),
         buttons: [{
           text: translate('Cancel'),
           role: 'cancel'
@@ -239,7 +240,7 @@ export default defineComponent({
     },
     async turnOffFulfillment() {
       const alert = await alertController.create({
-        header: translate(`Turn off fulfillment for ${this.currentFacility.name}`),
+        header: this.$t('Turn off fulfillment for ', { facilityName: this.currentFacility.name }),
         message: translate('Are you sure you want perform this action?'),
         buttons: [{
           text: translate('Cancel'),
@@ -248,6 +249,76 @@ export default defineComponent({
           text: translate('Save'),
           handler: () => {
             this.updateFacility(0);
+          }
+        }]
+      });
+
+      await alert.present();
+    },
+    async recycleOutstandingOrders() {
+      const alert = await alertController.create({
+        header: translate('Recycle outstanding orders'),
+        message: this.$t('Are you sure you want to recycle outstanding order(s)?', { ordersCount: 0 }),
+        buttons: [{
+          text: translate('No'),
+          role: 'cancel'
+        }, {
+          text: translate('Yes'),
+          handler: async () => {
+            let resp;
+
+            try {
+              resp = await UserService.recycleOutstandingOrders({
+                "facilityId": this.currentFacility.facilityId,
+                "reasonId": "INACTIVE_STORE"
+              })
+
+              if(resp.status == 200 && !hasError) {
+                // TODO: update toast messages for success and failure case
+                showToast(translate('Facility updated successfully'))
+              } else {
+                showToast(translate('Failed to update facility'))
+                console.error(resp.data)
+              }
+            } catch(err) {
+              showToast(translate('Failed to update facility'))
+              console.error(err)
+            }
+          }
+        }]
+      });
+
+      await alert.present();
+    },
+    async recycleInProgressOrders() {
+      const alert = await alertController.create({
+        header: translate('Recycle in progress orders'),
+        message: this.$t('Are you sure you want to recycle in progress order(s)?', { ordersCount: 0 }),
+        buttons: [{
+          text: translate('No'),
+          role: 'cancel'
+        }, {
+          text: translate('Yes'),
+          handler: async () => {
+            let resp;
+
+            try {
+              resp = await UserService.recycleInProgressOrders({
+                "facilityId": this.currentFacility.facilityId,
+                "reasonId": "INACTIVE_STORE"
+              })
+
+              if(resp.status == 200 && !hasError) {
+                // TODO: update toast messages for success and failure case
+                showToast(translate('Facility updated successfully'))
+              } else {
+                showToast(translate('Failed to update facility'))
+                console.error(resp.data)
+              }
+            } catch(err) {
+              showToast(translate('Failed to update facility'))
+              console.error(err)
+            }
           }
         }]
       });

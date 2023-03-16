@@ -48,7 +48,8 @@ const getFacilityDetails = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
     method: "post",
-    data: payload
+    data: payload,
+    cache: true
   })
 }
 
@@ -60,11 +61,29 @@ const updateFacility = async (payload: any): Promise<any> => {
   })
 }
 
+const recycleInProgressOrders = async(payload: any): Promise<any> => {
+  return api({
+    url: "service/bulkRejectStoreInProgressOrders",
+    method: "post",
+    data: payload
+  })
+}
+
+const recycleOutstandingOrders = async(payload: any): Promise<any> => {
+  return api({
+    url: "service/bulkRejectStoreOutstandingOrders",
+    method: "post",
+    data: payload
+  })
+}
+
 export const UserService = {
     login,
     getAvailableTimeZones,
     getFacilityDetails,
     getProfile,
+    recycleInProgressOrders,
+    recycleOutstandingOrders,
     setUserTimeZone,
     checkPermission,
     updateFacility
