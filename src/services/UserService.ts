@@ -48,8 +48,7 @@ const getFacilityDetails = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
     method: "post",
-    data: payload,
-    cache: true
+    data: payload
   })
 }
 

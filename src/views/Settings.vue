@@ -171,7 +171,7 @@ export default defineComponent({
               "q.op": "AND"
             },
             "query": "(*:*)",
-            "filter": ["docType: OISGIR", "quantityNotAvailable: 0", "isPicked: N", "-shipmentMethodTypeId: STOREPICKUP", "-fulfillmentStatus: Cancelled", "orderStatusId: ORDER_APPROVED", "orderTypeId: SALES_ORDER", `facilityId: ${this.currentFacility.facilityId}`]
+            "filter": ["docType: OISGIR", "quantityNotAvailable: 0", "isPicked: N", "-shipmentMethodTypeId: STOREPICKUP", "-fulfillmentStatus: Cancelled", "orderStatusId: ORDER_APPROVED", "orderTypeId: SALES_ORDER", `facilityId: ${this.currentFacility.facilityId}`, `productStoreId: ${this.currentEComStore.productStoreId}`]
           }
         }
 
@@ -201,7 +201,7 @@ export default defineComponent({
               "q.op": "AND"
             },
             "query": "(*:*)",
-            "filter": ["docType: OISGIR", "picklistItemStatusId: PICKITEM_PENDING", "-shipmentMethodTypeId: STOREPICKUP", "-fulfillmentStatus: Rejected", `facilityId: ${this.currentFacility.facilityId}`]
+            "filter": ["docType: OISGIR", "picklistItemStatusId: PICKITEM_PENDING", "-shipmentMethodTypeId: STOREPICKUP", "-fulfillmentStatus: Rejected", `facilityId: ${this.currentFacility.facilityId}`, `productStoreId: ${this.currentEComStore.productStoreId}`]
           }
         }
 
@@ -232,8 +232,11 @@ export default defineComponent({
         if(resp.status == 200 && !hasError(resp) && resp.data.count) {
           // using index 0 as we will only get a single record
           this.currentFacilityDetails = resp.data.docs[0]
+        } else {
+          this.currentFacilityDetails = {}
         }
       } catch(err) {
+        this.currentFacilityDetails = {}
         console.error(err)
       }
     },
@@ -252,9 +255,9 @@ export default defineComponent({
         this.router.push('/login');
       })
     },
-    setFacility (facility: any) {
+    async setFacility (facility: any) {
       if (this.userProfile){
-        this.store.dispatch('user/setFacility', {
+        await this.store.dispatch('user/setFacility', {
           'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
         });
         this.getCurrentFacilityDetails();
@@ -333,7 +336,7 @@ export default defineComponent({
     async recycleOutstandingOrders() {
       const alert = await alertController.create({
         header: translate('Recycle outstanding orders'),
-        message: this.$t('Are you sure you want to recycle outstanding order(s)?', { ordersCount: 0 }),
+        message: this.$t('Are you sure you want to recycle outstanding order(s)?', { ordersCount: this.outstandingOrdersCount }),
         buttons: [{
           text: translate('No'),
           role: 'cancel'
@@ -368,7 +371,7 @@ export default defineComponent({
     async recycleInProgressOrders() {
       const alert = await alertController.create({
         header: translate('Recycle in progress orders'),
-        message: this.$t('Are you sure you want to recycle in progress order(s)?', { ordersCount: 0 }),
+        message: this.$t('Are you sure you want to recycle in progress order(s)?', { ordersCount: this.inProgressOrdersCount }),
         buttons: [{
           text: translate('No'),
           role: 'cancel'

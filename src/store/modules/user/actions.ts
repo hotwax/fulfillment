@@ -86,6 +86,16 @@ const actions: ActionTree<UserState, RootState> = {
     if (resp.data.userTimeZone) {
       Settings.defaultZone = resp.data.userTimeZone;
     }
+
+    // logic to remove duplicate facilities
+    resp.data.facilities = resp.data.facilities.reduce((facilities: Array<any>, facility: any) => {
+      const facilityId = facility.facilityId
+      if(!facilities.some((facility) => facility.facilityId === facilityId)) {
+        facilities.push(facility)
+      }
+      return facilities;
+    }, [])
+
     if (resp.status === 200) {
       commit(types.USER_INFO_UPDATED, resp.data);
       commit(types.USER_CURRENT_FACILITY_UPDATED, resp.data.facilities.length > 0 ? resp.data.facilities[0] : {});
