@@ -251,7 +251,6 @@ export default defineComponent({
     },
     logout () {
       this.store.dispatch('user/logout').then(() => {
-        this.store.dispatch('picklist/clearPicklist')
         this.router.push('/login');
       })
     },
@@ -356,7 +355,7 @@ export default defineComponent({
                 showToast(translate('Facility updated successfully'))
               } else {
                 showToast(translate('Failed to update facility'))
-                console.error(resp.data)
+                console.error(resp)
               }
             } catch(err) {
               showToast(translate('Failed to update facility'))
@@ -391,7 +390,7 @@ export default defineComponent({
                 showToast(translate('Facility updated successfully'))
               } else {
                 showToast(translate('Failed to update facility'))
-                console.error(resp.data)
+                console.error(resp)
               }
             } catch(err) {
               showToast(translate('Failed to update facility'))
