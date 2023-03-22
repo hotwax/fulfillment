@@ -60,10 +60,10 @@
             </div>
           </div>
 
-          <!-- TODO: implement functionality to add new boxes and change its type -->
+          <!-- TODO: implement functionality to change the type of box -->
           <div class="box-type desktop-only">
-            <ion-button fill="outline"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
-            <ion-chip> Box A | Type 3</ion-chip>
+            <ion-button @click="addShipmentBox(order)" fill="outline"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
+            <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ shipmentPackage.packageName }}{{ ' | ' }}{{ order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0] }}</ion-chip>
           </div>
 
           <div v-for="(item, index) in order.doclist.docs" :key="index" class="order-item">
@@ -146,7 +146,7 @@
 
 <script lang="ts">
 import { IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonItem, IonIcon, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonThumbnail, IonTitle, IonToolbar, alertController, popoverController } from '@ionic/vue';
-import { defineComponent, ref } from 'vue';
+import { defineComponent } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline, optionsOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
@@ -203,7 +203,8 @@ export default defineComponent({
     return {
       queryString: '',
       unfillableReason: JSON.parse(process.env.VUE_APP_UNFILLABLE_REASONS),
-      picklists: [] as any
+      picklists: [] as any,
+      defaultShipmentBoxType: ''
     }
   },
   methods: {
@@ -452,11 +453,85 @@ export default defineComponent({
     async updateSelectedPicklists(id: string) {
       await this.store.dispatch('order/updateSelectedPicklists', id)
       this.fetchInProgressOrders();
+    },
+    async fetchShipmentRouteSegmentInformation(shipmentIds: Array<string>) {
+      const payload = {
+        "inpurFields": {
+          "carrierPartyId": "_NA_",
+          "carrierPartyId_op": "notEqual",
+          "shipmentId": shipmentIds,
+          "shipmentId_op": "in"
+        },
+        "entityName": "ShipmentRouteSegment",
+        "fieldList": ["carrierPartyId", "shipmentMethodTypeId"]
+      }
+
+      try {
+        const resp = await UtilService.fetchShipmentRouteSegmentInformation(payload)
+
+        if(!hasError(resp) && resp.data.count) {
+          return resp.data.docs[0]
+        }
+      } catch (err) {
+        console.error(err)
+      }
+
+      return {};
+    },
+    async fetchDefaultShipmentBox() {
+      let defaultBoxType = 'YOURPACKNG'
+
+      try {
+        const resp = await UtilService.fetchDefaultShipmentBox({
+          "entityName": "SystemProperty",
+          "inputFields": {
+            "systemResourceId": "shipment",
+            "systemPropertyId": "shipment.default.boxtype"
+          },
+          "fieldList": ["systemPropertyValue"]
+        })
+
+        if(!hasError(resp) && resp.data.count) {
+          defaultBoxType = resp.data.docs[0].systemPropertyValue
+        }
+      } catch (err) {
+        console.error(err)
+      }
+
+      return defaultBoxType;
+    },
+    async addShipmentBox(order: any) {
+      const { carrierPartyId, shipmentMethodTypeId } = await this.fetchShipmentRouteSegmentInformation(order.shipmentIds)
+      
+      if(!this.defaultShipmentBoxType) {
+        this.defaultShipmentBoxType = await this.fetchDefaultShipmentBox();
+      }
+
+      const params = {
+        picklistBinId: order.groupValue,
+        shipmentBoxTypeId: this.defaultShipmentBoxType
+      } as any
+
+      carrierPartyId && (params['carrierPartyId'] = carrierPartyId)
+      shipmentMethodTypeId && (params['shipmentMethodTypeId'] = shipmentMethodTypeId)
+
+      try {
+        const resp = await OrderService.addShipmentBox(params)
+
+        if(!hasError(resp)) {
+          showToast(translate('Added box to the order'))
+        }
+      } catch (err) {
+        showToast(translate('Failed to add box'))
+        console.error(err)
+      }
+
     }
   },
   async mounted () {
     this.fetchPickersInformation();
     await this.fetchInProgressOrders();
+    // this.getShipmentPackageAndRouteInformation();
   },
   setup() {
     const store = useStore();

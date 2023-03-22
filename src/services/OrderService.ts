@@ -32,7 +32,16 @@ const rejectOrderItem = async (payload: any): Promise <any> => {
   });
 }
 
+const addShipmentBox = async (payload: any): Promise <any> => {
+  return api({
+    url: "service/addShipmentPackage",
+    method: "post",
+    data: payload
+  });
+}
+
 export const OrderService = {
+  addShipmentBox,
   fetchInProgressOrders,
   packOrder,
   packOrders,
