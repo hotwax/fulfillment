@@ -177,7 +177,7 @@ export default defineComponent({
 
         resp = await UserService.getOutstandingOrdersCount(payload)
 
-        if(resp.status == 200 && !hasError(resp) && resp.data.grouped.orderId.ngroups) {
+        if(!hasError(resp) && resp.data.grouped.orderId.ngroups) {
           this.outstandingOrdersCount = resp.data.grouped.orderId.ngroups
         } else {
           this.outstandingOrdersCount = 0
@@ -207,7 +207,7 @@ export default defineComponent({
 
         resp = await UserService.getInProgressOrdersCount(payload)
 
-        if(resp.status == 200 && !hasError(resp) && resp.data.grouped.picklistBinId.ngroups) {
+        if(!hasError(resp) && resp.data.grouped.picklistBinId.ngroups) {
           this.inProgressOrdersCount = resp.data.grouped.picklistBinId.ngroups
         } else {
           this.inProgressOrdersCount = 0
@@ -229,7 +229,7 @@ export default defineComponent({
           "fieldList": ["maximumOrderLimit"]
         })
 
-        if(resp.status == 200 && !hasError(resp) && resp.data.count) {
+        if(!hasError(resp) && resp.data.count) {
           // using index 0 as we will only get a single record
           this.currentFacilityDetails = resp.data.docs[0]
         } else {
@@ -279,7 +279,7 @@ export default defineComponent({
           maximumOrderLimit
         })
 
-        if(resp.status == 200 && !hasError) {
+        if(!hasError(resp)) {
           this.currentFacilityDetails.maximumOrderLimit = maximumOrderLimit
           showToast(translate('Facility updated successfully'))
         } else {
@@ -347,18 +347,19 @@ export default defineComponent({
             try {
               resp = await UserService.recycleOutstandingOrders({
                 "facilityId": this.currentFacility.facilityId,
+                "productStoreId": this.currentEComStore.productStoreId,
                 "reasonId": "INACTIVE_STORE"
               })
 
-              if(resp.status == 200 && !hasError) {
+              if(!hasError(resp)) {
                 // TODO: update toast messages for success and failure case
-                showToast(translate('Facility updated successfully'))
+                showToast(translate('Recycling has been started. All outstanding orders will be recycled shortly.'))
               } else {
-                showToast(translate('Failed to update facility'))
+                showToast(translate('Failed to recycle outstanding orders'))
                 console.error(resp)
               }
             } catch(err) {
-              showToast(translate('Failed to update facility'))
+              showToast(translate('Failed to recycle outstanding orders'))
               console.error(err)
             }
           }
@@ -382,18 +383,19 @@ export default defineComponent({
             try {
               resp = await UserService.recycleInProgressOrders({
                 "facilityId": this.currentFacility.facilityId,
+                "productStoreId": this.currentEComStore.productStoreId,
                 "reasonId": "INACTIVE_STORE"
               })
 
-              if(resp.status == 200 && !hasError) {
+              if(!hasError(resp)) {
                 // TODO: update toast messages for success and failure case
-                showToast(translate('Facility updated successfully'))
+                showToast(translate('Recycling has been started. All in progress orders will be recycled shortly.'))
               } else {
-                showToast(translate('Failed to update facility'))
+                showToast(translate('Failed to recycle in progress orders'))
                 console.error(resp)
               }
             } catch(err) {
-              showToast(translate('Failed to update facility'))
+              showToast(translate('Failed to recycle in progress orders'))
               console.error(err)
             }
           }

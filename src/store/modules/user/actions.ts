@@ -149,7 +149,7 @@ const actions: ActionTree<UserState, RootState> = {
       }
 
       resp = await UserService.getEComStores(param);
-      if(resp.status === 200 && !hasError(resp) && resp.data.docs?.length > 0) {
+      if(!hasError(resp) && resp.data.docs?.length > 0) {
         const user = state.current as any;
         user.stores = resp.data.docs
 
