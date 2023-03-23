@@ -169,11 +169,20 @@ const fetchDefaultShipmentBox = async(query: any) : Promise<any> => {
   })
 }
 
+const fetchRejectReasons = async(query: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "post", // TODO: cache this api request
+    data: query
+  })
+}
+
 export const UtilService = {
   fetchCarrierPartyIdsForShipment,
   fetchCarrierShipmentBoxType,
   fetchDefaultShipmentBox,
   fetchPicklistInformation,
+  fetchRejectReasons,
   fetchShipmentInformationForOrder,
   fetchShipmentPackages,
   fetchShipmentRouteSegmentInformation

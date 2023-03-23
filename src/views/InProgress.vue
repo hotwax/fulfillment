@@ -63,7 +63,7 @@
           <!-- TODO: implement functionality to change the type of box -->
           <div class="box-type desktop-only">
             <ion-button @click="addShipmentBox(order)" fill="outline"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
-            <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ shipmentPackage.packageName }}{{ ' | ' }}{{ order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0] }}</ion-chip>
+            <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
           </div>
 
           <div v-for="(item, index) in order.doclist.docs" :key="index" class="order-item">
@@ -104,7 +104,7 @@
                   <ion-item lines="none">
                     <ion-label>{{ $t("Select issue") }}</ion-label>
                     <ion-select @ionChange="updateRejectReason($event, item)" :value="item.rejectReason" >
-                      <ion-select-option v-for="reason in unfillableReason" :key="reason.id" :value="reason.id">{{ $t(reason.label) }}</ion-select-option>
+                      <ion-select-option v-for="reason in rejectReasons" :key="reason.enumCode" :value="reason.enumCode">{{ $t(reason.description) }}</ion-select-option>
                     </ion-select>
                   </ion-item>
                 </div>
@@ -196,26 +196,26 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       getProductStock: 'stock/getProductStock',
       viewSize: 'util/getViewSize',
-      selectedPicklists: 'order/getSelectedPicklists'
+      selectedPicklists: 'order/getSelectedPicklists',
+      rejectReasons: 'util/getRejectReasons'
     })
   },
   data() {
     return {
       queryString: '',
-      unfillableReason: JSON.parse(process.env.VUE_APP_UNFILLABLE_REASONS),
       picklists: [] as any,
       defaultShipmentBoxType: ''
     }
   },
   methods: {
     isOrderReadyToReject(order: any) {
-      return order.doclist.docs.some((item: any) => item.rejectReason || item.rejectReason === '')
+      return order.doclist.docs.some((item: any) => item.rejectReason)
     },
     segmentChanged(ev: CustomEvent, item: any) {
       // when selecting the report segment for the first time defining the value for rejectReason,
       // as in current flow once moving to reject segment we can't pack an order
       if(ev.detail.value === 'issue' && !item.rejectReason) {
-        item.rejectReason = ''
+        item.rejectReason = this.rejectReasons[0].enumCode // setting the first reason as default
       }
 
       item.segmentSelected = ev.detail.value;
@@ -355,15 +355,14 @@ export default defineComponent({
       await this.store.dispatch('order/fetchInProgressOrders', payload)
     },
     save(order: any) {
-      // added empty check as for 'No Reason' the value for issue will be empty string
-      const itemsToReject = order.doclist.docs.filter((item: any) => item.rejectReason || item.rejectReason === '')
+      const itemsToReject = order.doclist.docs.filter((item: any) => item.rejectReason)
 
       // finding is there any item that is `out of stock` as we need to display the message conditionaly
       const outOfStockItem = itemsToReject.find((item: any) => item.rejectReason === 'NOT_IN_STOCK')
 
       if(itemsToReject.length) {
-        this.reportIssue(itemsToReject, outOfStockItem);
-      }      
+        return this.reportIssue(itemsToReject, outOfStockItem);
+      }
     },
     updateRejectReason(ev: CustomEvent, item: any) {
       item.rejectReason = ev.detail.value;
@@ -519,17 +518,22 @@ export default defineComponent({
         const resp = await OrderService.addShipmentBox(params)
 
         if(!hasError(resp)) {
-          showToast(translate('Added box to the order'))
+          showToast(translate('Box added successfully'))
+          // TODO: only update the order in which the box is added instead of fetching all the inProgress orders
+          this.fetchInProgressOrders();
         }
       } catch (err) {
         showToast(translate('Failed to add box'))
         console.error(err)
       }
-
+    },
+    getShipmentPackageNameAndType(shipmentPackage: any, order: any) {
+      return `Box ${shipmentPackage.packageName} | ${order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0]}`
     }
   },
   async mounted () {
     this.fetchPickersInformation();
+    this.store.dispatch('util/fetchRejectReasons')
     await this.fetchInProgressOrders();
     // this.getShipmentPackageAndRouteInformation();
   },
