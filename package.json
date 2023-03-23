@@ -17,7 +17,7 @@
     "@ionic/core": "6.2.9",
     "@ionic/vue": "6.2.9",
     "@ionic/vue-router": "6.2.9",
-    "@hotwax/oms-api": "^1.5.1",
+    "@hotwax/oms-api": "^1.6.0",
     "@types/luxon": "^2.3.2",
     "core-js": "^3.6.5",
     "luxon": "^2.4.0",
