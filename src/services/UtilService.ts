@@ -153,6 +153,42 @@ const fetchCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promi
   return shipmentBoxType;
 }
 
+const fetchShipmentItemInformation = async(shipmentIds: Array<string>): Promise<any> => {
+  let shipmentItemsInformation = {}
+  const params = {
+    "entityName": "ShipmentAndItemAndProduct",
+    "inputFields": {
+      "shipmentId": shipmentIds,
+      "shipmentId_op": "in"
+    },
+    "fieldList": ["shipmentItemSeqId", "productId", "primaryOrderId", "shipmentId"],
+    "viewSize": shipmentIds.length * 5, // TODO: check what should be the viewSize here
+  }
+
+  try {
+    const resp = await api({
+      url: "performFind",
+      method: "post",
+      data: params
+    })
+
+    if(resp.status == 200 && !hasError(resp) && resp.data.count) {
+      shipmentItemsInformation = resp.data.docs.reduce((shipmentItems: any, shipmentItem: any) => {
+        if(shipmentItems[shipmentItem.primaryOrderId]) {
+          shipmentItems[shipmentItem.primaryOrderId].push(shipmentItem)
+        } else {
+          shipmentItems[shipmentItem.primaryOrderId] = [shipmentItem]
+        }
+        return shipmentItems
+      }, {})
+    }
+  } catch(err) {
+    console.error(err)
+  }
+
+  return shipmentItemsInformation;
+}
+
 const fetchShipmentRouteSegmentInformation = async(query: any) : Promise<any> => {
   return api({
     url: "performFind",
@@ -184,6 +220,7 @@ export const UtilService = {
   fetchPicklistInformation,
   fetchRejectReasons,
   fetchShipmentInformationForOrder,
+  fetchShipmentItemInformation,
   fetchShipmentPackages,
   fetchShipmentRouteSegmentInformation
 }

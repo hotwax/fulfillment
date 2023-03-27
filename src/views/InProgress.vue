@@ -94,16 +94,15 @@
                 <div v-if="item.segmentSelected === 'pack'">
                   <ion-item lines="none">
                     <ion-label>{{ $t("Select box") }}</ion-label>
-                    <ion-select value="box1">
-                      <ion-select-option value="box1">Box A Type 3</ion-select-option>
-                      <ion-select-option value="box2">Box B Type 2</ion-select-option>
+                    <ion-select @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
+                      <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName">{{ shipmentPackage.packageName }}</ion-select-option>
                     </ion-select>
                   </ion-item>
                 </div>
                 <div v-if="item.segmentSelected === 'issue'">
                   <ion-item lines="none">
                     <ion-label>{{ $t("Select issue") }}</ion-label>
-                    <ion-select @ionChange="updateRejectReason($event, item)" :value="item.rejectReason" >
+                    <ion-select @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
                       <ion-select-option v-for="reason in rejectReasons" :key="reason.enumCode" :value="reason.enumCode">{{ $t(reason.description) }}</ion-select-option>
                     </ion-select>
                   </ion-item>
@@ -127,7 +126,7 @@
 
           <div class="actions">
             <div>
-              <ion-button :disabled="isOrderReadyToReject(order)" @click="packOrder(order)">{{ $t("Pack") }}</ion-button>
+              <ion-button :disabled="order.isModified(order)" @click="packOrder(order)">{{ $t("Pack") }}</ion-button>
               <ion-button fill="outline" @click="save(order)">{{ $t("Save") }}</ion-button>
             </div>
           </div>
@@ -208,9 +207,6 @@ export default defineComponent({
     }
   },
   methods: {
-    isOrderReadyToReject(order: any) {
-      return order.doclist.docs.some((item: any) => item.rejectReason)
-    },
     segmentChanged(ev: CustomEvent, item: any) {
       // when selecting the report segment for the first time defining the value for rejectReason,
       // as in current flow once moving to reject segment we can't pack an order
@@ -294,7 +290,10 @@ export default defineComponent({
         });
       return alert.present();
     },
-    async reportIssue(itemsToReject: any, outOfStockItem?: any) {
+    async reportIssue(order: any, itemsToReject: any) {
+      // finding is there any item that is `out of stock` as we need to display the message accordingly
+      const outOfStockItem = itemsToReject.find((item: any) => item.rejectReason === 'NOT_IN_STOCK')
+
       // TODO: update alert message when itemsToReject contains a single item and also in some specific conditions
       let message;
       if(!outOfStockItem) {
@@ -318,34 +317,12 @@ export default defineComponent({
           }, {
             text: this.$t("Report"),
             role: 'confirm',
-            handler: async () => {
-              const payload = {
-                'orderId': itemsToReject[0].orderId
-              }
-              const responses = [];
-
-              // https://blog.devgenius.io/using-async-await-in-a-foreach-loop-you-cant-c174b31999bd
-              // The forEach, map, reduce loops are not built to work with asynchronous callback functions.
-              // It doesn't wait for the promise of an iteration to be resolved before it goes on to the next iteration.
-              // We could use either the for…of the loop or the for(let i = 0;….)
-              for (const item of itemsToReject) {
-                const params = {
-                  ...payload,
-                  'rejectReason': item.rejectReason,
-                  'facilityId': item.facilityId,
-                  'orderItemSeqId': item.orderItemSeqId,
-                  'shipmentMethodTypeId': item.shipmentMethodTypeId,
-                  'quantity': parseInt(item.itemQuantity)
-                }
-                const resp = await OrderService.rejectOrderItem({'payload': params});
-                responses.push(resp);
-
-                // TODO: add toast messages for success and failure case
-              }
-              return responses;
-            },
-          }],
+            handler: async() => {
+              await this.updateOrder(order);
+            }
+          }]
         });
+      
       return alert.present();
     },
     async fetchInProgressOrders () {
@@ -354,18 +331,53 @@ export default defineComponent({
       } as any
       await this.store.dispatch('order/fetchInProgressOrders', payload)
     },
+    updateOrder(order: any) {
+      const form = new FormData()
+
+      form.append('facilityId', this.currentFacility.facilityId)
+
+      order.doclist.docs.map((item: any, index: number) => {
+        let prefix = 'rtp'
+        if(item.rejectReason) {
+          prefix = 'rej'
+        }
+
+        const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
+
+        form.append(`box_shipmentId_${index}`, item.shipmentId)
+        form.append(`${index}_box_rowSubmit`, ''+index)
+        form.append(`box_shipmentBoxTypeId_${index}`, order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0])
+        form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
+        form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
+        form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
+        form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
+      })
+
+      this.store.dispatch('order/updateOrder', {
+        headers: {
+          'Content-Type': 'multipart/form-data;'
+        },
+        data: form
+      })
+
+    },
     save(order: any) {
       const itemsToReject = order.doclist.docs.filter((item: any) => item.rejectReason)
 
-      // finding is there any item that is `out of stock` as we need to display the message conditionaly
-      const outOfStockItem = itemsToReject.find((item: any) => item.rejectReason === 'NOT_IN_STOCK')
-
       if(itemsToReject.length) {
-        return this.reportIssue(itemsToReject, outOfStockItem);
+        this.reportIssue(order, itemsToReject);
+        return;
       }
+
+      this.updateOrder(order)
     },
-    updateRejectReason(ev: CustomEvent, item: any) {
+    updateRejectReason(ev: CustomEvent, item: any, order: any) {
       item.rejectReason = ev.detail.value;
+      order.isModified = true;
+    },
+    updateBox(ev: CustomEvent, item: any, order: any) {
+      item.selectedBox = ev.detail.value;
+      order.isModified = true;
     },
     async fetchPickersInformation() {
       const orderQueryPayload = prepareOrderQuery({
@@ -535,7 +547,6 @@ export default defineComponent({
     this.fetchPickersInformation();
     this.store.dispatch('util/fetchRejectReasons')
     await this.fetchInProgressOrders();
-    // this.getShipmentPackageAndRouteInformation();
   },
   setup() {
     const store = useStore();

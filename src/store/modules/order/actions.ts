@@ -3,10 +3,11 @@ import RootState from '@/store/RootState'
 import OrderState from './OrderState'
 import emitter from '@/event-bus'
 import { OrderService } from '@/services/OrderService'
-import { hasError } from '@/utils'
+import { hasError, showToast } from '@/utils'
 import * as types from './mutation-types'
 import { prepareOrderQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
+import { translate } from '@/i18n'
 
 
 const actions: ActionTree<OrderState, RootState> = {
@@ -42,12 +43,14 @@ const actions: ActionTree<OrderState, RootState> = {
       if (resp.status === 200 && resp.data.grouped?.picklistBinId.matches > 0 && !hasError(resp)) {
         const total = resp.data.grouped.picklistBinId.ngroups
         const orders = resp.data.grouped.picklistBinId.groups
+        const availableShipmentIds: Array<string> = [];
 
         // using for loop as map does not supports working with async code
         for (const order of orders) {
           const shipmentInformation = await UtilService.fetchShipmentInformationForOrder(order.groupValue, order.doclist.docs[0].orderId)
           order.shipment = shipmentInformation.shipment;
           order.shipmentIds = shipmentInformation.shipmentIds;
+          availableShipmentIds.push(...shipmentInformation.shipmentIds)
         }
 
         // using flat to have the shipmentIds at a single level and then filtered the shipmentId to handle the case if we might not have the shipmentId available for an order
@@ -56,7 +59,7 @@ const actions: ActionTree<OrderState, RootState> = {
         // TODO: handle case when shipmentIds is empty
         const shipmentPackages = await UtilService.fetchShipmentPackages(shipmentIds)
 
-        const availableShipmentIds = orders.map((order: any) => order.shipment.shipmentId).flat().filter((shipmentId: string) => shipmentId)
+        const itemInformationByShipment = await UtilService.fetchShipmentItemInformation(availableShipmentIds)
 
         const carrierPartyIdsByShipment = await UtilService.fetchCarrierPartyIdsForShipment(availableShipmentIds)
 
@@ -65,11 +68,6 @@ const actions: ActionTree<OrderState, RootState> = {
         const carrierShipmentBoxType = await UtilService.fetchCarrierShipmentBoxType(carrierPartyIds)
 
         orders.map((order: any) => {
-          order.doclist.docs.map((item: any) => {
-            // assigning segmentSelected at item level as we have option to change segment for each item
-            item.segmentSelected = 'pack'
-          })
-
           order['shipmentPackages'] = shipmentPackages[order.doclist.docs[0].orderId]
           order['carrierPartyIds'] = [...new Set(availableShipmentIds.map((id: any) => carrierPartyIdsByShipment[id].map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
 
@@ -82,6 +80,24 @@ const actions: ActionTree<OrderState, RootState> = {
 
             return shipmentBoxType
           }, {})
+
+          order.doclist.docs.map((item: any) => {
+            // assigning segmentSelected at item level as we have option to change segment for each item
+            item.segmentSelected = 'pack'
+
+            // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
+            const shipmentItem = itemInformationByShipment[item.orderId].find((shipmentItem: any) => shipmentItem.productId === item.productId)
+            item.shipmentItemSeqId = shipmentItem.shipmentItemSeqId
+
+            // TODO: check if we can handle this case directly
+            // clearning the productId from the found shipmentItem as when we have multiple products having the same productId
+            // then there is no unique information available in ShipmentAndItemAndProduct entity to uniquely identify the products
+            // thus every time when a shipmentItem is found assigning it's shipmentItemSeqId and then clearning the productId
+            // so that the items will not have the same shipmentItemSeqId
+            shipmentItem.productId = ''
+
+            item.selectedBox = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+          })
         })
 
         commit(types.ORDER_INPROGRESS_UPDATED, {orders, total})
@@ -110,6 +126,23 @@ const actions: ActionTree<OrderState, RootState> = {
       selectedPicklists.push(picklistId)
     }
     commit(types.ORDER_SELECTED_PICKLISTS_UPDATED, selectedPicklists)
+  },
+
+  async updateOrder({ commit }, payload) {
+
+    try {
+      const resp = await OrderService.updateOrder(payload)
+
+      if(!hasError(resp)) {
+        showToast(translate('Order updated successfully'))
+      } else {
+        throw resp.data;
+      }
+    } catch (err) {
+      showToast(translate('Failed to update order'))
+      console.error(err)
+    }
+
   }
 }
 

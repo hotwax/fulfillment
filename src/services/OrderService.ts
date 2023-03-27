@@ -40,10 +40,20 @@ const addShipmentBox = async (payload: any): Promise <any> => {
   });
 }
 
+const updateOrder = async (payload: any): Promise <any> => {
+  return api({
+    url: "updateOrder",
+    method: "post",
+    data: payload.data,
+    headers: payload.headers
+  })
+}
+
 export const OrderService = {
   addShipmentBox,
   fetchInProgressOrders,
   packOrder,
   packOrders,
-  rejectOrderItem
+  rejectOrderItem,
+  updateOrder
 } 
