@@ -161,6 +161,8 @@ export default defineComponent({
       let resp;
 
       try {
+        this.outstandingOrdersCount = 0
+
         const payload = {
           "json": {
             "params": {
@@ -180,11 +182,8 @@ export default defineComponent({
 
         if(!hasError(resp) && resp.data.grouped.orderId.ngroups) {
           this.outstandingOrdersCount = resp.data.grouped.orderId.ngroups
-        } else {
-          this.outstandingOrdersCount = 0
         }
       } catch(err) {
-        this.outstandingOrdersCount = 0
         console.error(err)
       }
     },
@@ -229,7 +228,7 @@ export default defineComponent({
             "facilityId": this.currentFacility.facilityId
           },
           "viewSize": 1,
-          "fieldList": ["maximumOrderLimit"]
+          "fieldList": ["maximumOrderLimit", "facilityId"]
         })
 
         if(!hasError(resp) && resp.data.count) {

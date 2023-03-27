@@ -47,8 +47,9 @@ const setUserTimeZone = async (payload: any): Promise <any>  => {
 const getFacilityDetails = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
-    method: "post",
-    data: payload
+    method: "get",
+    params: payload,
+    cache: true
   })
 }
 

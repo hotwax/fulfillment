@@ -82,26 +82,32 @@ const actions: ActionTree<UserState, RootState> = {
    * Get User profile
    */
   async getProfile ( { commit, dispatch }) {
-    const resp = await UserService.getProfile()
-    if (resp.data.userTimeZone) {
-      Settings.defaultZone = resp.data.userTimeZone;
-    }
-
-    // logic to remove duplicate facilities
-    resp.data.facilities = resp.data.facilities.reduce((facilities: Array<any>, facility: any) => {
-      const facilityId = facility.facilityId
-      if(!facilities.some((facility) => facility.facilityId === facilityId)) {
-        facilities.push(facility)
+    try {
+      const resp = await UserService.getProfile()
+      if (resp.data.userTimeZone) {
+        Settings.defaultZone = resp.data.userTimeZone;
       }
-      return facilities;
-    }, [])
 
-    if (resp.status === 200) {
+      // logic to remove duplicate facilities
+      const facilityIds = new Set();
+      const facilities = [] as Array<any>;
+
+      resp.data.facilities.map((facility: any) => {
+        if(!facilityIds.has(facility.facilityId)) {
+          facilityIds.add(facility.facilityId)
+          facilities.push(facility)
+        }
+      })
+
+      resp.data.facilities = facilities
+
       const currentFacility = resp.data.facilities.length > 0 ? resp.data.facilities[0] : {};
       resp.data.stores = await dispatch('getEComStores', { facilityId: currentFacility.facilityId })
 
       commit(types.USER_INFO_UPDATED, resp.data);
       commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
+    } catch(err) {
+      console.error(err)
     }
   },
 
