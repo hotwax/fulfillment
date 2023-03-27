@@ -164,6 +164,7 @@ export default defineComponent({
         const payload = {
           "json": {
             "params": {
+              "rows": "0",
               "group": true,
               "group.field": "orderId",
               "group.limit": 10000,
@@ -191,9 +192,12 @@ export default defineComponent({
       let resp;
 
       try {
+        this.inProgressOrdersCount = 0
+
         const payload = {
           "json": {
             "params": {
+              "rows": "0",
               "group": true,
               "group.field": "picklistBinId",
               "group.limit": 10000,
@@ -209,17 +213,16 @@ export default defineComponent({
 
         if(!hasError(resp) && resp.data.grouped.picklistBinId.ngroups) {
           this.inProgressOrdersCount = resp.data.grouped.picklistBinId.ngroups
-        } else {
-          this.inProgressOrdersCount = 0
         }
       } catch(err) {
         console.error(err)
-        this.inProgressOrdersCount = 0
       }
     },
     async getCurrentFacilityDetails() {
       let resp: any;
       try {
+        this.currentFacilityDetails = {}
+
         resp = await UserService.getFacilityDetails({
           "entityName": "Facility",
           "inputFields": {
@@ -232,11 +235,8 @@ export default defineComponent({
         if(!hasError(resp) && resp.data.count) {
           // using index 0 as we will only get a single record
           this.currentFacilityDetails = resp.data.docs[0]
-        } else {
-          this.currentFacilityDetails = {}
         }
       } catch(err) {
-        this.currentFacilityDetails = {}
         console.error(err)
       }
     },
@@ -298,19 +298,22 @@ export default defineComponent({
           text: translate('Cancel'),
           role: 'cancel'
         }, {
-          text: translate('Save')
+          text: translate('Save'),
+          handler: (data) => {
+            // Adding this extra check as min attribute does not work when providing input using keyboard
+            if (data.setLimit <= 0) {
+              showToast(translate('Provide a value greater than 0'))
+              return;
+            }
+            this.updateFacility(data.setLimit)
+          }
         }],
         inputs: [{
+          name: 'setLimit',
+          min: 1,
           type: 'number',
-          placeholder: translate('Set Limit'),
+          placeholder: translate('Set Limit')
         }],
-      });
-
-      alert.onDidDismiss().then((data) => {
-        if(data.role !== 'cancel') {
-          // using 0 index as we only have a single input in alert
-          this.updateFacility(data.data.values[0])
-        }
       });
 
       await alert.present();
