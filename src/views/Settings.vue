@@ -65,7 +65,7 @@
 
         <ion-item class="mobile-only">
           <ion-button fill="clear">{{ $t("Recycle all open orders") }}</ion-button>
-          <ion-button slot="end" fill="clear" color="medium" @click="recyclePopover">
+          <ion-button slot="end" fill="clear" color="medium" @click="openRecyclePopover">
             <ion-icon :icon="ellipsisVerticalOutline" slot="icon-only" />
           </ion-button>
         </ion-item>
@@ -105,7 +105,7 @@ import {
 alertController} from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, timeOutline } from 'ionicons/icons'
-import Popover from '@/views/RecyclePopover.vue'
+import RecyclePopover from '@/views/RecyclePopover.vue'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import TimeZoneModal from '@/views/timezone-modal.vue'
@@ -239,9 +239,9 @@ export default defineComponent({
         console.error(err)
       }
     },
-    async recyclePopover(ev: Event) {
+    async openRecyclePopover(ev: Event) {
       const popover = await popoverController.create({
-        component: Popover,
+        component: RecyclePopover,
         event: ev,
         translucent: true,
         showBackdrop: false,
