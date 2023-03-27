@@ -97,21 +97,23 @@ const actions: ActionTree<UserState, RootState> = {
     }, [])
 
     if (resp.status === 200) {
-      commit(types.USER_INFO_UPDATED, resp.data);
-      commit(types.USER_CURRENT_FACILITY_UPDATED, resp.data.facilities.length > 0 ? resp.data.facilities[0] : {});
-    }
+      const currentFacility = resp.data.facilities.length > 0 ? resp.data.facilities[0] : {};
+      resp.data.stores = await dispatch('getEComStores', { facilityId: currentFacility.facilityId })
 
-    if (resp.data.facilities.length > 0) {
-      await dispatch('getEComStores', { facilityId: resp.data.facilities[0].facilityId })
+      commit(types.USER_INFO_UPDATED, resp.data);
+      commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
     }
   },
 
   /**
    * update current facility information
    */
-  async setFacility ({ commit, dispatch }, payload) {
+  async setFacility ({ commit, dispatch, state }, payload) {
+    const user = JSON.parse(JSON.stringify(state.current as any));
     commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
-    await dispatch("getEComStores", { facilityId: payload.facility.facilityId });
+    user.stores = await dispatch("getEComStores", { facilityId: payload.facility.facilityId });
+
+    commit(types.USER_INFO_UPDATED, user);
   },
   
   /**
@@ -133,7 +135,7 @@ const actions: ActionTree<UserState, RootState> = {
     updateInstanceUrl(payload)
   },
 
-  async getEComStores({ state, commit, dispatch }, payload) {
+  async getEComStores({ commit }, payload) {
     let resp;
 
     try {
@@ -149,18 +151,16 @@ const actions: ActionTree<UserState, RootState> = {
       }
 
       resp = await UserService.getEComStores(param);
-      if(!hasError(resp) && resp.data.docs?.length > 0) {
-        const user = state.current as any;
-        user.stores = resp.data.docs
+      if(!hasError(resp)) {
+        const eComStores = resp.data.docs
 
         const userPref =  await UserService.getUserPreference({
           'userPrefTypeId': 'SELECTED_BRAND'
         });
-        const userPrefStore = user.stores.find((store: any) => store.productStoreId == userPref.data.userPrefValue)
+        const userPrefStore = eComStores.find((store: any) => store.productStoreId == userPref.data.userPrefValue)
 
-        commit(types.USER_CURRENT_ECOM_STORE_UPDATED, userPrefStore ? userPrefStore : user.stores.length > 0 ? user.stores[0] : {});
-        commit(types.USER_INFO_UPDATED, user);
-        return user.stores
+        commit(types.USER_CURRENT_ECOM_STORE_UPDATED, userPrefStore ? userPrefStore : eComStores.length > 0 ? eComStores[0] : {});
+        return eComStores
       } else {
         console.error(resp);
       }
