@@ -1,6 +1,6 @@
 {
-  "appId": "co.hotwax.ionic.sdk",
-  "appName": "ionic-sdk",
+  "appId": "co.hotwax.fulfillment",
+  "appName": "Fulfillment",
   "bundledWebRuntime": false,
   "npmClient": "npm",
   "webDir": "dist",
