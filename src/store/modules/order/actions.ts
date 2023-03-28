@@ -29,6 +29,7 @@ const actions: ActionTree<OrderState, RootState> = {
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
         facilityId: { value: this.state.user.currentFacility.facilityId },
+        productStoreId: { value: this.state.user.currentEComStore.productStoreId }
       }
     }
 
@@ -66,6 +67,11 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   updateSelectedShipmentMethods({ commit, dispatch, state }, method) {
+    if(!method) {
+      commit(types.ORDER_SELECTED_SHIPMENT_METHODS_UPDATED, [])
+      return;
+    }
+
     const selectedShipmentMethods = JSON.parse(JSON.stringify(state.selectedShipmentMethods))
     const index = selectedShipmentMethods.indexOf(method)
     if (index < 0) {

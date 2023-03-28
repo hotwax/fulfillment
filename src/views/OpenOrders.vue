@@ -164,7 +164,8 @@ export default defineComponent({
       currentFacility: 'user/getCurrentFacility',
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
-      getProductStock: 'stock/getProductStock'
+      getProductStock: 'stock/getProductStock',
+      currentEComStore: 'user/getCurrentEComStore'
     })
   },
   data () {
@@ -200,6 +201,7 @@ export default defineComponent({
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
           facilityId: { value: this.currentFacility.facilityId },
+          productStoreId: { value: this.currentEComStore.productStoreId }
         },
         facet: {
           "shipmentMethodTypeIdFacet":{
@@ -233,6 +235,7 @@ export default defineComponent({
     }
   },
   async mounted () {
+    await this.updateSelectedShipmentMethods(''); // clearing the already selected shipment method when changing the page
     await Promise.all([this.findOpenOrders(), this.fetchShipmentMethods()]);
   },
   setup() {

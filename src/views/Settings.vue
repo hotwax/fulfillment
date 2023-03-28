@@ -406,11 +406,13 @@ export default defineComponent({
 
       await alert.present();
     },
-    setEComStore(store: any) {
+    async setEComStore(store: any) {
       if(this.userProfile) {
-        this.store.dispatch('user/setEComStore', {
+        await this.store.dispatch('user/setEComStore', {
           'eComStore': this.userProfile.stores.find((str: any) => str.productStoreId == store['detail'].value)
         })
+        this.getOutstandingOrdersCount();
+        this.getInProgressOrdersCount();
       }
     }
   },
