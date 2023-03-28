@@ -18,7 +18,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const params = {
       ...payload,
-      queryString: state.queryString,
+      queryString: state.open.queryString,
       viewSize: state.open.viewSize,
       queryFields: 'orderId',
       filters: {
@@ -62,7 +62,7 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   async clearOrders ({ commit }) {
-    commit(types.ORDER_OPEN_UPDATED, {list: {}, total: 0})
+    commit(types.ORDER_OPEN_CLEARED, {list: {}, total: 0, viewSize: 0, queryString: ''})
   },
 
   updateSelectedShipmentMethods({ commit, dispatch, state }, method) {
@@ -77,8 +77,8 @@ const actions: ActionTree<OrderState, RootState> = {
     dispatch('findOpenOrders');
   },
 
-  updateQueryString({ commit }, queryString) {
-    commit(types.ORDER_QUERY_STRING_UPDATED, queryString)
+  updateQueryString({ commit }, payload) {
+    commit(types.ORDER_QUERY_STRING_UPDATED, payload)
   },
 
   updateViewSize({ commit }, payload) {

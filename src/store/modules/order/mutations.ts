@@ -11,10 +11,13 @@ const mutations: MutationTree <OrderState> = {
     state.selectedShipmentMethods = payload;
   },
   [types.ORDER_QUERY_STRING_UPDATED](state, payload) {
-    state.queryString = payload
+    (state as any)[payload.page].queryString = payload.queryString
   },
   [types.ORDER_VIEW_SIZE_UPDATED](state, payload) {
     (state as any)[payload.page].viewSize = payload.size
+  },
+  [types.ORDER_OPEN_CLEARED](state, payload) {
+    state.open = payload
   }
 }
 export default mutations;

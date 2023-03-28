@@ -17,7 +17,7 @@
     
     <ion-content id="view-size-selector">
       <div v-if="openOrders.total">
-        <ion-searchbar :value="queryString" @keyup.enter="updateQueryString($event.target.value)"/>
+        <ion-searchbar :value="openOrders.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
         <div class="filters">
           <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
             <ion-checkbox slot="start" @ionChange="updateSelectedShipmentMethods(method.val)"/>
@@ -164,8 +164,7 @@ export default defineComponent({
       currentFacility: 'user/getCurrentFacility',
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
-      getProductStock: 'stock/getProductStock',
-      queryString: 'order/getQueryString'
+      getProductStock: 'stock/getProductStock'
     })
   },
   data () {
@@ -229,7 +228,7 @@ export default defineComponent({
       }
     },
     async updateQueryString(queryString: string) {
-      await this.store.dispatch('order/updateQueryString', queryString)
+      await this.store.dispatch('order/updateQueryString', { queryString, page: 'open' })
       this.findOpenOrders();
     }
   },

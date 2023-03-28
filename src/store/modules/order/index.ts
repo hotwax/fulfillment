@@ -11,10 +11,10 @@ const orderModule: Module<OrderState, RootState> = {
     open: {
       list: [],
       total: 0,
-      viewSize: 0
+      viewSize: 0,
+      queryString: ''
     },
-    selectedShipmentMethods: [],
-    queryString: ''
+    selectedShipmentMethods: []
   },
   getters,
   actions,
