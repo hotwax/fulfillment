@@ -3,7 +3,7 @@ export default interface OrderState {
     list: any,
     total: number,
     viewSize: number,
-    queryString: string
+    queryString: string,
+    selectedShipmentMethods: Array<string>
   }
-  selectedShipmentMethods: Array<string>;
 }

@@ -12,9 +12,9 @@ const orderModule: Module<OrderState, RootState> = {
       list: [],
       total: 0,
       viewSize: process.env.VUE_APP_VIEW_SIZE,
-      queryString: ''
+      queryString: '',
+      selectedShipmentMethods: []
     },
-    selectedShipmentMethods: []
   },
   getters,
   actions,

@@ -34,8 +34,8 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     // only adding shipmentMethods when a method is selected
-    if(state.selectedShipmentMethods.length) {
-      params.filters['shipmentMethodTypeId'] = { value: state.selectedShipmentMethods, op: 'OR' }
+    if(state.open.selectedShipmentMethods.length) {
+      params.filters['shipmentMethodTypeId'] = { value: state.open.selectedShipmentMethods, op: 'OR' }
     }
 
     const orderQueryPayload = prepareOrderQuery(params)
@@ -73,7 +73,7 @@ const actions: ActionTree<OrderState, RootState> = {
       return;
     }
 
-    const selectedShipmentMethods = JSON.parse(JSON.stringify(state.selectedShipmentMethods))
+    const selectedShipmentMethods = JSON.parse(JSON.stringify(state.open.selectedShipmentMethods))
     const index = selectedShipmentMethods.indexOf(method)
     if (index < 0) {
       selectedShipmentMethods.push(method)

@@ -8,7 +8,7 @@ const mutations: MutationTree <OrderState> = {
     state.open.total = payload.total;
   },
   [types.ORDER_SELECTED_SHIPMENT_METHODS_UPDATED] (state, payload) {
-    state.selectedShipmentMethods = payload;
+    state.open.selectedShipmentMethods = payload;
   },
   [types.ORDER_QUERY_STRING_UPDATED](state, payload) {
     (state as any)[payload.page].queryString = payload.queryString
