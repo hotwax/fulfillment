@@ -151,7 +151,7 @@ export default defineComponent({
       return this.currentFacilityDetails.maximumOrderLimit != 0
     }
   },
-  mounted() {
+  ionViewWillEnter() {
     this.getCurrentFacilityDetails()
     this.getOutstandingOrdersCount()
     this.getInProgressOrdersCount()
