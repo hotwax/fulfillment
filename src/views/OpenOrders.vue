@@ -170,7 +170,6 @@ export default defineComponent({
   },
   data () {
     return {
-      selectedShipmentMethod: [] as Array<string>,
       shipmentMethods: [] as Array<any>
     }
   },
