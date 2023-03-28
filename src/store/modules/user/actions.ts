@@ -81,22 +81,45 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    * Get User profile
    */
-  async getProfile ( { commit }) {
-    const resp = await UserService.getProfile()
-    if (resp.data.userTimeZone) {
-      Settings.defaultZone = resp.data.userTimeZone;
-    }
-    if (resp.status === 200) {
+  async getProfile ( { commit, dispatch }) {
+    try {
+      const resp = await UserService.getProfile()
+      if (resp.data.userTimeZone) {
+        Settings.defaultZone = resp.data.userTimeZone;
+      }
+
+      // logic to remove duplicate facilities
+      const facilityIds = new Set();
+      const facilities = [] as Array<any>;
+
+      resp.data.facilities.map((facility: any) => {
+        if(!facilityIds.has(facility.facilityId)) {
+          facilityIds.add(facility.facilityId)
+          facilities.push(facility)
+        }
+      })
+
+      resp.data.facilities = facilities
+
+      const currentFacility = resp.data.facilities.length > 0 ? resp.data.facilities[0] : {};
+      resp.data.stores = await dispatch('getEComStores', { facilityId: currentFacility.facilityId })
+
       commit(types.USER_INFO_UPDATED, resp.data);
-      commit(types.USER_CURRENT_FACILITY_UPDATED, resp.data.facilities.length > 0 ? resp.data.facilities[0] : {});
+      commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
+    } catch(err) {
+      console.error(err)
     }
   },
 
   /**
    * update current facility information
    */
-  async setFacility ({ commit }, payload) {
+  async setFacility ({ commit, dispatch, state }, payload) {
+    const user = JSON.parse(JSON.stringify(state.current as any));
     commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
+    user.stores = await dispatch("getEComStores", { facilityId: payload.facility.facilityId });
+
+    commit(types.USER_INFO_UPDATED, user);
   },
   
   /**
@@ -113,10 +136,56 @@ const actions: ActionTree<UserState, RootState> = {
   },
 
   // Set User Instance Url
-  setUserInstanceUrl ({ state, commit }, payload){
+  setUserInstanceUrl ({ commit }, payload){
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
     updateInstanceUrl(payload)
-  }
+  },
+
+  async getEComStores({ commit }, payload) {
+    let resp;
+
+    try {
+      const param = {
+        "inputFields": {
+          "facilityId": payload.facilityId,
+          "storeName_op": "not-empty"
+        },
+        "fieldList": ["productStoreId", "storeName"],
+        "entityName": "ProductStoreFacilityDetail",
+        "distinct": "Y",
+        "noConditionFind": "Y"
+      }
+
+      resp = await UserService.getEComStores(param);
+      if(!hasError(resp)) {
+        const eComStores = resp.data.docs
+
+        const userPref =  await UserService.getUserPreference({
+          'userPrefTypeId': 'SELECTED_BRAND'
+        });
+        const userPrefStore = eComStores.find((store: any) => store.productStoreId == userPref.data.userPrefValue)
+
+        commit(types.USER_CURRENT_ECOM_STORE_UPDATED, userPrefStore ? userPrefStore : eComStores.length > 0 ? eComStores[0] : {});
+        return eComStores
+      } else {
+        console.error(resp);
+      }
+    } catch(error) {
+      console.error(error);
+    }
+    return []
+  },
+
+  /**
+   *  update current eComStore information
+  */
+  async setEComStore({ commit }, payload) {
+    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, payload.eComStore);
+    await UserService.setUserPreference({
+      'userPrefTypeId': 'SELECTED_BRAND',
+      'userPrefValue': payload.eComStore.productStoreId
+    });
+  },
 }
 
 export default actions;
