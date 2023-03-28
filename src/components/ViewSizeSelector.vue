@@ -96,7 +96,7 @@ export default defineComponent({
       }
       await this.store.dispatch('util/updateViewSize', size)
       if(this.$route.name === 'OpenOrders') {
-        this.store.dispatch('order/fetchOpenOrders')
+        this.store.dispatch('order/findOpenOrders')
       }
       // closing the menu after selecting any view size
       menuController.close()

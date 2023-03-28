@@ -1,6 +1,6 @@
 import { api } from '@/adapter';
 
-const fetchOpenOrders = async (query: any): Promise <any>  => {
+const findOpenOrders = async (query: any): Promise <any>  => {
   return api({
    // TODO: We can replace this with any API
     url: "solr-query", 
@@ -10,5 +10,5 @@ const fetchOpenOrders = async (query: any): Promise <any>  => {
 }
 
 export const OrderService = {
-  fetchOpenOrders
+  findOpenOrders
 }

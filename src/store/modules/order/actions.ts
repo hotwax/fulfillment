@@ -12,7 +12,7 @@ import { prepareOrderQuery } from '@/utils/solrHelper'
 const actions: ActionTree<OrderState, RootState> = {
 
   // get open orders
-  async fetchOpenOrders ({ commit, state }, payload = {}) {
+  async findOpenOrders ({ commit, state }, payload = {}) {
     emitter.emit('presentLoader');
     let resp;
 
@@ -38,22 +38,24 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     const orderQueryPayload = prepareOrderQuery(params)
+    let orders = {};
+    let total = 0;
 
     try {
-      resp = await OrderService.fetchOpenOrders(orderQueryPayload);
+      resp = await OrderService.findOpenOrders(orderQueryPayload);
       if (resp.status === 200 && resp.data.grouped.orderId.matches > 0 && !hasError(resp)) {
-        const total = resp.data.grouped.orderId.ngroups
-        commit(types.ORDER_OPEN_UPDATED, {list: resp.data.grouped.orderId.groups, total})
-        this.dispatch('product/getProductInformation', {orders: resp.data.grouped.orderId.groups})
+        total = resp.data.grouped.orderId.ngroups
+        orders = resp.data.grouped.orderId.groups
+        this.dispatch('product/getProductInformation', { orders })
       } else {
         console.error('No orders found')
-        commit(types.ORDER_OPEN_UPDATED, {list: {}, total: 0}) // clearning orders in case of errors as clearning them beforehand results in wrong viewSize displayed on UI
       }
     } catch (err) {
       console.error('error', err)
       showToast(translate('Something went wrong'))
-      commit(types.ORDER_OPEN_UPDATED, {list: {}, total: 0})
     }
+
+    commit(types.ORDER_OPEN_UPDATED, {list: orders, total})
 
     emitter.emit('dismissLoader');
     return resp;
@@ -72,7 +74,7 @@ const actions: ActionTree<OrderState, RootState> = {
       selectedShipmentMethods.splice(index, 1)
     }
     commit(types.ORDER_SELECTED_SHIPMENT_METHODS_UPDATED, selectedShipmentMethods)
-    dispatch('fetchOpenOrders');
+    dispatch('findOpenOrders');
   },
 
   updateQueryString({ commit }, queryString) {

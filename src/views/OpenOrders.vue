@@ -185,8 +185,8 @@ export default defineComponent({
       });
       return assignPickerModal.present();
     },
-    async fetchOpenOrders () {
-      await this.store.dispatch('order/fetchOpenOrders')
+    async findOpenOrders () {
+      await this.store.dispatch('order/findOpenOrders')
     },
     async fetchShipmentMethods() {
       let resp: any;
@@ -231,11 +231,11 @@ export default defineComponent({
     },
     async updateQueryString(queryString: string) {
       await this.store.dispatch('order/updateQueryString', queryString)
-      this.fetchOpenOrders();
+      this.findOpenOrders();
     }
   },
   async mounted () {
-    await Promise.all([this.fetchOpenOrders(), this.fetchShipmentMethods()]);
+    await Promise.all([this.findOpenOrders(), this.fetchShipmentMethods()]);
   },
   setup() {
     const store = useStore();
