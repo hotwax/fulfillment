@@ -35,9 +35,9 @@ import {
   IonToolbar,
   menuController
 } from "@ionic/vue";
-import { defineComponent } from "vue";
+import { computed, defineComponent } from "vue";
 import { useRoute } from "vue-router";
-import { mapGetters, useStore } from 'vuex';
+import { useStore } from 'vuex';
 
 export default defineComponent({
   name: "ViewSizeSelector",
@@ -52,21 +52,14 @@ export default defineComponent({
     IonRadioGroup,
     IonTitle,
     IonToolbar
-  },  
-  computed: {
-    ...mapGetters({
-      openOrders: 'order/getOpenOrders',
-      viewSize: 'util/getViewSize'
-    })
   },
   methods: {
     prepareViewSizeOptions () {
-      const total = this.$route.name === 'OpenOrders' ? this.openOrders.total : 0 
       // creating an array of numbers using Array.keys method and then multiplying each by 5
-      const viewSizeOptions = [ ...Array(Math.ceil(total / 5)).keys() ].map( i => {
+      const viewSizeOptions = [ ...Array(Math.ceil(this.total / 5)).keys() ].map( i => {
         const count = (i+1) * 5
         // added check that if the count is greater than the total orders available then assigning orders total as size option
-        return count > total ? total : count
+        return count > this.total ? this.total : count
       })
       // Added this check, if the viewSize options only have one option to select then making 0th index value as view size, and if having empty view than making view size as 0
       // This condition will become true only in case when the orders total is equal to or less than 5, as we are generating size options with a difference of 5
@@ -85,7 +78,7 @@ export default defineComponent({
       if(this.viewSize == size) {
         return;
       }
-      await this.store.dispatch('util/updateViewSize', size)
+      await this.store.dispatch('order/updateViewSize', { size, page: this.currentPage })
     },
     async updateViewSize(size: number) {
       // TODO: multiple api calls being made as viewSize is updated after fetching the orders
@@ -94,8 +87,9 @@ export default defineComponent({
       if(this.viewSize == size) {
         return;
       }
-      await this.store.dispatch('util/updateViewSize', size)
-      if(this.$route.name === 'OpenOrders') {
+
+      await this.store.dispatch('order/updateViewSize', { size, page: this.currentPage })
+      if(this.currentPage === 'open') {
         this.store.dispatch('order/findOpenOrders')
       }
       // closing the menu after selecting any view size
@@ -106,11 +100,25 @@ export default defineComponent({
     const store = useStore();
     const route = useRoute();
 
-    const title = route.name === 'OpenOrders' ? 'Picklist Size' : 'Result Size';
+    let title = 'Result Size'
+    let currentPage = ''
+    let viewSize: any = 0
+    let total: any = 0
+
+    if(route.name === 'OpenOrders') {
+      title = 'Picklist Size'
+      currentPage = 'open'
+      // TODO: check if we can use a single getter to get the data, currently when trying that the values are not reactive
+      viewSize = computed(() => store.getters['order/getOpenOrders'].viewSize)
+      total = computed(() => store.getters['order/getOpenOrders'].total)
+    }
 
     return {
+      currentPage,
       store,
-      title
+      title,
+      total,
+      viewSize
     }
   }
 });

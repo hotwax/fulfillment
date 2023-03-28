@@ -5,7 +5,7 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button menu="start" slot="start" />
-        <ion-title>{{ viewSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
+        <ion-title>{{ openOrders.viewSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
      
         <ion-buttons slot="end">
           <ion-menu-button menu="end">
@@ -164,7 +164,6 @@ export default defineComponent({
       currentFacility: 'user/getCurrentFacility',
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
-      viewSize: 'util/getViewSize',
       getProductStock: 'stock/getProductStock',
       queryString: 'order/getQueryString'
     })

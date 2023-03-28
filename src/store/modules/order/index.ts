@@ -11,6 +11,7 @@ const orderModule: Module<OrderState, RootState> = {
     open: {
       list: [],
       total: 0,
+      viewSize: 0
     },
     selectedShipmentMethods: [],
     queryString: ''

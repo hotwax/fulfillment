@@ -19,7 +19,7 @@ const actions: ActionTree<OrderState, RootState> = {
     const params = {
       ...payload,
       queryString: state.queryString,
-      viewSize: this.state.util.viewSize,
+      viewSize: state.open.viewSize,
       queryFields: 'orderId',
       filters: {
         quantityNotAvailable: { value: 0 },
@@ -79,6 +79,10 @@ const actions: ActionTree<OrderState, RootState> = {
 
   updateQueryString({ commit }, queryString) {
     commit(types.ORDER_QUERY_STRING_UPDATED, queryString)
+  },
+
+  updateViewSize({ commit }, payload) {
+    commit(types.ORDER_VIEW_SIZE_UPDATED, payload)
   }
 }
 

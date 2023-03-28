@@ -12,6 +12,9 @@ const mutations: MutationTree <OrderState> = {
   },
   [types.ORDER_QUERY_STRING_UPDATED](state, payload) {
     state.queryString = payload
+  },
+  [types.ORDER_VIEW_SIZE_UPDATED](state, payload) {
+    (state as any)[payload.page].viewSize = payload.size
   }
 }
 export default mutations;
