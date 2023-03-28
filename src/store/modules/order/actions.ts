@@ -12,7 +12,7 @@ import { prepareOrderQuery } from '@/utils/solrHelper'
 const actions: ActionTree<OrderState, RootState> = {
 
   // get open orders
-  async findOpenOrders ({ commit, state }, payload = {}) {
+  async findOpenOrders ({ commit, dispatch, state }, payload = {}) {
     emitter.emit('presentLoader');
     let resp;
 
@@ -39,7 +39,7 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     const orderQueryPayload = prepareOrderQuery(params)
-    let orders = {};
+    let orders = [];
     let total = 0;
 
     try {
@@ -56,6 +56,7 @@ const actions: ActionTree<OrderState, RootState> = {
       showToast(translate('Something went wrong'))
     }
 
+    dispatch('updateViewSize', { size: orders.length, page: 'open' })
     commit(types.ORDER_OPEN_UPDATED, {list: orders, total})
 
     emitter.emit('dismissLoader');
@@ -80,11 +81,14 @@ const actions: ActionTree<OrderState, RootState> = {
       selectedShipmentMethods.splice(index, 1)
     }
     commit(types.ORDER_SELECTED_SHIPMENT_METHODS_UPDATED, selectedShipmentMethods)
+    dispatch('updateViewSize', { size: process.env.VUE_APP_VIEW_SIZE, page: 'open' })
     dispatch('findOpenOrders');
   },
 
-  updateQueryString({ commit }, payload) {
+  updateQueryString({ commit, dispatch }, payload) {
     commit(types.ORDER_QUERY_STRING_UPDATED, payload)
+    dispatch('updateViewSize', { size: process.env.VUE_APP_VIEW_SIZE, page: 'open' })
+    dispatch('findOpenOrders');
   },
 
   updateViewSize({ commit }, payload) {

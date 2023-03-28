@@ -5,7 +5,8 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button menu="start" slot="start" />
-        <ion-title>{{ openOrders.viewSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
+        <ion-title v-if="!openOrders.total">{{ openOrders.total }} {{ $t('orders') }}</ion-title>
+        <ion-title v-else>{{ openOrders.viewSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
      
         <ion-buttons slot="end">
           <ion-menu-button menu="end">
@@ -230,7 +231,6 @@ export default defineComponent({
     },
     async updateQueryString(queryString: string) {
       await this.store.dispatch('order/updateQueryString', { queryString, page: 'open' })
-      this.findOpenOrders();
     }
   },
   async mounted () {
