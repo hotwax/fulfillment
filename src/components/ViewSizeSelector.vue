@@ -2,7 +2,7 @@
   <ion-menu type="overlay" side="end">
     <ion-header>
       <ion-toolbar>
-        <ion-title>{{ $t("Result Size") }}</ion-title>
+        <ion-title>{{ $t(title) }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -22,6 +22,7 @@
 </template>
 
 <script lang="ts">
+import emitter from "@/event-bus";
 import {
   IonContent,
   IonHeader,
@@ -35,7 +36,8 @@ import {
   IonToolbar,
   menuController
 } from "@ionic/vue";
-import { defineComponent } from "vue";
+import { computed, defineComponent } from "vue";
+import { useRoute } from "vue-router";
 import { mapGetters, useStore } from 'vuex';
 
 export default defineComponent({
@@ -86,10 +88,17 @@ export default defineComponent({
       }
       await this.store.dispatch('util/updateViewSize', size)
     },
+    prepareViewSizeOptionss () {
+      // creating an array of numbers using Array.keys method and then multiplying each by 5
+      return [ ...Array(Math.ceil(this.total / 5)).keys() ].map( i => {
+        const count = (i+1) * 5
+        // added check that if the count is greater than the total orders available then assigning orders total as size option
+        return count > this.total ? this.total : count
+      })
+    },
     async updateViewSize(size: number) {
       // TODO: multiple api calls being made as viewSize is updated after fetching the orders
       // not updating viewSize and calling solr-query when size in state and clicked size are same
-
       // TODO: adding this check handles issue of multiple api calls, but results in wrong behaviour
       if(this.viewSize == size) {
         return;
@@ -98,14 +107,33 @@ export default defineComponent({
       if(this.$route.name === 'InProgress') {
         this.store.dispatch('order/fetchInProgressOrders')
       }
+
+      emitter.emit('updateOrderQuery', size)
       // closing the menu after selecting any view size
       menuController.close()
     }
   },
   setup () {
     const store = useStore();
+    const route = useRoute();
+
+    let title = 'Result Size'
+    let viewSize: any = 0
+    let total: any = 0
+
+    if(route.name === 'OpenOrders') {
+      title = 'Picklist Size'
+      // TODO: check if we can use a single getter to get the data, currently when trying that the values are not reactive
+      viewSize = computed(() => store.getters['order/getOpenOrders'].query.viewSize)
+      total = computed(() => store.getters['order/getOpenOrders'].total)
+    }
+
     return {
-      store
+      store,
+      route,
+      title,
+      total,
+      viewSize
     }
   }
 });

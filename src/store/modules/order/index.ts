@@ -8,6 +8,15 @@ import RootState from '../../RootState'
 const orderModule: Module<OrderState, RootState> = {
   namespaced: true,
   state: {
+    open: {
+      list: [],
+      total: 0,
+      query: {
+        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        queryString: '',
+        selectedShipmentMethods: []
+      }
+    },
     inProgress: {
       list: [],
       total: 0

@@ -2,7 +2,7 @@
   <ion-menu side="start" content-id="main-content" type="overlay" :disabled="!isUserAuthenticated">
     <ion-header>
       <ion-toolbar>
-        <ion-title>Broadway Store</ion-title>
+        <ion-title>{{ currentFacility.name }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -41,7 +41,7 @@ import {
 import { defineComponent, ref } from "vue";
 import { mapGetters } from "vuex";
 
-import { mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settings } from "ionicons/icons";
+import { mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
 import { useStore } from "@/store";
 
 export default defineComponent({
@@ -83,7 +83,7 @@ export default defineComponent({
     const selectedIndex = ref(0);
     const appPages = [
       {
-        title: "Orders",
+        title: "Open",
         url: "/open-orders",
         iosIcon: mailUnreadOutline,
         mdIcon: mailUnreadOutline,
@@ -103,8 +103,8 @@ export default defineComponent({
       {
         title: "Settings",
         url: "/settings",
-        iosIcon: settings,
-        mdIcon: settings,
+        iosIcon: settingsOutline,
+        mdIcon: settingsOutline,
       },
     ];
     return {
@@ -113,7 +113,7 @@ export default defineComponent({
       mailUnreadOutline,
       mailOpenOutline,
       checkmarkDoneOutline,
-      settings,
+      settingsOutline,
       store
     };
   },

@@ -27,7 +27,7 @@ const loginGuard = (to: any, from: any, next: any) => {
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    redirect: '/completed'
+    redirect: '/open-orders'
   },
   {
     path: '/open-orders',
