@@ -71,7 +71,7 @@ export default defineComponent({
         return;
       }
 
-      emitter.emit('updateOrderQuery', { filter: 'viewSize', value: size })
+      emitter.emit('updateOrderQuery', size)
       // closing the menu after selecting any view size
       menuController.close()
     }

@@ -12,14 +12,16 @@ import { prepareOrderQuery } from '@/utils/solrHelper'
 const actions: ActionTree<OrderState, RootState> = {
 
   // get open orders
-  async findOpenOrders ({ commit, state }, payload = {}) {
+  async findOpenOrders ({ commit, dispatch, state }, payload = {}) {
     emitter.emit('presentLoader');
     let resp;
 
+    const openOrderQuery = JSON.parse(JSON.stringify(state.open.query))
+
     const params = {
       ...payload,
-      queryString: state.open.query.queryString,
-      viewSize: state.open.query.viewSize,
+      queryString: openOrderQuery.queryString,
+      viewSize: openOrderQuery.viewSize,
       queryFields: 'orderId',
       filters: {
         quantityNotAvailable: { value: 0 },
@@ -34,8 +36,8 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     // only adding shipmentMethods when a method is selected
-    if(state.open.query.selectedShipmentMethods.length) {
-      params.filters['shipmentMethodTypeId'] = { value: state.open.query.selectedShipmentMethods, op: 'OR' }
+    if(openOrderQuery.selectedShipmentMethods.length) {
+      params.filters['shipmentMethodTypeId'] = { value: openOrderQuery.selectedShipmentMethods, op: 'OR' }
     }
 
     const orderQueryPayload = prepareOrderQuery(params)
@@ -56,7 +58,9 @@ const actions: ActionTree<OrderState, RootState> = {
       showToast(translate('Something went wrong'))
     }
 
-    commit(types.ORDER_OPEN_QUERY_UPDATED, { filter: 'viewSize', value: orders.length })  // directly commiting here as when calling the action `updateOpenQuery`, it results in an infinite loop
+    openOrderQuery.viewSize = orders.length
+
+    commit(types.ORDER_OPEN_QUERY_UPDATED, { ...openOrderQuery })
     commit(types.ORDER_OPEN_UPDATED, {list: orders, total})
 
     emitter.emit('dismissLoader');

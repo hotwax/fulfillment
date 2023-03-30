@@ -177,7 +177,9 @@ export default defineComponent({
   },
   methods: {
     async updateSelectedShipmentMethods (method: string) {
-      const selectedShipmentMethods = JSON.parse(JSON.stringify(this.openOrders.query.selectedShipmentMethods))
+      const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
+
+      const selectedShipmentMethods = openOrdersQuery.selectedShipmentMethods
       const index = selectedShipmentMethods.indexOf(method)
       if (index < 0) {
         selectedShipmentMethods.push(method)
@@ -185,7 +187,11 @@ export default defineComponent({
         selectedShipmentMethods.splice(index, 1)
       }
 
-      this.store.dispatch('order/updateOpenQuery', { filter: 'selectedShipmentMethods', value: selectedShipmentMethods })
+      // making view size default when changing the shipment method to correctly fetch orders
+      openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      openOrdersQuery.selectedShipmentMethods = selectedShipmentMethods
+
+      this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
     },
     async assignPickers() {
       const assignPickerModal = await modalController.create({
@@ -239,10 +245,17 @@ export default defineComponent({
       }
     },
     async updateQueryString(queryString: string) {
-      await this.store.dispatch('order/updateOpenQuery', { filter: 'queryString', value: queryString })
+      const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
+
+      openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      openOrdersQuery.queryString = queryString
+      await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
     },
-    async updateOrderQuery(payload: any) {
-      await this.store.dispatch('order/updateOpenQuery', payload)
+    async updateOrderQuery(size: any) {
+      const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
+
+      openOrdersQuery.viewSize = size
+      await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
     }
   },
   async mounted () {
