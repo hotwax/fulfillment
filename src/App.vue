@@ -1,9 +1,9 @@
 <template>
   <ion-app>
-    <IonSplitPane content-id="main-content" when="lg">
+    <ion-split-pane content-id="main-content" when="lg">
       <Menu />
       <ion-router-outlet id="main-content" />
-    </IonSplitPane>
+    </ion-split-pane>
   </ion-app>
 </template>
 
@@ -21,8 +21,8 @@ import { Settings } from 'luxon'
 export default defineComponent({
   name: 'App',
   components: {
-    IonApp,  
-    IonRouterOutlet, 
+    IonApp,
+    IonRouterOutlet,
     IonSplitPane,
     Menu
   },

@@ -2,7 +2,6 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router';
 import './registerServiceWorker'
-import { DateTime } from 'luxon';
 
 import { IonicVue } from '@ionic/vue';
 
@@ -35,32 +34,6 @@ const app = createApp(App)
   .use(router)
   .use(i18n)
   .use(store);
-
-// Filters are removed in Vue 3 and global filter introduced https://v3.vuejs.org/guide/migration/filters.html#global-filters
-app.config.globalProperties.$filters = {
-  formatDate(value: any, inFormat?: string, outFormat?: string) {
-    // TODO Make default format configurable and from environment variables
-    if(inFormat){
-      return DateTime.fromFormat(value, inFormat).toFormat(outFormat ? outFormat : 'MM-dd-yyyy');
-    }
-    return DateTime.fromISO(value).toFormat(outFormat ? outFormat : 'MM-dd-yyyy');
-  },
-  formatUtcDate(value: any, inFormat?: any, outFormat?: string) {
-    // TODO Make default format configurable and from environment variables
-    // TODO Fix this setDefault should set the default timezone instead of getting it everytiem and setting the tz
-    return DateTime.fromISO(value, { zone: 'utc' }).setZone(store.state.user.current.userTimeZone).toFormat(outFormat ? outFormat : 'MM-dd-yyyy')
-  },
-  getFeature(featureHierarchy: any, featureKey: string) {
-    let  featureValue = ''
-    if (featureHierarchy) {
-      const feature = featureHierarchy.find((featureItem: any) => featureItem.startsWith(featureKey))
-      const featureSplit = feature ? feature.split('/') : [];
-      featureValue = featureSplit[2] ? featureSplit[2] : '';
-    }
-    return featureValue;
-  }
-}
-
 
 router.isReady().then(() => {
   app.mount('#app');

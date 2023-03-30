@@ -151,7 +151,7 @@ export default defineComponent({
       return this.currentFacilityDetails.maximumOrderLimit != 0
     }
   },
-  mounted() {
+  ionViewWillEnter() {
     this.getCurrentFacilityDetails()
     this.getOutstandingOrdersCount()
     this.getInProgressOrdersCount()
@@ -250,6 +250,7 @@ export default defineComponent({
     },
     logout () {
       this.store.dispatch('user/logout').then(() => {
+        this.store.dispatch('order/clearOrders')
         this.router.push('/login');
       })
     },
@@ -258,6 +259,7 @@ export default defineComponent({
         await this.store.dispatch('user/setFacility', {
           'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
         });
+        this.store.dispatch('order/clearOrders')
         this.getCurrentFacilityDetails();
         this.getOutstandingOrdersCount();
         this.getInProgressOrdersCount();
@@ -404,11 +406,13 @@ export default defineComponent({
 
       await alert.present();
     },
-    setEComStore(store: any) {
+    async setEComStore(store: any) {
       if(this.userProfile) {
-        this.store.dispatch('user/setEComStore', {
+        await this.store.dispatch('user/setEComStore', {
           'eComStore': this.userProfile.stores.find((str: any) => str.productStoreId == store['detail'].value)
         })
+        this.getOutstandingOrdersCount();
+        this.getInProgressOrdersCount();
       }
     }
   },

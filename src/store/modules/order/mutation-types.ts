@@ -1,0 +1,4 @@
+export const SN_ORDER = 'order'
+export const ORDER_OPEN_UPDATED = SN_ORDER + '/OPEN_UPDATED'
+export const ORDER_OPEN_QUERY_UPDATED = SN_ORDER + '/OPEN_QUERY_UPDATED'
+export const ORDER_OPEN_CLEARED = SN_ORDER + '/OPEN_CLEARED'
