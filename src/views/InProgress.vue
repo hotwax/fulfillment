@@ -81,7 +81,7 @@
             </div>
 
             <div class="desktop-only">
-              <ion-segment @ionChange="segmentChanged($event, item)" :value="item.segmentSelected">
+              <ion-segment @ionChange="segmentChanged($event, item, order)" :value="item.segmentSelected">
                 <ion-segment-button value="pack">
                   <ion-label>{{ $t("Ready to pack") }}</ion-label>
                 </ion-segment-button>
@@ -126,7 +126,7 @@
 
           <div class="actions">
             <div>
-              <ion-button :disabled="order.isModified(order)" @click="packOrder(order)">{{ $t("Pack") }}</ion-button>
+              <ion-button :disabled="order.isModified" @click="packOrder(order)">{{ $t("Pack") }}</ion-button>
               <ion-button fill="outline" @click="save(order)">{{ $t("Save") }}</ion-button>
             </div>
           </div>
@@ -207,11 +207,12 @@ export default defineComponent({
     }
   },
   methods: {
-    segmentChanged(ev: CustomEvent, item: any) {
+    segmentChanged(ev: CustomEvent, item: any, order: any) {
       // when selecting the report segment for the first time defining the value for rejectReason,
       // as in current flow once moving to reject segment we can't pack an order
       if(ev.detail.value === 'issue' && !item.rejectReason) {
         item.rejectReason = this.rejectReasons[0].enumCode // setting the first reason as default
+        order.isModified = true
       }
 
       item.segmentSelected = ev.detail.value;
