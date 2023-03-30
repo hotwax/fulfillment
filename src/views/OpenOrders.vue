@@ -134,6 +134,7 @@ import { formatUtcDate, getFeature, hasError } from '@/utils'
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
+import emitter from '@/event-bus';
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -239,10 +240,17 @@ export default defineComponent({
     },
     async updateQueryString(queryString: string) {
       await this.store.dispatch('order/updateOpenQuery', { filter: 'queryString', value: queryString })
+    },
+    async updateOrderQuery(payload: any) {
+      await this.store.dispatch('order/updateOpenQuery', payload)
     }
   },
   async mounted () {
+    emitter.on('updateOrderQuery', this.updateOrderQuery)
     await Promise.all([this.findOpenOrders(), this.fetchShipmentMethods()]);
+  },
+  unmounted() {
+    emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   setup() {
     const store = useStore();

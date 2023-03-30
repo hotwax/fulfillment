@@ -22,6 +22,7 @@
 </template>
 
 <script lang="ts">
+import emitter from "@/event-bus";
 import {
   IonContent,
   IonHeader,
@@ -70,10 +71,7 @@ export default defineComponent({
         return;
       }
 
-      await this.store.dispatch('order/updateOpenQuery', { filter: 'viewSize', value: size })
-      if(this.currentPage === 'open') {
-        this.store.dispatch('order/findOpenOrders')
-      }
+      emitter.emit('updateOrderQuery', { filter: 'viewSize', value: size })
       // closing the menu after selecting any view size
       menuController.close()
     }
@@ -83,21 +81,19 @@ export default defineComponent({
     const route = useRoute();
 
     let title = 'Result Size'
-    let currentPage = ''
     let viewSize: any = 0
     let total: any = 0
 
     if(route.name === 'OpenOrders') {
       title = 'Picklist Size'
-      currentPage = 'open'
       // TODO: check if we can use a single getter to get the data, currently when trying that the values are not reactive
       viewSize = computed(() => store.getters['order/getOpenOrders'].query.viewSize)
       total = computed(() => store.getters['order/getOpenOrders'].total)
     }
 
     return {
-      currentPage,
       store,
+      route,
       title,
       total,
       viewSize

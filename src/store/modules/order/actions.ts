@@ -16,8 +16,6 @@ const actions: ActionTree<OrderState, RootState> = {
     emitter.emit('presentLoader');
     let resp;
 
-    console.log('inside find open orders')
-
     const params = {
       ...payload,
       queryString: state.open.query.queryString,
@@ -78,7 +76,6 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   async updateOpenQuery({ commit, dispatch }, payload) {
-    console.log('updateOpenQuery', payload)
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
     await dispatch('findOpenOrders');
   }
