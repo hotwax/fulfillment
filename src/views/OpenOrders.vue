@@ -6,7 +6,7 @@
       <ion-toolbar>
         <ion-menu-button menu="start" slot="start" />
         <ion-title v-if="!openOrders.total">{{ openOrders.total }} {{ $t('orders') }}</ion-title>
-        <ion-title v-else>{{ openOrders.viewSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
+        <ion-title v-else>{{ openOrders.query.viewSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
      
         <ion-buttons slot="end">
           <ion-menu-button menu="end">
@@ -18,7 +18,7 @@
     
     <ion-content id="view-size-selector">
       <div v-if="openOrders.total">
-        <ion-searchbar :value="openOrders.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
+        <ion-searchbar :value="openOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
         <div class="filters">
           <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
             <ion-checkbox slot="start" @ionChange="updateSelectedShipmentMethods(method.val)"/>
@@ -176,7 +176,15 @@ export default defineComponent({
   },
   methods: {
     async updateSelectedShipmentMethods (method: string) {
-      await this.store.dispatch('order/updateSelectedShipmentMethods', method)
+      const selectedShipmentMethods = JSON.parse(JSON.stringify(this.openOrders.query.selectedShipmentMethods))
+      const index = selectedShipmentMethods.indexOf(method)
+      if (index < 0) {
+        selectedShipmentMethods.push(method)
+      } else {
+        selectedShipmentMethods.splice(index, 1)
+      }
+
+      this.store.dispatch('order/updateOpenQuery', { filter: 'selectedShipmentMethods', value: selectedShipmentMethods })
     },
     async assignPickers() {
       const assignPickerModal = await modalController.create({
@@ -230,11 +238,10 @@ export default defineComponent({
       }
     },
     async updateQueryString(queryString: string) {
-      await this.store.dispatch('order/updateQueryString', { queryString, page: 'open' })
+      await this.store.dispatch('order/updateOpenQuery', { filter: 'queryString', value: queryString })
     }
   },
   async mounted () {
-    await this.updateSelectedShipmentMethods(''); // clearing the already selected shipment method when changing the page
     await Promise.all([this.findOpenOrders(), this.fetchShipmentMethods()]);
   },
   setup() {

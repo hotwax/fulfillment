@@ -70,7 +70,7 @@ export default defineComponent({
         return;
       }
 
-      await this.store.dispatch('order/updateViewSize', { size, page: this.currentPage })
+      await this.store.dispatch('order/updateOpenQuery', { filter: 'viewSize', value: size })
       if(this.currentPage === 'open') {
         this.store.dispatch('order/findOpenOrders')
       }
@@ -91,7 +91,7 @@ export default defineComponent({
       title = 'Picklist Size'
       currentPage = 'open'
       // TODO: check if we can use a single getter to get the data, currently when trying that the values are not reactive
-      viewSize = computed(() => store.getters['order/getOpenOrders'].viewSize)
+      viewSize = computed(() => store.getters['order/getOpenOrders'].query.viewSize)
       total = computed(() => store.getters['order/getOpenOrders'].total)
     }
 

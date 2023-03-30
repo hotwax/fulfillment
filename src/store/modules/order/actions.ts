@@ -12,14 +12,16 @@ import { prepareOrderQuery } from '@/utils/solrHelper'
 const actions: ActionTree<OrderState, RootState> = {
 
   // get open orders
-  async findOpenOrders ({ commit, dispatch, state }, payload = {}) {
+  async findOpenOrders ({ commit, state }, payload = {}) {
     emitter.emit('presentLoader');
     let resp;
 
+    console.log('inside find open orders')
+
     const params = {
       ...payload,
-      queryString: state.open.queryString,
-      viewSize: state.open.viewSize,
+      queryString: state.open.query.queryString,
+      viewSize: state.open.query.viewSize,
       queryFields: 'orderId',
       filters: {
         quantityNotAvailable: { value: 0 },
@@ -34,8 +36,8 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     // only adding shipmentMethods when a method is selected
-    if(state.open.selectedShipmentMethods.length) {
-      params.filters['shipmentMethodTypeId'] = { value: state.open.selectedShipmentMethods, op: 'OR' }
+    if(state.open.query.selectedShipmentMethods.length) {
+      params.filters['shipmentMethodTypeId'] = { value: state.open.query.selectedShipmentMethods, op: 'OR' }
     }
 
     const orderQueryPayload = prepareOrderQuery(params)
@@ -56,7 +58,7 @@ const actions: ActionTree<OrderState, RootState> = {
       showToast(translate('Something went wrong'))
     }
 
-    dispatch('updateViewSize', { size: orders.length, page: 'open' })
+    commit(types.ORDER_OPEN_QUERY_UPDATED, { filter: 'viewSize', value: orders.length })  // directly commiting here as when calling the action `updateOpenQuery`, it results in an infinite loop
     commit(types.ORDER_OPEN_UPDATED, {list: orders, total})
 
     emitter.emit('dismissLoader');
@@ -64,35 +66,21 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   async clearOrders ({ commit }) {
-    commit(types.ORDER_OPEN_CLEARED, {list: {}, total: 0, viewSize: 0, queryString: ''})
+    commit(types.ORDER_OPEN_CLEARED, {
+      list: {},
+      total: 0,
+      query: {
+        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        queryString: '',
+        selectedShipmentMethods: []
+      }
+    })
   },
 
-  updateSelectedShipmentMethods({ commit, dispatch, state }, method) {
-    if(!method) {
-      commit(types.ORDER_SELECTED_SHIPMENT_METHODS_UPDATED, [])
-      return;
-    }
-
-    const selectedShipmentMethods = JSON.parse(JSON.stringify(state.open.selectedShipmentMethods))
-    const index = selectedShipmentMethods.indexOf(method)
-    if (index < 0) {
-      selectedShipmentMethods.push(method)
-    } else {
-      selectedShipmentMethods.splice(index, 1)
-    }
-    commit(types.ORDER_SELECTED_SHIPMENT_METHODS_UPDATED, selectedShipmentMethods)
-    dispatch('updateViewSize', { size: process.env.VUE_APP_VIEW_SIZE, page: 'open' })
-    dispatch('findOpenOrders');
-  },
-
-  updateQueryString({ commit, dispatch }, payload) {
-    commit(types.ORDER_QUERY_STRING_UPDATED, payload)
-    dispatch('updateViewSize', { size: process.env.VUE_APP_VIEW_SIZE, page: 'open' })
-    dispatch('findOpenOrders');
-  },
-
-  updateViewSize({ commit }, payload) {
-    commit(types.ORDER_VIEW_SIZE_UPDATED, payload)
+  async updateOpenQuery({ commit, dispatch }, payload) {
+    console.log('updateOpenQuery', payload)
+    commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
+    await dispatch('findOpenOrders');
   }
 }
 

@@ -12,7 +12,7 @@
   </ion-header>
 
   <ion-content>
-    <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; searchPicker()"/>
+    <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; findPickers()"/>
     <ion-row>
       <ion-chip v-for="picker in selectedPickers" :key="picker.id">
         <ion-label>{{ picker.name }}</ion-label>
@@ -26,7 +26,7 @@
       -->
       <div v-if="!pickers.length">{{ 'No picker found' }}</div>
       <div v-else>
-        <ion-item v-for="(picker, index) in pickers" :key="index" @click="changePicker(picker.id)">
+        <ion-item v-for="(picker, index) in pickers" :key="index" @click="selectPicker(picker.id)">
           <ion-label>{{ picker.name }}</ion-label>
           <ion-checkbox :checked="isPickerSelected(picker.id)"/>
         </ion-item>
@@ -82,7 +82,6 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      openOrders: 'order/getOpenOrders',
       currentFacility: 'user/getCurrentFacility'
     })
   },
@@ -100,7 +99,7 @@ export default defineComponent({
     closeModal() {
       modalController.dismiss({ dismissed: true });
     },
-    changePicker(id) {
+    selectPicker(id) {
       const picker = this.selectedPickers.some((picker) => picker.id == id)
       if (picker) {
         // if picker is already selected then removing that picker from the list on click
@@ -108,10 +107,6 @@ export default defineComponent({
       } else {
         this.selectedPickers.push(this.pickers.find((picker) => picker.id == id))
       }
-    },
-    async searchPicker () {
-      this.pickers = []
-      this.findPickers()
     },
     async printPicklist () {
       emitter.emit("presentLoader")
@@ -159,6 +154,7 @@ export default defineComponent({
     },
     async findPickers() {
       let inputFields = {}
+      this.pickers = []
 
       if(this.queryString.length > 0) {
         inputFields = {
