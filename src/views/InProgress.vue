@@ -81,7 +81,7 @@
             </div>
 
             <div class="desktop-only">
-              <ion-segment @ionChange="segmentChanged($event, item, order)" :value="item.segmentSelected">
+              <ion-segment @ionChange="changeSegment($event, item, order)" :value="item.segmentSelected">
                 <ion-segment-button value="pack">
                   <ion-label>{{ $t("Ready to pack") }}</ion-label>
                 </ion-segment-button>
@@ -207,7 +207,7 @@ export default defineComponent({
     }
   },
   methods: {
-    segmentChanged(ev: CustomEvent, item: any, order: any) {
+    changeSegment(ev: CustomEvent, item: any, order: any) {
       // when selecting the report segment for the first time defining the value for rejectReason,
       // as in current flow once moving to reject segment we can't pack an order
       if(ev.detail.value === 'issue' && !item.rejectReason) {
@@ -338,12 +338,15 @@ export default defineComponent({
       form.append('facilityId', this.currentFacility.facilityId)
 
       order.doclist.docs.map((item: any, index: number) => {
+        const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
+
         let prefix = 'rtp'
         if(item.rejectReason) {
           prefix = 'rej'
+          form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
+        } else {
+          form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
         }
-
-        const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
         form.append(`box_shipmentId_${index}`, item.shipmentId)
         form.append(`${index}_box_rowSubmit`, ''+index)
@@ -351,7 +354,6 @@ export default defineComponent({
         form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
         form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
         form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
-        form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
       })
 
       this.store.dispatch('order/updateOrder', {
