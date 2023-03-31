@@ -18,7 +18,7 @@ const mutations: MutationTree <OrderState> = {
     state.inProgress.total = payload.total;
   },
   [types.ORDER_SELECTED_PICKLISTS_UPDATED](state, payload) {
-    state.selectedPicklists = payload
+    state.inProgress.query.selectedPicklists = payload
   }
 }
 export default mutations;

@@ -10,7 +10,7 @@ const getters: GetterTree<OrderState, RootState> = {
     return state.inProgress;
   },
   getSelectedPicklists(state) {
-    return state.selectedPicklists
+    return state.inProgress.query.selectedPicklists
   }
 };
 export default getters;

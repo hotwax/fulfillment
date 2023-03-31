@@ -19,10 +19,13 @@ const orderModule: Module<OrderState, RootState> = {
     },
     inProgress: {
       list: [],
-      total: 0
+      total: 0,
+      query: {
+        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        selectedPicklists: [],
+        queryString: ''
+      }
     },
-    selectedPicklists: [],  // storing the selectedPicklists in state as when changing the viewSize or queryString we need to honor the selectedPicklists
-    queryString: ''
   },
   getters,
   actions,

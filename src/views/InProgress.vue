@@ -196,7 +196,8 @@ export default defineComponent({
       getProductStock: 'stock/getProductStock',
       viewSize: 'util/getViewSize',
       selectedPicklists: 'order/getSelectedPicklists',
-      rejectReasons: 'util/getRejectReasons'
+      rejectReasons: 'util/getRejectReasons',
+      currentEComStore: 'user/getCurrentEComStore'
     })
   },
   data() {
@@ -390,7 +391,8 @@ export default defineComponent({
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           '-fulfillmentStatus': { value: 'Rejected' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility.facilityId }
+          facilityId: { value: this.currentFacility.facilityId },
+          productStoreId: { value: this.currentEComStore.productStoreId }
         },
         facet: {
           picklistFacet: {

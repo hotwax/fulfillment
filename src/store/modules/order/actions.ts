@@ -19,8 +19,8 @@ const actions: ActionTree<OrderState, RootState> = {
 
     // preparing filters separately those are based on some condition
     const filters = {} as any
-    if(state.selectedPicklists.length) {
-      filters['picklistId'] = {value: state.selectedPicklists, op: 'OR'}
+    if(state.inProgress.query.selectedPicklists.length) {
+      filters['picklistId'] = {value: state.inProgress.query.selectedPicklists, op: 'OR'}
     }
 
     const orderQueryPayload = prepareOrderQuery({
@@ -34,6 +34,7 @@ const actions: ActionTree<OrderState, RootState> = {
         '-fulfillmentStatus': { value: 'Rejected' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
         facilityId: { value: this.state.user.currentFacility.facilityId },
+        productStoreId: { value: this.state.user.currentEComStore.productStoreId },
         ...filters
       }
     })
@@ -184,7 +185,7 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   updateSelectedPicklists({ state, commit }, picklistId) {
-    const selectedPicklists = JSON.parse(JSON.stringify(state.selectedPicklists))
+    const selectedPicklists = JSON.parse(JSON.stringify(state.inProgress.query.selectedPicklists))
 
     if(selectedPicklists.includes(picklistId)) {
       selectedPicklists.splice(selectedPicklists.indexOf(picklistId), 1)
