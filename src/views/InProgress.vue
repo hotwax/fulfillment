@@ -543,7 +543,8 @@ export default defineComponent({
       }
     },
     getShipmentPackageNameAndType(shipmentPackage: any, order: any) {
-      return `Box ${shipmentPackage.packageName} | ${order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0]}`
+      // TODO
+      return  order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? `Box ${shipmentPackage.packageName} | ${order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0]}` : ''
     }
   },
   async mounted () {
