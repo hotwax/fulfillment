@@ -23,7 +23,7 @@
         <!-- TODO: make pickers information dynamic -->
         <div class="filters">
           <ion-item v-for="picklist in picklists" :key="picklist.id" lines="none">
-            <ion-checkbox :checked="selectedPicklists.includes(picklist.id)" slot="start" @ion-change="updateSelectedPicklists(picklist.id)"/>
+            <ion-checkbox :checked="inProgressOrders.query.selectedPicklists.includes(picklist.id)" slot="start" @ion-change="updateSelectedPicklists(picklist.id)"/>
             <ion-label class="ion-text-wrap">
               {{ picklist.pickersName }}
               <p>{{ picklist.date }}</p>
@@ -195,7 +195,6 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       getProductStock: 'stock/getProductStock',
       viewSize: 'util/getViewSize',
-      selectedPicklists: 'order/getSelectedPicklists',
       rejectReasons: 'util/getRejectReasons',
       currentEComStore: 'user/getCurrentEComStore'
     })
