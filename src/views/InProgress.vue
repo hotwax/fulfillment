@@ -19,7 +19,7 @@
     
     <ion-content id="view-size-selector">
       <div v-if="inProgressOrders.total">
-        <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; fetchInProgressOrders()"/>
+        <ion-searchbar v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
 
         <!-- TODO: make pickers information dynamic -->
         <div class="filters">
@@ -241,7 +241,7 @@ export default defineComponent({
           showToast(translate('Order packed successfully'));
           // TODO: handle the case of fetching in progress orders after packing an order
           // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
-          this.fetchInProgressOrders();
+          this.findInProgressOrders();
         } else {
           showToast(translate('Failed to pack order'))
           console.error('error', resp)
@@ -276,7 +276,7 @@ export default defineComponent({
                   showToast(translate('Orders packed successfully'));
                   // TODO: handle the case of fetching in progress orders after packing multiple orders
                   // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
-                  this.fetchInProgressOrders();
+                  this.findInProgressOrders();
                 } else {
                   showToast(translate('Failed to pack orders'))
                   console.error('error', resp)
@@ -326,11 +326,8 @@ export default defineComponent({
       
       return alert.present();
     },
-    async fetchInProgressOrders () {
-      const payload = {
-        queryString: this.queryString
-      } as any
-      await this.store.dispatch('order/fetchInProgressOrders', payload)
+    async findInProgressOrders () {
+      await this.store.dispatch('order/findInProgressOrders')
     },
     updateOrder(order: any) {
       const form = new FormData()
@@ -418,7 +415,7 @@ export default defineComponent({
       let resp;
 
       try {
-        resp = await OrderService.fetchInProgressOrders(orderQueryPayload);
+        resp = await OrderService.findInProgressOrders(orderQueryPayload);
         if (resp.status === 200 && !hasError(resp) && resp.data.facets.count > 0) {
           const buckets = resp.data.facets.picklistFacet.buckets
 
@@ -548,7 +545,7 @@ export default defineComponent({
         if(!hasError(resp)) {
           showToast(translate('Box added successfully'))
           // TODO: only update the order in which the box is added instead of fetching all the inProgress orders
-          this.fetchInProgressOrders();
+          this.findInProgressOrders();
         }
       } catch (err) {
         showToast(translate('Failed to add box'))
@@ -557,13 +554,29 @@ export default defineComponent({
     },
     getShipmentPackageNameAndType(shipmentPackage: any, order: any) {
       // TODO
-      return  order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? `Box ${shipmentPackage.packageName} | ${order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0]}` : ''
+      return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? `Box ${shipmentPackage.packageName} | ${order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0]}` : ''
+    },
+    async updateQueryString(queryString: string) {
+      const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
+
+      inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      inProgressOrdersQuery.queryString = queryString
+      await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
+    },
+    async updateOrderQuery(size: any) {
+      const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
+
+      inProgressOrdersQuery.viewSize = size
+      await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
     }
   },
   async mounted () {
-    this.fetchPickersInformation();
     this.store.dispatch('util/fetchRejectReasons')
-    await this.fetchInProgressOrders();
+    await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
+    emitter.on('updateOrderQuery', this.updateOrderQuery)
+  },
+  unmounted() {
+    emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   setup() {
     const store = useStore();

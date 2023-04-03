@@ -13,15 +13,15 @@ import { UtilService } from '@/services/UtilService'
 const actions: ActionTree<OrderState, RootState> = {
 
   // get in-progress orders
-  async fetchInProgressOrders ({ commit, state }, payload) {
+  async findInProgressOrders ({ commit, state }, payload) {
     emitter.emit('presentLoader');
     let resp;
     let orders = [];
     let total = 0;
 
-    try {
-      const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
+    const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
 
+    try {
       const params = {
         ...payload,
         queryString: inProgressQuery.queryString,
@@ -45,7 +45,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
       const orderQueryPayload = prepareOrderQuery(params)
 
-      resp = await OrderService.fetchInProgressOrders(orderQueryPayload);
+      resp = await OrderService.findInProgressOrders(orderQueryPayload);
       if (resp.status === 200 && resp.data.grouped?.picklistBinId.matches > 0 && !hasError(resp)) {
         total = resp.data.grouped.picklistBinId.ngroups
         orders = resp.data.grouped.picklistBinId.groups
@@ -109,10 +109,6 @@ const actions: ActionTree<OrderState, RootState> = {
           })
         })
 
-        inProgressQuery.viewSize = orders.length
-
-        commit(types.ORDER_INPROGRESS_QUERY_UPDATED, { ...inProgressQuery })
-        commit(types.ORDER_INPROGRESS_UPDATED, {orders, total})
         this.dispatch('product/getProductInformation', { orders })
       } else {
         console.error('No orders found')
@@ -120,6 +116,11 @@ const actions: ActionTree<OrderState, RootState> = {
     } catch (err) {
       console.error('error', err)
     }
+
+    inProgressQuery.viewSize = orders.length
+
+    commit(types.ORDER_INPROGRESS_QUERY_UPDATED, { ...inProgressQuery })
+    commit(types.ORDER_INPROGRESS_UPDATED, {orders, total})
     emitter.emit('dismissLoader');
     return resp;
   },
