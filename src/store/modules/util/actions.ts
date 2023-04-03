@@ -6,9 +6,6 @@ import { UtilService } from '@/services/UtilService'
 import { hasError } from '@/utils'
 
 const actions: ActionTree<UtilState, RootState> = {
-  updateViewSize({ commit }, payload) {
-    commit(types.UTIL_VIEW_SIZE_UPDATED, payload)
-  },
   async fetchRejectReasons({ commit }) {
     try {
       const payload = {

@@ -6,7 +6,8 @@
       <ion-menu-button menu="start" slot="start" />
       <ion-toolbar>
         <ion-menu-button slot="start" />
-        <ion-title>{{ viewSize }} {{("of")}} {{ inProgressOrders.total }} {{ $t("orders") }}</ion-title>
+        <ion-title v-if="!inProgressOrders.total">{{ inProgressOrders.total }} {{ $t('orders') }}</ion-title>
+        <ion-title v-else>{{ inProgressOrders.query.viewSize }} {{ $t('of') }} {{ inProgressOrders.total }} {{ $t('orders') }}</ion-title>
 
         <ion-buttons slot="end">
           <ion-menu-button menu="end">
@@ -194,7 +195,6 @@ export default defineComponent({
       inProgressOrders: 'order/getInProgressOrders',
       getProduct: 'product/getProduct',
       getProductStock: 'stock/getProductStock',
-      viewSize: 'util/getViewSize',
       rejectReasons: 'util/getRejectReasons',
       currentEComStore: 'user/getCurrentEComStore'
     })

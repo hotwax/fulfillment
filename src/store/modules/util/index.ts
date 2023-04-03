@@ -8,7 +8,6 @@ import UtilState from './UtilState'
 const utilModule: Module<UtilState, RootState> = {
   namespaced: true,
   state: {
-    viewSize: 0,
     rejectReasons: []
   },
   getters,
