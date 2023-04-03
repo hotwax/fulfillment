@@ -16,34 +16,39 @@ const actions: ActionTree<OrderState, RootState> = {
   async fetchInProgressOrders ({ commit, state }, payload) {
     emitter.emit('presentLoader');
     let resp;
-
-    // preparing filters separately those are based on some condition
-    const filters = {} as any
-    if(state.inProgress.query.selectedPicklists.length) {
-      filters['picklistId'] = {value: state.inProgress.query.selectedPicklists, op: 'OR'}
-    }
-
-    const orderQueryPayload = prepareOrderQuery({
-      ...payload,
-      viewSize: this.state.util.viewSize,
-      queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
-      sort: 'orderDate asc',
-      groupBy: 'picklistBinId',
-      filters: {
-        picklistItemStatusId: { value: 'PICKITEM_PENDING' },
-        '-fulfillmentStatus': { value: 'Rejected' },
-        '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        facilityId: { value: this.state.user.currentFacility.facilityId },
-        productStoreId: { value: this.state.user.currentEComStore.productStoreId },
-        ...filters
-      }
-    })
+    let orders = [];
+    let total = 0;
 
     try {
+      const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
+
+      const params = {
+        ...payload,
+        queryString: inProgressQuery.queryString,
+        viewSize: inProgressQuery.viewSize,
+        queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
+        sort: 'orderDate asc',
+        groupBy: 'picklistBinId',
+        filters: {
+          picklistItemStatusId: { value: 'PICKITEM_PENDING' },
+          '-fulfillmentStatus': { value: 'Rejected' },
+          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+          facilityId: { value: this.state.user.currentFacility.facilityId },
+          productStoreId: { value: this.state.user.currentEComStore.productStoreId }
+        }
+      }
+
+      // preparing filters separately those are based on some condition
+      if(inProgressQuery.selectedPicklists.length) {
+        params.filters['picklistId'] = {value: inProgressQuery.selectedPicklists, op: 'OR'}
+      }
+
+      const orderQueryPayload = prepareOrderQuery(params)
+
       resp = await OrderService.fetchInProgressOrders(orderQueryPayload);
       if (resp.status === 200 && resp.data.grouped?.picklistBinId.matches > 0 && !hasError(resp)) {
-        const total = resp.data.grouped.picklistBinId.ngroups
-        const orders = resp.data.grouped.picklistBinId.groups
+        total = resp.data.grouped.picklistBinId.ngroups
+        orders = resp.data.grouped.picklistBinId.groups
         const availableShipmentIds: Array<string> = [];
 
         // using for loop as map does not supports working with async code
@@ -104,6 +109,9 @@ const actions: ActionTree<OrderState, RootState> = {
           })
         })
 
+        inProgressQuery.viewSize = orders.length
+
+        commit(types.ORDER_INPROGRESS_QUERY_UPDATED, { ...inProgressQuery })
         commit(types.ORDER_INPROGRESS_UPDATED, {orders, total})
         this.dispatch('product/getProductInformation', { orders })
       } else {
@@ -172,7 +180,15 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   async clearOrders ({ commit }) {
-    commit(types.ORDER_INPROGRESS_UPDATED, {orders: {}, total: 0})
+    commit(types.ORDER_INPROGRESS_CLEARED, {
+      list: [],
+      total: 0,
+      query: {
+        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        selectedPicklists: [],
+        queryString: ''
+      }
+    })
     commit(types.ORDER_OPEN_CLEARED, {
       list: {},
       total: 0,
@@ -182,17 +198,6 @@ const actions: ActionTree<OrderState, RootState> = {
         selectedShipmentMethods: []
       }
     })
-  },
-
-  updateSelectedPicklists({ state, commit }, picklistId) {
-    const selectedPicklists = JSON.parse(JSON.stringify(state.inProgress.query.selectedPicklists))
-
-    if(selectedPicklists.includes(picklistId)) {
-      selectedPicklists.splice(selectedPicklists.indexOf(picklistId), 1)
-    } else {
-      selectedPicklists.push(picklistId)
-    }
-    commit(types.ORDER_SELECTED_PICKLISTS_UPDATED, selectedPicklists)
   },
 
   async updateOrder({ commit }, payload) {
@@ -215,6 +220,11 @@ const actions: ActionTree<OrderState, RootState> = {
   async updateOpenQuery({ commit, dispatch }, payload) {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
     await dispatch('findOpenOrders');
+  },
+
+  async updateInProgressQuery({ commit, dispatch }, payload) {
+    commit(types.ORDER_INPROGRESS_QUERY_UPDATED, payload)
+    await dispatch('findInProgressOrders');
   }
 }
 

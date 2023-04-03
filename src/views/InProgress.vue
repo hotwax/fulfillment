@@ -466,8 +466,20 @@ export default defineComponent({
       }
     },
     async updateSelectedPicklists(id: string) {
-      await this.store.dispatch('order/updateSelectedPicklists', id)
-      this.fetchInProgressOrders();
+      const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
+      const selectedPicklists = inProgressOrdersQuery.selectedPicklists
+
+      if(selectedPicklists.includes(id)) {
+        selectedPicklists.splice(selectedPicklists.indexOf(id), 1)
+      } else {
+        selectedPicklists.push(id)
+      }
+
+      // making view size default when changing the shipment method to correctly fetch orders
+      inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      inProgressOrdersQuery.selectedPicklists = selectedPicklists
+
+      this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
     },
     async fetchShipmentRouteSegmentInformation(shipmentIds: Array<string>) {
       const payload = {
