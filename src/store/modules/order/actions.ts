@@ -58,20 +58,20 @@ const actions: ActionTree<OrderState, RootState> = {
           orderIds.push(order.doclist.docs[0].orderId)
         })
 
-        const shipmentInformations = await UtilService.findShipmentInformationForOrders(picklistBinIds, orderIds)
-        const availableShipmentIds: Array<string> = [...shipmentInformations.flat()]
+        const shipmentIds: Array<string> = [...(await UtilService.findShipmentIdsForOrders(picklistBinIds, orderIds)).flat()]
 
         // TODO: handle case when shipmentIds is empty
         // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
-        const [shipmentPackages, itemInformationByShipment, carrierPartyIdsByShipment] = await Promise.all([UtilService.findShipmentPackages(availableShipmentIds), UtilService.findShipmentItemInformation(availableShipmentIds), UtilService.findCarrierPartyIdsForShipment(availableShipmentIds)])
+        const [shipmentPackages, itemInformationByShipment, carrierPartyIdsByShipment] = await Promise.all([UtilService.findShipmentPackages(shipmentIds), UtilService.findShipmentItemInformation(shipmentIds), UtilService.findCarrierPartyIdsForShipment(shipmentIds)])
 
+        // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
         const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipment).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
 
         const carrierShipmentBoxType = await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
 
         orders.map((order: any) => {
           order['shipmentPackages'] = shipmentPackages[order.doclist.docs[0].orderId]
-          order['carrierPartyIds'] = [...new Set(availableShipmentIds.map((id: any) => carrierPartyIdsByShipment[id].map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
+          order['carrierPartyIds'] = [...new Set(shipmentIds.map((id: any) => carrierPartyIdsByShipment[id].map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
 
           order['shipmentBoxTypeByCarrierParty'] = order['carrierPartyIds'].reduce((shipmentBoxType: any, carrierPartyId: string) => {
             if(shipmentBoxType[carrierPartyId]) {

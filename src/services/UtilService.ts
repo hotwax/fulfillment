@@ -18,7 +18,7 @@ const fetchPicklistInformation = async (query: any): Promise <any>  => {
   });
 } 
 
-const findShipmentInformationForOrders = async(picklistBinIds: Array<string>, orderIds: Array<string>): Promise<any> => {
+const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: Array<string>): Promise<any> => {
   let shipmentIds = [];
 
   const params = {
@@ -253,7 +253,7 @@ export const UtilService = {
   fetchDefaultShipmentBox,
   fetchPicklistInformation,
   fetchRejectReasons,
-  findShipmentInformationForOrders,
+  findShipmentIdsForOrders,
   findShipmentItemInformation,
   fetchShipmentMethods,
   findShipmentPackages,
