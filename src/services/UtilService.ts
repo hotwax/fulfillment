@@ -13,8 +13,8 @@ const fetchShipmentMethods = async (query: any): Promise <any>  => {
 const fetchPicklistInformation = async (query: any): Promise <any>  => {
   return api({
     url: "performFind",
-    method: "post",
-    data: query
+    method: "get",
+    params: query
   });
 } 
 
@@ -25,14 +25,14 @@ const findShipmentInformationForOrders = async(picklistBinIds: Array<string>, or
     "entityName": "Shipment",
     "inputFields": {
       "primaryOrderId": orderIds,
-      "primaryOrderId_in": "in",
+      "primaryOrderId_op": "in",
       "picklistBinId": picklistBinIds,
       "picklistBinId_op": "in",
       "originFacilityId": store.state.user.currentFacility.facilityId,
       "statusId": ["SHIPMENT_APPROVED", "SHIPMENT_INPUT"],
       "statusId_op": "in"
     },
-    "fieldList": ["shipmentId"],
+    "fieldList": ["shipmentId", "primaryOrderId"],
     "viewSize": orderIds.length * picklistBinIds.length,
     "distinct": "Y"
   }
@@ -40,8 +40,8 @@ const findShipmentInformationForOrders = async(picklistBinIds: Array<string>, or
   try {
     const resp = await api({
       url: "performFind",
-      method: "post",
-      data: params
+      method: "get",
+      params
     })
 
     if(resp.status == 200 && !hasError(resp) && resp.data.count) {
@@ -70,8 +70,8 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
   try {
     const resp = await api({
       url: "performFind",
-      method: "post",
-      data: params
+      method: "get",
+      params
     })
 
     if(resp.status == 200 && !hasError(resp) && resp.data.count) {
@@ -106,8 +106,8 @@ const findCarrierPartyIdsForShipment = async(shipmentIds: Array<string>): Promis
   try {
     const resp = await api({
       url: "performFind",
-      method: "post",
-      data: params
+      method: "get",
+      params
     })
 
     if(resp.status == 200 && !hasError(resp) && resp.data.count) {
@@ -142,8 +142,8 @@ const findCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promis
   try {
     const resp = await api({
       url: "performFind",
-      method: "post",
-      data: params
+      method: "get",
+      params
     })
 
     if(resp.status == 200 && !hasError(resp) && resp.data.count) {
@@ -178,8 +178,8 @@ const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<a
   try {
     const resp = await api({
       url: "performFind",
-      method: "post",
-      data: params
+      method: "get",
+      params
     })
 
     if(resp.status == 200 && !hasError(resp) && resp.data.count) {
@@ -202,32 +202,34 @@ const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<a
 const fetchShipmentRouteSegmentInformation = async(query: any) : Promise<any> => {
   return api({
     url: "performFind",
-    method: "post",
-    data: query
+    method: "get",
+    params: query
   })
 }
 
 const fetchDefaultShipmentBox = async(query: any) : Promise<any> => {
   return api({
     url: "performFind",
-    method: "post",
-    data: query
+    method: "get",
+    params: query,
+    cache: true
   })
 }
 
 const fetchRejectReasons = async(query: any): Promise<any> => {
   return api({
     url: "performFind",
-    method: "post", // TODO: cache this api request
-    data: query
+    method: "get", // TODO: cache this api request
+    params: query,
+    cache: true
   })
 }
 
 const getAvailablePickers = async (query: any): Promise <any> => {
   return api({
     url: 'performFind',
-    method: 'POST',
-    data: query,
+    method: 'get',
+    params: query,
     cache: true
   })
 }
