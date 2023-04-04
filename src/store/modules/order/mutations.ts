@@ -10,8 +10,16 @@ const mutations: MutationTree <OrderState> = {
   [types.ORDER_OPEN_QUERY_UPDATED](state, payload) {
     state.open.query = payload
   },
-  [types.ORDER_OPEN_CLEARED](state, payload) {
-    state.open = payload
+  [types.ORDER_OPEN_CLEARED](state) {
+    state.open = {
+      list: {},
+      total: 0,
+      query: {
+        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        queryString: '',
+        selectedShipmentMethods: []
+      }
+    }
   },
   [types.ORDER_INPROGRESS_UPDATED] (state, payload) {
     state.inProgress.list = payload.orders;
@@ -21,7 +29,15 @@ const mutations: MutationTree <OrderState> = {
     state.inProgress.query = payload;
   },
   [types.ORDER_INPROGRESS_CLEARED](state, payload) {
-    state.inProgress = payload
+    state.inProgress = {
+      list: [],
+      total: 0,
+      query: {
+        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        selectedPicklists: [],
+        queryString: ''
+      }
+    }
   }
 }
 export default mutations;

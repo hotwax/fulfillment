@@ -97,7 +97,7 @@
         </ion-fab>
       </div>
       <div class="empty-state" v-else>
-        {{ currentFacility.name }}{{ $t(' doesn’t have any outstanding orders right now.') }}
+        {{ currentFacility.name }}{{ $t(" doesn't have any outstanding orders right now.") }}
       </div>
     </ion-content>
   </ion-page>

@@ -49,29 +49,25 @@ const actions: ActionTree<OrderState, RootState> = {
       if (resp.status === 200 && resp.data.grouped?.picklistBinId.matches > 0 && !hasError(resp)) {
         total = resp.data.grouped.picklistBinId.ngroups
         orders = resp.data.grouped.picklistBinId.groups
-        const availableShipmentIds: Array<string> = [];
 
-        // using for loop as map does not supports working with async code
-        for (const order of orders) {
-          const shipmentInformation = await UtilService.fetchShipmentInformationForOrder(order.groupValue, order.doclist.docs[0].orderId)
-          order.shipment = shipmentInformation.shipment;
-          order.shipmentIds = shipmentInformation.shipmentIds;
-          availableShipmentIds.push(...shipmentInformation.shipmentIds)
-        }
+        const picklistBinIds: Array<string> = [];
+        const orderIds: Array<string> = [];
 
-        // using flat to have the shipmentIds at a single level and then filtered the shipmentId to handle the case if we might not have the shipmentId available for an order
-        const shipmentIds = orders.map((order: any) => order.shipmentIds).flat().filter((shipmentId: string) => shipmentId)
+        orders.map((order: any) => {
+          picklistBinIds.push(order.groupValue)
+          orderIds.push(order.doclist.docs[0].orderId)
+        })
+
+        const shipmentInformations = await UtilService.findShipmentInformationForOrders(picklistBinIds, orderIds)
+        const availableShipmentIds: Array<string> = [...shipmentInformations.flat()]
 
         // TODO: handle case when shipmentIds is empty
-        const shipmentPackages = await UtilService.fetchShipmentPackages(shipmentIds)
-
-        const itemInformationByShipment = await UtilService.fetchShipmentItemInformation(availableShipmentIds)
-
-        const carrierPartyIdsByShipment = await UtilService.fetchCarrierPartyIdsForShipment(availableShipmentIds)
+        // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
+        const [shipmentPackages, itemInformationByShipment, carrierPartyIdsByShipment] = await Promise.all([UtilService.findShipmentPackages(availableShipmentIds), UtilService.findShipmentItemInformation(availableShipmentIds), UtilService.findCarrierPartyIdsForShipment(availableShipmentIds)])
 
         const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipment).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
 
-        const carrierShipmentBoxType = await UtilService.fetchCarrierShipmentBoxType(carrierPartyIds)
+        const carrierShipmentBoxType = await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
 
         orders.map((order: any) => {
           order['shipmentPackages'] = shipmentPackages[order.doclist.docs[0].orderId]
@@ -181,24 +177,8 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   async clearOrders ({ commit }) {
-    commit(types.ORDER_INPROGRESS_CLEARED, {
-      list: [],
-      total: 0,
-      query: {
-        viewSize: process.env.VUE_APP_VIEW_SIZE,
-        selectedPicklists: [],
-        queryString: ''
-      }
-    })
-    commit(types.ORDER_OPEN_CLEARED, {
-      list: {},
-      total: 0,
-      query: {
-        viewSize: process.env.VUE_APP_VIEW_SIZE,
-        queryString: '',
-        selectedShipmentMethods: []
-      }
-    })
+    commit(types.ORDER_INPROGRESS_CLEARED)
+    commit(types.ORDER_OPEN_CLEARED)
   },
 
   async updateOrder({ commit }, payload) {

@@ -18,19 +18,22 @@ const fetchPicklistInformation = async (query: any): Promise <any>  => {
   });
 } 
 
-const fetchShipmentInformationForOrder = async(picklistBinId: string, orderId: string): Promise<any> => {
-  let shipment = {};
+const findShipmentInformationForOrders = async(picklistBinIds: Array<string>, orderIds: Array<string>): Promise<any> => {
   let shipmentIds = [];
 
   const params = {
     "entityName": "Shipment",
     "inputFields": {
-      "primaryOrderId": orderId,
-      "picklistBinId": picklistBinId,
+      "primaryOrderId": orderIds,
+      "primaryOrderId_in": "in",
+      "picklistBinId": picklistBinIds,
+      "picklistBinId_op": "in",
       "originFacilityId": store.state.user.currentFacility.facilityId,
       "statusId": ["SHIPMENT_APPROVED", "SHIPMENT_INPUT"],
       "statusId_op": "in"
     },
+    "fieldList": ["shipmentId"],
+    "viewSize": orderIds.length * picklistBinIds.length,
     "distinct": "Y"
   }
 
@@ -42,17 +45,16 @@ const fetchShipmentInformationForOrder = async(picklistBinId: string, orderId: s
     })
 
     if(resp.status == 200 && !hasError(resp) && resp.data.count) {
-      shipment = { ...resp.data.docs[0] } // returning the first shipment record
       shipmentIds = resp.data.docs.map((shipment: any) => shipment.shipmentId) // returning all the shipmentIds as those are used to fetch shipment package information
-    }    
+    }
   } catch(err) {
     console.error(err)
   }
 
-  return { shipment, shipmentIds };
+  return shipmentIds;
 }
 
-const fetchShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => {
+const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => {
   let shipmentPackageForOrders = {};
   const params = {
     "entityName": "ShipmentPackageRouteSegDetail",
@@ -89,7 +91,7 @@ const fetchShipmentPackages = async(shipmentIds: Array<string>): Promise<any> =>
   return shipmentPackageForOrders;
 }
 
-const fetchCarrierPartyIdsForShipment = async(shipmentIds: Array<string>): Promise<any> => {
+const findCarrierPartyIdsForShipment = async(shipmentIds: Array<string>): Promise<any> => {
   let carrierPartyIds = {};
   const params = {
     "entityName": "ShipmentRouteSegment",
@@ -125,7 +127,7 @@ const fetchCarrierPartyIdsForShipment = async(shipmentIds: Array<string>): Promi
   return carrierPartyIds;
 }
 
-const fetchCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promise<any> => {
+const findCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promise<any> => {
   let shipmentBoxType = {}
   const params = {
     "entityName": "CarrierShipmentBoxType",
@@ -161,7 +163,7 @@ const fetchCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promi
   return shipmentBoxType;
 }
 
-const fetchShipmentItemInformation = async(shipmentIds: Array<string>): Promise<any> => {
+const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<any> => {
   let shipmentItemsInformation = {}
   const params = {
     "entityName": "ShipmentAndItemAndProduct",
@@ -244,15 +246,15 @@ const createPicklist = async (query: any): Promise <any> => {
 
 export const UtilService = {
   createPicklist,  
-  fetchCarrierPartyIdsForShipment,
-  fetchCarrierShipmentBoxType,
+  findCarrierPartyIdsForShipment,
+  findCarrierShipmentBoxType,
   fetchDefaultShipmentBox,
   fetchPicklistInformation,
   fetchRejectReasons,
-  fetchShipmentInformationForOrder,
-  fetchShipmentItemInformation,
+  findShipmentInformationForOrders,
+  findShipmentItemInformation,
   fetchShipmentMethods,
-  fetchShipmentPackages,
+  findShipmentPackages,
   fetchShipmentRouteSegmentInformation,
   getAvailablePickers
 }
