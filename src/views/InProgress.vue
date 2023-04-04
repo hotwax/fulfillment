@@ -329,7 +329,7 @@ export default defineComponent({
     async findInProgressOrders () {
       await this.store.dispatch('order/findInProgressOrders')
     },
-    updateOrder(order: any) {
+    async updateOrder(order: any) {
       const form = new FormData()
 
       form.append('facilityId', this.currentFacility.facilityId)
@@ -353,13 +353,23 @@ export default defineComponent({
         form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
       })
 
-      this.store.dispatch('order/updateOrder', {
-        headers: {
-          'Content-Type': 'multipart/form-data;'
-        },
-        data: form
-      })
+      try {
+        const resp = await OrderService.updateOrder({
+          headers: {
+            'Content-Type': 'multipart/form-data;'
+          },
+          data: form
+        })
 
+        if(!hasError(resp)) {
+          showToast(translate('Order updated successfully'))
+        } else {
+          throw resp.data;
+        }
+      } catch (err) {
+        showToast(translate('Failed to update order'))
+        console.error(err)
+      }
     },
     save(order: any) {
       const itemsToReject = order.doclist.docs.filter((item: any) => item.rejectReason)
@@ -512,7 +522,7 @@ export default defineComponent({
             "systemResourceId": "shipment",
             "systemPropertyId": "shipment.default.boxtype"
           },
-          "fieldList": ["systemPropertyValue"]
+          "fieldList": ["systemPropertyValue", "systemResourceId"]
         })
 
         if(!hasError(resp) && resp.data.count) {

@@ -33,7 +33,7 @@ const findShipmentInformationForOrders = async(picklistBinIds: Array<string>, or
       "statusId_op": "in"
     },
     "fieldList": ["shipmentId", "primaryOrderId"],
-    "viewSize": orderIds.length * picklistBinIds.length,
+    "viewSize": (orderIds.length * picklistBinIds.length) + 1,  // maximum records we have for orders
     "distinct": "Y"
   }
 

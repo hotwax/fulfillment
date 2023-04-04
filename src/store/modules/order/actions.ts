@@ -181,23 +181,6 @@ const actions: ActionTree<OrderState, RootState> = {
     commit(types.ORDER_OPEN_CLEARED)
   },
 
-  async updateOrder({ commit }, payload) {
-
-    try {
-      const resp = await OrderService.updateOrder(payload)
-
-      if(!hasError(resp)) {
-        showToast(translate('Order updated successfully'))
-      } else {
-        throw resp.data;
-      }
-    } catch (err) {
-      showToast(translate('Failed to update order'))
-      console.error(err)
-    }
-
-  },
-
   async updateOpenQuery({ commit, dispatch }, payload) {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
     await dispatch('findOpenOrders');
