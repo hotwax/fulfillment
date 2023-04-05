@@ -55,7 +55,7 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
 }
 
 const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => {
-  let shipmentPackageForOrders = {};
+  let shipmentPackages = {};
   const params = {
     "entityName": "ShipmentPackageRouteSegDetail",
     "inputFields": {
@@ -75,7 +75,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
     })
 
     if(resp.status == 200 && !hasError(resp) && resp.data.count) {
-      shipmentPackageForOrders = resp.data.docs.reduce((shipmentForOrders: any, shipmentPackage: any) => {
+      shipmentPackages = resp.data.docs.reduce((shipmentForOrders: any, shipmentPackage: any) => {
         if(shipmentForOrders[shipmentPackage.primaryOrderId]) {
           shipmentForOrders[shipmentPackage.primaryOrderId].push(shipmentPackage)
         } else {
@@ -88,7 +88,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
     console.error(err)
   }
 
-  return shipmentPackageForOrders;
+  return shipmentPackages;
 }
 
 const findCarrierPartyIdsForShipment = async(shipmentIds: Array<string>): Promise<any> => {

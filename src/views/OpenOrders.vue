@@ -235,7 +235,7 @@ export default defineComponent({
 
       try {
         resp = await UtilService.fetchShipmentMethods(payload);
-        if(resp.status == 200 && !hasError(resp) && resp.data.facets.count > 0) {
+        if(resp.status == 200 && !hasError(resp) && resp.data.facets?.count > 0) {
           this.shipmentMethods = resp.data.facets.shipmentMethodTypeIdFacet.buckets
         } else {
           console.error('Failed to fetch shipment methods')

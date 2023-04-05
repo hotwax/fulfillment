@@ -46,7 +46,7 @@ const actions: ActionTree<OrderState, RootState> = {
       const orderQueryPayload = prepareOrderQuery(params)
 
       resp = await OrderService.findInProgressOrders(orderQueryPayload);
-      if (resp.status === 200 && resp.data.grouped?.picklistBinId.matches > 0 && !hasError(resp)) {
+      if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
         total = resp.data.grouped.picklistBinId.ngroups
         orders = resp.data.grouped.picklistBinId.groups
 
@@ -62,7 +62,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
         // TODO: handle case when shipmentIds is empty
         // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
-        const [shipmentPackages, itemInformationByShipment, carrierPartyIdsByShipment] = await Promise.all([UtilService.findShipmentPackages(shipmentIds), UtilService.findShipmentItemInformation(shipmentIds), UtilService.findCarrierPartyIdsForShipment(shipmentIds)])
+        const [shipmentPackagesByOrder, itemInformationByOrder, carrierPartyIdsByShipment] = await Promise.all([UtilService.findShipmentPackages(shipmentIds), UtilService.findShipmentItemInformation(shipmentIds), UtilService.findCarrierPartyIdsForShipment(shipmentIds)])
 
         // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
         const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipment).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
@@ -70,7 +70,7 @@ const actions: ActionTree<OrderState, RootState> = {
         const carrierShipmentBoxType = await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
 
         orders.map((order: any) => {
-          order['shipmentPackages'] = shipmentPackages[order.doclist.docs[0].orderId]
+          order['shipmentPackages'] = shipmentPackagesByOrder[order.doclist.docs[0].orderId]
           order['carrierPartyIds'] = [...new Set(shipmentIds.map((id: any) => carrierPartyIdsByShipment[id].map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
 
           order['shipmentBoxTypeByCarrierParty'] = order['carrierPartyIds'].reduce((shipmentBoxType: any, carrierPartyId: string) => {
@@ -88,7 +88,7 @@ const actions: ActionTree<OrderState, RootState> = {
             item.segmentSelected = 'pack'
 
             // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
-            const shipmentItem = itemInformationByShipment[item.orderId]?.find((shipmentItem: any) => shipmentItem.productId === item.productId)
+            const shipmentItem = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.productId === item.productId)
 
             if(shipmentItem) {
               item.shipmentItemSeqId = shipmentItem.shipmentItemSeqId
@@ -156,7 +156,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
     try {
       resp = await OrderService.findOpenOrders(orderQueryPayload);
-      if (resp.status === 200 && resp.data.grouped.orderId.matches > 0 && !hasError(resp)) {
+      if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
         total = resp.data.grouped.orderId.ngroups
         orders = resp.data.grouped.orderId.groups
         this.dispatch('product/getProductInformation', { orders })

@@ -12,7 +12,7 @@ const mutations: MutationTree <OrderState> = {
   },
   [types.ORDER_OPEN_CLEARED](state) {
     state.open = {
-      list: {},
+      list: [],
       total: 0,
       query: {
         viewSize: process.env.VUE_APP_VIEW_SIZE,
