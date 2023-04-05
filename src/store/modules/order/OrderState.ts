@@ -7,5 +7,14 @@ export default interface OrderState {
       queryString: string,
       selectedShipmentMethods: Array<string>
     }
+  },
+  completed: {
+    list: any,
+    total: number,
+    query: {
+      viewSize: number,
+      queryString: string,
+      selectedCarrierPartyIds: Array<string>
+    }
   }
 }

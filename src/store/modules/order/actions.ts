@@ -67,6 +67,59 @@ const actions: ActionTree<OrderState, RootState> = {
     return resp;
   },
 
+  async findCompletedOrders ({ commit, state }, payload = {}) {
+    emitter.emit('presentLoader');
+    let resp;
+
+    const completedOrderQuery = JSON.parse(JSON.stringify(state.completed.query))
+
+    const params = {
+      ...payload,
+      queryString: completedOrderQuery.queryString,
+      viewSize: completedOrderQuery.viewSize,
+      queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
+      groupBy: 'picklistBinId',
+      sort: 'orderDate asc',
+      filters: {
+        picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
+        '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+        facilityId: { value: this.state.user.currentFacility.facilityId },
+        productStoreId: { value: this.state.user.currentEComStore.productStoreId }
+      }
+    }
+
+    // only adding shipmentMethods when a method is selected
+    if(completedOrderQuery.selectedCarrierPartyIds.length) {
+      params.filters['shipmentCarrierPartyId'] = { value: completedOrderQuery.selectedCarrierPartyIds, op: 'OR' }
+    }
+
+    const orderQueryPayload = prepareOrderQuery(params)
+    let orders = [];
+    let total = 0;
+
+    try {
+      resp = await OrderService.findCompletedOrders(orderQueryPayload);
+      if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
+        total = resp.data.grouped.picklistBinId.ngroups
+        orders = resp.data.grouped.picklistBinId.groups
+        this.dispatch('product/getProductInformation', { orders })
+      } else {
+        console.error('No orders found')
+      }
+    } catch (err) {
+      console.error('error', err)
+      showToast(translate('Something went wrong'))
+    }
+
+    completedOrderQuery.viewSize = orders.length
+
+    commit(types.ORDER_COMPLETED_QUERY_UPDATED, { ...completedOrderQuery })
+    commit(types.ORDER_COMPLETED_UPDATED, {list: orders, total})
+
+    emitter.emit('dismissLoader');
+    return resp;
+  },
+
   async clearOrders ({ commit }) {
     commit(types.ORDER_OPEN_CLEARED, {
       list: {},
@@ -77,11 +130,25 @@ const actions: ActionTree<OrderState, RootState> = {
         selectedShipmentMethods: []
       }
     })
+    commit(types.ORDER_COMPLETED_CLEARED, {
+      list: {},
+      total: 0,
+      query: {
+        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        queryString: '',
+        selectedCarrierPartyIds: []
+      }
+    })
   },
 
   async updateOpenQuery({ commit, dispatch }, payload) {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
     await dispatch('findOpenOrders');
+  },
+
+  async updateCompletedQuery({ commit, dispatch }, payload) {
+    commit(types.ORDER_COMPLETED_QUERY_UPDATED, payload)
+    await dispatch('findCompletedOrders');
   }
 }
 
