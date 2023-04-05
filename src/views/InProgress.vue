@@ -425,7 +425,7 @@ export default defineComponent({
 
       try {
         resp = await OrderService.findInProgressOrders(orderQueryPayload);
-        if (resp.status === 200 && !hasError(resp) && resp.data.facets.count > 0) {
+        if (resp.status === 200 && !hasError(resp) && resp.data.facets?.count > 0) {
           const buckets = resp.data.facets.picklistFacet.buckets
 
           const picklistIds = buckets.map((bucket: any) => bucket.val)
@@ -450,6 +450,7 @@ export default defineComponent({
                 return picklists;
               }
 
+              // if firstName is not found then adding default name `System Generated`
               const pickersName = pickersInformation.pickerFacet.buckets.length ? pickersInformation.pickerFacet.buckets.reduce((pickers: Array<string>, picker: any) => {
                 pickers.push(picker.val.split('/')[1].split(' ')[0]) // having picker val in format 10001/FirstName LastName, we only need to display firstName
                 return pickers
