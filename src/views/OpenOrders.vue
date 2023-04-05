@@ -17,8 +17,8 @@
     </ion-header>
     
     <ion-content id="view-size-selector">
+      <ion-searchbar :value="openOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="openOrders.total">
-        <ion-searchbar :value="openOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
         <div class="filters">
           <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
             <ion-checkbox slot="start" @ionChange="updateSelectedShipmentMethods(method.val)"/>

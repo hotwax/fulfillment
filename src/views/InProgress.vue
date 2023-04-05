@@ -18,9 +18,8 @@
     </ion-header>
     
     <ion-content id="view-size-selector">
+      <ion-searchbar v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="inProgressOrders.total">
-        <ion-searchbar v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
-
         <!-- TODO: make pickers information dynamic -->
         <div class="filters">
           <ion-item v-for="picklist in picklists" :key="picklist.id" lines="none">
