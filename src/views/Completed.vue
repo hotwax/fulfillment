@@ -260,7 +260,7 @@ export default defineComponent({
       })
 
       try {
-        const resp = await UtilService.findShipmentMethods(payload)
+        const resp = await UtilService.fetchShipmentMethods(payload)
 
         if(resp.status == 200 && !hasError(resp)) {
           this.shipmentMethods = resp.data.facets.shipmentMethodFacet.buckets

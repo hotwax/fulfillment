@@ -30,7 +30,7 @@ const createPicklist = async (query: any): Promise <any> => {
   })
 }
 
-const findShipmentMethods = async (query: any): Promise <any>  => {
+const fetchShipmentMethods = async (query: any): Promise <any>  => {
   return api({
     url: "solr-query",
     method: "post",
@@ -50,6 +50,6 @@ export const UtilService = {
   createPicklist,
   fetchShipmentMethods,
   fetchCarrierPartyIds,
-  findShipmentMethods,
+  fetchShipmentMethods,
   getAvailablePickers
 }
