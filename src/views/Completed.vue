@@ -1,5 +1,7 @@
 <template>
   <ion-page>
+    <ViewSizeSelector content-id="view-size-selector" />
+
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button slot="start" />
@@ -9,11 +11,14 @@
         <ion-buttons slot="end">
           <!-- TODO: implement support to upload CSV -->
           <ion-button :disabled="true" fill="clear" @click="() => router.push('/upload-csv')">{{ $t("Upload CSV") }}</ion-button>
+          <ion-menu-button menu="end">
+            <ion-icon :icon="optionsOutline" />
+          </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
     
-    <ion-content>
+    <ion-content id="view-size-selector">
       <ion-searchbar :value="completedOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)" />
 
       <div v-if="completedOrders.total">
@@ -155,7 +160,7 @@ import {
   popoverController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline } from 'ionicons/icons'
+import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
@@ -163,6 +168,8 @@ import { formatUtcDate, getFeature, hasError } from '@/utils'
 import Image from '@/components/Image.vue'
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
+import emitter from '@/event-bus';
+import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 
 export default defineComponent({
   name: 'Home',
@@ -187,6 +194,7 @@ export default defineComponent({
     IonThumbnail,
     IonTitle,
     IonToolbar,
+    ViewSizeSelector
   },
   data() {
     return {
@@ -208,8 +216,18 @@ export default defineComponent({
   async mounted() {
     await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchManifestedCarrierPartyIds(), this.fetchUnmanifestedCarrierPartyIds()]);
     this.generateUniqueCarrierPartyIds()
+    emitter.on('updateOrderQuery', this.updateOrderQuery)
+  },
+  unmounted() {
+    emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   methods: {
+    async updateOrderQuery(size: any) {
+      const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
+
+      completedOrdersQuery.viewSize = size
+      await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+    },
     async shipOrderAlert() {
       const alert = await alertController
         .create({
@@ -407,6 +425,7 @@ export default defineComponent({
       ellipsisVerticalOutline,
       formatUtcDate,
       getFeature,
+      optionsOutline,
       pricetagOutline,
       printOutline,
       router,
