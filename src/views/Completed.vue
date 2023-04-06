@@ -209,22 +209,6 @@ export default defineComponent({
     await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchManifestedCarrierPartyIds(), this.fetchUnmanifestedCarrierPartyIds()]);
     this.generateUniqueCarrierPartyIds()
   },
-  setup() {
-    const store = useStore();
-    const router = useRouter();
-
-    return {  
-      formatUtcDate,
-      getFeature,
-      printOutline, 
-      downloadOutline, 
-      pricetagOutline, 
-      ellipsisVerticalOutline, 
-      checkmarkDoneOutline,
-      router,
-      store
-    }
-  }, 
   methods: {
     async shipOrderAlert() {
       const alert = await alertController
@@ -370,6 +354,22 @@ export default defineComponent({
     },
     generateUniqueCarrierPartyIds() {
       this.uniqueCarrierPartyIds = [...new Set([...this.unmanifestedCarrierPartyIds, ...this.manifestedCarrierPartyIds].map((carrierPartyId: any) => carrierPartyId.val?.split('/')[0]))]
+    }
+  },
+  setup() {
+    const store = useStore();
+    const router = useRouter();
+
+    return {
+      checkmarkDoneOutline,
+      downloadOutline,
+      ellipsisVerticalOutline,
+      formatUtcDate,
+      getFeature,
+      pricetagOutline,
+      printOutline,
+      router,
+      store
     }
   }
 });
