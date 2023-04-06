@@ -27,13 +27,13 @@
             </ion-label>
             <ion-icon :icon="printOutline" />
           </ion-item>
-          <ion-item lines="none">
-            <ion-checkbox slot="start"/>
+
+          <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod.val">
+            <ion-checkbox :value="shipmentMethod.val" slot="start"/>
             <ion-label>
-              UPS
-              <p>10 {{ $t("packages") }}</p>
+              {{ shipmentMethod.val }}
+              <p>{{ shipmentMethod.groups }} {{ shipmentMethod.groups > 1 ? $t('orders') : $t('order') }}, {{ shipmentMethod.itemCount }} {{ shipmentMethod.itemCount > 1 ? $t('items') : $t('item') }}</p>
             </ion-label>
-            <ion-icon :icon="downloadOutline" />
           </ion-item>
         </div>
 
@@ -150,8 +150,10 @@ import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
-import { formatUtcDate, getFeature } from '@/utils'
+import { formatUtcDate, getFeature, hasError } from '@/utils'
 import Image from '@/components/Image.vue'
+import { UtilService } from '@/services/UtilService';
+import { prepareOrderQuery } from '@/utils/solrHelper';
 
 export default defineComponent({
   name: 'Home',
@@ -177,6 +179,11 @@ export default defineComponent({
     IonTitle,
     IonToolbar,
   },
+  data() {
+    return {
+      shipmentMethods: {} as any
+    }
+  },
   computed: {
     ...mapGetters({
       completedOrders: 'order/getCompletedOrders',
@@ -187,7 +194,7 @@ export default defineComponent({
     })
   },
   async mounted() {
-    await this.store.dispatch('order/findCompletedOrders');
+    await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods()]);
   },
   setup() {
     const store = useStore();
@@ -225,6 +232,46 @@ export default defineComponent({
       });
       return popover.present();
     },
+
+    async fetchShipmentMethods() {
+      const payload = prepareOrderQuery({
+        viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
+        queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
+        groupBy: 'picklistBinId',
+        sort: 'orderDate asc',
+        defType: "edismax",
+        filters: {
+          picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
+          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+          facilityId: { value: this.currentFacility.facilityId },
+          productStoreId: { value: this.currentEComStore.productStoreId }
+        },
+        facet: {
+          "shipmentMethodFacet": {
+            "excludeTags": "shipmentMethodTypeIdFilter",
+            "field": "shipmentMethodTypeId",
+            "mincount": 1,
+            "limit": -1,
+            "sort": "index",
+            "type": "terms",
+            "facet": {
+              "groups": "unique(orderId)",
+              "itemCount": "sum(itemQuantity)"
+            }
+          }
+        }
+      })
+
+      try {
+        const resp = await UtilService.findShipmentMethods(payload)
+
+        if(resp.status == 200 && !hasError(resp)) {
+          this.shipmentMethods = resp.data.facets.shipmentMethodFacet.buckets
+        }
+      } catch(err) {
+        console.error(err)
+      }
+    }
   }
 });
 </script>
