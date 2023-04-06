@@ -14,13 +14,13 @@
     </ion-header>
     
     <ion-content>
-      <ion-searchbar />
+      <ion-searchbar :value="completedOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)" />
 
       <div v-if="completedOrders.total">
 
         <div class="filters">
           <ion-item lines="none" v-for="carrierPartyId in unmanifestedCarrierPartyIds" :key="carrierPartyId.val">
-            <ion-checkbox slot="start"/>
+            <ion-checkbox slot="start" :checked="completedOrders.query.selectedCarrierPartyIds.includes(carrierPartyId.val)" @ionChange="updateSelectedCarrierPartyIds(carrierPartyId.val)"/>
             <ion-label>
               {{ carrierPartyId.val }}
               <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? $t('package') : $t("packages") }}</p>
@@ -29,16 +29,16 @@
           </ion-item>
 
           <ion-item lines="none" v-for="carrierPartyId in manifestedCarrierPartyIds" :key="carrierPartyId.val">
-            <ion-checkbox slot="start"/>
+            <ion-checkbox slot="start" :checked="completedOrders.query.selectedCarrierPartyIds.includes(carrierPartyId.val)" @ionChange="updateSelectedCarrierPartyIds(carrierPartyId.val)"/>
             <ion-label>
-              Fedex
-              <p>30 {{ $t("packages") }}</p>
+              {{ carrierPartyId.val }}
+              <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? $t('package') : $t("packages") }}</p>
             </ion-label>
             <ion-icon :icon="printOutline" />
           </ion-item>
 
           <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod.val">
-            <ion-checkbox :value="shipmentMethod.val" slot="start"/>
+            <ion-checkbox slot="start" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)" @ionChange="updateSelectedShipmentMethods(shipmentMethod.val)"/>
             <ion-label>
               {{ shipmentMethod.val }}
               <p>{{ shipmentMethod.groups }} {{ shipmentMethod.groups > 1 ? $t('orders') : $t('order') }}, {{ shipmentMethod.itemCount }} {{ shipmentMethod.itemCount > 1 ? $t('items') : $t('item') }}</p>
@@ -354,6 +354,47 @@ export default defineComponent({
     },
     generateUniqueCarrierPartyIds() {
       this.uniqueCarrierPartyIds = [...new Set([...this.unmanifestedCarrierPartyIds, ...this.manifestedCarrierPartyIds].map((carrierPartyId: any) => carrierPartyId.val?.split('/')[0]))]
+    },
+    async updateQueryString(queryString: string) {
+      const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
+
+      completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      completedOrdersQuery.queryString = queryString
+      await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+    },
+    async updateSelectedShipmentMethods (method: string) {
+      const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
+
+      const selectedShipmentMethods = completedOrdersQuery.selectedShipmentMethods
+      const index = selectedShipmentMethods.indexOf(method)
+      if (index < 0) {
+        selectedShipmentMethods.push(method)
+      } else {
+        selectedShipmentMethods.splice(index, 1)
+      }
+
+      // making view size default when changing the shipment method to correctly fetch orders
+      completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      completedOrdersQuery.selectedShipmentMethods = selectedShipmentMethods
+
+      this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+    },
+    async updateSelectedCarrierPartyIds (carrierPartyId: string) {
+      const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
+
+      const selectedCarrierPartyIds = completedOrdersQuery.selectedCarrierPartyIds
+      const index = selectedCarrierPartyIds.indexOf(carrierPartyId)
+      if (index < 0) {
+        selectedCarrierPartyIds.push(carrierPartyId)
+      } else {
+        selectedCarrierPartyIds.splice(index, 1)
+      }
+
+      // making view size default when changing the shipment method to correctly fetch orders
+      completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      completedOrdersQuery.selectedCarrierPartyIds = selectedCarrierPartyIds
+
+      this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     }
   },
   setup() {
