@@ -38,9 +38,18 @@ const findShipmentMethods = async (query: any): Promise <any>  => {
   });
 }
 
+const fetchCarrierPartyIds = async (query: any): Promise <any>  => {
+  return api({
+    url: "solr-query",
+    method: "post",
+    data: query
+  });
+}
+
 export const UtilService = {
   createPicklist,
   fetchShipmentMethods,
+  fetchCarrierPartyIds,
   findShipmentMethods,
   getAvailablePickers
 }
