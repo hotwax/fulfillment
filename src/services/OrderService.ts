@@ -18,7 +18,16 @@ const findCompletedOrders = async (query: any): Promise <any>  => {
   });
 }
 
+const bulkShipOrders = async (query: any): Promise<any> => {
+  return api({
+    url: "bulkShipOrders",
+    method: "post",
+    data: query
+  })
+}
+
 export const OrderService = {
+  bulkShipOrders,
   findCompletedOrders,
   findOpenOrders
 }

@@ -114,6 +114,6 @@
   "Worn display": "Worn display",
   "Yes": "Yes",
   "You are packing orders. Select additional documents that you would like to print.": "You are packing { count } orders. { space } Select additional documents that you would like to print.",
-  "You are shipping orders. You cannot unpack and edit orders after they have been  shipped. Are you sure you are ready to ship this orders.": "You are shipping { count } orders. { space } You cannot unpack and edit orders after they have been  shipped. Are you sure you are ready to ship this orders.",
+  "You are shipping orders. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this orders.": "You are shipping { count } orders. { space } You cannot unpack and edit orders after they have been  shipped. Are you sure you are ready to ship this orders.",
   ", and other products are identified as unfulfillable. other orders  containing these products will be  unassigned  from this store and sent to be rebrokered.": "{ productName }, and { products } other products are identified as unfulfillable. { space } { orders } other orders containing these products will be unassigned from this store and sent to be rebrokered."
 }

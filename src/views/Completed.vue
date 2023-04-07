@@ -51,7 +51,7 @@
           </ion-item>
         </div>
 
-        <ion-button expand="block" class="desktop-only" fill="outline" @click="shipOrderAlert">{{ $t("Ship") }}</ion-button>
+        <ion-button expand="block" class="desktop-only" fill="outline" @click="bulkShipOrders()">{{ $t("Ship") }}</ion-button>
 
         <ion-card v-for="(orders, index) in completedOrders.list" :key="index">
           <div class="card-header">
@@ -101,7 +101,7 @@
           <!-- TODO: implement functionality to mobile view -->
           <div class="mobile-only">
             <ion-item>
-              <ion-button fill="clear" @click="shipOrderAlert">{{ $t("Ship Now") }}</ion-button>
+              <ion-button fill="clear" >{{ $t("Ship Now") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -111,7 +111,7 @@
           <!-- TODO: make the buttons functional -->
           <div class="actions">
             <div class="desktop-only">
-              <ion-button @click="shipOrderAlert">{{ $t("Ship Now") }}</ion-button>
+              <ion-button>{{ $t("Ship Now") }}</ion-button>
               <ion-button fill="outline">{{ $t("Print Shipping Label") }}</ion-button>
               <ion-button fill="outline">{{ $t("Print Customer Letter") }}</ion-button>
             </div>
@@ -123,7 +123,7 @@
 
         <!-- TODO: make mobile view functional -->
         <ion-fab class="mobile-only" vertical="bottom" horizontal="end">
-          <ion-fab-button  @click="shipOrderAlert">
+          <ion-fab-button  @click="bulkShipOrders()">
             <ion-icon :icon="checkmarkDoneOutline" />
           </ion-fab-button>
         </ion-fab>
@@ -164,12 +164,14 @@ import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
-import { formatUtcDate, getFeature, hasError } from '@/utils'
+import { formatUtcDate, getFeature, hasError, showToast } from '@/utils'
 import Image from '@/components/Image.vue'
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import emitter from '@/event-bus';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
+import { translate } from '@/i18n';
+import { OrderService } from '@/services/OrderService';
 
 export default defineComponent({
   name: 'Home',
@@ -228,14 +230,38 @@ export default defineComponent({
       completedOrdersQuery.viewSize = size
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
-    async shipOrderAlert() {
-      const alert = await alertController
+    async bulkShipOrders() {
+      const shipOrderAlert = await alertController
         .create({
            header: this.$t("Ship orders"),
-           message: this.$t("You are shipping orders. You cannot unpack and edit orders after they have been  shipped. Are you sure you are ready to ship this orders.", {count: 15, space: '<br /><br />'}),       
-           buttons: [this.$t("Cancel"), this.$t("Ship")],
+           message: this.$t("You are shipping orders. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this orders.", {count: this.completedOrders.list.length, space: '<br /><br />'}),
+           buttons: [{
+            role: "cancel",
+            text: this.$t("Cancel"),
+          }, {
+            text: this.$t("Ship"),
+            handler: async () => {
+              const payload = {
+                shipmentIds: this.completedOrders.list.map((order: any) => order.doclist.docs[0].shipmentId)
+              }
+
+              try {
+                const resp = await OrderService.bulkShipOrders(payload)
+
+                if(resp.status == 200 && !hasError(resp)) {
+                  // TODO: refresh order on success of ship action
+                  showToast(translate('Orders shipped successfully'))
+                } else {
+                  showToast(translate('Failed to ship orders'))
+                }
+              } catch(err) {
+                console.error(err)
+                showToast(translate('Failed to ship orders'))
+              }
+            }
+          }]
         });
-      return alert.present();
+      return shipOrderAlert.present();
     },
 
     async shippingPopover(ev: Event) {
