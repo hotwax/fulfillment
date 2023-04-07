@@ -31,8 +31,8 @@
           <ion-item lines="none" v-for="carrierPartyId in manifestedCarrierPartyIds" :key="carrierPartyId.val">
             <ion-checkbox slot="start"/>
             <ion-label>
-              Fedex
-              <p>30 {{ $t("packages") }}</p>
+              {{ carrierPartyId.val }}
+              <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? $t('package') : $t("packages") }}</p>
             </ion-label>
             <ion-icon :icon="printOutline" />
           </ion-item>
