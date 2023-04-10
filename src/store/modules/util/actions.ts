@@ -7,6 +7,7 @@ import { hasError } from '@/utils'
 
 const actions: ActionTree<UtilState, RootState> = {
   async fetchRejectReasons({ commit }) {
+    let rejectReasons  = [];
     try {
       const payload = {
         "inputFields": {
@@ -21,11 +22,13 @@ const actions: ActionTree<UtilState, RootState> = {
       const resp = await UtilService.fetchRejectReasons(payload)
 
       if(!hasError(resp) && resp.data.count > 0) {
-        commit(types.UTIL_REJECT_REASONS_UPDATED, resp.data.docs)
+        rejectReasons = resp.data.docs
       }
     } catch (err) {
       console.error(err)
     }
+
+    commit(types.UTIL_REJECT_REASONS_UPDATED, rejectReasons)
   }
 }
 

@@ -16,7 +16,7 @@ const fetchPicklistInformation = async (query: any): Promise <any>  => {
     method: "get",
     params: query
   });
-} 
+}
 
 const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: Array<string>): Promise<any> => {
   let shipmentIds = [];
@@ -38,6 +38,7 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
   }
 
   try {
+    // TODO: handle case when viewSize is more than 250 as performFind api does not return more than 250 records at once
     const resp = await api({
       url: "performFind",
       method: "get",
@@ -83,7 +84,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
         }
         return shipmentForOrders
       }, {})
-    }    
+    }
   } catch(err) {
     console.error(err)
   }
@@ -92,7 +93,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
 }
 
 const findCarrierPartyIdsForShipment = async(shipmentIds: Array<string>): Promise<any> => {
-  let carrierPartyIds = {};
+  let carrierPartyIdsByShipment = {};
   const params = {
     "entityName": "ShipmentRouteSegment",
     "inputFields": {
@@ -111,20 +112,20 @@ const findCarrierPartyIdsForShipment = async(shipmentIds: Array<string>): Promis
     })
 
     if(resp.status == 200 && !hasError(resp) && resp.data.count) {
-      carrierPartyIds = resp.data.docs.reduce((partyIds: any, shipment: any) => {
-        if(partyIds[shipment.shipmentId]) {
-          partyIds[shipment.shipmentId].push(shipment)
+      carrierPartyIdsByShipment = resp.data.docs.reduce((carrierPartyIdsByShipment: any, shipment: any) => {
+        if(carrierPartyIdsByShipment[shipment.shipmentId]) {
+          carrierPartyIdsByShipment[shipment.shipmentId].push(shipment)
         } else {
-          partyIds[shipment.shipmentId] = [shipment]
+          carrierPartyIdsByShipment[shipment.shipmentId] = [shipment]
         }
-        return partyIds
+        return carrierPartyIdsByShipment
       }, {})
-    }    
+    }
   } catch(err) {
     console.error(err)
   }
 
-  return carrierPartyIds;
+  return carrierPartyIdsByShipment;
 }
 
 const findCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promise<any> => {
@@ -143,7 +144,8 @@ const findCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promis
     const resp = await api({
       url: "performFind",
       method: "get",
-      params
+      params,
+      cache: true
     })
 
     if(resp.status == 200 && !hasError(resp) && resp.data.count) {
