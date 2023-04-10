@@ -8,7 +8,7 @@ const prepareOrderQuery = (params: any) => {
         "rows": viewSize,
         "sort": params.sort ? params.sort : "reservedDatetime asc",
         "group": true,
-        "group.field": "orderId",
+        "group.field": params.groupBy ? params.groupBy : "orderId",
         "group.limit": 1000,
         "group.ngroups": true,
         "q.op": "AND",

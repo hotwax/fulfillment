@@ -7,5 +7,14 @@ export default interface OrderState {
       queryString: string,
       selectedShipmentMethods: Array<string>
     }
+  },
+  inProgress: {
+    list: any,
+    total: number,
+    query: {
+      viewSize: number,
+      selectedPicklists: Array<string>,
+      queryString: string
+    }
   }
 }

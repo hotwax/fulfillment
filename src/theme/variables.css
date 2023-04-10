@@ -260,7 +260,7 @@ ion-thumbnail > img {
 
 .filters > ion-item {
   flex: 1 0 100%;
-  max-width: 200px;
+  max-width: fit-content;
   border: var(--border-medium);
   border-radius: 10px;
 }
@@ -310,7 +310,7 @@ img {
   display: unset;
 }
 
-empty-state {
+.empty-state {
   max-width: 100%;
   display: flex;
   flex-direction: column;
