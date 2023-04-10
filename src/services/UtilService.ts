@@ -168,12 +168,12 @@ const findCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promis
 const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<any> => {
   let shipmentItemsInformation = {}
   const params = {
-    "entityName": "ShipmentAndItemAndProduct",
+    "entityName": "OrderShipment",
     "inputFields": {
       "shipmentId": shipmentIds,
       "shipmentId_op": "in"
     },
-    "fieldList": ["shipmentItemSeqId", "productId", "primaryOrderId", "shipmentId"],
+    "fieldList": ["shipmentItemSeqId", "orderItemSeqId", "orderId", "shipmentId"],
     "viewSize": shipmentIds.length * 5, // TODO: check what should be the viewSize here
   }
 
@@ -186,10 +186,10 @@ const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<a
 
     if(resp.status == 200 && !hasError(resp) && resp.data.count) {
       shipmentItemsInformation = resp.data.docs.reduce((shipmentItems: any, shipmentItem: any) => {
-        if(shipmentItems[shipmentItem.primaryOrderId]) {
-          shipmentItems[shipmentItem.primaryOrderId].push(shipmentItem)
+        if(shipmentItems[shipmentItem.orderId]) {
+          shipmentItems[shipmentItem.orderId].push(shipmentItem)
         } else {
-          shipmentItems[shipmentItem.primaryOrderId] = [shipmentItem]
+          shipmentItems[shipmentItem.orderId] = [shipmentItem]
         }
         return shipmentItems
       }, {})

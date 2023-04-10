@@ -88,18 +88,7 @@ const actions: ActionTree<OrderState, RootState> = {
             item.segmentSelected = 'pack'
 
             // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
-            const shipmentItem = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.productId === item.productId)
-
-            if(shipmentItem) {
-              item.shipmentItemSeqId = shipmentItem.shipmentItemSeqId
-
-              // TODO: check if we can handle this case directly
-              // clearning the productId from the found shipmentItem as when we have multiple products having the same productId
-              // then there is no unique information available in ShipmentAndItemAndProduct entity to uniquely identify the products
-              // thus every time when a shipmentItem is found assigning it's shipmentItemSeqId and then clearning the productId
-              // so that the items will not have the same shipmentItemSeqId
-              shipmentItem.productId = ''
-            }
+            item.shipmentItemSeqId = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)?.shipmentItemSeqId
 
             item.selectedBox = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
           })
