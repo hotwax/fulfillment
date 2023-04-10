@@ -26,8 +26,17 @@ const bulkShipOrders = async (query: any): Promise<any> => {
   })
 }
 
+const unpackOrder = async (query: any): Promise<any> => {
+  return api({
+    url: "service/unlockStoreFulfillmentOrder",
+    method: "post",
+    data: query
+  })
+}
+
 export const OrderService = {
   bulkShipOrders,
   findCompletedOrders,
-  findOpenOrders
+  findOpenOrders,
+  unpackOrder
 }

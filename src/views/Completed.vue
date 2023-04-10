@@ -53,25 +53,25 @@
 
         <ion-button expand="block" class="desktop-only" fill="outline" @click="bulkShipOrders()">{{ $t("Ship") }}</ion-button>
 
-        <ion-card v-for="(orders, index) in completedOrders.list" :key="index">
+        <ion-card v-for="(order, index) in completedOrders.list" :key="index">
           <div class="card-header">
             <div class="order-primary-info">
               <ion-label>
-                {{ orders.doclist.docs[0].customerName }}
-                <p>{{ $t("Ordered") }} {{ formatUtcDate(orders.doclist.docs[0].orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                {{ order.doclist.docs[0].customerName }}
+                <p>{{ $t("Ordered") }} {{ formatUtcDate(order.doclist.docs[0].orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
               </ion-label>
             </div>
 
             <div class="order-tags">
               <ion-chip outline>
                 <ion-icon :icon="pricetagOutline" />
-                <ion-label>{{ orders.doclist.docs[0].orderId }}</ion-label>
+                <ion-label>{{ order.doclist.docs[0].orderId }}</ion-label>
               </ion-chip>
             </div>
 
             <div class="order-metadata">
               <ion-label>
-                {{ orders.doclist.docs[0].shipmentMethodTypeDesc }}
+                {{ order.doclist.docs[0].shipmentMethodTypeDesc }}
                 <!-- TODO: add support to display the last brokered date, currently not getting
                 the date in API response -->
                 <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
@@ -79,22 +79,22 @@
             </div>
           </div>
 
-          <div v-for="order in orders.doclist.docs" :key="order" class="order-item">
+          <div v-for="item in order.doclist.docs" :key="item.orderItemSeqId" class="order-item">
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail>
-                  <Image :src="getProduct(order.productId).mainImageUrl" />
+                  <Image :src="getProduct(item.productId).mainImageUrl" />
                 </ion-thumbnail>
                 <ion-label>
-                  <p class="overline">{{ order.productSku }}</p>
-                  {{ order.virtualProductName }}
-                  <p>{{ getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  <p class="overline">{{ item.productSku }}</p>
+                  {{ item.virtualProductName }}
+                  <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                 </ion-label>
               </ion-item>
             </div>
 
             <div class="product-metadata mobile-only">
-              <ion-note>{{ getProductStock(order.productId) }} {{ $t("pieces in stock") }}</ion-note>
+              <ion-note>{{ getProductStock(item.productId) }} {{ $t("pieces in stock") }}</ion-note>
             </div>
           </div>
 
@@ -116,7 +116,7 @@
               <ion-button fill="outline">{{ $t("Print Customer Letter") }}</ion-button>
             </div>
             <div class="desktop-only">
-              <ion-button fill="outline" color="danger">{{ $t("Unpack") }}</ion-button>
+              <ion-button fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
             </div>
           </div>
         </ion-card>
@@ -439,6 +439,40 @@ export default defineComponent({
       completedOrdersQuery.selectedCarrierPartyIds = selectedCarrierPartyIds
 
       this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+    },
+    async unpackOrder(order: any) {
+      const unpackOrderAlert = await alertController
+        .create({
+           header: this.$t("Unpack"),
+           message: this.$t("Unpacking this order will send it back to 'In progress' and it will have to be repacked."),
+           buttons: [{
+            role: "cancel",
+            text: this.$t("Cancel"),
+          }, {
+            text: this.$t("Unpack"),
+            handler: async () => {
+              const payload = {
+                orderId: order.doclist.docs[0].orderId,
+                picklistBinId: order.groupValue
+              }
+
+              try {
+                const resp = await OrderService.unpackOrder(payload)
+
+                if(resp.status == 200 && !hasError(resp)) {
+                  // TODO: refresh order on success of unpack action
+                  showToast(translate('Order unpacked successfully'))
+                } else {
+                  showToast(translate('Failed to unpack the order'))
+                }
+              } catch(err) {
+                console.error(err)
+                showToast(translate('Failed to unpack the order'))
+              }
+            }
+          }]
+        });
+      return unpackOrderAlert.present();
     }
   },
   setup() {
