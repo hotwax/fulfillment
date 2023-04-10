@@ -112,8 +112,9 @@
           <div class="actions">
             <div class="desktop-only">
               <ion-button>{{ $t("Ship Now") }}</ion-button>
-              <ion-button fill="outline">{{ $t("Print Shipping Label") }}</ion-button>
-              <ion-button fill="outline">{{ $t("Print Customer Letter") }}</ion-button>
+              <!-- TODO: implemented support to make the buttons functional -->
+              <ion-button :disabled="true" fill="outline">{{ $t("Print Shipping Label") }}</ion-button>
+              <ion-button :disabled="true" fill="outline">{{ $t("Print Customer Letter") }}</ion-button>
             </div>
             <div class="desktop-only">
               <ion-button fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
