@@ -81,7 +81,7 @@
             </div>
 
             <div class="desktop-only">
-              <ion-segment @ionChange="changeSegment($event, item, order)" :value="item.segmentSelected">
+              <ion-segment @ionChange="changeSegment($event, item, order)" :value="isIssueSegmentSelectedForItem(item) ? 'issue' : 'pack'">
                 <ion-segment-button value="pack">
                   <ion-label>{{ $t("Ready to pack") }}</ion-label>
                 </ion-segment-button>
@@ -91,7 +91,7 @@
               </ion-segment>
               <div class="segments">
                 <!-- TODO: add functionality to update box type -->
-                <div v-if="item.segmentSelected === 'pack'">
+                <div v-if="!isIssueSegmentSelectedForItem(item)">
                   <ion-item lines="none">
                     <ion-label>{{ $t("Select box") }}</ion-label>
                     <ion-select @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
@@ -99,7 +99,7 @@
                     </ion-select>
                   </ion-item>
                 </div>
-                <div v-if="item.segmentSelected === 'issue'">
+                <div v-else>
                   <ion-item lines="none">
                     <ion-label>{{ $t("Select issue") }}</ion-label>
                     <ion-select @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
@@ -202,10 +202,14 @@ export default defineComponent({
     return {
       queryString: '',
       picklists: [] as any,
-      defaultShipmentBoxType: ''
+      defaultShipmentBoxType: '',
+      itemsIssueSegmentSelected: [] as any,
     }
   },
   methods: {
+    isIssueSegmentSelectedForItem(item: any) {
+      return this.itemsIssueSegmentSelected.includes(`${item.orderId}-${item.orderItemSeqId}`)
+    },
     changeSegment(ev: CustomEvent, item: any, order: any) {
       // when selecting the report segment for the first time defining the value for rejectReason,
       // as in current flow once moving to reject segment we can't pack an order
@@ -214,7 +218,8 @@ export default defineComponent({
         order.isModified = true
       }
 
-      item.segmentSelected = ev.detail.value;
+      const itemIndex = this.itemsIssueSegmentSelected.indexOf(`${item.orderId}-${item.orderItemSeqId}`)
+      ev.detail.value === 'issue' ? this.itemsIssueSegmentSelected.push(`${item.orderId}-${item.orderItemSeqId}`) : this.itemsIssueSegmentSelected.splice(itemIndex, 1)
     },
     async packagingPopover(ev: Event) {
       const popover = await popoverController.create({

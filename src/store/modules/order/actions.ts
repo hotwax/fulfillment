@@ -84,9 +84,6 @@ const actions: ActionTree<OrderState, RootState> = {
           }, {})
 
           order.doclist.docs.map((item: any) => {
-            // assigning segmentSelected at item level as we have option to change segment for each item
-            item.segmentSelected = 'pack'
-
             // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
             item.shipmentItemSeqId = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)?.shipmentItemSeqId
 
