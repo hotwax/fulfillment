@@ -16,5 +16,14 @@ export default interface OrderState {
       queryString: string,
       selectedCarrierPartyIds: Array<string>
     }
+  },  
+  inProgress: {
+    list: any,
+    total: number,
+    query: {
+      viewSize: number,
+      selectedPicklists: Array<string>,
+      queryString: string
+    }
   }
 }

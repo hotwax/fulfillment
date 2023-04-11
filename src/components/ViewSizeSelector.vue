@@ -89,6 +89,10 @@ export default defineComponent({
       // TODO: check if we can use a single getter to get the data, currently when trying that the values are not reactive
       viewSize = computed(() => store.getters['order/getOpenOrders'].query.viewSize)
       total = computed(() => store.getters['order/getOpenOrders'].total)
+    } else if(route.name === 'InProgress') {
+      // TODO: check if we can use a single getter to get the data, currently when trying that the values are not reactive
+      viewSize = computed(() => store.getters['order/getInProgressOrders'].query.viewSize)
+      total = computed(() => store.getters['order/getInProgressOrders'].total)
     }
 
     return {

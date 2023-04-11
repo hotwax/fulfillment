@@ -26,6 +26,15 @@ const orderModule: Module<OrderState, RootState> = {
         selectedCarrierPartyIds: []
       }
     },
+    inProgress: {
+      list: [],
+      total: 0,
+      query: {
+        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        selectedPicklists: [],
+        queryString: ''
+      }
+    },
   },
   getters,
   actions,
