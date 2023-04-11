@@ -16,6 +16,3 @@ const stockModule: Module<StockState, RootState> = {
 }
 
 export default stockModule;
-
-// TODO
-// store.registerModule('stock', stockModule);

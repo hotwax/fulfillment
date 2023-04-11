@@ -6,6 +6,9 @@ const getters: GetterTree<OrderState, RootState> = {
   getOpenOrders (state) {
     return state.open;
   },
+  getInProgressOrders (state) {
+    return state.inProgress;
+  },
   getCompletedOrders (state) {
     return state.completed;
   }
