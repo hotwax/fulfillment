@@ -32,7 +32,7 @@
         </ion-item>
       </div> 
 
-      <ion-button expand="block" class="desktop-only" fill="outline" @click="shipOrderAlert">{{ $t("Ship") }}</ion-button>
+      <ion-button expand="block" class="bulk-action desktop-only" fill="outline" @click="shipOrderAlert">{{ $t("Ship") }}</ion-button>
 
       <ion-card>
         <div class="card-header">
@@ -61,7 +61,7 @@
         <div class="order-item">
           <div class="product-info">
             <ion-item lines="none">
-              <ion-thumbnail>
+              <ion-thumbnail slot="start">
                 <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
               </ion-thumbnail>
               <ion-label>
@@ -80,7 +80,7 @@
         <div class="order-item">
           <div class="product-info">
             <ion-item lines="none">
-              <ion-thumbnail>
+              <ion-thumbnail slot="start">
                 <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
               </ion-thumbnail>
               <ion-label>

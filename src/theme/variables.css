@@ -237,6 +237,17 @@ http://ionicframework.com/docs/theming/ */
 
 body {
   --border-medium: 1px solid var(--ion-color-medium);
+  
+  --spacer-2xs: 0.25rem; /* 4px */
+  --spacer-xs: 0.5rem;   /* 8px */
+  --spacer-sm: 1rem;     /* 16px */
+  --spacer-base: 1.5rem; /* 24px */
+  --spacer-lg: 2rem;     /* 32px */
+  --spacer-xl: 2.5rem;   /* 40px */
+  --spacer-2xl: 5rem;    /* 80px */
+  --spacer-3xl: 10rem;   /* 160px */
+
+  --ion-item-like-padding: 16px 10px;
 }
 
 .overline {
@@ -256,6 +267,8 @@ ion-thumbnail > img {
   display: flex;
   flex-wrap: nowrap;
   overflow-x: scroll;
+  gap: var(--spacer-xs);
+  margin: 8px 0 6px;
 }
 
 .filters > ion-item {
@@ -265,10 +278,23 @@ ion-thumbnail > img {
   border-radius: 10px;
 }
 
+.filters ion-item:first-child {
+  margin-left: var(--spacer-xs);
+}
+
+.filters ion-item:last-child {
+  margin-right: var(--spacer-xs);
+}
+
+.bulk-action {
+  margin: var(--spacer-sm) var(--spacer-sm) var(--spacer-xl);
+}
+
 img {
   object-fit: contain;
 }
 
+/* shipment card layout start */
 .card-header {
   display: grid;
   grid: "tags"
@@ -279,6 +305,7 @@ img {
 
 .order-primary-info {
   grid-area: info;
+  padding: 10px var(--spacer-xs);
 }
 
 .order-tags {
@@ -291,16 +318,28 @@ img {
   border-bottom: var(--border-medium);
 }
 
+.order-primary-info, .order-tags, .order-metadata {
+  padding: var(--ion-item-like-padding);
+}
+
 .order-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: var(--spacer-xs) 0;
   border-bottom: var(--border-medium);
-}   
+} 
+
+.product-metadata {
+  padding-inline-end: var(--spacer-sm);
+}
 
 .actions {
   display: none;
+  padding: var(--spacer-xs);
 }
+
+/* shipment card layout end */
 
 .desktop-only {
   display: none;
@@ -328,6 +367,7 @@ img {
 }
 
 @media (min-width: 991px) {
+  /* shipment card desktop layout start */
   .card-header {
     grid: "info tags metadata" / max-content 1fr max-content;
     justify-items: center;
@@ -349,6 +389,7 @@ img {
     display: flex;
     justify-content: space-between;
   }
+  /* shipment card desktop layout end */
 
   .desktop-only {
     display: block;
