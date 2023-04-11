@@ -46,7 +46,7 @@
           </ion-item>
         </div>
 
-        <ion-button expand="block" class="desktop-only" fill="outline" @click="shipOrderAlert">{{ $t("Ship") }}</ion-button>
+        <ion-button expand="block" class="bulk-action desktop-only" fill="outline" @click="shipOrderAlert">{{ $t("Ship") }}</ion-button>
 
         <ion-card v-for="(orders, index) in completedOrders.list" :key="index">
           <div class="card-header">
@@ -77,7 +77,7 @@
           <div v-for="order in orders.doclist.docs" :key="order" class="order-item">
             <div class="product-info">
               <ion-item lines="none">
-                <ion-thumbnail>
+                <ion-thumbnail slot="start">
                   <Image :src="getProduct(order.productId).mainImageUrl" />
                 </ion-thumbnail>
                 <ion-label>
