@@ -33,7 +33,7 @@
           </ion-item>
         </div>
 
-        <ion-button expand="block" class="desktop-only" fill="outline" @click="packOrders()">{{ $t("Pack orders") }}</ion-button>
+        <ion-button expand="block" class="bulk-action desktop-only" fill="outline" @click="packOrders()">{{ $t("Pack orders") }}</ion-button>
 
         <ion-card v-for="(order, index) in inProgressOrders.list" :key="index">
           <div class="card-header">
@@ -69,7 +69,7 @@
           <div v-for="(item, index) in order.doclist.docs" :key="index" class="order-item">
             <div class="product-info">
               <ion-item lines="none">
-                <ion-thumbnail>
+                <ion-thumbnail slot="start">
                   <Image :src="getProduct(item.productId).mainImageUrl" />
                 </ion-thumbnail>
                 <ion-label>
@@ -613,6 +613,10 @@ export default defineComponent({
 
 <style scoped>
 .box-type {
+  display: flex;
+  gap: var(--spacer-sm);
   border-bottom: var(--border-medium);
+  padding: var(--ion-item-like-padding);
+  align-items: center;
 }
 </style>

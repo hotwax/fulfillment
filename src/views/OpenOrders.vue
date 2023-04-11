@@ -29,7 +29,7 @@
           </ion-item>
         </div>
 
-        <ion-button class="desktop-only" fill="outline" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
+        <ion-button class="bulk-action desktop-only" fill="outline" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
 
         <ion-card v-for="(orders, index) in openOrders.list" :key="index">
           <div class="card-header">
@@ -64,7 +64,7 @@
             <div class="order-item">
               <div class="product-info">
                 <ion-item lines="none">
-                  <ion-thumbnail>
+                  <ion-thumbnail slot="start">
                     <Image :src="getProduct(order.productId).mainImageUrl" />
                   </ion-thumbnail>
                   <ion-label>
