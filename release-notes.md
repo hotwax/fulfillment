@@ -1,3 +1,15 @@
+# Release 1.1.0
+
+## What's Changed
+* Fixed: issue of login navigation failed on token expire(#85zruuj2w) by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/91
+* Implemented: support to make the in-progress page functional(#1y8mznd) by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/85
+* Add spacing to layout by @dt2patel in https://github.com/hotwax/fulfillment-pwa/pull/84 and @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/99
+
+## New Contributors
+* @dt2patel made their first contribution in https://github.com/hotwax/fulfillment-pwa/pull/84
+
+**Full Changelog**: https://github.com/hotwax/fulfillment-pwa/compare/v1.0.0...v1.1.0
+
 # Release 1.0.0
 
 ## What's Changed
