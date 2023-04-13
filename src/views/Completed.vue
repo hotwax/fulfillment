@@ -193,7 +193,8 @@ export default defineComponent({
       shipmentMethods: [] as Array<any>,
       unmanifestedCarrierPartyIds: [] as Array<any>,
       manifestedCarrierPartyIds: [] as Array<any>,
-      uniqueCarrierPartyIds: [] as Array<any>
+      uniqueCarrierPartyIds: [] as Array<any>,
+      carrierPartyIds: [] as Array<any>
     }
   },
   computed: {
@@ -264,6 +265,46 @@ export default defineComponent({
 
         if(resp.status == 200 && !hasError(resp)) {
           this.shipmentMethods = resp.data.facets.shipmentMethodFacet.buckets
+        }
+      } catch(err) {
+        console.error(err)
+      }
+    },
+    async fetchCarrierPartyIds() {
+      const payload = prepareOrderQuery({
+        viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
+        queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
+        groupBy: 'picklistBinId',
+        sort: 'orderDate asc',
+        defType: "edismax",
+        filters: {
+          picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
+          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+          facilityId: { value: this.currentFacility.facilityId },
+          productStoreId: { value: this.currentEComStore.productStoreId },
+        },
+        facet: {
+          manifestContentIdFacet: {
+            "excludeTags": "manifestContentIdFilter",
+            "field": "manifestContentId",
+            "mincount": 1,
+            "limit": -1,
+            "sort": "index",
+            "type": "terms",
+            "facet": {
+              "groups": "unique(picklistBinId)"
+            }
+          }
+        }
+      })
+
+      try {
+        const resp = await UtilService.fetchCarrierPartyIds(payload)
+
+        if(resp.status == 200 && !hasError(resp) && resp.data.facets.count >= 0) {
+          this.carrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
+        } else {
+          console.error('Failed to fetch manifestedCarrierPartyIds', resp.data)
         }
       } catch(err) {
         console.error(err)
