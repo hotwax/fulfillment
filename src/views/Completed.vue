@@ -19,19 +19,10 @@
       <div v-if="completedOrders.total">
 
         <div class="filters">
-          <ion-item lines="none" v-for="carrierPartyId in unmanifestedCarrierPartyIds" :key="carrierPartyId.val">
+          <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId.val">
             <ion-checkbox slot="start"/>
             <ion-label>
-              {{ carrierPartyId.val }}
-              <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? $t('package') : $t("packages") }}</p>
-            </ion-label>
-            <ion-icon :icon="printOutline" />
-          </ion-item>
-
-          <ion-item lines="none" v-for="carrierPartyId in manifestedCarrierPartyIds" :key="carrierPartyId.val">
-            <ion-checkbox slot="start"/>
-            <ion-label>
-              {{ carrierPartyId.val }}
+              {{ carrierPartyId.val.split('/')[0] }}
               <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? $t('package') : $t("packages") }}</p>
             </ion-label>
             <ion-icon :icon="printOutline" />
@@ -191,9 +182,6 @@ export default defineComponent({
   data() {
     return {
       shipmentMethods: [] as Array<any>,
-      unmanifestedCarrierPartyIds: [] as Array<any>,
-      manifestedCarrierPartyIds: [] as Array<any>,
-      uniqueCarrierPartyIds: [] as Array<any>,
       carrierPartyIds: [] as Array<any>
     }
   },
@@ -207,8 +195,7 @@ export default defineComponent({
     })
   },
   async mounted() {
-    await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchManifestedCarrierPartyIds(), this.fetchUnmanifestedCarrierPartyIds()]);
-    this.generateUniqueCarrierPartyIds()
+    await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
   },
   methods: {
     async shipOrderAlert() {
@@ -304,97 +291,11 @@ export default defineComponent({
         if(resp.status == 200 && !hasError(resp) && resp.data.facets.count >= 0) {
           this.carrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
         } else {
-          console.error('Failed to fetch manifestedCarrierPartyIds', resp.data)
+          console.error('Failed to fetch carrierPartyIds', resp.data)
         }
       } catch(err) {
         console.error(err)
       }
-    },
-
-    async fetchManifestedCarrierPartyIds() {
-      const payload = prepareOrderQuery({
-        viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
-        queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
-        groupBy: 'picklistBinId',
-        sort: 'orderDate asc',
-        defType: "edismax",
-        filters: {
-          picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
-          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId },
-          isManifested: { value: 'Y' }
-        },
-        facet: {
-          manifestContentIdFacet: {
-            "excludeTags": "manifestContentIdFilter",
-            "field": "manifestContentId",
-            "mincount": 1,
-            "limit": -1,
-            "sort": "index",
-            "type": "terms",
-            "facet": {
-              "groups": "unique(picklistBinId)"
-            }
-          }
-        }
-      })
-
-      try {
-        const resp = await UtilService.fetchCarrierPartyIds(payload)
-
-        if(resp.status == 200 && !hasError(resp) && resp.data.facets.count >= 0) {
-          this.manifestedCarrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
-        } else {
-          console.error('Failed to fetch manifestedCarrierPartyIds', resp.data)
-        }
-      } catch(err) {
-        console.error(err)
-      }
-    },
-    async fetchUnmanifestedCarrierPartyIds() {
-      const payload = prepareOrderQuery({
-        viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
-        queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
-        groupBy: 'picklistBinId',
-        sort: 'orderDate asc',
-        defType: "edismax",
-        filters: {
-          picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
-          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId },
-          isManifested: { value: 'N' }
-        },
-        facet: {
-          manifestContentIdFacet: {
-            "excludeTags": "manifestContentIdFilter",
-            "field": "manifestContentId",
-            "mincount": 1,
-            "limit": -1,
-            "sort": "index",
-            "type": "terms",
-            "facet": {
-              "groups": "unique(picklistBinId)"
-            }
-          }
-        }
-      })
-
-      try {
-        const resp = await UtilService.fetchCarrierPartyIds(payload)
-
-        if(resp.status == 200 && !hasError(resp) && resp.data.facets.count >= 0) {
-          this.unmanifestedCarrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
-        } else {
-          console.error('Failed to fetch unmanifestedCarrierPartyIds', resp.data)
-        }
-      } catch(err) {
-        console.error(err)
-      }
-    },
-    generateUniqueCarrierPartyIds() {
-      this.uniqueCarrierPartyIds = [...new Set([...this.unmanifestedCarrierPartyIds, ...this.manifestedCarrierPartyIds].map((carrierPartyId: any) => carrierPartyId.val?.split('/')[0]))]
     }
   },
   setup() {
