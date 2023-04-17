@@ -39,25 +39,25 @@
 
         <ion-button expand="block" class="bulk-action desktop-only" fill="outline" @click="shipOrderAlert">{{ $t("Ship") }}</ion-button>
 
-        <ion-card v-for="(orders, index) in completedOrders.list" :key="index">
+        <ion-card v-for="(order, index) in completedOrders.list" :key="index">
           <div class="card-header">
             <div class="order-primary-info">
               <ion-label>
-                {{ orders.doclist.docs[0].customerName }}
-                <p>{{ $t("Ordered") }} {{ formatUtcDate(orders.doclist.docs[0].orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                {{ order.customerName }}
+                <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
               </ion-label>
             </div>
 
             <div class="order-tags">
               <ion-chip outline>
                 <ion-icon :icon="pricetagOutline" />
-                <ion-label>{{ orders.doclist.docs[0].orderId }}</ion-label>
+                <ion-label>{{ order.orderId }}</ion-label>
               </ion-chip>
             </div>
 
             <div class="order-metadata">
               <ion-label>
-                {{ orders.doclist.docs[0].shipmentMethodTypeDesc }}
+                {{ order.shipmentMethodTypeDesc }}
                 <!-- TODO: add support to display the last brokered date, currently not getting
                 the date in API response -->
                 <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
@@ -65,22 +65,22 @@
             </div>
           </div>
 
-          <div v-for="order in orders.doclist.docs" :key="order" class="order-item">
+          <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
-                  <Image :src="getProduct(order.productId).mainImageUrl" />
+                  <Image :src="getProduct(item.productId).mainImageUrl" />
                 </ion-thumbnail>
                 <ion-label>
-                  <p class="overline">{{ order.productSku }}</p>
-                  {{ order.virtualProductName }}
-                  <p>{{ getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  <p class="overline">{{ item.productSku }}</p>
+                  {{ item.virtualProductName }}
+                  <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                 </ion-label>
               </ion-item>
             </div>
 
             <div class="product-metadata mobile-only">
-              <ion-note>{{ getProductStock(order.productId) }} {{ $t("pieces in stock") }}</ion-note>
+              <ion-note>{{ getProductStock(item.productId) }} {{ $t("pieces in stock") }}</ion-note>
             </div>
           </div>
 
