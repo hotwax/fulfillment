@@ -75,6 +75,7 @@ const actions: ActionTree<UserState, RootState> = {
   async logout ({ commit }) {
     // TODO add any other tasks if need
     commit(types.USER_END_SESSION)
+    this.dispatch('order/clearOrders')
     resetConfig();
   },
 
@@ -118,8 +119,8 @@ const actions: ActionTree<UserState, RootState> = {
     const user = JSON.parse(JSON.stringify(state.current as any));
     commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
     user.stores = await dispatch("getEComStores", { facilityId: payload.facility.facilityId });
-
     commit(types.USER_INFO_UPDATED, user);
+    this.dispatch('order/clearOrders')
   },
   
   /**

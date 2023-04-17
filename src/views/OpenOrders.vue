@@ -17,8 +17,8 @@
     </ion-header>
     
     <ion-content id="view-size-selector">
+      <ion-searchbar :value="openOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="openOrders.total">
-        <ion-searchbar :value="openOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
         <div class="filters">
           <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
             <ion-checkbox slot="start" @ionChange="updateSelectedShipmentMethods(method.val)"/>
@@ -29,7 +29,7 @@
           </ion-item>
         </div>
 
-        <ion-button class="desktop-only" fill="outline" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
+        <ion-button class="bulk-action desktop-only" fill="outline" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
 
         <ion-card v-for="(orders, index) in openOrders.list" :key="index">
           <div class="card-header">
@@ -64,7 +64,7 @@
             <div class="order-item">
               <div class="product-info">
                 <ion-item lines="none">
-                  <ion-thumbnail>
+                  <ion-thumbnail slot="start">
                     <Image :src="getProduct(order.productId).mainImageUrl" />
                   </ion-thumbnail>
                   <ion-label>
@@ -97,7 +97,7 @@
         </ion-fab>
       </div>
       <div class="empty-state" v-else>
-        {{ currentFacility.name }}{{ $t(' doesn’t have any outstanding orders right now.') }}
+        {{ currentFacility.name }}{{ $t(" doesn't have any outstanding orders right now.") }}
       </div>
     </ion-content>
   </ion-page>
@@ -235,7 +235,7 @@ export default defineComponent({
 
       try {
         resp = await UtilService.fetchShipmentMethods(payload);
-        if(resp.status == 200 && !hasError(resp) && resp.data.facets.count > 0) {
+        if(resp.status == 200 && !hasError(resp) && resp.data.facets?.count > 0) {
           this.shipmentMethods = resp.data.facets.shipmentMethodTypeIdFacet.buckets
         } else {
           console.error('Failed to fetch shipment methods')
