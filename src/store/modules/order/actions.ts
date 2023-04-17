@@ -212,6 +212,18 @@ const actions: ActionTree<OrderState, RootState> = {
 
     completedOrderQuery.viewSize = orders.length
 
+    // Transforming the resp
+    orders = orders.map((order: any) => ({
+      customerId: order.doclist.docs[0].customerId,
+      customerName: order.doclist.docs[0].customerName,
+      orderId: order.doclist.docs[0].orderId,
+      orderDate: order.doclist.docs[0].orderDate,
+      groupValue: order.groupValue,
+      items: order.doclist.docs,
+      shipmentMethodTypeId: order.doclist.docs[0].shipmentMethodTypeId,
+      shipmentMethodTypeDesc: order.doclist.docs[0].shipmentMethodTypeDesc
+    }))
+
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, { ...completedOrderQuery })
     commit(types.ORDER_COMPLETED_UPDATED, {list: orders, total})
 

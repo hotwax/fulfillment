@@ -24,19 +24,10 @@
       <div v-if="completedOrders.total">
 
         <div class="filters">
-          <ion-item lines="none" v-for="carrierPartyId in unmanifestedCarrierPartyIds" :key="carrierPartyId.val">
+          <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId.val">
             <ion-checkbox slot="start" :checked="completedOrders.query.selectedCarrierPartyIds.includes(carrierPartyId.val)" @ionChange="updateSelectedCarrierPartyIds(carrierPartyId.val)"/>
             <ion-label>
-              {{ carrierPartyId.val }}
-              <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? $t('package') : $t("packages") }}</p>
-            </ion-label>
-            <ion-icon :icon="printOutline" />
-          </ion-item>
-
-          <ion-item lines="none" v-for="carrierPartyId in manifestedCarrierPartyIds" :key="carrierPartyId.val">
-            <ion-checkbox slot="start" :checked="completedOrders.query.selectedCarrierPartyIds.includes(carrierPartyId.val)" @ionChange="updateSelectedCarrierPartyIds(carrierPartyId.val)"/>
-            <ion-label>
-              {{ carrierPartyId.val }}
+              {{ carrierPartyId.val.split('/')[0] }}
               <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? $t('package') : $t("packages") }}</p>
             </ion-label>
             <ion-icon :icon="printOutline" />
@@ -53,25 +44,25 @@
 
         <ion-button expand="block" class="bulk-action desktop-only" fill="outline" @click="shipOrderAlert">{{ $t("Ship") }}</ion-button>
 
-        <ion-card v-for="(orders, index) in completedOrders.list" :key="index">
+        <ion-card v-for="(order, index) in completedOrders.list" :key="index">
           <div class="card-header">
             <div class="order-primary-info">
               <ion-label>
-                {{ orders.doclist.docs[0].customerName }}
-                <p>{{ $t("Ordered") }} {{ formatUtcDate(orders.doclist.docs[0].orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                {{ order.customerName }}
+                <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
               </ion-label>
             </div>
 
             <div class="order-tags">
               <ion-chip outline>
                 <ion-icon :icon="pricetagOutline" />
-                <ion-label>{{ orders.doclist.docs[0].orderId }}</ion-label>
+                <ion-label>{{ order.orderId }}</ion-label>
               </ion-chip>
             </div>
 
             <div class="order-metadata">
               <ion-label>
-                {{ orders.doclist.docs[0].shipmentMethodTypeDesc }}
+                {{ order.shipmentMethodTypeDesc }}
                 <!-- TODO: add support to display the last brokered date, currently not getting
                 the date in API response -->
                 <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
@@ -79,22 +70,22 @@
             </div>
           </div>
 
-          <div v-for="order in orders.doclist.docs" :key="order" class="order-item">
+          <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
-                  <Image :src="getProduct(order.productId).mainImageUrl" />
+                  <Image :src="getProduct(item.productId).mainImageUrl" />
                 </ion-thumbnail>
                 <ion-label>
-                  <p class="overline">{{ order.productSku }}</p>
-                  {{ order.virtualProductName }}
-                  <p>{{ getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  <p class="overline">{{ item.productSku }}</p>
+                  {{ item.virtualProductName }}
+                  <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                 </ion-label>
               </ion-item>
             </div>
 
             <div class="product-metadata mobile-only">
-              <ion-note>{{ getProductStock(order.productId) }} {{ $t("pieces in stock") }}</ion-note>
+              <ion-note>{{ getProductStock(item.productId) }} {{ $t("pieces in stock") }}</ion-note>
             </div>
           </div>
 
@@ -199,9 +190,7 @@ export default defineComponent({
   data() {
     return {
       shipmentMethods: [] as Array<any>,
-      unmanifestedCarrierPartyIds: [] as Array<any>,
-      manifestedCarrierPartyIds: [] as Array<any>,
-      uniqueCarrierPartyIds: [] as Array<any>
+      carrierPartyIds: [] as Array<any>
     }
   },
   computed: {
@@ -214,8 +203,7 @@ export default defineComponent({
     })
   },
   async mounted() {
-    await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchManifestedCarrierPartyIds(), this.fetchUnmanifestedCarrierPartyIds()]);
-    this.generateUniqueCarrierPartyIds()
+    await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
   unmounted() {
@@ -287,8 +275,7 @@ export default defineComponent({
         console.error(err)
       }
     },
-
-    async fetchManifestedCarrierPartyIds() {
+    async fetchCarrierPartyIds() {
       const payload = prepareOrderQuery({
         viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
         queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
@@ -300,7 +287,6 @@ export default defineComponent({
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.currentFacility.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId },
-          isManifested: { value: 'Y' }
         },
         facet: {
           manifestContentIdFacet: {
@@ -321,57 +307,13 @@ export default defineComponent({
         const resp = await UtilService.fetchCarrierPartyIds(payload)
 
         if(resp.status == 200 && !hasError(resp) && resp.data.facets.count >= 0) {
-          this.manifestedCarrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
+          this.carrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
         } else {
-          console.error('Failed to fetch manifestedCarrierPartyIds', resp.data)
+          console.error('Failed to fetch carrierPartyIds', resp.data)
         }
       } catch(err) {
         console.error(err)
       }
-    },
-    async fetchUnmanifestedCarrierPartyIds() {
-      const payload = prepareOrderQuery({
-        viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
-        queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
-        groupBy: 'picklistBinId',
-        sort: 'orderDate asc',
-        defType: "edismax",
-        filters: {
-          picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
-          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId },
-          isManifested: { value: 'N' }
-        },
-        facet: {
-          manifestContentIdFacet: {
-            "excludeTags": "manifestContentIdFilter",
-            "field": "manifestContentId",
-            "mincount": 1,
-            "limit": -1,
-            "sort": "index",
-            "type": "terms",
-            "facet": {
-              "groups": "unique(picklistBinId)"
-            }
-          }
-        }
-      })
-
-      try {
-        const resp = await UtilService.fetchCarrierPartyIds(payload)
-
-        if(resp.status == 200 && !hasError(resp) && resp.data.facets.count >= 0) {
-          this.unmanifestedCarrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
-        } else {
-          console.error('Failed to fetch unmanifestedCarrierPartyIds', resp.data)
-        }
-      } catch(err) {
-        console.error(err)
-      }
-    },
-    generateUniqueCarrierPartyIds() {
-      this.uniqueCarrierPartyIds = [...new Set([...this.unmanifestedCarrierPartyIds, ...this.manifestedCarrierPartyIds].map((carrierPartyId: any) => carrierPartyId.val?.split('/')[0]))]
     },
     async updateQueryString(queryString: string) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
