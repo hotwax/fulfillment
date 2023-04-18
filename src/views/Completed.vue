@@ -1,5 +1,7 @@
 <template>
   <ion-page>
+    <ViewSizeSelector content-id="view-size-selector" />
+
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button slot="start" />
@@ -9,18 +11,21 @@
         <ion-buttons slot="end">
           <!-- TODO: implement support to upload CSV -->
           <ion-button :disabled="true" fill="clear" @click="() => router.push('/upload-csv')">{{ $t("Upload CSV") }}</ion-button>
+          <ion-menu-button menu="end">
+            <ion-icon :icon="optionsOutline" />
+          </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
     
-    <ion-content>
-      <ion-searchbar />
+    <ion-content id="view-size-selector">
+      <ion-searchbar :value="completedOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)" />
 
       <div v-if="completedOrders.total">
 
         <div class="filters">
           <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId.val">
-            <ion-checkbox slot="start"/>
+            <ion-checkbox slot="start" :checked="completedOrders.query.selectedCarrierPartyIds.includes(carrierPartyId.val)" @ionChange="updateSelectedCarrierPartyIds(carrierPartyId.val)"/>
             <ion-label>
               {{ carrierPartyId.val.split('/')[0] }}
               <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? $t('package') : $t("packages") }}</p>
@@ -29,7 +34,7 @@
           </ion-item>
 
           <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod.val">
-            <ion-checkbox :value="shipmentMethod.val" slot="start"/>
+            <ion-checkbox slot="start" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)" @ionChange="updateSelectedShipmentMethods(shipmentMethod.val)"/>
             <ion-label>
               {{ shipmentMethod.val }}
               <p>{{ shipmentMethod.groups }} {{ shipmentMethod.groups > 1 ? $t('orders') : $t('order') }}, {{ shipmentMethod.itemCount }} {{ shipmentMethod.itemCount > 1 ? $t('items') : $t('item') }}</p>
@@ -146,7 +151,7 @@ import {
   popoverController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline } from 'ionicons/icons'
+import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
@@ -154,6 +159,8 @@ import { formatUtcDate, getFeature, hasError } from '@/utils'
 import Image from '@/components/Image.vue'
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
+import emitter from '@/event-bus';
+import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 
 export default defineComponent({
   name: 'Home',
@@ -178,6 +185,7 @@ export default defineComponent({
     IonThumbnail,
     IonTitle,
     IonToolbar,
+    ViewSizeSelector
   },
   data() {
     return {
@@ -196,8 +204,18 @@ export default defineComponent({
   },
   async mounted() {
     await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+    emitter.on('updateOrderQuery', this.updateOrderQuery)
+  },
+  unmounted() {
+    emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   methods: {
+    async updateOrderQuery(size: any) {
+      const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
+
+      completedOrdersQuery.viewSize = size
+      await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+    },
     async shipOrderAlert() {
       const alert = await alertController
         .create({
@@ -296,6 +314,47 @@ export default defineComponent({
       } catch(err) {
         console.error(err)
       }
+    },
+    async updateQueryString(queryString: string) {
+      const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
+
+      completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      completedOrdersQuery.queryString = queryString
+      await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+    },
+    async updateSelectedShipmentMethods (method: string) {
+      const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
+
+      const selectedShipmentMethods = completedOrdersQuery.selectedShipmentMethods
+      const index = selectedShipmentMethods.indexOf(method)
+      if (index < 0) {
+        selectedShipmentMethods.push(method)
+      } else {
+        selectedShipmentMethods.splice(index, 1)
+      }
+
+      // making view size default when changing the shipment method to correctly fetch orders
+      completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      completedOrdersQuery.selectedShipmentMethods = selectedShipmentMethods
+
+      this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+    },
+    async updateSelectedCarrierPartyIds (carrierPartyId: string) {
+      const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
+
+      const selectedCarrierPartyIds = completedOrdersQuery.selectedCarrierPartyIds
+      const index = selectedCarrierPartyIds.indexOf(carrierPartyId)
+      if (index < 0) {
+        selectedCarrierPartyIds.push(carrierPartyId)
+      } else {
+        selectedCarrierPartyIds.splice(index, 1)
+      }
+
+      // making view size default when changing the shipment method to correctly fetch orders
+      completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      completedOrdersQuery.selectedCarrierPartyIds = selectedCarrierPartyIds
+
+      this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     }
   },
   setup() {
@@ -308,6 +367,7 @@ export default defineComponent({
       ellipsisVerticalOutline,
       formatUtcDate,
       getFeature,
+      optionsOutline,
       pricetagOutline,
       printOutline,
       router,

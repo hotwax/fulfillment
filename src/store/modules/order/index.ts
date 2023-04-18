@@ -23,7 +23,8 @@ const orderModule: Module<OrderState, RootState> = {
       query: {
         viewSize: process.env.VUE_APP_VIEW_SIZE,
         queryString: '',
-        selectedCarrierPartyIds: []
+        selectedCarrierPartyIds: [],
+        selectedShipmentMethods: []
       }
     },
     inProgress: {

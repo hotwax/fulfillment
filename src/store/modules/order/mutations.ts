@@ -28,13 +28,14 @@ const mutations: MutationTree <OrderState> = {
   [types.ORDER_COMPLETED_QUERY_UPDATED](state, payload) {
     state.completed.query = payload
   },
-  [types.ORDER_COMPLETED_CLEARED](state, payload) {
+  [types.ORDER_COMPLETED_CLEARED](state) {
     state.completed = {
       list: [],
       total: 0,
       query: {
         viewSize: process.env.VUE_APP_VIEW_SIZE,
         selectedCarrierPartyIds: [],
+        selectedShipmentMethods: [],
         queryString: ''
       }
     }
@@ -46,7 +47,7 @@ const mutations: MutationTree <OrderState> = {
   [types.ORDER_INPROGRESS_QUERY_UPDATED] (state, payload) {
     state.inProgress.query = payload;
   },
-  [types.ORDER_INPROGRESS_CLEARED](state, payload) {
+  [types.ORDER_INPROGRESS_CLEARED](state) {
     state.inProgress = {
       list: [],
       total: 0,

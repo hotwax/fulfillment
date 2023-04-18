@@ -183,9 +183,13 @@ const actions: ActionTree<OrderState, RootState> = {
       }
     }
 
-    // only adding shipmentMethods when a method is selected
     if(completedOrderQuery.selectedCarrierPartyIds.length) {
-      params.filters['shipmentCarrierPartyId'] = { value: completedOrderQuery.selectedCarrierPartyIds, op: 'OR' }
+      params.filters['manifestContentId'] = { value: completedOrderQuery.selectedCarrierPartyIds, op: 'OR' }
+    }
+
+    // only adding shipmentMethods when a method is selected
+    if(completedOrderQuery.selectedShipmentMethods.length) {
+      params.filters['shipmentMethodTypeId'] = { value: completedOrderQuery.selectedShipmentMethods, op: 'OR' }
     }
 
     const orderQueryPayload = prepareOrderQuery(params)
