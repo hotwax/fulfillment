@@ -241,7 +241,7 @@ export default defineComponent({
                 if(resp.status == 200 && !hasError(resp)) {
                   showToast(translate('Orders shipped successfully'))
                   // TODO: handle the case of data not updated correctly
-                  this.store.dispatch('orders/findCompletedOrders')
+                  await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
                   showToast(translate('Failed to ship orders'))
                 }
@@ -407,7 +407,7 @@ export default defineComponent({
                 if(resp.status == 200 && !hasError(resp)) {
                   showToast(translate('Order unpacked successfully'))
                   // TODO: handle the case of data not updated correctly
-                  this.store.dispatch('orders/findCompletedOrders')
+                  await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
                   showToast(translate('Failed to unpack the order'))
                 }
