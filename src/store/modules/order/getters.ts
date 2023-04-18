@@ -8,6 +8,9 @@ const getters: GetterTree<OrderState, RootState> = {
   },
   getInProgressOrders (state) {
     return state.inProgress;
+  },
+  getCompletedOrders (state) {
+    return state.completed;
   }
 };
 export default getters;

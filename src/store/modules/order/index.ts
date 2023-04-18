@@ -17,6 +17,15 @@ const orderModule: Module<OrderState, RootState> = {
         selectedShipmentMethods: []
       }
     },
+    completed: {
+      list: [],
+      total: 0,
+      query: {
+        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        queryString: '',
+        selectedCarrierPartyIds: []
+      }
+    },
     inProgress: {
       list: [],
       total: 0,

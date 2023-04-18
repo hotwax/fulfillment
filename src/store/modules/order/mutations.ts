@@ -21,6 +21,24 @@ const mutations: MutationTree <OrderState> = {
       }
     }
   },
+  [types.ORDER_COMPLETED_UPDATED] (state, payload) {
+    state.completed.list = payload.list;
+    state.completed.total = payload.total;
+  },
+  [types.ORDER_COMPLETED_QUERY_UPDATED](state, payload) {
+    state.completed.query = payload
+  },
+  [types.ORDER_COMPLETED_CLEARED](state, payload) {
+    state.completed = {
+      list: [],
+      total: 0,
+      query: {
+        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        selectedCarrierPartyIds: [],
+        queryString: ''
+      }
+    }
+  },
   [types.ORDER_INPROGRESS_UPDATED] (state, payload) {
     state.inProgress.list = payload.orders;
     state.inProgress.total = payload.total;

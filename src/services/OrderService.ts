@@ -9,6 +9,15 @@ const findOpenOrders = async (query: any): Promise <any>  => {
   });
 }
 
+const findCompletedOrders = async (query: any): Promise <any>  => {
+  return api({
+   // TODO: We can replace this with any API
+    url: "solr-query",
+    method: "post",
+    data: query
+  });
+}
+
 const findInProgressOrders = async (query: any): Promise <any>  => {
   return api({
     // TODO: We can replace this with any API
@@ -61,10 +70,11 @@ const updateOrder = async (payload: any): Promise <any> => {
 
 export const OrderService = {
   addShipmentBox,
+  findCompletedOrders,
   findInProgressOrders,
   findOpenOrders,
   packOrder,
   packOrders,
   rejectOrderItem,
   updateOrder
-} 
+}

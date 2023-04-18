@@ -8,6 +8,15 @@ export default interface OrderState {
       selectedShipmentMethods: Array<string>
     }
   },
+  completed: {
+    list: any,
+    total: number,
+    query: {
+      viewSize: number,
+      queryString: string,
+      selectedCarrierPartyIds: Array<string>
+    }
+  },  
   inProgress: {
     list: any,
     total: number,
