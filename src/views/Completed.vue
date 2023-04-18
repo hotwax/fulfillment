@@ -334,7 +334,7 @@ export default defineComponent({
       try {
         const resp = await UtilService.fetchCarrierPartyIds(payload)
 
-        if(resp.status == 200 && !hasError(resp) && resp.data.facets.count >= 0) {
+        if(resp.status == 200 && !hasError(resp)) {
           this.carrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
         } else {
           console.error('Failed to fetch carrierPartyIds', resp.data)
