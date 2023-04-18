@@ -11,7 +11,7 @@
         <ion-radio-group :value="viewSize" @ionChange="updateViewSize($event.detail.value)">
           <ion-item v-for="count in prepareViewSizeOptions()" :key="count">
             <ion-radio slot="start" :value="count"/>
-            <ion-label>{{ count }} {{ $t('orders') }}</ion-label>
+            <ion-label>{{ count }} {{ count === 1 ? $t('order') : $t('orders') }}</ion-label>
             <!-- TODO: add support to display the order items count -->
             <!-- <ion-note slot="end">10 items</ion-note> -->
           </ion-item>

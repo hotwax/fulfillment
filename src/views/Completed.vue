@@ -6,7 +6,7 @@
       <ion-toolbar>
         <ion-menu-button slot="start" />
         <ion-title v-if="!completedOrders.total">{{ completedOrders.total }} {{ $t('orders') }}</ion-title>
-        <ion-title v-else>{{ completedOrders.query.viewSize }} {{ $t('of') }} {{ completedOrders.total }} {{ $t('orders') }}</ion-title>
+        <ion-title v-else>{{ completedOrders.query.viewSize }} {{ $t('of') }} {{ completedOrders.total }} {{ completedOrders.total ? $t('order') : $t('orders') }}</ion-title>
 
         <ion-buttons slot="end">
           <!-- TODO: implement support to upload CSV -->
@@ -30,7 +30,8 @@
               {{ carrierPartyId.val.split('/')[0] }}
               <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? $t('package') : $t("packages") }}</p>
             </ion-label>
-            <ion-icon :icon="printOutline" />
+            <!-- TODO: make the print icon functional -->
+            <!-- <ion-icon :icon="printOutline" /> -->
           </ion-item>
 
           <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod.val">
