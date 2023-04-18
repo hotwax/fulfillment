@@ -232,15 +232,16 @@ export default defineComponent({
             text: this.$t("Ship"),
             handler: async () => {
               const payload = {
-                shipmentIds: this.completedOrders.list.map((order: any) => order.shipmentId)
+                shipmentId: this.completedOrders.list.map((order: any) => order.shipmentId)
               }
 
               try {
                 const resp = await OrderService.bulkShipOrders(payload)
 
                 if(resp.status == 200 && !hasError(resp)) {
-                  // TODO: refresh order on success of ship action
                   showToast(translate('Orders shipped successfully'))
+                  // TODO: handle the case of data not updated correctly
+                  this.store.dispatch('orders/findCompletedOrders')
                 } else {
                   showToast(translate('Failed to ship orders'))
                 }
@@ -404,8 +405,9 @@ export default defineComponent({
                 const resp = await OrderService.unpackOrder(payload)
 
                 if(resp.status == 200 && !hasError(resp)) {
-                  // TODO: refresh order on success of unpack action
                   showToast(translate('Order unpacked successfully'))
+                  // TODO: handle the case of data not updated correctly
+                  this.store.dispatch('orders/findCompletedOrders')
                 } else {
                   showToast(translate('Failed to unpack the order'))
                 }

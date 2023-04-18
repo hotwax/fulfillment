@@ -45,7 +45,7 @@ const packOrders = async (query: any): Promise <any> => {
 
 const bulkShipOrders = async (query: any): Promise<any> => {
   return api({
-    url: "bulkShipOrders",
+    url: "service/bulkShipOrders",
     method: "post",
     data: query
   })
