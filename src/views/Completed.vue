@@ -6,7 +6,7 @@
       <ion-toolbar>
         <ion-menu-button slot="start" />
         <ion-title v-if="!completedOrders.total">{{ completedOrders.total }} {{ $t('orders') }}</ion-title>
-        <ion-title v-else>{{ completedOrders.query.viewSize }} {{ $t('of') }} {{ completedOrders.total }} {{ $t('orders') }}</ion-title>
+        <ion-title v-else>{{ completedOrders.query.viewSize }} {{ $t('of') }} {{ completedOrders.total }} {{ completedOrders.total ? $t('order') : $t('orders') }}</ion-title>
 
         <ion-buttons slot="end">
           <!-- TODO: implement support to upload CSV -->
@@ -30,7 +30,8 @@
               {{ carrierPartyId.val.split('/')[0] }}
               <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? $t('package') : $t("packages") }}</p>
             </ion-label>
-            <ion-icon :icon="printOutline" />
+            <!-- TODO: make the print icon functional -->
+            <!-- <ion-icon :icon="printOutline" /> -->
           </ion-item>
 
           <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod.val">
@@ -42,7 +43,7 @@
           </ion-item>
         </div>
 
-        <ion-button expand="block" class="bulk-action desktop-only" fill="outline" @click="shipOrderAlert">{{ $t("Ship") }}</ion-button>
+        <ion-button expand="block" class="bulk-action desktop-only" fill="outline" @click="bulkShipOrders()">{{ $t("Ship") }}</ion-button>
 
         <ion-card v-for="(order, index) in completedOrders.list" :key="index">
           <div class="card-header">
@@ -92,7 +93,7 @@
           <!-- TODO: implement functionality to mobile view -->
           <div class="mobile-only">
             <ion-item>
-              <ion-button fill="clear" @click="shipOrderAlert">{{ $t("Ship Now") }}</ion-button>
+              <ion-button fill="clear" >{{ $t("Ship Now") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -102,19 +103,20 @@
           <!-- TODO: make the buttons functional -->
           <div class="actions">
             <div class="desktop-only">
-              <ion-button @click="shipOrderAlert">{{ $t("Ship Now") }}</ion-button>
-              <ion-button fill="outline">{{ $t("Print Shipping Label") }}</ion-button>
-              <ion-button fill="outline">{{ $t("Print Customer Letter") }}</ion-button>
+              <ion-button>{{ $t("Ship Now") }}</ion-button>
+              <!-- TODO: implemented support to make the buttons functional -->
+              <ion-button :disabled="true" fill="outline">{{ $t("Print Shipping Label") }}</ion-button>
+              <ion-button :disabled="true" fill="outline">{{ $t("Print Customer Letter") }}</ion-button>
             </div>
             <div class="desktop-only">
-              <ion-button fill="outline" color="danger">{{ $t("Unpack") }}</ion-button>
+              <ion-button fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
             </div>
           </div>
         </ion-card>
 
         <!-- TODO: make mobile view functional -->
         <ion-fab class="mobile-only" vertical="bottom" horizontal="end">
-          <ion-fab-button  @click="shipOrderAlert">
+          <ion-fab-button  @click="bulkShipOrders()">
             <ion-icon :icon="checkmarkDoneOutline" />
           </ion-fab-button>
         </ion-fab>
@@ -155,12 +157,14 @@ import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
-import { formatUtcDate, getFeature, hasError } from '@/utils'
+import { formatUtcDate, getFeature, hasError, showToast } from '@/utils'
 import Image from '@/components/Image.vue'
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import emitter from '@/event-bus';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
+import { translate } from '@/i18n';
+import { OrderService } from '@/services/OrderService';
 
 export default defineComponent({
   name: 'Home',
@@ -216,14 +220,39 @@ export default defineComponent({
       completedOrdersQuery.viewSize = size
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
-    async shipOrderAlert() {
-      const alert = await alertController
+    async bulkShipOrders() {
+      const shipOrderAlert = await alertController
         .create({
            header: this.$t("Ship orders"),
-           message: this.$t("You are shipping orders. You cannot unpack and edit orders after they have been  shipped. Are you sure you are ready to ship this orders.", {count: 15, space: '<br /><br />'}),       
-           buttons: [this.$t("Cancel"), this.$t("Ship")],
+           message: this.$t("You are shipping orders. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this orders.", {count: this.completedOrders.list.length, space: '<br /><br />'}),
+           buttons: [{
+            role: "cancel",
+            text: this.$t("Cancel"),
+          }, {
+            text: this.$t("Ship"),
+            handler: async () => {
+              const payload = {
+                shipmentId: this.completedOrders.list.map((order: any) => order.shipmentId)
+              }
+
+              try {
+                const resp = await OrderService.bulkShipOrders(payload)
+
+                if(resp.status == 200 && !hasError(resp)) {
+                  showToast(translate('Orders shipped successfully'))
+                  // TODO: handle the case of data not updated correctly
+                  await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+                } else {
+                  showToast(translate('Failed to ship orders'))
+                }
+              } catch(err) {
+                console.error(err)
+                showToast(translate('Failed to ship orders'))
+              }
+            }
+          }]
         });
-      return alert.present();
+      return shipOrderAlert.present();
     },
 
     async shippingPopover(ev: Event) {
@@ -355,6 +384,41 @@ export default defineComponent({
       completedOrdersQuery.selectedCarrierPartyIds = selectedCarrierPartyIds
 
       this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+    },
+    async unpackOrder(order: any) {
+      const unpackOrderAlert = await alertController
+        .create({
+           header: this.$t("Unpack"),
+           message: this.$t("Unpacking this order will send it back to 'In progress' and it will have to be repacked."),
+           buttons: [{
+            role: "cancel",
+            text: this.$t("Cancel"),
+          }, {
+            text: this.$t("Unpack"),
+            handler: async () => {
+              const payload = {
+                orderId: order.orderId,
+                picklistBinId: order.groupValue
+              }
+
+              try {
+                const resp = await OrderService.unpackOrder(payload)
+
+                if(resp.status == 200 && !hasError(resp)) {
+                  showToast(translate('Order unpacked successfully'))
+                  // TODO: handle the case of data not updated correctly
+                  await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+                } else {
+                  showToast(translate('Failed to unpack the order'))
+                }
+              } catch(err) {
+                console.error(err)
+                showToast(translate('Failed to unpack the order'))
+              }
+            }
+          }]
+        });
+      return unpackOrderAlert.present();
     }
   },
   setup() {
