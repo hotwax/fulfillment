@@ -1,4 +1,5 @@
 import { api } from '@/adapter';
+import { hasError } from '@/utils';
 
 const findOpenOrders = async (query: any): Promise <any>  => {
   return api({
@@ -68,6 +69,33 @@ const updateOrder = async (payload: any): Promise <any> => {
   })
 }
 
+const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
+  try {
+    // Get packing slip from the server
+    const response: any = await api({
+      method: 'get',
+      url: 'PackingSlip.pdf',
+      params: {
+        shipmentIds
+      },
+      responseType: "blob"
+    })
+
+    if (!response || response.status !== 200 || hasError(response)) {
+      console.error("Failed to load packing slip")
+      return;
+    }
+
+    // Generate local file URL for the blob received
+    const pdfUrl = window.URL.createObjectURL(response.data);
+    // Open the file in new tab
+    (window as any).open(pdfUrl, "_blank").focus();
+
+  } catch(err) {
+    console.error("Failed to load packing slip", err)
+  }
+}
+
 export const OrderService = {
   addShipmentBox,
   findCompletedOrders,
@@ -75,6 +103,7 @@ export const OrderService = {
   findOpenOrders,
   packOrder,
   packOrders,
+  printPackingSlip,
   rejectOrderItem,
   updateOrder
 }

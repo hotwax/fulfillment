@@ -36,11 +36,11 @@
         </ion-item>
         <ion-item>
           <ion-label>{{ $t("Shipping label") }}</ion-label>
-          <ion-checkbox slot="end" />
+          <ion-checkbox :checked="userPreference.printShippingLabel" @ionChange="setPrintShippingLabelPreference($event)" slot="end" />
         </ion-item>
         <ion-item lines="none">
           <ion-label>{{ $t("Packing slip") }}</ion-label>
-          <ion-checkbox slot="end" />
+          <ion-checkbox :checked="userPreference.printPackingSlip" @ionChange="setPrintPackingSlipPreference($event)" slot="end" />
         </ion-item>
       </ion-card>
 
@@ -144,7 +144,8 @@ export default defineComponent({
       userProfile: 'user/getUserProfile',
       currentFacility: 'user/getCurrentFacility',
       instanceUrl: 'user/getInstanceUrl',
-      currentEComStore: 'user/getCurrentEComStore'
+      currentEComStore: 'user/getCurrentEComStore',
+      userPreference: 'user/getUserPreference'
     }),
     isStoreFulfillmentTurnOn() {
       // considered that if facility details are not available then also fulfillment will be turned on
@@ -414,6 +415,12 @@ export default defineComponent({
         this.getOutstandingOrdersCount();
         this.getInProgressOrdersCount();
       }
+    },
+    setPrintShippingLabelPreference (ev: any) {
+      this.store.dispatch('user/setUserPreference', { printShippingLabel: ev.detail.checked })
+    },
+    setPrintPackingSlipPreference (ev: any){
+      this.store.dispatch('user/setUserPreference', { printPackingSlip: ev.detail.checked })
     }
   },
   setup() {

@@ -195,7 +195,8 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       getProductStock: 'stock/getProductStock',
       rejectReasons: 'util/getRejectReasons',
-      currentEComStore: 'user/getCurrentEComStore'
+      currentEComStore: 'user/getCurrentEComStore',
+      userPreference: 'user/getUserPreference'
     })
   },
   data() {
@@ -231,30 +232,61 @@ export default defineComponent({
       return popover.present();
     },
     async packOrder(order: any) {
-      // TODO: implement support to print shipping labels and packing slip
-      const params = {
-        'picklistBinId': order.picklistBinId,
-        'orderId': order.orderId
-      }
+      const confirmPackOrder = await alertController
+        .create({
+          header: this.$t("Pack order"),
+          message: this.$t("You are packing an order. Select additional documents that you would like to print.", {space: '<br /><br />'}),
+          inputs: [{
+            name: 'printShippingLabel',
+            type: 'checkbox',
+            label: this.$t('Shipping labels'),
+            value: 'printShippingLabel',
+            checked: this.userPreference.printShippingLabel,
+          }, {
+            name: 'printPackingSlip',
+            type: 'checkbox',
+            label: this.$t('Packing slip'),
+            value: 'printPackingSlip',
+            checked: this.userPreference.printPackingSlip
+          }],
+          buttons: [{
+            text: this.$t("Cancel"),
+            role: 'cancel'
+          }, {
+            text: this.$t("Pack"),
+            role: 'confirm',
+            handler: async (data) => {
+              const params = {
+                'picklistBinId': order.picklistBinId,
+                'orderId': order.orderId
+              }
 
-      emitter.emit('presentLoader');
+              emitter.emit('presentLoader');
 
-      try {
-        const resp = await OrderService.packOrder(params);
-        if (resp.status === 200 && !hasError(resp)) {
-          showToast(translate('Order packed successfully'));
-          // TODO: handle the case of fetching in progress orders after packing an order
-          // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
-          await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
-        } else {
-          showToast(translate('Failed to pack order'))
-          console.error('error', resp)
-        }
-      } catch (err) {
-        showToast(translate('Failed to pack order'))
-        console.error(err)
-      }
-      emitter.emit('dismissLoader');
+              if(data.includes('printPackingSlip')) {
+                OrderService.printPackingSlip(order.shipmentIds)
+              }
+
+              try {
+                const resp = await OrderService.packOrder(params);
+                if (resp.status === 200 && !hasError(resp)) {
+                  showToast(translate('Order packed successfully'));
+                  // TODO: handle the case of fetching in progress orders after packing an order
+                  // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
+                  await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
+                } else {
+                  showToast(translate('Failed to pack order'))
+                  console.error('error', resp)
+                }
+              } catch (err) {
+                showToast(translate('Failed to pack order'))
+                console.error(err)
+              }
+              emitter.emit('dismissLoader');
+            }
+          }]
+        });
+      return confirmPackOrder.present();
     },
     async packOrders() {
       const alert = await alertController

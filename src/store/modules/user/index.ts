@@ -12,7 +12,11 @@ const userModule: Module<UserState, RootState> = {
       current: null,
       currentFacility: {},
       instanceUrl: '',
-      currentEComStore: {}
+      currentEComStore: {},
+      preference: {
+        printShippingLabel: false,
+        printPackingSlip: false
+      }
     },
     getters,
     actions,
