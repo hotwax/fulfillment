@@ -245,7 +245,7 @@ export default defineComponent({
           showToast(translate('Order packed successfully'));
           // TODO: handle the case of fetching in progress orders after packing an order
           // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
-          this.findInProgressOrders();
+          await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
         } else {
           showToast(translate('Failed to pack order'))
           console.error('error', resp)
@@ -280,7 +280,7 @@ export default defineComponent({
                   showToast(translate('Orders packed successfully'));
                   // TODO: handle the case of fetching in progress orders after packing multiple orders
                   // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
-                  this.findInProgressOrders();
+                  await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
                 } else {
                   showToast(translate('Failed to pack orders'))
                   console.error('error', resp)
@@ -560,7 +560,7 @@ export default defineComponent({
         if(!hasError(resp)) {
           showToast(translate('Box added successfully'))
           // TODO: only update the order in which the box is added instead of fetching all the inProgress orders
-          this.findInProgressOrders();
+          await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
         }
       } catch (err) {
         showToast(translate('Failed to add box'))
