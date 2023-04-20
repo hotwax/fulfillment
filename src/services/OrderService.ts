@@ -53,7 +53,7 @@ const rejectOrderItem = async (payload: any): Promise <any> => {
 
 const addShipmentBox = async (payload: any): Promise <any> => {
   return api({
-    url: "service/addShipmentPackage",
+    url: "addShipmentPackage",
     method: "post",
     data: payload
   });

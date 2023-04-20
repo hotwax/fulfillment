@@ -39,22 +39,22 @@
           <div class="card-header">
             <div class="order-primary-info">
               <ion-label>
-                {{ order.doclist.docs[0].customerName }}
-                <p>{{ $t("Ordered") }} {{ formatUtcDate(order.doclist.docs[0].orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                {{ order.customerName }}
+                <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
               </ion-label>
             </div>
 
             <div class="order-tags">
               <ion-chip outline>
                 <ion-icon :icon="pricetagOutline" />
-                <ion-label>{{ order.doclist.docs[0].orderId }}</ion-label>
+                <ion-label>{{ order.orderId }}</ion-label>
               </ion-chip>
             </div>
 
             <div class="order-metadata">
               <!-- TODO: add brokered date-->
               <ion-label>
-                {{ order.doclist.docs[0].shipmentMethodTypeDesc }}
+                {{ order.shipmentMethodTypeDesc }}
                 <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
               </ion-label>
             </div>
@@ -66,7 +66,7 @@
             <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
           </div>
 
-          <div v-for="(item, index) in order.doclist.docs" :key="index" class="order-item">
+          <div v-for="(item, index) in order.items" :key="index" class="order-item">
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
@@ -233,8 +233,8 @@ export default defineComponent({
     async packOrder(order: any) {
       // TODO: implement support to print shipping labels and packing slip
       const params = {
-        'picklistBinId': order.doclist.docs[0].picklistBinId,
-        'orderId': order.doclist.docs[0].orderId
+        'picklistBinId': order.picklistBinId,
+        'orderId': order.orderId
       }
 
       emitter.emit('presentLoader');
@@ -270,7 +270,7 @@ export default defineComponent({
             handler: async () => {
               emitter.emit('presentLoader');
 
-              const shipmentIds = this.inProgressOrders.list.map((order: any) => order.doclist.docs[0].shipmentId)
+              const shipmentIds = this.inProgressOrders.list.map((order: any) => order.shipmentId)
 
               try {
                 const resp = await OrderService.packOrders({
@@ -307,7 +307,7 @@ export default defineComponent({
         const productName = outOfStockItem.productName
 
         // TODO: ordersCount is not correct as current we are identifying orders count by only checking items visible on UI and not other orders
-        const ordersCount = this.inProgressOrders.list.map((order: any) => order.doclist.docs.filter((item: any) => item.productSku === outOfStockItem.productSku))?.filter((item: any) => item.length).length
+        const ordersCount = this.inProgressOrders.list.map((order: any) => order.items.filter((item: any) => item.productSku === outOfStockItem.productSku))?.filter((item: any) => item.length).length
 
         // displaying product count decrement by 1 as we are displaying one product sku directly.
         message = this.$t(", and other products are identified as unfulfillable. other orders containing these products will be unassigned from this store and sent to be rebrokered.", {productName, products: itemsToReject.length - 1, space: '<br /><br />', orders: ordersCount})
@@ -338,7 +338,7 @@ export default defineComponent({
 
       form.append('facilityId', this.currentFacility.facilityId)
 
-      order.doclist.docs.map((item: any, index: number) => {
+      order.items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
         let prefix = 'rtp'
@@ -376,7 +376,7 @@ export default defineComponent({
       }
     },
     save(order: any) {
-      const itemsToReject = order.doclist.docs.filter((item: any) => item.rejectReason)
+      const itemsToReject = order.items.filter((item: any) => item.rejectReason)
 
       if(itemsToReject.length) {
         this.reportIssue(order, itemsToReject);

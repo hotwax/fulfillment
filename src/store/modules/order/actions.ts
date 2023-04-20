@@ -13,7 +13,7 @@ import { UtilService } from '@/services/UtilService'
 const actions: ActionTree<OrderState, RootState> = {
 
   // get in-progress orders
-  async findInProgressOrders ({ commit, state }, payload) {
+  async findInProgressOrders ({ commit, state }, payload = {}) {
     emitter.emit('presentLoader');
     let resp;
     let orders = [];
@@ -69,29 +69,44 @@ const actions: ActionTree<OrderState, RootState> = {
 
         const carrierShipmentBoxType = await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
 
-        orders.map((order: any) => {
-          order['shipmentPackages'] = shipmentPackagesByOrder[order.doclist.docs[0].orderId]
-          order['carrierPartyIds'] = [...new Set(shipmentIds.map((id: any) => carrierPartyIdsByShipment[id].map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
+        this.dispatch('product/getProductInformation', { orders })
 
-          order['shipmentBoxTypeByCarrierParty'] = order['carrierPartyIds'].reduce((shipmentBoxType: any, carrierPartyId: string) => {
-            if(shipmentBoxType[carrierPartyId]) {
-              shipmentBoxType[carrierPartyId].push(carrierShipmentBoxType[carrierPartyId])
-            } else {
-              shipmentBoxType[carrierPartyId] = carrierShipmentBoxType[carrierPartyId]
-            }
-
-            return shipmentBoxType
-          }, {})
+        orders = orders.map((order: any) => {
 
           order.doclist.docs.map((item: any) => {
             // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
             item.shipmentItemSeqId = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)?.shipmentItemSeqId
 
-            item.selectedBox = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+            item.selectedBox = shipmentPackagesByOrder[item.orderId].find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
           })
-        })
 
-        this.dispatch('product/getProductInformation', { orders })
+          const orderItem = order.doclist.docs[0];
+          const carrierPartyIds = [...new Set(shipmentIds.map((id: any) => carrierPartyIdsByShipment[id].map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
+
+          return {
+            customerId: orderItem.customerId,
+            customerName: orderItem.customerName,
+            orderId: orderItem.orderId,
+            orderDate: orderItem.orderDate,
+            groupValue: order.groupValue,
+            picklistBinId: orderItem.picklistBinId,
+            shipmentIds,
+            items: order.doclist.docs,
+            shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
+            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+            shipmentPackages: shipmentPackagesByOrder[orderItem.orderId],
+            carrierPartyIds,
+            shipmentBoxTypeByCarrierParty: carrierPartyIds.reduce((shipmentBoxType: any, carrierPartyId: string) => {
+              if(shipmentBoxType[carrierPartyId]) {
+                shipmentBoxType[carrierPartyId].push(carrierShipmentBoxType[carrierPartyId])
+              } else {
+                shipmentBoxType[carrierPartyId] = carrierShipmentBoxType[carrierPartyId]
+              }
+
+              return shipmentBoxType
+            }, {}),
+          }
+        })
       } else {
         console.error('No orders found')
       }
