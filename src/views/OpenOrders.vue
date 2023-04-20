@@ -135,6 +135,7 @@ import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import emitter from '@/event-bus';
+import logger from '@/logger';
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -238,10 +239,10 @@ export default defineComponent({
         if(resp.status == 200 && !hasError(resp) && resp.data.facets?.count > 0) {
           this.shipmentMethods = resp.data.facets.shipmentMethodTypeIdFacet.buckets
         } else {
-          console.error('Failed to fetch shipment methods')
+          throw resp.data;
         }
       } catch(err) {
-        console.error('error', err)
+        logger.error('Failed to fetch shipment methods information', err)
       }
     },
     async updateQueryString(queryString: string) {

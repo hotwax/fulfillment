@@ -4,6 +4,7 @@ import UtilState from './UtilState'
 import * as types from './mutation-types'
 import { UtilService } from '@/services/UtilService'
 import { hasError } from '@/utils'
+import logger from '@/logger'
 
 const actions: ActionTree<UtilState, RootState> = {
   async fetchRejectReasons({ commit }) {
@@ -25,7 +26,7 @@ const actions: ActionTree<UtilState, RootState> = {
         rejectReasons = resp.data.docs
       }
     } catch (err) {
-      console.error(err)
+      logger.error('Failed to fetch reject reasons', err)
     }
 
     commit(types.UTIL_REJECT_REASONS_UPDATED, rejectReasons)
