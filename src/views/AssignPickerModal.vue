@@ -82,7 +82,8 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      currentFacility: 'user/getCurrentFacility'
+      currentFacility: 'user/getCurrentFacility',
+      openOrders: 'order/getOpenOrders'
     })
   },
   data () {
@@ -113,7 +114,7 @@ export default defineComponent({
       let resp;
 
       // creating picklist only for orders that are currently in the list, means those are currently visible on UI
-      const orders = this.state.order.open.list;
+      const orders = this.openOrders.list;
 
       const formData = new FormData();
       formData.append("facilityId", this.currentFacility.facilityId);
