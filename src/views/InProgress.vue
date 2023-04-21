@@ -133,12 +133,12 @@
             </div>
           </ion-card>
         </div>
-        <ion-fab class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-          <ion-fab-button @click="packOrders()">
-            <ion-icon :icon="checkmarkDoneOutline" />
-          </ion-fab-button>
-        </ion-fab>
       </div>
+      <ion-fab v-if="inProgressOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button @click="packOrders()">
+          <ion-icon :icon="checkmarkDoneOutline" />
+        </ion-fab-button>
+      </ion-fab>
       <div class="empty-state" v-else>{{ currentFacility.name }} {{ $t(" doesn't have any orders in progress right now.") }} </div>
     </ion-content>
   </ion-page>
