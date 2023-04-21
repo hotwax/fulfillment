@@ -145,8 +145,7 @@ export default defineComponent({
           this.closeModal();
           await this.store.dispatch('order/findOpenOrders')
         } else {
-          showToast(translate('Failed to create picklist for orders'))
-          logger.error('Failed to create picklist for orders', resp.data)
+          throw resp.data
         }
       } catch (err) {
         logger.error('Failed to create picklist for orders', err)
@@ -202,7 +201,7 @@ export default defineComponent({
             id: picker.partyId
           }))
         } else {
-          logger.error('Failed to fetch the pickers information or there are no pickers available', resp.data)
+          throw resp.data
         }
       } catch (err) {
         logger.error('Failed to fetch the pickers information or there are no pickers available', err)

@@ -248,8 +248,7 @@ export default defineComponent({
           // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
           this.findInProgressOrders();
         } else {
-          showToast(translate('Failed to pack order'))
-          logger.error('Failed to pack order', resp.data)
+          throw resp.data
         }
       } catch (err) {
         showToast(translate('Failed to pack order'))
@@ -283,8 +282,7 @@ export default defineComponent({
                   // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
                   this.findInProgressOrders();
                 } else {
-                  showToast(translate('Failed to pack orders'))
-                  logger.error('Failed to pack orders', resp.data)
+                  throw resp.data
                 }
               } catch (err) {
                 showToast(translate('Failed to pack orders'))
@@ -472,7 +470,7 @@ export default defineComponent({
             }, this.picklists)
           }
         } else {
-          logger.error('No picklist facets found', resp.data)
+          throw resp.data
         }
       } catch (err) {
         logger.error('No picklist facets found', err)

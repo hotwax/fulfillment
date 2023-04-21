@@ -24,6 +24,8 @@ const actions: ActionTree<UtilState, RootState> = {
 
       if(!hasError(resp) && resp.data.count > 0) {
         rejectReasons = resp.data.docs
+      } else {
+        throw resp.data
       }
     } catch (err) {
       logger.error('Failed to fetch reject reasons', err)

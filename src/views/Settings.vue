@@ -364,8 +364,7 @@ export default defineComponent({
               if(!hasError(resp)) {
                 showToast(translate('Recycling has been started. All outstanding orders will be recycled shortly.'))
               } else {
-                showToast(translate('Failed to recycle outstanding orders'))
-                logger.error('Failed to recycle outstanding orders', resp.data)
+                throw resp.data
               }
             } catch(err) {
               showToast(translate('Failed to recycle outstanding orders'))
@@ -399,8 +398,7 @@ export default defineComponent({
               if(!hasError(resp)) {
                 showToast(translate('Recycling has been started. All in progress orders will be recycled shortly.'))
               } else {
-                showToast(translate('Failed to recycle in progress orders'))
-                logger.error('Failed to recycle in progress orders', resp.data)
+                throw resp.data
               }
             } catch(err) {
               showToast(translate('Failed to recycle in progress orders'))
