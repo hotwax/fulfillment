@@ -369,7 +369,7 @@ export default defineComponent({
         if(!hasError(resp)) {
           showToast(translate('Order updated successfully'))
         } else {
-          return Promise.reject(resp.data);
+          throw resp.data;
         }
       } catch (err) {
         showToast(translate('Failed to update order'))
@@ -512,7 +512,7 @@ export default defineComponent({
         if(!hasError(resp) && resp.data.count) {
           return resp.data.docs[0]
         } else {
-          return Promise.reject(resp.data)
+          throw resp.data
         }
       } catch (err) {
         logger.error('Failed to fetch shipment route segment information', err)
@@ -536,7 +536,7 @@ export default defineComponent({
         if(!hasError(resp) && resp.data.count) {
           defaultBoxType = resp.data.docs[0].systemPropertyValue
         } else {
-          return Promise.reject(resp.data)
+          throw resp.data
         }
       } catch (err) {
         logger.error('Failed to fetch default shipment box type information', err)
@@ -567,7 +567,7 @@ export default defineComponent({
           // TODO: only update the order in which the box is added instead of fetching all the inProgress orders
           this.findInProgressOrders();
         } else {
-          return Promise.reject(resp.data)
+          throw resp.data
         }
       } catch (err) {
         showToast(translate('Failed to add box'))
