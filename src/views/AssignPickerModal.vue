@@ -60,6 +60,7 @@ import { hasError, showToast } from "@/utils";
 import { translate } from "@/i18n";
 import { UtilService } from "@/services/UtilService";
 import emitter from "@/event-bus";
+import logger from "@/logger"
 
 export default defineComponent({
   name: "AssignPickerModal",
@@ -82,7 +83,8 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      currentFacility: 'user/getCurrentFacility'
+      currentFacility: 'user/getCurrentFacility',
+      openOrders: 'order/getOpenOrders'
     })
   },
   data () {
@@ -113,7 +115,7 @@ export default defineComponent({
       let resp;
 
       // creating picklist only for orders that are currently in the list, means those are currently visible on UI
-      const orders = this.state.order.open.list;
+      const orders = this.openOrders.list;
 
       const formData = new FormData();
       formData.append("facilityId", this.currentFacility.facilityId);
@@ -143,11 +145,11 @@ export default defineComponent({
           this.closeModal();
           await this.store.dispatch('order/findOpenOrders')
         } else {
-          showToast(translate('Failed to create picklist for orders'))
+          throw resp.data
         }
       } catch (err) {
-        console.error(err)
-        showToast(translate('Something went wrong'))
+        logger.error('Failed to create picklist for orders', err)
+        showToast(translate('Failed to create picklist for orders'))
       }
 
       emitter.emit("dismissLoader")
@@ -199,10 +201,10 @@ export default defineComponent({
             id: picker.partyId
           }))
         } else {
-          console.error('Failed to fetch the pickers information or there are no pickers available', resp.data)
+          throw resp.data
         }
       } catch (err) {
-        console.error(err)
+        logger.error('Failed to fetch the pickers information or there are no pickers available', err)
       }
     }
   },

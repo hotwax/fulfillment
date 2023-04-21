@@ -7,6 +7,7 @@ import { hasError, showToast } from '@/utils'
 import { translate } from '@/i18n'
 import { Settings } from 'luxon'
 import { updateInstanceUrl, updateToken, resetConfig } from '@/adapter'
+import logger from '@/logger'
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -42,7 +43,7 @@ const actions: ActionTree<UserState, RootState> = {
             } else {
               const permissionError = 'You do not have permission to access the app.';
               showToast(translate(permissionError));
-              console.error("error", permissionError);
+              logger.error("error", permissionError);
               return Promise.reject(new Error(permissionError));
             }
           } else {
@@ -53,17 +54,17 @@ const actions: ActionTree<UserState, RootState> = {
           }
         } else if (hasError(resp)) {
           showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
-          console.error("error", resp.data._ERROR_MESSAGE_);
+          logger.error("error", resp.data._ERROR_MESSAGE_);
           return Promise.reject(new Error(resp.data._ERROR_MESSAGE_));
         }
       } else {
         showToast(translate('Something went wrong'));
-        console.error("error", resp.data._ERROR_MESSAGE_);
+        logger.error("error", resp.data._ERROR_MESSAGE_);
         return Promise.reject(new Error(resp.data._ERROR_MESSAGE_));
       }
     } catch (err: any) {
       showToast(translate('Something went wrong'));
-      console.error("error", err);
+      logger.error("error", err);
       return Promise.reject(new Error(err))
     }
     // return resp
@@ -108,7 +109,7 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_INFO_UPDATED, resp.data);
       commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
     } catch(err) {
-      console.error(err)
+      logger.error('Failed to fetch user profile information', err)
     }
   },
 
@@ -169,10 +170,10 @@ const actions: ActionTree<UserState, RootState> = {
         commit(types.USER_CURRENT_ECOM_STORE_UPDATED, userPrefStore ? userPrefStore : eComStores.length > 0 ? eComStores[0] : {});
         return eComStores
       } else {
-        console.error(resp);
+        throw resp.data
       }
     } catch(error) {
-      console.error(error);
+      logger.error('Failed to get ecom stores', error);
     }
     return []
   },

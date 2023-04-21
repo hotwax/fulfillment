@@ -3,11 +3,11 @@ import RootState from '@/store/RootState'
 import OrderState from './OrderState'
 import emitter from '@/event-bus'
 import { OrderService } from '@/services/OrderService'
-import { hasError, showToast } from '@/utils'
-import { translate } from '@/i18n'
+import { hasError } from '@/utils'
 import * as types from './mutation-types'
 import { prepareOrderQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
+import logger from '@/logger'
 
 
 const actions: ActionTree<OrderState, RootState> = {
@@ -93,10 +93,10 @@ const actions: ActionTree<OrderState, RootState> = {
 
         this.dispatch('product/getProductInformation', { orders })
       } else {
-        console.error('No orders found')
+        throw resp.data
       }
     } catch (err) {
-      console.error('error', err)
+      logger.error('No inProgress orders found', err)
     }
 
     inProgressQuery.viewSize = orders.length
@@ -147,10 +147,10 @@ const actions: ActionTree<OrderState, RootState> = {
         orders = resp.data.grouped.orderId.groups
         this.dispatch('product/getProductInformation', { orders })
       } else {
-        console.error('No orders found')
+        throw resp.data
       }
     } catch (err) {
-      console.error('error', err)
+      logger.error('No outstanding orders found', err)
     }
 
     openOrderQuery.viewSize = orders.length
@@ -203,11 +203,10 @@ const actions: ActionTree<OrderState, RootState> = {
         orders = resp.data.grouped.picklistBinId.groups
         this.dispatch('product/getProductInformation', { orders })
       } else {
-        console.error('No orders found')
+        throw resp.data
       }
     } catch (err) {
-      console.error('error', err)
-      showToast(translate('Something went wrong'))
+      logger.error('No completed orders found', err)
     }
 
     completedOrderQuery.viewSize = orders.length
@@ -220,6 +219,7 @@ const actions: ActionTree<OrderState, RootState> = {
       orderDate: order.doclist.docs[0].orderDate,
       groupValue: order.groupValue,
       items: order.doclist.docs,
+      shipmentId: order.doclist.docs[0].shipmentId,
       shipmentMethodTypeId: order.doclist.docs[0].shipmentMethodTypeId,
       shipmentMethodTypeDesc: order.doclist.docs[0].shipmentMethodTypeDesc
     }))
