@@ -279,12 +279,11 @@ export default defineComponent({
                   // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
                   await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
                 } else {
-                  showToast(translate('Failed to pack order'))
-                  console.error('error', resp)
+                  throw resp.data
                 }
               } catch (err) {
                 showToast(translate('Failed to pack order'))
-                console.error(err)
+                logger.error('Failed to pack order', err)
               }
               emitter.emit('dismissLoader');
             }

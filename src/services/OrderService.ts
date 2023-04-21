@@ -1,4 +1,5 @@
 import { api } from '@/adapter';
+import logger from '@/logger';
 import { hasError } from '@/utils';
 
 const findOpenOrders = async (query: any): Promise <any>  => {
@@ -88,7 +89,7 @@ const updateOrder = async (payload: any): Promise <any> => {
 const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
   try {
     // Get packing slip from the server
-    const response: any = await api({
+    const resp: any = await api({
       method: 'get',
       url: 'PackingSlip.pdf',
       params: {
@@ -97,18 +98,17 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
       responseType: "blob"
     })
 
-    if (!response || response.status !== 200 || hasError(response)) {
-      console.error("Failed to load packing slip")
-      return;
+    if (!resp || resp.status !== 200 || hasError(resp)) {
+      throw resp.data
     }
 
     // Generate local file URL for the blob received
-    const pdfUrl = window.URL.createObjectURL(response.data);
+    const pdfUrl = window.URL.createObjectURL(resp.data);
     // Open the file in new tab
     (window as any).open(pdfUrl, "_blank").focus();
 
   } catch(err) {
-    console.error("Failed to load packing slip", err)
+    logger.error("Failed to load packing slip", err)
   }
 }
 
@@ -134,7 +134,7 @@ const printShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
     (window as any).open(pdfUrl, "_blank").focus();
 
   } catch(err) {
-    console.error("Failed to load shipping label", err)
+    logger.error("Failed to load shipping label", err)
   }
 }
 
