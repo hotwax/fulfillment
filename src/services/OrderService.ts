@@ -112,6 +112,32 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
   }
 }
 
+const printShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
+  try {
+    // Get packing slip from the server
+    const resp: any = await api({
+      method: 'get',
+      url: 'ShippingLabel.pdf',
+      params: {
+        shipmentIds
+      },
+      responseType: "blob"
+    })
+
+    if (!resp || resp.status !== 200 || hasError(resp)) {
+      throw resp.data;
+    }
+
+    // Generate local file URL for the blob received
+    const pdfUrl = window.URL.createObjectURL(resp.data);
+    // Open the file in new tab
+    (window as any).open(pdfUrl, "_blank").focus();
+
+  } catch(err) {
+    console.error("Failed to load shipping label", err)
+  }
+}
+
 export const OrderService = {
   addShipmentBox,
   bulkShipOrders,
@@ -121,6 +147,7 @@ export const OrderService = {
   packOrder,
   packOrders,
   printPackingSlip,
+  printShippingLabel,
   rejectOrderItem,
   unpackOrder,
   updateOrder

@@ -266,6 +266,10 @@ export default defineComponent({
                 OrderService.printPackingSlip(order.shipmentIds)
               }
 
+              if(data.includes('printShippingLabel')) {
+                OrderService.printShippingLabel(order.shipmentIds)
+              }
+
               try {
                 const resp = await OrderService.packOrder(params);
                 if (resp.status === 200 && !hasError(resp)) {
@@ -320,6 +324,10 @@ export default defineComponent({
               // the associated ids, currently passing the associated shipmentId
               if(data.includes('printPackingSlip')) {
                 OrderService.printPackingSlip(shipmentIds)
+              }
+
+              if(data.includes('printShippingLabel')) {
+                OrderService.printShippingLabel(shipmentIds)
               }
 
               try {
