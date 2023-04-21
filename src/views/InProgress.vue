@@ -20,7 +20,6 @@
     <ion-content id="view-size-selector">
       <ion-searchbar v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="inProgressOrders.total">
-        <!-- TODO: make pickers information dynamic -->
         <div class="filters">
           <ion-item v-for="picklist in picklists" :key="picklist.id" lines="none">
             <ion-checkbox :checked="inProgressOrders.query.selectedPicklists.includes(picklist.id)" slot="start" @ion-change="updateSelectedPicklists(picklist.id)"/>
@@ -29,7 +28,7 @@
               <p>{{ picklist.date }}</p>
             </ion-label>
             <!-- TODO: implement support to print picklist -->
-            <ion-icon :icon="printOutline" />
+            <ion-button fill="outline" slot="end"><ion-icon :icon="printOutline" /></ion-button>
           </ion-item>
         </div>
 
