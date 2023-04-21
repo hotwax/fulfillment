@@ -1,3 +1,17 @@
+# Release 1.2.0
+
+## What's Changed
+* Implemented: code to make the data dynamic on the completed page(#1xx6t61) by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/94
+* Implemented: support to enable searching, applying filters and change the viewSize on completed page(#207m759) by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/96
+* Implemented: support to make the buttons functional on completed page(#85zrvxjku) by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/98
+* Fixed: issue of picklist not generated from open order page(#100) by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/104
+* Updated: oms-api package to latest release(update/oms-version) by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/108
+* Implemented: support to handle the case when checkInventory api exceeds the limit(#85zrx65t8) by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/103
+* Implemented: support to use logger(#85zrxrwd7) by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/105 and https://github.com/hotwax/fulfillment-pwa/pull/109
+
+
+**Full Changelog**: https://github.com/hotwax/fulfillment-pwa/compare/v1.1.0...v1.2.0
+
 # Release 1.1.0
 
 ## What's Changed

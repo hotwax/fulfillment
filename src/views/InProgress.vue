@@ -157,6 +157,7 @@ import { translate } from '@/i18n';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import { UtilService } from '@/services/UtilService';
 import { DateTime } from 'luxon';
+import logger from '@/logger';
 
 export default defineComponent({
   name: 'InProgress',
@@ -340,12 +341,11 @@ export default defineComponent({
                   // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
                   await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
                 } else {
-                  showToast(translate('Failed to pack orders'))
-                  console.error('error', resp)
+                  throw resp.data
                 }
               } catch (err) {
                 showToast(translate('Failed to pack orders'))
-                console.error(err)
+                logger.error('Failed to pack orders', err)
               }
               emitter.emit('dismissLoader');
             }
@@ -430,7 +430,7 @@ export default defineComponent({
         }
       } catch (err) {
         showToast(translate('Failed to update order'))
-        console.error(err)
+        logger.error('Failed to update order', err)
       }
     },
     save(order: any) {
@@ -529,10 +529,10 @@ export default defineComponent({
             }, this.picklists)
           }
         } else {
-          console.error('No picklist facets found')
+          throw resp.data
         }
       } catch (err) {
-        console.error('error', err)
+        logger.error('No picklist facets found', err)
       }
     },
     async updateSelectedPicklists(id: string) {
@@ -568,9 +568,11 @@ export default defineComponent({
 
         if(!hasError(resp) && resp.data.count) {
           return resp.data.docs[0]
+        } else {
+          throw resp.data
         }
       } catch (err) {
-        console.error(err)
+        logger.error('Failed to fetch shipment route segment information', err)
       }
 
       return {};
@@ -590,9 +592,11 @@ export default defineComponent({
 
         if(!hasError(resp) && resp.data.count) {
           defaultBoxType = resp.data.docs[0].systemPropertyValue
+        } else {
+          throw resp.data
         }
       } catch (err) {
-        console.error(err)
+        logger.error('Failed to fetch default shipment box type information', err)
       }
 
       return defaultBoxType;
@@ -619,10 +623,12 @@ export default defineComponent({
           showToast(translate('Box added successfully'))
           // TODO: only update the order in which the box is added instead of fetching all the inProgress orders
           await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
+        } else {
+          throw resp.data
         }
       } catch (err) {
         showToast(translate('Failed to add box'))
-        console.error(err)
+        logger.error('Failed to add box', err)
       }
     },
     getShipmentPackageNameAndType(shipmentPackage: any, order: any) {

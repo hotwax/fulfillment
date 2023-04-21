@@ -165,6 +165,7 @@ import emitter from '@/event-bus';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import { translate } from '@/i18n';
 import { OrderService } from '@/services/OrderService';
+import logger from '@/logger';
 
 export default defineComponent({
   name: 'Home',
@@ -243,10 +244,10 @@ export default defineComponent({
                   // TODO: handle the case of data not updated correctly
                   await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
-                  showToast(translate('Failed to ship orders'))
+                  throw resp.data
                 }
               } catch(err) {
-                console.error(err)
+                logger.error('Failed to ship orders', err)
                 showToast(translate('Failed to ship orders'))
               }
             }
@@ -299,9 +300,11 @@ export default defineComponent({
 
         if(resp.status == 200 && !hasError(resp)) {
           this.shipmentMethods = resp.data.facets.shipmentMethodFacet.buckets
+        } else {
+          throw resp.data
         }
       } catch(err) {
-        console.error(err)
+        logger.error('Failed to fetch shipment methods', err)
       }
     },
     async fetchCarrierPartyIds() {
@@ -338,10 +341,10 @@ export default defineComponent({
         if(resp.status == 200 && !hasError(resp)) {
           this.carrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
         } else {
-          console.error('Failed to fetch carrierPartyIds', resp.data)
+          throw resp.data
         }
       } catch(err) {
-        console.error(err)
+        logger.error('Failed to fetch carrierPartyIds', err)
       }
     },
     async updateQueryString(queryString: string) {
@@ -409,10 +412,10 @@ export default defineComponent({
                   // TODO: handle the case of data not updated correctly
                   await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
-                  showToast(translate('Failed to unpack the order'))
+                  throw resp.data
                 }
               } catch(err) {
-                console.error(err)
+                logger.error('Failed to unpack the order', err)
                 showToast(translate('Failed to unpack the order'))
               }
             }

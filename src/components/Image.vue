@@ -3,6 +3,7 @@
 </template>
 
 <script lang="ts">
+import logger from "@/logger";
 import { defineComponent } from "vue";
 
 export default defineComponent({
@@ -51,7 +52,7 @@ export default defineComponent({
           this.checkIfImageExists(this.src).then(() => {
             this.imageUrl = this.src;
           }).catch(() => {
-            console.error("Image doesn't exist");
+            logger.error("Image doesn't exist", this.src);
           })
         } else {
           // Image is from resource server, hence append to base resource url, check for existence and assign
@@ -59,7 +60,7 @@ export default defineComponent({
           this.checkIfImageExists(imageUrl).then(() => {
             this.imageUrl = imageUrl;
           }).catch(() => {
-            console.error("Image doesn't exist");
+            logger.error("Image doesn't exist", imageUrl);
           })
         }
       }

@@ -17,13 +17,7 @@ const actions: ActionTree<StockState, RootState> = {
     }
   },
 
-  /**
-   * Add stocks of list of products
-   */
-   async addProducts  ( { commit }, { productIds }) {
-    // There is a limitation at API level to handle only 100 records
-    // but as we will always fetch data for the fetched records which will be as per the viewSize
-    // assuming that the value will never be 100 to show
+  async fetchStock({ commit }, { productIds }) {
     const resp: any = await StockService.checkInventory({
       "filters": {
         "productId": productIds,
@@ -32,11 +26,27 @@ const actions: ActionTree<StockState, RootState> = {
       },
       // TODO: need to display QOH in place of atp
       "fieldsToSelect": ["productId","atp"],
+      "viewSize": productIds.length,
     });
     if (resp.status === 200 && !hasError(resp)) {
       // Handled empty response in case of failed query
       if (resp.data) commit(types.STOCK_ADD_PRODUCTS, { products: resp.data.docs })
     }
+  },
+
+  /**
+  * Add stocks of list of products
+  */
+  async addProducts  ( { dispatch }, { productIds }) {
+    // There is a limitation at API level to handle only 100 records
+    // Added check to create array of arrays of productIds of max length 100, as in some case we might have
+    // more than 100 items for which we need to check the inventory
+    const productIdArrays = []
+    while(productIds.length) {
+      productIdArrays.push(productIds.splice(0, 100))
+    }
+
+    await Promise.allSettled(productIdArrays.map((productIds) => dispatch('fetchStock', { productIds })))
   }
 
 }
