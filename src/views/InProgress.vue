@@ -292,16 +292,35 @@ export default defineComponent({
         .create({
           header: this.$t("Pack orders"),
           message: this.$t("You are packing orders. Select additional documents that you would like to print.", {count: this.inProgressOrders.list.length, space: '<br /><br />'}),
+          inputs: [{
+            name: 'printShippingLabel',
+            type: 'checkbox',
+            label: this.$t('Shipping labels'),
+            value: 'printShippingLabel',
+            checked: this.userPreference.printShippingLabel,
+          }, {
+            name: 'printPackingSlip',
+            type: 'checkbox',
+            label: this.$t('Packing slip'),
+            value: 'printPackingSlip',
+            checked: this.userPreference.printPackingSlip
+          }],
           buttons: [{
             text: this.$t("Cancel"),
             role: 'cancel'
           }, {
             text: this.$t("Pack"),
             role: 'confirm',
-            handler: async () => {
+            handler: async (data) => {
               emitter.emit('presentLoader');
 
               const shipmentIds = this.inProgressOrders.list.map((order: any) => order.shipmentId)
+
+              // TODO: need to check that do we need to pass all the shipmentIds for an order or just need to pass
+              // the associated ids, currently passing the associated shipmentId
+              if(data.includes('printPackingSlip')) {
+                OrderService.printPackingSlip(shipmentIds)
+              }
 
               try {
                 const resp = await OrderService.packOrders({
