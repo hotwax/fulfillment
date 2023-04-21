@@ -29,10 +29,10 @@
           </ion-item>
         </div>
 
-        <ion-button class="bulk-action desktop-only" fill="outline" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
+        <ion-button class="bulk-action desktop-only" fill="outline" size="large" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
 
-        <ion-card v-for="(orders, index) in openOrders.list" :key="index">
-          <div class="card-header">
+        <ion-card class="order" v-for="(orders, index) in openOrders.list" :key="index">
+          <div class="order-header">
             <div class="order-primary-info">
               <ion-label>
                 {{ orders.doclist.docs[0].customerName }}
