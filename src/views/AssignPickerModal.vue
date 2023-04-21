@@ -60,6 +60,7 @@ import { hasError, showToast } from "@/utils";
 import { translate } from "@/i18n";
 import { UtilService } from "@/services/UtilService";
 import emitter from "@/event-bus";
+import logger from "@/logger"
 
 export default defineComponent({
   name: "AssignPickerModal",
@@ -145,10 +146,11 @@ export default defineComponent({
           await this.store.dispatch('order/findOpenOrders')
         } else {
           showToast(translate('Failed to create picklist for orders'))
+          logger.error('Failed to create picklist for orders', resp.data)
         }
       } catch (err) {
-        console.error(err)
-        showToast(translate('Something went wrong'))
+        logger.error('Failed to create picklist for orders', err)
+        showToast(translate('Failed to create picklist for orders'))
       }
 
       emitter.emit("dismissLoader")
@@ -200,10 +202,10 @@ export default defineComponent({
             id: picker.partyId
           }))
         } else {
-          console.error('Failed to fetch the pickers information or there are no pickers available', resp.data)
+          logger.error('Failed to fetch the pickers information or there are no pickers available', resp.data)
         }
       } catch (err) {
-        console.error(err)
+        logger.error('Failed to fetch the pickers information or there are no pickers available', err)
       }
     }
   },

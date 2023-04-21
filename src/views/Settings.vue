@@ -112,6 +112,7 @@ import TimeZoneModal from '@/views/timezone-modal.vue'
 import { UserService } from '@/services/UserService';
 import { hasError, showToast } from '@/utils';
 import { translate } from '@/i18n';
+import logger from '@/logger';
 
 export default defineComponent({
   name: 'Settings',
@@ -182,9 +183,11 @@ export default defineComponent({
 
         if(!hasError(resp) && resp.data.grouped.orderId.ngroups) {
           this.outstandingOrdersCount = resp.data.grouped.orderId.ngroups
+        } else {
+          return Promise.reject(resp.data)
         }
       } catch(err) {
-        console.error(err)
+        logger.error('Failed to get outstanding orders count', err)
       }
     },
     async getInProgressOrdersCount() {
@@ -212,9 +215,11 @@ export default defineComponent({
 
         if(!hasError(resp) && resp.data.grouped.picklistBinId.ngroups) {
           this.inProgressOrdersCount = resp.data.grouped.picklistBinId.ngroups
+        } else {
+          return Promise.reject(resp.data)
         }
       } catch(err) {
-        console.error(err)
+        logger.error('Failed to get inProgress orders count', err)
       }
     },
     async getCurrentFacilityDetails() {
@@ -234,9 +239,11 @@ export default defineComponent({
         if(!hasError(resp) && resp.data.count) {
           // using index 0 as we will only get a single record
           this.currentFacilityDetails = resp.data.docs[0]
+        } else {
+          return Promise.reject(resp.data)
         }
       } catch(err) {
-        console.error(err)
+        logger.error('Failed to fetch current facility details', err)
       }
     },
     async openRecyclePopover(ev: Event) {
@@ -284,12 +291,11 @@ export default defineComponent({
           this.currentFacilityDetails.maximumOrderLimit = maximumOrderLimit
           showToast(translate('Facility updated successfully'))
         } else {
-          showToast(translate('Failed to update facility'))
-          console.error(resp.data)
+          return Promise.reject(resp.data)
         }
       } catch(err) {
         showToast(translate('Failed to update facility'))
-        console.error(err)
+        logger.error('Failed to update facility', err)
       }
     },
     async turnOnFulfillment() {
@@ -359,11 +365,11 @@ export default defineComponent({
                 showToast(translate('Recycling has been started. All outstanding orders will be recycled shortly.'))
               } else {
                 showToast(translate('Failed to recycle outstanding orders'))
-                console.error(resp)
+                logger.error('Failed to recycle outstanding orders', resp.data)
               }
             } catch(err) {
               showToast(translate('Failed to recycle outstanding orders'))
-              console.error(err)
+              logger.error('Failed to recycle outstanding orders', err)
             }
           }
         }]
@@ -394,11 +400,11 @@ export default defineComponent({
                 showToast(translate('Recycling has been started. All in progress orders will be recycled shortly.'))
               } else {
                 showToast(translate('Failed to recycle in progress orders'))
-                console.error(resp)
+                logger.error('Failed to recycle in progress orders', resp.data)
               }
             } catch(err) {
               showToast(translate('Failed to recycle in progress orders'))
-              console.error(err)
+              logger.error('Failed to recycle in progress orders', err)
             }
           }
         }]

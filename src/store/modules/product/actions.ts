@@ -4,6 +4,7 @@ import RootState from '@/store/RootState'
 import ProductState from './ProductState'
 import * as types from './mutation-types'
 import { hasError } from '@/utils'
+import logger from "@/logger";
 
 const actions: ActionTree<ProductState, RootState> = {
 
@@ -35,10 +36,10 @@ const actions: ActionTree<ProductState, RootState> = {
         const products = resp.data.response.docs;
         commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
       } else {
-        console.error('Something went wrong')
+        return Promise.reject(resp.data)
       }
     } catch(err) {
-      console.error(err)
+      logger.error('Failed to fetch products information', err)
     }
     return resp;
   },
