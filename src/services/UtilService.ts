@@ -49,7 +49,7 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
     if(resp.status == 200 && !hasError(resp) && resp.data.count) {
       shipmentIds = resp.data.docs.map((shipment: any) => shipment.shipmentId) // returning all the shipmentIds as those are used to fetch shipment package information
     } else {
-      throw resp.data
+      return Promise.reject(resp.data)
     }
   } catch(err) {
     logger.error('Failed to fetch shipmentIds for orders', err)
@@ -88,7 +88,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
         return shipmentForOrders
       }, {})
     } else {
-      throw resp.data
+      return Promise.reject(resp.data)
     }
   } catch(err) {
     logger.error('Failed to fetch shipment packages information', err)
@@ -126,7 +126,7 @@ const findCarrierPartyIdsForShipment = async(shipmentIds: Array<string>): Promis
         return carrierPartyIdsByShipment
       }, {})
     } else {
-      throw resp.data
+      return Promise.reject(resp.data)
     }
   } catch(err) {
     logger.error('Failed to fetch carrierPartyIds for shipment', err)
@@ -165,7 +165,7 @@ const findCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promis
         return shipmentBoxTypes
       }, {})
     } else {
-      throw resp.data
+      return Promise.reject(resp.data)
     }
   } catch(err) {
     logger.error('Failed to fetch carrier shipment box type information', err)
@@ -203,7 +203,7 @@ const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<a
         return shipmentItems
       }, {})
     } else {
-      throw resp.data
+      return Promise.reject(resp.data)
     }
   } catch(err) {
     logger.error('Failed to fetch shipmentItem information', err)

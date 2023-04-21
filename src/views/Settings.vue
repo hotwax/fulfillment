@@ -184,7 +184,7 @@ export default defineComponent({
         if(!hasError(resp) && resp.data.grouped.orderId.ngroups) {
           this.outstandingOrdersCount = resp.data.grouped.orderId.ngroups
         } else {
-          throw resp.data
+          return Promise.reject(resp.data)
         }
       } catch(err) {
         logger.error('Failed to get outstanding orders count', err)
@@ -216,7 +216,7 @@ export default defineComponent({
         if(!hasError(resp) && resp.data.grouped.picklistBinId.ngroups) {
           this.inProgressOrdersCount = resp.data.grouped.picklistBinId.ngroups
         } else {
-          throw resp.data
+          return Promise.reject(resp.data)
         }
       } catch(err) {
         logger.error('Failed to get inProgress orders count', err)
@@ -240,7 +240,7 @@ export default defineComponent({
           // using index 0 as we will only get a single record
           this.currentFacilityDetails = resp.data.docs[0]
         } else {
-          throw resp.data
+          return Promise.reject(resp.data)
         }
       } catch(err) {
         logger.error('Failed to fetch current facility details', err)
@@ -291,7 +291,7 @@ export default defineComponent({
           this.currentFacilityDetails.maximumOrderLimit = maximumOrderLimit
           showToast(translate('Facility updated successfully'))
         } else {
-          throw resp.data
+          return Promise.reject(resp.data)
         }
       } catch(err) {
         showToast(translate('Failed to update facility'))
