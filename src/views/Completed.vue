@@ -42,85 +42,85 @@
             </ion-label>
           </ion-item>
         </div>
+        <div class="results">
+          <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ $t("Ship") }}</ion-button>
 
-        <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ $t("Ship") }}</ion-button>
-
-        <ion-card class="order" v-for="(order, index) in completedOrders.list" :key="index">
-          <div class="order-header">
-            <div class="order-primary-info">
-              <ion-label>
-                {{ order.customerName }}
-                <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
-              </ion-label>
-            </div>
-
-            <div class="order-tags">
-              <ion-chip outline>
-                <ion-icon :icon="pricetagOutline" />
-                <ion-label>{{ order.orderId }}</ion-label>
-              </ion-chip>
-            </div>
-
-            <div class="order-metadata">
-              <ion-label>
-                {{ order.shipmentMethodTypeDesc }}
-                <!-- TODO: add support to display the last brokered date, currently not getting
-                the date in API response -->
-                <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
-              </ion-label>
-            </div>
-          </div>
-
-          <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
-            <div class="product-info">
-              <ion-item lines="none">
-                <ion-thumbnail slot="start">
-                  <Image :src="getProduct(item.productId).mainImageUrl" />
-                </ion-thumbnail>
+          <ion-card class="order" v-for="(order, index) in completedOrders.list" :key="index">
+            <div class="order-header">
+              <div class="order-primary-info">
                 <ion-label>
-                  <p class="overline">{{ item.productSku }}</p>
-                  {{ item.virtualProductName }}
-                  <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  {{ order.customerName }}
+                  <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
                 </ion-label>
+              </div>
+
+              <div class="order-tags">
+                <ion-chip outline>
+                  <ion-icon :icon="pricetagOutline" />
+                  <ion-label>{{ order.orderId }}</ion-label>
+                </ion-chip>
+              </div>
+
+              <div class="order-metadata">
+                <ion-label>
+                  {{ order.shipmentMethodTypeDesc }}
+                  <!-- TODO: add support to display the last brokered date, currently not getting
+                  the date in API response -->
+                  <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
+                </ion-label>
+              </div>
+            </div>
+
+            <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
+              <div class="product-info">
+                <ion-item lines="none">
+                  <ion-thumbnail slot="start">
+                    <Image :src="getProduct(item.productId).mainImageUrl" />
+                  </ion-thumbnail>
+                  <ion-label>
+                    <p class="overline">{{ item.productSku }}</p>
+                    {{ item.virtualProductName }}
+                    <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  </ion-label>
+                </ion-item>
+              </div>
+
+              <div class="product-metadata mobile-only">
+                <ion-note>{{ getProductStock(item.productId) }} {{ $t("pieces in stock") }}</ion-note>
+              </div>
+            </div>
+
+            <!-- TODO: implement functionality to mobile view -->
+            <div class="mobile-only">
+              <ion-item>
+                <ion-button fill="clear" >{{ $t("Ship Now") }}</ion-button>
+                <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover">
+                  <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+                </ion-button>
               </ion-item>
             </div>
 
-            <div class="product-metadata mobile-only">
-              <ion-note>{{ getProductStock(item.productId) }} {{ $t("pieces in stock") }}</ion-note>
+            <!-- TODO: make the buttons functional -->
+            <div class="actions">
+              <div class="desktop-only">
+                <ion-button>{{ $t("Ship Now") }}</ion-button>
+                <!-- TODO: implemented support to make the buttons functional -->
+                <ion-button :disabled="true" fill="outline">{{ $t("Print Shipping Label") }}</ion-button>
+                <ion-button :disabled="true" fill="outline">{{ $t("Print Customer Letter") }}</ion-button>
+              </div>
+              <div class="desktop-only">
+                <ion-button fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
+              </div>
             </div>
-          </div>
-
-          <!-- TODO: implement functionality to mobile view -->
-          <div class="mobile-only">
-            <ion-item>
-              <ion-button fill="clear" >{{ $t("Ship Now") }}</ion-button>
-              <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover">
-                <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-              </ion-button>
-            </ion-item>
-          </div>
-
-          <!-- TODO: make the buttons functional -->
-          <div class="actions">
-            <div class="desktop-only">
-              <ion-button>{{ $t("Ship Now") }}</ion-button>
-              <!-- TODO: implemented support to make the buttons functional -->
-              <ion-button :disabled="true" fill="outline">{{ $t("Print Shipping Label") }}</ion-button>
-              <ion-button :disabled="true" fill="outline">{{ $t("Print Customer Letter") }}</ion-button>
-            </div>
-            <div class="desktop-only">
-              <ion-button fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
-            </div>
-          </div>
-        </ion-card>
-
-        <!-- TODO: make mobile view functional -->
-        <ion-fab class="mobile-only" vertical="bottom" horizontal="end">
-          <ion-fab-button  @click="bulkShipOrders()">
-            <ion-icon :icon="checkmarkDoneOutline" />
-          </ion-fab-button>
-        </ion-fab>
+          </ion-card>
+        </div>
       </div>
+      <!-- TODO: make mobile view functional -->
+      <ion-fab v-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end">
+        <ion-fab-button  @click="bulkShipOrders()">
+          <ion-icon :icon="checkmarkDoneOutline" />
+        </ion-fab-button>
+      </ion-fab>
       <div class="empty-state" v-else>
         {{ currentFacility.name }}{{ $t(" doesn't have any completed orders right now.") }}
       </div>

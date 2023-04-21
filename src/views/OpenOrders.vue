@@ -29,73 +29,74 @@
           </ion-item>
         </div>
 
-        <ion-button class="bulk-action desktop-only" fill="outline" size="large" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
+        <div class="results">
+          <ion-button class="bulk-action desktop-only" fill="outline" size="large" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
 
-        <ion-card class="order" v-for="(orders, index) in openOrders.list" :key="index">
-          <div class="order-header">
-            <div class="order-primary-info">
-              <ion-label>
-                {{ orders.doclist.docs[0].customerName }}
-                <p>{{ $t("Ordered") }} {{ formatUtcDate(orders.doclist.docs[0].orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
-              </ion-label>
-            </div>
-
-            <div class="order-tags">
-              <ion-chip outline>
-                <ion-icon :icon="pricetagOutline" />
-                <ion-label>{{ orders.doclist.docs[0].orderId }}</ion-label>
-              </ion-chip>
-              <ion-button fill="clear" class="mobile-only" color="danger">
-                <ion-icon slot="icon-only" :icon="refreshCircleOutline" />
-              </ion-button>
-            </div>
-
-            <div class="order-metadata">
-              <ion-label>
-                {{ orders.doclist.docs[0].shipmentMethodTypeDesc }}
-                <!-- TODO: add support to display the last brokered date, currently not getting
-                the date in API response -->
-                <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
-              </ion-label>
-            </div>
-          </div>
-
-          <div v-for="order in orders.doclist.docs" :key="order">
-            <div class="order-item">
-              <div class="product-info">
-                <ion-item lines="none">
-                  <ion-thumbnail slot="start">
-                    <Image :src="getProduct(order.productId).mainImageUrl" />
-                  </ion-thumbnail>
-                  <ion-label>
-                    <p class="overline">{{ order.productSku }}</p>
-                    {{ order.virtualProductName }}
-                    <p>{{ getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
-                  </ion-label>
-                </ion-item>
+          <ion-card class="order" v-for="(orders, index) in openOrders.list" :key="index">
+            <div class="order-header">
+              <div class="order-primary-info">
+                <ion-label>
+                  {{ orders.doclist.docs[0].customerName }}
+                  <p>{{ $t("Ordered") }} {{ formatUtcDate(orders.doclist.docs[0].orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                </ion-label>
               </div>
-              <div class="product-metadata">
-                <!-- TODO: display QOH in place of ATP -->
-                <ion-note>{{ getProductStock(order.productId) }} {{ $t('pieces in stock') }}</ion-note>
+
+              <div class="order-tags">
+                <ion-chip outline>
+                  <ion-icon :icon="pricetagOutline" />
+                  <ion-label>{{ orders.doclist.docs[0].orderId }}</ion-label>
+                </ion-chip>
+                <ion-button fill="clear" class="mobile-only" color="danger">
+                  <ion-icon slot="icon-only" :icon="refreshCircleOutline" />
+                </ion-button>
+              </div>
+
+              <div class="order-metadata">
+                <ion-label>
+                  {{ orders.doclist.docs[0].shipmentMethodTypeDesc }}
+                  <!-- TODO: add support to display the last brokered date, currently not getting
+                  the date in API response -->
+                  <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
+                </ion-label>
               </div>
             </div>
-          </div>
 
-          <!-- TODO: add functionality to the buttons-->
-          <!-- <div class="actions">
-            <div class="positive-action"></div>
-            <div class="negative-action">
-              <ion-button fill="outline" color="danger">{{ $t("Recycle") }}</ion-button>
+            <div v-for="order in orders.doclist.docs" :key="order">
+              <div class="order-item">
+                <div class="product-info">
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <Image :src="getProduct(order.productId).mainImageUrl" />
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ order.productSku }}</p>
+                      {{ order.virtualProductName }}
+                      <p>{{ getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
+                    </ion-label>
+                  </ion-item>
+                </div>
+                <div class="product-metadata">
+                  <!-- TODO: display QOH in place of ATP -->
+                  <ion-note>{{ getProductStock(order.productId) }} {{ $t('pieces in stock') }}</ion-note>
+                </div>
+              </div>
             </div>
-          </div> -->
-        </ion-card>
 
-        <ion-fab class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-          <ion-fab-button @click="assignPickers">
-            <ion-icon :icon="printOutline" />
-          </ion-fab-button>
-        </ion-fab>
+            <!-- TODO: add functionality to the buttons-->
+            <!-- <div class="actions">
+              <div class="positive-action"></div>
+              <div class="negative-action">
+                <ion-button fill="outline" color="danger">{{ $t("Recycle") }}</ion-button>
+              </div>
+            </div> -->
+          </ion-card>
+        </div>
       </div>
+      <ion-fab v-if="openOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button @click="assignPickers">
+          <ion-icon :icon="printOutline" />
+        </ion-fab-button>
+      </ion-fab>
       <div class="empty-state" v-else>
         {{ currentFacility.name }}{{ $t(" doesn't have any outstanding orders right now.") }}
       </div>

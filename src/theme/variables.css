@@ -368,8 +368,8 @@ img {
 
 @media (min-width: 991px) {
   /* shipment card desktop layout start */
-  .order, .bulk-action {
-    max-width: 1080px;
+  .results {
+    max-width: 1100px;
     margin-inline: auto;
   }
 
