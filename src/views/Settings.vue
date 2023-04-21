@@ -10,7 +10,7 @@
     <ion-content>
       <ion-item>
         <ion-label>{{ $t("Store") }}</ion-label>
-        <ion-select :value="currentFacility.facilityId" @ionChange="setFacility($event)">
+        <ion-select interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
           <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
         </ion-select>
       </ion-item>

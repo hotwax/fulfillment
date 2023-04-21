@@ -94,7 +94,7 @@
                 <div v-if="!isIssueSegmentSelectedForItem(item)">
                   <ion-item lines="none">
                     <ion-label>{{ $t("Select box") }}</ion-label>
-                    <ion-select @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
+                    <ion-select interface="popover" @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
                       <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName">{{ shipmentPackage.packageName }}</ion-select-option>
                     </ion-select>
                   </ion-item>
