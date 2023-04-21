@@ -44,6 +44,22 @@ const packOrders = async (query: any): Promise <any> => {
   })
 }
 
+const bulkShipOrders = async (query: any): Promise<any> => {
+  return api({
+    url: "service/bulkShipOrders",
+    method: "post",
+    data: query
+  })
+}
+
+const unpackOrder = async (query: any): Promise<any> => {
+  return api({
+    url: "service/unlockStoreFulfillmentOrder",
+    method: "post",
+    data: query
+  })
+}
+
 const rejectOrderItem = async (payload: any): Promise <any> => {
   return api({
     url: "rejectOrderItem",
@@ -98,6 +114,7 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
 
 export const OrderService = {
   addShipmentBox,
+  bulkShipOrders,
   findCompletedOrders,
   findInProgressOrders,
   findOpenOrders,
@@ -105,5 +122,6 @@ export const OrderService = {
   packOrders,
   printPackingSlip,
   rejectOrderItem,
+  unpackOrder,
   updateOrder
 }

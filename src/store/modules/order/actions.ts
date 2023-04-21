@@ -235,6 +235,7 @@ const actions: ActionTree<OrderState, RootState> = {
       orderDate: order.doclist.docs[0].orderDate,
       groupValue: order.groupValue,
       items: order.doclist.docs,
+      shipmentId: order.doclist.docs[0].shipmentId,
       shipmentMethodTypeId: order.doclist.docs[0].shipmentMethodTypeId,
       shipmentMethodTypeDesc: order.doclist.docs[0].shipmentMethodTypeDesc
     }))
