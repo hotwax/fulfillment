@@ -29,7 +29,7 @@
               <p>{{ picklist.date }}</p>
             </ion-label>
             <!-- TODO: implement support to print picklist -->
-            <ion-icon :icon="printOutline" />
+            <ion-icon slot="end" :icon="printOutline" />
           </ion-item>
         </div>
 
