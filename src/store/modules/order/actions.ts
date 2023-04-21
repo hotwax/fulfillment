@@ -58,7 +58,8 @@ const actions: ActionTree<OrderState, RootState> = {
           orderIds.push(order.doclist.docs[0].orderId)
         })
 
-        const shipmentIds: Array<string> = [...(await UtilService.findShipmentIdsForOrders(picklistBinIds, orderIds)).flat()]
+        const shipmentIdsForOrders = await UtilService.findShipmentIdsForOrders(picklistBinIds, orderIds)
+        const shipmentIds: Array<any> = [...Object.values(shipmentIdsForOrders).flat()]
 
         // TODO: handle case when shipmentIds is empty
         // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
@@ -90,7 +91,7 @@ const actions: ActionTree<OrderState, RootState> = {
             orderDate: orderItem.orderDate,
             groupValue: order.groupValue,
             picklistBinId: orderItem.picklistBinId,
-            shipmentIds,
+            shipmentIds: shipmentIdsForOrders[orderItem.orderId],
             items: order.doclist.docs,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
             shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
