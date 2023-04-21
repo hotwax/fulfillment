@@ -114,13 +114,13 @@
             </div>
           </ion-card>
         </div>
+        <!-- TODO: make mobile view functional -->
+        <ion-fab class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
+          <ion-fab-button  @click="bulkShipOrders()">
+            <ion-icon :icon="checkmarkDoneOutline" />
+          </ion-fab-button>
+        </ion-fab>
       </div>
-      <!-- TODO: make mobile view functional -->
-      <ion-fab v-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end">
-        <ion-fab-button  @click="bulkShipOrders()">
-          <ion-icon :icon="checkmarkDoneOutline" />
-        </ion-fab-button>
-      </ion-fab>
       <div class="empty-state" v-else>
         {{ currentFacility.name }}{{ $t(" doesn't have any completed orders right now.") }}
       </div>

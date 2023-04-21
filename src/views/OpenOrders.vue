@@ -91,12 +91,12 @@
             </div> -->
           </ion-card>
         </div>
+        <ion-fab class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
+          <ion-fab-button @click="assignPickers">
+            <ion-icon :icon="printOutline" />
+          </ion-fab-button>
+        </ion-fab>
       </div>
-      <ion-fab v-if="openOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="assignPickers">
-          <ion-icon :icon="printOutline" />
-        </ion-fab-button>
-      </ion-fab>
       <div class="empty-state" v-else>
         {{ currentFacility.name }}{{ $t(" doesn't have any outstanding orders right now.") }}
       </div>
