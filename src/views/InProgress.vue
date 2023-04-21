@@ -201,7 +201,6 @@ export default defineComponent({
   },
   data() {
     return {
-      queryString: '',
       picklists: [] as any,
       defaultShipmentBoxType: '',
       itemsIssueSegmentSelected: [] as any,
@@ -388,6 +387,9 @@ export default defineComponent({
       return alert.present();
     },
     async findInProgressOrders () {
+      // assigning with empty array, as when we are updating(save) an order and if for one of the items issue segment
+      // was selected before update making pack button disabled, then after update pack button is still disabled for that order
+      this.itemsIssueSegmentSelected = []
       await this.store.dispatch('order/findInProgressOrders')
     },
     async updateOrder(order: any) {
@@ -451,6 +453,7 @@ export default defineComponent({
       order.isModified = true;
     },
     async fetchPickersInformation() {
+
       const orderQueryPayload = prepareOrderQuery({
         viewSize: '0',  // passing viewSize as 0 as we don't need any data
         groupBy: 'picklistBinId',
@@ -505,7 +508,7 @@ export default defineComponent({
           const picklistResp = await UtilService.fetchPicklistInformation(payload);
 
           if(picklistResp.status == 200 && !hasError(picklistResp) && picklistResp.data.count > 0) {
-            picklistResp.data.docs.reduce((picklists: any, picklist: any) => {
+            this.picklists = picklistResp.data.docs.reduce((picklists: any, picklist: any) => {
               const pickersInformation = buckets.find((bucket: any) => picklist.picklistId == bucket.val)
 
               if(pickersInformation.count == 0) {
@@ -525,7 +528,7 @@ export default defineComponent({
               })
 
               return picklists
-            }, this.picklists)
+            }, [])
           }
         } else {
           throw resp.data
