@@ -42,10 +42,10 @@
           </ion-item>
         </div>
 
-        <ion-button expand="block" class="bulk-action desktop-only" fill="outline" @click="shipOrderAlert">{{ $t("Ship") }}</ion-button>
+        <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="shipOrderAlert">{{ $t("Ship") }}</ion-button>
 
-        <ion-card v-for="(order, index) in completedOrders.list" :key="index">
-          <div class="card-header">
+        <ion-card class="order" v-for="(order, index) in completedOrders.list" :key="index">
+          <div class="order-header">
             <div class="order-primary-info">
               <ion-label>
                 {{ order.customerName }}

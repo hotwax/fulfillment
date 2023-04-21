@@ -33,10 +33,10 @@
           </ion-item>
         </div>
 
-        <ion-button expand="block" class="bulk-action desktop-only" fill="outline" @click="packOrders()">{{ $t("Pack orders") }}</ion-button>
+        <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="packOrders()">{{ $t("Pack orders") }}</ion-button>
 
-        <ion-card v-for="(order, index) in inProgressOrders.list" :key="index">
-          <div class="card-header">
+        <ion-card class="order" v-for="(order, index) in inProgressOrders.list" :key="index">
+          <div class="order-header">
             <div class="order-primary-info">
               <ion-label>
                 {{ order.doclist.docs[0].customerName }}

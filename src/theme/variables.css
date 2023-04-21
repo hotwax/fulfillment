@@ -295,7 +295,7 @@ img {
 }
 
 /* shipment card layout start */
-.card-header {
+.order-header {
   display: grid;
   grid: "tags"
         "info"
@@ -368,15 +368,17 @@ img {
 
 @media (min-width: 991px) {
   /* shipment card desktop layout start */
-  .card-header {
-    grid: "info tags metadata" / max-content 1fr max-content;
-    justify-items: center;
+  .order {
+    max-width: ;
+  }
+
+  .order-header {
+    grid: "info tags metadata" / 1fr max-content 1fr;
     align-items: center;
     border-bottom: var(--border-medium);
   }
 
   .order-tags {
-    justify-self: center;
     border-bottom: none;
   }
 
