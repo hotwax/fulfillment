@@ -36,7 +36,7 @@ const actions: ActionTree<ProductState, RootState> = {
         const products = resp.data.response.docs;
         commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
       } else {
-        return Promise.reject(resp.data)
+        throw resp.data
       }
     } catch(err) {
       logger.error('Failed to fetch products information', err)

@@ -248,8 +248,7 @@ export default defineComponent({
           // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
           this.findInProgressOrders();
         } else {
-          showToast(translate('Failed to pack order'))
-          logger.error('Failed to pack order', resp.data)
+          throw resp.data
         }
       } catch (err) {
         showToast(translate('Failed to pack order'))
@@ -283,8 +282,7 @@ export default defineComponent({
                   // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
                   this.findInProgressOrders();
                 } else {
-                  showToast(translate('Failed to pack orders'))
-                  logger.error('Failed to pack orders', resp.data)
+                  throw resp.data
                 }
               } catch (err) {
                 showToast(translate('Failed to pack orders'))
@@ -369,7 +367,7 @@ export default defineComponent({
         if(!hasError(resp)) {
           showToast(translate('Order updated successfully'))
         } else {
-          return Promise.reject(resp.data);
+          throw resp.data;
         }
       } catch (err) {
         showToast(translate('Failed to update order'))
@@ -472,7 +470,7 @@ export default defineComponent({
             }, this.picklists)
           }
         } else {
-          logger.error('No picklist facets found', resp.data)
+          throw resp.data
         }
       } catch (err) {
         logger.error('No picklist facets found', err)
@@ -512,7 +510,7 @@ export default defineComponent({
         if(!hasError(resp) && resp.data.count) {
           return resp.data.docs[0]
         } else {
-          return Promise.reject(resp.data)
+          throw resp.data
         }
       } catch (err) {
         logger.error('Failed to fetch shipment route segment information', err)
@@ -536,7 +534,7 @@ export default defineComponent({
         if(!hasError(resp) && resp.data.count) {
           defaultBoxType = resp.data.docs[0].systemPropertyValue
         } else {
-          return Promise.reject(resp.data)
+          throw resp.data
         }
       } catch (err) {
         logger.error('Failed to fetch default shipment box type information', err)
@@ -567,7 +565,7 @@ export default defineComponent({
           // TODO: only update the order in which the box is added instead of fetching all the inProgress orders
           this.findInProgressOrders();
         } else {
-          return Promise.reject(resp.data)
+          throw resp.data
         }
       } catch (err) {
         showToast(translate('Failed to add box'))

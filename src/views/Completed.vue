@@ -244,8 +244,7 @@ export default defineComponent({
                   // TODO: handle the case of data not updated correctly
                   await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
-                  showToast(translate('Failed to ship orders'))
-                  logger.error('Failed to ship orders', resp.data)
+                  throw resp.data
                 }
               } catch(err) {
                 logger.error('Failed to ship orders', err)
@@ -302,7 +301,7 @@ export default defineComponent({
         if(resp.status == 200 && !hasError(resp)) {
           this.shipmentMethods = resp.data.facets.shipmentMethodFacet.buckets
         } else {
-          logger.error('Failed to fetch shipment methods', resp.data)
+          throw resp.data
         }
       } catch(err) {
         logger.error('Failed to fetch shipment methods', err)
@@ -342,7 +341,7 @@ export default defineComponent({
         if(resp.status == 200 && !hasError(resp)) {
           this.carrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
         } else {
-          logger.error('Failed to fetch carrierPartyIds', resp.data)
+          throw resp.data
         }
       } catch(err) {
         logger.error('Failed to fetch carrierPartyIds', err)
@@ -413,8 +412,7 @@ export default defineComponent({
                   // TODO: handle the case of data not updated correctly
                   await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
-                  showToast(translate('Failed to unpack the order'))
-                  logger.error('Failed to unpack the order', resp.data)
+                  throw resp.data
                 }
               } catch(err) {
                 logger.error('Failed to unpack the order', err)

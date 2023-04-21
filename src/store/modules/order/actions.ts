@@ -93,7 +93,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
         this.dispatch('product/getProductInformation', { orders })
       } else {
-        logger.error('No inProgress orders found', resp.data)
+        throw resp.data
       }
     } catch (err) {
       logger.error('No inProgress orders found', err)
@@ -147,7 +147,7 @@ const actions: ActionTree<OrderState, RootState> = {
         orders = resp.data.grouped.orderId.groups
         this.dispatch('product/getProductInformation', { orders })
       } else {
-        logger.error('No outstanding orders found', resp.data)
+        throw resp.data
       }
     } catch (err) {
       logger.error('No outstanding orders found', err)
@@ -203,7 +203,7 @@ const actions: ActionTree<OrderState, RootState> = {
         orders = resp.data.grouped.picklistBinId.groups
         this.dispatch('product/getProductInformation', { orders })
       } else {
-        logger.error('No completed orders found', resp.data)
+        throw resp.data
       }
     } catch (err) {
       logger.error('No completed orders found', err)

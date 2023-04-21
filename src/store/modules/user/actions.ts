@@ -170,7 +170,7 @@ const actions: ActionTree<UserState, RootState> = {
         commit(types.USER_CURRENT_ECOM_STORE_UPDATED, userPrefStore ? userPrefStore : eComStores.length > 0 ? eComStores[0] : {});
         return eComStores
       } else {
-        logger.error('Failed to get ecom stores', resp.data);
+        throw resp.data
       }
     } catch(error) {
       logger.error('Failed to get ecom stores', error);

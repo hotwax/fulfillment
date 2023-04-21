@@ -239,7 +239,7 @@ export default defineComponent({
         if(resp.status == 200 && !hasError(resp) && resp.data.facets?.count > 0) {
           this.shipmentMethods = resp.data.facets.shipmentMethodTypeIdFacet.buckets
         } else {
-          return Promise.reject(resp.data);
+          throw resp.data;
         }
       } catch(err) {
         logger.error('Failed to fetch shipment methods information', err)
