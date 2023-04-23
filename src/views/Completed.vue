@@ -85,7 +85,7 @@
                 </ion-item>
               </div>
 
-              <div class="product-metadata mobile-only">
+              <div class="product-metadata">
                 <ion-note>{{ getProductStock(item.productId) }} {{ $t("pieces in stock") }}</ion-note>
               </div>
             </div>
