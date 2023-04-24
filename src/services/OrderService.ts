@@ -138,6 +138,32 @@ const printShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
   }
 }
 
+const printPicklist = async (picklistId: string): Promise<any> => {
+  try {
+    // Get picklist from the server
+    const resp: any = await api({
+      method: 'get',
+      url: 'PrintPicklist.pdf',
+      params: {
+        picklistId
+      },
+      responseType: "blob"
+    })
+
+    if (!resp || resp.status !== 200 || hasError(resp)) {
+      throw resp.data;
+    }
+
+    // Generate local file URL for the blob received
+    const pdfUrl = window.URL.createObjectURL(resp.data);
+    // Open the file in new tab
+    (window as any).open(pdfUrl, "_blank").focus();
+
+  } catch(err) {
+    logger.error("Failed to print picklist", err)
+  }
+}
+
 export const OrderService = {
   addShipmentBox,
   bulkShipOrders,
@@ -147,6 +173,7 @@ export const OrderService = {
   packOrder,
   packOrders,
   printPackingSlip,
+  printPicklist,
   printShippingLabel,
   rejectOrderItem,
   unpackOrder,

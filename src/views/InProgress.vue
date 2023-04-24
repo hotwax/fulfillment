@@ -27,8 +27,7 @@
               {{ picklist.pickersName }}
               <p>{{ picklist.date }}</p>
             </ion-label>
-            <!-- TODO: implement support to print picklist -->
-            <ion-button fill="outline" slot="end"><ion-icon :icon="printOutline" /></ion-button>
+            <ion-button fill="outline" slot="end" @click="printPicklist(picklist.id)"><ion-icon :icon="printOutline" /></ion-button>
           </ion-item>
         </div>
 
@@ -650,6 +649,9 @@ export default defineComponent({
 
       inProgressOrdersQuery.viewSize = size
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
+    },
+    async printPicklist(picklistId: string) {
+      await OrderService.printPicklist(picklistId)
     }
   },
   async mounted () {
