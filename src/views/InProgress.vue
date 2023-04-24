@@ -32,111 +32,112 @@
           </ion-item>
         </div>
 
-        <ion-button expand="block" class="bulk-action desktop-only" fill="outline" @click="packOrders()">{{ $t("Pack orders") }}</ion-button>
+        <div class="results">
+          <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="packOrders()">{{ $t("Pack orders") }}</ion-button>
 
-        <ion-card v-for="(order, index) in inProgressOrders.list" :key="index">
-          <div class="card-header">
-            <div class="order-primary-info">
-              <ion-label>
-                {{ order.customerName }}
-                <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
-              </ion-label>
-            </div>
-
-            <div class="order-tags">
-              <ion-chip outline>
-                <ion-icon :icon="pricetagOutline" />
-                <ion-label>{{ order.orderId }}</ion-label>
-              </ion-chip>
-            </div>
-
-            <div class="order-metadata">
-              <!-- TODO: add brokered date-->
-              <ion-label>
-                {{ order.shipmentMethodTypeDesc }}
-                <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
-              </ion-label>
-            </div>
-          </div>
-
-          <!-- TODO: implement functionality to change the type of box -->
-          <div class="box-type desktop-only">
-            <ion-button @click="addShipmentBox(order)" fill="outline"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
-            <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
-          </div>
-
-          <div v-for="(item, index) in order.items" :key="index" class="order-item">
-            <div class="product-info">
-              <ion-item lines="none">
-                <ion-thumbnail slot="start">
-                  <Image :src="getProduct(item.productId).mainImageUrl" />
-                </ion-thumbnail>
+          <ion-card class="order" v-for="(order, index) in inProgressOrders.list" :key="index">
+            <div class="order-header">
+              <div class="order-primary-info">
                 <ion-label>
-                  <p class="overline">{{ item.productSku }}</p>
-                  {{ item.productName }}
-                  <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  {{ order.customerName }}
+                  <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
                 </ion-label>
-              </ion-item>
-            </div>
+              </div>
 
-            <div class="desktop-only">
-              <ion-segment @ionChange="changeSegment($event, item, order)" :value="isIssueSegmentSelectedForItem(item) ? 'issue' : 'pack'">
-                <ion-segment-button value="pack">
-                  <ion-label>{{ $t("Ready to pack") }}</ion-label>
-                </ion-segment-button>
-                <ion-segment-button value="issue">
-                  <ion-label>{{ $t("Report an issue") }}</ion-label>
-                </ion-segment-button>
-              </ion-segment>
-              <div class="segments">
-                <!-- TODO: add functionality to update box type -->
-                <div v-if="!isIssueSegmentSelectedForItem(item)">
-                  <ion-item lines="none">
-                    <ion-label>{{ $t("Select box") }}</ion-label>
-                    <ion-select @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
-                      <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName">{{ shipmentPackage.packageName }}</ion-select-option>
-                    </ion-select>
-                  </ion-item>
-                </div>
-                <div v-else>
-                  <ion-item lines="none">
-                    <ion-label>{{ $t("Select issue") }}</ion-label>
-                    <ion-select @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
-                      <ion-select-option v-for="reason in rejectReasons" :key="reason.enumCode" :value="reason.enumCode">{{ $t(reason.description) }}</ion-select-option>
-                    </ion-select>
-                  </ion-item>
-                </div>
+              <div class="order-tags">
+                <ion-chip outline>
+                  <ion-icon :icon="pricetagOutline" />
+                  <ion-label>{{ order.orderId }}</ion-label>
+                </ion-chip>
+              </div>
+
+              <div class="order-metadata">
+                <!-- TODO: add brokered date-->
+                <ion-label>
+                  {{ order.shipmentMethodTypeDesc }}
+                  <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
+                </ion-label>
               </div>
             </div>
 
-            <div class="product-metadata">
-              <ion-note>{{ getProductStock(item.productId) }} {{ $t("pieces in stock") }}</ion-note>
+            <!-- TODO: implement functionality to change the type of box -->
+            <div class="box-type desktop-only">
+              <ion-button @click="addShipmentBox(order)" fill="outline"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
+              <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
             </div>
-          </div>
 
-          <div class="mobile-only">
-            <ion-item>
-              <ion-button fill="clear" @click="packOrder(order)">{{ $t("Pack using default packaging") }}</ion-button>
-              <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
-                <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-              </ion-button>
-            </ion-item>
-          </div>
+            <div v-for="(item, index) in order.items" :key="index" class="order-item">
+              <div class="product-info">
+                <ion-item lines="none">
+                  <ion-thumbnail slot="start">
+                    <Image :src="getProduct(item.productId).mainImageUrl" />
+                  </ion-thumbnail>
+                  <ion-label>
+                    <p class="overline">{{ item.productSku }}</p>
+                    {{ item.productName }}
+                    <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  </ion-label>
+                </ion-item>
+              </div>
 
-          <div class="actions">
-            <div>
-              <ion-button :disabled="order.isModified" @click="packOrder(order)">{{ $t("Pack") }}</ion-button>
-              <ion-button fill="outline" @click="save(order)">{{ $t("Save") }}</ion-button>
+              <div class="desktop-only">
+                <ion-segment @ionChange="changeSegment($event, item, order)" :value="isIssueSegmentSelectedForItem(item) ? 'issue' : 'pack'">
+                  <ion-segment-button value="pack">
+                    <ion-label>{{ $t("Ready to pack") }}</ion-label>
+                  </ion-segment-button>
+                  <ion-segment-button value="issue">
+                    <ion-label>{{ $t("Report an issue") }}</ion-label>
+                  </ion-segment-button>
+                </ion-segment>
+                <div class="segments">
+                  <!-- TODO: add functionality to update box type -->
+                  <div v-if="!isIssueSegmentSelectedForItem(item)">
+                    <ion-item lines="none">
+                      <ion-label>{{ $t("Select box") }}</ion-label>
+                      <ion-select interface="popover" @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
+                        <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName">{{ shipmentPackage.packageName }}</ion-select-option>
+                      </ion-select>
+                    </ion-item>
+                  </div>
+                  <div v-else>
+                    <ion-item lines="none">
+                      <ion-label>{{ $t("Select issue") }}</ion-label>
+                      <ion-select @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
+                        <ion-select-option v-for="reason in rejectReasons" :key="reason.enumCode" :value="reason.enumCode">{{ $t(reason.description) }}</ion-select-option>
+                      </ion-select>
+                    </ion-item>
+                  </div>
+                </div>
+              </div>
+
+              <div class="product-metadata">
+                <ion-note>{{ getProductStock(item.productId) }} {{ $t("pieces in stock") }}</ion-note>
+              </div>
             </div>
-          </div>
-        </ion-card>
 
-        <ion-fab class="mobile-only" vertical="bottom" horizontal="end">
-          <ion-fab-button @click="packOrders()">
-            <ion-icon :icon="checkmarkDoneOutline" />
-          </ion-fab-button>
-        </ion-fab>
+            <div class="mobile-only">
+              <ion-item>
+                <ion-button fill="clear" @click="packOrder(order)">{{ $t("Pack using default packaging") }}</ion-button>
+                <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
+                  <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+                </ion-button>
+              </ion-item>
+            </div>
+
+            <div class="actions">
+              <div>
+                <ion-button :disabled="order.isModified" @click="packOrder(order)">{{ $t("Pack") }}</ion-button>
+                <ion-button fill="outline" @click="save(order)">{{ $t("Save") }}</ion-button>
+              </div>
+            </div>
+          </ion-card>
+        </div>
       </div>
+      <ion-fab v-if="inProgressOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button @click="packOrders()">
+          <ion-icon :icon="checkmarkDoneOutline" />
+        </ion-fab-button>
+      </ion-fab>
       <div class="empty-state" v-else>{{ currentFacility.name }} {{ $t(" doesn't have any orders in progress right now.") }} </div>
     </ion-content>
   </ion-page>
