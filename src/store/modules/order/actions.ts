@@ -146,6 +146,7 @@ const actions: ActionTree<OrderState, RootState> = {
         total = resp.data.grouped.orderId.ngroups
         orders = resp.data.grouped.orderId.groups
         this.dispatch('product/getProductInformation', { orders })
+        this.dispatch('util/fetchShipmentMethodTypeDesc', orders.map((order: any) => order.doclist.docs[0].shipmentMethodTypeId))
       } else {
         throw resp.data
       }

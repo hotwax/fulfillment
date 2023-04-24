@@ -23,7 +23,7 @@
           <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
             <ion-checkbox slot="start" @ionChange="updateSelectedShipmentMethods(method.val)"/>
             <ion-label>
-              {{ method.val }}
+              {{ getShipmentMethodDesc(method.val) }}
               <p>{{ method.ordersCount }} {{ $t("orders") }}, {{ method.count }} {{ $t("items") }}</p>
             </ion-label>
           </ion-item>
@@ -169,7 +169,8 @@ export default defineComponent({
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
       getProductStock: 'stock/getProductStock',
-      currentEComStore: 'user/getCurrentEComStore'
+      currentEComStore: 'user/getCurrentEComStore',
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
     })
   },
   data () {
