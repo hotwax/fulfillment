@@ -10,7 +10,7 @@
         <ion-title v-else>{{ inProgressOrders.query.viewSize }} {{ $t('of') }} {{ inProgressOrders.total }} {{ $t('orders') }}</ion-title>
 
         <ion-buttons slot="end">
-          <ion-menu-button menu="end">
+          <ion-menu-button menu="end" :disabled="!inProgressOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
         </ion-buttons>
