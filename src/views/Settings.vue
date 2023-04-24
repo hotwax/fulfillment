@@ -182,7 +182,7 @@ export default defineComponent({
 
         resp = await UserService.getOutstandingOrdersCount(payload)
 
-        if(!hasError(resp) && resp.data.grouped.orderId.ngroups) {
+        if(!hasError(resp)) {
           this.outstandingOrdersCount = resp.data.grouped.orderId.ngroups
         } else {
           throw resp.data
@@ -214,7 +214,7 @@ export default defineComponent({
 
         resp = await UserService.getInProgressOrdersCount(payload)
 
-        if(!hasError(resp) && resp.data.grouped.picklistBinId.ngroups) {
+        if(!hasError(resp)) {
           this.inProgressOrdersCount = resp.data.grouped.picklistBinId.ngroups
         } else {
           throw resp.data
