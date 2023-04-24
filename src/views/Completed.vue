@@ -37,7 +37,7 @@
           <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod.val">
             <ion-checkbox slot="start" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)" @ionChange="updateSelectedShipmentMethods(shipmentMethod.val)"/>
             <ion-label>
-              {{ shipmentMethod.shipmentMethodTypeDesc }}
+              {{ getShipmentMethodDesc(shipmentMethod.val) }}
               <p>{{ shipmentMethod.groups }} {{ shipmentMethod.groups > 1 ? $t('orders') : $t('order') }}, {{ shipmentMethod.itemCount }} {{ shipmentMethod.itemCount > 1 ? $t('items') : $t('item') }}</p>
             </ion-label>
           </ion-item>
@@ -205,7 +205,8 @@ export default defineComponent({
       currentFacility: 'user/getCurrentFacility',
       getProductStock: 'stock/getProductStock',
       currentEComStore: 'user/getCurrentEComStore',
-      getPartyName: 'util/getPartyName'
+      getPartyName: 'util/getPartyName',
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
     })
   },
   async mounted() {
