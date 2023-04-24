@@ -8,6 +8,9 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   getPartyName: (state) => (partyId: string) => {
     return state.partyNames[partyId] ? state.partyNames[partyId] : ''
+  },
+  getShipmentMethodDesc: (state) => (shipmentMethodId: string) => {
+    return state.shipmentMethodTypeDesc[shipmentMethodId] ? state.shipmentMethodTypeDesc[shipmentMethodId] : shipmentMethodId
   }
 }
 export default getters;

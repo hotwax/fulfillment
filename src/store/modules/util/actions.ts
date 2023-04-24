@@ -76,6 +76,43 @@ const actions: ActionTree<UtilState, RootState> = {
     } catch(err) {
       logger.error('Error fetching party information', err)
     }
+  },
+
+  async fetchShipmentMethodTypeDesc({ commit, state }, shipmentIds) {
+    const shipmentMethodTypeDesc = JSON.parse(JSON.stringify(state.shipmentMethodTypeDesc))
+    const cachedShipmentMethodIds = Object.keys(shipmentMethodTypeDesc);
+    const ids = shipmentIds.filter((shipmentId: string) => !cachedShipmentMethodIds.includes(shipmentId))
+
+    if(!ids.length) return;
+
+    try {
+      const payload = {
+        "inputFields": {
+          "shipmentMethodTypeId": ids,
+          "shipmentMethodTypeId_op": "in"
+        },
+        "fieldList": ["shipmentMethodTypeId", "description"],
+        "entityName": "ShipmentMethodType",
+        "viewSize": ids.length
+      }
+
+      const resp = await UtilService.fetchShipmentMethodTypeDesc(payload);
+
+      if(!hasError(resp)) {
+        const shipmentMethodResp = {} as any
+        resp.data.docs.map((shipmentMethodInformation: any) => {
+          shipmentMethodResp[shipmentMethodInformation.shipmentMethodTypeId] = shipmentMethodInformation.description
+        })
+        commit(types.UTIL_SHIPMENT_METHODS_UPDATED, {
+          ...shipmentMethodTypeDesc,
+          ...shipmentMethodResp
+        })
+      } else {
+        throw resp.data
+      }
+    } catch(err) {
+      logger.error('Error fetching shipment description', err)
+    }
   }
 }
 
