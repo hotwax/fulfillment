@@ -32,6 +32,50 @@ const actions: ActionTree<UtilState, RootState> = {
     }
 
     commit(types.UTIL_REJECT_REASONS_UPDATED, rejectReasons)
+  },
+
+  async fetchPartyInformation({ commit, state }, partyIds) {
+    const partyInformation = JSON.parse(JSON.stringify(state.partyInformation))
+    const cachedPartyIds = Object.keys(partyInformation);
+    const ids = partyIds.filter((partyId: string) => !cachedPartyIds.includes(partyId))
+
+    if(!ids.length) return;
+
+    try {
+      const payload = {
+        "inputFields": {
+          "partyId": ids,
+          "partyId_op": "in"
+        },
+        "fieldList": ["firstName", "middleName", "lastName", "groupName", "partyId"],
+        "entityName": "PartyNameView",
+        "viewSize": ids.length
+      }
+
+      const resp = await UtilService.fetchPartyInformation(payload);
+
+      if(!hasError(resp)) {
+        const partyResp = {} as any
+        resp.data.docs.map((partyInformation: any) => {
+
+          let partyName = ''
+          partyInformation.firstName && (partyName += partyInformation.firstName + ' ')
+          partyInformation.middleName && (partyName += partyInformation.middleName + ' ')
+          partyInformation.lastName && (partyName += partyInformation.lastName + ' ')
+          partyInformation.groupName && (partyName += partyInformation.groupName)
+
+          partyResp[partyInformation.partyId] = partyName
+        })
+        commit(types.UTIL_PARTY_NAMES_UPDATED, {
+          ...partyInformation,
+          ...partyResp
+        })
+      } else {
+        throw resp.data
+      }
+    } catch(err) {
+      logger.error('Error fetching party information', err)
+    }
   }
 }
 

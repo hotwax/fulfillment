@@ -21,7 +21,7 @@ const state: any = {
 }
 
 const persistState = createPersistedState({
-    paths: ['user'],
+    paths: ['user', 'util.partyInformation'],
     fetchBeforeUse: true
 })
 

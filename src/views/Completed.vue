@@ -340,6 +340,7 @@ export default defineComponent({
 
         if(resp.status == 200 && !hasError(resp)) {
           this.carrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
+          this.store.dispatch('util/fetchPartyInformation', this.carrierPartyIds.map((carrierPartyId) => carrierPartyId.val.split('/')[0]))
         } else {
           throw resp.data
         }

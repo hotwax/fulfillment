@@ -267,12 +267,21 @@ const fetchCarrierPartyIds = async (query: any): Promise <any>  => {
   });
 }
 
+const fetchPartyInformation = async (query: any): Promise <any>  => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
 export const UtilService = {
   createPicklist,
   fetchCarrierPartyIds,
   findCarrierPartyIdsForShipment,
   findCarrierShipmentBoxType,
   fetchDefaultShipmentBox,
+  fetchPartyInformation,
   fetchPicklistInformation,
   fetchRejectReasons,
   findShipmentIdsForOrders,
