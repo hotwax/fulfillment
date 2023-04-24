@@ -35,7 +35,7 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   async fetchPartyInformation({ commit, state }, partyIds) {
-    const partyInformation = JSON.parse(JSON.stringify(state.partyInformation))
+    const partyInformation = JSON.parse(JSON.stringify(state.partyNames))
     const cachedPartyIds = Object.keys(partyInformation);
     const ids = partyIds.filter((partyId: string) => !cachedPartyIds.includes(partyId))
 

@@ -7,7 +7,7 @@ const mutations: MutationTree <UtilState> = {
     state.rejectReasons = payload
   },
   [types.UTIL_PARTY_NAMES_UPDATED] (state, payload) {
-    state.partyInformation = payload
+    state.partyNames = payload
   }
 }
 export default mutations;
