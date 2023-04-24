@@ -27,7 +27,7 @@
           <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId.val">
             <ion-checkbox slot="start" :checked="completedOrders.query.selectedCarrierPartyIds.includes(carrierPartyId.val)" @ionChange="updateSelectedCarrierPartyIds(carrierPartyId.val)"/>
             <ion-label>
-              {{ carrierPartyId.val.split('/')[0] }}
+              {{ getPartyName(carrierPartyId.val.split('/')[0]) }}
               <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? $t('package') : $t("packages") }}</p>
             </ion-label>
             <!-- TODO: make the print icon functional -->
@@ -204,7 +204,8 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       currentFacility: 'user/getCurrentFacility',
       getProductStock: 'stock/getProductStock',
-      currentEComStore: 'user/getCurrentEComStore'
+      currentEComStore: 'user/getCurrentEComStore',
+      getPartyName: 'util/getPartyName'
     })
   },
   async mounted() {
