@@ -20,7 +20,7 @@ const fetchPicklistInformation = async (query: any): Promise <any>  => {
 }
 
 const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: Array<string>): Promise<any> => {
-  let shipmentIds = {};
+  let shipmentIdsForOrders = {};
 
   const params = {
     "entityName": "Shipment",
@@ -47,7 +47,7 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
     })
 
     if(resp.status == 200 && !hasError(resp) && resp.data.count) {
-      shipmentIds = resp.data.docs.reduce((shipmentIdsForOrders: any, shipment: any) => {
+      shipmentIdsForOrders = resp.data.docs.reduce((shipmentIdsForOrders: any, shipment: any) => {
         if(shipmentIdsForOrders[shipment.primaryOrderId]) {
           shipmentIdsForOrders[shipment.primaryOrderId].push(shipment.shipmentId)
         } else {
@@ -62,7 +62,7 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
     logger.error('Failed to fetch shipmentIds for orders', err)
   }
 
-  return shipmentIds;
+  return shipmentIdsForOrders;
 }
 
 const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => {
