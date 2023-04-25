@@ -9,7 +9,7 @@
         <ion-title v-else>{{ openOrders.query.viewSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
      
         <ion-buttons slot="end">
-          <ion-menu-button menu="end">
+          <ion-menu-button menu="end" :disabled="!openOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
         </ion-buttons>

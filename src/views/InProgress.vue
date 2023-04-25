@@ -10,7 +10,7 @@
         <ion-title v-else>{{ inProgressOrders.query.viewSize }} {{ $t('of') }} {{ inProgressOrders.total }} {{ $t('orders') }}</ion-title>
 
         <ion-buttons slot="end">
-          <ion-menu-button menu="end">
+          <ion-menu-button menu="end" :disabled="!inProgressOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
         </ion-buttons>
@@ -20,7 +20,6 @@
     <ion-content id="view-size-selector">
       <ion-searchbar v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="inProgressOrders.total">
-        <!-- TODO: make pickers information dynamic -->
         <div class="filters">
           <ion-item v-for="picklist in picklists" :key="picklist.id" lines="none">
             <ion-checkbox :checked="inProgressOrders.query.selectedPicklists.includes(picklist.id)" slot="start" @ion-change="updateSelectedPicklists(picklist.id)"/>
@@ -28,8 +27,7 @@
               {{ picklist.pickersName }}
               <p>{{ picklist.date }}</p>
             </ion-label>
-            <!-- TODO: implement support to print picklist -->
-            <ion-icon slot="end" :icon="printOutline" />
+            <ion-button fill="outline" slot="end" @click="printPicklist(picklist.id)"><ion-icon :icon="printOutline" /></ion-button>
           </ion-item>
         </div>
 
@@ -40,22 +38,22 @@
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
-                  {{ order.doclist.docs[0].customerName }}
-                  <p>{{ $t("Ordered") }} {{ formatUtcDate(order.doclist.docs[0].orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                  {{ order.customerName }}
+                  <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
                 </ion-label>
               </div>
 
               <div class="order-tags">
                 <ion-chip outline>
                   <ion-icon :icon="pricetagOutline" />
-                  <ion-label>{{ order.doclist.docs[0].orderId }}</ion-label>
+                  <ion-label>{{ order.orderId }}</ion-label>
                 </ion-chip>
               </div>
 
               <div class="order-metadata">
                 <!-- TODO: add brokered date-->
                 <ion-label>
-                  {{ order.doclist.docs[0].shipmentMethodTypeDesc }}
+                  {{ order.shipmentMethodTypeDesc }}
                   <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
                 </ion-label>
               </div>
@@ -67,7 +65,7 @@
               <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
             </div>
 
-            <div v-for="(item, index) in order.doclist.docs" :key="index" class="order-item">
+            <div v-for="(item, index) in order.items" :key="index" class="order-item">
               <div class="product-info">
                 <ion-item lines="none">
                   <ion-thumbnail slot="start">
@@ -197,12 +195,12 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       getProductStock: 'stock/getProductStock',
       rejectReasons: 'util/getRejectReasons',
-      currentEComStore: 'user/getCurrentEComStore'
+      currentEComStore: 'user/getCurrentEComStore',
+      userPreference: 'user/getUserPreference'
     })
   },
   data() {
     return {
-      queryString: '',
       picklists: [] as any,
       defaultShipmentBoxType: '',
       itemsIssueSegmentSelected: [] as any,
@@ -233,45 +231,103 @@ export default defineComponent({
       return popover.present();
     },
     async packOrder(order: any) {
-      // TODO: implement support to print shipping labels and packing slip
-      const params = {
-        'picklistBinId': order.doclist.docs[0].picklistBinId,
-        'orderId': order.doclist.docs[0].orderId
-      }
-
-      emitter.emit('presentLoader');
-
-      try {
-        const resp = await OrderService.packOrder(params);
-        if (resp.status === 200 && !hasError(resp)) {
-          showToast(translate('Order packed successfully'));
-          // TODO: handle the case of fetching in progress orders after packing an order
-          // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
-          this.findInProgressOrders();
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        showToast(translate('Failed to pack order'))
-        logger.error('Failed to pack order', err)
-      }
-      emitter.emit('dismissLoader');
-    },
-    async packOrders() {
-      const alert = await alertController
+      const confirmPackOrder = await alertController
         .create({
-          header: this.$t("Pack orders"),
-          message: this.$t("You are packing orders. Select additional documents that you would like to print.", {count: this.inProgressOrders.list.length, space: '<br /><br />'}),
+          header: this.$t("Pack order"),
+          message: this.$t("You are packing an order. Select additional documents that you would like to print.", {space: '<br /><br />'}),
+          inputs: [{
+            name: 'printShippingLabel',
+            type: 'checkbox',
+            label: this.$t('Shipping labels'),
+            value: 'printShippingLabel',
+            checked: this.userPreference.printShippingLabel,
+          }, {
+            name: 'printPackingSlip',
+            type: 'checkbox',
+            label: this.$t('Packing slip'),
+            value: 'printPackingSlip',
+            checked: this.userPreference.printPackingSlip
+          }],
           buttons: [{
             text: this.$t("Cancel"),
             role: 'cancel'
           }, {
             text: this.$t("Pack"),
             role: 'confirm',
-            handler: async () => {
+            handler: async (data) => {
+              const params = {
+                'picklistBinId': order.picklistBinId,
+                'orderId': order.orderId
+              }
+
               emitter.emit('presentLoader');
 
-              const shipmentIds = this.inProgressOrders.list.map((order: any) => order.doclist.docs[0].shipmentId)
+              if(data.includes('printPackingSlip')) {
+                OrderService.printPackingSlip(order.shipmentIds)
+              }
+
+              if(data.includes('printShippingLabel')) {
+                OrderService.printShippingLabel(order.shipmentIds)
+              }
+
+              try {
+                const resp = await OrderService.packOrder(params);
+                if (resp.status === 200 && !hasError(resp)) {
+                  showToast(translate('Order packed successfully'));
+                  // TODO: handle the case of fetching in progress orders after packing an order
+                  // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
+                  await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
+                } else {
+                  throw resp.data
+                }
+              } catch (err) {
+                showToast(translate('Failed to pack order'))
+                logger.error('Failed to pack order', err)
+              }
+              emitter.emit('dismissLoader');
+            }
+          }]
+        });
+      return confirmPackOrder.present();
+    },
+    async packOrders() {
+      const alert = await alertController
+        .create({
+          header: this.$t("Pack orders"),
+          message: this.$t("You are packing orders. Select additional documents that you would like to print.", {count: this.inProgressOrders.list.length, space: '<br /><br />'}),
+          inputs: [{
+            name: 'printShippingLabel',
+            type: 'checkbox',
+            label: this.$t('Shipping labels'),
+            value: 'printShippingLabel',
+            checked: this.userPreference.printShippingLabel,
+          }, {
+            name: 'printPackingSlip',
+            type: 'checkbox',
+            label: this.$t('Packing slip'),
+            value: 'printPackingSlip',
+            checked: this.userPreference.printPackingSlip
+          }],
+          buttons: [{
+            text: this.$t("Cancel"),
+            role: 'cancel'
+          }, {
+            text: this.$t("Pack"),
+            role: 'confirm',
+            handler: async (data) => {
+              emitter.emit('presentLoader');
+
+              const shipmentIds = this.inProgressOrders.list.map((order: any) => order.shipmentId)
+
+              // TODO: need to check that do we need to pass all the shipmentIds for an order or just need to pass
+              // the associated ids, currently passing the associated shipmentId
+              if(data.includes('printPackingSlip')) {
+                OrderService.printPackingSlip(shipmentIds)
+              }
+
+              if(data.includes('printShippingLabel')) {
+                OrderService.printShippingLabel(shipmentIds)
+              }
 
               try {
                 const resp = await OrderService.packOrders({
@@ -281,7 +337,7 @@ export default defineComponent({
                   showToast(translate('Orders packed successfully'));
                   // TODO: handle the case of fetching in progress orders after packing multiple orders
                   // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
-                  this.findInProgressOrders();
+                  await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
                 } else {
                   throw resp.data
                 }
@@ -307,7 +363,7 @@ export default defineComponent({
         const productName = outOfStockItem.productName
 
         // TODO: ordersCount is not correct as current we are identifying orders count by only checking items visible on UI and not other orders
-        const ordersCount = this.inProgressOrders.list.map((order: any) => order.doclist.docs.filter((item: any) => item.productSku === outOfStockItem.productSku))?.filter((item: any) => item.length).length
+        const ordersCount = this.inProgressOrders.list.map((order: any) => order.items.filter((item: any) => item.productSku === outOfStockItem.productSku))?.filter((item: any) => item.length).length
 
         // displaying product count decrement by 1 as we are displaying one product sku directly.
         message = this.$t(", and other products are identified as unfulfillable. other orders containing these products will be unassigned from this store and sent to be rebrokered.", {productName, products: itemsToReject.length - 1, space: '<br /><br />', orders: ordersCount})
@@ -331,6 +387,9 @@ export default defineComponent({
       return alert.present();
     },
     async findInProgressOrders () {
+      // assigning with empty array, as when we are updating(save) an order and if for one of the items issue segment
+      // was selected before update making pack button disabled, then after update pack button is still disabled for that order
+      this.itemsIssueSegmentSelected = []
       await this.store.dispatch('order/findInProgressOrders')
     },
     async updateOrder(order: any) {
@@ -338,7 +397,7 @@ export default defineComponent({
 
       form.append('facilityId', this.currentFacility.facilityId)
 
-      order.doclist.docs.map((item: any, index: number) => {
+      order.items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
         let prefix = 'rtp'
@@ -376,7 +435,7 @@ export default defineComponent({
       }
     },
     save(order: any) {
-      const itemsToReject = order.doclist.docs.filter((item: any) => item.rejectReason)
+      const itemsToReject = order.items.filter((item: any) => item.rejectReason)
 
       if(itemsToReject.length) {
         this.reportIssue(order, itemsToReject);
@@ -394,6 +453,7 @@ export default defineComponent({
       order.isModified = true;
     },
     async fetchPickersInformation() {
+
       const orderQueryPayload = prepareOrderQuery({
         viewSize: '0',  // passing viewSize as 0 as we don't need any data
         groupBy: 'picklistBinId',
@@ -448,7 +508,7 @@ export default defineComponent({
           const picklistResp = await UtilService.fetchPicklistInformation(payload);
 
           if(picklistResp.status == 200 && !hasError(picklistResp) && picklistResp.data.count > 0) {
-            picklistResp.data.docs.reduce((picklists: any, picklist: any) => {
+            this.picklists = picklistResp.data.docs.reduce((picklists: any, picklist: any) => {
               const pickersInformation = buckets.find((bucket: any) => picklist.picklistId == bucket.val)
 
               if(pickersInformation.count == 0) {
@@ -468,7 +528,7 @@ export default defineComponent({
               })
 
               return picklists
-            }, this.picklists)
+            }, [])
           }
         } else {
           throw resp.data
@@ -564,7 +624,7 @@ export default defineComponent({
         if(!hasError(resp)) {
           showToast(translate('Box added successfully'))
           // TODO: only update the order in which the box is added instead of fetching all the inProgress orders
-          this.findInProgressOrders();
+          await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
         } else {
           throw resp.data
         }
@@ -589,6 +649,9 @@ export default defineComponent({
 
       inProgressOrdersQuery.viewSize = size
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
+    },
+    async printPicklist(picklistId: string) {
+      await OrderService.printPicklist(picklistId)
     }
   },
   async mounted () {

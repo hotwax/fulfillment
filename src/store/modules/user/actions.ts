@@ -188,6 +188,10 @@ const actions: ActionTree<UserState, RootState> = {
       'userPrefValue': payload.eComStore.productStoreId
     });
   },
+
+  setUserPreference({ commit }, payload){
+    commit(types.USER_PREFERENCE_UPDATED, payload)
+  },
 }
 
 export default actions;
