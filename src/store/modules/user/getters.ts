@@ -24,6 +24,9 @@ const getters: GetterTree <UserState, RootState> = {
     },
     getCurrentEComStore(state) {
         return state.currentEComStore
+    },
+    getUserPreference(state) {
+        return state.preference
     }
 }
 export default getters;

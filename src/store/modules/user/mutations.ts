@@ -23,6 +23,9 @@ const mutations: MutationTree <UserState> = {
     },
     [types.USER_CURRENT_ECOM_STORE_UPDATED](state, payload) {
         state.currentEComStore = payload;
-    }
+    },
+    [types.USER_PREFERENCE_UPDATED] (state, payload) {
+        state.preference = {...state.preference, ...payload};
+    },
 }
 export default mutations;
