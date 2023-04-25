@@ -103,14 +103,15 @@
             <!-- TODO: make the buttons functional -->
             <div class="actions">
               <div class="desktop-only">
-                <ion-button>{{ $t("Ship Now") }}</ion-button>
+                <ion-button v-if="isOrderShipped(order)" :disabled="true">{{ $t("Shipped") }}</ion-button>
+                <ion-button v-else>{{ $t("Ship Now") }}</ion-button>
                 <!-- TODO: implemented support to make the buttons functional -->
                 <ion-button v-if="order.missingLabelImage" :disabled="true" fill="outline">{{ $t("Retry Generate Label") }}</ion-button>
                 <ion-button v-else :disabled="true" fill="outline">{{ $t("Print Shipping Label") }}</ion-button>
                 <ion-button :disabled="true" fill="outline">{{ $t("Print Customer Letter") }}</ion-button>
               </div>
               <div class="desktop-only">
-                <ion-button fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
+                <ion-button :disabled="isOrderShipped(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -423,6 +424,9 @@ export default defineComponent({
           }]
         });
       return unpackOrderAlert.present();
+    },
+    isOrderShipped(order: any) {
+      return Object.values(order.shipments).some((shipment: any) => shipment.statusId === 'SHIPMENT_SHIPPED')
     }
   },
   setup() {
