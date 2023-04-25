@@ -240,6 +240,7 @@ export default defineComponent({
         resp = await UtilService.fetchShipmentMethods(payload);
         if(resp.status == 200 && !hasError(resp) && resp.data.facets?.count > 0) {
           this.shipmentMethods = resp.data.facets.shipmentMethodTypeIdFacet.buckets
+          this.store.dispatch('util/fetchShipmentMethodTypeDesc', this.shipmentMethods.map((shipmentMethod: any) => shipmentMethod.val))
         } else {
           throw resp.data;
         }

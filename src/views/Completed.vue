@@ -302,6 +302,7 @@ export default defineComponent({
 
         if(resp.status == 200 && !hasError(resp)) {
           this.shipmentMethods = resp.data.facets.shipmentMethodFacet.buckets
+          this.store.dispatch('util/fetchShipmentMethodTypeDesc', this.shipmentMethods.map((shipmentMethod: any) => shipmentMethod.val))
         } else {
           throw resp.data
         }
