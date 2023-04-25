@@ -58,13 +58,13 @@ const actions: ActionTree<UtilState, RootState> = {
         const partyResp = {} as any
         resp.data.docs.map((partyInformation: any) => {
 
-          let partyName = ''
-          partyInformation.firstName && (partyName += partyInformation.firstName + ' ')
-          partyInformation.middleName && (partyName += partyInformation.middleName + ' ')
-          partyInformation.lastName && (partyName += partyInformation.lastName + ' ')
-          partyInformation.groupName && (partyName += partyInformation.groupName)
+          const partyName = []
+          partyInformation.firstName && (partyName.push(partyInformation.firstName))
+          partyInformation.middleName && (partyName.push(partyInformation.middleName))
+          partyInformation.lastName && (partyName.push(partyInformation.lastName))
+          partyInformation.groupName && (partyName.push(partyInformation.groupName))
 
-          partyResp[partyInformation.partyId] = partyName
+          partyResp[partyInformation.partyId] = partyName.join(' ')
         })
         commit(types.UTIL_PARTY_NAMES_UPDATED, {
           ...partyInformation,
