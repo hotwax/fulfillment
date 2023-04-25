@@ -195,6 +195,8 @@ const actions: ActionTree<OrderState, RootState> = {
     const orderQueryPayload = prepareOrderQuery(params)
     let orders = [];
     let total = 0;
+    let shipments = {} as any;
+    let shipmentPackagesByOrder = {} as any;
 
     try {
       resp = await OrderService.findCompletedOrders(orderQueryPayload);
@@ -202,6 +204,20 @@ const actions: ActionTree<OrderState, RootState> = {
         total = resp.data.grouped.picklistBinId.ngroups
         orders = resp.data.grouped.picklistBinId.groups
         this.dispatch('product/getProductInformation', { orders })
+
+        const picklistBinIds: Array<string> = [];
+        const orderIds: Array<string> = [];
+
+        orders.map((order: any) => {
+          picklistBinIds.push(order.groupValue)
+          orderIds.push(order.doclist.docs[0].orderId)
+        })
+
+        const shipmentIds: Array<string> = [];
+
+        shipments = await UtilService.fetchShipmentsForOrders(picklistBinIds, orderIds);
+        Object.values(shipments).map((shipmentInformation: any) => Object.values(shipmentInformation).map((shipment: any) => shipmentIds.push(shipment.shipmentId)))
+        shipmentPackagesByOrder = await UtilService.fetchShipmentPackagesByOrders(shipmentIds);
       } else {
         throw resp.data
       }
@@ -212,17 +228,28 @@ const actions: ActionTree<OrderState, RootState> = {
     completedOrderQuery.viewSize = orders.length
 
     // Transforming the resp
-    orders = orders.map((order: any) => ({
-      customerId: order.doclist.docs[0].customerId,
-      customerName: order.doclist.docs[0].customerName,
-      orderId: order.doclist.docs[0].orderId,
-      orderDate: order.doclist.docs[0].orderDate,
-      groupValue: order.groupValue,
-      items: order.doclist.docs,
-      shipmentId: order.doclist.docs[0].shipmentId,
-      shipmentMethodTypeId: order.doclist.docs[0].shipmentMethodTypeId,
-      shipmentMethodTypeDesc: order.doclist.docs[0].shipmentMethodTypeDesc
-    }))
+    orders = orders.map((order: any) => {
+
+      let missingLabelImage = false;
+
+      if(shipmentPackagesByOrder[order.doclist.docs[0].orderId]) {
+        missingLabelImage = Object.keys(shipmentPackagesByOrder[order.doclist.docs[0].orderId]).length > 0
+      }
+
+      return {
+        customerId: order.doclist.docs[0].customerId,
+        customerName: order.doclist.docs[0].customerName,
+        orderId: order.doclist.docs[0].orderId,
+        orderDate: order.doclist.docs[0].orderDate,
+        groupValue: order.groupValue,
+        items: order.doclist.docs,
+        shipmentId: order.doclist.docs[0].shipmentId,
+        shipmentMethodTypeId: order.doclist.docs[0].shipmentMethodTypeId,
+        shipmentMethodTypeDesc: order.doclist.docs[0].shipmentMethodTypeDesc,
+        shipments: shipments[order.doclist.docs[0].orderId],
+        missingLabelImage
+      }
+    })
 
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, { ...completedOrderQuery })
     commit(types.ORDER_COMPLETED_UPDATED, {list: orders, total})

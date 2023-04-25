@@ -49,7 +49,7 @@
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
-                  {{ order.customerName }}
+                  {{ order.customerName }} {{ order.missingLabelImage }}
                   <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
                 </ion-label>
               </div>
@@ -105,7 +105,8 @@
               <div class="desktop-only">
                 <ion-button>{{ $t("Ship Now") }}</ion-button>
                 <!-- TODO: implemented support to make the buttons functional -->
-                <ion-button :disabled="true" fill="outline">{{ $t("Print Shipping Label") }}</ion-button>
+                <ion-button v-if="order.missingLabelImage" :disabled="true" fill="outline">{{ $t("Retry Generate Label") }}</ion-button>
+                <ion-button v-else :disabled="true" fill="outline">{{ $t("Print Shipping Label") }}</ion-button>
                 <ion-button :disabled="true" fill="outline">{{ $t("Print Customer Letter") }}</ion-button>
               </div>
               <div class="desktop-only">
