@@ -35,11 +35,11 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   async fetchPartyInformation({ commit, state }, partyIds) {
-    const partyInformation = JSON.parse(JSON.stringify(state.partyNames))
+    let partyInformation = JSON.parse(JSON.stringify(state.partyNames))
     const cachedPartyIds = Object.keys(partyInformation);
     const ids = partyIds.filter((partyId: string) => !cachedPartyIds.includes(partyId))
 
-    if(!ids.length) return;
+    if(!ids.length) return partyInformation;
 
     try {
       const payload = {
@@ -58,32 +58,38 @@ const actions: ActionTree<UtilState, RootState> = {
         const partyResp = {} as any
         resp.data.docs.map((partyInformation: any) => {
 
-          const partyName = []
-          partyInformation.firstName && (partyName.push(partyInformation.firstName))
-          partyInformation.middleName && (partyName.push(partyInformation.middleName))
-          partyInformation.lastName && (partyName.push(partyInformation.lastName))
-          partyInformation.groupName && (partyName.push(partyInformation.groupName))
+          let partyName = ''
+          if(partyInformation.groupName) {
+            partyName = partyInformation.groupName
+          } else {
+            partyName = [partyInformation.firstName, partyInformation.lastName].join(' ')
+          }
 
-          partyResp[partyInformation.partyId] = partyName.join(' ')
+          partyResp[partyInformation.partyId] = partyName
         })
-        commit(types.UTIL_PARTY_NAMES_UPDATED, {
+
+        partyInformation = {
           ...partyInformation,
           ...partyResp
-        })
+        }
+
+        commit(types.UTIL_PARTY_NAMES_UPDATED, partyInformation)
       } else {
         throw resp.data
       }
     } catch(err) {
       logger.error('Error fetching party information', err)
     }
+
+    return partyInformation;
   },
 
   async fetchShipmentMethodTypeDesc({ commit, state }, shipmentIds) {
-    const shipmentMethodTypeDesc = JSON.parse(JSON.stringify(state.shipmentMethodTypeDesc))
+    let shipmentMethodTypeDesc = JSON.parse(JSON.stringify(state.shipmentMethodTypeDesc))
     const cachedShipmentMethodIds = Object.keys(shipmentMethodTypeDesc);
     const ids = shipmentIds.filter((shipmentId: string) => !cachedShipmentMethodIds.includes(shipmentId))
 
-    if(!ids.length) return;
+    if(!ids.length) return shipmentMethodTypeDesc;
 
     try {
       const payload = {
@@ -103,16 +109,21 @@ const actions: ActionTree<UtilState, RootState> = {
         resp.data.docs.map((shipmentMethodInformation: any) => {
           shipmentMethodResp[shipmentMethodInformation.shipmentMethodTypeId] = shipmentMethodInformation.description
         })
-        commit(types.UTIL_SHIPMENT_METHODS_UPDATED, {
+
+        shipmentMethodTypeDesc = {
           ...shipmentMethodTypeDesc,
           ...shipmentMethodResp
-        })
+        }
+
+        commit(types.UTIL_SHIPMENT_METHODS_UPDATED, shipmentMethodTypeDesc)
       } else {
         throw resp.data
       }
     } catch(err) {
       logger.error('Error fetching shipment description', err)
     }
+
+    return shipmentMethodTypeDesc;
   }
 }
 
