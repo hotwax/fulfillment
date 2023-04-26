@@ -263,7 +263,8 @@ const actions: ActionTree<OrderState, RootState> = {
         shipmentMethodTypeId: order.doclist.docs[0].shipmentMethodTypeId,
         shipmentMethodTypeDesc: order.doclist.docs[0].shipmentMethodTypeDesc,
         shipments: shipments[order.doclist.docs[0].orderId],
-        missingLabelImage
+        missingLabelImage,
+        shipmentPackages: shipmentPackagesByOrder[order.doclist.docs[0].orderId]  // ShipmentPackages information is required when performing retryShippingLabel action
       }
     })
 

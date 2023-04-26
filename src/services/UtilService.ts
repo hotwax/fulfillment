@@ -160,10 +160,8 @@ const fetchShipmentPackagesByOrders = async(shipmentIds: Array<string>): Promise
     "inputFields": {
       "shipmentId": shipmentIds,
       "shipmentId_op": "in",
-      "trackingCode": "null",
-      "trackingCode_op": "equals",
-      "shipmentItemSeqId": "null",
-      "shipmentItemSeqId_op": "notEqual"
+      "trackingCode_op": "empty",
+      "shipmentItemSeqId_op": "not-empty"
     },
     "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId"],
     "viewSize": shipmentIds.length,

@@ -49,7 +49,7 @@
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
-                  {{ order.customerName }} {{ order.missingLabelImage }}
+                  {{ order.customerName }}
                   <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
                 </ion-label>
               </div>
@@ -106,8 +106,8 @@
                 <ion-button v-if="isOrderShipped(order)" :disabled="true">{{ $t("Shipped") }}</ion-button>
                 <ion-button v-else>{{ $t("Ship Now") }}</ion-button>
                 <!-- TODO: implemented support to make the buttons functional -->
-                <ion-button v-if="order.missingLabelImage" :disabled="true" fill="outline">{{ $t("Retry Generate Label") }}</ion-button>
-                <ion-button v-else :disabled="true" fill="outline">{{ $t("Print Shipping Label") }}</ion-button>
+                <ion-button v-if="order.missingLabelImage" fill="outline" @click="retryShippingLabel(order)">{{ $t("Retry Generate Label") }}</ion-button>
+                <ion-button v-else fill="outline">{{ $t("Print Shipping Label") }}</ion-button>
                 <ion-button :disabled="true" fill="outline">{{ $t("Print Customer Letter") }}</ion-button>
               </div>
               <div class="desktop-only">
@@ -427,6 +427,12 @@ export default defineComponent({
     },
     isOrderShipped(order: any) {
       return Object.values(order.shipments).some((shipment: any) => shipment.statusId === 'SHIPMENT_SHIPPED')
+    },
+    async retryShippingLabel(order: any) {
+      // Getting all the shipmentIds from shipmentPackages, as we only need to pass those shipmentIds for which label is missing
+      // In shipmentPackages only those shipmentInformation is available for which shippingLabel is missing
+      const shipmentIds = Object.keys(order.shipmentPackages)
+      await OrderService.retryShippingLabel(shipmentIds)
     }
   },
   setup() {

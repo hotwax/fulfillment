@@ -164,6 +164,30 @@ const printPicklist = async (picklistId: string): Promise<any> => {
   }
 }
 
+const retryShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
+  try {
+    const resp: any = await api({
+      method: 'get',
+      url: 'retryShippingLabel',  // TODO: update the api
+      params: {
+        shipmentIds
+      },
+      responseType: "blob"
+    })
+
+    if (!resp || resp.status !== 200 || hasError(resp)) {
+      throw resp.data;
+    }
+
+    // Generate local file URL for the blob received
+    const pdfUrl = window.URL.createObjectURL(resp.data);
+    // Open the file in new tab
+    (window as any).open(pdfUrl, "_blank").focus();
+  } catch(err) {
+    logger.error("Failed to load shipping label", err)
+  }
+}
+
 export const OrderService = {
   addShipmentBox,
   bulkShipOrders,
@@ -176,6 +200,7 @@ export const OrderService = {
   printPicklist,
   printShippingLabel,
   rejectOrderItem,
+  retryShippingLabel,
   unpackOrder,
   updateOrder
 }
