@@ -56,11 +56,12 @@ export default defineComponent({
   },
   methods: {
     prepareViewSizeOptions () {
+      const maxViewSize = this.total > 100 ? 100 : this.total
       // creating an array of numbers using Array.keys method and then multiplying each by 5
-      return [ ...Array(Math.ceil(this.total / 5)).keys() ].map( i => {
+      return [ ...Array(Math.ceil(maxViewSize / 5)).keys() ].map( i => {
         const count = (i+1) * 5
         // added check that if the count is greater than the total orders available then assigning orders total as size option
-        return count > this.total ? this.total : count
+        return count > maxViewSize ? maxViewSize : count
       })
     },
     async updateViewSize(size: number) {
