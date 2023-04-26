@@ -56,6 +56,7 @@ export default defineComponent({
   },
   methods: {
     prepareViewSizeOptions () {
+      // Added check to only have 100 as the max option in size selector
       const maxViewSize = this.total > 100 ? 100 : this.total
       // creating an array of numbers using Array.keys method and then multiplying each by 5
       return [ ...Array(Math.ceil(maxViewSize / 5)).keys() ].map( i => {
