@@ -27,7 +27,7 @@
           <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId.val">
             <ion-checkbox slot="start" :checked="completedOrders.query.selectedCarrierPartyIds.includes(carrierPartyId.val)" @ionChange="updateSelectedCarrierPartyIds(carrierPartyId.val)"/>
             <ion-label>
-              {{ carrierPartyId.val.split('/')[0] }}
+              {{ getPartyName(carrierPartyId.val.split('/')[0]) }}
               <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? $t('package') : $t("packages") }}</p>
             </ion-label>
             <!-- TODO: make the print icon functional -->
@@ -37,7 +37,7 @@
           <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod.val">
             <ion-checkbox slot="start" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)" @ionChange="updateSelectedShipmentMethods(shipmentMethod.val)"/>
             <ion-label>
-              {{ shipmentMethod.val }}
+              {{ getShipmentMethodDesc(shipmentMethod.val) }}
               <p>{{ shipmentMethod.groups }} {{ shipmentMethod.groups > 1 ? $t('orders') : $t('order') }}, {{ shipmentMethod.itemCount }} {{ shipmentMethod.itemCount > 1 ? $t('items') : $t('item') }}</p>
             </ion-label>
           </ion-item>
@@ -203,7 +203,9 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       currentFacility: 'user/getCurrentFacility',
       getProductStock: 'stock/getProductStock',
-      currentEComStore: 'user/getCurrentEComStore'
+      currentEComStore: 'user/getCurrentEComStore',
+      getPartyName: 'util/getPartyName',
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
     })
   },
   async mounted() {
@@ -299,6 +301,7 @@ export default defineComponent({
 
         if(resp.status == 200 && !hasError(resp)) {
           this.shipmentMethods = resp.data.facets.shipmentMethodFacet.buckets
+          this.store.dispatch('util/fetchShipmentMethodTypeDesc', this.shipmentMethods.map((shipmentMethod: any) => shipmentMethod.val))
         } else {
           throw resp.data
         }
@@ -339,6 +342,7 @@ export default defineComponent({
 
         if(resp.status == 200 && !hasError(resp)) {
           this.carrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
+          this.store.dispatch('util/fetchPartyInformation', this.carrierPartyIds.map((carrierPartyId) => carrierPartyId.val.split('/')[0]))
         } else {
           throw resp.data
         }

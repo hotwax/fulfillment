@@ -5,6 +5,12 @@ import RootState from '@/store/RootState'
 const getters: GetterTree <UtilState, RootState> = {
   getRejectReasons(state) {
     return state.rejectReasons ? state.rejectReasons : []
+  },
+  getPartyName: (state) => (partyId: string) => {
+    return state.partyNames[partyId] ? state.partyNames[partyId] : ''
+  },
+  getShipmentMethodDesc: (state) => (shipmentMethodId: string) => {
+    return state.shipmentMethodTypeDesc[shipmentMethodId] ? state.shipmentMethodTypeDesc[shipmentMethodId] : shipmentMethodId
   }
 }
 export default getters;
