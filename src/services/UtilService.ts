@@ -151,7 +151,7 @@ const findCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promis
       "partyId_op": "in"
     },
     "fieldList": ["shipmentBoxTypeId", "partyId"],
-    "viewSize": carrierPartyIds.length,
+    "viewSize": carrierPartyIds.length * 10,  // considering that one carrierPartyId will have maximum of 10 box type
   }
 
   try {
