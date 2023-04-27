@@ -1,3 +1,15 @@
+# Release 1.3.0
+
+## What's Changed
+* Card layout adjustments by @dt2patel in https://github.com/hotwax/fulfillment-pwa/pull/111
+* Implemented: support to make packing slip, shipping label and print picklist functional(#1xx6rd3) by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/107
+* Fixed: the issue of empty chips on UI on inProgress page(#119) by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/120
+* Implemented: support to only allow user to select max 100 orders at once(#85zryr6gv) by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/118
+* Implemented: support to print customerLetter and shippingLabel from completed page by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/115
+* Implemented: support to display carrierPartyName and shipmentMethod desc on completed and open orders page(#85zry800j) by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/113
+
+**Full Changelog**: https://github.com/hotwax/fulfillment-pwa/compare/v1.2.0...v1.3.0
+
 # Release 1.2.0
 
 ## What's Changed
