@@ -27,7 +27,7 @@
           <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId.val">
             <ion-checkbox slot="start" :checked="completedOrders.query.selectedCarrierPartyIds.includes(carrierPartyId.val)" @ionChange="updateSelectedCarrierPartyIds(carrierPartyId.val)"/>
             <ion-label>
-              {{ carrierPartyId.val.split('/')[0] }}
+              {{ getPartyName(carrierPartyId.val.split('/')[0]) }}
               <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? $t('package') : $t("packages") }}</p>
             </ion-label>
             <!-- TODO: make the print icon functional -->
@@ -37,7 +37,7 @@
           <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod.val">
             <ion-checkbox slot="start" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)" @ionChange="updateSelectedShipmentMethods(shipmentMethod.val)"/>
             <ion-label>
-              {{ shipmentMethod.val }}
+              {{ getShipmentMethodDesc(shipmentMethod.val) }}
               <p>{{ shipmentMethod.groups }} {{ shipmentMethod.groups > 1 ? $t('orders') : $t('order') }}, {{ shipmentMethod.itemCount }} {{ shipmentMethod.itemCount > 1 ? $t('items') : $t('item') }}</p>
             </ion-label>
           </ion-item>
@@ -107,8 +107,8 @@
                 <ion-button v-else>{{ $t("Ship Now") }}</ion-button>
                 <!-- TODO: implemented support to make the buttons functional -->
                 <ion-button v-if="order.missingLabelImage" fill="outline" @click="retryShippingLabel(order)">{{ $t("Retry Generate Label") }}</ion-button>
-                <ion-button v-else fill="outline">{{ $t("Print Shipping Label") }}</ion-button>
-                <ion-button :disabled="true" fill="outline">{{ $t("Print Customer Letter") }}</ion-button>
+                <ion-button v-else fill="outline" @click="printShippingLabel(order)">{{ $t("Print Shipping Label") }}</ion-button>
+                <ion-button :disabled="true" fill="outline" @click="printPackingSlip(order)">{{ $t("Print Customer Letter") }}</ion-button>
               </div>
               <div class="desktop-only">
                 <ion-button :disabled="isOrderShipped(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
@@ -206,7 +206,9 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       currentFacility: 'user/getCurrentFacility',
       getProductStock: 'stock/getProductStock',
-      currentEComStore: 'user/getCurrentEComStore'
+      currentEComStore: 'user/getCurrentEComStore',
+      getPartyName: 'util/getPartyName',
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
     })
   },
   async mounted() {
@@ -302,6 +304,7 @@ export default defineComponent({
 
         if(resp.status == 200 && !hasError(resp)) {
           this.shipmentMethods = resp.data.facets.shipmentMethodFacet.buckets
+          this.store.dispatch('util/fetchShipmentMethodTypeDesc', this.shipmentMethods.map((shipmentMethod: any) => shipmentMethod.val))
         } else {
           throw resp.data
         }
@@ -342,6 +345,7 @@ export default defineComponent({
 
         if(resp.status == 200 && !hasError(resp)) {
           this.carrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
+          this.store.dispatch('util/fetchPartyInformation', this.carrierPartyIds.map((carrierPartyId) => carrierPartyId.val.split('/')[0]))
         } else {
           throw resp.data
         }
@@ -433,6 +437,12 @@ export default defineComponent({
       // In shipmentPackages only those shipmentInformation is available for which shippingLabel is missing
       const shipmentIds = Object.keys(order.shipmentPackages)
       await OrderService.retryShippingLabel(shipmentIds)
+    },
+    async printPackingSlip(order: any) {
+      await OrderService.printPackingSlip(order.shipmentIds)
+    },
+    async printShippingLabel(order: any) {
+      await OrderService.printShippingLabel(order.shipmentIds)
     }
   },
   setup() {

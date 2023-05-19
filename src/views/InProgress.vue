@@ -101,7 +101,7 @@
                   <div v-else>
                     <ion-item lines="none">
                       <ion-label>{{ $t("Select issue") }}</ion-label>
-                      <ion-select @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
+                      <ion-select interface="popover" @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
                         <ion-select-option v-for="reason in rejectReasons" :key="reason.enumCode" :value="reason.enumCode">{{ $t(reason.description) }}</ion-select-option>
                       </ion-select>
                     </ion-item>

@@ -1,3 +1,5 @@
 export default interface UtilState {
   rejectReasons: [];
+  partyNames: any;
+  shipmentMethodTypeDesc: any;
 }

@@ -244,7 +244,7 @@ const findCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promis
       "partyId_op": "in"
     },
     "fieldList": ["shipmentBoxTypeId", "partyId"],
-    "viewSize": carrierPartyIds.length,
+    "viewSize": carrierPartyIds.length * 10,  // considering that one carrierPartyId will have maximum of 10 box type
   }
 
   try {
@@ -367,12 +367,29 @@ const fetchCarrierPartyIds = async (query: any): Promise <any>  => {
   });
 }
 
+const fetchPartyInformation = async (query: any): Promise <any>  => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
+const fetchShipmentMethodTypeDesc = async (query: any): Promise <any>  => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
 export const UtilService = {
   createPicklist,
   fetchCarrierPartyIds,
   findCarrierPartyIdsForShipment,
   findCarrierShipmentBoxType,
   fetchDefaultShipmentBox,
+  fetchPartyInformation,
   fetchPicklistInformation,
   fetchRejectReasons,
   fetchShipmentsForOrders,
@@ -380,6 +397,7 @@ export const UtilService = {
   findShipmentIdsForOrders,
   findShipmentItemInformation,
   fetchShipmentMethods,
+  fetchShipmentMethodTypeDesc,
   findShipmentPackages,
   fetchShipmentRouteSegmentInformation,
   getAvailablePickers
