@@ -1,6 +1,7 @@
 import { api } from '@/adapter';
+import { translate } from '@/i18n';
 import logger from '@/logger';
-import { hasError } from '@/utils';
+import { hasError, showToast } from '@/utils';
 
 const findOpenOrders = async (query: any): Promise <any>  => {
   return api({
@@ -108,6 +109,7 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
     (window as any).open(pdfUrl, "_blank").focus();
 
   } catch(err) {
+    showToast(translate('Failed to print packing slip'))
     logger.error("Failed to load packing slip", err)
   }
 }
@@ -134,6 +136,7 @@ const printShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
     (window as any).open(pdfUrl, "_blank").focus();
 
   } catch(err) {
+    showToast(translate('Failed to print shipping label'))
     logger.error("Failed to load shipping label", err)
   }
 }
@@ -160,6 +163,7 @@ const printPicklist = async (picklistId: string): Promise<any> => {
     (window as any).open(pdfUrl, "_blank").focus();
 
   } catch(err) {
+    showToast(translate('Failed to print picklist'))
     logger.error("Failed to print picklist", err)
   }
 }
@@ -184,6 +188,7 @@ const retryShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
     // Open the file in new tab
     (window as any).open(pdfUrl, "_blank").focus();
   } catch(err) {
+    showToast(translate('Failed to regenerate shipping label'))
     logger.error("Failed to load shipping label", err)
   }
 }
