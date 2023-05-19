@@ -78,11 +78,11 @@ const actions: ActionTree<OrderState, RootState> = {
             // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
             item.shipmentItemSeqId = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)?.shipmentItemSeqId
 
-            item.selectedBox = shipmentPackagesByOrder[item.orderId].find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+            item.selectedBox = shipmentPackagesByOrder[item.orderId]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
           })
 
           const orderItem = order.doclist.docs[0];
-          const carrierPartyIds = [...new Set(shipmentIds.map((id: any) => carrierPartyIdsByShipment[id].map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
+          const carrierPartyIds = [...new Set(shipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
 
           return {
             customerId: orderItem.customerId,
@@ -247,24 +247,25 @@ const actions: ActionTree<OrderState, RootState> = {
     orders = orders.map((order: any) => {
 
       let missingLabelImage = false;
+      const orderItem = order.doclist.docs[0]; // basic information for the order
 
-      if(shipmentPackagesByOrder[order.doclist.docs[0].orderId]) {
-        missingLabelImage = Object.keys(shipmentPackagesByOrder[order.doclist.docs[0].orderId]).length > 0
+      if(shipmentPackagesByOrder[orderItem.orderId]) {
+        missingLabelImage = Object.keys(shipmentPackagesByOrder[orderItem.orderId]).length > 0
       }
 
       return {
-        customerId: order.doclist.docs[0].customerId,
-        customerName: order.doclist.docs[0].customerName,
-        orderId: order.doclist.docs[0].orderId,
-        orderDate: order.doclist.docs[0].orderDate,
+        customerId: orderItem.customerId,
+        customerName: orderItem.customerName,
+        orderId: orderItem.orderId,
+        orderDate: orderItem.orderDate,
         groupValue: order.groupValue,
         items: order.doclist.docs,
-        shipmentId: order.doclist.docs[0].shipmentId,
-        shipmentMethodTypeId: order.doclist.docs[0].shipmentMethodTypeId,
-        shipmentMethodTypeDesc: order.doclist.docs[0].shipmentMethodTypeDesc,
-        shipments: shipments[order.doclist.docs[0].orderId],
+        shipmentId: orderItem.shipmentId,
+        shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
+        shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+        shipments: shipments[orderItem.orderId],
         missingLabelImage,
-        shipmentPackages: shipmentPackagesByOrder[order.doclist.docs[0].orderId]  // ShipmentPackages information is required when performing retryShippingLabel action
+        shipmentPackages: shipmentPackagesByOrder[orderItem.orderId]  // ShipmentPackages information is required when performing retryShippingLabel action
       }
     })
 
