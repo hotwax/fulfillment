@@ -232,8 +232,8 @@ const actions: ActionTree<OrderState, RootState> = {
         const shipmentIds: Array<string> = [];
 
         shipments = await UtilService.fetchShipmentsForOrders(picklistBinIds, orderIds);
-        Object.values(shipments).map((shipmentInformation: any) => Object.values(shipmentInformation).map((shipment: any) => shipmentIds.push(shipment.shipmentId)))
-        shipmentPackagesByOrder = await UtilService.fetchShipmentPackagesByOrders(shipmentIds);
+        shipments.length && Object.values(shipments).map((shipmentInformation: any) => Object.values(shipmentInformation).map((shipment: any) => shipmentIds.push(shipment.shipmentId)))
+        shipmentIds.length && (shipmentPackagesByOrder = await UtilService.fetchShipmentPackagesByOrders(shipmentIds))
       } else {
         throw resp.data
       }
