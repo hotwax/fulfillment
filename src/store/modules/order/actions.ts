@@ -78,11 +78,11 @@ const actions: ActionTree<OrderState, RootState> = {
             // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
             item.shipmentItemSeqId = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)?.shipmentItemSeqId
 
-            item.selectedBox = shipmentPackagesByOrder[item.orderId].find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+            item.selectedBox = shipmentPackagesByOrder[item.orderId]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
           })
 
           const orderItem = order.doclist.docs[0];
-          const carrierPartyIds = [...new Set(shipmentIds.map((id: any) => carrierPartyIdsByShipment[id].map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
+          const carrierPartyIds = [...new Set(shipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
 
           return {
             customerId: orderItem.customerId,
@@ -211,6 +211,8 @@ const actions: ActionTree<OrderState, RootState> = {
     const orderQueryPayload = prepareOrderQuery(params)
     let orders = [];
     let total = 0;
+    let shipments = {} as any;
+    let shipmentPackagesByOrder = {} as any;
 
     try {
       resp = await OrderService.findCompletedOrders(orderQueryPayload);
@@ -218,6 +220,20 @@ const actions: ActionTree<OrderState, RootState> = {
         total = resp.data.grouped.picklistBinId.ngroups
         orders = resp.data.grouped.picklistBinId.groups
         this.dispatch('product/getProductInformation', { orders })
+
+        const picklistBinIds: Array<string> = [];
+        const orderIds: Array<string> = [];
+
+        orders.map((order: any) => {
+          picklistBinIds.push(order.groupValue)
+          orderIds.push(order.doclist.docs[0].orderId)
+        })
+
+        const shipmentIds: Array<string> = [];
+
+        shipments = await UtilService.fetchShipmentsForOrders(picklistBinIds, orderIds);
+        shipments.length && Object.values(shipments).map((shipmentInformation: any) => Object.values(shipmentInformation).map((shipment: any) => shipmentIds.push(shipment.shipmentId)))
+        shipmentIds.length && (shipmentPackagesByOrder = await UtilService.fetchShipmentPackagesByOrders(shipmentIds))
       } else {
         throw resp.data
       }
@@ -228,17 +244,30 @@ const actions: ActionTree<OrderState, RootState> = {
     completedOrderQuery.viewSize = orders.length
 
     // Transforming the resp
-    orders = orders.map((order: any) => ({
-      customerId: order.doclist.docs[0].customerId,
-      customerName: order.doclist.docs[0].customerName,
-      orderId: order.doclist.docs[0].orderId,
-      orderDate: order.doclist.docs[0].orderDate,
-      groupValue: order.groupValue,
-      items: order.doclist.docs,
-      shipmentId: order.doclist.docs[0].shipmentId,
-      shipmentMethodTypeId: order.doclist.docs[0].shipmentMethodTypeId,
-      shipmentMethodTypeDesc: order.doclist.docs[0].shipmentMethodTypeDesc
-    }))
+    orders = orders.map((order: any) => {
+
+      let missingLabelImage = false;
+      const orderItem = order.doclist.docs[0]; // basic information for the order
+
+      if(shipmentPackagesByOrder[orderItem.orderId]) {
+        missingLabelImage = Object.keys(shipmentPackagesByOrder[orderItem.orderId]).length > 0
+      }
+
+      return {
+        customerId: orderItem.customerId,
+        customerName: orderItem.customerName,
+        orderId: orderItem.orderId,
+        orderDate: orderItem.orderDate,
+        groupValue: order.groupValue,
+        items: order.doclist.docs,
+        shipmentId: orderItem.shipmentId,
+        shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
+        shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+        shipments: shipments[orderItem.orderId],
+        missingLabelImage,
+        shipmentPackages: shipmentPackagesByOrder[orderItem.orderId]  // ShipmentPackages information is required when performing retryShippingLabel action
+      }
+    })
 
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, { ...completedOrderQuery })
     commit(types.ORDER_COMPLETED_UPDATED, {list: orders, total})

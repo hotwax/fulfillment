@@ -103,12 +103,15 @@
             <!-- TODO: make the buttons functional -->
             <div class="actions">
               <div class="desktop-only">
-                <ion-button>{{ $t("Ship Now") }}</ion-button>
-                <ion-button fill="outline" @click="printShippingLabel(order)">{{ $t("Print Shipping Label") }}</ion-button>
-                <ion-button fill="outline" @click="printPackingSlip(order)">{{ $t("Print Customer Letter") }}</ion-button>
+                <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ $t("Shipped") }}</ion-button>
+                <ion-button v-else>{{ $t("Ship Now") }}</ion-button>
+                <!-- TODO: implemented support to make the buttons functional -->
+                <ion-button v-if="order.missingLabelImage" fill="outline" @click="retryShippingLabel(order)">{{ $t("Retry Generate Label") }}</ion-button>
+                <ion-button v-else fill="outline" @click="printShippingLabel(order)">{{ $t("Print Shipping Label") }}</ion-button>
+                <ion-button :disabled="true" fill="outline" @click="printPackingSlip(order)">{{ $t("Print Customer Letter") }}</ion-button>
               </div>
               <div class="desktop-only">
-                <ion-button fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
+                <ion-button :disabled="!hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -425,6 +428,15 @@ export default defineComponent({
           }]
         });
       return unpackOrderAlert.present();
+    },
+    hasPackedShipments(order: any) {
+      return Object.values(order.shipments).some((shipment: any) => shipment.statusId === 'SHIPMENT_PACKED')
+    },
+    async retryShippingLabel(order: any) {
+      // Getting all the shipmentIds from shipmentPackages, as we only need to pass those shipmentIds for which label is missing
+      // In shipmentPackages only those shipmentInformation is available for which shippingLabel is missing
+      const shipmentIds = Object.keys(order.shipmentPackages)
+      await OrderService.retryShippingLabel(shipmentIds)
     },
     async printPackingSlip(order: any) {
       await OrderService.printPackingSlip(order.shipmentIds)
