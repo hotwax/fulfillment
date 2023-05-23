@@ -114,26 +114,27 @@ export default defineComponent({
       emitter.emit("presentLoader")
       let resp;
 
-      // creating picklist only for orders that are currently in the list, means those are currently visible on UI
-      const orders = this.openOrders.list;
+      // creating picklist for orders that are currently in the list, means those are currently in the selected viewSize
+      const orderItems = []
+      this.openOrders.list.map((order) => {
+        order.doclist.docs.map((item) => orderItems.push(item))
+      });
 
       const formData = new FormData();
       formData.append("facilityId", this.currentFacility.facilityId);
-      orders.map((order) => {
-        order.doclist.docs.map((item, index) => {
-          formData.append("facilityId_o_"+index, this.currentFacility.facilityId)
-          formData.append("shipmentMethodTypeId_o_"+index, item.shipmentMethodTypeId)
-          formData.append("itemStatusId_o_"+index, "PICKITEM_PENDING")
-          formData.append("shipGroupSeqId_o_"+index, item.shipGroupSeqId)
-          formData.append("orderId_o_"+index, item.orderId)
-          formData.append("orderItemSeqId_o_"+index, item.orderItemSeqId)
-          formData.append("productId_o_"+index, item.productId)
-          formData.append("quantity_o_"+index, item.itemQuantity)
-          formData.append("inventoryItemId_o_"+index, item.inventoryItemId)
-          formData.append("picked_o_"+index, item.itemQuantity)
-          formData.append("_rowSubmit_o_"+index, "Y")
-        })
-      });
+      orderItems.map((item, index) => {
+        formData.append("facilityId_o_"+index, this.currentFacility.facilityId)
+        formData.append("shipmentMethodTypeId_o_"+index, item.shipmentMethodTypeId)
+        formData.append("itemStatusId_o_"+index, "PICKITEM_PENDING")
+        formData.append("shipGroupSeqId_o_"+index, item.shipGroupSeqId)
+        formData.append("orderId_o_"+index, item.orderId)
+        formData.append("orderItemSeqId_o_"+index, item.orderItemSeqId)
+        formData.append("productId_o_"+index, item.productId)
+        formData.append("quantity_o_"+index, item.itemQuantity)
+        formData.append("inventoryItemId_o_"+index, item.inventoryItemId)
+        formData.append("picked_o_"+index, item.itemQuantity)
+        formData.append("_rowSubmit_o_"+index, "Y")
+      })
 
       // Adding all the pickers selected in FormData
       // TODO: check if we need to only allow selection of 3 or less pickers as in the current fulfillment app we can only select 3 pickers
