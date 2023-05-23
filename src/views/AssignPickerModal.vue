@@ -144,6 +144,7 @@ export default defineComponent({
         resp = await UtilService.createPicklist(formData);
         if (resp.status === 200 && !hasError(resp)) {
           this.closeModal();
+          showToast(translate('Picklist created successfully'))
           await this.store.dispatch('order/findOpenOrders')
         } else {
           throw resp.data
