@@ -88,7 +88,8 @@
                     <ion-label>{{ $t("Report an issue") }}</ion-label>
                   </ion-segment-button>
                 </ion-segment>
-                <div class="segments">
+                <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
+                <div class="segments" v-if="order.shipmentPackages && order.shipmentPackages.length">
                   <!-- TODO: add functionality to update box type -->
                   <div v-if="!isIssueSegmentSelectedForItem(item)">
                     <ion-item lines="none">
