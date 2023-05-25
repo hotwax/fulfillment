@@ -18,12 +18,11 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const requestParams = [];
 
-    // filtering the orders for which we need to fetch the shipment information
     while(ordersTotal > 0) {
       const picklistBinIds: Array<string> = [];
       const orderIds: Array<string> = [];
 
-      // splitting the orders of state to fetch the additional orders information
+      // splitting the orders in batches to fetch the additional orders information
       const orders = cachedOrders.slice(0, process.env.VUE_APP_VIEW_SIZE)
 
       orders.map((order: any) => {
@@ -33,7 +32,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
       requestParams.push({ picklistBinIds, orderIds })
 
-      // reducing the total count by the numbers of orders used to prepare the payload
+      // reducing the total count by the numbers of orders for which the payload is prepared
       ordersTotal -= process.env.VUE_APP_VIEW_SIZE
     }
 
@@ -44,7 +43,7 @@ const actions: ActionTree<OrderState, RootState> = {
     let shipmentPackagesByOrder = {} as any, itemInformationByOrder = {} as any, carrierPartyIdsByShipment = {} as any, carrierShipmentBoxType = {} as any
 
     for (const resp of shipmentIdResps) {
-      // maintaing an object containg information of shipmentIds for each order
+      // maintaining an object containing information of shipmentIds for each order
       shipmentIdsForOrders = {
         ...shipmentIdsForOrders,
         ...resp
@@ -83,7 +82,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
     cachedOrders = cachedOrders.map((order: any) => {
 
-      // if for an order shipment information is not available then returning the same order again
+      // if for an order shipment information is not available then returning the same order information again
       if(!shipmentIdsForOrders[order.orderId]) {
         return {
           ...order
