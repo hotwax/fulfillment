@@ -13,17 +13,17 @@ import logger from '@/logger'
 const actions: ActionTree<OrderState, RootState> = {
   async fetchInProgressOrdersAdditionalInformation({ commit, state }) {
     // getting all the orders from state
-    let cachedOrders = JSON.parse(JSON.stringify(state.inProgress.list)); // maintaining cachedOrders as to prepare the orders payload
-    let ordersTotal = state.inProgress.total
+    const cachedOrders = JSON.parse(JSON.stringify(state.inProgress.list)); // maintaining cachedOrders as to prepare the orders payload
+    let inProgressOrders = JSON.parse(JSON.stringify(state.inProgress.list)); // maintaining inProgreesOrders as update the orders information once information in fetched
 
     const requestParams = [];
 
-    while(ordersTotal > 0) {
+    while(cachedOrders.length) {
       const picklistBinIds: Array<string> = [];
       const orderIds: Array<string> = [];
 
       // splitting the orders in batches to fetch the additional orders information
-      const orders = cachedOrders.slice(0, process.env.VUE_APP_VIEW_SIZE)
+      const orders = cachedOrders.splice(0, process.env.VUE_APP_VIEW_SIZE)
 
       orders.map((order: any) => {
         picklistBinIds.push(order.picklistBinId)
@@ -31,9 +31,6 @@ const actions: ActionTree<OrderState, RootState> = {
       })
 
       requestParams.push({ picklistBinIds, orderIds })
-
-      // reducing the total count by the numbers of orders for which the payload is prepared
-      ordersTotal -= process.env.VUE_APP_VIEW_SIZE
     }
 
     const shipmentIdResps = await Promise.all(requestParams.map((params) => UtilService.findShipmentIdsForOrders(params.picklistBinIds, params.orderIds)))
@@ -80,7 +77,7 @@ const actions: ActionTree<OrderState, RootState> = {
       }
     }
 
-    cachedOrders = cachedOrders.map((order: any) => {
+    inProgressOrders = inProgressOrders.map((order: any) => {
 
       // if for an order shipment information is not available then returning the same order information again
       if(!shipmentIdsForOrders[order.orderId]) {
@@ -124,7 +121,7 @@ const actions: ActionTree<OrderState, RootState> = {
     })
 
     // updating the state with the updated orders information
-    commit(types.ORDER_INPROGRESS_UPDATED, {orders: cachedOrders, total: state.inProgress.total})
+    commit(types.ORDER_INPROGRESS_UPDATED, {orders: inProgressOrders, total: state.inProgress.total})
   },
 
   // get in-progress orders
