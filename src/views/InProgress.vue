@@ -131,6 +131,10 @@
             </div>
           </ion-card>
         </div>
+
+        <ion-infinite-scroll @ionInfinite="loadMoreOrders($event)" threshold="100px" :disabled="!isInProgressOrdersScrollable">
+          <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')" />
+        </ion-infinite-scroll>
       </div>
       <ion-fab v-if="inProgressOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="packOrders()">
@@ -143,7 +147,7 @@
 </template>
 
 <script lang="ts">
-import { IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonItem, IonIcon, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonThumbnail, IonTitle, IonToolbar, alertController, popoverController } from '@ionic/vue';
+import { IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonIcon, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonThumbnail, IonTitle, IonToolbar, alertController, popoverController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline, optionsOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
@@ -173,6 +177,8 @@ export default defineComponent({
     IonFabButton,
     IonHeader,
     IonItem,
+    IonInfiniteScroll,
+    IonInfiniteScrollContent,
     IonIcon,
     IonLabel,
     IonMenuButton,
@@ -196,7 +202,8 @@ export default defineComponent({
       getProductStock: 'stock/getProductStock',
       rejectReasons: 'util/getRejectReasons',
       currentEComStore: 'user/getCurrentEComStore',
-      userPreference: 'user/getUserPreference'
+      userPreference: 'user/getUserPreference',
+      isInProgressOrdersScrollable: 'order/isInProgressOrdersScrollable',
     })
   },
   data() {
@@ -290,6 +297,75 @@ export default defineComponent({
         });
       return confirmPackOrder.present();
     },
+    async getShipmentIdsForOrders(orders: any) {
+      const params = []
+
+      while(orders.length) {
+        const orderItems = orders.splice(0, process.env.VUE_APP_VIEW_SIZE)
+
+        const picklistBinIds: Array<string> = [];
+        const orderIds: Array<string> = [];
+
+        orderItems.map((order: any) => {
+          picklistBinIds.push(order.groupValue)
+          orderIds.push(order.doclist.docs[0].orderId)
+        })
+
+        params.push({ picklistBinIds, orderIds})
+      }
+
+      const shipmentIdsForOrders = await Promise.all(params.map((param) => UtilService.findShipmentIdsForOrders(param.picklistBinIds, param.orderIds)))
+
+      const shipmentIds: Array<any> = [...Object.values(shipmentIdsForOrders).flat()]
+      return shipmentIds;
+    },
+    // fetch information for orders whose information is not yet available
+    async getOrders() {
+      let resp;
+      let orders = [];
+
+      const inProgressQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
+
+      // fetching only those orders that are not available
+      const viewSize = inProgressQuery.viewSize - this.inProgressOrders.list.length
+      const viewIndex = this.inProgressOrders.list.length / process.env.VUE_APP_VIEW_SIZE
+
+      try {
+        const params = {
+          viewSize,
+          viewIndex,
+          queryString: inProgressQuery.queryString,
+          queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
+          sort: 'orderDate asc',
+          groupBy: 'picklistBinId',
+          filters: {
+            picklistItemStatusId: { value: 'PICKITEM_PENDING' },
+            '-fulfillmentStatus': { value: 'Rejected' },
+            '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+            facilityId: { value: this.currentFacility.facilityId },
+            productStoreId: { value: this.currentEComStore.productStoreId }
+          }
+        } as any
+
+        // preparing filters separately those are based on some condition
+        if(inProgressQuery.selectedPicklists.length) {
+          params.filters['picklistId'] = {value: inProgressQuery.selectedPicklists, op: 'OR'}
+        }
+
+        const orderQueryPayload = prepareOrderQuery(params)
+
+        resp = await OrderService.findInProgressOrders(orderQueryPayload);
+        if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
+          orders = resp.data.grouped.picklistBinId.groups
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        logger.error('No inProgress orders found', err)
+      }
+
+      return orders;
+    },
     async packOrders() {
       const alert = await alertController
         .create({
@@ -319,6 +395,13 @@ export default defineComponent({
 
               const shipmentIds = this.inProgressOrders.list.map((order: any) => order.shipmentId)
 
+              if(this.isInProgressOrdersScrollable) {
+                const orders = await this.getOrders();
+                const shipmentIdsForOrders = await this.getShipmentIdsForOrders(orders);
+
+                shipmentIds.push(...shipmentIdsForOrders)
+              }
+
               // TODO: need to check that do we need to pass all the shipmentIds for an order or just need to pass
               // the associated ids, currently passing the associated shipmentId
               if(data.includes('printPackingSlip')) {
@@ -329,22 +412,22 @@ export default defineComponent({
                 OrderService.printShippingLabel(shipmentIds)
               }
 
-              try {
-                const resp = await OrderService.packOrders({
-                  shipmentIds
-                });
-                if (resp.status === 200 && !hasError(resp)) {
-                  showToast(translate('Orders packed successfully'));
-                  // TODO: handle the case of fetching in progress orders after packing multiple orders
-                  // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
-                  await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
-                } else {
-                  throw resp.data
-                }
-              } catch (err) {
-                showToast(translate('Failed to pack orders'))
-                logger.error('Failed to pack orders', err)
-              }
+              // try {
+              //   const resp = await OrderService.packOrders({
+              //     shipmentIds
+              //   });
+              //   if (resp.status === 200 && !hasError(resp)) {
+              //     showToast(translate('Orders packed successfully'));
+              //     // TODO: handle the case of fetching in progress orders after packing multiple orders
+              //     // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
+              //     await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
+              //   } else {
+              //     throw resp.data
+              //   }
+              // } catch (err) {
+              //   showToast(translate('Failed to pack orders'))
+              //   logger.error('Failed to pack orders', err)
+              // }
               emitter.emit('dismissLoader');
             }
           }]
@@ -386,11 +469,22 @@ export default defineComponent({
       
       return alert.present();
     },
-    async findInProgressOrders () {
+    async findInProgressOrders(viewSize = 10, viewIndex = 0) {
       // assigning with empty array, as when we are updating(save) an order and if for one of the items issue segment
       // was selected before update making pack button disabled, then after update pack button is still disabled for that order
       this.itemsIssueSegmentSelected = []
-      await this.store.dispatch('order/findInProgressOrders')
+      await this.store.dispatch('order/findInProgressOrders', { viewSize, viewIndex })
+    },
+    loadMoreOrders(event: any) {
+      const viewSize = this.inProgressOrders.query.viewSize - this.inProgressOrders.list.length
+
+      this.findInProgressOrders(
+        // added this check as we don't need viewSize to exceed env View Size as in that case there is no use of infinte scroll
+        viewSize > process.env.VUE_APP_VIEW_SIZE ? process.env.VUE_APP_VIEW_SIZE : viewSize,
+        Math.ceil(this.inProgressOrders.list.length / process.env.VUE_APP_VIEW_SIZE)
+      ).then(() => {
+        event.target.complete();
+      })
     },
     async updateOrder(order: any) {
       const form = new FormData()

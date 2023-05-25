@@ -11,6 +11,9 @@ const getters: GetterTree<OrderState, RootState> = {
   },
   getCompletedOrders (state) {
     return state.completed;
+  },
+  isInProgressOrdersScrollable: (state) => {
+    return state.inProgress.list.length > 0 && state.inProgress.list.length < state.inProgress.query.viewSize
   }
 };
 export default getters;

@@ -13,8 +13,8 @@ import logger from '@/logger'
 const actions: ActionTree<OrderState, RootState> = {
 
   // get in-progress orders
-  async findInProgressOrders ({ commit, state }, payload = {}) {
-    emitter.emit('presentLoader');
+  async findInProgressOrders ({ commit, state }, payload = { viewSize: 10, viewIndex: 0 }) {
+    if(payload.viewIndex === 0) emitter.emit('presentLoader');
     let resp;
     let orders = [];
     let total = 0;
@@ -25,7 +25,6 @@ const actions: ActionTree<OrderState, RootState> = {
       const params = {
         ...payload,
         queryString: inProgressQuery.queryString,
-        viewSize: inProgressQuery.viewSize,
         queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
         sort: 'orderDate asc',
         groupBy: 'picklistBinId',
@@ -115,11 +114,18 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('No inProgress orders found', err)
     }
 
-    inProgressQuery.viewSize = orders.length
+    // TODO: handle case as on initiali load default view size is not getting selected in size selector
+    // added logic as on initial load if the orders are less than the env viewSize the size is not automatically set in state
+    // thus not updated on UI
+    if(!payload.viewIndex && orders.length < process.env.VUE_APP_VIEW_SIZE) {
+      inProgressQuery.viewSize = orders.length
+    }
+
+    if(payload.viewIndex && payload.viewIndex > 0) orders = state.inProgress.list.concat(orders)
 
     commit(types.ORDER_INPROGRESS_QUERY_UPDATED, { ...inProgressQuery })
     commit(types.ORDER_INPROGRESS_UPDATED, {orders, total})
-    emitter.emit('dismissLoader');
+    if(payload.viewIndex === 0) emitter.emit('dismissLoader');
     return resp;
   },
   

@@ -12,7 +12,7 @@ const prepareOrderQuery = (params: any) => {
         "group.limit": 1000,
         "group.ngroups": true,
         "q.op": "AND",
-        "start": viewIndex * viewSize
+        "start": viewIndex * process.env.VUE_APP_VIEW_SIZE
       },
       "query":"(*:*)",
       "filter": [`docType: ${params.docType ? params.docType : 'OISGIR'}`]
