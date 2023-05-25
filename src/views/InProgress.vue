@@ -59,8 +59,12 @@
               </div>
             </div>
 
+            <div class="box-type desktop-only" v-if="!order.shipmentPackages">
+              <ion-skeleton-text animated />
+              <ion-skeleton-text animated />
+            </div>
             <!-- TODO: implement functionality to change the type of box -->
-            <div class="box-type desktop-only">
+            <div class="box-type desktop-only" v-else>
               <ion-button @click="addShipmentBox(order)" fill="outline"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
             </div>
@@ -79,7 +83,18 @@
                 </ion-item>
               </div>
 
-              <div class="desktop-only">
+              <div class="desktop-only" v-if="!order.shipmentPackages">
+                <ion-segment>
+                  <ion-segment-button><ion-skeleton-text animated /></ion-segment-button>
+                  <ion-segment-button><ion-skeleton-text animated /></ion-segment-button>
+                </ion-segment>
+                <div class="segments">
+                  <ion-item lines="none">
+                    <ion-skeleton-text animated />
+                  </ion-item>
+                </div>
+              </div>
+              <div class="desktop-only" v-else>
                 <ion-segment @ionChange="changeSegment($event, item, order)" :value="isIssueSegmentSelectedForItem(item) ? 'issue' : 'pack'">
                   <ion-segment-button value="pack">
                     <ion-label>{{ $t("Ready to pack") }}</ion-label>
@@ -144,7 +159,7 @@
 </template>
 
 <script lang="ts">
-import { IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonItem, IonIcon, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonThumbnail, IonTitle, IonToolbar, alertController, popoverController } from '@ionic/vue';
+import { IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonItem, IonIcon, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSkeletonText, IonThumbnail, IonTitle, IonToolbar, alertController, popoverController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline, optionsOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
@@ -184,6 +199,7 @@ export default defineComponent({
     IonSegmentButton,
     IonSelect,
     IonSelectOption,
+    IonSkeletonText,
     IonThumbnail,   
     IonTitle,
     IonToolbar,
@@ -688,5 +704,15 @@ export default defineComponent({
   border-bottom: var(--border-medium);
   padding: var(--ion-item-like-padding);
   align-items: center;
+}
+
+.box-type > ion-skeleton-text {
+  width: 10%;
+  height: 30px;
+}
+
+ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-text {
+  width: 100%;
+  height: 30px;
 }
 </style>
