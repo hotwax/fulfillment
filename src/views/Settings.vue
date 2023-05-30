@@ -263,6 +263,11 @@ export default defineComponent({
       })
     },
     async setFacility (facility: any) {
+      // not updating the facility when the current facility in vuex state and the selected facility are same
+      if(this.currentFacility.facilityId === facility['detail'].value) {
+        return;
+      }
+
       if (this.userProfile){
         await this.store.dispatch('user/setFacility', {
           'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
@@ -412,6 +417,11 @@ export default defineComponent({
       await alert.present();
     },
     async setEComStore(store: any) {
+      // not updating the ecomstore when the current value in vuex state and selected value are same
+      if(this.currentEComStore.productStoreId === store['detail'].value) {
+        return;
+      }
+
       if(this.userProfile) {
         await this.store.dispatch('user/setEComStore', {
           'eComStore': this.userProfile.stores.find((str: any) => str.productStoreId == store['detail'].value)
