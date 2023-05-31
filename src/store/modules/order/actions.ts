@@ -11,9 +11,122 @@ import logger from '@/logger'
 
 
 const actions: ActionTree<OrderState, RootState> = {
+  async fetchInProgressOrdersAdditionalInformation({ commit, state }) {
+    // getting all the orders from state
+    const cachedOrders = JSON.parse(JSON.stringify(state.inProgress.list)); // maintaining cachedOrders as to prepare the orders payload
+    let inProgressOrders = JSON.parse(JSON.stringify(state.inProgress.list)); // maintaining inProgreesOrders as update the orders information once information in fetched
+
+    const requestParams = [];
+
+    while(cachedOrders.length) {
+      const picklistBinIds: Array<string> = [];
+      const orderIds: Array<string> = [];
+
+      // splitting the orders in batches to fetch the additional orders information
+      const orders = cachedOrders.splice(0, process.env.VUE_APP_VIEW_SIZE)
+
+      orders.map((order: any) => {
+        picklistBinIds.push(order.picklistBinId)
+        orderIds.push(order.orderId)
+      })
+
+      requestParams.push({ picklistBinIds, orderIds })
+    }
+
+    const shipmentIdResps = await Promise.all(requestParams.map((params) => UtilService.findShipmentIdsForOrders(params.picklistBinIds, params.orderIds)))
+    let shipmentIdsForOrders = {} as any
+    const shipmentIds = [] as any
+
+    let shipmentPackagesByOrder = {} as any, itemInformationByOrder = {} as any, carrierPartyIdsByShipment = {} as any, carrierShipmentBoxType = {} as any
+
+    for (const resp of shipmentIdResps) {
+      // maintaining an object containing information of shipmentIds for each order
+      shipmentIdsForOrders = {
+        ...shipmentIdsForOrders,
+        ...resp
+      }
+
+      // storing all the shipmentIds for all the orders in an array to use furthur
+      const orderShipmentIds = [...Object.values(resp).flat()] as Array<string>
+      shipmentIds.push(...Object.values(resp).flat())
+
+      // TODO: handle case when shipmentIds is empty
+      // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
+      const [shipmentPackagesByOrderInformation, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
+
+      // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
+      const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
+
+      shipmentPackagesByOrder = {
+        ...shipmentPackagesByOrder,
+        ...shipmentPackagesByOrderInformation
+      }
+
+      itemInformationByOrder = {
+        ...itemInformationByOrder,
+        ...itemInformationByOrderInformation
+      }
+
+      carrierPartyIdsByShipment = {
+        ...carrierPartyIdsByShipment,
+        ...carrierPartyIdsByShipmentInformation
+      }
+
+      carrierShipmentBoxType = {
+        ...carrierShipmentBoxType,
+        ...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
+      }
+    }
+
+    inProgressOrders = inProgressOrders.map((order: any) => {
+
+      // if for an order shipment information is not available then returning the same order information again
+      if(!shipmentIdsForOrders[order.orderId]) {
+        return {
+          ...order
+        }
+      }
+
+      order.items.map((item: any) => {
+        // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
+        item.shipmentItemSeqId = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)?.shipmentItemSeqId
+        item.selectedBox = shipmentPackagesByOrder[item.orderId]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+      })
+
+      const orderItem = order.items[0];
+      const carrierPartyIds = [...new Set(shipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
+
+      return {
+        customerId: orderItem.customerId,
+        customerName: orderItem.customerName,
+        orderId: orderItem.orderId,
+        orderDate: orderItem.orderDate,
+        groupValue: orderItem.picklistBinId,
+        picklistBinId: orderItem.picklistBinId,
+        shipmentIds: shipmentIdsForOrders[orderItem.orderId],
+        items: order.items,
+        shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
+        shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+        shipmentPackages: shipmentPackagesByOrder[orderItem.orderId],
+        carrierPartyIds,
+        shipmentBoxTypeByCarrierParty: carrierPartyIds.reduce((shipmentBoxType: any, carrierPartyId: any) => {
+          if(shipmentBoxType[carrierPartyId]) {
+            shipmentBoxType[carrierPartyId].push(carrierShipmentBoxType[carrierPartyId])
+          } else {
+            shipmentBoxType[carrierPartyId] = carrierShipmentBoxType[carrierPartyId]
+          }
+
+          return shipmentBoxType
+        }, {})
+      }
+    })
+
+    // updating the state with the updated orders information
+    commit(types.ORDER_INPROGRESS_UPDATED, {orders: inProgressOrders, total: state.inProgress.total})
+  },
 
   // get in-progress orders
-  async findInProgressOrders ({ commit, state }, payload = {}) {
+  async findInProgressOrders ({ commit, dispatch, state }, payload = {}) {
     emitter.emit('presentLoader');
     let resp;
     let orders = [];
@@ -50,40 +163,10 @@ const actions: ActionTree<OrderState, RootState> = {
         total = resp.data.grouped.picklistBinId.ngroups
         orders = resp.data.grouped.picklistBinId.groups
 
-        const picklistBinIds: Array<string> = [];
-        const orderIds: Array<string> = [];
-
-        orders.map((order: any) => {
-          picklistBinIds.push(order.groupValue)
-          orderIds.push(order.doclist.docs[0].orderId)
-        })
-
-        const shipmentIdsForOrders = await UtilService.findShipmentIdsForOrders(picklistBinIds, orderIds)
-        const shipmentIds: Array<any> = [...Object.values(shipmentIdsForOrders).flat()]
-
-        // TODO: handle case when shipmentIds is empty
-        // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
-        const [shipmentPackagesByOrder, itemInformationByOrder, carrierPartyIdsByShipment] = await Promise.all([UtilService.findShipmentPackages(shipmentIds), UtilService.findShipmentItemInformation(shipmentIds), UtilService.findCarrierPartyIdsForShipment(shipmentIds)])
-
-        // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
-        const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipment).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
-
-        const carrierShipmentBoxType = await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
-
         this.dispatch('product/getProductInformation', { orders })
 
         orders = orders.map((order: any) => {
-
-          order.doclist.docs.map((item: any) => {
-            // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
-            item.shipmentItemSeqId = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)?.shipmentItemSeqId
-
-            item.selectedBox = shipmentPackagesByOrder[item.orderId]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
-          })
-
           const orderItem = order.doclist.docs[0];
-          const carrierPartyIds = [...new Set(shipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
-
           return {
             customerId: orderItem.customerId,
             customerName: orderItem.customerName,
@@ -91,21 +174,9 @@ const actions: ActionTree<OrderState, RootState> = {
             orderDate: orderItem.orderDate,
             groupValue: order.groupValue,
             picklistBinId: orderItem.picklistBinId,
-            shipmentIds: shipmentIdsForOrders[orderItem.orderId],
             items: order.doclist.docs,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
             shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
-            shipmentPackages: shipmentPackagesByOrder[orderItem.orderId],
-            carrierPartyIds,
-            shipmentBoxTypeByCarrierParty: carrierPartyIds.reduce((shipmentBoxType: any, carrierPartyId: string) => {
-              if(shipmentBoxType[carrierPartyId]) {
-                shipmentBoxType[carrierPartyId].push(carrierShipmentBoxType[carrierPartyId])
-              } else {
-                shipmentBoxType[carrierPartyId] = carrierShipmentBoxType[carrierPartyId]
-              }
-
-              return shipmentBoxType
-            }, {}),
           }
         })
       } else {
@@ -119,6 +190,10 @@ const actions: ActionTree<OrderState, RootState> = {
 
     commit(types.ORDER_INPROGRESS_QUERY_UPDATED, { ...inProgressQuery })
     commit(types.ORDER_INPROGRESS_UPDATED, {orders, total})
+
+    // fetching the additional information like shipmentRoute, carrierParty information
+    dispatch('fetchInProgressOrdersAdditionalInformation')
+
     emitter.emit('dismissLoader');
     return resp;
   },
