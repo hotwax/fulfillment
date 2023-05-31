@@ -262,10 +262,15 @@ export default defineComponent({
         this.router.push('/login');
       })
     },
-    async setFacility (facility: any) {
+    async setFacility (event: any) {
+      // not updating the facility when the current facility in vuex state and the selected facility are same
+      if(this.currentFacility.facilityId === event.detail.value) {
+        return;
+      }
+
       if (this.userProfile){
         await this.store.dispatch('user/setFacility', {
-          'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
+          'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == event.detail.value)
         });
         this.store.dispatch('order/clearOrders')
         this.getCurrentFacilityDetails();
@@ -411,10 +416,15 @@ export default defineComponent({
 
       await alert.present();
     },
-    async setEComStore(store: any) {
+    async setEComStore(event: any) {
+      // not updating the ecomstore when the current value in vuex state and selected value are same
+      if(this.currentEComStore.productStoreId === event.detail.value) {
+        return;
+      }
+
       if(this.userProfile) {
         await this.store.dispatch('user/setEComStore', {
-          'eComStore': this.userProfile.stores.find((str: any) => str.productStoreId == store['detail'].value)
+          'eComStore': this.userProfile.stores.find((str: any) => str.productStoreId == event.detail.value)
         })
         this.getOutstandingOrdersCount();
         this.getInProgressOrdersCount();
