@@ -1,3 +1,14 @@
+# Release 1.4.0
+
+## What's Changed
+* Implemented: support to fetch shipment and shipmentPackage information on completed page and added support for missingLabelImage(#85zryhjxr) by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/116
+* Fixed: picklist print issue due to wrong index value being passed and added success toast after picklist is created by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/124
+* Fixed: issue of unwanted api calls after login, due to change in facility and productStore by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/128
+* Improved: logic to lazy load shipment information for inProgress orders(#85zt3q4xz) by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/125
+
+
+**Full Changelog**: https://github.com/hotwax/fulfillment-pwa/compare/v1.3.0...v1.4.0
+
 # Release 1.3.0
 
 ## What's Changed
