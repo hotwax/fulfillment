@@ -11,71 +11,64 @@ import logger from '@/logger'
 
 
 const actions: ActionTree<OrderState, RootState> = {
-  async fetchInProgressOrdersAdditionalInformation({ commit, state }) {
+  async fetchInProgressOrdersAdditionalInformation({ commit, state }, payload = { viewIndex: 0 }) {
     // getting all the orders from state
     const cachedOrders = JSON.parse(JSON.stringify(state.inProgress.list)); // maintaining cachedOrders as to prepare the orders payload
     let inProgressOrders = JSON.parse(JSON.stringify(state.inProgress.list)); // maintaining inProgreesOrders as update the orders information once information in fetched
 
-    const requestParams = [];
+    const picklistBinIds: Array<string> = [];
+    const orderIds: Array<string> = [];
 
-    while(cachedOrders.length) {
-      const picklistBinIds: Array<string> = [];
-      const orderIds: Array<string> = [];
+    // splitting the orders in batches to fetch the additional orders information
+    const orders = cachedOrders.splice(payload.viewIndex * process.env.VUE_APP_VIEW_SIZE, process.env.VUE_APP_VIEW_SIZE)
 
-      // splitting the orders in batches to fetch the additional orders information
-      const orders = cachedOrders.splice(0, process.env.VUE_APP_VIEW_SIZE)
+    orders.map((order: any) => {
+      picklistBinIds.push(order.picklistBinId)
+      orderIds.push(order.orderId)
+    })
 
-      orders.map((order: any) => {
-        picklistBinIds.push(order.picklistBinId)
-        orderIds.push(order.orderId)
-      })
+    const resp = await UtilService.findShipmentIdsForOrders(picklistBinIds, orderIds);
 
-      requestParams.push({ picklistBinIds, orderIds })
-    }
-
-    const shipmentIdResps = await Promise.all(requestParams.map((params) => UtilService.findShipmentIdsForOrders(params.picklistBinIds, params.orderIds)))
     let shipmentIdsForOrders = {} as any
     const shipmentIds = [] as any
 
     let shipmentPackagesByOrder = {} as any, itemInformationByOrder = {} as any, carrierPartyIdsByShipment = {} as any, carrierShipmentBoxType = {} as any
 
-    for (const resp of shipmentIdResps) {
-      // maintaining an object containing information of shipmentIds for each order
-      shipmentIdsForOrders = {
-        ...shipmentIdsForOrders,
-        ...resp
-      }
+    // maintaining an object containing information of shipmentIds for each order
+    shipmentIdsForOrders = {
+      ...shipmentIdsForOrders,
+      ...resp
+    }
 
-      // storing all the shipmentIds for all the orders in an array to use furthur
-      const orderShipmentIds = [...Object.values(resp).flat()] as Array<string>
-      shipmentIds.push(...Object.values(resp).flat())
+    // storing all the shipmentIds for all the orders in an array to use furthur
+    const orderShipmentIds = [...Object.values(resp).flat()] as Array<string>
+    shipmentIds.push(...Object.values(resp).flat())
 
-      // TODO: handle case when shipmentIds is empty
-      // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
-      const [shipmentPackagesByOrderInformation, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
+    // TODO: handle case when shipmentIds is empty
+    // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
+    const [shipmentPackagesByOrderInformation, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
 
-      // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
-      const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
+    // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
+    const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
 
-      shipmentPackagesByOrder = {
-        ...shipmentPackagesByOrder,
-        ...shipmentPackagesByOrderInformation
-      }
+    shipmentPackagesByOrder = {
+      ...shipmentPackagesByOrder,
+      ...shipmentPackagesByOrderInformation
+    }
 
-      itemInformationByOrder = {
-        ...itemInformationByOrder,
-        ...itemInformationByOrderInformation
-      }
+    itemInformationByOrder = {
+      ...itemInformationByOrder,
+      ...itemInformationByOrderInformation
+    }
 
-      carrierPartyIdsByShipment = {
-        ...carrierPartyIdsByShipment,
-        ...carrierPartyIdsByShipmentInformation
-      }
+    carrierPartyIdsByShipment = {
+      ...carrierPartyIdsByShipment,
+      ...carrierPartyIdsByShipmentInformation
+    }
 
-      carrierShipmentBoxType = {
-        ...carrierShipmentBoxType,
-        ...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
-      }
+    carrierShipmentBoxType = {
+      ...carrierShipmentBoxType,
+      ...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
     }
 
     inProgressOrders = inProgressOrders.map((order: any) => {
@@ -164,6 +157,7 @@ const actions: ActionTree<OrderState, RootState> = {
         total = resp.data.grouped.picklistBinId.ngroups
         orders = resp.data.grouped.picklistBinId.groups
 
+        // TODO get only product visible
         this.dispatch('product/getProductInformation', { orders })
 
         orders = orders.map((order: any) => {
@@ -372,6 +366,12 @@ const actions: ActionTree<OrderState, RootState> = {
   async updateInProgressQuery({ commit, dispatch }, payload) {
     commit(types.ORDER_INPROGRESS_QUERY_UPDATED, payload)
     await dispatch('findInProgressOrders');
+  },
+
+  async updateInProgressIndex({ commit, dispatch }, payload) {
+    // TODO handle API failure
+    await dispatch('fetchInProgressOrdersAdditionalInformation', { viewIndex: payload.viewIndex});
+    commit(types.ORDER_INPROGRESS_QUERY_UPDATED, payload)
   }
 }
 

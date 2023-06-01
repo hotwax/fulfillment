@@ -34,7 +34,7 @@
         <div class="results">
           <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="packOrders()">{{ $t("Pack orders") }}</ion-button>
 
-          <ion-card class="order" v-for="(order, index) in inProgressOrders.list" :key="index">
+          <ion-card class="order" v-for="(order, index) in getInProgressOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
@@ -145,6 +145,9 @@
               </div>
             </div>
           </ion-card>
+          <ion-infinite-scroll @ionInfinite="loadMoreInProgressOrders($event)" threshold="100px" :disabled="!isInProgressOrderScrollable()">
+            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"/>
+          </ion-infinite-scroll>
         </div>
       </div>
       <ion-fab v-if="inProgressOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
@@ -158,7 +161,36 @@
 </template>
 
 <script lang="ts">
-import { IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonItem, IonIcon, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSkeletonText, IonThumbnail, IonTitle, IonToolbar, alertController, popoverController } from '@ionic/vue';
+import {
+  IonButton,
+  IonButtons,
+  IonCard,
+  IonCheckbox,
+  IonChip,
+  IonContent,
+  IonFab,
+  IonFabButton,
+  IonHeader,
+  IonItem,
+  IonIcon,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
+  IonLabel,
+  IonMenuButton,
+  IonNote,
+  IonPage,
+  IonSearchbar,
+  IonSegment,
+  IonSegmentButton,
+  IonSelect,
+  IonSelectOption,
+  IonSkeletonText,
+  IonThumbnail,
+  IonTitle,
+  IonToolbar,
+  alertController,
+  popoverController
+} from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline, optionsOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
@@ -189,6 +221,8 @@ export default defineComponent({
     IonHeader,
     IonItem,
     IonIcon,
+    IonInfiniteScroll,
+    IonInfiniteScrollContent,
     IonLabel,
     IonMenuButton,
     IonNote,
@@ -223,6 +257,9 @@ export default defineComponent({
     }
   },
   methods: {
+    getInProgressOrders() {
+      return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * process.env.VUE_APP_VIEW_SIZE );
+    },
     isIssueSegmentSelectedForItem(item: any) {
       return this.itemsIssueSegmentSelected.includes(`${item.orderId}-${item.orderItemSeqId}`)
     },
@@ -553,6 +590,15 @@ export default defineComponent({
         logger.error('No picklist facets found', err)
       }
     },
+    async loadMoreInProgressOrders(event: any) {
+      const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
+      inProgressOrdersQuery.viewIndex++;
+      await this.store.dispatch('order/updateInProgressIndex', { ...inProgressOrdersQuery })
+      event.target.complete();
+    },
+    isInProgressOrderScrollable() {
+      return ((this.inProgressOrders.query.viewIndex + 1) * process.env.VUE_APP_VIEW_SIZE) <  this.inProgressOrders.query.viewSize;
+    },
     async updateSelectedPicklists(id: string) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
       const selectedPicklists = inProgressOrdersQuery.selectedPicklists
@@ -566,6 +612,7 @@ export default defineComponent({
       // making view size default when changing the shipment method to correctly fetch orders
       inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       inProgressOrdersQuery.selectedPicklists = selectedPicklists
+      inProgressOrdersQuery.viewIndex = 0
 
       this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
     },

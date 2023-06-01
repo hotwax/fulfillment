@@ -15,6 +15,7 @@ const mutations: MutationTree <OrderState> = {
       list: [],
       total: 0,
       query: {
+        viewIndex: 0,
         viewSize: process.env.VUE_APP_VIEW_SIZE,
         queryString: '',
         selectedShipmentMethods: []
@@ -33,6 +34,7 @@ const mutations: MutationTree <OrderState> = {
       list: [],
       total: 0,
       query: {
+        viewIndex: 0,
         viewSize: process.env.VUE_APP_VIEW_SIZE,
         selectedCarrierPartyIds: [],
         selectedShipmentMethods: [],
@@ -52,6 +54,7 @@ const mutations: MutationTree <OrderState> = {
       list: [],
       total: 0,
       query: {
+        viewIndex: 0,
         viewSize: process.env.VUE_APP_VIEW_SIZE,
         selectedPicklists: [],
         queryString: ''

@@ -88,6 +88,9 @@
               </div>
             </div> -->
           </ion-card>
+          <!-- <ion-infinite-scroll @ionInfinite="loadMoreOpenOrders($event)" threshold="100px" :disabled="!isOpenOrdersScrollable">
+            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"/>
+          </ion-infinite-scroll> -->
         </div>
       </div>
       <ion-fab v-if="openOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
@@ -114,7 +117,9 @@ import {
   IonFabButton, 
   IonHeader, 
   IonLabel, 
-  IonIcon, 
+  IonIcon,
+  // IonInfiniteScroll,
+  // IonInfiniteScrollContent,
   IonItem, 
   IonMenuButton, 
   IonNote, 
@@ -151,6 +156,8 @@ export default defineComponent({
     IonHeader,
     IonLabel,
     IonIcon,
+    // IonInfiniteScroll,
+    // IonInfiniteScrollContent,
     IonItem,
     IonMenuButton,
     IonNote,
