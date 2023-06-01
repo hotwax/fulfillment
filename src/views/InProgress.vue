@@ -51,10 +51,9 @@
               </div>
 
               <div class="order-metadata">
-                <!-- TODO: add brokered date-->
                 <ion-label>
                   {{ order.shipmentMethodTypeDesc }}
-                  <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
+                  <p v-if="order.reservedDatetime">{{ $t("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
                 </ion-label>
               </div>
             </div>

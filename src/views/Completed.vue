@@ -64,9 +64,7 @@
               <div class="order-metadata">
                 <ion-label>
                   {{ order.shipmentMethodTypeDesc }}
-                  <!-- TODO: add support to display the last brokered date, currently not getting
-                  the date in API response -->
-                  <!-- <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p> -->
+                  <p v-if="order.reservedDatetime">{{ $t("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
                 </ion-label>
               </div>
             </div>
