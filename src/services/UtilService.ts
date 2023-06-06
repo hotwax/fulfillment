@@ -34,7 +34,7 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
       "statusId_op": "in"
     },
     "fieldList": ["shipmentId", "primaryOrderId"],
-    "viewSize": (orderIds.length * picklistBinIds.length) + 1,  // maximum records we have for orders
+    "viewSize": 200,  // maximum records we have for orders
     "distinct": "Y"
   }
 
@@ -46,7 +46,7 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
       params
     })
 
-    if(resp.status == 200 && !hasError(resp) && resp.data.count) {
+    if (!hasError(resp)) {
       shipmentIdsForOrders = resp.data.docs.reduce((shipmentIdsForOrders: any, shipment: any) => {
         if(shipmentIdsForOrders[shipment.primaryOrderId]) {
           shipmentIdsForOrders[shipment.primaryOrderId].push(shipment.shipmentId)
@@ -55,11 +55,12 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
         }
         return shipmentIdsForOrders
       }, {})
-    } else {
-      throw resp.data
+    } else if (resp.error && resp.error !== "No record found") {
+      return Promise.reject(resp.error);
     }
   } catch(err) {
     logger.error('Failed to fetch shipmentIds for orders', err)
+    return Promise.reject(err);
   }
 
   return shipmentIdsForOrders;

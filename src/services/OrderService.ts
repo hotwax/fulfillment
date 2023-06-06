@@ -30,35 +30,35 @@ const findInProgressOrders = async (query: any): Promise <any>  => {
   });
 }
 
-const packOrder = async (query: any): Promise <any> => {
+const packOrder = async (payload: any): Promise <any> => {
   return api({
     url: "/service/packStoreFulfillmentOrder",
     method: "post",
-    data: query
+    data: payload
   })
 }
 
-const packOrders = async (query: any): Promise <any> => {
+const packOrders = async (payload: any): Promise <any> => {
   return api({
     url: "/service/bulkPackStoreFulfillmentOrders",
     method: "post",
-    data: query
+    data: payload
   })
 }
 
-const bulkShipOrders = async (query: any): Promise<any> => {
+const bulkShipOrders = async (payload: any): Promise<any> => {
   return api({
     url: "service/bulkShipOrders",
     method: "post",
-    data: query
+    data: payload
   })
 }
 
-const unpackOrder = async (query: any): Promise<any> => {
+const unpackOrder = async (payload: any): Promise<any> => {
   return api({
     url: "service/unlockStoreFulfillmentOrder",
     method: "post",
-    data: query
+    data: payload
   })
 }
 

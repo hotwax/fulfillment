@@ -58,12 +58,12 @@
               </div>
             </div>
 
-            <div class="box-type desktop-only" v-if="!order.shipmentPackages">
+            <div class="box-type desktop-only" v-if="!order.shipmentPackages && !order.hasMissingInfo">
               <ion-skeleton-text animated />
               <ion-skeleton-text animated />
             </div>
             <!-- TODO: implement functionality to change the type of box -->
-            <div class="box-type desktop-only" v-else>
+            <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
               <ion-button @click="addShipmentBox(order)" fill="outline"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
             </div>
@@ -82,7 +82,7 @@
                 </ion-item>
               </div>
 
-              <div class="desktop-only" v-if="!order.shipmentPackages">
+              <div class="desktop-only" v-if="!order.shipmentPackages && !order.hasMissingInfo">
                 <ion-segment>
                   <ion-segment-button><ion-skeleton-text animated /></ion-segment-button>
                   <ion-segment-button><ion-skeleton-text animated /></ion-segment-button>
@@ -93,7 +93,7 @@
                   </ion-item>
                 </div>
               </div>
-              <div class="desktop-only" v-else>
+              <div class="desktop-only" v-else-if="order.shipmentPackages">
                 <ion-segment @ionChange="changeSegment($event, item, order)" :value="isIssueSegmentSelectedForItem(item) ? 'issue' : 'pack'">
                   <ion-segment-button value="pack">
                     <ion-label>{{ $t("Ready to pack") }}</ion-label>
@@ -131,7 +131,7 @@
 
             <div class="mobile-only">
               <ion-item>
-                <ion-button fill="clear" @click="packOrder(order)">{{ $t("Pack using default packaging") }}</ion-button>
+                <ion-button fill="clear"  :disabled="order.isModified || order.hasMissingInfo" @click="packOrder(order)">{{ $t("Pack using default packaging") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -140,8 +140,8 @@
 
             <div class="actions">
               <div>
-                <ion-button :disabled="order.isModified" @click="packOrder(order)">{{ $t("Pack") }}</ion-button>
-                <ion-button fill="outline" @click="save(order)">{{ $t("Save") }}</ion-button>
+                <ion-button :disabled="order.isModified || order.hasMissingInfo" @click="packOrder(order)">{{ $t("Pack") }}</ion-button>
+                <ion-button :disabled="order.hasMissingInfo" fill="outline" @click="save(order)">{{ $t("Save") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -369,8 +369,23 @@ export default defineComponent({
             role: 'confirm',
             handler: async (data) => {
               emitter.emit('presentLoader');
+              let orderList = JSON.parse(JSON.stringify(this.inProgressOrders.list))
+              // fetch related shipmentIds when missing
+              if (this.isInProgressOrderScrollable()) {
+                const remainingOrderIndex = (this.inProgressOrders.query.viewIndex + 1) * process.env.VUE_APP_VIEW_SIZE;
+                const shipmentIdsForOrders = await this.fetchOrderShipmentIds(orderList.slice(remainingOrderIndex));
+                orderList = orderList.map((order: any) => {
+                  // if for an order shipment information is not available then returning the same order information again
+                  if(shipmentIdsForOrders[order.orderId]) {
+                    order.shipmentIds = shipmentIdsForOrders[order.orderId];
+                  }
+                  return order;
+                });
+              }
 
-              const shipmentIds = this.inProgressOrders.list.map((order: any) => order.shipmentId)
+              // Considering only unique shipment IDs
+              // TODO check reason for redundant shipment IDs
+              const shipmentIds = [...new Set(orderList.map((order: any) => order.shipmentIds).flat())] as Array<string>
 
               // TODO: need to check that do we need to pass all the shipmentIds for an order or just need to pass
               // the associated ids, currently passing the associated shipmentId
@@ -403,6 +418,27 @@ export default defineComponent({
           }]
         });
       return alert.present();
+    },
+    async fetchOrderShipmentIds(orderList: any) {
+      // Implemented logic to fetch in batches
+      const batchSize = 50;
+      const clonedOrderList = JSON.parse(JSON.stringify(orderList));
+      const requestParams = [];
+      while(clonedOrderList.length) {
+        const picklistBinIds: Array<string> = [];
+        const orderIds: Array<string> = [];
+        // splitting the orders in batches to fetch the additional orders information
+        const orders = clonedOrderList.splice(0, batchSize);
+
+        orders.map((order: any) => {
+          picklistBinIds.push(order.picklistBinId)
+          orderIds.push(order.orderId)
+        })
+        requestParams.push({ picklistBinIds, orderIds })
+      }
+      // TODO Handle error case
+      const shipmentIdResps = await Promise.all(requestParams.map((params) => UtilService.findShipmentIdsForOrders(params.picklistBinIds, params.orderIds)))
+      return Object.assign({}, ...shipmentIdResps)
     },
     async reportIssue(order: any, itemsToReject: any) {
       // finding is there any item that is `out of stock` as we need to display the message accordingly

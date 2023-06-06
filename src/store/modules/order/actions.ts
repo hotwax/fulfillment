@@ -27,22 +27,14 @@ const actions: ActionTree<OrderState, RootState> = {
       orderIds.push(order.orderId)
     })
 
-    const resp = await UtilService.findShipmentIdsForOrders(picklistBinIds, orderIds);
-
-    let shipmentIdsForOrders = {} as any
-    const shipmentIds = [] as any
+    try {
+      // maintaining an object containing information of shipmentIds for each order
+    const shipmentIdsForOrders = await UtilService.findShipmentIdsForOrders(picklistBinIds, orderIds);
 
     let shipmentPackagesByOrder = {} as any, itemInformationByOrder = {} as any, carrierPartyIdsByShipment = {} as any, carrierShipmentBoxType = {} as any
 
-    // maintaining an object containing information of shipmentIds for each order
-    shipmentIdsForOrders = {
-      ...shipmentIdsForOrders,
-      ...resp
-    }
-
     // storing all the shipmentIds for all the orders in an array to use furthur
-    const orderShipmentIds = [...Object.values(resp).flat()] as Array<string>
-    shipmentIds.push(...Object.values(resp).flat())
+    const orderShipmentIds = [...Object.values(shipmentIdsForOrders).flat()] as Array<string>
 
     // TODO: handle case when shipmentIds is empty
     // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
@@ -87,7 +79,7 @@ const actions: ActionTree<OrderState, RootState> = {
       })
 
       const orderItem = order.items[0];
-      const carrierPartyIds = [...new Set(shipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
+      const carrierPartyIds = [...new Set(orderShipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
 
       return {
         customerId: orderItem.customerId,
@@ -114,6 +106,13 @@ const actions: ActionTree<OrderState, RootState> = {
         }, {})
       }
     })
+    } catch(err) {
+      inProgressOrders = inProgressOrders.map((order: any) => {
+        order.hasMissingInfo = true;
+        return order;
+      });
+      logger.error('Failed to fetch shipmentIds for orders', err)
+    }
 
     // updating the state with the updated orders information
     commit(types.ORDER_INPROGRESS_UPDATED, {orders: inProgressOrders, total: state.inProgress.total})
