@@ -134,7 +134,8 @@ import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } f
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import Image from '@/components/Image.vue'
-import { formatUtcDate, getFeature, hasError } from '@/utils'
+import { formatUtcDate, getFeature } from '@/utils'
+import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'

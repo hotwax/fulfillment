@@ -195,7 +195,8 @@ import { defineComponent } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline, optionsOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
-import { formatUtcDate, getFeature, hasError, showToast } from '@/utils';
+import { formatUtcDate, getFeature, showToast } from '@/utils';
+import { hasError } from '@/adapter';
 import Image from '@/components/Image.vue'
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue';
 import { OrderService } from '@/services/OrderService';
@@ -747,6 +748,12 @@ export default defineComponent({
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
 
       inProgressOrdersQuery.viewSize = size
+      inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
+      await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
+    },
+    async initialiseOrderQuery() {
+      const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
+      inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
     },
     async printPicklist(picklistId: string) {
@@ -755,7 +762,7 @@ export default defineComponent({
   },
   async mounted () {
     this.store.dispatch('util/fetchRejectReasons')
-    await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
+    await Promise.all([this.fetchPickersInformation(), this.initialiseOrderQuery()])
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
   unmounted() {

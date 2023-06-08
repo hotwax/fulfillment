@@ -62,7 +62,7 @@ import { defineComponent } from "vue";
 import { closeOutline, save } from "ionicons/icons";
 import { useStore } from "@/store";
 import { UserService } from "@/services/UserService";
-import { hasError } from '@/utils'
+import { hasError } from '@/adapter'
 import { DateTime } from 'luxon'
 
 export default defineComponent({

@@ -45,7 +45,7 @@
         <div class="results">
           <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ $t("Ship") }}</ion-button>
 
-          <ion-card class="order" v-for="(order, index) in completedOrders.list" :key="index">
+          <ion-card class="order" v-for="(order, index) in getCompletedOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
@@ -113,6 +113,9 @@
               </div>
             </div>
           </ion-card>
+          <ion-infinite-scroll @ionInfinite="loadMoreCompletedOrders($event)" threshold="100px" :disabled="!isCompletedOrderScrollable()">
+            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"/>
+          </ion-infinite-scroll>
         </div>
       </div>
       <!-- TODO: make mobile view functional -->
@@ -140,6 +143,8 @@ import {
   IonFabButton,
   IonHeader,
   IonIcon,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
   IonItem,
   IonLabel,
   IonMenuButton,
@@ -157,7 +162,8 @@ import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
-import { formatUtcDate, getFeature, hasError, showToast } from '@/utils'
+import { formatUtcDate, getFeature, showToast } from '@/utils'
+import { hasError } from '@/adapter'
 import Image from '@/components/Image.vue'
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
@@ -181,6 +187,8 @@ export default defineComponent({
     IonFabButton,
     IonHeader,
     IonIcon,
+    IonInfiniteScroll,
+    IonInfiniteScrollContent,
     IonItem,
     IonLabel,
     IonMenuButton,
@@ -210,13 +218,30 @@ export default defineComponent({
     })
   },
   async mounted() {
-    await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+    await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
   unmounted() {
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   methods: {
+    getCompletedOrders() {
+      return this.completedOrders.list.slice(0, (this.completedOrders.query.viewIndex + 1) * process.env.VUE_APP_VIEW_SIZE );
+    },
+    async loadMoreCompletedOrders(event: any) {
+      const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
+      completedOrdersQuery.viewIndex++;
+      await this.store.dispatch('order/updateCompletedOrderIndex', { ...completedOrdersQuery })
+      event.target.complete();
+    },
+    isCompletedOrderScrollable() {
+      return ((this.completedOrders.query.viewIndex + 1) * process.env.VUE_APP_VIEW_SIZE) <  this.completedOrders.query.viewSize;
+    },
+    async initialiseOrderQuery() {
+      const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
+      completedOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
+      await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+    },
     async updateOrderQuery(size: any) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
 
@@ -234,8 +259,21 @@ export default defineComponent({
           }, {
             text: this.$t("Ship"),
             handler: async () => {
+              let orderList = JSON.parse(JSON.stringify(this.completedOrders.list))
+
+              let shipmentIds = orderList.reduce((shipmentIds: any, order: any) => {
+                if (order.shipments) {
+                  shipmentIds.push(...Object.keys(order.shipments).filter((shipmentId: any) => order.shipments[shipmentId].statusId === "SHIPMENT_PACKED"))
+                }
+                return shipmentIds;
+              }, []);
+
+              // Considering only unique shipment IDs
+              // TODO check reason for redundant shipment IDs
+              shipmentIds = [...new Set(shipmentIds)] as Array<string>
+
               const payload = {
-                shipmentId: this.completedOrders.list.map((order: any) => order.shipmentId)
+                shipmentId: shipmentIds
               }
 
               try {
@@ -256,6 +294,28 @@ export default defineComponent({
           }]
         });
       return shipOrderAlert.present();
+    },
+    async fetchOrderShipmentIds(orderList: any) {
+      // Implemented logic to fetch in batches
+      const batchSize = 50;
+      const clonedOrderList = JSON.parse(JSON.stringify(orderList));
+      const requestParams = [];
+      while(clonedOrderList.length) {
+        const picklistBinIds: Array<string> = [];
+        const orderIds: Array<string> = [];
+        // splitting the orders in batches to fetch the additional orders information
+        const orders = clonedOrderList.splice(0, batchSize);
+
+        orders.map((order: any) => {
+          picklistBinIds.push(order.picklistBinId)
+          orderIds.push(order.orderId)
+        })
+        requestParams.push({ picklistBinIds, orderIds })
+      }
+      // TODO Handle error casefetchShipmentsForOrders
+      const shipmentIdResps = await Promise.all(requestParams.map((params) => UtilService.findShipmentIdsForOrders(params.picklistBinIds, params.orderIds, ["SHIPMENT_PACKED"])))
+
+      return Object.assign({}, ...shipmentIdResps)
     },
 
     async shippingPopover(ev: Event) {
@@ -428,7 +488,8 @@ export default defineComponent({
       return unpackOrderAlert.present();
     },
     hasPackedShipments(order: any) {
-      return Object.values(order.shipments).some((shipment: any) => shipment.statusId === 'SHIPMENT_PACKED')
+      // TODO check if ternary check is needed or we could handle on UI
+      return order.shipments ? Object.values(order.shipments).some((shipment: any) => shipment.statusId === 'SHIPMENT_PACKED') : {}
     },
     async retryShippingLabel(order: any) {
       // Getting all the shipmentIds from shipmentPackages, as we only need to pass those shipmentIds for which label is missing

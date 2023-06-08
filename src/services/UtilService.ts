@@ -1,7 +1,6 @@
-import { api, client } from '@/adapter';
+import { api, client, hasError } from '@/adapter';
 import logger from '@/logger';
 import store from '@/store';
-import { hasError } from '@/utils';
 
 const fetchShipmentMethods = async (query: any): Promise <any>  => {
   return api({
@@ -19,7 +18,7 @@ const fetchPicklistInformation = async (query: any): Promise <any>  => {
   });
 }
 
-const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: Array<string>): Promise<any> => {
+const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: Array<string>, statusId = ["SHIPMENT_APPROVED", "SHIPMENT_INPUT"]): Promise<any> => {
   let shipmentIdsForOrders = {};
 
   const params = {
@@ -30,7 +29,7 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
       "picklistBinId": picklistBinIds,
       "picklistBinId_op": "in",
       "originFacilityId": store.state.user.currentFacility.facilityId,
-      "statusId": ["SHIPMENT_APPROVED", "SHIPMENT_INPUT"],
+      "statusId": statusId,
       "statusId_op": "in"
     },
     "fieldList": ["shipmentId", "primaryOrderId"],
@@ -55,8 +54,8 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
         }
         return shipmentIdsForOrders
       }, {})
-    } else if (resp.error && resp.error !== "No record found") {
-      return Promise.reject(resp.error);
+    } else if (resp.data.error && resp.data.error !== "No record found") {
+      return Promise.reject(resp.data.error);
     }
   } catch(err) {
     logger.error('Failed to fetch shipmentIds for orders', err)
@@ -144,8 +143,8 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
         }
         return shipmentForOrders
       }, {})
-    } else {
-      throw resp.data
+    } else if (resp.data.error && resp.data.error !== "No record found") {
+      return Promise.reject(resp.data.error);
     }
   } catch(err) {
     logger.error('Failed to fetch shipment packages information', err)
@@ -176,7 +175,7 @@ const fetchShipmentPackagesByOrders = async(shipmentIds: Array<string>): Promise
       params
     })
 
-    if(resp.status == 200 && !hasError(resp) && resp.data.count) {
+    if(!hasError(resp)) {
       shipmentPackages = resp.data.docs.reduce((shipmentPackagesInformation: any, shipmentPackage: any) => {
         if(shipmentPackagesInformation[shipmentPackage.primaryOrderId]) {
           shipmentPackagesInformation[shipmentPackage.primaryOrderId][shipmentPackage.shipmentId] = shipmentPackage
@@ -188,8 +187,8 @@ const fetchShipmentPackagesByOrders = async(shipmentIds: Array<string>): Promise
 
         return shipmentPackagesInformation
       }, {})
-    } else {
-      throw resp.data
+    } else if (resp.data.error && resp.data.error !== "No record found") {
+      return Promise.reject(resp.data.error);
     }
   } catch(err) {
     logger.error('Failed to fetch shipment packages information', err)

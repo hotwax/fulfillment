@@ -3,7 +3,7 @@ import RootState from '@/store/RootState'
 import UtilState from './UtilState'
 import * as types from './mutation-types'
 import { UtilService } from '@/services/UtilService'
-import { hasError } from '@/utils'
+import { hasError } from '@/adapter'
 import logger from '@/logger'
 
 const actions: ActionTree<UtilState, RootState> = {

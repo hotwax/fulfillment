@@ -1,7 +1,7 @@
-import { api } from '@/adapter';
+import { api, hasError } from '@/adapter';
 import { translate } from '@/i18n';
 import logger from '@/logger';
-import { hasError, showToast } from '@/utils';
+import { showToast } from '@/utils';
 
 const findOpenOrders = async (query: any): Promise <any>  => {
   return api({

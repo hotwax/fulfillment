@@ -3,7 +3,7 @@ import { ActionTree } from 'vuex'
 import RootState from '@/store/RootState'
 import ProductState from './ProductState'
 import * as types from './mutation-types'
-import { hasError } from '@/utils'
+import { hasError } from '@/adapter'
 import logger from "@/logger";
 
 const actions: ActionTree<ProductState, RootState> = {
