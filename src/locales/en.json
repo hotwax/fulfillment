@@ -60,6 +60,7 @@
   "orders": "orders",
   "Out of stock": "Out of stock",
   "Next day": "Next day",
+  "No packed shipments to ship for these orders": "No packed shipments to ship for these orders",
   "package": "package",
   "packages": "packages",
   "Pack": "Pack",

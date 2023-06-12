@@ -754,6 +754,7 @@ export default defineComponent({
     async initialiseOrderQuery() {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
       inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
+      inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
     },
     async printPicklist(picklistId: string) {

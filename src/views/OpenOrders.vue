@@ -208,9 +208,6 @@ export default defineComponent({
       });
       return assignPickerModal.present();
     },
-    async findOpenOrders () {
-      await this.store.dispatch('order/findOpenOrders')
-    },
     async fetchShipmentMethods() {
       let resp: any;
 
@@ -266,11 +263,17 @@ export default defineComponent({
 
       openOrdersQuery.viewSize = size
       await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
-    }
+    },
+    async initialiseOrderQuery() {
+      const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
+      openOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
+      openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
+    },
   },
   async mounted () {
     emitter.on('updateOrderQuery', this.updateOrderQuery)
-    await Promise.all([this.findOpenOrders(), this.fetchShipmentMethods()]);
+    await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
   },
   unmounted() {
     emitter.off('updateOrderQuery', this.updateOrderQuery)

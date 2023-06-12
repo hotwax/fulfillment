@@ -87,6 +87,79 @@ const updateOrder = async (payload: any): Promise <any> => {
   })
 }
 
+const fetchShipments = async(picklistBinIds: Array<string>, orderIds: Array<string>, originFacilityId: string, statusId = ["SHIPMENT_SHIPPED", "SHIPMENT_PACKED"]): Promise<any> => {
+  let shipments = [];
+
+  const params = {
+    "entityName": "Shipment",
+    "inputFields": {
+      "primaryOrderId": orderIds,
+      "primaryOrderId_op": "in",
+      "picklistBinId": picklistBinIds,
+      "picklistBinId_op": "in",
+      "originFacilityId": originFacilityId,
+      "statusId": statusId,
+      "statusId_op": "in"
+    },
+    "fieldList": ["primaryOrderId", "picklistBinId", "shipmentId", "shipmentMethodTypeId", "statusId", "shipmentTypeId"],
+    "viewSize": 250,  // maximum records we could have
+    "distinct": "Y"
+  }
+
+  try {
+    // TODO: handle case when viewSize is more than 250 as performFind api does not return more than 250 records at once
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    })
+
+    if(!hasError(resp)) {
+      shipments = resp.data.docs;
+    } else if (!resp.data.error || (resp.data.error && resp.data.error !== "No record found")) {
+      return Promise.reject(resp.data.error);
+    }
+  } catch(err) {
+    logger.error('Failed to fetch shipments for orders', err)
+  }
+
+  return shipments;
+}
+
+const fetchShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => {
+  let shipmentPackages = [];
+  const params = {
+    "entityName": "ShipmentPackageRouteSegDetail",
+    "inputFields": {
+      "shipmentId": shipmentIds,
+      "shipmentId_op": "in",
+      "trackingCode_op": "empty",
+      "shipmentItemSeqId_op": "not-empty"
+    },
+    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId"],
+    "viewSize": 250,  // maximum records we could have
+    "distinct": "Y"
+  }
+
+  try {
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    })
+
+    if(!hasError(resp)) {
+      shipmentPackages = resp.data.docs;
+    } else if (!resp.data.error || (resp.data.error && resp.data.error !== "No record found")) {
+      return Promise.reject(resp.data.error);
+    }
+  } catch(err) {
+    logger.error('Failed to fetch shipment packages information', err)
+  }
+
+  return shipmentPackages;
+}
+
 const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
   try {
     // Get packing slip from the server
@@ -94,7 +167,7 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
       method: 'get',
       url: 'PackingSlip.pdf',
       params: {
-        shipmentIds
+        shipmentId: shipmentIds
       },
       responseType: "blob"
     })
@@ -196,6 +269,8 @@ const retryShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
 export const OrderService = {
   addShipmentBox,
   bulkShipOrders,
+  fetchShipments,
+  fetchShipmentPackages,
   findCompletedOrders,
   findInProgressOrders,
   findOpenOrders,

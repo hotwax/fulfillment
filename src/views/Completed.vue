@@ -240,6 +240,7 @@ export default defineComponent({
     async initialiseOrderQuery() {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
       completedOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
+      completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async updateOrderQuery(size: any) {
@@ -263,15 +264,19 @@ export default defineComponent({
 
               let shipmentIds = orderList.reduce((shipmentIds: any, order: any) => {
                 if (order.shipments) {
-                  shipmentIds.push(...Object.keys(order.shipments).filter((shipmentId: any) => order.shipments[shipmentId].statusId === "SHIPMENT_PACKED"))
+                  shipmentIds.push(...order.shipments.filter((shipment: any) => shipment.statusId === "SHIPMENT_PACKED"))
                 }
                 return shipmentIds;
               }, []);
 
               // Considering only unique shipment IDs
               // TODO check reason for redundant shipment IDs
-              shipmentIds = [...new Set(shipmentIds)] as Array<string>
+              shipmentIds = [...new Set(shipmentIds)] as Array<string>;
 
+              if (shipmentIds.length === 0) {
+                showToast(translate("No packed shipments to ship for these orders"))
+                return;
+              }
               const payload = {
                 shipmentId: shipmentIds
               }
@@ -282,7 +287,7 @@ export default defineComponent({
                 if(resp.status == 200 && !hasError(resp)) {
                   showToast(translate('Orders shipped successfully'))
                   // TODO: handle the case of data not updated correctly
-                  await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+                  await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
                   throw resp.data
                 }
