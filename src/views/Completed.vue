@@ -300,28 +300,6 @@ export default defineComponent({
         });
       return shipOrderAlert.present();
     },
-    async fetchOrderShipmentIds(orderList: any) {
-      // Implemented logic to fetch in batches
-      const batchSize = 50;
-      const clonedOrderList = JSON.parse(JSON.stringify(orderList));
-      const requestParams = [];
-      while(clonedOrderList.length) {
-        const picklistBinIds: Array<string> = [];
-        const orderIds: Array<string> = [];
-        // splitting the orders in batches to fetch the additional orders information
-        const orders = clonedOrderList.splice(0, batchSize);
-
-        orders.map((order: any) => {
-          picklistBinIds.push(order.picklistBinId)
-          orderIds.push(order.orderId)
-        })
-        requestParams.push({ picklistBinIds, orderIds })
-      }
-      // TODO Handle error casefetchShipmentsForOrders
-      const shipmentIdResps = await Promise.all(requestParams.map((params) => UtilService.findShipmentIdsForOrders(params.picklistBinIds, params.orderIds, ["SHIPMENT_PACKED"])))
-
-      return Object.assign({}, ...shipmentIdResps)
-    },
 
     async shippingPopover(ev: Event) {
       const popover = await popoverController.create({
