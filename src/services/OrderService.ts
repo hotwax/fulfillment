@@ -1,36 +1,37 @@
-import { api, hasError } from '@/adapter';
+import { api, client, hasError } from '@/adapter';
 import { translate } from '@/i18n';
 import logger from '@/logger';
 import { showToast } from '@/utils';
+import store from '@/store';
 
-const findOpenOrders = async (query: any): Promise <any>  => {
+const findOpenOrders = async (query: any): Promise<any> => {
   return api({
-   // TODO: We can replace this with any API
-    url: "solr-query", 
-    method: "post",
-    data: query
-  });
-}
-
-const findCompletedOrders = async (query: any): Promise <any>  => {
-  return api({
-   // TODO: We can replace this with any API
+    // TODO: We can replace this with any API
     url: "solr-query",
     method: "post",
     data: query
   });
 }
 
-const findInProgressOrders = async (query: any): Promise <any>  => {
+const findCompletedOrders = async (query: any): Promise<any> => {
   return api({
     // TODO: We can replace this with any API
-    url: "solr-query", 
+    url: "solr-query",
     method: "post",
     data: query
   });
 }
 
-const packOrder = async (payload: any): Promise <any> => {
+const findInProgressOrders = async (query: any): Promise<any> => {
+  return api({
+    // TODO: We can replace this with any API
+    url: "solr-query",
+    method: "post",
+    data: query
+  });
+}
+
+const packOrder = async (payload: any): Promise<any> => {
   return api({
     url: "/service/packStoreFulfillmentOrder",
     method: "post",
@@ -38,7 +39,7 @@ const packOrder = async (payload: any): Promise <any> => {
   })
 }
 
-const packOrders = async (payload: any): Promise <any> => {
+const packOrders = async (payload: any): Promise<any> => {
   return api({
     url: "/service/bulkPackStoreFulfillmentOrders",
     method: "post",
@@ -62,7 +63,7 @@ const unpackOrder = async (payload: any): Promise<any> => {
   })
 }
 
-const rejectOrderItem = async (payload: any): Promise <any> => {
+const rejectOrderItem = async (payload: any): Promise<any> => {
   return api({
     url: "rejectOrderItem",
     method: "post",
@@ -70,15 +71,26 @@ const rejectOrderItem = async (payload: any): Promise <any> => {
   });
 }
 
-const addShipmentBox = async (payload: any): Promise <any> => {
+const addShipmentBox = async (payload: any): Promise<any> => {
   return api({
     url: "addShipmentPackage",
     method: "post",
     data: payload
   });
 }
+const shipOrder = async (payload: any): Promise<any> => {
+  let baseURL = store.getters['user/getInstanceUrl'];
+  baseURL = baseURL && baseURL.startsWith('http') ? baseURL : `https://${baseURL}.hotwax.io/api/`;
+  return client({
+    url: 'shipOrder',
+    method: 'POST',
+    data: payload,
+    baseURL,
+    headers: { "Content-Type": "multipart/form-data" },
+  })
+}
 
-const updateOrder = async (payload: any): Promise <any> => {
+const updateOrder = async (payload: any): Promise<any> => {
   return api({
     url: "updateOrder",
     method: "post",
@@ -87,7 +99,7 @@ const updateOrder = async (payload: any): Promise <any> => {
   })
 }
 
-const fetchShipments = async(picklistBinIds: Array<string>, orderIds: Array<string>, originFacilityId: string, statusId = ["SHIPMENT_SHIPPED", "SHIPMENT_PACKED"]): Promise<any> => {
+const fetchShipments = async (picklistBinIds: Array<string>, orderIds: Array<string>, originFacilityId: string, statusId = ["SHIPMENT_SHIPPED", "SHIPMENT_PACKED"]): Promise<any> => {
   let shipments = [];
 
   const params = {
@@ -114,19 +126,19 @@ const fetchShipments = async(picklistBinIds: Array<string>, orderIds: Array<stri
       params
     })
 
-    if(!hasError(resp)) {
+    if (!hasError(resp)) {
       shipments = resp.data.docs;
     } else if (!resp.data.error || (resp.data.error && resp.data.error !== "No record found")) {
       return Promise.reject(resp.data.error);
     }
-  } catch(err) {
+  } catch (err) {
     logger.error('Failed to fetch shipments for orders', err)
   }
 
   return shipments;
 }
 
-const fetchShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => {
+const fetchShipmentPackages = async (shipmentIds: Array<string>): Promise<any> => {
   let shipmentPackages = [];
   const params = {
     "entityName": "ShipmentPackageRouteSegDetail",
@@ -148,12 +160,12 @@ const fetchShipmentPackages = async(shipmentIds: Array<string>): Promise<any> =>
       params
     })
 
-    if(!hasError(resp)) {
+    if (!hasError(resp)) {
       shipmentPackages = resp.data.docs;
     } else if (!resp.data.error || (resp.data.error && resp.data.error !== "No record found")) {
       return Promise.reject(resp.data.error);
     }
-  } catch(err) {
+  } catch (err) {
     logger.error('Failed to fetch shipment packages information', err)
   }
 
@@ -181,18 +193,46 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
     // Open the file in new tab
     (window as any).open(pdfUrl, "_blank").focus();
 
-  } catch(err) {
+  } catch (err) {
     showToast(translate('Failed to print packing slip'))
     logger.error("Failed to load packing slip", err)
   }
 }
 
-const printShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
+const printShippingLabel = async (shipmentIds: Array<string>, focus = true): Promise<any> => {
   try {
     // Get packing slip from the server
     const resp: any = await api({
       method: 'get',
       url: 'ShippingLabel.pdf',
+      params: {
+        shipmentId: shipmentIds
+      },
+      responseType: "blob"
+    })
+
+    if (!resp || resp.status !== 200 || hasError(resp)) {
+      throw resp.data;
+    }
+
+    // Generate local file URL for the blob received
+    const pdfUrl = window.URL.createObjectURL(resp.data);
+    // Open the file in new tab
+    (window as any).open(pdfUrl, "_blank").focus();
+
+  } catch (err) {
+    showToast(translate('Failed to print shipping label'))
+    logger.error("Failed to load shipping label", err)
+  }
+}
+
+
+const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
+  try {
+    // Get packing slip from the server
+    const resp: any = await api({
+      method: 'get',
+      url: 'LabelAndPackingSlip.pdf',
       params: {
         shipmentIds
       },
@@ -208,12 +248,11 @@ const printShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
     // Open the file in new tab
     (window as any).open(pdfUrl, "_blank").focus();
 
-  } catch(err) {
-    showToast(translate('Failed to print shipping label'))
-    logger.error("Failed to load shipping label", err)
+  } catch (err) {
+    showToast(translate('Failed to print shipping label and packing slip'))
+    logger.error("Failed to load shipping label and packing slip", err)
   }
 }
-
 const printPicklist = async (picklistId: string): Promise<any> => {
   try {
     // Get picklist from the server
@@ -235,35 +274,20 @@ const printPicklist = async (picklistId: string): Promise<any> => {
     // Open the file in new tab
     (window as any).open(pdfUrl, "_blank").focus();
 
-  } catch(err) {
+  } catch (err) {
     showToast(translate('Failed to print picklist'))
     logger.error("Failed to print picklist", err)
   }
 }
 
 const retryShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
-  try {
-    const resp: any = await api({
-      method: 'get',
-      url: 'retryShippingLabel',  // TODO: update the api
-      params: {
-        shipmentIds
-      },
-      responseType: "blob"
-    })
-
-    if (!resp || resp.status !== 200 || hasError(resp)) {
-      throw resp.data;
+  return api({
+    method: 'get',
+    url: 'retryShippingLabel',  // TODO: update the api
+    params: {
+      shipmentIds
     }
-
-    // Generate local file URL for the blob received
-    const pdfUrl = window.URL.createObjectURL(resp.data);
-    // Open the file in new tab
-    (window as any).open(pdfUrl, "_blank").focus();
-  } catch(err) {
-    showToast(translate('Failed to regenerate shipping label'))
-    logger.error("Failed to load shipping label", err)
-  }
+  })
 }
 
 export const OrderService = {
@@ -279,8 +303,10 @@ export const OrderService = {
   printPackingSlip,
   printPicklist,
   printShippingLabel,
+  printShippingLabelAndPackingSlip,
   rejectOrderItem,
   retryShippingLabel,
+  shipOrder,
   unpackOrder,
   updateOrder
 }

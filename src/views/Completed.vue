@@ -102,7 +102,7 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ $t("Shipped") }}</ion-button>
-                <ion-button  :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" v-else>{{ $t("Ship Now") }}</ion-button>
+                <ion-button  :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="shipOrder(order)" v-else>{{ $t("Ship Now") }}</ion-button>
                 <!-- TODO: implemented support to make the buttons functional -->
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" v-if="order.missingLabelImage" fill="outline" @click="retryShippingLabel(order)">{{ $t("Retry Generate Label") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" v-else fill="outline" @click="printShippingLabel(order)">{{ $t("Print Shipping Label") }}</ion-button>
@@ -259,11 +259,54 @@ export default defineComponent({
       completedOrdersQuery.viewSize = size
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
+    async shipOrder(order: any) {
+
+      const packedShipments = order.shipments.filter((shipment: any) => shipment.statusId === "SHIPMENT_PACKED");
+      
+      if (packedShipments.length === 0) {
+        showToast(translate('There are no packed shipments. Failed to ship order.'))
+        return;
+      }
+      const shipmentIds = new Set();
+      let index = 0;
+
+      const payload = packedShipments.reduce((formData: any, shipment: any) => {
+
+        if (!shipmentIds.has(shipment.shipmentId)) {
+          formData.append('shipmentId_o_' + index, shipment.shipmentId)
+          formData.append('statusId_o_' + index, "SHIPMENT_SHIPPED")
+          formData.append('shipmentTypeId_o_' + index, shipment.shipmentTypeId)
+          formData.append('_rowSubmit_o_' + index, "Y")
+          index++;
+        }
+
+        return formData;
+      }, new FormData())
+
+      try {
+        const resp = await OrderService.shipOrder(payload)
+
+        if(!hasError(resp)) {
+          showToast(translate('Order shipped successfully'))
+          // TODO: handle the case of data not updated correctly
+          await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+        } else {
+          throw resp.data
+        }
+      } catch(err) {
+        logger.error('Failed to ship order', err)
+        showToast(translate('Failed to ship order'))
+      }
+
+    },
     async bulkShipOrders() {
+      const packedOrdersCount = this.completedOrders.list.filter((order: any) => {
+        return this.hasPackedShipments(order);
+      }).length;
       const shipOrderAlert = await alertController
         .create({
            header: this.$t("Ship orders"),
-           message: this.$t("You are shipping orders. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this orders.", {count: this.completedOrders.list.length, space: '<br /><br />'}),
+           message: this.$tc("You are shipping orders. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this orders?", {count: packedOrdersCount, space: '<br /><br />'}),
            buttons: [{
             role: "cancel",
             text: this.$t("Cancel"),
@@ -487,14 +530,24 @@ export default defineComponent({
     async retryShippingLabel(order: any) {
       // Getting all the shipmentIds from shipmentPackages, as we only need to pass those shipmentIds for which label is missing
       // In shipmentPackages only those shipmentInformation is available for which shippingLabel is missing
-      const shipmentIds = Object.keys(order.shipmentPackages)
-      await OrderService.retryShippingLabel(shipmentIds)
+      const shipmentIds = order.shipmentPackages.map((shipmentPackage: any) => shipmentPackage.shipmentId);
+      // TODO Handle error case
+      const resp = await OrderService.retryShippingLabel(shipmentIds)
+      if (!hasError(resp)) {
+        showToast(translate("Shipping Label generated successfully"))
+        // TODO fetch specific order
+        this.initialiseOrderQuery();
+      } else {
+        showToast(translate("Failed to generate shipping label"))
+      }
     },
     async printPackingSlip(order: any) {
-      await OrderService.printPackingSlip(order.shipmentIds)
+      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
+      await OrderService.printPackingSlip(shipmentIds);
     },
     async printShippingLabel(order: any) {
-      await OrderService.printShippingLabel(order.shipmentIds)
+      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
+      await OrderService.printShippingLabel(shipmentIds)
     }
   },
   setup() {

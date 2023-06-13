@@ -315,29 +315,28 @@ export default defineComponent({
               }
 
               emitter.emit('presentLoader');
-
-              if(data.includes('printPackingSlip')) {
-                OrderService.printPackingSlip(order.shipmentIds)
-              }
-
-              if(data.includes('printShippingLabel')) {
-                OrderService.printShippingLabel(order.shipmentIds)
-              }
-
               try {
                 const resp = await OrderService.packOrder(params);
                 if (resp.status === 200 && !hasError(resp)) {
                   showToast(translate('Order packed successfully'));
-                  // TODO: handle the case of fetching in progress orders after packing an order
-                  // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
-                  await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
                 } else {
                   throw resp.data
                 }
+                if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
+                  await OrderService.printShippingLabelAndPackingSlip(order.shipmentIds)
+                } else if(data.includes('printPackingSlip')) {
+                  await OrderService.printPackingSlip(order.shipmentIds)
+                } else if(data.includes('printShippingLabel')) {
+                  await OrderService.printShippingLabel(order.shipmentIds)
+                }
+                // TODO: handle the case of fetching in progress orders after packing an order
+                // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
+                await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery()]);
               } catch (err) {
                 showToast(translate('Failed to pack order'))
                 logger.error('Failed to pack order', err)
               }
+
               emitter.emit('dismissLoader');
             }
           }]
@@ -388,28 +387,27 @@ export default defineComponent({
               // TODO check reason for redundant shipment IDs
               const shipmentIds = [...new Set(orderList.map((order: any) => order.shipmentIds).flat())] as Array<string>
 
-              // TODO: need to check that do we need to pass all the shipmentIds for an order or just need to pass
-              // the associated ids, currently passing the associated shipmentId
-              if(data.includes('printPackingSlip')) {
-                OrderService.printPackingSlip(shipmentIds)
-              }
-
-              if(data.includes('printShippingLabel')) {
-                OrderService.printShippingLabel(shipmentIds)
-              }
-
               try {
                 const resp = await OrderService.packOrders({
                   shipmentIds
                 });
                 if (resp.status === 200 && !hasError(resp)) {
                   showToast(translate('Orders packed successfully'));
-                  // TODO: handle the case of fetching in progress orders after packing multiple orders
-                  // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
-                  await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
                 } else {
                   throw resp.data
                 }
+                // TODO: need to check that do we need to pass all the shipmentIds for an order or just need to pass
+                // the associated ids, currently passing the associated shipmentId
+                if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
+                  await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                } else if(data.includes('printPackingSlip')) {
+                  await OrderService.printPackingSlip(shipmentIds)
+                } else if(data.includes('printShippingLabel')) {
+                  await OrderService.printShippingLabel(shipmentIds)
+                }
+                  // TODO: handle the case of fetching in progress orders after packing multiple orders
+                  // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
+                await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery()])
               } catch (err) {
                 showToast(translate('Failed to pack orders'))
                 logger.error('Failed to pack orders', err)
@@ -744,10 +742,10 @@ export default defineComponent({
       inProgressOrdersQuery.queryString = queryString
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
     },
-    async updateOrderQuery(size: any) {
+    async updateOrderQuery(size?: any) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
 
-      inProgressOrdersQuery.viewSize = size
+      size && (inProgressOrdersQuery.viewSize = size)
       inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
     },
