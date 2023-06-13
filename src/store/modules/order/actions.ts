@@ -67,6 +67,13 @@ const actions: ActionTree<OrderState, RootState> = {
 
       // if for an order shipment information is not available then returning the same order information again
       if(!shipmentIdsForOrders[order.orderId]) {
+          // if there are no shipment for the order, there is some issue with the order
+          if (picklistBinIds.includes(order.picklistBinId) && orderIds.includes(order.orderId)) {
+            return {
+              ...order,
+              hasMissingInfo: true,
+            }
+          }
           return order
       }
 
@@ -134,9 +141,8 @@ const actions: ActionTree<OrderState, RootState> = {
       const shipmentbatches = await Promise.all(requestParams.map((params) => OrderService.fetchShipments(params.picklistBinIds, params.orderIds, this.state.user.currentFacility.facilityId)))
       // TODO simplify below logic by returning shipments list
       const shipments = shipmentbatches.flat();
-      const packedShipments = shipments.filter((shipment: any) => shipment.statusId === "SHIPMENT_PACKED")
 
-      const shipmentIds = [...new Set(packedShipments.map((shipment: any) => shipment.shipmentId))]
+      const shipmentIds = [...new Set(shipments.map((shipment: any) => shipment.shipmentId))]
       // Get packed shipmentIds
       let shipmentPackages = [] as any;
       if (shipmentIds.length > 0) {
