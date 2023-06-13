@@ -12,6 +12,7 @@ const orderModule: Module<OrderState, RootState> = {
       list: [],
       total: 0,
       query: {
+        viewIndex: 0,
         viewSize: process.env.VUE_APP_VIEW_SIZE,
         queryString: '',
         selectedShipmentMethods: []
@@ -21,6 +22,7 @@ const orderModule: Module<OrderState, RootState> = {
       list: [],
       total: 0,
       query: {
+        viewIndex: 0,
         viewSize: process.env.VUE_APP_VIEW_SIZE,
         queryString: '',
         selectedCarrierPartyIds: [],
@@ -31,6 +33,7 @@ const orderModule: Module<OrderState, RootState> = {
       list: [],
       total: 0,
       query: {
+        viewIndex: 0,
         viewSize: process.env.VUE_APP_VIEW_SIZE,
         selectedPicklists: [],
         queryString: ''

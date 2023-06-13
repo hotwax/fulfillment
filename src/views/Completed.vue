@@ -43,9 +43,9 @@
           </ion-item>
         </div>
         <div class="results">
-          <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ $t("Ship") }}</ion-button>
+          <ion-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo()" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ $t("Ship") }}</ion-button>
 
-          <ion-card class="order" v-for="(order, index) in completedOrders.list" :key="index">
+          <ion-card class="order" v-for="(order, index) in getCompletedOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
@@ -91,7 +91,7 @@
             <!-- TODO: implement functionality to mobile view -->
             <div class="mobile-only">
               <ion-item>
-                <ion-button fill="clear" >{{ $t("Ship Now") }}</ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="clear" >{{ $t("Ship Now") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -102,17 +102,20 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ $t("Shipped") }}</ion-button>
-                <ion-button v-else>{{ $t("Ship Now") }}</ion-button>
+                <ion-button  :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" v-else>{{ $t("Ship Now") }}</ion-button>
                 <!-- TODO: implemented support to make the buttons functional -->
-                <ion-button v-if="order.missingLabelImage" fill="outline" @click="retryShippingLabel(order)">{{ $t("Retry Generate Label") }}</ion-button>
-                <ion-button v-else fill="outline" @click="printShippingLabel(order)">{{ $t("Print Shipping Label") }}</ion-button>
-                <ion-button :disabled="true" fill="outline" @click="printPackingSlip(order)">{{ $t("Print Customer Letter") }}</ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" v-if="order.missingLabelImage" fill="outline" @click="retryShippingLabel(order)">{{ $t("Retry Generate Label") }}</ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" v-else fill="outline" @click="printShippingLabel(order)">{{ $t("Print Shipping Label") }}</ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="printPackingSlip(order)">{{ $t("Print Customer Letter") }}</ion-button>
               </div>
               <div class="desktop-only">
-                <ion-button :disabled="!hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
               </div>
             </div>
           </ion-card>
+          <ion-infinite-scroll @ionInfinite="loadMoreCompletedOrders($event)" threshold="100px" :disabled="!isCompletedOrderScrollable()">
+            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"/>
+          </ion-infinite-scroll>
         </div>
       </div>
       <!-- TODO: make mobile view functional -->
@@ -140,6 +143,8 @@ import {
   IonFabButton,
   IonHeader,
   IonIcon,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
   IonItem,
   IonLabel,
   IonMenuButton,
@@ -157,7 +162,8 @@ import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
-import { formatUtcDate, getFeature, hasError, showToast } from '@/utils'
+import { formatUtcDate, getFeature, showToast } from '@/utils'
+import { hasError } from '@/adapter'
 import Image from '@/components/Image.vue'
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
@@ -181,6 +187,8 @@ export default defineComponent({
     IonFabButton,
     IonHeader,
     IonIcon,
+    IonInfiniteScroll,
+    IonInfiniteScrollContent,
     IonItem,
     IonLabel,
     IonMenuButton,
@@ -210,13 +218,41 @@ export default defineComponent({
     })
   },
   async mounted() {
-    await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+    await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
   unmounted() {
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   methods: {
+    hasAnyPackedShipment(): boolean {
+      return this.completedOrders.list.some((order: any) => {
+        return order.shipments && order.shipments.some((shipment: any) => shipment.statusId === "SHIPMENT_PACKED");
+      })
+    },
+    hasAnyMissingInfo(): boolean {
+      return this.completedOrders.list.some((order: any) => {
+        return order.hasMissingShipmentInfo || order.hasMissingPackageInfo;
+      })
+    },
+    getCompletedOrders() {
+      return this.completedOrders.list.slice(0, (this.completedOrders.query.viewIndex + 1) * process.env.VUE_APP_VIEW_SIZE );
+    },
+    async loadMoreCompletedOrders(event: any) {
+      const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
+      completedOrdersQuery.viewIndex++;
+      await this.store.dispatch('order/updateCompletedOrderIndex', { ...completedOrdersQuery })
+      event.target.complete();
+    },
+    isCompletedOrderScrollable() {
+      return ((this.completedOrders.query.viewIndex + 1) * process.env.VUE_APP_VIEW_SIZE) <  this.completedOrders.query.viewSize;
+    },
+    async initialiseOrderQuery() {
+      const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
+      completedOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
+      completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+    },
     async updateOrderQuery(size: any) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
 
@@ -234,8 +270,25 @@ export default defineComponent({
           }, {
             text: this.$t("Ship"),
             handler: async () => {
+              let orderList = JSON.parse(JSON.stringify(this.completedOrders.list))
+
+              let shipmentIds = orderList.reduce((shipmentIds: any, order: any) => {
+                if (order.shipments) {
+                  shipmentIds.push(...order.shipments.filter((shipment: any) => shipment.statusId === "SHIPMENT_PACKED"))
+                }
+                return shipmentIds;
+              }, []);
+
+              // Considering only unique shipment IDs
+              // TODO check reason for redundant shipment IDs
+              shipmentIds = [...new Set(shipmentIds)] as Array<string>;
+
+              if (shipmentIds.length === 0) {
+                showToast(translate("No packed shipments to ship for these orders"))
+                return;
+              }
               const payload = {
-                shipmentId: this.completedOrders.list.map((order: any) => order.shipmentId)
+                shipmentId: shipmentIds
               }
 
               try {
@@ -244,7 +297,7 @@ export default defineComponent({
                 if(resp.status == 200 && !hasError(resp)) {
                   showToast(translate('Orders shipped successfully'))
                   // TODO: handle the case of data not updated correctly
-                  await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+                  await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
                   throw resp.data
                 }
@@ -428,7 +481,8 @@ export default defineComponent({
       return unpackOrderAlert.present();
     },
     hasPackedShipments(order: any) {
-      return Object.values(order.shipments).some((shipment: any) => shipment.statusId === 'SHIPMENT_PACKED')
+      // TODO check if ternary check is needed or we could handle on UI
+      return order.shipments ? Object.values(order.shipments).some((shipment: any) => shipment.statusId === 'SHIPMENT_PACKED') : {}
     },
     async retryShippingLabel(order: any) {
       // Getting all the shipmentIds from shipmentPackages, as we only need to pass those shipmentIds for which label is missing

@@ -110,7 +110,8 @@ import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import TimeZoneModal from '@/views/timezone-modal.vue'
 import { UserService } from '@/services/UserService';
-import { hasError, showToast } from '@/utils';
+import { showToast } from '@/utils';
+import { hasError } from '@/adapter';
 import { translate } from '@/i18n';
 import logger from '@/logger';
 

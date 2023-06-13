@@ -56,7 +56,8 @@ import {
 import { defineComponent } from "vue";
 import { closeOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
-import { hasError, showToast } from "@/utils";
+import { showToast } from "@/utils";
+import { hasError } from "@/adapter";
 import { translate } from "@/i18n";
 import { UtilService } from "@/services/UtilService";
 import emitter from "@/event-bus";

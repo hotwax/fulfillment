@@ -3,7 +3,7 @@ import RootState from '@/store/RootState'
 import OrderState from './OrderState'
 import emitter from '@/event-bus'
 import { OrderService } from '@/services/OrderService'
-import { hasError } from '@/utils'
+import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import { prepareOrderQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
@@ -11,80 +11,63 @@ import logger from '@/logger'
 
 
 const actions: ActionTree<OrderState, RootState> = {
-  async fetchInProgressOrdersAdditionalInformation({ commit, state }) {
+  async fetchInProgressOrdersAdditionalInformation({ commit, state }, payload = { viewIndex: 0 }) {
     // getting all the orders from state
     const cachedOrders = JSON.parse(JSON.stringify(state.inProgress.list)); // maintaining cachedOrders as to prepare the orders payload
     let inProgressOrders = JSON.parse(JSON.stringify(state.inProgress.list)); // maintaining inProgreesOrders as update the orders information once information in fetched
 
-    const requestParams = [];
+    const picklistBinIds: Array<string> = [];
+    const orderIds: Array<string> = [];
 
-    while(cachedOrders.length) {
-      const picklistBinIds: Array<string> = [];
-      const orderIds: Array<string> = [];
+    // splitting the orders in batches to fetch the additional orders information
+    const orders = cachedOrders.splice(payload.viewIndex * process.env.VUE_APP_VIEW_SIZE, process.env.VUE_APP_VIEW_SIZE)
 
-      // splitting the orders in batches to fetch the additional orders information
-      const orders = cachedOrders.splice(0, process.env.VUE_APP_VIEW_SIZE)
+    orders.map((order: any) => {
+      picklistBinIds.push(order.picklistBinId)
+      orderIds.push(order.orderId)
+    })
 
-      orders.map((order: any) => {
-        picklistBinIds.push(order.picklistBinId)
-        orderIds.push(order.orderId)
-      })
-
-      requestParams.push({ picklistBinIds, orderIds })
-    }
-
-    const shipmentIdResps = await Promise.all(requestParams.map((params) => UtilService.findShipmentIdsForOrders(params.picklistBinIds, params.orderIds)))
-    let shipmentIdsForOrders = {} as any
-    const shipmentIds = [] as any
+    try {
+      // maintaining an object containing information of shipmentIds for each order
+    const shipmentIdsForOrders = await UtilService.findShipmentIdsForOrders(picklistBinIds, orderIds);
 
     let shipmentPackagesByOrder = {} as any, itemInformationByOrder = {} as any, carrierPartyIdsByShipment = {} as any, carrierShipmentBoxType = {} as any
 
-    for (const resp of shipmentIdResps) {
-      // maintaining an object containing information of shipmentIds for each order
-      shipmentIdsForOrders = {
-        ...shipmentIdsForOrders,
-        ...resp
-      }
+    // storing all the shipmentIds for all the orders in an array to use furthur
+    const orderShipmentIds = [...(new Set(Object.values(shipmentIdsForOrders).flat()))] as Array<string>
 
-      // storing all the shipmentIds for all the orders in an array to use furthur
-      const orderShipmentIds = [...Object.values(resp).flat()] as Array<string>
-      shipmentIds.push(...Object.values(resp).flat())
+    // TODO: handle case when shipmentIds is empty
+    // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
+    const [shipmentPackagesByOrderInformation, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
 
-      // TODO: handle case when shipmentIds is empty
-      // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
-      const [shipmentPackagesByOrderInformation, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
+    // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
+    const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
 
-      // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
-      const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
+    shipmentPackagesByOrder = {
+      ...shipmentPackagesByOrder,
+      ...shipmentPackagesByOrderInformation
+    }
 
-      shipmentPackagesByOrder = {
-        ...shipmentPackagesByOrder,
-        ...shipmentPackagesByOrderInformation
-      }
+    itemInformationByOrder = {
+      ...itemInformationByOrder,
+      ...itemInformationByOrderInformation
+    }
 
-      itemInformationByOrder = {
-        ...itemInformationByOrder,
-        ...itemInformationByOrderInformation
-      }
+    carrierPartyIdsByShipment = {
+      ...carrierPartyIdsByShipment,
+      ...carrierPartyIdsByShipmentInformation
+    }
 
-      carrierPartyIdsByShipment = {
-        ...carrierPartyIdsByShipment,
-        ...carrierPartyIdsByShipmentInformation
-      }
-
-      carrierShipmentBoxType = {
-        ...carrierShipmentBoxType,
-        ...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
-      }
+    carrierShipmentBoxType = {
+      ...carrierShipmentBoxType,
+      ...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
     }
 
     inProgressOrders = inProgressOrders.map((order: any) => {
 
       // if for an order shipment information is not available then returning the same order information again
       if(!shipmentIdsForOrders[order.orderId]) {
-        return {
-          ...order
-        }
+          return order
       }
 
       order.items.map((item: any) => {
@@ -94,20 +77,11 @@ const actions: ActionTree<OrderState, RootState> = {
       })
 
       const orderItem = order.items[0];
-      const carrierPartyIds = [...new Set(shipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
+      const carrierPartyIds = [...new Set(orderShipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
 
       return {
-        customerId: orderItem.customerId,
-        customerName: orderItem.customerName,
-        orderId: orderItem.orderId,
-        orderDate: orderItem.orderDate,
-        reservedDatetime: orderItem.reservedDatetime,
-        groupValue: orderItem.picklistBinId,
-        picklistBinId: orderItem.picklistBinId,
+        ...order,
         shipmentIds: shipmentIdsForOrders[orderItem.orderId],
-        items: order.items,
-        shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
-        shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
         shipmentPackages: shipmentPackagesByOrder[orderItem.orderId],
         carrierPartyIds,
         shipmentBoxTypeByCarrierParty: carrierPartyIds.reduce((shipmentBoxType: any, carrierPartyId: any) => {
@@ -121,9 +95,103 @@ const actions: ActionTree<OrderState, RootState> = {
         }, {})
       }
     })
+    } catch(err) {
+      inProgressOrders = inProgressOrders.map((order: any) => {
+        orderIds.includes(order.orderId) && (order.hasMissingInfo = true);
+        return order;
+      });
+      logger.error('Failed to fetch shipmentIds for orders', err)
+    }
 
     // updating the state with the updated orders information
     commit(types.ORDER_INPROGRESS_UPDATED, {orders: inProgressOrders, total: state.inProgress.total})
+  },
+
+  async fetchCompletedOrdersAdditionalInformation({ commit, state }) {
+    // getting all the orders from state
+    const cachedOrders = JSON.parse(JSON.stringify(state.completed.list)); // maintaining cachedOrders as to prepare the orders payload
+    let completedOrders = JSON.parse(JSON.stringify(state.completed.list)); // maintaining completedOrders as update the orders information once information in fetched
+
+    // Split orders in batch of 40
+    const batchSize = 20;
+    const requestParams = [];
+    // fetch shipments for orders 
+    while(cachedOrders.length) {
+      const picklistBinIds: Array<string> = [];
+      const orderIds: Array<string> = [];
+
+      // splitting the orders in batches to fetch the additional orders information
+      const orders = cachedOrders.splice(0, batchSize)
+
+      orders.map((order: any) => {
+        picklistBinIds.push(order.picklistBinId)
+        orderIds.push(order.orderId)
+      })
+      requestParams.push({ picklistBinIds, orderIds })
+    }
+
+    try {
+      const shipmentbatches = await Promise.all(requestParams.map((params) => OrderService.fetchShipments(params.picklistBinIds, params.orderIds, this.state.user.currentFacility.facilityId)))
+      // TODO simplify below logic by returning shipments list
+      const shipments = shipmentbatches.flat();
+      const packedShipments = shipments.filter((shipment: any) => shipment.statusId === "SHIPMENT_PACKED")
+
+      const shipmentIds = [...new Set(packedShipments.map((shipment: any) => shipment.shipmentId))]
+      // Get packed shipmentIds
+      let shipmentPackages = [] as any;
+      if (shipmentIds.length > 0) {
+        try {
+            const shipmentIdBatches = [];
+            while(shipmentIds.length) {
+              shipmentIdBatches.push(shipmentIds.splice(0, batchSize))
+            }
+            const shipmentPackagesBatches = await Promise.all(shipmentIdBatches.map((shipmentIds) => OrderService.fetchShipmentPackages(shipmentIds)))
+            shipmentPackages = shipmentPackagesBatches.flat();
+          } catch(err) {
+            completedOrders = completedOrders.map((order: any) => {
+              order.hasMissingPackageInfo = true;
+              return order;
+            });
+            logger.error('Failed to fetch shipment packages for orders', err)
+          }
+      }
+
+      // Transforming the resp
+      completedOrders = completedOrders.map((order: any) => {
+
+        const orderShipments = shipments.filter((shipment: any) => order.orderId === shipment.primaryOrderId && shipment.picklistBinId === order.picklistBinId);
+
+        // if for an order shipment information is not available then returning the same order information again
+        if(!orderShipments || orderShipments.length === 0) {
+          return order
+        }
+
+        const currentShipmentPackages = orderShipments.reduce((currentShipmentPackages: any, shipment: any) => {
+          currentShipmentPackages.push(...shipmentPackages.filter((shipmentPackage: any) => shipmentPackage.shipmentId === shipment.shipmentId ));
+          return currentShipmentPackages;
+        }, []);
+
+        // If there is any shipment package with missing tracking code, retry shipping label
+        const missingLabelImage = currentShipmentPackages.length > 0;
+
+        return {
+          ...order,
+          shipments: orderShipments,
+          missingLabelImage,
+          shipmentPackages: currentShipmentPackages  // ShipmentPackages information is required when performing retryShippingLabel action
+        }
+      })
+    } catch(err) {
+      completedOrders = completedOrders.map((order: any) => {
+        //  TODO check if we need to check for picklistBinId as well
+        order.hasMissingShipmentInfo = true;
+        return order;
+      });
+      logger.error('Failed to fetch shipmentIds for orders', err)
+    }
+
+    // updating the state with the updated orders information
+    commit(types.ORDER_COMPLETED_UPDATED, { list: completedOrders, total: state.completed.total })
   },
 
   // get in-progress orders
@@ -164,6 +232,7 @@ const actions: ActionTree<OrderState, RootState> = {
         total = resp.data.grouped.picklistBinId.ngroups
         orders = resp.data.grouped.picklistBinId.groups
 
+        // TODO get only product visible
         this.dispatch('product/getProductInformation', { orders })
 
         orders = orders.map((order: any) => {
@@ -234,7 +303,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
     try {
       resp = await OrderService.findOpenOrders(orderQueryPayload);
-      if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
+      if (!hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
         total = resp.data.grouped.orderId.ngroups
         orders = resp.data.grouped.orderId.groups
         this.dispatch('product/getProductInformation', { orders })
@@ -254,7 +323,7 @@ const actions: ActionTree<OrderState, RootState> = {
     return resp;
   },
 
-  async findCompletedOrders ({ commit, state }, payload = {}) {
+  async findCompletedOrders ({ commit, dispatch, state }, payload = {}) {
     emitter.emit('presentLoader');
     let resp;
 
@@ -287,8 +356,6 @@ const actions: ActionTree<OrderState, RootState> = {
     const orderQueryPayload = prepareOrderQuery(params)
     let orders = [];
     let total = 0;
-    let shipments = {} as any;
-    let shipmentPackagesByOrder = {} as any;
 
     try {
       resp = await OrderService.findCompletedOrders(orderQueryPayload);
@@ -296,20 +363,7 @@ const actions: ActionTree<OrderState, RootState> = {
         total = resp.data.grouped.picklistBinId.ngroups
         orders = resp.data.grouped.picklistBinId.groups
         this.dispatch('product/getProductInformation', { orders })
-
-        const picklistBinIds: Array<string> = [];
-        const orderIds: Array<string> = [];
-
-        orders.map((order: any) => {
-          picklistBinIds.push(order.groupValue)
-          orderIds.push(order.doclist.docs[0].orderId)
-        })
-
-        const shipmentIds: Array<string> = [];
-
-        shipments = await UtilService.fetchShipmentsForOrders(picklistBinIds, orderIds);
-        shipments.length && Object.values(shipments).map((shipmentInformation: any) => Object.values(shipmentInformation).map((shipment: any) => shipmentIds.push(shipment.shipmentId)))
-        shipmentIds.length && (shipmentPackagesByOrder = await UtilService.fetchShipmentPackagesByOrders(shipmentIds))
+        
       } else {
         throw resp.data
       }
@@ -321,13 +375,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
     // Transforming the resp
     orders = orders.map((order: any) => {
-
-      let missingLabelImage = false;
       const orderItem = order.doclist.docs[0]; // basic information for the order
-
-      if(shipmentPackagesByOrder[orderItem.orderId]) {
-        missingLabelImage = Object.keys(shipmentPackagesByOrder[orderItem.orderId]).length > 0
-      }
 
       return {
         customerId: orderItem.customerId,
@@ -336,18 +384,20 @@ const actions: ActionTree<OrderState, RootState> = {
         orderDate: orderItem.orderDate,
         reservedDatetime: orderItem.reservedDatetime,
         groupValue: order.groupValue,
+        picklistBinId: orderItem.picklistBinId,
         items: order.doclist.docs,
         shipmentId: orderItem.shipmentId,
         shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
-        shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
-        shipments: shipments[orderItem.orderId],
-        missingLabelImage,
-        shipmentPackages: shipmentPackagesByOrder[orderItem.orderId]  // ShipmentPackages information is required when performing retryShippingLabel action
+        shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc
       }
     })
 
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, { ...completedOrderQuery })
     commit(types.ORDER_COMPLETED_UPDATED, {list: orders, total})
+
+    // fetching the additional information like shipmentRoute, carrierParty information
+    // TODO make it async and use skelatal pattern
+    await dispatch('fetchCompletedOrdersAdditionalInformation')
 
     emitter.emit('dismissLoader');
     return resp;
@@ -372,6 +422,16 @@ const actions: ActionTree<OrderState, RootState> = {
   async updateInProgressQuery({ commit, dispatch }, payload) {
     commit(types.ORDER_INPROGRESS_QUERY_UPDATED, payload)
     await dispatch('findInProgressOrders');
+  },
+
+  async updateInProgressIndex({ commit, dispatch }, payload) {
+    // TODO handle API failure
+    await dispatch('fetchInProgressOrdersAdditionalInformation', { viewIndex: payload.viewIndex});
+    commit(types.ORDER_INPROGRESS_QUERY_UPDATED, payload)
+  },
+
+  async updateCompletedOrderIndex({ commit }, payload) {
+    commit(types.ORDER_COMPLETED_QUERY_UPDATED, payload)
   }
 }
 

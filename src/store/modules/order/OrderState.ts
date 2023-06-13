@@ -3,6 +3,7 @@ export default interface OrderState {
     list: any,
     total: number,
     query: {
+      viewIndex: number,
       viewSize: number,
       queryString: string,
       selectedShipmentMethods: Array<string>
@@ -12,6 +13,7 @@ export default interface OrderState {
     list: any,
     total: number,
     query: {
+      viewIndex: number,
       viewSize: number,
       queryString: string,
       selectedCarrierPartyIds: Array<string>,
@@ -22,6 +24,7 @@ export default interface OrderState {
     list: any,
     total: number,
     query: {
+      viewIndex: number,
       viewSize: number,
       selectedPicklists: Array<string>,
       queryString: string

@@ -88,6 +88,9 @@
               </div>
             </div> -->
           </ion-card>
+          <!-- <ion-infinite-scroll @ionInfinite="loadMoreOpenOrders($event)" threshold="100px" :disabled="!isOpenOrdersScrollable">
+            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"/>
+          </ion-infinite-scroll> -->
         </div>
       </div>
       <ion-fab v-if="openOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
@@ -114,7 +117,9 @@ import {
   IonFabButton, 
   IonHeader, 
   IonLabel, 
-  IonIcon, 
+  IonIcon,
+  // IonInfiniteScroll,
+  // IonInfiniteScrollContent,
   IonItem, 
   IonMenuButton, 
   IonNote, 
@@ -129,7 +134,8 @@ import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } f
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import Image from '@/components/Image.vue'
-import { formatUtcDate, getFeature, hasError } from '@/utils'
+import { formatUtcDate, getFeature } from '@/utils'
+import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
@@ -151,6 +157,8 @@ export default defineComponent({
     IonHeader,
     IonLabel,
     IonIcon,
+    // IonInfiniteScroll,
+    // IonInfiniteScrollContent,
     IonItem,
     IonMenuButton,
     IonNote,
@@ -199,9 +207,6 @@ export default defineComponent({
         component: AssignPickerModal
       });
       return assignPickerModal.present();
-    },
-    async findOpenOrders () {
-      await this.store.dispatch('order/findOpenOrders')
     },
     async fetchShipmentMethods() {
       let resp: any;
@@ -258,11 +263,17 @@ export default defineComponent({
 
       openOrdersQuery.viewSize = size
       await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
-    }
+    },
+    async initialiseOrderQuery() {
+      const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
+      openOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
+      openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
+    },
   },
   async mounted () {
     emitter.on('updateOrderQuery', this.updateOrderQuery)
-    await Promise.all([this.findOpenOrders(), this.fetchShipmentMethods()]);
+    await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
   },
   unmounted() {
     emitter.off('updateOrderQuery', this.updateOrderQuery)

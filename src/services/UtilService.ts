@@ -1,7 +1,6 @@
-import { api, client } from '@/adapter';
+import { api, client, hasError } from '@/adapter';
 import logger from '@/logger';
 import store from '@/store';
-import { hasError } from '@/utils';
 
 const fetchShipmentMethods = async (query: any): Promise <any>  => {
   return api({
@@ -19,54 +18,8 @@ const fetchPicklistInformation = async (query: any): Promise <any>  => {
   });
 }
 
-const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: Array<string>): Promise<any> => {
+const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: Array<string>, statusId = ["SHIPMENT_APPROVED", "SHIPMENT_INPUT"]): Promise<any> => {
   let shipmentIdsForOrders = {};
-
-  const params = {
-    "entityName": "Shipment",
-    "inputFields": {
-      "primaryOrderId": orderIds,
-      "primaryOrderId_op": "in",
-      "picklistBinId": picklistBinIds,
-      "picklistBinId_op": "in",
-      "originFacilityId": store.state.user.currentFacility.facilityId,
-      "statusId": ["SHIPMENT_APPROVED", "SHIPMENT_INPUT"],
-      "statusId_op": "in"
-    },
-    "fieldList": ["shipmentId", "primaryOrderId"],
-    "viewSize": (orderIds.length * picklistBinIds.length) + 1,  // maximum records we have for orders
-    "distinct": "Y"
-  }
-
-  try {
-    // TODO: handle case when viewSize is more than 250 as performFind api does not return more than 250 records at once
-    const resp = await api({
-      url: "performFind",
-      method: "get",
-      params
-    })
-
-    if(resp.status == 200 && !hasError(resp) && resp.data.count) {
-      shipmentIdsForOrders = resp.data.docs.reduce((shipmentIdsForOrders: any, shipment: any) => {
-        if(shipmentIdsForOrders[shipment.primaryOrderId]) {
-          shipmentIdsForOrders[shipment.primaryOrderId].push(shipment.shipmentId)
-        } else {
-          shipmentIdsForOrders[shipment.primaryOrderId] = [shipment.shipmentId]
-        }
-        return shipmentIdsForOrders
-      }, {})
-    } else {
-      throw resp.data
-    }
-  } catch(err) {
-    logger.error('Failed to fetch shipmentIds for orders', err)
-  }
-
-  return shipmentIdsForOrders;
-}
-
-const fetchShipmentsForOrders = async(picklistBinIds: Array<string>, orderIds: Array<string>, statusId = ["SHIPMENT_SHIPPED", "SHIPMENT_PACKED"]): Promise<any> => {
-  let shipments = [];
 
   const params = {
     "entityName": "Shipment",
@@ -79,8 +32,8 @@ const fetchShipmentsForOrders = async(picklistBinIds: Array<string>, orderIds: A
       "statusId": statusId,
       "statusId_op": "in"
     },
-    "fieldList": ["primaryOrderId", "shipmentId", "shipmentMethodTypeId", "statusId", "shipmentTypeId"],
-    "viewSize": (orderIds.length * picklistBinIds.length) + 1,  // maximum records we have for orders
+    "fieldList": ["shipmentId", "primaryOrderId"],
+    "viewSize": 200,  // maximum records we have for orders
     "distinct": "Y"
   }
 
@@ -92,27 +45,26 @@ const fetchShipmentsForOrders = async(picklistBinIds: Array<string>, orderIds: A
       params
     })
 
-    if(resp.status == 200 && !hasError(resp) && resp.data.count) {
-      shipments = resp.data.docs.reduce((shipmentInformation: any, shipment: any) => {
-        if(shipmentInformation[shipment.primaryOrderId]) {
-          shipmentInformation[shipment.primaryOrderId][shipment.shipmentId] = shipment
+    if (!hasError(resp)) {
+      shipmentIdsForOrders = resp.data.docs.reduce((shipmentIdsForOrders: any, shipment: any) => {
+        if(shipmentIdsForOrders[shipment.primaryOrderId]) {
+          shipmentIdsForOrders[shipment.primaryOrderId].push(shipment.shipmentId)
         } else {
-          shipmentInformation[shipment.primaryOrderId] = {
-            [shipment.shipmentId]: shipment
-          }
+          shipmentIdsForOrders[shipment.primaryOrderId] = [shipment.shipmentId]
         }
-
-        return shipmentInformation
+        return shipmentIdsForOrders
       }, {})
-    } else {
-      throw resp.data
+    } else if (resp.data.error && resp.data.error !== "No record found") {
+      return Promise.reject(resp.data.error);
     }
   } catch(err) {
-    logger.error('Failed to fetch shipments for orders', err)
+    logger.error('Failed to fetch shipmentIds for orders', err)
+    return Promise.reject(err);
   }
 
-  return shipments;
+  return shipmentIdsForOrders;
 }
+
 
 const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => {
   let shipmentPackages = {};
@@ -143,8 +95,8 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
         }
         return shipmentForOrders
       }, {})
-    } else {
-      throw resp.data
+    } else if (resp.data.error && resp.data.error !== "No record found") {
+      return Promise.reject(resp.data.error);
     }
   } catch(err) {
     logger.error('Failed to fetch shipment packages information', err)
@@ -153,49 +105,6 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
   return shipmentPackages;
 }
 
-const fetchShipmentPackagesByOrders = async(shipmentIds: Array<string>): Promise<any> => {
-  let shipmentPackages = {};
-  const params = {
-    "entityName": "ShipmentPackageRouteSegDetail",
-    "inputFields": {
-      "shipmentId": shipmentIds,
-      "shipmentId_op": "in",
-      "trackingCode_op": "empty",
-      "shipmentItemSeqId_op": "not-empty"
-    },
-    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId"],
-    "viewSize": shipmentIds.length,
-    "distinct": "Y"
-  }
-
-  try {
-    const resp = await api({
-      url: "performFind",
-      method: "get",
-      params
-    })
-
-    if(resp.status == 200 && !hasError(resp) && resp.data.count) {
-      shipmentPackages = resp.data.docs.reduce((shipmentPackagesInformation: any, shipmentPackage: any) => {
-        if(shipmentPackagesInformation[shipmentPackage.primaryOrderId]) {
-          shipmentPackagesInformation[shipmentPackage.primaryOrderId][shipmentPackage.shipmentId] = shipmentPackage
-        } else {
-          shipmentPackagesInformation[shipmentPackage.primaryOrderId] = {
-            [shipmentPackage.shipmentId]: shipmentPackage
-          }
-        }
-
-        return shipmentPackagesInformation
-      }, {})
-    } else {
-      throw resp.data
-    }
-  } catch(err) {
-    logger.error('Failed to fetch shipment packages information', err)
-  }
-
-  return shipmentPackages;
-}
 
 const findCarrierPartyIdsForShipment = async(shipmentIds: Array<string>): Promise<any> => {
   let carrierPartyIdsByShipment = {};
@@ -392,8 +301,6 @@ export const UtilService = {
   fetchPartyInformation,
   fetchPicklistInformation,
   fetchRejectReasons,
-  fetchShipmentsForOrders,
-  fetchShipmentPackagesByOrders,
   findShipmentIdsForOrders,
   findShipmentItemInformation,
   fetchShipmentMethods,
