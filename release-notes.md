@@ -1,3 +1,15 @@
+# Release 1.5.0
+
+## What's Changed
+* Improved: show last brokered date for the orders (#126) by @adityasharma7 in https://github.com/hotwax/fulfillment-pwa/pull/133
+* Implemented: Lazy load related information as per the data viewed by User (#130) by @adityasharma7 in https://github.com/hotwax/fulfillment-pwa/pull/134
+* Implemented: logic to ship order, print shipping label, packing slip and retry shipping label (#131) by @adityasharma7 in https://github.com/hotwax/fulfillment-pwa/pull/135
+
+## New Contributors
+* @adityasharma7 made their first contribution in https://github.com/hotwax/fulfillment-pwa/pull/133
+
+**Full Changelog**: https://github.com/hotwax/fulfillment-pwa/compare/v1.4.0...v1.5.0
+
 # Release 1.4.0
 
 ## What's Changed
