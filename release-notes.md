@@ -1,3 +1,11 @@
+# Release 1.5.1
+
+## What's Changed
+* Fixed: shipmentId should be passed instead of complete shipment list for bulk ship orders (#131) by @adityasharma7 in https://github.com/hotwax/fulfillment-pwa/pull/136
+
+
+**Full Changelog**: https://github.com/hotwax/fulfillment-pwa/compare/v1.5.0...v1.5.1
+
 # Release 1.5.0
 
 ## What's Changed
