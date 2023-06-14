@@ -32,7 +32,7 @@
         <div class="results">
           <ion-button class="bulk-action desktop-only" fill="outline" size="large" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
 
-          <ion-card class="order" v-for="(orders, index) in openOrders.list" :key="index">
+          <ion-card class="order" v-for="(orders, index) in getOpenOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
@@ -84,9 +84,9 @@
               </div>
             </div> -->
           </ion-card>
-          <!-- <ion-infinite-scroll @ionInfinite="loadMoreOpenOrders($event)" threshold="100px" :disabled="!isOpenOrdersScrollable">
+          <ion-infinite-scroll @ionInfinite="loadMoreOpenOrders($event)" threshold="100px" :disabled="!isOpenOrdersScrollable()">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"/>
-          </ion-infinite-scroll> -->
+          </ion-infinite-scroll>
         </div>
       </div>
       <ion-fab v-if="openOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
@@ -114,8 +114,8 @@ import {
   IonHeader, 
   IonLabel, 
   IonIcon,
-  // IonInfiniteScroll,
-  // IonInfiniteScrollContent,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
   IonItem, 
   IonMenuButton,
   IonPage, 
@@ -152,8 +152,8 @@ export default defineComponent({
     IonHeader,
     IonLabel,
     IonIcon,
-    // IonInfiniteScroll,
-    // IonInfiniteScrollContent,
+    IonInfiniteScroll,
+    IonInfiniteScrollContent,
     IonItem,
     IonMenuButton,
     IonPage,
@@ -178,6 +178,18 @@ export default defineComponent({
     }
   },
   methods: {
+    getOpenOrders() {
+      return this.openOrders.list.slice(0, (this.openOrders.query.viewIndex + 1) * process.env.VUE_APP_VIEW_SIZE );
+    },
+    async loadMoreOpenOrders(event: any) {
+      const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
+      openOrdersQuery.viewIndex++;
+      await this.store.dispatch('order/updateOpenOrderIndex', { ...openOrdersQuery })
+      event.target.complete();
+    },
+    isOpenOrdersScrollable() {
+      return ((this.openOrders.query.viewIndex + 1) * process.env.VUE_APP_VIEW_SIZE) <  this.openOrders.query.viewSize;
+    },
     async updateSelectedShipmentMethods (method: string) {
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
 

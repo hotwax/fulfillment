@@ -435,9 +435,11 @@ const actions: ActionTree<OrderState, RootState> = {
     await dispatch('fetchInProgressOrdersAdditionalInformation', { viewIndex: payload.viewIndex});
     commit(types.ORDER_INPROGRESS_QUERY_UPDATED, payload)
   },
-
   async updateCompletedOrderIndex({ commit }, payload) {
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, payload)
+  },
+  async updateOpenOrderIndex({ commit }, payload) {
+    commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
   }
 }
 
