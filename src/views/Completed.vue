@@ -82,10 +82,6 @@
                   </ion-label>
                 </ion-item>
               </div>
-
-              <div class="product-metadata">
-                <ion-note>{{ getProductStock(item.productId) }} {{ $t("pieces in stock") }}</ion-note>
-              </div>
             </div>
 
             <!-- TODO: implement functionality to mobile view -->
@@ -148,7 +144,6 @@ import {
   IonItem,
   IonLabel,
   IonMenuButton,
-  IonNote,
   IonPage,
   IonSearchbar,
   IonThumbnail,
@@ -192,7 +187,6 @@ export default defineComponent({
     IonItem,
     IonLabel,
     IonMenuButton,
-    IonNote,
     IonPage,
     IonSearchbar,
     IonThumbnail,
@@ -211,7 +205,6 @@ export default defineComponent({
       completedOrders: 'order/getCompletedOrders',
       getProduct: 'product/getProduct',
       currentFacility: 'user/getCurrentFacility',
-      getProductStock: 'stock/getProductStock',
       currentEComStore: 'user/getCurrentEComStore',
       getPartyName: 'util/getPartyName',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc'

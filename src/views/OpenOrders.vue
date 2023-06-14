@@ -73,10 +73,6 @@
                     </ion-label>
                   </ion-item>
                 </div>
-                <div class="product-metadata">
-                  <!-- TODO: display QOH in place of ATP -->
-                  <ion-note>{{ getProductStock(order.productId) }} {{ $t('pieces in stock') }}</ion-note>
-                </div>
               </div>
             </div>
 
@@ -121,8 +117,7 @@ import {
   // IonInfiniteScroll,
   // IonInfiniteScrollContent,
   IonItem, 
-  IonMenuButton, 
-  IonNote, 
+  IonMenuButton,
   IonPage, 
   IonSearchbar, 
   IonThumbnail, 
@@ -161,7 +156,6 @@ export default defineComponent({
     // IonInfiniteScrollContent,
     IonItem,
     IonMenuButton,
-    IonNote,
     IonPage,
     IonSearchbar,
     IonThumbnail,
@@ -174,7 +168,6 @@ export default defineComponent({
       currentFacility: 'user/getCurrentFacility',
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
-      getProductStock: 'stock/getProductStock',
       currentEComStore: 'user/getCurrentEComStore',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc'
     })
