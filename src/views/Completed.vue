@@ -317,7 +317,12 @@ export default defineComponent({
 
               let shipmentIds = orderList.reduce((shipmentIds: any, order: any) => {
                 if (order.shipments) {
-                  shipmentIds.push(...order.shipments.filter((shipment: any) => shipment.statusId === "SHIPMENT_PACKED"))
+                  order.shipments.reduce((shipmentIds: any, shipment: any) => {
+                    if (shipment.statusId === "SHIPMENT_PACKED") {
+                      shipmentIds.push(shipment.shipmentId)
+                    }
+                    return shipmentIds;
+                  }, shipmentIds) 
                 }
                 return shipmentIds;
               }, []);
