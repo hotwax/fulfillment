@@ -199,7 +199,7 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
   }
 }
 
-const printShippingLabel = async (shipmentIds: Array<string>, focus = true): Promise<any> => {
+const printShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
   try {
     // Get packing slip from the server
     const resp: any = await api({

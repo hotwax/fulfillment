@@ -124,9 +124,6 @@
                 </div>
               </div>
 
-              <div class="product-metadata">
-                <ion-note>{{ getProductStock(item.productId) }} {{ $t("pieces in stock") }}</ion-note>
-              </div>
             </div>
 
             <div class="mobile-only">
@@ -177,7 +174,6 @@ import {
   IonInfiniteScrollContent,
   IonLabel,
   IonMenuButton,
-  IonNote,
   IonPage,
   IonSearchbar,
   IonSegment,
@@ -226,7 +222,6 @@ export default defineComponent({
     IonInfiniteScrollContent,
     IonLabel,
     IonMenuButton,
-    IonNote,
     IonPage,
     IonSearchbar,
     IonSegment,
@@ -244,7 +239,6 @@ export default defineComponent({
       currentFacility: 'user/getCurrentFacility',
       inProgressOrders: 'order/getInProgressOrders',
       getProduct: 'product/getProduct',
-      getProductStock: 'stock/getProductStock',
       rejectReasons: 'util/getRejectReasons',
       currentEComStore: 'user/getCurrentEComStore',
       userPreference: 'user/getUserPreference'
