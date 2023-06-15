@@ -274,6 +274,20 @@ const actions: ActionTree<OrderState, RootState> = {
     return resp;
   },
   
+  updateInProgressOrder ({ commit, state }, updatedOrder) {
+    const orders = state.inProgress.list.map((order: any) => {
+      if (updatedOrder.orderId === order.orderId && updatedOrder.picklistBinId === order.picklistBinId) {
+        return {
+          ...order,
+          ...updatedOrder
+        };
+      }
+      return order;
+    })
+
+    commit(types.ORDER_INPROGRESS_UPDATED, {orders, total: state.inProgress.total})
+  },
+
   // get open orders
   async findOpenOrders ({ commit, state }, payload = {}) {
     emitter.emit('presentLoader');
