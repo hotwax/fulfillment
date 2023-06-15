@@ -137,7 +137,7 @@
 
             <div class="actions">
               <div>
-                <ion-button :disabled="order.isModified || order.hasMissingInfo" @click="packOrder(order)">{{ $t("Pack") }}</ion-button>
+                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click="packOrder(order)">{{ $t("Pack") }}</ion-button>
                 <ion-button :disabled="order.hasMissingInfo" fill="outline" @click="save(order)">{{ $t("Save") }}</ion-button>
               </div>
             </div>
@@ -258,16 +258,20 @@ export default defineComponent({
     isIssueSegmentSelectedForItem(item: any) {
       return this.itemsIssueSegmentSelected.includes(`${item.orderId}-${item.orderItemSeqId}`)
     },
-    changeSegment(ev: CustomEvent, item: any, order: any) {
+    async changeSegment(ev: CustomEvent, item: any, order: any) {
       // when selecting the report segment for the first time defining the value for rejectReason,
       // as in current flow once moving to reject segment we can't pack an order
-      if(ev.detail.value === 'issue' && !item.rejectReason) {
+      if(ev.detail.value === 'issue') {
         item.rejectReason = this.rejectReasons[0].enumCode // setting the first reason as default
-        order.isModified = true
+        order.hasRejectedItem = true
+        this.itemsIssueSegmentSelected.push(`${item.orderId}-${item.orderItemSeqId}`)
+      } else {
+        delete item.rejectReason
+        order.hasRejectedItem = order.items.some((item: any) => item.rejectReason)
+        const itemIndex = this.itemsIssueSegmentSelected.indexOf(`${item.orderId}-${item.orderItemSeqId}`)
+        this.itemsIssueSegmentSelected.splice(itemIndex, 1)
       }
-
-      const itemIndex = this.itemsIssueSegmentSelected.indexOf(`${item.orderId}-${item.orderItemSeqId}`)
-      ev.detail.value === 'issue' ? this.itemsIssueSegmentSelected.push(`${item.orderId}-${item.orderItemSeqId}`) : this.itemsIssueSegmentSelected.splice(itemIndex, 1)
+      await this.store.dispatch('order/updateInProgressOrder', order)
     },
     async packagingPopover(ev: Event) {
       const popover = await popoverController.create({
@@ -483,7 +487,7 @@ export default defineComponent({
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
         let prefix = 'rtp'
-        if(item.rejectReason) {
+        if(this.isIssueSegmentSelectedForItem(item)) {
           prefix = 'rej'
           form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
         } else {
@@ -507,6 +511,12 @@ export default defineComponent({
         })
 
         if(!hasError(resp)) {
+          if (order.hasRejectedItem) {
+            this.updateOrderQuery()
+          } else {
+            order.isModified = false;
+            await this.store.dispatch('order/updateInProgressOrder', order)
+          }
           showToast(translate('Order updated successfully'))
         } else {
           throw resp.data;
@@ -517,22 +527,21 @@ export default defineComponent({
       }
     },
     save(order: any) {
+      if(order.hasRejectedItem) {
       const itemsToReject = order.items.filter((item: any) => item.rejectReason)
-
-      if(itemsToReject.length) {
         this.reportIssue(order, itemsToReject);
         return;
       }
-
-      this.updateOrder(order)
+      this.updateOrder(order);
     },
     updateRejectReason(ev: CustomEvent, item: any, order: any) {
       item.rejectReason = ev.detail.value;
-      order.isModified = true;
+      this.store.dispatch('order/updateInProgressOrder', order)
     },
     updateBox(ev: CustomEvent, item: any, order: any) {
       item.selectedBox = ev.detail.value;
       order.isModified = true;
+      this.store.dispatch('order/updateInProgressOrder', order)
     },
     async fetchPickersInformation() {
 
@@ -736,18 +745,16 @@ export default defineComponent({
       inProgressOrdersQuery.queryString = queryString
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
     },
-    async updateOrderQuery(size?: any) {
+    async updateOrderQuery(size?: any, queryString?: any) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
 
       size && (inProgressOrdersQuery.viewSize = size)
+      queryString && (inProgressOrdersQuery.queryString = '')
       inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
     },
     async initialiseOrderQuery() {
-      const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
-      inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
-      inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
+      await this.updateOrderQuery(process.env.VUE_APP_VIEW_SIZE, '')
     },
     async printPicklist(picklistId: string) {
       await OrderService.printPicklist(picklistId)
