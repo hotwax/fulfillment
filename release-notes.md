@@ -1,3 +1,14 @@
+# Release 1.6.0
+
+## What's Changed
+* Removed: code to get and show atp (#123) by @adityasharma7 in https://github.com/hotwax/fulfillment-pwa/pull/142
+* Implemented: infinite scroll on open orders page (#143) by @adityasharma7 in https://github.com/hotwax/fulfillment-pwa/pull/144
+* Fixed: Issue with report an issue on in progress page (#146) by @adityasharma7 in https://github.com/hotwax/fulfillment-pwa/pull/147
+
+
+**Full Changelog**: https://github.com/hotwax/fulfillment-pwa/compare/v1.5.1...v1.6.0
+
+
 # Release 1.5.1
 
 ## What's Changed
