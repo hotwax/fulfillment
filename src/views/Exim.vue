@@ -22,7 +22,7 @@
             {{ $t("Download orders that are packed and haven't been shipped yet. Use the downloaded file to send the packed order details to a carrier where shipping labels and tracking codes will be generated.") }}
           </ion-card-content>
           <div class="border-top">
-            <ion-button fill="clear">
+            <ion-button fill="clear" @click="downloadPackedOrders">
               {{ $t('Download') }}
               <ion-icon slot="end" :icon="downloadOutline" />
             </ion-button>
@@ -42,7 +42,7 @@
             {{ $t('Import shipped order details from an external system based on tracking codes. Orders that have tracking codes will automatically be shipped at the end of the day.') }}
           </ion-card-content>
           <div class="border-top">
-            <ion-button fill="clear">
+            <ion-button fill="clear" @click="uploadImportOrders">
               {{ $t('Import') }}
               <ion-icon slot="end" :icon="cloudUploadOutline" />
             </ion-button>
@@ -71,6 +71,7 @@ import {
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { cloudUploadOutline, downloadOutline  } from 'ionicons/icons'
+import { useRouter } from 'vue-router';
 
 export default defineComponent({
   name: 'Exim',
@@ -89,10 +90,21 @@ export default defineComponent({
     IonTitle,
     IonToolbar
   },
+  methods: {
+    uploadImportOrders() {
+      this.router.push('/upload-import-orders')
+    },
+    downloadPackedOrders() {
+      this.router.push('/download-packed-orders')
+    }
+  },
   setup() {
+    const router = useRouter();
+
     return {
       cloudUploadOutline,
-      downloadOutline
+      downloadOutline,
+      router
     }
   }
 });
