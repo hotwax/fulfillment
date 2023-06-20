@@ -7,6 +7,7 @@ import OpenOrders from "@/views/OpenOrders.vue"
 import Login from '@/views/Login.vue'
 import Settings from "@/views/Settings.vue"
 import store from '@/store'
+import Exim from "@/views/Exim.vue"
 
 const authGuard = (to: any, from: any, next: any) => {
   if (store.getters['user/isAuthenticated']) {
@@ -57,6 +58,12 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Login',
     component: Login,
     beforeEnter: loginGuard
+  },
+  {
+    path: "/exim",
+    name: "EXIM",
+    component: Exim,
+    beforeEnter: authGuard
   },
   {
     path: "/settings",
