@@ -8,6 +8,8 @@ import Login from '@/views/Login.vue'
 import Settings from "@/views/Settings.vue"
 import store from '@/store'
 import Exim from "@/views/Exim.vue"
+import UploadImportOrders from "@/views/UploadImportOrders.vue"
+import DownloadPackedOrders from "@/views/DownloadPackedOrders.vue"
 
 const authGuard = (to: any, from: any, next: any) => {
   if (store.getters['user/isAuthenticated']) {
@@ -63,6 +65,18 @@ const routes: Array<RouteRecordRaw> = [
     path: "/exim",
     name: "EXIM",
     component: Exim,
+    beforeEnter: authGuard
+  },
+  {
+    path: "/upload-import-orders",
+    name: "UploadImportOrders",
+    component: UploadImportOrders,
+    beforeEnter: authGuard
+  },
+  {
+    path: "/download-packed-orders",
+    name: "DownloadPackedOrders",
+    component: DownloadPackedOrders,
     beforeEnter: authGuard
   },
   {
