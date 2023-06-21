@@ -1,6 +1,7 @@
 import store from '@/store';
 import { toastController } from '@ionic/vue';
 import { DateTime } from 'luxon';
+import Papa from 'papaparse'
 
 // TODO Use separate files for specific utilities
 
@@ -51,4 +52,21 @@ const getFeature = (featureHierarchy: any, featureKey: string) => {
   return featureValue;
 }
 
-export { formatDate, formatUtcDate, getFeature, handleDateTimeInput, showToast, hasError }
+const parseCsv = async (file: File, options?: any) => {
+  return new Promise((resolve, reject) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function (results: any) {
+        if (results.errors.length) {
+          reject(results.error)
+        } else {
+          resolve(results.data)
+        }
+      },
+      ...options
+    });
+  })
+}
+
+export { formatDate, formatUtcDate, getFeature, handleDateTimeInput, showToast, hasError, parseCsv }

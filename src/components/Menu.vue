@@ -41,7 +41,7 @@ import {
 import { defineComponent, ref } from "vue";
 import { mapGetters } from "vuex";
 
-import { mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
+import { mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline } from "ionicons/icons";
 import { useStore } from "@/store";
 
 export default defineComponent({
@@ -99,6 +99,12 @@ export default defineComponent({
         url: "/completed",
         iosIcon: checkmarkDoneOutline,
         mdIcon: checkmarkDoneOutline,
+      },
+      {
+        title: "EXIM",
+        url: "/exim",
+        iosIcon: swapVerticalOutline,
+        mdIcon: swapVerticalOutline,
       },
       {
         title: "Settings",

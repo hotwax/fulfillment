@@ -179,7 +179,7 @@ export default defineComponent({
   },
   methods: {
     getOpenOrders() {
-      return this.openOrders.list.slice(0, (this.openOrders.query.viewIndex + 1) * process.env.VUE_APP_VIEW_SIZE );
+      return this.openOrders.list.slice(0, (this.openOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
     },
     async loadMoreOpenOrders(event: any) {
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
@@ -188,7 +188,7 @@ export default defineComponent({
       event.target.complete();
     },
     isOpenOrdersScrollable() {
-      return ((this.openOrders.query.viewIndex + 1) * process.env.VUE_APP_VIEW_SIZE) <  this.openOrders.query.viewSize;
+      return ((this.openOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any)) <  this.openOrders.query.viewSize;
     },
     async updateSelectedShipmentMethods (method: string) {
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))

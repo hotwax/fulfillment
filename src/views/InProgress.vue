@@ -253,7 +253,7 @@ export default defineComponent({
   },
   methods: {
     getInProgressOrders() {
-      return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * process.env.VUE_APP_VIEW_SIZE );
+      return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
     },
     isIssueSegmentSelectedForItem(item: any) {
       return this.itemsIssueSegmentSelected.includes(`${item.orderId}-${item.orderItemSeqId}`)
@@ -370,7 +370,7 @@ export default defineComponent({
               let orderList = JSON.parse(JSON.stringify(this.inProgressOrders.list))
               // fetch related shipmentIds when missing
               if (this.isInProgressOrderScrollable()) {
-                const remainingOrderIndex = (this.inProgressOrders.query.viewIndex + 1) * process.env.VUE_APP_VIEW_SIZE;
+                const remainingOrderIndex = (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any);
                 const shipmentIdsForOrders = await this.fetchOrderShipmentIds(orderList.slice(remainingOrderIndex));
                 orderList = orderList.map((order: any) => {
                   // if for an order shipment information is not available then returning the same order information again
@@ -635,7 +635,7 @@ export default defineComponent({
       event.target.complete();
     },
     isInProgressOrderScrollable() {
-      return ((this.inProgressOrders.query.viewIndex + 1) * process.env.VUE_APP_VIEW_SIZE) <  this.inProgressOrders.query.viewSize;
+      return ((this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any)) <  this.inProgressOrders.query.viewSize;
     },
     async updateSelectedPicklists(id: string) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))

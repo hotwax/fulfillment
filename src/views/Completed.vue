@@ -229,7 +229,7 @@ export default defineComponent({
       })
     },
     getCompletedOrders() {
-      return this.completedOrders.list.slice(0, (this.completedOrders.query.viewIndex + 1) * process.env.VUE_APP_VIEW_SIZE );
+      return this.completedOrders.list.slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
     },
     async loadMoreCompletedOrders(event: any) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
@@ -238,7 +238,7 @@ export default defineComponent({
       event.target.complete();
     },
     isCompletedOrderScrollable() {
-      return ((this.completedOrders.query.viewIndex + 1) * process.env.VUE_APP_VIEW_SIZE) <  this.completedOrders.query.viewSize;
+      return ((this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any)) <  this.completedOrders.query.viewSize;
     },
     async initialiseOrderQuery() {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
