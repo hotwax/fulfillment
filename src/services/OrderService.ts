@@ -127,9 +127,9 @@ const fetchShipments = async (picklistBinIds: Array<string>, orderIds: Array<str
     })
 
     if (!hasError(resp)) {
-      shipments = resp.data.docs;
-    } else if (!resp.data.error || (resp.data.error && resp.data.error !== "No record found")) {
-      return Promise.reject(resp.data.error);
+      shipments = resp?.data.docs;
+    } else if (!resp?.data.error || (resp.data.error && resp.data.error !== "No record found")) {
+      return Promise.reject(resp?.data.error);
     }
   } catch (err) {
     logger.error('Failed to fetch shipments for orders', err)
@@ -161,9 +161,9 @@ const fetchShipmentPackages = async (shipmentIds: Array<string>): Promise<any> =
     })
 
     if (!hasError(resp)) {
-      shipmentPackages = resp.data.docs;
-    } else if (!resp.data.error || (resp.data.error && resp.data.error !== "No record found")) {
-      return Promise.reject(resp.data.error);
+      shipmentPackages = resp?.data.docs;
+    } else if (!resp?.data.error || (resp.data.error && resp.data.error !== "No record found")) {
+      return Promise.reject(resp?.data.error);
     }
   } catch (err) {
     logger.error('Failed to fetch shipment packages information', err)

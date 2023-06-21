@@ -46,7 +46,7 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
     })
 
     if (!hasError(resp)) {
-      shipmentIdsForOrders = resp.data.docs.reduce((shipmentIdsForOrders: any, shipment: any) => {
+      shipmentIdsForOrders = resp?.data.docs.reduce((shipmentIdsForOrders: any, shipment: any) => {
         if(shipmentIdsForOrders[shipment.primaryOrderId]) {
           shipmentIdsForOrders[shipment.primaryOrderId].push(shipment.shipmentId)
         } else {
@@ -54,7 +54,7 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
         }
         return shipmentIdsForOrders
       }, {})
-    } else if (resp.data.error && resp.data.error !== "No record found") {
+    } else if (resp?.data.error && resp.data.error !== "No record found") {
       return Promise.reject(resp.data.error);
     }
   } catch(err) {
@@ -86,7 +86,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
       params
     })
 
-    if(resp.status == 200 && !hasError(resp) && resp.data.count) {
+    if(resp?.status == 200 && !hasError(resp) && resp.data.count) {
       shipmentPackages = resp.data.docs.reduce((shipmentForOrders: any, shipmentPackage: any) => {
         if(shipmentForOrders[shipmentPackage.primaryOrderId]) {
           shipmentForOrders[shipmentPackage.primaryOrderId].push(shipmentPackage)
@@ -95,7 +95,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
         }
         return shipmentForOrders
       }, {})
-    } else if (resp.data.error && resp.data.error !== "No record found") {
+    } else if (resp?.data.error && resp.data.error !== "No record found") {
       return Promise.reject(resp.data.error);
     }
   } catch(err) {
@@ -125,7 +125,7 @@ const findCarrierPartyIdsForShipment = async(shipmentIds: Array<string>): Promis
       params
     })
 
-    if(resp.status == 200 && !hasError(resp) && resp.data.count) {
+    if(resp?.status == 200 && !hasError(resp) && resp.data.count) {
       carrierPartyIdsByShipment = resp.data.docs.reduce((carrierPartyIdsByShipment: any, shipment: any) => {
         if(carrierPartyIdsByShipment[shipment.shipmentId]) {
           carrierPartyIdsByShipment[shipment.shipmentId].push(shipment)
@@ -135,7 +135,7 @@ const findCarrierPartyIdsForShipment = async(shipmentIds: Array<string>): Promis
         return carrierPartyIdsByShipment
       }, {})
     } else {
-      throw resp.data
+      throw resp?.data
     }
   } catch(err) {
     logger.error('Failed to fetch carrierPartyIds for shipment', err)
@@ -164,7 +164,7 @@ const findCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promis
       cache: true
     })
 
-    if(resp.status == 200 && !hasError(resp) && resp.data.count) {
+    if(resp?.status == 200 && !hasError(resp) && resp.data.count) {
       shipmentBoxType = resp.data.docs.reduce((shipmentBoxTypes: any, boxType: any) => {
         if(shipmentBoxTypes[boxType.partyId]) {
           shipmentBoxTypes[boxType.partyId].push(boxType.shipmentBoxTypeId)
@@ -174,7 +174,7 @@ const findCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promis
         return shipmentBoxTypes
       }, {})
     } else {
-      throw resp.data
+      throw resp?.data
     }
   } catch(err) {
     logger.error('Failed to fetch carrier shipment box type information', err)
@@ -202,7 +202,7 @@ const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<a
       params
     })
 
-    if(resp.status == 200 && !hasError(resp) && resp.data.count) {
+    if(resp?.status == 200 && !hasError(resp) && resp.data.count) {
       shipmentItemsInformation = resp.data.docs.reduce((shipmentItems: any, shipmentItem: any) => {
         if(shipmentItems[shipmentItem.orderId]) {
           shipmentItems[shipmentItem.orderId].push(shipmentItem)
@@ -212,7 +212,7 @@ const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<a
         return shipmentItems
       }, {})
     } else {
-      throw resp.data
+      throw resp?.data
     }
   } catch(err) {
     logger.error('Failed to fetch shipmentItem information', err)
