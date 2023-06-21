@@ -20,7 +20,7 @@ const actions: ActionTree<OrderState, RootState> = {
     const orderIds: Array<string> = [];
 
     // splitting the orders in batches to fetch the additional orders information
-    const orders = cachedOrders.splice(payload.viewIndex * process.env.VUE_APP_VIEW_SIZE, process.env.VUE_APP_VIEW_SIZE)
+    const orders = cachedOrders.splice(payload.viewIndex * (process.env.VUE_APP_VIEW_SIZE as any), process.env.VUE_APP_VIEW_SIZE)
 
     orders.map((order: any) => {
       picklistBinIds.push(order.picklistBinId)
