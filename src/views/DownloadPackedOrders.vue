@@ -168,7 +168,7 @@ export default defineComponent({
         }, {
           text: this.$t("Download"),
           handler: async () => {
-            const fileName = `PackedOrders-${this.currentFacility.facilityId}-${DateTime.now().toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)}.csv`
+            const fileName = `HCPackedOrders-${this.currentFacility.facilityId}-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`
             await jsonToCsv(downloadData, { download: true, name: fileName })
           }
         }]
