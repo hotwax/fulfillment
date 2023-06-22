@@ -35,13 +35,14 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { useStore } from "vuex";
+import { mapGetters, useStore } from "vuex";
 import { useRouter } from 'vue-router';
 import { IonCheckbox, IonPage, IonHeader, IonList, IonListHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonButton, alertController, IonIcon } from '@ionic/vue'
 import { pencilOutline } from 'ionicons/icons'
-import { parseCsv, parseJSON, showToast } from '@/utils';
+import { parseCsv, jsonToCsv, showToast } from '@/utils';
 import { translate } from "@/i18n";
 import logger from '@/logger';
+import { DateTime } from 'luxon';
 
 export default defineComponent({
   name: 'UploadImportOrders',
@@ -68,6 +69,11 @@ export default defineComponent({
       fileColumns: [] as Array<string>,
       downloadData: {} as any
     }
+  },
+  computed: {
+    ...mapGetters({
+      currentFacility: 'user/getCurrentFacility'
+    })
   },
   ionViewDidEnter() {
     // TODO: make api call to get the CSV file, instead of upload file option
@@ -129,7 +135,6 @@ export default defineComponent({
       } else {
         this.downloadData[field] = this.fieldMapping[field]
       }
-      console.log('download data', this.downloadData)
     },
     async download() {
       if(!Object.keys(this.downloadData).length) {
@@ -137,10 +142,13 @@ export default defineComponent({
         return;
       }
 
-      const uploadData = this.content.map((order: any) => {
-        return Object.keys(this.downloadData).map((property: string) => ({
-          [this.downloadData[property]]: order[property]
-        }))
+      const uploadData = [] as any
+
+      this.content.map((order: any) => {
+        uploadData.push(Object.keys(this.downloadData).reduce((orderInfo: any, property: string) => {
+          orderInfo[this.downloadData[property]] = order[property]
+          return orderInfo
+        }, {}))
       })
 
       const alert = await alertController.create({
@@ -152,8 +160,8 @@ export default defineComponent({
         }, {
           text: this.$t("Download"),
           handler: async () => {
-            const csv = await parseJSON(uploadData)
-            console.log('csv', csv)
+            const fileName = `PackedOrders-${this.currentFacility.facilityId}-${DateTime.now().toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)}.csv`
+            await jsonToCsv(uploadData, { download: true, name: fileName })
           }
         }]
       });
