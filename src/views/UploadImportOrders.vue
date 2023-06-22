@@ -113,10 +113,7 @@ export default defineComponent({
       }
 
       const uploadData = this.content.map((order: any) => ({
-        'orderId': '',
-        'orderIdType': 'SHOPIFY_ORD_NAME',
         'orderIdValue': order[this.fieldMapping.orderId],
-        'facilityId': '',
         'externalFacilityId': order[this.fieldMapping.facilityId],
         'trackingNumber': order[this.fieldMapping.trackingCode]
       }))
