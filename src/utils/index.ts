@@ -69,4 +69,8 @@ const parseCsv = async (file: File, options?: any) => {
   })
 }
 
-export { formatDate, formatUtcDate, getFeature, handleDateTimeInput, showToast, hasError, parseCsv }
+const parseJSON = async (data: any) => {
+  return await Papa.unparse(data);
+}
+
+export { formatDate, formatUtcDate, getFeature, handleDateTimeInput, showToast, hasError, parseCsv, parseJSON}
