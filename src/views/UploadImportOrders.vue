@@ -75,17 +75,23 @@ export default defineComponent({
   ionViewDidEnter() {
     this.file = {}
     this.content = []
-    this.fieldMapping = Object.keys(this.fields).reduce((fieldMapping: any, field: string) => {
-      fieldMapping[field] = ""
-      return fieldMapping;
-    }, {})
+    this.generateFieldMapping();
     // this.$refs.file.value = null;
   },
   methods: {
+    generateFieldMapping() {
+      this.fieldMapping = Object.keys(this.fields).reduce((fieldMapping: any, field: string) => {
+        fieldMapping[field] = ""
+        return fieldMapping;
+      }, {})
+    },
     async parse(event: any) {
       const file = event.target.files[0];
       try {
         if (file) {
+          // recreate fieldMapping object when the file is changed
+          this.generateFieldMapping();
+
           this.file = file;
           this.content = await parseCsv(file).then(res => res);
           this.fileColumns = Object.keys(this.content[0]);
