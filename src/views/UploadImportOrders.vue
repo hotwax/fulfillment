@@ -109,9 +109,12 @@ export default defineComponent({
       }
 
       const uploadData = this.content.map((order: any) => ({
-        orderId: order[this.fieldMapping.orderId],
-        facilityId: order[this.fieldMapping.facilityId],
-        trackingCode: order[this.fieldMapping.trackingCode]
+        'order-id': '',
+        'order-id-type': 'SHOPIFY_ORD_NAME',
+        'order-id-value': order[this.fieldMapping.orderId],
+        'facility-id': '',
+        'external-facility-id': order[this.fieldMapping.facilityId],
+        'tracking-number': order[this.fieldMapping.trackingCode]
       }))
 
       const fileName = this.file.name.replace(".csv", ".json");
