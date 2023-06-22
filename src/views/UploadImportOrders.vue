@@ -37,11 +37,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
-import { useStore } from "vuex";
+import { defineComponent } from 'vue';
 import { useRouter } from 'vue-router';
 import { IonPage, IonSelect, IonSelectOption, IonHeader, IonList, IonListHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonButton, alertController } from '@ionic/vue'
-import { ellipsisVerticalOutline, businessOutline, shirtOutline, sendOutline, checkboxOutline, calculatorOutline, cloudUploadOutline, arrowUndoOutline, chevronForwardOutline, timeOutline } from 'ionicons/icons'
 import { parseCsv, showToast } from '@/utils';
 import { translate } from "@/i18n";
 import { UploadService } from "@/services/UploadService"
@@ -77,17 +75,23 @@ export default defineComponent({
   ionViewDidEnter() {
     this.file = {}
     this.content = []
-    this.fieldMapping = Object.keys(this.fields).reduce((fieldMapping: any, field: string) => {
-      fieldMapping[field] = ""
-      return fieldMapping;
-    }, {})
+    this.generateFieldMapping();
     // this.$refs.file.value = null;
   },
   methods: {
+    generateFieldMapping() {
+      this.fieldMapping = Object.keys(this.fields).reduce((fieldMapping: any, field: string) => {
+        fieldMapping[field] = ""
+        return fieldMapping;
+      }, {})
+    },
     async parse(event: any) {
       const file = event.target.files[0];
       try {
         if (file) {
+          // recreate fieldMapping object when the file is changed
+          this.generateFieldMapping();
+
           this.file = file;
           this.content = await parseCsv(file).then(res => res);
           this.fileColumns = Object.keys(this.content[0]);
@@ -109,9 +113,9 @@ export default defineComponent({
       }
 
       const uploadData = this.content.map((order: any) => ({
-        orderId: order[this.fieldMapping.orderId],
-        facilityId: order[this.fieldMapping.facilityId],
-        trackingCode: order[this.fieldMapping.trackingCode]
+        'orderIdValue': order[this.fieldMapping.orderId],
+        'externalFacilityId': order[this.fieldMapping.facilityId],
+        'trackingNumber': order[this.fieldMapping.trackingCode]
       }))
 
       const fileName = this.file.name.replace(".csv", ".json");
@@ -154,23 +158,9 @@ export default defineComponent({
   },
   setup() {
     const router = useRouter();
-    const store = useStore();
-    const segmentSelected = ref('all');
     
     return {
-      checkboxOutline,
-      calculatorOutline,
-      ellipsisVerticalOutline,
-      sendOutline,
-      arrowUndoOutline,
-      businessOutline,
-      cloudUploadOutline,
-      chevronForwardOutline,
-      timeOutline,
-      shirtOutline,
-      segmentSelected,
-      router,
-      store,
+      router
     }
   }
 });
