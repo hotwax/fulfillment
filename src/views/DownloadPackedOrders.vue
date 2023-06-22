@@ -14,9 +14,10 @@
       <main>
         <ion-list>
           <ion-list-header>{{ $t("Select the fields you want to include in your export") }}</ion-list-header>
+          <ion-button fill="clear" @click="selectAll" >{{ $t('Select all') }}</ion-button>
 
           <ion-item :key="field" v-for="(value, field) in fieldMapping">
-            <ion-checkbox @ionChange="updateSelectedData(field)" slot="start"/>
+            <ion-checkbox :checked="selectedData[field]" @click="isFieldClicked=true" @ionChange="updateSelectedData(field)" slot="start"/>
             <ion-label>{{ field }}</ion-label>
             <ion-button v-if="value === field" fill="outline" @click="addCustomLabel(field)">{{ $t('Custom Label') }}</ion-button>
             <!-- Using multiple if's instead of wrapping in a single parent div, to style the component properly without adding any extra css -->
@@ -69,7 +70,8 @@ export default defineComponent({
       content: [] as any,
       fieldMapping: {} as any,
       fileColumns: [] as Array<string>,
-      selectedData: {} as any
+      selectedData: {} as any,
+      isFieldClicked: false
     }
   },
   computed: {
@@ -138,10 +140,13 @@ export default defineComponent({
       await alert.present();
     },
     updateSelectedData(field: any) {
-      if(this.selectedData[field]) {
-        delete this.selectedData[field]
-      } else {
-        this.selectedData[field] = this.fieldMapping[field]
+      if(this.isFieldClicked) {
+        if(this.selectedData[field]) {
+          delete this.selectedData[field]
+        } else {
+          this.selectedData[field] = this.fieldMapping[field]
+        }
+        this.isFieldClicked = false;
       }
     },
     async download() {
@@ -174,6 +179,9 @@ export default defineComponent({
         }]
       });
       return alert.present();
+    },
+    selectAll() {
+      this.selectedData = JSON.parse(JSON.stringify(this.fieldMapping))
     }
   },
   setup() {
