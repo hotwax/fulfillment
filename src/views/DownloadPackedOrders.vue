@@ -8,6 +8,7 @@
     </ion-header>
 
     <ion-content>
+      <!-- TODO: remove this option to upload file and make api call in ionViewWillEnter to get the csv file -->
       <input :placeholder="$t('Select CSV')" @change="parse" ref="file" class="ion-hide" type="file" id="downloadPackedOrders"/>
       <label for="downloadPackedOrders">{{ $t("Upload") }}</label>
       <main>
@@ -20,7 +21,9 @@
             <ion-button v-if="value === field" fill="outline" @click="addCustomLabel(field)">{{ $t('Custom Label') }}</ion-button>
             <!-- Using multiple if's instead of wrapping in a single parent div, to style the component properly without adding any extra css -->
             <ion-label v-if="value !== field" slot="end">{{ value }}</ion-label>
-            <ion-icon v-if="value !== field" slot="end" :icon="pencilOutline" @click="addCustomLabel(field)" />
+            <ion-button v-if="value !== field" slot="end" fill="clear" @click="addCustomLabel(field)">
+              <ion-icon :icon="pencilOutline" />
+            </ion-button>
           </ion-item>
         </ion-list>
 
@@ -88,6 +91,7 @@ export default defineComponent({
           this.content = await parseCsv(file).then(res => res);
           // get the column names from the file
           this.fileColumns = Object.keys(this.content[0]);
+          // generate default mappings for the columns
           this.fieldMapping = this.fileColumns.reduce((fieldMapping: any, field: string) => {
             fieldMapping[field] = field
             return fieldMapping;
