@@ -112,25 +112,30 @@ export default defineComponent({
             const value = data.customLabel.trim();
 
             // check if the provided label is already mapped to some value, if yes then ask user to provide unique label
-            if(Object.values(this.fieldMapping).includes(value)) {
+            if(Object.values(this.fieldMapping).includes(value) && this.fieldMapping[field] != value) {
               showToast(translate('Please provide unique labels'))
               return false;
             }
 
             this.fieldMapping[field] = value ? value : field;
+            // once the field value is changed and if that field is already selected, then updating the data as well
+            if(this.downloadData[field]) {
+              this.downloadData[field] = this.fieldMapping[field]
+            }
           }
         }],
         inputs: [{
           name: 'customLabel',
           type: 'text',
-          placeholder: translate('Custom Label')
+          placeholder: translate('Custom Label'),
+          value: this.fieldMapping[field]
         }]
       });
 
       await alert.present();
     },
     updateDownloadData(field: any) {
-      if(this.downloadData[field] && this.downloadData[field].length >= 0) {
+      if(this.downloadData[field]) {
         delete this.downloadData[field]
       } else {
         this.downloadData[field] = this.fieldMapping[field]
