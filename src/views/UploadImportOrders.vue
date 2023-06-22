@@ -37,11 +37,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
-import { useStore } from "vuex";
+import { defineComponent } from 'vue';
 import { useRouter } from 'vue-router';
 import { IonPage, IonSelect, IonSelectOption, IonHeader, IonList, IonListHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonButton, alertController } from '@ionic/vue'
-import { ellipsisVerticalOutline, businessOutline, shirtOutline, sendOutline, checkboxOutline, calculatorOutline, cloudUploadOutline, arrowUndoOutline, chevronForwardOutline, timeOutline } from 'ionicons/icons'
 import { parseCsv, showToast } from '@/utils';
 import { translate } from "@/i18n";
 import { UploadService } from "@/services/UploadService"
@@ -157,23 +155,9 @@ export default defineComponent({
   },
   setup() {
     const router = useRouter();
-    const store = useStore();
-    const segmentSelected = ref('all');
     
     return {
-      checkboxOutline,
-      calculatorOutline,
-      ellipsisVerticalOutline,
-      sendOutline,
-      arrowUndoOutline,
-      businessOutline,
-      cloudUploadOutline,
-      chevronForwardOutline,
-      timeOutline,
-      shirtOutline,
-      segmentSelected,
-      router,
-      store,
+      router
     }
   }
 });
