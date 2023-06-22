@@ -16,7 +16,7 @@
           <ion-list-header>{{ $t("Select the fields you want to include in your export") }}</ion-list-header>
 
           <ion-item :key="field" v-for="(value, field) in fieldMapping">
-            <ion-checkbox @ionChange="updateDownloadData(field)" slot="start"/>
+            <ion-checkbox @ionChange="updateSelectedData(field)" slot="start"/>
             <ion-label>{{ field }}</ion-label>
             <ion-button v-if="value === field" fill="outline" @click="addCustomLabel(field)">{{ $t('Custom Label') }}</ion-button>
             <!-- Using multiple if's instead of wrapping in a single parent div, to style the component properly without adding any extra css -->
@@ -38,9 +38,8 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { mapGetters, useStore } from "vuex";
-import { useRouter } from 'vue-router';
-import { IonCheckbox, IonPage, IonHeader, IonList, IonListHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonButton, alertController, IonIcon } from '@ionic/vue'
+import { mapGetters } from "vuex";
+import { alertController, IonBackButton, IonButton, IonCheckbox, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonTitle, IonToolbar } from '@ionic/vue'
 import { pencilOutline } from 'ionicons/icons'
 import { parseCsv, jsonToCsv, showToast } from '@/utils';
 import { translate } from "@/i18n";
@@ -50,19 +49,19 @@ import { DateTime } from 'luxon';
 export default defineComponent({
   name: 'UploadImportOrders',
   components: {
-    IonCheckbox,
-    IonPage,
-    IonHeader,
-    IonToolbar,
     IonBackButton,
-    IonList,
-    IonListHeader,
-    IonTitle,
+    IonButton,
+    IonCheckbox,
     IonContent,
+    IonHeader,
+    IonIcon,
     IonItem,
     IonLabel,
-    IonButton,
-    IonIcon
+    IonList,
+    IonListHeader,
+    IonPage,
+    IonTitle,
+    IonToolbar
   },
   data() {
     return {
@@ -70,7 +69,7 @@ export default defineComponent({
       content: [] as any,
       fieldMapping: {} as any,
       fileColumns: [] as Array<string>,
-      downloadData: {} as any
+      selectedData: {} as any
     }
   },
   computed: {
@@ -123,8 +122,8 @@ export default defineComponent({
 
             this.fieldMapping[field] = value ? value : field;
             // once the field value is changed and if that field is already selected, then updating the data as well
-            if(this.downloadData[field]) {
-              this.downloadData[field] = this.fieldMapping[field]
+            if(this.selectedData[field]) {
+              this.selectedData[field] = this.fieldMapping[field]
             }
           }
         }],
@@ -138,31 +137,31 @@ export default defineComponent({
 
       await alert.present();
     },
-    updateDownloadData(field: any) {
-      if(this.downloadData[field]) {
-        delete this.downloadData[field]
+    updateSelectedData(field: any) {
+      if(this.selectedData[field]) {
+        delete this.selectedData[field]
       } else {
-        this.downloadData[field] = this.fieldMapping[field]
+        this.selectedData[field] = this.fieldMapping[field]
       }
     },
     async download() {
-      if(!Object.keys(this.downloadData).length) {
+      if(!Object.keys(this.selectedData).length) {
         showToast(translate('Please select at least one field to generate CSV'))
         return;
       }
 
-      const uploadData = [] as any
+      const downloadData = [] as any
 
       this.content.map((order: any) => {
-        uploadData.push(Object.keys(this.downloadData).reduce((orderInfo: any, property: string) => {
-          orderInfo[this.downloadData[property]] = order[property]
+        downloadData.push(Object.keys(this.selectedData).reduce((orderInfo: any, property: string) => {
+          orderInfo[this.selectedData[property]] = order[property]
           return orderInfo
         }, {}))
       })
 
       const alert = await alertController.create({
         header: this.$t("Download packed orders"),
-        message: this.$t("Make sure all the label provided are correct."),
+        message: this.$t("Make sure all the labels provided are correct."),
         buttons: [{
           text: this.$t("Cancel"),
           role: 'cancel',
@@ -170,7 +169,7 @@ export default defineComponent({
           text: this.$t("Download"),
           handler: async () => {
             const fileName = `PackedOrders-${this.currentFacility.facilityId}-${DateTime.now().toLocaleString(DateTime.DATETIME_FULL_WITH_SECONDS)}.csv`
-            await jsonToCsv(uploadData, { download: true, name: fileName })
+            await jsonToCsv(downloadData, { download: true, name: fileName })
           }
         }]
       });
@@ -178,13 +177,8 @@ export default defineComponent({
     }
   },
   setup() {
-    const router = useRouter();
-    const store = useStore();
-
     return {
-      pencilOutline,
-      router,
-      store,
+      pencilOutline
     }
   }
 });
@@ -195,9 +189,5 @@ export default defineComponent({
 main {
   max-width: 732px;
   margin: var(--spacer-sm) auto 0;
-}
-
-label {
-  cursor: pointer;
 }
 </style>
