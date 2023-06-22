@@ -24,10 +24,6 @@
           </ion-item>
         </ion-list>
 
-        <!-- Not allow duplicate values -->
-        <!-- By default value and field name are same -->
-        <!-- use JSON to CSV form ionic sdk PR 14-->
-        <!-- Allow empty selection of value in which the value will be same as label -->
         <ion-button size="large" :disabled="!content.length" color="medium" @click="download" expand="block">
           {{ $t("Download") }}
         </ion-button>
@@ -108,6 +104,13 @@ export default defineComponent({
           text: translate('Save'),
           handler: (data) => {
             const value = data.customLabel.trim();
+
+            // check if the provided label is already mapped to some value, if yes then ask user to provide unique label
+            if(Object.values(this.fieldMapping).includes(value)) {
+              showToast(translate('Please provide unique labels'))
+              return false;
+            }
+
             this.fieldMapping[field] = value ? value : field;
           }
         }],
