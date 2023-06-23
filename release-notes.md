@@ -6,7 +6,6 @@
 * Updated README.md file by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/150
 * Improved: column labels for import functionality and removed some unused imports by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/157
 * Implemented: support to export the packed orders in specific format(#154) by @ymaheshwari1 in https://github.com/hotwax/fulfillment-pwa/pull/156
-* Updated: app version for minor release (1.7.0) by @k2maan in https://github.com/hotwax/fulfillment-pwa/pull/158
 
 
 **Full Changelog**: https://github.com/hotwax/fulfillment-pwa/compare/v1.6.0...v1.7.0
