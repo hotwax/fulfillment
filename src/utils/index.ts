@@ -1,5 +1,7 @@
 import store from '@/store';
+import { JsonToCsvOption } from '@/types';
 import { toastController } from '@ionic/vue';
+import { saveAs } from 'file-saver';
 import { DateTime } from 'luxon';
 import Papa from 'papaparse'
 
@@ -69,4 +71,22 @@ const parseCsv = async (file: File, options?: any) => {
   })
 }
 
-export { formatDate, formatUtcDate, getFeature, handleDateTimeInput, showToast, hasError, parseCsv }
+const jsonToCsv = (file: any, options: JsonToCsvOption = {}) => {
+  const csv = Papa.unparse(file, {
+    ...options.parse
+  });
+  const encoding = {
+    type: String,
+    default: "utf-8",
+    ...options.encode
+  };
+  const blob = new Blob([csv], {
+    type: "application/csvcharset=" + JSON.stringify(encoding)
+  });
+  if (options.download) {
+    saveAs(blob, options.name ? options.name : "default.csv");
+  }
+  return blob;
+}
+
+export { formatDate, formatUtcDate, getFeature, handleDateTimeInput, showToast, hasError, parseCsv, jsonToCsv}
