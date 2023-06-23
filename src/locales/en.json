@@ -40,6 +40,7 @@
   "Failed to recycle outstanding orders": "Failed to recycle outstanding orders",
   "Failed to update facility": "Failed to update facility",
   "Failed to update order": "Failed to update order",
+  "File downloaded successfully": "File downloaded successfully",
   "File uploaded successfully": "File uploaded successfully",
   "Fulfillment": "Fulfillment",
   "has outstanding orders and in progress orders.": "{ storeName } has { outstandingOrdersCount } outstanding orders and { inProgressOrdersCount } in progress orders.",

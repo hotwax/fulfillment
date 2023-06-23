@@ -46,6 +46,7 @@ import { parseCsv, jsonToCsv, showToast } from '@/utils';
 import { translate } from "@/i18n";
 import logger from '@/logger';
 import { DateTime } from 'luxon';
+import { useRouter } from 'vue-router';
 
 export default defineComponent({
   name: 'UploadImportOrders',
@@ -140,6 +141,7 @@ export default defineComponent({
       await alert.present();
     },
     updateSelectedData(field: any) {
+      // Using isFieldClicked variable as when checked property is changed programatically it calls this method, resulting in wrong behaviour
       if(this.isFieldClicked) {
         if(this.selectedData[field]) {
           delete this.selectedData[field]
@@ -175,6 +177,7 @@ export default defineComponent({
           handler: async () => {
             const fileName = `HCPackedOrders-${this.currentFacility.facilityId}-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`
             await jsonToCsv(downloadData, { download: true, name: fileName })
+            this.router.back();
           }
         }]
       });
@@ -185,8 +188,11 @@ export default defineComponent({
     }
   },
   setup() {
+    const router = useRouter();
+
     return {
-      pencilOutline
+      pencilOutline,
+      router
     }
   }
 });
