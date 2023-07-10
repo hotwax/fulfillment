@@ -72,7 +72,7 @@
               <div class="product-info">
                 <ion-item lines="none">
                   <ion-thumbnail slot="start">
-                    <Image :src="getProduct(item.productId).mainImageUrl" />
+                    <ShopifyImg :src="getProduct(item.productId).mainImageUrl" />
                   </ion-thumbnail>
                   <ion-label>
                     <p class="overline">{{ item.productSku }}</p>
@@ -193,7 +193,7 @@ import Popover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
 import { formatUtcDate, getFeature, showToast } from '@/utils';
 import { hasError } from '@/adapter';
-import Image from '@/components/Image.vue'
+import { ShopifyImg } from 'dxp-components';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue';
 import { OrderService } from '@/services/OrderService';
 import emitter from '@/event-bus';
@@ -206,7 +206,7 @@ import logger from '@/logger';
 export default defineComponent({
   name: 'InProgress',
   components: {
-    Image,
+    ShopifyImg,
     IonButton,
     IonButtons,
     IonCard,
