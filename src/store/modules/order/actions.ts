@@ -214,7 +214,6 @@ const actions: ActionTree<OrderState, RootState> = {
         ...payload,
         queryString: inProgressQuery.queryString,
         viewSize: inProgressQuery.viewSize,
-        queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
         sort: 'orderDate asc',
         groupBy: 'picklistBinId',
         filters: {
@@ -352,7 +351,6 @@ const actions: ActionTree<OrderState, RootState> = {
       ...payload,
       queryString: completedOrderQuery.queryString,
       viewSize: completedOrderQuery.viewSize,
-      queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
       groupBy: 'picklistBinId',
       sort: 'orderDate asc',
       filters: {
