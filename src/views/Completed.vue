@@ -366,7 +366,6 @@ export default defineComponent({
     async fetchShipmentMethods() {
       const payload = prepareOrderQuery({
         viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
-        queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
         groupBy: 'picklistBinId',
         sort: 'orderDate asc',
         defType: "edismax",
@@ -408,7 +407,6 @@ export default defineComponent({
     async fetchCarrierPartyIds() {
       const payload = prepareOrderQuery({
         viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
-        queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
         groupBy: 'picklistBinId',
         sort: 'orderDate asc',
         defType: "edismax",
