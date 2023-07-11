@@ -11,7 +11,6 @@
         <ion-menu-toggle auto-hide="false" v-for="(page, index) in appPages" :key="index">
           <ion-item
             button
-            @click="selectedIndex = index"
             router-direction="root"
             :router-link="page.url"
             class="hydrated"
@@ -38,10 +37,11 @@ import {
   IonTitle,
   IonToolbar
 } from "@ionic/vue";
-import { defineComponent, ref } from "vue";
+import { computed, defineComponent } from "vue";
 import { mapGetters } from "vuex";
 import { mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline } from "ionicons/icons";
 import { useStore } from "@/store";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   name: "Menu",
@@ -57,29 +57,16 @@ export default defineComponent({
     IonTitle,
     IonToolbar
   },
-  created() {
-    // When open any specific screen it should show that screen selected
-    this.selectedIndex = this.appPages.findIndex((screen) => {
-      return screen.url === this.$router.currentRoute.value.path;
-    })
-  },
   computed: {
     ...mapGetters({
       isUserAuthenticated: 'user/isUserAuthenticated',
       currentFacility: 'user/getCurrentFacility',
     })
   },
-  watch:{
-    $route (to) {
-      // When logout and login it should point to Oth index
-      if (to.path === '/login') {
-        this.selectedIndex = 0;
-      }
-    },
-  }, 
   setup() {
     const store = useStore();
-    const selectedIndex = ref(0);
+    const router = useRouter();
+
     const appPages = [
       {
         title: "Open",
@@ -104,14 +91,21 @@ export default defineComponent({
         url: "/exim",
         iosIcon: swapVerticalOutline,
         mdIcon: swapVerticalOutline,
+        childRoutes: ["/download-packed-orders", "/upload-import-orders"] // defined child routes as to enable the correct menu when we are on a route that is not listed in the menu
       },
       {
         title: "Settings",
         url: "/settings",
         iosIcon: settingsOutline,
         mdIcon: settingsOutline,
-      },
+      }
     ];
+
+    const selectedIndex = computed(() => {
+      const path = router.currentRoute.value.path
+      return appPages.findIndex((screen) => screen.url === path || screen.childRoutes?.includes(path))
+    })
+
     return {
       selectedIndex,
       appPages,
@@ -121,7 +115,7 @@ export default defineComponent({
       settingsOutline,
       store
     };
-  },
+  }
 });
 </script>
 
