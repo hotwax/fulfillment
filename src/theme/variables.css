@@ -328,7 +328,11 @@ img {
   align-items: center;
   padding: var(--spacer-xs) 0;
   border-bottom: var(--border-medium);
-} 
+}
+
+.order-item:last-child {
+  border-bottom: none;
+}
 
 .product-metadata {
   padding-inline-end: var(--spacer-sm);
