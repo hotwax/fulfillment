@@ -215,6 +215,7 @@ export default defineComponent({
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
   unmounted() {
+    this.store.dispatch('order/clearCompletedOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   methods: {

@@ -429,6 +429,18 @@ const actions: ActionTree<OrderState, RootState> = {
     commit(types.ORDER_COMPLETED_CLEARED)
   },
 
+  async clearOpenOrders({ commit }) {
+    commit(types.ORDER_OPEN_CLEARED)
+  },
+
+  async clearInProgressOrders({ commit }) {
+    commit(types.ORDER_INPROGRESS_CLEARED)
+  },
+
+  async clearCompletedOrders({ commit }) {
+    commit(types.ORDER_COMPLETED_CLEARED)
+  },
+
   async updateOpenQuery({ commit, dispatch }, payload) {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
     await dispatch('findOpenOrders');
