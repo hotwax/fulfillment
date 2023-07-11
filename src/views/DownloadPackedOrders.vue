@@ -14,7 +14,7 @@
       <main>
         <ion-list>
           <ion-list-header>{{ $t("Select the fields you want to include in your export") }}</ion-list-header>
-          <ion-button fill="clear" @click="selectAll" >{{ $t('Select all') }}</ion-button>
+          <ion-button fill="clear" @click="selectAll" :disabled="!Object.keys(fieldMapping).length">{{ $t('Select all') }}</ion-button>
 
           <ion-item :key="field" v-for="(value, field) in fieldMapping">
             <ion-checkbox :checked="selectedData[field]" @click="isFieldClicked=true" @ionChange="updateSelectedData(field)" slot="start"/>
