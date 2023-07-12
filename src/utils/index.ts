@@ -1,5 +1,7 @@
+import { translate } from '@/i18n';
 import store from '@/store';
 import { JsonToCsvOption } from '@/types';
+import { Plugins } from '@capacitor/core';
 import { toastController } from '@ionic/vue';
 import { saveAs } from 'file-saver';
 import { DateTime } from 'luxon';
@@ -89,4 +91,14 @@ const jsonToCsv = (file: any, options: JsonToCsvOption = {}) => {
   return blob;
 }
 
-export { formatDate, formatUtcDate, getFeature, handleDateTimeInput, showToast, hasError, parseCsv, jsonToCsv}
+const copyToClipboard = async (value: string, text?: string) => {
+  const { Clipboard } = Plugins;
+
+  await Clipboard.write({
+    string: value,
+  }).then(() => {
+    text ? showToast(translate(text)) : showToast(translate("Copied", { value }));
+  });
+}
+
+export { copyToClipboard, formatDate, formatUtcDate, getFeature, handleDateTimeInput, showToast, hasError, parseCsv, jsonToCsv}
