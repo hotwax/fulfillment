@@ -42,7 +42,7 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip outline>
+                <ion-chip @click="copyToClipboard(orders.doclist.docs[0].orderId, 'Internal Id copied to clipboard')" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ orders.doclist.docs[0].orderId }}</ion-label>
                 </ion-chip>
@@ -129,7 +129,7 @@ import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } f
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import Image from '@/components/Image.vue'
-import { formatUtcDate, getFeature } from '@/utils'
+import { copyToClipboard, formatUtcDate, getFeature } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
@@ -288,6 +288,7 @@ export default defineComponent({
     const store = useStore();
 
     return{
+      copyToClipboard,
       formatUtcDate,
       getFeature,
       optionsOutline,

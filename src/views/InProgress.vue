@@ -44,7 +44,7 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip outline>
+                <ion-chip @click="copyToClipboard(order.orderId, 'Internal Id copied to clipboard')" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderId }}</ion-label>
                 </ion-chip>
@@ -191,7 +191,7 @@ import { defineComponent } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline, optionsOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
-import { formatUtcDate, getFeature, showToast } from '@/utils';
+import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils';
 import { hasError } from '@/adapter';
 import Image from '@/components/Image.vue'
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue';
@@ -773,6 +773,7 @@ export default defineComponent({
     const store = useStore();
 
     return {
+      copyToClipboard,
       addOutline,
       printOutline,
       ellipsisVerticalOutline,
