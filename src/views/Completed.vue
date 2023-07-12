@@ -9,8 +9,6 @@
         <ion-title v-else>{{ completedOrders.query.viewSize }} {{ $t('of') }} {{ completedOrders.total }} {{ completedOrders.total ? $t('order') : $t('orders') }}</ion-title>
 
         <ion-buttons slot="end">
-          <!-- TODO: implement support to upload CSV -->
-          <ion-button :disabled="true" fill="clear" @click="() => router.push('/upload-csv')">{{ $t("Upload CSV") }}</ion-button>
           <ion-menu-button menu="end" :disabled="!completedOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
