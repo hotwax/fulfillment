@@ -44,9 +44,9 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip @click="copyToClipboard(order.orderId, 'Internal Id copied to clipboard')" outline>
+                <ion-chip @click="copyToClipboard(order.orderName, 'Copied to clipboard')" outline>
                   <ion-icon :icon="pricetagOutline" />
-                  <ion-label>{{ order.orderId }}</ion-label>
+                  <ion-label>{{ order.orderName }}</ion-label>
                 </ion-chip>
               </div>
 
