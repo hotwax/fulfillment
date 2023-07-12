@@ -29,7 +29,7 @@
         <ion-item v-for="(picker, index) in pickers" :key="index" @click="selectPicker(picker.id)">
           <ion-label>
             {{ picker.name }}
-            <p>{{ picker.externalId }}</p>
+            <p>{{ picker.externalId ? picker.externalId : picker.id }}</p>
           </ion-label>
           <ion-checkbox :checked="isPickerSelected(picker.id)"/>
         </ion-item>
