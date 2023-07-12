@@ -27,7 +27,7 @@ import './theme/variables.css';
 
 import i18n from './i18n'
 import store from './store'
-import { dxpComponents } from 'dxp-components';
+import { dxpComponents } from '@hotwax/dxp-components'; 
 
 const app = createApp(App)
   .use(IonicVue, {

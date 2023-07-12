@@ -64,7 +64,7 @@
                 <div class="product-info">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <ShopifyImg :src="getProduct(order.productId).mainImageUrl" />
+                      <ShopifyImg :src="getProduct(order.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ order.productSku }}</p>
@@ -128,7 +128,7 @@ import { defineComponent } from 'vue';
 import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
-import { ShopifyImg } from 'dxp-components';
+import { ShopifyImg } from '@hotwax/dxp-components';
 import { formatUtcDate, getFeature } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
