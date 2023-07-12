@@ -29,7 +29,7 @@
         <ion-item v-for="(picker, index) in pickers" :key="index" @click="selectPicker(picker.id)">
           <ion-label>
             {{ picker.name }}
-            <p>{{ picker.id }}</p>
+            <p>{{ picker.externalId }}</p>
           </ion-label>
           <ion-checkbox :checked="isPickerSelected(picker.id)"/>
         </ion-item>
@@ -196,7 +196,7 @@ export default defineComponent({
         orderBy: "firstName ASC",
         filterByDate: "Y",
         distinct: "Y",
-        fieldList: ["firstName", "lastName", "partyId"]
+        fieldList: ["firstName", "lastName", "partyId", "externalId"]
       }
 
       try {
@@ -204,7 +204,8 @@ export default defineComponent({
         if (resp.status === 200 && !hasError(resp)) {
           this.pickers = resp.data.docs.map((picker) => ({
             name: picker.firstName+ ' ' +picker.lastName,
-            id: picker.partyId
+            id: picker.partyId,
+            externalId: picker.externalId
           }))
         } else {
           throw resp.data
