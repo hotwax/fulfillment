@@ -407,7 +407,9 @@ const actions: ActionTree<OrderState, RootState> = {
         items: order.doclist.docs,
         shipmentId: orderItem.shipmentId,
         shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
-        shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc
+        shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+        isGeneratingShippingLabel: false,
+        isGeneratingPackingSlip: false
       }
     })
 

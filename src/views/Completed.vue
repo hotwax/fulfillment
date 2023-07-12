@@ -99,8 +99,14 @@
                 <ion-button  :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="shipOrder(order)" v-else>{{ $t("Ship Now") }}</ion-button>
                 <!-- TODO: implemented support to make the buttons functional -->
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" v-if="order.missingLabelImage" fill="outline" @click="retryShippingLabel(order)">{{ $t("Retry Generate Label") }}</ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" v-else fill="outline" @click="printShippingLabel(order)">{{ $t("Print Shipping Label") }}</ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="printPackingSlip(order)">{{ $t("Print Customer Letter") }}</ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" v-else fill="outline" @click="printShippingLabel(order)">
+                  {{ $t("Print Shipping Label") }}
+                  <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
+                </ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="printPackingSlip(order)">
+                  {{ $t("Print Customer Letter") }}
+                  <ion-spinner color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
+                </ion-button>
               </div>
               <div class="desktop-only">
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
@@ -144,6 +150,7 @@ import {
   IonMenuButton,
   IonPage,
   IonSearchbar,
+  IonSpinner,
   IonThumbnail,
   IonTitle,
   IonToolbar,
@@ -187,6 +194,7 @@ export default defineComponent({
     IonMenuButton,
     IonPage,
     IonSearchbar,
+    IonSpinner,
     IonThumbnail,
     IonTitle,
     IonToolbar,
@@ -537,12 +545,28 @@ export default defineComponent({
       }
     },
     async printPackingSlip(order: any) {
+      // if the request to print packing slip is not yet completed, then clicking multiple times on the button
+      // should not do anything
+      if(order.isGeneratingPackingSlip) {
+        return;
+      }
+
       const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
+      order.isGeneratingPackingSlip = true;
       await OrderService.printPackingSlip(shipmentIds);
+      order.isGeneratingPackingSlip = false;
     },
     async printShippingLabel(order: any) {
+      // if the request to print shipping label is not yet completed, then clicking multiple times on the button
+      // should not do anything
+      if(order.isGeneratingShippingLabel) {
+        return;
+      }
+
       const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
+      order.isGeneratingShippingLabel = true;
       await OrderService.printShippingLabel(shipmentIds)
+      order.isGeneratingShippingLabel = false;
     }
   },
   setup() {

@@ -27,7 +27,10 @@
               {{ picklist.pickersName }}
               <p>{{ picklist.date }}</p>
             </ion-label>
-            <ion-button fill="outline" slot="end" @click="printPicklist(picklist.id)"><ion-icon :icon="printOutline" /></ion-button>
+            <ion-spinner color="primary" slot="end" v-if="picklist.isGeneratingPicklist" name="crescent" />
+            <ion-button v-else fill="outline" slot="end" @click="printPicklist(picklist)">
+              <ion-icon :icon="printOutline" />
+            </ion-button>
           </ion-item>
         </div>
 
@@ -181,6 +184,7 @@ import {
   IonSelect,
   IonSelectOption,
   IonSkeletonText,
+  IonSpinner,
   IonThumbnail,
   IonTitle,
   IonToolbar,
@@ -229,6 +233,7 @@ export default defineComponent({
     IonSelect,
     IonSelectOption,
     IonSkeletonText,
+    IonSpinner,
     IonThumbnail,   
     IonTitle,
     IonToolbar,
@@ -615,7 +620,8 @@ export default defineComponent({
               picklists.push({
                 id: picklist.picklistId,
                 pickersName: pickersName.join(', '),
-                date: DateTime.fromMillis(picklist.picklistDate).toLocaleString(DateTime.TIME_SIMPLE)
+                date: DateTime.fromMillis(picklist.picklistDate).toLocaleString(DateTime.TIME_SIMPLE),
+                isGeneratingPicklist: false  // used to display the spinner on the button when trying to generate picklist
               })
 
               return picklists
@@ -756,8 +762,10 @@ export default defineComponent({
     async initialiseOrderQuery() {
       await this.updateOrderQuery(process.env.VUE_APP_VIEW_SIZE, '')
     },
-    async printPicklist(picklistId: string) {
-      await OrderService.printPicklist(picklistId)
+    async printPicklist(picklist: any) {
+      picklist.isGeneratingPicklist = true;
+      await OrderService.printPicklist(picklist.id)
+      picklist.isGeneratingPicklist = false;
     }
   },
   async mounted () {
