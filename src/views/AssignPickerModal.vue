@@ -27,7 +27,10 @@
       <div v-if="!pickers.length">{{ 'No picker found' }}</div>
       <div v-else>
         <ion-item v-for="(picker, index) in pickers" :key="index" @click="selectPicker(picker.id)">
-          <ion-label>{{ picker.name }}</ion-label>
+          <ion-label>
+            {{ picker.name }}
+            <p>{{ picker.externalId ? picker.externalId : picker.id }}</p>
+          </ion-label>
           <ion-checkbox :checked="isPickerSelected(picker.id)"/>
         </ion-item>
       </div>
@@ -193,7 +196,7 @@ export default defineComponent({
         orderBy: "firstName ASC",
         filterByDate: "Y",
         distinct: "Y",
-        fieldList: ["firstName", "lastName", "partyId"]
+        fieldList: ["firstName", "lastName", "partyId", "externalId"]
       }
 
       try {
@@ -201,7 +204,8 @@ export default defineComponent({
         if (resp.status === 200 && !hasError(resp)) {
           this.pickers = resp.data.docs.map((picker) => ({
             name: picker.firstName+ ' ' +picker.lastName,
-            id: picker.partyId
+            id: picker.partyId,
+            externalId: picker.externalId
           }))
         } else {
           throw resp.data
