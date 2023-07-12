@@ -27,7 +27,10 @@
       <div v-if="!pickers.length">{{ 'No picker found' }}</div>
       <div v-else>
         <ion-item v-for="(picker, index) in pickers" :key="index" @click="selectPicker(picker.id)">
-          <ion-label>{{ picker.name }}</ion-label>
+          <ion-label>
+            {{ picker.name }}
+            <p>{{ picker.id }}</p>
+          </ion-label>
           <ion-checkbox :checked="isPickerSelected(picker.id)"/>
         </ion-item>
       </div>
