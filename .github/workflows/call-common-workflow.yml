@@ -13,4 +13,5 @@ jobs:
     uses: hotwax/dxp-components/.github/workflows/common.yml@main
     with:
       config-path: .github/labeler.yml
-    secrets: inherit
+    secrets:
+      envPAT: ${{ secrets.envPAT }}
