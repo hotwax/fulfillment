@@ -47,6 +47,7 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
 
     if (!hasError(resp)) {
       shipmentIdsForOrders = resp?.data.docs.reduce((shipmentIdsForOrders: any, shipment: any) => {
+        // creating key in this pattern as the same order can have multiple picklist bin and in that we need to find to which picklist bin shipment is associated
         const key = `${shipment.primaryOrderId}_${shipment.picklistBinId}`
         if(shipmentIdsForOrders[key]) {
           shipmentIdsForOrders[key].push(shipment.shipmentId)
@@ -89,6 +90,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
 
     if(resp?.status == 200 && !hasError(resp) && resp.data.count) {
       shipmentPackages = resp.data.docs.reduce((shipmentForOrders: any, shipmentPackage: any) => {
+        // creating key in this pattern as the same order can have multiple picklist bin and in that we need to find to which picklist bin shipment is associated
         const key = `${shipmentPackage.primaryOrderId}_${shipmentPackage.picklistBinId}`
         if(shipmentForOrders[key]) {
           shipmentForOrders[key].push(shipmentPackage)
