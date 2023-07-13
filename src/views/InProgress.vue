@@ -120,7 +120,7 @@
                     <ion-item lines="none">
                       <ion-label>{{ $t("Select issue") }}</ion-label>
                       <ion-select interface="popover" @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
-                        <ion-select-option v-for="reason in rejectReasons" :key="reason.enumCode" :value="reason.enumCode">{{ $t(reason.description) }}</ion-select-option>
+                        <ion-select-option v-for="reason in rejectReasons" :key="reason.enumId" :value="reason.enumId">{{ reason.description ? $t(reason.description) : reason.enumId }}</ion-select-option>
                       </ion-select>
                     </ion-item>
                   </div>
@@ -267,7 +267,7 @@ export default defineComponent({
       // when selecting the report segment for the first time defining the value for rejectReason,
       // as in current flow once moving to reject segment we can't pack an order
       if(ev.detail.value === 'issue') {
-        item.rejectReason = this.rejectReasons[0].enumCode // setting the first reason as default
+        item.rejectReason = this.rejectReasons[0].enumId // setting the first reason as default
         order.hasRejectedItem = true
         this.itemsIssueSegmentSelected.push(`${item.orderId}-${item.orderItemSeqId}`)
       } else {

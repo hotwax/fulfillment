@@ -14,7 +14,7 @@ const actions: ActionTree<UtilState, RootState> = {
         "inputFields": {
           "parentEnumTypeId": "REPORT_AN_ISSUE"
         },
-        "fieldList": ["enumCode", "description"],
+        "fieldList": ["enumId", "description"],
         "distinct": "Y",
         "entityName": "EnumTypeChildAndEnum",
         "viewSize": 20 // keeping view size 20 as considering that we will have max 20 reasons
