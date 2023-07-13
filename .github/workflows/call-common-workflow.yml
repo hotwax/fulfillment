@@ -9,5 +9,5 @@ on:
       
 
 jobs:
-  call-workflow-passing-data:
+  call-workflow-in-another-repo:
     uses: hotwax/dxp-components/.github/workflows/common.yml@main
