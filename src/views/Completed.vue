@@ -9,8 +9,6 @@
         <ion-title v-else>{{ completedOrders.query.viewSize }} {{ $t('of') }} {{ completedOrders.total }} {{ completedOrders.total ? $t('order') : $t('orders') }}</ion-title>
 
         <ion-buttons slot="end">
-          <!-- TODO: implement support to upload CSV -->
-          <ion-button :disabled="true" fill="clear" @click="() => router.push('/upload-csv')">{{ $t("Upload CSV") }}</ion-button>
           <ion-menu-button menu="end" :disabled="!completedOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
@@ -55,9 +53,9 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip outline>
+                <ion-chip @click="copyToClipboard(order.orderName, 'Copied to clipboard')" outline>
                   <ion-icon :icon="pricetagOutline" />
-                  <ion-label>{{ order.orderId }}</ion-label>
+                  <ion-label>{{ order.orderName }}</ion-label>
                 </ion-chip>
               </div>
 
@@ -101,8 +99,14 @@
                 <ion-button  :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="shipOrder(order)" v-else>{{ $t("Ship Now") }}</ion-button>
                 <!-- TODO: implemented support to make the buttons functional -->
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" v-if="order.missingLabelImage" fill="outline" @click="retryShippingLabel(order)">{{ $t("Retry Generate Label") }}</ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" v-else fill="outline" @click="printShippingLabel(order)">{{ $t("Print Shipping Label") }}</ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="printPackingSlip(order)">{{ $t("Print Customer Letter") }}</ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" v-else fill="outline" @click="printShippingLabel(order)">
+                  {{ $t("Print Shipping Label") }}
+                  <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
+                </ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="printPackingSlip(order)">
+                  {{ $t("Print Customer Letter") }}
+                  <ion-spinner color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
+                </ion-button>
               </div>
               <div class="desktop-only">
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
@@ -146,6 +150,7 @@ import {
   IonMenuButton,
   IonPage,
   IonSearchbar,
+  IonSpinner,
   IonThumbnail,
   IonTitle,
   IonToolbar,
@@ -157,7 +162,7 @@ import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
-import { formatUtcDate, getFeature, showToast } from '@/utils'
+import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter'
 import { ShopifyImg } from '@hotwax/dxp-components';
 import { UtilService } from '@/services/UtilService';
@@ -189,6 +194,7 @@ export default defineComponent({
     IonMenuButton,
     IonPage,
     IonSearchbar,
+    IonSpinner,
     IonThumbnail,
     IonTitle,
     IonToolbar,
@@ -215,6 +221,7 @@ export default defineComponent({
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
   unmounted() {
+    this.store.dispatch('order/clearCompletedOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   methods: {
@@ -365,7 +372,6 @@ export default defineComponent({
     async fetchShipmentMethods() {
       const payload = prepareOrderQuery({
         viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
-        queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
         groupBy: 'picklistBinId',
         sort: 'orderDate asc',
         defType: "edismax",
@@ -407,7 +413,6 @@ export default defineComponent({
     async fetchCarrierPartyIds() {
       const payload = prepareOrderQuery({
         viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
-        queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
         groupBy: 'picklistBinId',
         sort: 'orderDate asc',
         defType: "edismax",
@@ -540,12 +545,28 @@ export default defineComponent({
       }
     },
     async printPackingSlip(order: any) {
+      // if the request to print packing slip is not yet completed, then clicking multiple times on the button
+      // should not do anything
+      if(order.isGeneratingPackingSlip) {
+        return;
+      }
+
       const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
+      order.isGeneratingPackingSlip = true;
       await OrderService.printPackingSlip(shipmentIds);
+      order.isGeneratingPackingSlip = false;
     },
     async printShippingLabel(order: any) {
+      // if the request to print shipping label is not yet completed, then clicking multiple times on the button
+      // should not do anything
+      if(order.isGeneratingShippingLabel) {
+        return;
+      }
+
       const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
+      order.isGeneratingShippingLabel = true;
       await OrderService.printShippingLabel(shipmentIds)
+      order.isGeneratingShippingLabel = false;
     }
   },
   setup() {
@@ -553,6 +574,7 @@ export default defineComponent({
     const router = useRouter();
 
     return {
+      copyToClipboard,
       checkmarkDoneOutline,
       downloadOutline,
       ellipsisVerticalOutline,

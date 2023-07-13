@@ -27,7 +27,10 @@
               {{ picklist.pickersName }}
               <p>{{ picklist.date }}</p>
             </ion-label>
-            <ion-button fill="outline" slot="end" @click="printPicklist(picklist.id)"><ion-icon :icon="printOutline" /></ion-button>
+            <ion-spinner color="primary" slot="end" v-if="picklist.isGeneratingPicklist" name="crescent" />
+            <ion-button v-else fill="outline" slot="end" @click="printPicklist(picklist)">
+              <ion-icon :icon="printOutline" />
+            </ion-button>
           </ion-item>
         </div>
 
@@ -44,9 +47,9 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip outline>
+                <ion-chip @click="copyToClipboard(order.orderName, 'Copied to clipboard')" outline>
                   <ion-icon :icon="pricetagOutline" />
-                  <ion-label>{{ order.orderId }}</ion-label>
+                  <ion-label>{{ order.orderName }}</ion-label>
                 </ion-chip>
               </div>
 
@@ -64,7 +67,7 @@
             </div>
             <!-- TODO: implement functionality to change the type of box -->
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
-              <ion-button @click="addShipmentBox(order)" fill="outline"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
+              <ion-button @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
             </div>
 
@@ -181,6 +184,7 @@ import {
   IonSelect,
   IonSelectOption,
   IonSkeletonText,
+  IonSpinner,
   IonThumbnail,
   IonTitle,
   IonToolbar,
@@ -191,7 +195,7 @@ import { defineComponent } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline, optionsOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
-import { formatUtcDate, getFeature, showToast } from '@/utils';
+import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils';
 import { hasError } from '@/adapter';
 import { ShopifyImg } from '@hotwax/dxp-components';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue';
@@ -229,6 +233,7 @@ export default defineComponent({
     IonSelect,
     IonSelectOption,
     IonSkeletonText,
+    IonSpinner,
     IonThumbnail,   
     IonTitle,
     IonToolbar,
@@ -615,7 +620,8 @@ export default defineComponent({
               picklists.push({
                 id: picklist.picklistId,
                 pickersName: pickersName.join(', '),
-                date: DateTime.fromMillis(picklist.picklistDate).toLocaleString(DateTime.TIME_SIMPLE)
+                date: DateTime.fromMillis(picklist.picklistDate).toLocaleString(DateTime.TIME_SIMPLE),
+                isGeneratingPicklist: false  // used to display the spinner on the button when trying to generate picklist
               })
 
               return picklists
@@ -756,8 +762,10 @@ export default defineComponent({
     async initialiseOrderQuery() {
       await this.updateOrderQuery(process.env.VUE_APP_VIEW_SIZE, '')
     },
-    async printPicklist(picklistId: string) {
-      await OrderService.printPicklist(picklistId)
+    async printPicklist(picklist: any) {
+      picklist.isGeneratingPicklist = true;
+      await OrderService.printPicklist(picklist.id)
+      picklist.isGeneratingPicklist = false;
     }
   },
   async mounted () {
@@ -766,12 +774,14 @@ export default defineComponent({
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
   unmounted() {
+    this.store.dispatch('order/clearInProgressOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   setup() {
     const store = useStore();
 
     return {
+      copyToClipboard,
       addOutline,
       printOutline,
       ellipsisVerticalOutline,

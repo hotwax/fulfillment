@@ -214,7 +214,6 @@ const actions: ActionTree<OrderState, RootState> = {
         ...payload,
         queryString: inProgressQuery.queryString,
         viewSize: inProgressQuery.viewSize,
-        queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
         sort: 'orderDate asc',
         groupBy: 'picklistBinId',
         filters: {
@@ -248,6 +247,7 @@ const actions: ActionTree<OrderState, RootState> = {
             customerName: orderItem.customerName,
             orderId: orderItem.orderId,
             orderDate: orderItem.orderDate,
+            orderName: orderItem.orderName,
             groupValue: order.groupValue,
             picklistBinId: orderItem.picklistBinId,
             items: order.doclist.docs,
@@ -299,7 +299,6 @@ const actions: ActionTree<OrderState, RootState> = {
       ...payload,
       queryString: openOrderQuery.queryString,
       viewSize: openOrderQuery.viewSize,
-      queryFields: 'orderId',
       filters: {
         quantityNotAvailable: { value: 0 },
         isPicked: { value: 'N' },
@@ -353,7 +352,6 @@ const actions: ActionTree<OrderState, RootState> = {
       ...payload,
       queryString: completedOrderQuery.queryString,
       viewSize: completedOrderQuery.viewSize,
-      queryFields: 'productId productName virtualProductName orderId search_orderIdentifications productSku customerId customerName goodIdentifications',
       groupBy: 'picklistBinId',
       sort: 'orderDate asc',
       filters: {
@@ -402,13 +400,16 @@ const actions: ActionTree<OrderState, RootState> = {
         customerName: orderItem.customerName,
         orderId: orderItem.orderId,
         orderDate: orderItem.orderDate,
+        orderName: orderItem.orderName,
         reservedDatetime: orderItem.reservedDatetime,
         groupValue: order.groupValue,
         picklistBinId: orderItem.picklistBinId,
         items: order.doclist.docs,
         shipmentId: orderItem.shipmentId,
         shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
-        shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc
+        shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+        isGeneratingShippingLabel: false,
+        isGeneratingPackingSlip: false
       }
     })
 
@@ -426,6 +427,18 @@ const actions: ActionTree<OrderState, RootState> = {
   async clearOrders ({ commit }) {
     commit(types.ORDER_INPROGRESS_CLEARED)
     commit(types.ORDER_OPEN_CLEARED)
+    commit(types.ORDER_COMPLETED_CLEARED)
+  },
+
+  async clearOpenOrders({ commit }) {
+    commit(types.ORDER_OPEN_CLEARED)
+  },
+
+  async clearInProgressOrders({ commit }) {
+    commit(types.ORDER_INPROGRESS_CLEARED)
+  },
+
+  async clearCompletedOrders({ commit }) {
     commit(types.ORDER_COMPLETED_CLEARED)
   },
 
