@@ -662,7 +662,7 @@ export default defineComponent({
     },
     async fetchShipmentRouteSegmentInformation(shipmentIds: Array<string>) {
       const payload = {
-        "inpurFields": {
+        "inputFields": {
           "carrierPartyId": "_NA_",
           "carrierPartyId_op": "notEqual",
           "shipmentId": shipmentIds,

@@ -66,7 +66,7 @@ const actions: ActionTree<OrderState, RootState> = {
     inProgressOrders = inProgressOrders.map((order: any) => {
 
       // if for an order shipment information is not available then returning the same order information again
-      if(!shipmentIdsForOrders[order.orderId]) {
+      if(!shipmentIdsForOrders[`${order.orderId}_${order.picklistBinId}`]) {
           // if there are no shipment for the order, there is some issue with the order
           if (picklistBinIds.includes(order.picklistBinId) && orderIds.includes(order.orderId)) {
             return {
@@ -79,8 +79,14 @@ const actions: ActionTree<OrderState, RootState> = {
 
       order.items.map((item: any) => {
         // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
-        item.shipmentItemSeqId = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)?.shipmentItemSeqId
-        item.selectedBox = shipmentPackagesByOrder[item.orderId]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+        const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)
+
+        if(shipment) {
+          item.shipmentId = shipment.shipmentId
+          item.shipmentItemSeqId = shipment.shipmentItemSeqId
+        }
+
+        item.selectedBox = shipmentPackagesByOrder[`${item.orderId}_${item.picklistBinId}`]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
       })
 
       const orderItem = order.items[0];
@@ -88,8 +94,8 @@ const actions: ActionTree<OrderState, RootState> = {
 
       return {
         ...order,
-        shipmentIds: shipmentIdsForOrders[orderItem.orderId],
-        shipmentPackages: shipmentPackagesByOrder[orderItem.orderId],
+        shipmentIds: shipmentIdsForOrders[`${orderItem.orderId}_${orderItem.picklistBinId}`],
+        shipmentPackages: shipmentPackagesByOrder[`${orderItem.orderId}_${orderItem.picklistBinId}`],
         carrierPartyIds,
         shipmentBoxTypeByCarrierParty: carrierPartyIds.reduce((shipmentBoxType: any, carrierPartyId: any) => {
           if(shipmentBoxType[carrierPartyId]) {
