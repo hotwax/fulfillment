@@ -10,4 +10,4 @@ on:
 
 jobs:
   call-workflow-passing-data:
-    uses: hotwax/dxp-components/blob/main/.github/workflows/common.yml@main
+    uses: hotwax/dxp-components/.github/workflows/common.yml@main
