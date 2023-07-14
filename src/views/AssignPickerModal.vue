@@ -65,6 +65,7 @@ import { translate } from "@/i18n";
 import { UtilService } from "@/services/UtilService";
 import emitter from "@/event-bus";
 import logger from "@/logger"
+import { OrderService } from '@/services/OrderService';
 
 export default defineComponent({
   name: "AssignPickerModal",
@@ -149,6 +150,10 @@ export default defineComponent({
         if (resp.status === 200 && !hasError(resp)) {
           this.closeModal();
           showToast(translate('Picklist created successfully'))
+
+          // generating picklist after creating a new picklist
+          await OrderService.printPicklist(resp.data.picklistId)
+
           await this.store.dispatch('order/findOpenOrders')
         } else {
           throw resp.data
