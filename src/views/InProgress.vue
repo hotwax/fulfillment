@@ -41,7 +41,7 @@
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
-                  {{ order.customerName }}
+                  <strong>{{ order.customerName }}</strong>
                   <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
                 </ion-label>
               </div>
