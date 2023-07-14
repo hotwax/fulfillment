@@ -711,6 +711,13 @@ export default defineComponent({
       return defaultBoxType;
     },
     async addShipmentBox(order: any) {
+      if(order.isAddingBox) {
+        return;
+      }
+
+      // changing the flag to know that process to add the box is in process
+      order.isAddingBox = true;
+
       const { carrierPartyId, shipmentMethodTypeId } = await this.fetchShipmentRouteSegmentInformation(order.shipmentIds)
       
       if(!this.defaultShipmentBoxType) {
@@ -739,6 +746,8 @@ export default defineComponent({
         showToast(translate('Failed to add box'))
         logger.error('Failed to add box', err)
       }
+
+      order.isAddingBox = false;  // setting the value again to default once the box adding process is completed
     },
     getShipmentPackageNameAndType(shipmentPackage: any, order: any) {
       // TODO

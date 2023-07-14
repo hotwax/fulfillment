@@ -259,6 +259,7 @@ const actions: ActionTree<OrderState, RootState> = {
             items: order.doclist.docs,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
             shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+            isAddingBox: false
           }
         })
       } else {
