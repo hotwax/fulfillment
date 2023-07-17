@@ -8,9 +8,6 @@
     </ion-header>
 
     <ion-content>
-      <!-- TODO: remove this option to upload file and make api call in ionViewWillEnter to get the csv file -->
-      <input :placeholder="$t('Select CSV')" @change="parse" ref="file" class="ion-hide" type="file" id="downloadPackedOrders"/>
-      <label for="downloadPackedOrders">{{ $t("Upload") }}</label>
       <main>
         <ion-list>
           <ion-list-header>{{ $t("Select the fields you want to include in your export") }}</ion-list-header>
@@ -47,6 +44,7 @@ import { translate } from "@/i18n";
 import logger from '@/logger';
 import { DateTime } from 'luxon';
 import { useRouter } from 'vue-router';
+import { UploadService } from '@/services/UploadService';
 
 export default defineComponent({
   name: 'UploadImportOrders',
@@ -67,10 +65,9 @@ export default defineComponent({
   },
   data() {
     return {
-      file: {} as any,
       content: [] as any,
       fieldMapping: {} as any,
-      fileColumns: [] as Array<string>,
+      dataColumns: [] as Array<string>,
       selectedData: {} as any,
       isFieldClicked: false
     }
@@ -80,30 +77,42 @@ export default defineComponent({
       currentFacility: 'user/getCurrentFacility'
     })
   },
-  ionViewDidEnter() {
-    // TODO: make api call to get the CSV file, instead of upload file option
-    this.file = {}
+  async ionViewDidEnter() {
     this.content = []
+    await this.fetchPackedOrders();
   },
   methods: {
-    async parse(event: any) {
-      const file = event.target.files[0];
-      try {
-        if (file) {
-          this.content = await parseCsv(file).then(res => res);
-          // get the column names from the file
-          this.fileColumns = Object.keys(this.content[0]);
-          // generate default mappings for the columns
-          this.fieldMapping = this.fileColumns.reduce((fieldMapping: any, field: string) => {
-            fieldMapping[field] = field
-            return fieldMapping;
-          }, {})
-        } else {
-          logger.error("No file upload. Please try again");
+    async fetchPackedOrders() {
+      const payload = {
+        params: {
+          configId: 'MDM_PACKED_SHIPMENT',
+          mimeTypeId: 'application/octet'
         }
+      }
+
+      try {
+        const resp = await UploadService.fetchPackedOrders(payload);
+
+        if(resp.status == 200 && resp.data) {
+          await this.parse(resp.data)
+        }
+      } catch (err) {
+        logger.error('Failed to get packed orders', err)
+      }
+    },
+    async parse(data: any) {
+      try {
+        this.content = await parseCsv(data).then(res => res);
+        // get the column names from the data
+        this.dataColumns = Object.keys(this.content[0]);
+        // generate default mappings for the columns
+        this.fieldMapping = this.dataColumns.reduce((fieldMapping: any, field: string) => {
+          fieldMapping[field] = field
+          return fieldMapping;
+        }, {})
       } catch {
         this.content = []
-        logger.error("Please upload a valid csv to continue");
+        logger.error("Failed to parse the data");
       }
     },
     async addCustomLabel(field: any) {

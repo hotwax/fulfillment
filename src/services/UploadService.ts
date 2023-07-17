@@ -8,6 +8,7 @@ const uploadJsonFile = async (payload: any): Promise <any>  => {
     ...payload
   });
 }
+
 const prepareUploadJsonPayload = (request: UploadRequest) => {
   const blob = new Blob([JSON.stringify(request.uploadData)], { type: 'application/json'});
   const formData = new FormData();
@@ -26,7 +27,16 @@ const prepareUploadJsonPayload = (request: UploadRequest) => {
   }
 }
 
+const fetchPackedOrders = async (payload: any): Promise <any>  => {
+  return api({
+    url: "generateCsvFile",
+    method: "get",
+    ...payload
+  });
+}
+
 export const UploadService = {
+  fetchPackedOrders,
   prepareUploadJsonPayload,
   uploadJsonFile
 }
