@@ -17,6 +17,7 @@ import { mapGetters, useStore } from 'vuex';
 import { initialise, resetConfig } from '@/adapter'
 import { useRouter } from 'vue-router';
 import { Settings } from 'luxon'
+import { useLocaleStore } from 'dxp-components';
 
 export default defineComponent({
   name: 'App',
@@ -93,6 +94,7 @@ export default defineComponent({
     if (this.userProfile && this.userProfile.userTimeZone) {
       Settings.defaultZone = this.userProfile.userTimeZone;
     }
+    this.localeStore.setLocale(this.localeStore.getLocale)
   },
   unmounted() {
     emitter.off('presentLoader', this.presentLoader);
@@ -102,9 +104,11 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const router = useRouter();
+    const localeStore = useLocaleStore()
     return {
       router,
-      store
+      store,
+      localeStore
     }
   }
 });

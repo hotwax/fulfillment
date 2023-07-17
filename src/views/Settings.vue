@@ -77,6 +77,13 @@
         <ion-button @click="changeTimeZone()" fill="outline" color="dark">{{ $t("Change") }}</ion-button>
       </ion-item>
       <ion-item>
+        <ion-icon :icon="languageOutline" slot="start"/>
+        <ion-label>{{$t("Choose language")}}</ion-label>
+        <ion-select interface="popover" :value="localeStore.getLocale" @ionChange="localeStore.setLocale($event.detail.value)">
+          <ion-select-option v-for="locale in Object.keys(locales)" :key="locale" :value="locale" >{{ locales[locale] }}</ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-item>
         <ion-label>{{ userProfile !== null ? userProfile.partyName : '' }}</ion-label>
         <ion-button fill="outline" color="medium" @click="logout()">{{ $t("Logout") }}</ion-button>
       </ion-item>
@@ -104,7 +111,7 @@ import {
   modalController,
 alertController} from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, timeOutline } from 'ionicons/icons'
+import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, languageOutline, timeOutline } from 'ionicons/icons'
 import RecyclePopover from '@/views/RecyclePopover.vue'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
@@ -114,6 +121,7 @@ import { showToast } from '@/utils';
 import { hasError } from '@/adapter';
 import { translate } from '@/i18n';
 import logger from '@/logger';
+import { useLocaleStore } from 'dxp-components';
 
 export default defineComponent({
   name: 'Settings',
@@ -136,6 +144,7 @@ export default defineComponent({
   data() {
     return {
       baseURL: process.env.VUE_APP_BASE_URL,
+      locales: process.env.VUE_APP_LOCALES ? JSON.parse(process.env.VUE_APP_LOCALES) : { "en": "English" },
       currentFacilityDetails: {} as any,
       outstandingOrdersCount: 0,
       inProgressOrdersCount: 0
@@ -441,14 +450,17 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const router = useRouter();
+    const localeStore = useLocaleStore()
 
     return {
       codeWorkingOutline,
       ellipsisVerticalOutline,
       globeOutline,
+      languageOutline,
       timeOutline,
       router,
-      store
+      store,
+      localeStore
     }
   }
 });
