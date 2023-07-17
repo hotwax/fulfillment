@@ -6,12 +6,37 @@
         <ion-title>{{ $t("Saved mappings") }}</ion-title>
       </ion-toolbar>
     </ion-header>
+
+    <ion-content>
+      <main>
+        <div class="empty-state" v-if="!areFieldMappingsAvailable">
+          <p>{{ $t("There are no saved CSV mappings to show. Create a new mapping from a file upload screen")}}</p>
+        </div>
+        <section v-else>
+          <ion-list v-if="Object.keys(fieldMappings('IMPORD')).length">
+            <ion-list-header>{{ $t("Import Orders") }}</ion-list-header>
+            <ion-item v-for="(mapping, index) in fieldMappings('IMPORD')" :key="index" @click="viewMappingConfiguration(index, 'IMPORD')" detail button>
+              <ion-label>{{ mapping.name }}</ion-label>
+            </ion-item>
+          </ion-list>
+        </section>
+
+        <aside class="desktop-only" v-if="isDesktop" v-show="currentMapping.id != ''">
+          <MappingConfiguration />
+        </aside>
+      </main>
+    </ion-content>
   </ion-page>      
 </template>
 
 <script lang="ts">
 import {
+  IonContent,
+  IonItem,
+  IonLabel,
+  IonListHeader,
   IonMenuButton,
+  IonList,
   IonHeader,
   IonToolbar,
   IonTitle,
@@ -22,15 +47,22 @@ import { defineComponent } from 'vue';
 import { useRouter } from 'vue-router'
 import { mapGetters, useStore } from 'vuex'
 import emitter from '@/event-bus';
+import MappingConfiguration from '@/components/MappingConfiguration.vue'
 
 export default defineComponent({
   name: 'SavedMappings',
   components: {
+    IonContent,
+    IonItem,
+    IonLabel,
+    IonListHeader,
     IonMenuButton,
+    IonList,
     IonHeader,
     IonToolbar,
     IonTitle,
-    IonPage
+    IonPage,
+    MappingConfiguration
   },
   mounted() {
     this.store.dispatch("user/clearCurrentMapping");
@@ -53,7 +85,7 @@ export default defineComponent({
     }
   },
   methods: {
-    async viewMappingConfiguration(id: string, mappingType: string) {
+    async viewMappingConfiguration(id: any, mappingType: string) {
       this.currentMappingId = id
       await this.store.dispatch('user/updateCurrentMapping', { id, mappingType });
 
