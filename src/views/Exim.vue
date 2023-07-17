@@ -49,6 +49,16 @@
           </div>
         </ion-card>
       </section>
+
+      <router-link to="saved-mappings">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ $t('Saved mappings') }}
+            </ion-card-title>
+          </ion-card-header>
+        </ion-card>
+      </router-link>
     </ion-content>
   </ion-page>
 </template>
