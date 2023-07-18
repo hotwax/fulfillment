@@ -99,14 +99,3 @@ export default defineComponent({
   },
 });
 </script>
-
-<style scoped>
-ion-row {
-  flex-wrap: nowrap;
-  overflow: scroll;
-}
-
-ion-chip {
-  flex-shrink: 0;
-}
-</style>
