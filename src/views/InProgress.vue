@@ -67,7 +67,7 @@
             </div>
             <!-- TODO: implement functionality to change the type of box -->
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
-              <ion-button :disabled="order.isAddingBox" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
+              <ion-button :disabled="orderBoxes.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
             </div>
 
@@ -247,13 +247,14 @@ export default defineComponent({
       rejectReasons: 'util/getRejectReasons',
       currentEComStore: 'user/getCurrentEComStore',
       userPreference: 'user/getUserPreference'
-    })
+    }),
   },
   data() {
     return {
       picklists: [] as any,
       defaultShipmentBoxType: '',
       itemsIssueSegmentSelected: [] as any,
+      orderBoxes: [] as any
     }
   },
   methods: {
@@ -711,8 +712,7 @@ export default defineComponent({
       return defaultBoxType;
     },
     async addShipmentBox(order: any) {
-      // changing the flag to know that process to add the box is in-progress
-      order.isAddingBox = true;
+      this.orderBoxes.push(order.orderId)
 
       const { carrierPartyId, shipmentMethodTypeId } = await this.fetchShipmentRouteSegmentInformation(order.shipmentIds)
       
@@ -742,8 +742,7 @@ export default defineComponent({
         showToast(translate('Failed to add box'))
         logger.error('Failed to add box', err)
       }
-
-      order.isAddingBox = false;  // setting the value again to default once the box adding process is completed
+      this.orderBoxes.splice(this.orderBoxes.indexOf(order.orderId), 1)
     },
     getShipmentPackageNameAndType(shipmentPackage: any, order: any) {
       // TODO
