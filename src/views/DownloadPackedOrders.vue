@@ -53,7 +53,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { mapGetters } from "vuex";
-import { alertController, IonBackButton, IonButton, IonCheckbox, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonTitle, IonToolbar, modalController } from '@ionic/vue'
+import { alertController, IonBackButton, IonButton, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonTitle, IonToolbar, modalController } from '@ionic/vue'
 import { addOutline, pencilOutline } from 'ionicons/icons'
 import { parseCsv, jsonToCsv, showToast } from '@/utils';
 import { translate } from "@/i18n";
@@ -68,6 +68,7 @@ export default defineComponent({
     IonBackButton,
     IonButton,
     IonCheckbox,
+    IonChip,
     IonContent,
     IonHeader,
     IonIcon,
