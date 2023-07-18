@@ -97,6 +97,8 @@ export default defineComponent({
   },
   methods: {
     async fetchPackedOrders() {
+      // TODO: need to set a timeout, as when the orders size gets big then the api might take long time to return the information
+
       const payload = {
         params: {
           configId: 'MDM_PACKED_SHIPMENT',

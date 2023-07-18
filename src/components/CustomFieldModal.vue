@@ -81,11 +81,12 @@ export default defineComponent({
       modalController.dismiss({ dismissed: true});
     },
     saveCustomField() {
-      if(!this.key.trim()) {
+      const fieldKey = this.key.trim();
+      if(!fieldKey) {
         showToast(translate('Please enter a valid key'))
         return;
       }
-      modalController.dismiss({ dismissed: true, value: { key: this.key, value: this.value } });
+      modalController.dismiss({ dismissed: true, value: { key: fieldKey, value: this.value } });
     }
   },
   setup() {
