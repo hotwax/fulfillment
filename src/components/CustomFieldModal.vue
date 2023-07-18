@@ -50,6 +50,8 @@ import {
 import { defineComponent } from "vue";
 import { checkmarkDoneOutline, closeOutline } from "ionicons/icons";
 import { useStore } from "vuex";
+import { showToast } from "@/utils"
+import { translate } from "@/i18n";
 
 export default defineComponent({
   name: "CustomFieldModal",
@@ -79,6 +81,10 @@ export default defineComponent({
       modalController.dismiss({ dismissed: true});
     },
     saveCustomField() {
+      if(!this.key.trim()) {
+        showToast(translate('Please enter a valid key'))
+        return;
+      }
       modalController.dismiss({ dismissed: true, value: { key: this.key, value: this.value } });
     }
   },
