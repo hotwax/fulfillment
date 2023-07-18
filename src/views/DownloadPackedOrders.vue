@@ -25,6 +25,18 @@
           </ion-item>
         </ion-list>
 
+        <ion-list>
+          <ion-button fill="clear" @click="addCustomField()" :disabled="!Object.keys(fieldMapping).length">{{ $t('Add custom fields') }}</ion-button>
+
+          <ion-item :key="key" v-for="(value, key) in customFields">
+            <ion-label>{{ key }}</ion-label>
+            <ion-label slot="end">{{ value }}</ion-label>
+            <ion-button slot="end" fill="clear" @click="removeCustomField(key)">
+              <ion-icon :icon="trashOutline" />
+            </ion-button>
+          </ion-item>
+        </ion-list>
+
         <ion-button size="large" :disabled="!content.length" color="medium" @click="download" expand="block">
           {{ $t("Download") }}
         </ion-button>
@@ -37,14 +49,15 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { mapGetters } from "vuex";
-import { alertController, IonBackButton, IonButton, IonCheckbox, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonTitle, IonToolbar } from '@ionic/vue'
-import { pencilOutline } from 'ionicons/icons'
+import { alertController, IonBackButton, IonButton, IonCheckbox, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonTitle, IonToolbar, modalController } from '@ionic/vue'
+import { pencilOutline, trashOutline } from 'ionicons/icons'
 import { parseCsv, jsonToCsv, showToast } from '@/utils';
 import { translate } from "@/i18n";
 import logger from '@/logger';
 import { DateTime } from 'luxon';
 import { useRouter } from 'vue-router';
 import { UploadService } from '@/services/UploadService';
+import CustomFieldModal from '@/components/CustomFieldModal.vue'
 
 export default defineComponent({
   name: 'UploadImportOrders',
@@ -69,7 +82,8 @@ export default defineComponent({
       fieldMapping: {} as any,
       dataColumns: [] as Array<string>,
       selectedData: {} as any,
-      isFieldClicked: false
+      isFieldClicked: false,
+      customFields: {} as any
     }
   },
   computed: {
@@ -86,7 +100,8 @@ export default defineComponent({
       const payload = {
         params: {
           configId: 'MDM_PACKED_SHIPMENT',
-          mimeTypeId: 'application/octet'
+          mimeTypeId: 'application/octet',
+          facilityId: this.currentFacility.facilityId
         }
       }
 
@@ -194,6 +209,22 @@ export default defineComponent({
     },
     selectAll() {
       this.selectedData = JSON.parse(JSON.stringify(this.fieldMapping))
+    },
+    async addCustomField() {
+      const customFieldModal = await modalController.create({
+        component: CustomFieldModal
+      });
+
+      customFieldModal.onDidDismiss().then((result) => {
+        if(result.data) {
+          this.customFields[result.data.value.key] = result.data.value.value
+        }
+      })
+
+      return customFieldModal.present();
+    },
+    removeCustomField(key: any) {
+      delete this.customFields[key];
     }
   },
   setup() {
@@ -201,6 +232,7 @@ export default defineComponent({
 
     return {
       pencilOutline,
+      trashOutline,
       router
     }
   }
