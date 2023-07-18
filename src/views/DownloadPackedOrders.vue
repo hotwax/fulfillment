@@ -28,7 +28,7 @@
 
           <ion-item :key="field" v-for="(value, field) in fieldMapping">
             <ion-checkbox :checked="selectedData[field]" @click="isFieldClicked=true" @ionChange="updateSelectedData(field)" slot="start"/>
-            <ion-label>{{ field }}</ion-label>
+            <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
             <ion-button v-if="value === field" fill="outline" @click="addCustomLabel(field)">{{ $t('Custom Label') }}</ion-button>
             <!-- Using multiple if's instead of wrapping in a single parent div, to style the component properly without adding any extra css -->
             <ion-label v-if="value !== field" slot="end">{{ value }}</ion-label>
@@ -149,16 +149,6 @@ export default defineComponent({
         this.content = await parseCsv(data).then(res => res);
         // get the column names from the data
         this.dataColumns = Object.keys(this.content[0]);
-        // generate default mappings for the columns
-        this.fieldMapping = this.dataColumns.reduce((fieldMapping: any, field: string) => {
-          // check to not add the field for which the key is not available, as when fetching the data we are getting an empty key
-          if(!field) {
-            return fieldMapping;
-          }
-
-          fieldMapping[field] = field
-          return fieldMapping;
-        }, {})
       } catch {
         this.content = []
         logger.error("Failed to parse the data");
@@ -258,21 +248,6 @@ export default defineComponent({
     },
     mapFields(mapping: any) {
       const fieldMapping = JSON.parse(JSON.stringify(mapping));
-
-      // TODO: Store an object in this.content variable, so everytime when accessing it, we don't need to use 0th index
-      const csvFields = Object.keys(this.content[0]);
-
-      const missingFields = Object.values(fieldMapping.value).filter((field: any) => {
-        if(!csvFields.includes(field)) return field;
-      });
-
-      if(missingFields.length) showToast(translate("Some of the mapping fields are missing in the CSV: ", { missingFields: missingFields.join(", ") }))
-
-      Object.keys(fieldMapping.value).map((key) => {
-        if(!csvFields.includes(fieldMapping.value[key])){
-          fieldMapping.value[key] = "";
-        }
-      })
       this.fieldMapping = fieldMapping.value;
     },
     async addCustomField() {
