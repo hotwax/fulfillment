@@ -122,6 +122,11 @@ export default defineComponent({
         this.dataColumns = Object.keys(this.content[0]);
         // generate default mappings for the columns
         this.fieldMapping = this.dataColumns.reduce((fieldMapping: any, field: string) => {
+          // check to not add the field for which the key is not available, as when fetching the data we are getting an empty key
+          if(!field) {
+            return fieldMapping;
+          }
+
           fieldMapping[field] = field
           return fieldMapping;
         }, {})
