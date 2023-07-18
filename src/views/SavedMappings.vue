@@ -19,6 +19,12 @@
               <ion-label>{{ mapping.name }}</ion-label>
             </ion-item>
           </ion-list>
+          <ion-list v-if="Object.keys(fieldMappings('EXPORD')).length">
+            <ion-list-header>{{ $t("Export Orders") }}</ion-list-header>
+            <ion-item v-for="(mapping, index) in fieldMappings('EXPORD')" :key="index" @click="viewMappingConfiguration(index, 'EXPORD')" detail button>
+              <ion-label>{{ mapping.name }}</ion-label>
+            </ion-item>
+          </ion-list>
         </section>
 
         <aside class="desktop-only" v-if="isDesktop" v-show="currentMapping.id != ''">

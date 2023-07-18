@@ -13,6 +13,19 @@
       <label for="downloadPackedOrders">{{ $t("Upload") }}</label>
       <main>
         <ion-list>
+          <ion-list-header>{{ $t("Saved mappings") }}</ion-list-header>
+          <div>
+            <ion-chip :disabled="!content.length" :outline=true @click="addFieldMapping()">
+              <ion-icon :icon="addOutline" />
+              <ion-label>{{ $t("New mapping") }}</ion-label>
+            </ion-chip>
+            <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('EXPORD') ?? []" :key="index" @click="mapFields(mapping)" :outline=true>
+              {{ mapping.name }}
+            </ion-chip>
+          </div>
+        </ion-list>
+
+        <ion-list>
           <ion-list-header>{{ $t("Select the fields you want to include in your export") }}</ion-list-header>
           <ion-button fill="clear" @click="selectAll" :disabled="!Object.keys(fieldMapping).length">{{ $t('Select all') }}</ion-button>
 
@@ -40,13 +53,14 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { mapGetters } from "vuex";
-import { alertController, IonBackButton, IonButton, IonCheckbox, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonTitle, IonToolbar } from '@ionic/vue'
-import { pencilOutline } from 'ionicons/icons'
+import { alertController, IonBackButton, IonButton, IonCheckbox, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonTitle, IonToolbar, modalController } from '@ionic/vue'
+import { addOutline, pencilOutline } from 'ionicons/icons'
 import { parseCsv, jsonToCsv, showToast } from '@/utils';
 import { translate } from "@/i18n";
 import logger from '@/logger';
 import { DateTime } from 'luxon';
 import { useRouter } from 'vue-router';
+import CreateMappingModal from "@/components/CreateMappingModal.vue";
 
 export default defineComponent({
   name: 'UploadImportOrders',
@@ -72,20 +86,29 @@ export default defineComponent({
       fieldMapping: {} as any,
       fileColumns: [] as Array<string>,
       selectedData: {} as any,
-      isFieldClicked: false
+      isFieldClicked: false,
+      fields: process.env["VUE_APP_MAPPING_EXPORD"] ? JSON.parse(process.env["VUE_APP_MAPPING_EXPORD"]) : {},
     }
   },
   computed: {
     ...mapGetters({
-      currentFacility: 'user/getCurrentFacility'
+      currentFacility: 'user/getCurrentFacility',
+      fieldMappings: 'user/getFieldMappings'
     })
   },
   ionViewDidEnter() {
     // TODO: make api call to get the CSV file, instead of upload file option
     this.file = {}
     this.content = []
+    this.generateFieldMapping();
   },
   methods: {
+    generateFieldMapping() {
+      this.fieldMapping = Object.keys(this.fields).reduce((fieldMapping: any, field: string) => {
+        fieldMapping[field] = field
+        return fieldMapping;
+      }, {})
+    },
     async parse(event: any) {
       const file = event.target.files[0];
       try {
@@ -185,12 +208,39 @@ export default defineComponent({
     },
     selectAll() {
       this.selectedData = JSON.parse(JSON.stringify(this.fieldMapping))
-    }
+    },
+    async addFieldMapping() {
+      const createMappingModal = await modalController.create({
+        component: CreateMappingModal,
+        componentProps: { content: this.content, seletedFieldMapping: this.fieldMapping, mappingType: 'EXPORD'}
+      });
+      return createMappingModal.present();
+    },
+    mapFields(mapping: any) {
+      const fieldMapping = JSON.parse(JSON.stringify(mapping));
+
+      // TODO: Store an object in this.content variable, so everytime when accessing it, we don't need to use 0th index
+      const csvFields = Object.keys(this.content[0]);
+
+      const missingFields = Object.values(fieldMapping.value).filter((field: any) => {
+        if(!csvFields.includes(field)) return field;
+      });
+
+      if(missingFields.length) showToast(translate("Some of the mapping fields are missing in the CSV: ", { missingFields: missingFields.join(", ") }))
+
+      Object.keys(fieldMapping.value).map((key) => {
+        if(!csvFields.includes(fieldMapping.value[key])){
+          fieldMapping.value[key] = "";
+        }
+      })
+      this.fieldMapping = fieldMapping.value;
+    },
   },
   setup() {
     const router = useRouter();
 
     return {
+      addOutline,
       pencilOutline,
       router
     }
