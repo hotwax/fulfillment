@@ -6,7 +6,7 @@
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
-      <ion-title>{{ $t("Add Custom Field") }}</ion-title>
+      <ion-title>{{ $t("Add custom field") }}</ion-title>
     </ion-toolbar>
   </ion-header>
 
@@ -14,11 +14,11 @@
     <ion-list>
       <ion-item lines="full">
         <ion-label position="fixed">{{ $t("Key") }}</ion-label>
-        <ion-input name="key" v-model="key" id="key" type="text" required />
+        <ion-input :placeholder="$t('Enter key')" name="key" v-model="key" id="key" type="text" required />
       </ion-item>
       <ion-item>
         <ion-label position="fixed">{{ $t("Value") }}</ion-label>
-        <ion-input name="value" v-model="value" id="value" type="text" required />
+        <ion-input :placeholder="$t('Enter value')" name="value" v-model="value" id="value" type="text" required />
       </ion-item>
     </ion-list>
 

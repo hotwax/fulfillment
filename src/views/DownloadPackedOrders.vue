@@ -26,7 +26,7 @@
         </ion-list>
 
         <ion-list>
-          <ion-button fill="clear" @click="addCustomField()" :disabled="!Object.keys(fieldMapping).length">{{ $t('Add custom fields') }}</ion-button>
+          <ion-button fill="clear" @click="addCustomField()" :disabled="!Object.keys(fieldMapping).length">{{ $t('Add custom field') }}</ion-button>
 
           <ion-item :key="key" v-for="(value, key) in customFields">
             <ion-label>{{ key }}</ion-label>
