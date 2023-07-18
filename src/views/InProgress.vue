@@ -67,7 +67,7 @@
             </div>
             <!-- TODO: implement functionality to change the type of box -->
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
-              <ion-button @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
+              <ion-button :disabled="order.isAddingBox" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
             </div>
 
@@ -711,11 +711,7 @@ export default defineComponent({
       return defaultBoxType;
     },
     async addShipmentBox(order: any) {
-      if(order.isAddingBox) {
-        return;
-      }
-
-      // changing the flag to know that process to add the box is in process
+      // changing the flag to know that process to add the box is in-progress
       order.isAddingBox = true;
 
       const { carrierPartyId, shipmentMethodTypeId } = await this.fetchShipmentRouteSegmentInformation(order.shipmentIds)
