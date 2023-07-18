@@ -110,8 +110,11 @@ export default defineComponent({
 
         if(resp.status == 200 && resp.data) {
           await this.parse(resp.data)
+        } else {
+          throw resp.data
         }
       } catch (err) {
+        showToast(translate('Failed to get packed orders information'))
         logger.error('Failed to get packed orders', err)
       }
     },
@@ -195,6 +198,11 @@ export default defineComponent({
         }, {}))
       })
 
+      // adding custom fields in the data
+      Object.keys(this.customFields).map((field: any) => {
+        downloadData.map((data: any) => data[field] = this.customFields[field])
+      })
+
       const alert = await alertController.create({
         header: this.$t("Download packed orders"),
         message: this.$t("Make sure all the labels provided are correct."),
@@ -221,7 +229,7 @@ export default defineComponent({
       });
 
       customFieldModal.onDidDismiss().then((result) => {
-        if(result.data) {
+        if(result.data && result.data.value) {
           this.customFields[result.data.value.key] = result.data.value.value
         }
       })
