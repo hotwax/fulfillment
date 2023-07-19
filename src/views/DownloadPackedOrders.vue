@@ -110,7 +110,6 @@ export default defineComponent({
   },
   async ionViewDidEnter() {
     this.content = []
-    this.generateFieldMapping();
     await this.fetchPackedOrders();
   },
   methods: {
@@ -129,6 +128,8 @@ export default defineComponent({
         const resp = await UploadService.fetchPackedOrders(payload);
 
         if(resp.status == 200 && resp.data) {
+          // generating mapping only when we get the packed orders information
+          this.generateFieldMapping();
           await this.parse(resp.data)
         } else {
           throw resp.data
