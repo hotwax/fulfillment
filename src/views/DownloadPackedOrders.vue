@@ -157,7 +157,7 @@ export default defineComponent({
     },
     async addCustomLabel(field: any) {
       const alert = await alertController.create({
-        header: this.$t('Define custom label for', { field }),
+        header: this.$t('Define custom label for', { label: this.fields[field].label }),
         buttons: [{
           text: translate('Cancel'),
           role: 'cancel'
@@ -253,7 +253,8 @@ export default defineComponent({
     },
     async addCustomField() {
       const customFieldModal = await modalController.create({
-        component: CustomFieldModal
+        component: CustomFieldModal,
+        componentProps: { customFields: this.customFields }
       });
 
       customFieldModal.onDidDismiss().then((result) => {
