@@ -258,7 +258,7 @@ const actions: ActionTree<OrderState, RootState> = {
             picklistBinId: orderItem.picklistBinId,
             items: order.doclist.docs,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
-            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc
           }
         })
       } else {
