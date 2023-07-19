@@ -39,7 +39,7 @@ import {
 } from "@ionic/vue";
 import { computed, defineComponent } from "vue";
 import { mapGetters } from "vuex";
-import { bookmarkOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline } from "ionicons/icons";
+import { mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline } from "ionicons/icons";
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 
@@ -94,12 +94,6 @@ export default defineComponent({
         childRoutes: ["/download-packed-orders", "/upload-import-orders"] // defined child routes as to enable the correct menu when we are on a route that is not listed in the menu
       },
       {
-        title: "Saved Mappings",
-        url: "/saved-mappings",
-        iosIcon: bookmarkOutline,
-        mdIcon: bookmarkOutline,
-      },
-      {
         title: "Settings",
         url: "/settings",
         iosIcon: settingsOutline,
@@ -113,7 +107,6 @@ export default defineComponent({
     })
 
     return {
-      bookmarkOutline,
       selectedIndex,
       appPages,
       mailUnreadOutline,

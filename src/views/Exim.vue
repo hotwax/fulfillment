@@ -48,17 +48,21 @@
             </ion-button>
           </div>
         </ion-card>
-      </section>
 
-      <router-link to="saved-mappings">
         <ion-card>
           <ion-card-header>
             <ion-card-title>
               {{ $t('Saved mappings') }}
             </ion-card-title>
           </ion-card-header>
+          <div class="border-top">
+            <ion-button fill="clear" @click="viewSavedMappings">
+              {{ $t('View Saved mappings') }}
+              <ion-icon slot="end" :icon="bookmarkOutline" />
+            </ion-button>
+          </div>
         </ion-card>
-      </router-link>
+      </section>
     </ion-content>
   </ion-page>
 </template>
@@ -80,7 +84,7 @@ import {
   IonToolbar
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { cloudUploadOutline, downloadOutline  } from 'ionicons/icons'
+import { bookmarkOutline, cloudUploadOutline, downloadOutline  } from 'ionicons/icons'
 import { useRouter } from 'vue-router';
 
 export default defineComponent({
@@ -106,12 +110,16 @@ export default defineComponent({
     },
     downloadPackedOrders() {
       this.router.push('/download-packed-orders')
+    },
+    viewSavedMappings() {
+      this.router.push('/saved-mappings')
     }
   },
   setup() {
     const router = useRouter();
 
     return {
+      bookmarkOutline,
       cloudUploadOutline,
       downloadOutline,
       router
