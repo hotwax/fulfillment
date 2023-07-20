@@ -20,10 +20,10 @@
       <ion-list>
         <ion-item :key="field" v-for="(fieldValues, field) in getFields()">
           <ion-label>{{ $t(fieldValues.label) }}</ion-label>
-          <ion-select v-if="mappingType === 'IMPORD'" interface="popover" :placeholder = "$t('Select')" v-model="fieldMapping[field]">
+          <ion-input v-if="mappingType === 'EXPORD'" slot="end" v-model="fieldMapping[field]"></ion-input>
+          <ion-select v-else interface="popover" :placeholder = "$t('Select')" v-model="fieldMapping[field]">
             <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
           </ion-select>
-          <ion-input v-else slot="end" v-model="fieldMapping[field]"></ion-input>
         </ion-item>
       </ion-list>
     </div>
@@ -88,7 +88,17 @@ export default defineComponent({
   },
   props: ["content", "seletedFieldMapping", "mappingType"],
   mounted() {
-    this.fieldMapping = { ...this.seletedFieldMapping }
+    this.fieldMapping = JSON.parse(JSON.stringify(this.seletedFieldMapping));
+
+    // When the mapping type is export order, then converting it in the format (key: value), so that all type of mapping
+    // gets supported
+    if(this.mappingType === 'EXPORD') {
+      this.fieldMapping = {};
+      Object.keys(this.seletedFieldMapping).map((mapping: any) => {
+        this.fieldMapping[mapping] = this.seletedFieldMapping[mapping].value
+      })
+    }
+
     this.fileColumns = Object.keys(this.content[0]);
   },
   computed: {
@@ -114,7 +124,21 @@ export default defineComponent({
         return
       }
       const id = this.generateUniqueMappingPrefId();
-      await this.store.dispatch("user/createFieldMapping", { id, name: this.mappingName, value: this.fieldMapping, mappingType: this.mappingType })
+
+      let mappings = { ...this.fieldMapping }
+
+      // if the mapping type is export order then saving the mappings value having an isSelected property
+      if(this.mappingType === 'EXPORD') {
+        mappings = {}
+        Object.keys(this.seletedFieldMapping).map((mapping) => {
+          mappings[mapping] = {
+            value: this.fieldMapping[mapping],
+            isSelected: this.seletedFieldMapping[mapping]?.isSelected
+          }
+        })
+      }
+
+      await this.store.dispatch("user/createFieldMapping", { id, name: this.mappingName, value: mappings, mappingType: this.mappingType })
       this.closeModal();
     },
     areAllFieldsSelected() {

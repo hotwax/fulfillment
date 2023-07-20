@@ -173,10 +173,8 @@ export default defineComponent({
             }
 
             this.fieldMapping[field] = value ? value : field;
-            // once the field value is changed and if that field is already selected, then updating the data as well
-            if(this.selectedData[field]) {
-              this.selectedData[field] = this.fieldMapping[field]
-            }
+            // selecting the field value when the label for the field is changed
+            this.selectedData[field] = this.fieldMapping[field]
           }
         }],
         inputs: [{
@@ -241,9 +239,20 @@ export default defineComponent({
       this.selectedData = JSON.parse(JSON.stringify(this.fieldMapping))
     },
     async addFieldMapping() {
+      let selectedFieldMapping: any = {};
+
+      Object.keys(this.fieldMapping).map((mapping) => {
+        let isSelected = false;
+        if(this.selectedData[mapping]) {
+          isSelected = true
+        }
+
+        selectedFieldMapping[mapping] = { value: this.fieldMapping[mapping], isSelected }
+      })
+
       const createMappingModal = await modalController.create({
         component: CreateMappingModal,
-        componentProps: { content: this.content, seletedFieldMapping: this.fieldMapping, mappingType: 'EXPORD'}
+        componentProps: { content: this.content, seletedFieldMapping: selectedFieldMapping, mappingType: 'EXPORD'}
       });
       return createMappingModal.present();
     },
