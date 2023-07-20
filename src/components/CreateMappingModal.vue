@@ -86,16 +86,16 @@ export default defineComponent({
       fileColumns: [] as any
     }
   },
-  props: ["content", "seletedFieldMapping", "mappingType"],
+  props: ["content", "mappings", "mappingType"],
   mounted() {
-    this.fieldMapping = JSON.parse(JSON.stringify(this.seletedFieldMapping));
+    this.fieldMapping = JSON.parse(JSON.stringify(this.mappings));
 
     // When the mapping type is export order, then converting it in the format (key: value), so that all type of mapping
     // gets supported
     if(this.mappingType === 'EXPORD') {
       this.fieldMapping = {};
-      Object.keys(this.seletedFieldMapping).map((mapping: any) => {
-        this.fieldMapping[mapping] = this.seletedFieldMapping[mapping].value
+      Object.keys(this.mappings).map((mapping: any) => {
+        this.fieldMapping[mapping] = this.mappings[mapping].value
       })
     }
 
@@ -130,10 +130,10 @@ export default defineComponent({
       // if the mapping type is export order then saving the mappings value having an isSelected property
       if(this.mappingType === 'EXPORD') {
         mappings = {}
-        Object.keys(this.seletedFieldMapping).map((mapping) => {
+        Object.keys(this.mappings).map((mapping) => {
           mappings[mapping] = {
             value: this.fieldMapping[mapping],
-            isSelected: this.seletedFieldMapping[mapping]?.isSelected
+            isSelected: this.mappings[mapping]?.isSelected
           }
         })
       }

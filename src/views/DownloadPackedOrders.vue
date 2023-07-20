@@ -239,7 +239,7 @@ export default defineComponent({
       this.selectedData = JSON.parse(JSON.stringify(this.fieldMapping))
     },
     async addFieldMapping() {
-      let selectedFieldMapping: any = {};
+      let mappings: any = {};
 
       Object.keys(this.fieldMapping).map((mapping) => {
         let isSelected = false;
@@ -247,12 +247,12 @@ export default defineComponent({
           isSelected = true
         }
 
-        selectedFieldMapping[mapping] = { value: this.fieldMapping[mapping], isSelected }
+        mappings[mapping] = { value: this.fieldMapping[mapping], isSelected }
       })
 
       const createMappingModal = await modalController.create({
         component: CreateMappingModal,
-        componentProps: { content: this.content, seletedFieldMapping: selectedFieldMapping, mappingType: 'EXPORD'}
+        componentProps: { content: this.content, mappings, mappingType: 'EXPORD'}
       });
       return createMappingModal.present();
     },
