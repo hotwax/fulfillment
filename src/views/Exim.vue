@@ -57,7 +57,7 @@
           </ion-card-header>
           <div class="border-top">
             <ion-button fill="clear" @click="viewSavedMappings">
-              {{ $t('View Saved mappings') }}
+              {{ $t('View Saved Mappings') }}
               <ion-icon slot="end" :icon="bookmarkOutline" />
             </ion-button>
           </div>

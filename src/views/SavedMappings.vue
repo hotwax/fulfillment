@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-menu-button slot="start" />
+        <ion-back-button slot="start" default-href="/exim" />
         <ion-title>{{ $t("Saved mappings") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -37,11 +37,11 @@
 
 <script lang="ts">
 import {
+  IonBackButton,
   IonContent,
   IonItem,
   IonLabel,
   IonListHeader,
-  IonMenuButton,
   IonList,
   IonHeader,
   IonToolbar,
@@ -58,11 +58,11 @@ import MappingConfiguration from '@/components/MappingConfiguration.vue'
 export default defineComponent({
   name: 'SavedMappings',
   components: {
+    IonBackButton,
     IonContent,
     IonItem,
     IonLabel,
     IonListHeader,
-    IonMenuButton,
     IonList,
     IonHeader,
     IonToolbar,
