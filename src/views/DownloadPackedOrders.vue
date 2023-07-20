@@ -258,7 +258,16 @@ export default defineComponent({
     },
     mapFields(mapping: any) {
       const fieldMapping = JSON.parse(JSON.stringify(mapping));
-      this.fieldMapping = fieldMapping.value;
+      const mappingValue = fieldMapping.value
+
+      this.fieldMapping = {}
+      Object.keys(mappingValue).map((mapping) => {
+        this.fieldMapping[mapping] = mappingValue[mapping].value
+
+        if(mappingValue[mapping].isSelected) {
+          this.selectedData[mapping] = mappingValue[mapping].isSelected
+        }
+      })
     },
     async addCustomField() {
       const customFieldModal = await modalController.create({
