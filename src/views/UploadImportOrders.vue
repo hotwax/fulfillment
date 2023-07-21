@@ -16,6 +16,8 @@
           <label for="orderInputFile">{{ $t("Upload") }}</label>
         </ion-item>
 
+        {{ fieldMappings('IMPORD') }}
+
         <ion-list>
           <ion-list-header>{{ $t("Saved mappings") }}</ion-list-header>
           <div>
@@ -23,7 +25,7 @@
               <ion-icon :icon="addOutline" />
               <ion-label>{{ $t("New mapping") }}</ion-label>
             </ion-chip>
-            <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('IMPORD') ?? []" :key="index" @click="mapFields(mapping)" :outline=true>
+            <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('IMPORD') ?? []" :key="index" @click="mapFields(mapping.value)" :outline=true>
               {{ mapping.name }}
             </ion-chip>
           </div>
@@ -34,7 +36,7 @@
 
           <ion-item :key="field" v-for="(fieldValues, field) in fields">
             <ion-label>{{ $t(fieldValues.label) }}</ion-label>
-            <ion-select interface="popover" v-if="content.length" :placeholder="$t('Select')" v-model="fieldMapping[field]">
+            <ion-select interface="popover" v-if="content.length" :placeholder="$t('Select')" v-model="fieldMapping[field].value">
               <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -184,18 +186,21 @@ export default defineComponent({
       // TODO: Store an object in this.content variable, so everytime when accessing it, we don't need to use 0th index
       const csvFields = Object.keys(this.content[0]);
 
-      const missingFields = Object.values(fieldMapping.value).filter((field: any) => {
-        if(!csvFields.includes(field)) return field;
+      const missingFields: Array<string> = []
+
+      Object.values(fieldMapping).map((field: any) => {
+        if(!csvFields.includes(field.value)) missingFields.push(field.value);
       });
 
       if(missingFields.length) showToast(translate("Some of the mapping fields are missing in the CSV: ", { missingFields: missingFields.join(", ") }))
 
-      Object.keys(fieldMapping.value).map((key) => {
-        if(!csvFields.includes(fieldMapping.value[key])){
-          fieldMapping.value[key] = "";
+      Object.keys(fieldMapping).map((key) => {
+        if(!csvFields.includes(fieldMapping[key].value)){
+          fieldMapping[key].value = "";
         }
       })
-      this.fieldMapping = fieldMapping.value;
+
+      this.fieldMapping = fieldMapping;
     },
     async addFieldMapping() {
       let mappings: any = {};

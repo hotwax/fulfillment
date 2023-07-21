@@ -6,12 +6,10 @@
     </ion-item>
 
     <ion-list>
-
-      <ion-item :key="field" v-for="(fieldValues, field) in getFields()">
-        <ion-label>{{ $t(fieldValues.label) }}</ion-label>
-        <ion-input v-model="currentMapping.value[field]" />
+      <ion-item :key="field" v-for="(fieldValues, field) in currentMapping.value">
+        <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
+        <ion-input v-model="fieldValues.value" />
       </ion-item>
-
     </ion-list>
 
     <div class="ion-padding-top actions desktop-only">
@@ -71,11 +69,16 @@ export default defineComponent({
       currentMapping: 'user/getCurrentMapping'
     })
   },
+  data() {
+    return {
+      fields: {} as any
+    }
+  },
+  mounted() {
+    const fields = process.env["VUE_APP_MAPPING_" + this.currentMapping.mappingType];
+    this.fields = fields ? JSON.parse(fields) : {};
+  },
   methods: {
-    getFields() {
-      const fields = process.env["VUE_APP_MAPPING_" + this.currentMapping.mappingType];
-      return fields ? JSON.parse(fields) : {};
-    },
     async deleteMapping() {
       const message = this.$t("Are you sure you want to delete this CSV mapping? This action cannot be undone.");
       const alert = await alertController.create({
@@ -95,7 +98,7 @@ export default defineComponent({
       return alert.present();
     },
     areAllFieldsSelected() {
-      return Object.values(this.currentMapping.value).every(field => field !== "");
+      return Object.values(this.currentMapping.value).every((field: any) => field.value !== "");
     },
     async updateMapping() {
       if(!this.currentMapping.name) {

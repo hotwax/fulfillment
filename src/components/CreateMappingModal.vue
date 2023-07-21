@@ -18,7 +18,7 @@
   <ion-content class="ion-padding">
     <div>
       <ion-list>
-        <ion-item :key="field" v-for="(fieldValues, field) in mappings">
+        <ion-item :key="field" v-for="(fieldValues, field) in fieldMapping">
           <ion-label>{{ $t(fieldValues.label) }}</ion-label>
           <ion-input v-if="mappingType === 'EXPORD'" slot="end" v-model="fieldValues.value"></ion-input>
           <ion-select v-else interface="popover" :placeholder = "$t('Select')" v-model="fieldValues.value">
@@ -112,9 +112,9 @@ export default defineComponent({
       }
       const id = this.generateUniqueMappingPrefId();
 
-      // removing label from mappings as we don't need to save label with the mappings
+      // removing label from mappings as we don't need to save label with the mappings as it will just increase the size of the value
       Object.keys(this.fieldMapping).map((mapping) => {
-        delete this.fieldMapping[mapping].label
+        this.fieldMapping[mapping] && delete this.fieldMapping[mapping].label
       })
 
       await this.store.dispatch("user/createFieldMapping", { id, name: this.mappingName, value: this.fieldMapping, mappingType: this.mappingType })
