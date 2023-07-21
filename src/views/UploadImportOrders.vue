@@ -16,8 +16,6 @@
           <label for="orderInputFile">{{ $t("Upload") }}</label>
         </ion-item>
 
-        {{ fieldMappings('IMPORD') }}
-
         <ion-list>
           <ion-list-header>{{ $t("Saved mappings") }}</ion-list-header>
           <div>
@@ -106,7 +104,7 @@ export default defineComponent({
   methods: {
     generateFieldMapping() {
       this.fieldMapping = Object.keys(this.fields).reduce((fieldMapping: any, field: string) => {
-        fieldMapping[field] = ""
+        fieldMapping[field] = {}
         return fieldMapping;
       }, {})
     },
@@ -130,7 +128,7 @@ export default defineComponent({
       }
     },
     async save() {
-      const areAllFieldsSelected = Object.values(this.fieldMapping).every(field => field !== "");
+      const areAllFieldsSelected = Object.values(this.fieldMapping).every((field: any) => field.value !== "");
       
       if (!areAllFieldsSelected) {
         showToast(translate("Select all the fields to continue"));
@@ -138,9 +136,9 @@ export default defineComponent({
       }
 
       const uploadData = this.content.map((order: any) => ({
-        'orderIdValue': order[this.fieldMapping.orderId],
-        'externalFacilityId': order[this.fieldMapping.facilityId],
-        'trackingNumber': order[this.fieldMapping.trackingCode]
+        'orderIdValue': order[this.fieldMapping['orderId'].value],
+        'externalFacilityId': order[this.fieldMapping['facilityId'].value],
+        'trackingNumber': order[this.fieldMapping['trackingCode'].value]
       }))
 
       const fileName = this.file.name.replace(".csv", ".json");
@@ -206,7 +204,7 @@ export default defineComponent({
       let mappings: any = {};
 
       Object.keys(this.fieldMapping).map((mapping) => {
-        mappings[mapping] = { value: this.fieldMapping[mapping], label: this.fields[mapping].label }
+        mappings[mapping] = { value: this.fieldMapping[mapping].value, label: this.fields[mapping].label }
       })
 
       const createMappingModal = await modalController.create({

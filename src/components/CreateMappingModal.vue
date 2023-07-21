@@ -115,6 +115,7 @@ export default defineComponent({
       // removing label from mappings as we don't need to save label with the mappings as it will just increase the size of the value
       Object.keys(this.fieldMapping).map((mapping) => {
         this.fieldMapping[mapping] && delete this.fieldMapping[mapping].label
+        return;
       })
 
       await this.store.dispatch("user/createFieldMapping", { id, name: this.mappingName, value: this.fieldMapping, mappingType: this.mappingType })

@@ -262,7 +262,16 @@ export default defineComponent({
 
       this.fieldMapping = {}
       Object.keys(mappingValue).map((mapping) => {
-        this.fieldMapping[mapping] = mappingValue[mapping].value
+        if(mappingValue[mapping].isCustomField) {
+          this.customFields[mapping] = {
+            value: mappingValue[mapping].value,
+            label: mapping,
+            isSelected: true,
+            isCustomField: true
+          }
+        } else {
+          this.fieldMapping[mapping] = mappingValue[mapping].value
+        }
 
         if(mappingValue[mapping].isSelected) {
           this.selectedData[mapping] = mappingValue[mapping].isSelected
@@ -280,7 +289,8 @@ export default defineComponent({
           this.customFields[result.data.value.key] = {
             value: result.data.value.value,
             label: result.data.value.key,
-            isSelected: true
+            isSelected: true,
+            isCustomField: true
           }
         }
       })
