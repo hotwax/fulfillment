@@ -10,6 +10,7 @@ import { Settings } from 'luxon'
 import { updateInstanceUrl, updateToken, resetConfig } from '@/adapter'
 import logger from '@/logger'
 import { useProductIdentificationStore } from '@hotwax/dxp-components'
+import store from '@/store'
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -37,6 +38,13 @@ const actions: ActionTree<UserState, RootState> = {
               commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
               updateToken(resp.data.token)
               await dispatch('getProfile')
+              const currentEComStore = store.getters['user/getCurrentEComStore'];
+            
+              // Get product identification from api using dxp-component and set the state if eComStore is defined
+              if (currentEComStore.productStoreId) {
+                await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId)
+                  .catch((error) => console.log(error));
+              }
               if (resp.data._EVENT_MESSAGE_ && resp.data._EVENT_MESSAGE_.startsWith("Alert:")) {
                 // TODO Internationalise text
                 showToast(translate(resp.data._EVENT_MESSAGE_));
@@ -52,6 +60,13 @@ const actions: ActionTree<UserState, RootState> = {
             commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
             updateToken(resp.data.token)
             await dispatch('getProfile')
+            const currentEComStore = store.getters['user/getCurrentEComStore'];
+
+            // Get product identification from api using dxp-component and set the state if eComStore is defined
+            if (currentEComStore.productStoreId) {
+              await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId)
+                .catch((error) => console.log(error));
+            }
             return resp.data;
           }
         } else if (hasError(resp)) {
