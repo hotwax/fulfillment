@@ -116,6 +116,9 @@
 import { 
   IonButton, 
   IonCard, 
+  IonCardHeader,
+	IonCardTitle,
+	IonCardContent,
   IonCheckbox, 
   IonContent, 
   IonHeader,
@@ -130,7 +133,7 @@ import {
   IonToolbar,
   popoverController,
   modalController,
-alertController} from '@ionic/vue';
+  alertController} from '@ionic/vue';
 import { defineComponent, inject } from 'vue';
 import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, timeOutline } from 'ionicons/icons'
 import RecyclePopover from '@/views/RecyclePopover.vue'
@@ -149,6 +152,9 @@ export default defineComponent({
   components: { 
     IonButton,
     IonCard,
+    IonCardHeader,
+    IonCardTitle,
+    IonCardContent,
     IonCheckbox,
     IonContent, 
     IonHeader, 
