@@ -198,9 +198,15 @@ export default defineComponent({
       this.fieldMapping = fieldMapping.value;
     },
     async addFieldMapping() {
+      let mappings: any = {};
+
+      Object.keys(this.fieldMapping).map((mapping) => {
+        mappings[mapping] = { value: this.fieldMapping[mapping], label: this.fields[mapping].label }
+      })
+
       const createMappingModal = await modalController.create({
         component: CreateMappingModal,
-        componentProps: { content: this.content, seletedFieldMapping: this.fieldMapping, mappingType: 'IMPORD'}
+        componentProps: { content: this.content, mappings, mappingType: 'IMPORD'}
       });
       return createMappingModal.present();
     }

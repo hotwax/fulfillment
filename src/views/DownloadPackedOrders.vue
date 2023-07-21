@@ -41,9 +41,9 @@
         <ion-list>
           <ion-button fill="clear" @click="addCustomField()" :disabled="!Object.keys(fieldMapping).length">{{ $t('Add custom field') }}</ion-button>
 
-          <ion-item :key="key" v-for="(value, key) in customFields">
+          <ion-item :key="key" v-for="(field, key) in customFields">
             <ion-label>{{ key }}</ion-label>
-            <ion-label slot="end">{{ value }}</ion-label>
+            <ion-label slot="end">{{ field.value }}</ion-label>
             <ion-button slot="end" fill="clear" @click="removeCustomField(key)">
               <ion-icon :icon="trashOutline" />
             </ion-button>
@@ -215,7 +215,7 @@ export default defineComponent({
 
       // adding custom fields in the data
       Object.keys(this.customFields).map((field: any) => {
-        downloadData.map((data: any) => data[field] = this.customFields[field])
+        downloadData.map((data: any) => data[field] = this.customFields[field].value)
       })
 
       const alert = await alertController.create({
@@ -247,12 +247,12 @@ export default defineComponent({
           isSelected = true
         }
 
-        mappings[mapping] = { value: this.fieldMapping[mapping], isSelected }
+        mappings[mapping] = { value: this.fieldMapping[mapping], isSelected, label: this.fields[mapping].label }
       })
 
       const createMappingModal = await modalController.create({
         component: CreateMappingModal,
-        componentProps: { content: this.content, mappings, mappingType: 'EXPORD'}
+        componentProps: { content: this.content, mappings: { ...mappings, ...this.customFields }, mappingType: 'EXPORD'}
       });
       return createMappingModal.present();
     },
@@ -277,7 +277,11 @@ export default defineComponent({
 
       customFieldModal.onDidDismiss().then((result) => {
         if(result.data && result.data.value) {
-          this.customFields[result.data.value.key] = result.data.value.value
+          this.customFields[result.data.value.key] = {
+            value: result.data.value.value,
+            label: result.data.value.key,
+            isSelected: true
+          }
         }
       })
 

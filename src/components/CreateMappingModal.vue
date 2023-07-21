@@ -18,10 +18,10 @@
   <ion-content class="ion-padding">
     <div>
       <ion-list>
-        <ion-item :key="field" v-for="(fieldValues, field) in getFields()">
+        <ion-item :key="field" v-for="(fieldValues, field) in mappings">
           <ion-label>{{ $t(fieldValues.label) }}</ion-label>
-          <ion-input v-if="mappingType === 'EXPORD'" slot="end" v-model="fieldMapping[field]"></ion-input>
-          <ion-select v-else interface="popover" :placeholder = "$t('Select')" v-model="fieldMapping[field]">
+          <ion-input v-if="mappingType === 'EXPORD'" slot="end" v-model="fieldValues.value"></ion-input>
+          <ion-select v-else interface="popover" :placeholder = "$t('Select')" v-model="fieldValues.value">
             <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
           </ion-select>
         </ion-item>
@@ -88,17 +88,8 @@ export default defineComponent({
   },
   props: ["content", "mappings", "mappingType"],
   mounted() {
+    // mappings needs to be in format { <key>: { value: <value>, label: <label>, isSelected | optional: <boolean> }}
     this.fieldMapping = JSON.parse(JSON.stringify(this.mappings));
-
-    // When the mapping type is export order, then converting it in the format (key: value), so that all type of mapping
-    // gets supported
-    if(this.mappingType === 'EXPORD') {
-      this.fieldMapping = {};
-      Object.keys(this.mappings).map((mapping: any) => {
-        this.fieldMapping[mapping] = this.mappings[mapping].value
-      })
-    }
-
     this.fileColumns = Object.keys(this.content[0]);
   },
   computed: {
@@ -107,10 +98,6 @@ export default defineComponent({
     })
   },
   methods: {
-    getFields() {
-      const fields = process.env["VUE_APP_MAPPING_" + this.mappingType];
-      return fields ? JSON.parse(fields) : {};
-    },
     closeModal() {
       modalController.dismiss({ dismissed: true });
     },
@@ -125,24 +112,16 @@ export default defineComponent({
       }
       const id = this.generateUniqueMappingPrefId();
 
-      let mappings = { ...this.fieldMapping }
+      // removing label from mappings as we don't need to save label with the mappings
+      Object.keys(this.fieldMapping).map((mapping) => {
+        delete this.fieldMapping[mapping].label
+      })
 
-      // if the mapping type is export order then saving the mappings value having an isSelected property
-      if(this.mappingType === 'EXPORD') {
-        mappings = {}
-        Object.keys(this.mappings).map((mapping) => {
-          mappings[mapping] = {
-            value: this.fieldMapping[mapping],
-            isSelected: this.mappings[mapping]?.isSelected
-          }
-        })
-      }
-
-      await this.store.dispatch("user/createFieldMapping", { id, name: this.mappingName, value: mappings, mappingType: this.mappingType })
+      await this.store.dispatch("user/createFieldMapping", { id, name: this.mappingName, value: this.fieldMapping, mappingType: this.mappingType })
       this.closeModal();
     },
     areAllFieldsSelected() {
-      return Object.values(this.fieldMapping).every(field => field !== "");
+      return Object.values(this.fieldMapping).every((field: any) => field.value !== "");
     },
     //Todo: Generating unique identifiers as we are currently storing in local storage. Need to remove it as we will be storing data on server.
     generateUniqueMappingPrefId(): any {
