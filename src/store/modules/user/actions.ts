@@ -9,13 +9,14 @@ import { translate } from '@/i18n'
 import { Settings } from 'luxon'
 import { updateInstanceUrl, updateToken, resetConfig } from '@/adapter'
 import logger from '@/logger'
+import { useProductIdentificationStore } from '@hotwax/dxp-components'
 
 const actions: ActionTree<UserState, RootState> = {
 
   /**
  * Login user and return token
  */
-  async login ({ commit, dispatch }, { username, password }) {
+  async login({ commit, dispatch }, { username, password }) {
     try {
       const resp = await UserService.login(username, password)
       if (resp.status === 200 && resp.data) {
@@ -27,7 +28,7 @@ const actions: ActionTree<UserState, RootState> = {
                 permissionId
               },
               headers: {
-                Authorization:  'Bearer ' + resp.data.token,
+                Authorization: 'Bearer ' + resp.data.token,
                 'Content-Type': 'application/json'
               }
             });
@@ -37,7 +38,7 @@ const actions: ActionTree<UserState, RootState> = {
               updateToken(resp.data.token)
               await dispatch('getProfile')
               if (resp.data._EVENT_MESSAGE_ && resp.data._EVENT_MESSAGE_.startsWith("Alert:")) {
-              // TODO Internationalise text
+                // TODO Internationalise text
                 showToast(translate(resp.data._EVENT_MESSAGE_));
               }
               return resp.data;
@@ -74,7 +75,7 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    * Logout user
    */
-  async logout ({ commit }) {
+  async logout({ commit }) {
     // TODO add any other tasks if need
     commit(types.USER_END_SESSION)
     this.dispatch('order/clearOrders')
@@ -84,7 +85,7 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    * Get User profile
    */
-  async getProfile ( { commit, dispatch }) {
+  async getProfile({ commit, dispatch }) {
     try {
       const resp = await UserService.getProfile()
       if (resp.data.userTimeZone) {
@@ -96,7 +97,7 @@ const actions: ActionTree<UserState, RootState> = {
       const facilities = [] as Array<any>;
 
       resp.data.facilities.map((facility: any) => {
-        if(!facilityIds.has(facility.facilityId)) {
+        if (!facilityIds.has(facility.facilityId)) {
           facilityIds.add(facility.facilityId)
           facilities.push(facility)
         }
@@ -109,7 +110,7 @@ const actions: ActionTree<UserState, RootState> = {
 
       commit(types.USER_INFO_UPDATED, resp.data);
       commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
-    } catch(err) {
+    } catch (err) {
       logger.error('Failed to fetch user profile information', err)
     }
   },
@@ -117,18 +118,18 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    * update current facility information
    */
-  async setFacility ({ commit, dispatch, state }, payload) {
+  async setFacility({ commit, dispatch, state }, payload) {
     const user = JSON.parse(JSON.stringify(state.current as any));
     commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
     user.stores = await dispatch("getEComStores", { facilityId: payload.facility.facilityId });
     commit(types.USER_INFO_UPDATED, user);
     this.dispatch('order/clearOrders')
   },
-  
+
   /**
    * Update user timeZone
    */
-  async setUserTimeZone ( { state, commit }, payload) {
+  async setUserTimeZone({ state, commit }, payload) {
     const resp = await UserService.setUserTimeZone(payload)
     if (resp.status === 200 && !hasError(resp)) {
       const current: any = state.current;
@@ -139,7 +140,7 @@ const actions: ActionTree<UserState, RootState> = {
   },
 
   // Set User Instance Url
-  setUserInstanceUrl ({ commit }, payload){
+  setUserInstanceUrl({ commit }, payload) {
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
     updateInstanceUrl(payload)
   },
@@ -160,10 +161,10 @@ const actions: ActionTree<UserState, RootState> = {
       }
 
       resp = await UserService.getEComStores(param);
-      if(!hasError(resp)) {
+      if (!hasError(resp)) {
         const eComStores = resp.data.docs
 
-        const userPref =  await UserService.getUserPreference({
+        const userPref = await UserService.getUserPreference({
           'userPrefTypeId': 'SELECTED_BRAND'
         });
         const userPrefStore = eComStores.find((store: any) => store.productStoreId == userPref.data.userPrefValue)
@@ -173,7 +174,7 @@ const actions: ActionTree<UserState, RootState> = {
       } else {
         throw resp.data
       }
-    } catch(error) {
+    } catch (error) {
       logger.error('Failed to get ecom stores', error);
     }
     return []
@@ -188,9 +189,15 @@ const actions: ActionTree<UserState, RootState> = {
       'userPrefTypeId': 'SELECTED_BRAND',
       'userPrefValue': payload.eComStore.productStoreId
     });
+
+    // Get product identification from api using dxp-component and set the state if eComStore is defined
+    if (payload.eComStore.productStoreId) {
+      await useProductIdentificationStore().getIdentificationPref(payload.eComStore.productStoreId)
+        .catch((error) => console.log(error));
+    }
   },
 
-  setUserPreference({ commit }, payload){
+  setUserPreference({ commit }, payload) {
     commit(types.USER_PREFERENCE_UPDATED, payload)
   },
 }
