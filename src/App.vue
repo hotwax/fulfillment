@@ -9,7 +9,7 @@
 
 <script lang="ts">
 import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import { defineComponent, provide, ref } from 'vue';
 import Menu from '@/components/Menu.vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus";
@@ -110,6 +110,26 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const router = useRouter();
+
+    /* Start Product Identifier */
+
+    const productIdentificationStore = useProductIdentificationStore();
+
+    // Reactive state for productIdentificationPref
+    let productIdentificationPref = ref(
+      productIdentificationStore.$state.productIdentificationPref
+    );
+
+    // Providing productIdentificationPref to child components
+    provide('productIdentificationPref', productIdentificationPref);
+
+    // Subscribing to productIdentificationStore state change and changing value productIdentificationPref 
+    productIdentificationStore.$subscribe((mutation: any, state) => {
+        productIdentificationPref.value = state.productIdentificationPref;
+    }, {detached: true});
+
+    /* End Product Identifier */
+
     return {
       router,
       store
