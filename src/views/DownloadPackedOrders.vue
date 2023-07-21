@@ -193,7 +193,7 @@ export default defineComponent({
         if(this.selectedData[field]) {
           delete this.selectedData[field]
         } else {
-          this.selectedData[field] = this.fieldMapping[field]
+          this.selectedData[field] = this.fieldMapping[field].value
         }
         this.isFieldClicked = false;
       }
@@ -261,6 +261,9 @@ export default defineComponent({
       const mappingValue = fieldMapping.value
 
       this.fieldMapping = {}
+      this.customFields = {}
+      this.selectedData = {}
+
       Object.keys(mappingValue).map((mapping) => {
         if(mappingValue[mapping].isCustomField) {
           this.customFields[mapping] = {
@@ -273,8 +276,8 @@ export default defineComponent({
           this.fieldMapping[mapping] = mappingValue[mapping].value
         }
 
-        if(mappingValue[mapping].isSelected) {
-          this.selectedData[mapping] = mappingValue[mapping].isSelected
+        if(mappingValue[mapping].isSelected && !mappingValue[mapping].isCustomField) {
+          this.selectedData[mapping] = mappingValue[mapping].value
         }
       })
     },
