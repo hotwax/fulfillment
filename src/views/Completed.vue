@@ -74,8 +74,8 @@
                     <Image :src="getProduct(item.productId).mainImageUrl" />
                   </ion-thumbnail>
                   <ion-label>
-                    <p class="overline">{{ item.productSku }}</p>
-                    {{ item.virtualProductName }}
+                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) }}
                     <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                 </ion-item>
@@ -157,12 +157,12 @@ import {
   alertController,
   popoverController
 } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import { defineComponent, inject } from 'vue';
 import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
-import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
+import { copyToClipboard, formatUtcDate, getFeature, showToast, getProductIdentificationValue } from '@/utils'
 import { hasError } from '@/adapter'
 import Image from '@/components/Image.vue'
 import { UtilService } from '@/services/UtilService';
@@ -573,6 +573,9 @@ export default defineComponent({
     const store = useStore();
     const router = useRouter();
 
+    // Injecting identifier preference from app.view
+    const productIdentificationPref: any  = inject("productIdentificationPref");
+
     return {
       copyToClipboard,
       checkmarkDoneOutline,
@@ -584,7 +587,9 @@ export default defineComponent({
       pricetagOutline,
       printOutline,
       router,
-      store
+      store,
+      getProductIdentificationValue,
+      productIdentificationPref
     }
   }
 });

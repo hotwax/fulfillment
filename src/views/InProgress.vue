@@ -78,8 +78,8 @@
                     <Image :src="getProduct(item.productId).mainImageUrl" />
                   </ion-thumbnail>
                   <ion-label>
-                    <p class="overline">{{ item.productSku }}</p>
-                    {{ item.productName }}
+                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) }}
                     <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                 </ion-item>
@@ -191,11 +191,11 @@ import {
   alertController,
   popoverController
 } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import { defineComponent, inject } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline, optionsOutline } from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
-import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils';
+import { copyToClipboard, formatUtcDate, getFeature, showToast, getProductIdentificationValue } from '@/utils';
 import { hasError } from '@/adapter';
 import Image from '@/components/Image.vue'
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue';
@@ -784,6 +784,9 @@ export default defineComponent({
   setup() {
     const store = useStore();
 
+    // Injecting identifier preference from app.view
+    const productIdentificationPref: any  = inject("productIdentificationPref");
+
     return {
       copyToClipboard,
       addOutline,
@@ -794,7 +797,9 @@ export default defineComponent({
       getFeature,
       checkmarkDoneOutline,
       pricetagOutline,
-      store
+      store,
+      getProductIdentificationValue,
+      productIdentificationPref
     }
   }
 });

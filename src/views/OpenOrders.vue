@@ -67,8 +67,8 @@
                       <Image :src="getProduct(order.productId).mainImageUrl" />
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ order.productSku }}</p>
-                      {{ order.virtualProductName }}
+                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(order.productId)) }}</p>
+                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(order.productId)) }}
                       <p>{{ getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
                     </ion-label>
                   </ion-item>
@@ -124,12 +124,12 @@ import {
   IonTitle, 
   IonToolbar, 
   modalController } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import { defineComponent, inject } from 'vue';
 import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import Image from '@/components/Image.vue'
-import { copyToClipboard, formatUtcDate, getFeature } from '@/utils'
+import { copyToClipboard, formatUtcDate, getFeature, getProductIdentificationValue } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
@@ -287,6 +287,9 @@ export default defineComponent({
   setup() {
     const store = useStore();
 
+    // Injecting identifier preference from app.view
+    const productIdentificationPref: any  = inject("productIdentificationPref");
+
     return{
       copyToClipboard,
       formatUtcDate,
@@ -295,7 +298,9 @@ export default defineComponent({
       pricetagOutline,
       printOutline,
       refreshCircleOutline,
-      store
+      store,
+      getProductIdentificationValue,
+      productIdentificationPref
     }
   }
 });
