@@ -38,13 +38,6 @@ const actions: ActionTree<UserState, RootState> = {
               commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
               updateToken(resp.data.token)
               await dispatch('getProfile')
-              const currentEComStore = store.getters['user/getCurrentEComStore'];
-            
-              // Get product identification from api using dxp-component and set the state if eComStore is defined
-              if (currentEComStore.productStoreId) {
-                await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId)
-                  .catch((error) => console.log(error));
-              }
               if (resp.data._EVENT_MESSAGE_ && resp.data._EVENT_MESSAGE_.startsWith("Alert:")) {
                 // TODO Internationalise text
                 showToast(translate(resp.data._EVENT_MESSAGE_));
@@ -60,13 +53,6 @@ const actions: ActionTree<UserState, RootState> = {
             commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
             updateToken(resp.data.token)
             await dispatch('getProfile')
-            const currentEComStore = store.getters['user/getCurrentEComStore'];
-
-            // Get product identification from api using dxp-component and set the state if eComStore is defined
-            if (currentEComStore.productStoreId) {
-              await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId)
-                .catch((error) => console.log(error));
-            }
             return resp.data;
           }
         } else if (hasError(resp)) {
@@ -185,6 +171,14 @@ const actions: ActionTree<UserState, RootState> = {
         const userPrefStore = eComStores.find((store: any) => store.productStoreId == userPref.data.userPrefValue)
 
         commit(types.USER_CURRENT_ECOM_STORE_UPDATED, userPrefStore ? userPrefStore : eComStores.length > 0 ? eComStores[0] : {});
+
+        // Get product identification from api using dxp-component and set the state if eComStore is defined
+        const currEcomStore = store.getters['user/getCurrentEComStore']; 
+        if (currEcomStore.productStoreId) {
+          await useProductIdentificationStore().getIdentificationPref(currEcomStore.productStoreId)
+            .catch((error) => logger.error('Failed to fetch identification preference', error));
+        }
+
         return eComStores
       } else {
         throw resp.data
@@ -208,7 +202,7 @@ const actions: ActionTree<UserState, RootState> = {
     // Get product identification from api using dxp-component and set the state if eComStore is defined
     if (payload.eComStore.productStoreId) {
       await useProductIdentificationStore().getIdentificationPref(payload.eComStore.productStoreId)
-        .catch((error) => console.log(error));
+        .catch((error) => logger.error('Failed to fetch identification preference', error));
     }
   },
 
