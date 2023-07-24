@@ -109,6 +109,7 @@
                 </ion-button>
               </div>
               <div class="desktop-only">
+                <ion-button fill="outline" @click="showShippingLabelErrorModal(order)">{{ $t("Shipping label error") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
               </div>
             </div>
@@ -155,7 +156,8 @@ import {
   IonTitle,
   IonToolbar,
   alertController,
-  popoverController
+  popoverController,
+modalController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
@@ -172,6 +174,7 @@ import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import { translate } from '@/i18n';
 import { OrderService } from '@/services/OrderService';
 import logger from '@/logger';
+import ShippingLabelErrorModal from '@/views/ShippingLabelErrorModal.vue';
 
 export default defineComponent({
   name: 'Home',
@@ -567,6 +570,82 @@ export default defineComponent({
       order.isGeneratingShippingLabel = true;
       await OrderService.printShippingLabel(shipmentIds)
       order.isGeneratingShippingLabel = false;
+    },
+    async showShippingLabelErrorModal(order: any){
+
+      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId);
+      // const response = await OrderService.fetchShipmentLabelError(shipmentIds);
+
+      const response = {
+                            "count": "1",
+                            "docs": [
+                                {
+                                    "createdStamp": '',
+                                    "shipmentPackageSeqId": '',
+                                    "boxNumber": null,
+                                    "labelPrinted": null,
+                                    "internationalInvoice": null,
+                                    "codAmount": null,
+                                    "insuredAmount": null,
+                                    "gatewayMessage": "[Invalid Recipient StreetLine 1]",
+                                    "gatewayStatus": "error",
+                                    "lastUpdatedStamp": '',
+                                    "createdTxStamp": '',
+                                    "packagePickupPrn": null,
+                                    "labelIntlSignImage": null,
+                                    "lastUpdatedTxStamp": '',
+                                    "trackingCode": null,
+                                    "packageServiceCost": null,
+                                    "packageOtherCost": null,
+                                    "shipmentRouteSegmentId": '',
+                                    "labelImageUrl": null,
+                                    "labelImage": null,
+                                    "packagePickupDate": null,
+                                    "currencyUomId": null,
+                                    "packageTransportCost": null,
+                                    "shipmentId": '',
+                                    "labelHtml": null
+                                },
+                                {
+                                    "createdStamp": '',
+                                    "shipmentPackageSeqId": '',
+                                    "boxNumber": null,
+                                    "labelPrinted": null,
+                                    "internationalInvoice": null,
+                                    "codAmount": null,
+                                    "insuredAmount": null,
+                                    "gatewayMessage": "[Invalid Recipient StreetLine 4]",
+                                    "gatewayStatus": "error",
+                                    "lastUpdatedStamp": '',
+                                    "createdTxStamp": '',
+                                    "packagePickupPrn": null,
+                                    "labelIntlSignImage": null,
+                                    "lastUpdatedTxStamp": '',
+                                    "trackingCode": null,
+                                    "packageServiceCost": null,
+                                    "packageOtherCost": null,
+                                    "shipmentRouteSegmentId": '',
+                                    "labelImageUrl": null,
+                                    "labelImage": null,
+                                    "packagePickupDate": null,
+                                    "currencyUomId": null,
+                                    "packageTransportCost": null,
+                                    "shipmentId": '',
+                                    "labelHtml": null
+                                }
+                            ]
+                        }
+
+      // const resp = OrderService.fetchShipmentLabelError()
+
+      const gatewayMessages = response.docs.map((doc: any) => doc.gatewayMessage);
+      const assignPickerModal = await modalController.create({
+        component: ShippingLabelErrorModal,
+        componentProps: {
+          gatewayMessages
+         }
+      });
+      return assignPickerModal.present();
     }
   },
   setup() {

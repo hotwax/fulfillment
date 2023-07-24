@@ -20,6 +20,8 @@ const actions: ActionTree<UserState, RootState> = {
       const resp = await UserService.login(username, password)
       if (resp.status === 200 && resp.data) {
         if (resp.data.token) {
+          console.log('token', resp.data.token);
+          
           const permissionId = process.env.VUE_APP_PERMISSION_ID;
           if (permissionId) {
             const checkPermissionResponse = await UserService.checkPermission({

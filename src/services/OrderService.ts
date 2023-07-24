@@ -290,6 +290,38 @@ const retryShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
   })
 }
 
+const fetchShipmentLabelError = async (shipmentIds: Array<string>): Promise<any> => {
+  let shipmentLabelError = [];
+  const params = {
+    "entityName": "ShipmentPackageRouteSeg",
+    "inputFields": {
+      "shipmentId": shipmentIds,
+      "gatewayMessage": null,
+      "gatewayMessage_op": "not-equal",
+      "gatewayStatus": "error",
+      "gatewayStatus_op": "equals"
+    }
+  }
+
+  try {
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    })
+
+    if (!hasError(resp)) {
+      shipmentLabelError = resp?.data.docs;
+    } else if (!resp?.data.error || (resp.data.error && resp.data.error !== "No record found")) {
+      return Promise.reject(resp?.data.error);
+    }
+  } catch (err) {
+    logger.error('Failed to fetch shipment label error', err)
+  }
+
+  return shipmentLabelError;
+}
+
 export const OrderService = {
   addShipmentBox,
   bulkShipOrders,
@@ -308,5 +340,6 @@ export const OrderService = {
   retryShippingLabel,
   shipOrder,
   unpackOrder,
-  updateOrder
+  updateOrder,
+  fetchShipmentLabelError
 }
