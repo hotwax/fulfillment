@@ -1,7 +1,7 @@
 {
-  "doesn't have any completed orders right now.": "no tiene ningún pedido completado en este momento.",
-  "doesn't have any orders in progress right now.": "no tiene ningún pedido en curso en este momento.",
-  "doesn't have any outstanding orders right now.": "no tiene ningún pedido pendiente en este momento.",
+  " doesn't have any completed orders right now.": " no tiene ningún pedido completado en este moment.",
+  " doesn't have any orders in progress right now.": " no tiene ningún pedido en curso en este moment.",
+  " doesn't have any outstanding orders right now.": " no tiene ningún pedido pendiente en este momento.",
   "Add Box": "Agregar Caja",
   "Add custom field": "Agregar campo personalizado",
   "Are you sure you want to change the time zone to?": "¿Estás seguro/a de que quieres cambiar la zona horaria a?",
