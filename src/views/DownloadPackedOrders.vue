@@ -193,7 +193,7 @@ export default defineComponent({
         if(this.selectedData[field]) {
           delete this.selectedData[field]
         } else {
-          this.selectedData[field] = this.fieldMapping[field].value
+          this.selectedData[field] = this.fieldMapping[field]
         }
         this.isFieldClicked = false;
       }
