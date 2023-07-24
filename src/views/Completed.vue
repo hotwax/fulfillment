@@ -569,9 +569,9 @@ export default defineComponent({
       order.isGeneratingShippingLabel = true;
 
       if(order.missingLabelImage) {
-        this.retryShippingLabel(order)
+        await this.retryShippingLabel(order)
       } else {
-        this.printShippingLabel(order)
+        await this.printShippingLabel(order)
       }
 
       order.isGeneratingShippingLabel = false;
