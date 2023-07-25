@@ -14,14 +14,28 @@ const hasError = (response: any) => {
   return !!response.data._ERROR_MESSAGE_ || !!response.data._ERROR_MESSAGE_LIST_;
 }
 
-const showToast = async (message: string) => {
-  const toast = await toastController
-    .create({
-      message,
-      duration: 3000,
-      position: 'bottom'
-    })
-  return toast.present();
+const showToast = async (message: string, canDismiss?: boolean, manualDismiss?: boolean, position?: string) => {
+  const config = {
+    message,
+    position: position ? position : 'bottom',
+  } as any
+
+  if (canDismiss) {
+    config.buttons = [
+      {
+        text: 'Dismiss',
+        role: 'cancel',
+      },
+    ]
+  }
+
+  if (!manualDismiss) {
+    config.duration = 3000
+  }
+
+  const toast = await toastController.create(config)
+  // present toast if manual dismiss is not needed
+  return !manualDismiss ? toast.present() : toast
 }
 
 const handleDateTimeInput = (dateTimeValue: any) => {
