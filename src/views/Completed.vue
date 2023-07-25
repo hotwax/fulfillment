@@ -155,7 +155,7 @@ import {
   IonToolbar,
   alertController,
   popoverController,
-modalController
+  modalController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
@@ -172,7 +172,7 @@ import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import { translate } from '@/i18n';
 import { OrderService } from '@/services/OrderService';
 import logger from '@/logger';
-import ShippingLabelErrorModal from '@/views/ShippingLabelErrorModal.vue';
+import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 
 export default defineComponent({
   name: 'Home',
