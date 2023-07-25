@@ -155,7 +155,11 @@
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
-      <div class="empty-state" v-else>{{ currentFacility.name }} {{ $t(" doesn't have any orders in progress right now.") }} </div>
+      <div class="empty-state" v-else>
+        <div v-if="searchedQuery == ''">{{ currentFacility.name }}{{ $t(" doesn't have any outstanding orders right now.") }}</div>
+        <div v-if="searchedQuery != ''">{{ $t( `No results found for ${searchedQuery}. Try searching In Open or Completed tab instead.` ) }}</div>
+        <div v-if="searchedQuery != ''">{{ $t( `If you still can't find what you're looking for, try switching stores.` ) }}</div>
+      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -254,7 +258,8 @@ export default defineComponent({
       picklists: [] as any,
       defaultShipmentBoxType: '',
       itemsIssueSegmentSelected: [] as any,
-      orderBoxes: [] as any
+      orderBoxes: [] as any,
+      searchedQuery: ''
     }
   },
   methods: {
@@ -769,6 +774,7 @@ export default defineComponent({
       inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       inProgressOrdersQuery.queryString = queryString
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
+      this.searchedQuery = queryString;
     },
     async updateOrderQuery(size?: any, queryString?: any) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))

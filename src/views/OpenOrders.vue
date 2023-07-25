@@ -95,7 +95,9 @@
         </ion-fab-button>
       </ion-fab>
       <div class="empty-state" v-else>
-        {{ currentFacility.name }}{{ $t(" doesn't have any outstanding orders right now.") }}
+        <div v-if="searchedQuery == ''">{{ currentFacility.name }}{{ $t(" doesn't have any outstanding orders right now.") }}</div>
+        <div v-if="searchedQuery != ''">{{ $t( `No results found for ${searchedQuery}. Try searching In Progress or Completed tab instead.` ) }}</div>
+        <div v-if="searchedQuery != ''">{{ $t( `If you still can't find what you're looking for, try switching stores.` ) }}</div>
       </div>
     </ion-content>
   </ion-page>
@@ -174,7 +176,8 @@ export default defineComponent({
   },
   data () {
     return {
-      shipmentMethods: [] as Array<any>
+      shipmentMethods: [] as Array<any>,
+      searchedQuery: ''
     }
   },
   methods: {
@@ -262,6 +265,7 @@ export default defineComponent({
       openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       openOrdersQuery.queryString = queryString
       await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
+      this.searchedQuery = queryString;
     },
     async updateOrderQuery(size: any) {
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
