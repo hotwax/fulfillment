@@ -30,7 +30,7 @@ import {
   modalController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { addCircleOutline, closeOutline, pricetag } from "ionicons/icons";
+import { closeOutline } from "ionicons/icons";
 export default defineComponent({
   name: "ShippingLabelErrorModal",
   components: { 
