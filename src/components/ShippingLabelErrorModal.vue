@@ -15,6 +15,7 @@
         <ion-item v-for="message, index in gatewayMessages" :key="index">
           <ion-label>{{ message }}</ion-label>
         </ion-item>
+        <div v-if="!gatewayMessages.length">{{ $t("No data Found.") }}</div>
       </ion-list>
     </div>
   </ion-content>
