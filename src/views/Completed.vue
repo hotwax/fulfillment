@@ -97,10 +97,8 @@
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ $t("Shipped") }}</ion-button>
                 <ion-button  :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="shipOrder(order)" v-else>{{ $t("Ship Now") }}</ion-button>
-                <!-- TODO: implemented support to make the buttons functional -->
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" v-if="order.missingLabelImage" fill="outline" @click="retryShippingLabel(order)">{{ $t("Retry Generate Label") }}</ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" v-else fill="outline" @click="printShippingLabel(order)">
-                  {{ $t("Print Shipping Label") }}
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="regenerateShippingLabel(order)">
+                  {{ $t("Regenerate Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="printPackingSlip(order)">
@@ -541,6 +539,7 @@ export default defineComponent({
       const resp = await OrderService.retryShippingLabel(shipmentIds)
       if (!hasError(resp)) {
         showToast(translate("Shipping Label generated successfully"))
+        await this.printShippingLabel(order)
         // TODO fetch specific order
         this.initialiseOrderQuery();
       } else {
@@ -560,15 +559,24 @@ export default defineComponent({
       order.isGeneratingPackingSlip = false;
     },
     async printShippingLabel(order: any) {
+      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
+      await OrderService.printShippingLabel(shipmentIds)
+    },
+    async regenerateShippingLabel(order: any) {
       // if the request to print shipping label is not yet completed, then clicking multiple times on the button
       // should not do anything
       if(order.isGeneratingShippingLabel) {
         return;
       }
 
-      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
       order.isGeneratingShippingLabel = true;
-      await OrderService.printShippingLabel(shipmentIds)
+
+      if(order.missingLabelImage) {
+        await this.retryShippingLabel(order)
+      } else {
+        await this.printShippingLabel(order)
+      }
+
       order.isGeneratingShippingLabel = false;
     },
     async showShippingLabelErrorModal(order: any){

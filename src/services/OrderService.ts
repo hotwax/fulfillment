@@ -282,9 +282,9 @@ const printPicklist = async (picklistId: string): Promise<any> => {
 
 const retryShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
   return api({
-    method: 'get',
+    method: 'POST',
     url: 'retryShippingLabel',  // TODO: update the api
-    params: {
+    data: {
       shipmentIds
     }
   })
