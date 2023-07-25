@@ -9,6 +9,7 @@ import store from '@/store'
 import Exim from "@/views/Exim.vue"
 import UploadImportOrders from "@/views/UploadImportOrders.vue"
 import DownloadPackedOrders from "@/views/DownloadPackedOrders.vue"
+import SavedMappings from "@/views/SavedMappings.vue"
 
 const authGuard = (to: any, from: any, next: any) => {
   if (store.getters['user/isAuthenticated']) {
@@ -71,6 +72,12 @@ const routes: Array<RouteRecordRaw> = [
     path: "/download-packed-orders",
     name: "DownloadPackedOrders",
     component: DownloadPackedOrders,
+    beforeEnter: authGuard
+  },
+  {
+    path: "/saved-mappings",
+    name: "SavedMappings",
+    component: SavedMappings,
     beforeEnter: authGuard
   },
   {
