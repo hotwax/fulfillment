@@ -23,7 +23,7 @@ const showToast = async (message: string, canDismiss?: boolean, manualDismiss?: 
   if (canDismiss) {
     config.buttons = [
       {
-        text: 'Dismiss',
+        text: translate('Dismiss'),
         role: 'cancel',
       },
     ]
