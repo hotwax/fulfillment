@@ -591,7 +591,7 @@ export default defineComponent({
         component: ShippingLabelErrorModal,
         componentProps: {
           gatewayMessages
-         }
+        }
       });
       return shippingLabelErrorModal.present();
     }
