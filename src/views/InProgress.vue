@@ -403,19 +403,28 @@ export default defineComponent({
                 const resp = await OrderService.packOrders({
                   shipmentIds
                 });
-                if (resp.status === 200 && !hasError(resp)) {
-                  showToast(translate('Orders packed successfully'));
-                } else {
+                if (hasError(resp)) {
                   throw resp.data
                 }
+                emitter.emit('dismissLoader');
+
                 // TODO: need to check that do we need to pass all the shipmentIds for an order or just need to pass
                 // the associated ids, currently passing the associated shipmentId
-                if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
-                  await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
-                } else if(data.includes('printPackingSlip')) {
-                  await OrderService.printPackingSlip(shipmentIds)
-                } else if(data.includes('printShippingLabel')) {
-                  await OrderService.printShippingLabel(shipmentIds)
+                if (data.length) {
+                  // additional parameters for dismiss button and manual dismiss ability
+                  const toast: any = await showToast(translate('Order packed successfully. Document generation in process'), true, true)
+                  toast.present()
+                  if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
+                    await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                  } else if (data.includes('printPackingSlip')) {
+                    await OrderService.printPackingSlip(shipmentIds)
+                  } else if (data.includes('printShippingLabel')) {
+                    await OrderService.printShippingLabel(shipmentIds)
+                  }
+
+                  toast.dismiss()
+                } else {
+                  showToast(translate('Order packed successfully'));
                 }
                   // TODO: handle the case of fetching in progress orders after packing multiple orders
                   // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
@@ -424,7 +433,6 @@ export default defineComponent({
                 showToast(translate('Failed to pack orders'))
                 logger.error('Failed to pack orders', err)
               }
-              emitter.emit('dismissLoader');
             }
           }]
         });
