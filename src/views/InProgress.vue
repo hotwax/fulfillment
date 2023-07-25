@@ -317,30 +317,20 @@ export default defineComponent({
                 'orderId': order.orderId
               }
 
+              emitter.emit('presentLoader');
               try {
-                emitter.emit('presentLoader');
                 const resp = await OrderService.packOrder(params);
-                if (hasError(resp)) {
+                if (resp.status === 200 && !hasError(resp)) {
+                  showToast(translate('Order packed successfully'));
+                } else {
                   throw resp.data
                 }
-                emitter.emit('dismissLoader');
-
-                if (data.length) {
-                  // additional parameters for dismiss button and manual dismiss ability
-                  const toast: any = await showToast(translate('Order packed successfully. Document generation in process'), true, true)
-                  toast.present()
-
-                  if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabelAndPackingSlip(order.shipmentIds)
-                  } else if(data.includes('printPackingSlip')) {
-                    await OrderService.printPackingSlip(order.shipmentIds)
-                  } else if(data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(order.shipmentIds)
-                  }
-
-                  toast.dismiss()
-                } else {
-                  showToast(translate('Order packed successfully'));
+                if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
+                  await OrderService.printShippingLabelAndPackingSlip(order.shipmentIds)
+                } else if(data.includes('printPackingSlip')) {
+                  await OrderService.printPackingSlip(order.shipmentIds)
+                } else if(data.includes('printShippingLabel')) {
+                  await OrderService.printShippingLabel(order.shipmentIds)
                 }
                 // TODO: handle the case of fetching in progress orders after packing an order
                 // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
@@ -349,6 +339,8 @@ export default defineComponent({
                 showToast(translate('Failed to pack order'))
                 logger.error('Failed to pack order', err)
               }
+
+              emitter.emit('dismissLoader');
             }
           }]
         });
