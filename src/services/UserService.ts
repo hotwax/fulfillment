@@ -77,16 +77,18 @@ const getOutstandingOrdersCount = async(payload: any): Promise<any> => {
   })
 }
 
-const getEComStores = async (token: any): Promise<any> => {
+const getEComStores = async (token: any, facilityId: any): Promise<any> => {
   try {
     const params = {
       "inputFields": {
-        "storeName_op": "not-empty"
+        "storeName_op": "not-empty",
+        facilityId
       },
       "fieldList": ["productStoreId", "storeName"],
-      "entityName": "ProductStore",
+      "entityName": "ProductStoreFacilityDetail",
       "distinct": "Y",
-      "noConditionFind": "Y"
+      "noConditionFind": "Y",
+      "filterByDate": 'Y',
     }
     const baseURL = store.getters['user/getBaseUrl'];
     const resp = await client({

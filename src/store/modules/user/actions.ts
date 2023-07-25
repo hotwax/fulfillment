@@ -67,6 +67,8 @@ const actions: ActionTree<UserState, RootState> = {
 
       const userProfile = await UserService.getUserProfile(token);
 
+      if (!userProfile.facilities.length) throw 'Unable to login. User is not assocaited with any facility'
+
       // Getting unique facilities
       userProfile.facilities.reduce((uniqueFacilities: any, facility: any, index: number) => {
         if (uniqueFacilities.includes(facility.facilityId)) userProfile.facilities.splice(index, 1);
@@ -76,8 +78,7 @@ const actions: ActionTree<UserState, RootState> = {
 
       // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
       const currentFacility = userProfile.facilities[0];
-
-      userProfile.stores = await UserService.getEComStores(token);
+      userProfile.stores = await UserService.getEComStores(token, currentFacility.facilityId);
 
       // In Job Manager application, we have jobs which may not be associated with any product store
       userProfile.stores.push({
@@ -135,11 +136,20 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    * update current facility information
    */
-  async setFacility ({ commit, dispatch, state }, payload) {
-    const user = JSON.parse(JSON.stringify(state.current as any));
+  async setFacility ({ commit, state }, payload) {
+    const userProfile = JSON.parse(JSON.stringify(state.current as any));
+    userProfile.stores = await UserService.getEComStores(undefined, payload.facility.facilityId);
+
+    let preferredStore = userProfile.stores[0];
+    const preferredStoreId =  await UserService.getPreferredStore(undefined);
+
+    if (preferredStoreId) {
+      const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
+      store && (preferredStore = store)
+    }
+    commit(types.USER_INFO_UPDATED, userProfile);
     commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
-    user.stores = await dispatch("getEComStores", { facilityId: payload.facility.facilityId });
-    commit(types.USER_INFO_UPDATED, user);
+    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
     this.dispatch('order/clearOrders')
   },
   
