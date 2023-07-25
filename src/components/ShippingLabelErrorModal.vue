@@ -27,7 +27,12 @@ import {
   IonIcon,
   IonTitle,
   IonToolbar,
-  modalController
+  modalController,
+  IonButton,
+  IonButtons,
+  IonLabel,
+  IonItem,
+  IonList
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { closeOutline } from "ionicons/icons";
@@ -39,6 +44,11 @@ export default defineComponent({
     IonIcon,
     IonTitle,
     IonToolbar,
+    IonButton,
+    IonButtons,
+    IonLabel,
+    IonItem,
+    IonList
   },
   props: ['gatewayMessages'],
   methods: {
