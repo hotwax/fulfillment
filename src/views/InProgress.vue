@@ -321,7 +321,7 @@ export default defineComponent({
               try {
                 emitter.emit('presentLoader');
                 const resp = await OrderService.packOrder(params);
-                if (hasError(resp)) {
+                if (!hasError(resp)) {
                   throw resp.data
                 }
                 emitter.emit('dismissLoader');
@@ -349,6 +349,9 @@ export default defineComponent({
               } catch (err) {
                 showToast(translate('Failed to pack order'))
                 logger.error('Failed to pack order', err)
+              } finally {
+                // in case of error, if loader is not dismissed above
+                emitter.emit('dismissLoader');
               }
             }
           }]
