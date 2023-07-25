@@ -22,37 +22,29 @@
 
 <script>
 import { 
-  IonButtons,
-  IonButton,
   IonContent,
   IonHeader,
   IonIcon,
   IonTitle,
   IonToolbar,
-  modalController,
-  IonCard
+  modalController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { addCircleOutline, closeOutline, pricetag } from "ionicons/icons";
 export default defineComponent({
   name: "ShippingLabelErrorModal",
   components: { 
-
     IonContent,
     IonHeader,
     IonIcon,
     IonTitle,
     IonToolbar,
-    // IonCard
   },
   props: ['gatewayMessages'],
   methods: {
     closeModal() {
       modalController.dismiss({ dismissed: true });
     },
-  },
-  mounted(){
-    console.log(this.response);
   },
   setup() {
     return {
@@ -66,7 +58,6 @@ export default defineComponent({
 .box-type {
   display: flex;
   gap: var(--spacer-sm);
-  /* border-bottom: var(--border-medium); */
   padding: var(--ion-item-like-padding);
   align-items: center;
 }

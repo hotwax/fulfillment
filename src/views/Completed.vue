@@ -573,79 +573,21 @@ export default defineComponent({
     },
     async showShippingLabelErrorModal(order: any){
 
+      // Getting all the shipment ids and fetching the data of shipping label error by passing them
       const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId);
-      // const response = await OrderService.fetchShipmentLabelError(shipmentIds);
+      
+      const shipmentLabelErrorData = await OrderService.fetchShipmentLabelError(shipmentIds);
+      console.log(shipmentLabelErrorData);
 
-      const response = {
-                            "count": "1",
-                            "docs": [
-                                {
-                                    "createdStamp": '',
-                                    "shipmentPackageSeqId": '',
-                                    "boxNumber": null,
-                                    "labelPrinted": null,
-                                    "internationalInvoice": null,
-                                    "codAmount": null,
-                                    "insuredAmount": null,
-                                    "gatewayMessage": "[Invalid Recipient StreetLine 1]",
-                                    "gatewayStatus": "error",
-                                    "lastUpdatedStamp": '',
-                                    "createdTxStamp": '',
-                                    "packagePickupPrn": null,
-                                    "labelIntlSignImage": null,
-                                    "lastUpdatedTxStamp": '',
-                                    "trackingCode": null,
-                                    "packageServiceCost": null,
-                                    "packageOtherCost": null,
-                                    "shipmentRouteSegmentId": '',
-                                    "labelImageUrl": null,
-                                    "labelImage": null,
-                                    "packagePickupDate": null,
-                                    "currencyUomId": null,
-                                    "packageTransportCost": null,
-                                    "shipmentId": '',
-                                    "labelHtml": null
-                                },
-                                {
-                                    "createdStamp": '',
-                                    "shipmentPackageSeqId": '',
-                                    "boxNumber": null,
-                                    "labelPrinted": null,
-                                    "internationalInvoice": null,
-                                    "codAmount": null,
-                                    "insuredAmount": null,
-                                    "gatewayMessage": "[Invalid Recipient StreetLine 4]",
-                                    "gatewayStatus": "error",
-                                    "lastUpdatedStamp": '',
-                                    "createdTxStamp": '',
-                                    "packagePickupPrn": null,
-                                    "labelIntlSignImage": null,
-                                    "lastUpdatedTxStamp": '',
-                                    "trackingCode": null,
-                                    "packageServiceCost": null,
-                                    "packageOtherCost": null,
-                                    "shipmentRouteSegmentId": '',
-                                    "labelImageUrl": null,
-                                    "labelImage": null,
-                                    "packagePickupDate": null,
-                                    "currencyUomId": null,
-                                    "packageTransportCost": null,
-                                    "shipmentId": '',
-                                    "labelHtml": null
-                                }
-                            ]
-                        }
-
-      // const resp = OrderService.fetchShipmentLabelError()
-
-      const gatewayMessages = response.docs.map((doc: any) => doc.gatewayMessage);
-      const assignPickerModal = await modalController.create({
+      // Getting all the gateway messages and opening modal by passing them as props
+      const gatewayMessages = shipmentLabelErrorData.map((doc: any) => doc.gatewayMessage);
+      const shippingLabelErrorModal = await modalController.create({
         component: ShippingLabelErrorModal,
         componentProps: {
           gatewayMessages
          }
       });
-      return assignPickerModal.present();
+      return shippingLabelErrorModal.present();
     }
   },
   setup() {
