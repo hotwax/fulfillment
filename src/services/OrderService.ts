@@ -313,9 +313,8 @@ const fetchShipmentLabelError = async (shipmentIds: Array<string>): Promise<any>
     if (!resp || resp.status !== 200 || hasError(resp)) {
       throw resp?.data;
     }
-     
+
     shipmentLabelError = resp?.data.docs;
-    
   } catch (err) {
     logger.error('Failed to fetch shipment label error', err)
   }
