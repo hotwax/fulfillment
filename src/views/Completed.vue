@@ -123,9 +123,8 @@
         </ion-fab-button>
       </ion-fab>
       <div class="empty-state" v-else>
-        <div v-if="searchedQuery == ''">{{ currentFacility.name }}{{ $t(" doesn't have any outstanding orders right now.") }}</div>
-        <div v-if="searchedQuery != ''">{{ $t( `No results found for ${searchedQuery}. Try searching In Progress or Open tab instead.` ) }}</div>
-        <div v-if="searchedQuery != ''">{{ $t( `If you still can't find what you're looking for, try switching stores.` ) }}</div>
+        <p v-if="searchedQuery == ''">{{ currentFacility.name }}{{ $t(" doesn't have any outstanding orders right now.") }}</p>
+        <p v-if="searchedQuery != ''">{{ $t( `No results found for`)}}{{ " " + searchedQuery}}{{ $t(`. Try searching In Progress or Open tab instead.`)}} <br> {{ $t( `If you still can't find what you're looking for, try switching stores.` ) }}</p>
       </div>
     </ion-content>
   </ion-page>

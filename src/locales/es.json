@@ -51,6 +51,7 @@
   "File uploaded successfully": "Archivo cargado exitosamente",
   "Fulfillment": "Cumplimiento",
   "has outstanding orders and in progress orders.": "{storeName} tiene {outstandingOrdersCount} pedidos pendientes y {inProgressOrdersCount} pedidos en curso.",
+  "If you still can't find what you're looking for, try switching stores.": "If you still can't find what you're looking for, try switching stores.",
   "item": "artículo",
   "items": "artículos",
   "Import": "Importar",
@@ -69,6 +70,7 @@
   "No": "No",
   "No new file upload. Please try again": "No se cargó ningún archivo nuevo. Por favor, inténtalo nuevamente.",
   "No reason": "Sin motivo",
+  "No results found for": "No results found for",
   "No time zone found": "No se encontró zona horaria",
   "Not in Stock": "No en Stock",
   "order": "pedido",
@@ -174,5 +176,8 @@
   "You are packing an order. Select additional documents that you would like to print.": "Estás empacando un pedido. Selecciona documentos adicionales que te gustaría imprimir.",
   "You are packing orders. Select additional documents that you would like to print.": "Estás empacando {count} pedidos. {space} Selecciona documentos adicionales que te gustaría imprimir.",
   "You are shipping orders. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this orders?": "Estás enviando {count} pedido. {space} No puedes desempacar ni editar los pedidos una vez que se hayan enviado. ¿Estás seguro/a de que estás listo/a para enviar este pedido? | Estás enviando {count} pedidos. {space} No puedes desempacar ni editar los pedidos una vez que se hayan enviado. ¿Estás seguro/a de que estás listo/a para enviar estos pedidos?",
-  ", and other products are identified as unfulfillable. other orders containing these products will be unassigned from this store and sent to be rebrokered.": "{productName}, y {products} otros productos se identificaron como no realizables. {space} {orders} otros pedidos que contienen estos productos serán desasignados de esta tienda y enviados para ser reasignados."
+  ", and other products are identified as unfulfillable. other orders containing these products will be unassigned from this store and sent to be rebrokered.": "{productName}, y {products} otros productos se identificaron como no realizables. {space} {orders} otros pedidos que contienen estos productos serán desasignados de esta tienda y enviados para ser reasignados.",
+  ". Try searching In Progress or Completed tab instead.": ". Try searching In Progress or Completed tab instead.",
+  ". Try searching In Progress or Open tab instead.": ". Try searching In Progress or Open tab instead.",
+  ". Try searching In Open or Completed tab instead.": ". Try searching In Open or Completed tab instead."
 }

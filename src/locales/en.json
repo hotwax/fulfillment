@@ -51,6 +51,7 @@
   "File uploaded successfully": "File uploaded successfully",
   "Fulfillment": "Fulfillment",
   "has outstanding orders and in progress orders.": "{ storeName } has { outstandingOrdersCount } outstanding orders and { inProgressOrdersCount } in progress orders.",
+  "If you still can't find what you're looking for, try switching stores.": "If you still can't find what you're looking for, try switching stores.",
   "item": "item",
   "items": "items",
   "Import": "Import",
@@ -69,6 +70,7 @@
   "No": "No",
   "No new file upload. Please try again": "No new file upload. Please try again",
   "No reason": "No reason",
+  "No results found for": "No results found for",
   "No time zone found": "No time zone found",
   "Not in Stock": "Not in Stock",
   "order": "order",
@@ -173,5 +175,8 @@
   "You are packing an order. Select additional documents that you would like to print.": "You are packing an order. Select additional documents that you would like to print.",
   "You are packing orders. Select additional documents that you would like to print.": "You are packing { count } orders. { space } Select additional documents that you would like to print.",
   "You are shipping orders. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this orders?": "You are shipping { count } order. { space } You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this order? | You are shipping { count } orders. { space } You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship these orders?",
-  ", and other products are identified as unfulfillable. other orders containing these products will be unassigned from this store and sent to be rebrokered.": "{ productName }, and { products } other products are identified as unfulfillable. { space } { orders } other orders containing these products will be unassigned from this store and sent to be rebrokered."
+  ", and other products are identified as unfulfillable. other orders containing these products will be unassigned from this store and sent to be rebrokered.": "{ productName }, and { products } other products are identified as unfulfillable. { space } { orders } other orders containing these products will be unassigned from this store and sent to be rebrokered.",
+  ". Try searching In Progress or Completed tab instead.": ". Try searching In Progress or Completed tab instead.",
+  ". Try searching In Progress or Open tab instead.": ". Try searching In Progress or Open tab instead.",
+  ". Try searching In Open or Completed tab instead.": ". Try searching In Open or Completed tab instead."
 }
