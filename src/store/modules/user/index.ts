@@ -17,6 +17,13 @@ const userModule: Module<UserState, RootState> = {
       preference: {
         printShippingLabel: false,
         printPackingSlip: false
+      },
+      fieldMappings: {},
+      currentMapping: {
+        id: '',
+        mappingType: '',
+        name: '',
+        value: {}
       }
     },
     getters,

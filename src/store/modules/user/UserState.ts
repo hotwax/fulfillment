@@ -9,4 +9,11 @@ export default interface UserState {
         printShippingLabel: boolean,
         printPackingSlip: boolean
     }
+    fieldMappings: object | null;
+    currentMapping: {
+        id: string;
+        mappingType: string;
+        name: string;
+        value: object;
+    };
 }

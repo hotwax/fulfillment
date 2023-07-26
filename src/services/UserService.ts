@@ -253,11 +253,46 @@ const setUserPreference = async (payload: any): Promise<any> => {
   });
 }
 
+const createFieldMapping = async (payload: any): Promise <any> => {
+  return api({
+    url: "/service/createDataManagerMapping",
+    method: "POST",
+    data: payload
+  });
+}
+
+const updateFieldMapping = async (payload: any): Promise <any> => {
+  return api({
+    url: "/service/updateDataManagerMapping",
+    method: "POST",
+    data: payload
+  });
+}
+
+const deleteFieldMapping = async (payload: any): Promise <any> => {
+  return api({
+    url: "/service/deleteDataManagerMapping",
+    method: "POST",
+    data: payload
+  });
+}
+
+const getFieldMappings = async (payload: any): Promise <any> => {
+  return api({
+    url: "/performFind",
+    method: "POST",
+    data: payload
+  });
+}
+
 export const UserService = {
+    createFieldMapping,
+    deleteFieldMapping,
     login,
     getAvailableTimeZones,
     getEComStores,
     getFacilityDetails,
+    getFieldMappings,
     getInProgressOrdersCount,
     getOutstandingOrdersCount,
     getUserProfile,
@@ -267,5 +302,6 @@ export const UserService = {
     setUserPreference,
     setUserTimeZone,
     getUserPermissions,
-    updateFacility
+    updateFacility,
+    updateFieldMapping
 }

@@ -20,6 +20,7 @@ declare module 'vue-router' {
     permissionId?: string;
   }
 }
+import SavedMappings from "@/views/SavedMappings.vue"
 
 const authGuard = (to: any, from: any, next: any) => {
   if (store.getters['user/isAuthenticated']) {
@@ -101,6 +102,12 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Login',
     component: Login,
     beforeEnter: loginGuard
+  },
+  {
+    path: "/saved-mappings",
+    name: "SavedMappings",
+    component: SavedMappings,
+    beforeEnter: authGuard
   },
   {
     path: "/settings",
