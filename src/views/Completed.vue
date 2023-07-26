@@ -107,7 +107,7 @@
                 </ion-button>
               </div>
               <div class="desktop-only">
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
+                <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -170,6 +170,7 @@ import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import { translate } from '@/i18n';
 import { OrderService } from '@/services/OrderService';
 import logger from '@/logger';
+import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
   name: 'Home',
@@ -582,12 +583,14 @@ export default defineComponent({
     const router = useRouter();
 
     return {
+      Actions,
       copyToClipboard,
       checkmarkDoneOutline,
       downloadOutline,
       ellipsisVerticalOutline,
       formatUtcDate,
       getFeature,
+      hasPermission,
       optionsOutline,
       pricetagOutline,
       printOutline,

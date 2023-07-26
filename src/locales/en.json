@@ -189,6 +189,7 @@
   "Shipping labels": "Shipping labels",
   "Some of the mapping fields are missing in the CSV: ": "Some of the mapping fields are missing in the CSV: {missingFields}",
   "Something went wrong": "Something went wrong",
+  "Something went wrong while login. Please contact administrator.": "Something went wrong while login. Please contact administrator.",
   "Sorry, your username or password is incorrect. Please try again.": "Sorry, your username or password is incorrect. Please try again.",
   "Staff": "Staff",
   "State": "State",
@@ -224,6 +225,7 @@
   "You are packing an order. Select additional documents that you would like to print.": "You are packing an order. Select additional documents that you would like to print.",
   "You are packing orders. Select additional documents that you would like to print.": "You are packing { count } orders. { space } Select additional documents that you would like to print.",
   "You are shipping orders. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this orders?": "You are shipping { count } order. { space } You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this order? | You are shipping { count } orders. { space } You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship these orders?",
+  "You do not have permission to access this page": "You do not have permission to access this page",
   "Zip Code": "Zip Code",
   ", and other products are identified as unfulfillable. other orders containing these products will be unassigned from this store and sent to be rebrokered.": "{ productName }, and { products } other products are identified as unfulfillable. { space } { orders } other orders containing these products will be unassigned from this store and sent to be rebrokered."
 }

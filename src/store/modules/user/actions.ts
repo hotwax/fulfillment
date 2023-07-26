@@ -9,66 +9,117 @@ import { translate } from '@/i18n'
 import { Settings } from 'luxon'
 import { updateInstanceUrl, updateToken, resetConfig } from '@/adapter'
 import logger from '@/logger'
+import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from '@/authorization'
 
 const actions: ActionTree<UserState, RootState> = {
 
   /**
  * Login user and return token
  */
-  async login ({ commit, dispatch }, { username, password }) {
+  async login ({ commit }, { username, password }) {
     try {
-      const resp = await UserService.login(username, password)
-      if (resp.status === 200 && resp.data) {
-        if (resp.data.token) {
-          const permissionId = process.env.VUE_APP_PERMISSION_ID;
-          if (permissionId) {
-            const checkPermissionResponse = await UserService.checkPermission({
-              data: {
-                permissionId
-              },
-              headers: {
-                Authorization:  'Bearer ' + resp.data.token,
-                'Content-Type': 'application/json'
-              }
-            });
+      const resp = await UserService.login(username, password);
+      // Further we will have only response having 2xx status
+      // https://axios-http.com/docs/handling_errors
+      // We haven't customized validateStatus method and default behaviour is for all status other than 2xx
+      // TODO Check if we need to handle all 2xx status other than 200
 
-            if (checkPermissionResponse.status === 200 && !hasError(checkPermissionResponse) && checkPermissionResponse.data && checkPermissionResponse.data.hasPermission) {
-              commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
-              updateToken(resp.data.token)
-              await dispatch('getProfile')
-              if (resp.data._EVENT_MESSAGE_ && resp.data._EVENT_MESSAGE_.startsWith("Alert:")) {
-              // TODO Internationalise text
-                showToast(translate(resp.data._EVENT_MESSAGE_));
-              }
-              return resp.data;
-            } else {
-              const permissionError = 'You do not have permission to access the app.';
-              showToast(translate(permissionError));
-              logger.error("error", permissionError);
-              return Promise.reject(new Error(permissionError));
-            }
-          } else {
-            commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
-            updateToken(resp.data.token)
-            await dispatch('getProfile')
-            return resp.data;
-          }
-        } else if (hasError(resp)) {
-          showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
-          logger.error("error", resp.data._ERROR_MESSAGE_);
-          return Promise.reject(new Error(resp.data._ERROR_MESSAGE_));
-        }
-      } else {
-        showToast(translate('Something went wrong'));
+
+      /* ---- Guard clauses starts here --- */
+      // Know about Guard clauses here: https://learningactors.com/javascript-guard-clauses-how-you-can-refactor-conditional-logic/
+      // https://medium.com/@scadge/if-statements-design-guard-clauses-might-be-all-you-need-67219a1a981a
+
+
+      // If we have any error most possible reason is incorrect credentials.
+      if (hasError(resp)) {
+        showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
         logger.error("error", resp.data._ERROR_MESSAGE_);
         return Promise.reject(new Error(resp.data._ERROR_MESSAGE_));
       }
+
+      const token = resp.data.token;
+
+      // Getting the permissions list from server
+      const permissionId = process.env.VUE_APP_PERMISSION_ID;
+      // Prepare permissions list
+      const serverPermissionsFromRules = getServerPermissionsFromRules();
+      if (permissionId) serverPermissionsFromRules.push(permissionId);
+
+      const serverPermissions = await UserService.getUserPermissions({
+        permissionIds: serverPermissionsFromRules
+      }, token);
+      const appPermissions = prepareAppPermissions(serverPermissions);
+
+      // Checking if the user has permission to access the app
+      // If there is no configuration, the permission check is not enabled
+      if (permissionId) {
+        // As the token is not yet set in the state passing token headers explicitly
+        // TODO Abstract this out, how token is handled should be part of the method not the callee
+        const hasPermission = appPermissions.some((appPermissionId: any) => appPermissionId === permissionId );
+        // If there are any errors or permission check fails do not allow user to login
+        if (hasPermission) {
+          const permissionError = 'You do not have permission to access the app.';
+          showToast(translate(permissionError));
+          logger.error("error", permissionError);
+          return Promise.reject(new Error(permissionError));
+        }
+      }
+
+      const userProfile = await UserService.getUserProfile(token);
+
+      if (!userProfile.facilities.length) throw 'Unable to login. User is not assocaited with any facility'
+
+      // Getting unique facilities
+      userProfile.facilities.reduce((uniqueFacilities: any, facility: any, index: number) => {
+        if (uniqueFacilities.includes(facility.facilityId)) userProfile.facilities.splice(index, 1);
+        else uniqueFacilities.push(facility.facilityId);
+        return uniqueFacilities
+      }, []);
+
+      // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
+      const currentFacility = userProfile.facilities[0];
+      userProfile.stores = await UserService.getEComStores(token, currentFacility.facilityId);
+
+      // In Job Manager application, we have jobs which may not be associated with any product store
+      userProfile.stores.push({
+        productStoreId: "",
+        storeName: "None"
+      })
+      let preferredStore = userProfile.stores[0]
+
+      const preferredStoreId =  await UserService.getPreferredStore(token);
+      if (preferredStoreId) {
+        const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
+        store && (preferredStore = store)
+      }
+
+      /*  ---- Guard clauses ends here --- */
+
+      setPermissions(appPermissions);
+      if (userProfile.userTimeZone) {
+        Settings.defaultZone = userProfile.userTimeZone;
+      }
+
+      // TODO user single mutation
+      commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
+      commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
+      commit(types.USER_INFO_UPDATED, userProfile);
+      commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
+      commit(types.USER_TOKEN_CHANGED, { newToken: token })
+      updateToken(resp.data.token)
+
+      // Handling case for warnings like password may expire in few days
+      if (resp.data._EVENT_MESSAGE_ && resp.data._EVENT_MESSAGE_.startsWith("Alert:")) {
+        // TODO Internationalise text
+        showToast(translate(resp.data._EVENT_MESSAGE_));
+      }
     } catch (err: any) {
-      showToast(translate('Something went wrong'));
-      logger.error("error", err);
+      // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
+      // TODO Check if handling of specific status codes is required.
+      showToast(translate('Something went wrong while login. Please contact administrator.'));
+      logger.error("error: ", err.toString());
       return Promise.reject(new Error(err))
     }
-    // return resp
   },
 
   /**
@@ -79,50 +130,26 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_END_SESSION)
     this.dispatch('order/clearOrders')
     resetConfig();
-  },
-
-  /**
-   * Get User profile
-   */
-  async getProfile ( { commit, dispatch }) {
-    try {
-      const resp = await UserService.getProfile()
-      if (resp.data.userTimeZone) {
-        Settings.defaultZone = resp.data.userTimeZone;
-      }
-
-      // logic to remove duplicate facilities
-      const facilityIds = new Set();
-      const facilities = [] as Array<any>;
-
-      resp.data.facilities.map((facility: any) => {
-        if(!facilityIds.has(facility.facilityId)) {
-          facilityIds.add(facility.facilityId)
-          facilities.push(facility)
-        }
-      })
-
-      resp.data.facilities = facilities
-
-      const currentFacility = resp.data.facilities.length > 0 ? resp.data.facilities[0] : {};
-      resp.data.stores = await dispatch('getEComStores', { facilityId: currentFacility.facilityId })
-
-      dispatch('getFieldMappings')
-      commit(types.USER_INFO_UPDATED, resp.data);
-      commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
-    } catch(err) {
-      logger.error('Failed to fetch user profile information', err)
-    }
+    resetPermissions();
   },
 
   /**
    * update current facility information
    */
-  async setFacility ({ commit, dispatch, state }, payload) {
-    const user = JSON.parse(JSON.stringify(state.current as any));
+  async setFacility ({ commit, state }, payload) {
+    const userProfile = JSON.parse(JSON.stringify(state.current as any));
+    userProfile.stores = await UserService.getEComStores(undefined, payload.facility.facilityId);
+
+    let preferredStore = userProfile.stores[0];
+    const preferredStoreId =  await UserService.getPreferredStore(undefined);
+
+    if (preferredStoreId) {
+      const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
+      store && (preferredStore = store)
+    }
+    commit(types.USER_INFO_UPDATED, userProfile);
     commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
-    user.stores = await dispatch("getEComStores", { facilityId: payload.facility.facilityId });
-    commit(types.USER_INFO_UPDATED, user);
+    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
     this.dispatch('order/clearOrders')
   },
   
@@ -143,41 +170,6 @@ const actions: ActionTree<UserState, RootState> = {
   setUserInstanceUrl ({ commit }, payload){
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
     updateInstanceUrl(payload)
-  },
-
-  async getEComStores({ commit }, payload) {
-    let resp;
-
-    try {
-      const param = {
-        "inputFields": {
-          "facilityId": payload.facilityId,
-          "storeName_op": "not-empty"
-        },
-        "fieldList": ["productStoreId", "storeName"],
-        "entityName": "ProductStoreFacilityDetail",
-        "distinct": "Y",
-        "noConditionFind": "Y"
-      }
-
-      resp = await UserService.getEComStores(param);
-      if(!hasError(resp)) {
-        const eComStores = resp.data.docs
-
-        const userPref =  await UserService.getUserPreference({
-          'userPrefTypeId': 'SELECTED_BRAND'
-        });
-        const userPrefStore = eComStores.find((store: any) => store.productStoreId == userPref.data.userPrefValue)
-
-        commit(types.USER_CURRENT_ECOM_STORE_UPDATED, userPrefStore ? userPrefStore : eComStores.length > 0 ? eComStores[0] : {});
-        return eComStores
-      } else {
-        throw resp.data
-      }
-    } catch(error) {
-      logger.error('Failed to get ecom stores', error);
-    }
-    return []
   },
 
   /**
