@@ -246,7 +246,8 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       rejectReasons: 'util/getRejectReasons',
       currentEComStore: 'user/getCurrentEComStore',
-      userPreference: 'user/getUserPreference'
+      userPreference: 'user/getUserPreference',
+      boxTypeDesc: 'util/getShipmentBoxDesc'
     }),
   },
   data() {
@@ -761,7 +762,7 @@ export default defineComponent({
     },
     getShipmentPackageNameAndType(shipmentPackage: any, order: any) {
       // TODO
-      return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? `Box ${shipmentPackage.packageName} | ${order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0]}` : ''
+      return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? `Box ${shipmentPackage.packageName} | ${this.boxTypeDesc(order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0])}` : ''
     },
     async updateQueryString(queryString: string) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
