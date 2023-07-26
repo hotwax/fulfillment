@@ -95,8 +95,7 @@
         </ion-fab-button>
       </ion-fab>
       <div class="empty-state" v-else>
-        <p v-if="searchedQuery == ''">{{ currentFacility.name }}{{ $t(" doesn't have any outstanding orders right now.") }}</p>
-        <p v-if="searchedQuery != ''"> {{$t( `No results found for`)}}{{ " " + searchedQuery }}{{ $t(`. Try searching In Progress or Completed tab instead.`)}} <br> {{ $t(`If you still can't find what you're looking for, try switching stores.` ) }}</p>
+        <p v-html="getErrorMessage()"></p>
       </div>
     </ion-content>
   </ion-page>
@@ -180,6 +179,9 @@ export default defineComponent({
     }
   },
   methods: {
+    getErrorMessage() {
+      return this.searchedQuery === '' ? this.$t(" doesn't have any outstanding orders right now.", { facilityName: this.currentFacility.name }) : this.$t( "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+    },
     getOpenOrders() {
       return this.openOrders.list.slice(0, (this.openOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
     },
