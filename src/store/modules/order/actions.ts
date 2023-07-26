@@ -273,14 +273,11 @@ const actions: ActionTree<OrderState, RootState> = {
     commit(types.ORDER_INPROGRESS_QUERY_UPDATED, { ...inProgressQuery })
     commit(types.ORDER_INPROGRESS_UPDATED, {orders, total})
 
-    // If no orders then no need to fetch any additional information
-    if(!orders.length){
-      emitter.emit('dismissLoader');
-      return;
-    }
-
     // fetching the additional information like shipmentRoute, carrierParty information
-    dispatch('fetchInProgressOrdersAdditionalInformation')
+    // If no orders then no need to fetch any additional information
+    if(orders.length){      
+      dispatch('fetchInProgressOrdersAdditionalInformation');
+    }
 
     emitter.emit('dismissLoader');
     return resp;
@@ -427,16 +424,13 @@ const actions: ActionTree<OrderState, RootState> = {
 
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, { ...completedOrderQuery })
     commit(types.ORDER_COMPLETED_UPDATED, {list: orders, total})
-
-    // If no orders then no need to fetch any additional information
-    if(!orders.length){
-      emitter.emit('dismissLoader');
-      return;
-    }
-
+    
     // fetching the additional information like shipmentRoute, carrierParty information
     // TODO make it async and use skelatal pattern
-    await dispatch('fetchCompletedOrdersAdditionalInformation')
+    // If no orders then no need to fetch any additional information
+    if(orders.length){
+      await dispatch('fetchCompletedOrdersAdditionalInformation');
+    }
 
     emitter.emit('dismissLoader');
     return resp;
