@@ -8,7 +8,7 @@
 </template>
 
 <script lang="ts">
-import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
+import { createAnimation, IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import Menu from '@/components/Menu.vue';
 import { loadingController } from '@ionic/vue';
@@ -60,6 +60,29 @@ export default defineComponent({
     async unauthorised() {
       this.store.dispatch("user/logout");
       this.router.push("/login")
+    },
+    playAnimation() {
+      const aside = document.querySelector('aside') as Element
+      const main = document.querySelector('main') as Element
+
+      const revealAnimation = createAnimation()
+        .addElement(aside)
+        .duration(1500)
+        .easing('ease')
+        .keyframes([
+          { offset: 0, flex: '0', opacity: '0' },
+          { offset: 0.5, flex: '1', opacity: '0' },
+          { offset: 1, flex: '1', opacity: '1' }
+        ])
+
+      const gapAnimation = createAnimation()
+        .addElement(main)
+        .duration(500)
+        .fromTo('gap', '0', 'var(--spacer-2xl)');
+
+      createAnimation()
+        .addAnimation([gapAnimation, revealAnimation])
+        .play();
     }
   },
   created() {
@@ -87,6 +110,7 @@ export default defineComponent({
       });
     emitter.on('presentLoader', this.presentLoader);
     emitter.on('dismissLoader', this.dismissLoader);
+    emitter.on('playAnimation', this.playAnimation);
 
     // Handles case when user resumes or reloads the app
     // Luxon timezzone should be set with the user's selected timezone
@@ -97,6 +121,7 @@ export default defineComponent({
   unmounted() {
     emitter.off('presentLoader', this.presentLoader);
     emitter.off('dismissLoader', this.dismissLoader);
+    emitter.off('playAnimation', this.playAnimation);
     resetConfig()
   },
   setup() {

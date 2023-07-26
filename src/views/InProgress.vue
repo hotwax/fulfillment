@@ -67,7 +67,7 @@
             </div>
             <!-- TODO: implement functionality to change the type of box -->
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
-              <ion-button :disabled="orderBoxes.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
+              <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
             </div>
 
@@ -254,7 +254,7 @@ export default defineComponent({
       picklists: [] as any,
       defaultShipmentBoxType: '',
       itemsIssueSegmentSelected: [] as any,
-      orderBoxes: [] as any
+      addingBoxForOrderIds: [] as any
     }
   },
   methods: {
@@ -511,7 +511,9 @@ export default defineComponent({
 
       form.append('facilityId', this.currentFacility.facilityId)
 
-      order.items.map((item: any, index: number) => {
+      const items = JSON.parse(JSON.stringify(order.items));
+
+      items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
         let prefix = 'rtp'
@@ -543,6 +545,19 @@ export default defineComponent({
             this.updateOrderQuery()
           } else {
             order.isModified = false;
+
+            // updating the shipment information on item level
+            const itemInformationByOrderResp = await UtilService.findShipmentItemInformation(order.shipmentIds);
+            const itemInformation = itemInformationByOrderResp[order.orderId]
+
+            itemInformation?.map((orderItem: any) => {
+              const item = items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
+
+              item.shipmentId = orderItem.shipmentId
+              item.shipmentItemSeqId = orderItem.shipmentItemSeqId
+            })
+            order.items = items
+
             await this.store.dispatch('order/updateInProgressOrder', order)
           }
           showToast(translate('Order updated successfully'))
@@ -734,7 +749,7 @@ export default defineComponent({
       return defaultBoxType;
     },
     async addShipmentBox(order: any) {
-      this.orderBoxes.push(order.orderId)
+      this.addingBoxForOrderIds.push(order.orderId)
 
       const { carrierPartyId, shipmentMethodTypeId } = await this.fetchShipmentRouteSegmentInformation(order.shipmentIds)
       
@@ -764,7 +779,7 @@ export default defineComponent({
         showToast(translate('Failed to add box'))
         logger.error('Failed to add box', err)
       }
-      this.orderBoxes.splice(this.orderBoxes.indexOf(order.orderId), 1)
+      this.addingBoxForOrderIds.splice(this.addingBoxForOrderIds.indexOf(order.orderId), 1)
     },
     getShipmentPackageNameAndType(shipmentPackage: any, order: any) {
       // TODO

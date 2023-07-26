@@ -76,14 +76,17 @@ export default defineComponent({
       value: ''
     }
   },
+  props: ["customFields"],
   methods: {
     closeModal() {
       modalController.dismiss({ dismissed: true});
     },
     saveCustomField() {
       const fieldKey = this.key.trim();
-      if(!fieldKey) {
-        showToast(translate('Please enter a valid key'))
+      const errorMessage = fieldKey ? this.customFields[fieldKey] ? 'Please enter a unique key' : '' : 'Please enter a valid key'
+
+      if(errorMessage) {
+        showToast(translate(errorMessage))
         return;
       }
       modalController.dismiss({ dismissed: true, value: { key: fieldKey, value: this.value } });
