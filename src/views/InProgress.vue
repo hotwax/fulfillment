@@ -318,6 +318,7 @@ export default defineComponent({
                 'orderId': order.orderId
               }
 
+              let toast: any;
               try {
                 emitter.emit('presentLoader');
                 const resp = await OrderService.packOrder(params);
@@ -328,7 +329,7 @@ export default defineComponent({
 
                 if (data.length) {
                   // additional parameters for dismiss button and manual dismiss ability
-                  const toast: any = await showToast(translate('Order packed successfully. Document generation in process'), true, true)
+                  toast = await showToast(translate('Order packed successfully. Document generation in process'), true, true)
                   toast.present()
 
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
@@ -347,7 +348,8 @@ export default defineComponent({
                 // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
                 await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery()]);
               } catch (err) {
-                // in case of error, if loader is not dismissed above
+                // in case of error, if loader and toast are not dismissed above
+                if (toast) toast.dismiss()
                 emitter.emit('dismissLoader');
                 showToast(translate('Failed to pack order'))
                 logger.error('Failed to pack order', err)
@@ -400,6 +402,7 @@ export default defineComponent({
               // Considering only unique shipment IDs
               // TODO check reason for redundant shipment IDs
               const shipmentIds = [...new Set(orderList.map((order: any) => order.shipmentIds).flat())] as Array<string>
+              let toast: any;
 
               try {
                 const resp = await OrderService.packOrders({
@@ -414,7 +417,7 @@ export default defineComponent({
                 // the associated ids, currently passing the associated shipmentId
                 if (data.length) {
                   // additional parameters for dismiss button and manual dismiss ability
-                  const toast: any = await showToast(translate('Order packed successfully. Document generation in process'), true, true)
+                  toast = await showToast(translate('Order packed successfully. Document generation in process'), true, true)
                   toast.present()
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
                     await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
@@ -432,7 +435,8 @@ export default defineComponent({
                   // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
                 await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery()])
               } catch (err) {
-                // in case of error, if loader is not dismissed above
+                // in case of error, if loader and toast are not dismissed above
+                if (toast) toast.dismiss()
                 emitter.emit('dismissLoader');
                 showToast(translate('Failed to pack orders'))
                 logger.error('Failed to pack orders', err)
