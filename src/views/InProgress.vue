@@ -321,7 +321,7 @@ export default defineComponent({
               try {
                 emitter.emit('presentLoader');
                 const resp = await OrderService.packOrder(params);
-                if (!hasError(resp)) {
+                if (hasError(resp)) {
                   throw resp.data
                 }
                 emitter.emit('dismissLoader');
