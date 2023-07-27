@@ -65,11 +65,11 @@
               <ion-skeleton-text animated />
               <ion-skeleton-text animated />
             </div>
-            <!-- TODO: implement functionality to change the type of box -->
+            <!-- TODO: implement functionality to change the type of box (We are showing the Package Type the first element of package type array) -->
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
               <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageName(shipmentPackage, order) }} | 
-                <ion-select style="padding: 0 0 0 2px;" interface="popover" ionChange="" :value="getShipmentPackageType(shipmentPackage, order)">
+                <ion-select style="padding: 0 0 0 2px;" interface="popover" @ionChange="onBoxTypeChange($event.detail.value, shipmentPackage, order)" :value="getShipmentPackageType(shipmentPackage, order)">
                     <ion-select-option v-for="boxType in getShipmentBoxTypes(shipmentPackage, order)" :key="boxType" :value="boxType">{{ boxType }}</ion-select-option>
                 </ion-select>
               </ion-chip>
@@ -506,9 +506,11 @@ export default defineComponent({
           form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
         }
 
+        const shipmentBoxTypeId = shipmentPackage.newBoxType ? shipmentPackage.newBoxType : order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0];
+
         form.append(`box_shipmentId_${index}`, item.shipmentId)
         form.append(`${index}_box_rowSubmit`, ''+index)
-        form.append(`box_shipmentBoxTypeId_${index}`, order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0])
+        form.append(`box_shipmentBoxTypeId_${index}`, shipmentBoxTypeId)
         form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
         form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
         form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
@@ -764,11 +766,12 @@ export default defineComponent({
       this.addingBoxForOrderIds.splice(this.addingBoxForOrderIds.indexOf(order.orderId), 1)
     },
     getShipmentPackageType(shipmentPackage: any, order: any) {
-      // TODO
+      if(shipmentPackage.newBoxType){
+        return shipmentPackage.newBoxType;
+      }
       return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? `${order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0]}` : ''
     },
     getShipmentPackageName(shipmentPackage: any, order: any) {
-      // TODO
       return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? `Box ${shipmentPackage.packageName}` : ''
     },
     getShipmentBoxTypes(shipmentPackage: any, order: any){
@@ -796,6 +799,11 @@ export default defineComponent({
       picklist.isGeneratingPicklist = true;
       await OrderService.printPicklist(picklist.id)
       picklist.isGeneratingPicklist = false;
+    },
+    onBoxTypeChange(value: string, shipmentPackage: any, order: any){
+      shipmentPackage.newBoxType = value;
+      order.isModified = true;
+      this.store.dispatch('order/updateInProgressOrder', order)
     }
   },
   async mounted () {
