@@ -489,7 +489,7 @@ export default defineComponent({
       this.itemsIssueSegmentSelected = []
       await this.store.dispatch('order/findInProgressOrders')
     },
-    async updateOrder(order: any) {
+    async updateOrder(order: any) {      
       const form = new FormData()
 
       form.append('facilityId', this.currentFacility.facilityId)
@@ -507,11 +507,9 @@ export default defineComponent({
           form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
         }
 
-        const shipmentBoxTypeId = shipmentPackage.newBoxType ? shipmentPackage.newBoxType : order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0];
-
         form.append(`box_shipmentId_${index}`, item.shipmentId)
         form.append(`${index}_box_rowSubmit`, ''+index)
-        form.append(`box_shipmentBoxTypeId_${index}`, shipmentBoxTypeId)
+        form.append(`box_shipmentBoxTypeId_${index}`, shipmentPackage.shipmentBoxTypeId)
         form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
         form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
         form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
@@ -767,10 +765,11 @@ export default defineComponent({
       this.addingBoxForOrderIds.splice(this.addingBoxForOrderIds.indexOf(order.orderId), 1)
     },
     getShipmentPackageType(shipmentPackage: any, order: any) {
-      if(shipmentPackage.newBoxType){
-        return shipmentPackage.newBoxType;
+      const packageType = order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId].find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId) : '';
+      if(packageType === undefined){
+        return '';
       }
-      return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0] : ''
+      return packageType;
     },
     getShipmentPackageName(shipmentPackage: any, order: any) {
       return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? `Box ${shipmentPackage.packageName}` : ''
@@ -802,9 +801,9 @@ export default defineComponent({
       picklist.isGeneratingPicklist = false;
     },
     onBoxTypeChange(value: string, shipmentPackage: any, order: any){
-      shipmentPackage.newBoxType = value;
+      shipmentPackage.shipmentBoxTypeId = value;
       order.isModified = true;
-      this.store.dispatch('order/updateInProgressOrder', order)
+      this.store.dispatch('order/updateInProgressOrder', order);
     }
   },
   async mounted () {
