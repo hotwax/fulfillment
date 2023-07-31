@@ -261,7 +261,7 @@ export default defineComponent({
     logout () {
       this.store.dispatch('user/logout').then(() => {
         this.store.dispatch('order/clearOrders')
-        this.router.push('/login');
+        window.location.href = process.env.VUE_APP_LOGIN_URL as string
       })
     },
     async setFacility (event: any) {
