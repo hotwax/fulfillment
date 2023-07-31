@@ -28,6 +28,10 @@ import './theme/variables.css';
 import i18n from './i18n'
 import store from './store'
 
+import permissionPlugin from '@/authorization';
+import permissionRules from '@/authorization/Rules';
+import permissionActions from '@/authorization/Actions';
+
 const app = createApp(App)
   .use(IonicVue, {
     mode: 'md'
@@ -37,7 +41,11 @@ const app = createApp(App)
   })
   .use(router)
   .use(i18n)
-  .use(store);
+  .use(store)
+  .use(permissionPlugin, {
+    rules: permissionRules,
+    actions: permissionActions
+  });
 
 router.isReady().then(() => {
   app.mount('#app');
