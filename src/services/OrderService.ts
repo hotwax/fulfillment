@@ -296,9 +296,10 @@ const fetchShipmentLabelError = async (shipmentIds: Array<string>): Promise<any>
     "entityName": "ShipmentPackageRouteSeg",
     "inputFields": {
       "shipmentId": shipmentIds,
+      "shipmentId_op": "in",
       "gatewayMessage": null,
       "gatewayMessage_op": "notEqual",
-      "gatewayStatus": "error",
+      "gatewayStatus": "error", 
       "gatewayStatus_op": "equals"
     }
   }

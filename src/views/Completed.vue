@@ -107,7 +107,7 @@
                 </ion-button>
               </div>
               <div class="desktop-only">
-                <ion-button fill="outline" @click="showShippingLabelErrorModal(order)">{{ $t("Shipping label error") }}</ion-button>
+                <ion-button v-if="order.missingLabelImage" fill="outline" @click="showShippingLabelErrorModal(order)">{{ $t("Shipping label error") }}</ion-button>
                 <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
               </div>
             </div>
@@ -581,7 +581,6 @@ export default defineComponent({
       order.isGeneratingShippingLabel = false;
     },
     async showShippingLabelErrorModal(order: any){
-
       // Getting all the shipment ids and fetching the data of shipping label error by passing them
       const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId);
       const shipmentLabelErrorData = await OrderService.fetchShipmentLabelError(shipmentIds);
