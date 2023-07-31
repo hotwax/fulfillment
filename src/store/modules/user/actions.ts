@@ -16,7 +16,7 @@ const actions: ActionTree<UserState, RootState> = {
   /**
  * Login user and return token
  */
-  async login ({ commit }, { username, password }) {
+  async login ({ commit, dispatch }, { username, password }) {
     try {
       const resp = await UserService.login(username, password);
       // Further we will have only response having 2xx status
@@ -99,6 +99,8 @@ const actions: ActionTree<UserState, RootState> = {
       if (userProfile.userTimeZone) {
         Settings.defaultZone = userProfile.userTimeZone;
       }
+
+      dispatch('getFieldMappings')
 
       // TODO user single mutation
       commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
