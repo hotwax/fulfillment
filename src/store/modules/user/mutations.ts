@@ -8,12 +8,13 @@ const mutations: MutationTree <UserState> = {
     },
     [types.USER_END_SESSION] (state) {
       state.token = ''
-      state.current = null
+      state.current = {},
       state.currentFacility = {}
       state.currentEComStore = {}
+      state.permissions = []
     },
     [types.USER_INFO_UPDATED] (state, payload) {
-        state.current = payload
+        state.current = { ...state.current,  ...payload}
     },
     [types.USER_CURRENT_FACILITY_UPDATED] (state, payload) {
         state.currentFacility = payload;
@@ -27,5 +28,20 @@ const mutations: MutationTree <UserState> = {
     [types.USER_PREFERENCE_UPDATED] (state, payload) {
         state.preference = {...state.preference, ...payload};
     },
+    [types.USER_PERMISSIONS_UPDATED] (state, payload) {
+        state.permissions = payload
+    },
+    [types.USER_FIELD_MAPPINGS_UPDATED] (state, payload) {
+        state.fieldMappings = payload;
+    },  
+    [types.USER_CURRENT_FIELD_MAPPING_UPDATED] (state, payload) {
+        state.currentMapping = payload
+    },
+    [types.USER_FIELD_MAPPING_CREATED] (state, payload) {
+        (state.fieldMappings as any)[payload.type][payload.id] = {
+            name: payload.name,
+            value: payload.value
+        };
+    }
 }
 export default mutations;

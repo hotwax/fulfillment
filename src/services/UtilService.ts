@@ -32,7 +32,7 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
       "statusId": statusId,
       "statusId_op": "in"
     },
-    "fieldList": ["shipmentId", "primaryOrderId"],
+    "fieldList": ["shipmentId", "primaryOrderId", "picklistBinId"],
     "viewSize": 200,  // maximum records we have for orders
     "distinct": "Y"
   }
@@ -47,10 +47,12 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
 
     if (!hasError(resp)) {
       shipmentIdsForOrders = resp?.data.docs.reduce((shipmentIdsForOrders: any, shipment: any) => {
-        if(shipmentIdsForOrders[shipment.primaryOrderId]) {
-          shipmentIdsForOrders[shipment.primaryOrderId].push(shipment.shipmentId)
+        // creating key in this pattern as the same order can have multiple picklist bin and in that we need to find to which picklist bin shipment is associated
+        const key = `${shipment.primaryOrderId}_${shipment.picklistBinId}`
+        if(shipmentIdsForOrders[key]) {
+          shipmentIdsForOrders[key].push(shipment.shipmentId)
         } else {
-          shipmentIdsForOrders[shipment.primaryOrderId] = [shipment.shipmentId]
+          shipmentIdsForOrders[key] = [shipment.shipmentId]
         }
         return shipmentIdsForOrders
       }, {})
@@ -74,7 +76,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
       "shipmentId": shipmentIds,
       "shipmentId_op": "in"
     },
-    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId"],
+    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "picklistBinId"],
     "viewSize": shipmentIds.length,
     "distinct": "Y"
   }
@@ -88,10 +90,12 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
 
     if(resp?.status == 200 && !hasError(resp) && resp.data.count) {
       shipmentPackages = resp.data.docs.reduce((shipmentForOrders: any, shipmentPackage: any) => {
-        if(shipmentForOrders[shipmentPackage.primaryOrderId]) {
-          shipmentForOrders[shipmentPackage.primaryOrderId].push(shipmentPackage)
+        // creating key in this pattern as the same order can have multiple picklist bin and in that we need to find to which picklist bin shipment is associated
+        const key = `${shipmentPackage.primaryOrderId}_${shipmentPackage.picklistBinId}`
+        if(shipmentForOrders[key]) {
+          shipmentForOrders[key].push(shipmentPackage)
         } else {
-          shipmentForOrders[shipmentPackage.primaryOrderId] = [shipmentPackage]
+          shipmentForOrders[key] = [shipmentPackage]
         }
         return shipmentForOrders
       }, {})
@@ -292,6 +296,14 @@ const fetchShipmentMethodTypeDesc = async (query: any): Promise <any>  => {
   });
 }
 
+const fetchShipmentBoxTypeDesc = async (query: any): Promise <any>  => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
 export const UtilService = {
   createPicklist,
   fetchCarrierPartyIds,
@@ -303,6 +315,7 @@ export const UtilService = {
   fetchRejectReasons,
   findShipmentIdsForOrders,
   findShipmentItemInformation,
+  fetchShipmentBoxTypeDesc,
   fetchShipmentMethods,
   fetchShipmentMethodTypeDesc,
   findShipmentPackages,

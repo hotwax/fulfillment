@@ -17,11 +17,24 @@
         </ion-item>
 
         <ion-list>
+          <ion-list-header>{{ $t("Saved mappings") }}</ion-list-header>
+          <div>
+            <ion-chip :disabled="!content.length" :outline=true @click="addFieldMapping()">
+              <ion-icon :icon="addOutline" />
+              <ion-label>{{ $t("New mapping") }}</ion-label>
+            </ion-chip>
+            <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('IMPORD') ?? []" :key="index" @click="mapFields(mapping.value)" :outline=true>
+              {{ mapping.name }}
+            </ion-chip>
+          </div>
+        </ion-list>
+
+        <ion-list>
           <ion-list-header>{{ $t("Select the column for the following information in the uploaded CSV.") }}</ion-list-header>
 
           <ion-item :key="field" v-for="(fieldValues, field) in fields">
             <ion-label>{{ $t(fieldValues.label) }}</ion-label>
-            <ion-select interface="popover" v-if="content.length" :placeholder="$t('Select')" v-model="fieldMapping[field]">
+            <ion-select interface="popover" v-if="content.length" :placeholder="$t('Select')" v-model="fieldMapping[field].value">
               <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -39,16 +52,21 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { useRouter } from 'vue-router';
-import { IonPage, IonSelect, IonSelectOption, IonHeader, IonList, IonListHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonButton, alertController } from '@ionic/vue'
+import { IonChip, IonIcon, IonPage, IonSelect, IonSelectOption, IonHeader, IonList, IonListHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonButton, alertController, modalController } from '@ionic/vue'
 import { parseCsv, showToast } from '@/utils';
 import { translate } from "@/i18n";
 import { UploadService } from "@/services/UploadService"
 import { hasError } from '@/adapter';
 import logger from '@/logger';
+import { addOutline } from "ionicons/icons"
+import CreateMappingModal from "@/components/CreateMappingModal.vue";
+import { mapGetters } from 'vuex';
 
 export default defineComponent({
   name: 'UploadImportOrders',
   components: {
+    IonChip,
+    IonIcon,
     IonPage,
     IonSelect,
     IonSelectOption,
@@ -69,8 +87,13 @@ export default defineComponent({
       content: [] as any,
       fieldMapping: {} as any,
       fileColumns: [] as Array<string>,
-      fields: process.env["VUE_APP_UPLD_IMP_ORD"] ? JSON.parse(process.env["VUE_APP_UPLD_IMP_ORD"]) : {}
+      fields: process.env["VUE_APP_MAPPING_IMPORD"] ? JSON.parse(process.env["VUE_APP_MAPPING_IMPORD"]) : {}
     }
+  },
+  computed: {
+    ...mapGetters({
+      fieldMappings: 'user/getFieldMappings'
+    })
   },
   ionViewDidEnter() {
     this.file = {}
@@ -81,7 +104,7 @@ export default defineComponent({
   methods: {
     generateFieldMapping() {
       this.fieldMapping = Object.keys(this.fields).reduce((fieldMapping: any, field: string) => {
-        fieldMapping[field] = ""
+        fieldMapping[field] = {}
         return fieldMapping;
       }, {})
     },
@@ -105,7 +128,7 @@ export default defineComponent({
       }
     },
     async save() {
-      const areAllFieldsSelected = Object.values(this.fieldMapping).every(field => field !== "");
+      const areAllFieldsSelected = Object.values(this.fieldMapping).every((field: any) => field.value !== "");
       
       if (!areAllFieldsSelected) {
         showToast(translate("Select all the fields to continue"));
@@ -113,9 +136,9 @@ export default defineComponent({
       }
 
       const uploadData = this.content.map((order: any) => ({
-        'orderIdValue': order[this.fieldMapping.orderId],
-        'externalFacilityId': order[this.fieldMapping.facilityId],
-        'trackingNumber': order[this.fieldMapping.trackingCode]
+        'orderIdValue': order[this.fieldMapping['orderId'].value],
+        'externalFacilityId': order[this.fieldMapping['facilityId'].value],
+        'trackingNumber': order[this.fieldMapping['trackingCode'].value]
       }))
 
       const fileName = this.file.name.replace(".csv", ".json");
@@ -154,12 +177,48 @@ export default defineComponent({
         }]
       });
       return alert.present();
+    },
+    mapFields(mapping: any) {
+      const fieldMapping = JSON.parse(JSON.stringify(mapping));
+
+      // TODO: Store an object in this.content variable, so everytime when accessing it, we don't need to use 0th index
+      const csvFields = Object.keys(this.content[0]);
+
+      const missingFields: Array<string> = []
+
+      Object.values(fieldMapping).map((field: any) => {
+        if(!csvFields.includes(field.value)) missingFields.push(field.value);
+      });
+
+      if(missingFields.length) showToast(translate("Some of the mapping fields are missing in the CSV: ", { missingFields: missingFields.join(", ") }))
+
+      Object.keys(fieldMapping).map((key) => {
+        if(!csvFields.includes(fieldMapping[key].value)){
+          fieldMapping[key].value = "";
+        }
+      })
+
+      this.fieldMapping = fieldMapping;
+    },
+    async addFieldMapping() {
+      let mappings: any = {};
+
+      Object.keys(this.fieldMapping).map((mapping) => {
+        mappings[mapping] = { value: this.fieldMapping[mapping].value, label: this.fields[mapping].label }
+      })
+
+      const createMappingModal = await modalController.create({
+        component: CreateMappingModal,
+        componentProps: { content: this.content, mappings, mappingType: 'IMPORD'}
+      });
+      return createMappingModal.present();
     }
   },
   setup() {
     const router = useRouter();
     
     return {
+      addOutline,
       router
     }
   }

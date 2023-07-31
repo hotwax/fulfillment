@@ -29,6 +29,9 @@ import i18n from './i18n'
 import store from './store'
 import { dxpComponents } from '@hotwax/dxp-components'; 
 
+import permissionRules from '@/authorization/Rules';
+import permissionActions from '@/authorization/Actions';
+
 const app = createApp(App)
   .use(IonicVue, {
     mode: 'md'
@@ -40,7 +43,9 @@ const app = createApp(App)
   .use(i18n)
   .use(store)
   .use(dxpComponents, {
-    defaultImgUrl: require("@/assets/images/defaultImage.png")
+    defaultImgUrl: require("@/assets/images/defaultImage.png"),
+    rules: permissionRules,
+    actions: permissionActions
   });
 
 router.isReady().then(() => {

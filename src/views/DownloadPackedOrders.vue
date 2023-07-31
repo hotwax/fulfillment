@@ -8,22 +8,44 @@
     </ion-header>
 
     <ion-content>
-      <!-- TODO: remove this option to upload file and make api call in ionViewWillEnter to get the csv file -->
-      <input :placeholder="$t('Select CSV')" @change="parse" ref="file" class="ion-hide" type="file" id="downloadPackedOrders"/>
-      <label for="downloadPackedOrders">{{ $t("Upload") }}</label>
       <main>
+        <ion-list>
+          <ion-list-header>{{ $t("Saved mappings") }}</ion-list-header>
+          <div>
+            <ion-chip :disabled="!content.length" :outline=true @click="addFieldMapping()">
+              <ion-icon :icon="addOutline" />
+              <ion-label>{{ $t("New mapping") }}</ion-label>
+            </ion-chip>
+            <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('EXPORD') ?? []" :key="index" @click="mapFields(mapping)" :outline=true>
+              {{ mapping.name }}
+            </ion-chip>
+          </div>
+        </ion-list>
+
         <ion-list>
           <ion-list-header>{{ $t("Select the fields you want to include in your export") }}</ion-list-header>
           <ion-button fill="clear" @click="selectAll" :disabled="!Object.keys(fieldMapping).length">{{ $t('Select all') }}</ion-button>
 
           <ion-item :key="field" v-for="(value, field) in fieldMapping">
             <ion-checkbox :checked="selectedData[field]" @click="isFieldClicked=true" @ionChange="updateSelectedData(field)" slot="start"/>
-            <ion-label>{{ field }}</ion-label>
+            <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
             <ion-button v-if="value === field" fill="outline" @click="addCustomLabel(field)">{{ $t('Custom Label') }}</ion-button>
             <!-- Using multiple if's instead of wrapping in a single parent div, to style the component properly without adding any extra css -->
             <ion-label v-if="value !== field" slot="end">{{ value }}</ion-label>
             <ion-button v-if="value !== field" slot="end" fill="clear" @click="addCustomLabel(field)">
               <ion-icon :icon="pencilOutline" />
+            </ion-button>
+          </ion-item>
+        </ion-list>
+
+        <ion-list>
+          <ion-button fill="clear" @click="addCustomField()" :disabled="!Object.keys(fieldMapping).length">{{ $t('Add custom field') }}</ion-button>
+
+          <ion-item :key="key" v-for="(field, key) in customFields">
+            <ion-label>{{ key }}</ion-label>
+            <ion-label slot="end">{{ field.value }}</ion-label>
+            <ion-button slot="end" fill="clear" @click="removeCustomField(key)">
+              <ion-icon :icon="trashOutline" />
             </ion-button>
           </ion-item>
         </ion-list>
@@ -40,13 +62,16 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { mapGetters } from "vuex";
-import { alertController, IonBackButton, IonButton, IonCheckbox, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonTitle, IonToolbar } from '@ionic/vue'
-import { pencilOutline } from 'ionicons/icons'
+import { alertController, IonBackButton, IonButton, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonTitle, IonToolbar, modalController } from '@ionic/vue'
+import { addOutline, pencilOutline, trashOutline } from 'ionicons/icons'
 import { parseCsv, jsonToCsv, showToast } from '@/utils';
 import { translate } from "@/i18n";
 import logger from '@/logger';
 import { DateTime } from 'luxon';
 import { useRouter } from 'vue-router';
+import CreateMappingModal from "@/components/CreateMappingModal.vue";
+import { UploadService } from '@/services/UploadService';
+import CustomFieldModal from '@/components/CustomFieldModal.vue'
 
 export default defineComponent({
   name: 'UploadImportOrders',
@@ -54,6 +79,7 @@ export default defineComponent({
     IonBackButton,
     IonButton,
     IonCheckbox,
+    IonChip,
     IonContent,
     IonHeader,
     IonIcon,
@@ -67,48 +93,71 @@ export default defineComponent({
   },
   data() {
     return {
-      file: {} as any,
       content: [] as any,
       fieldMapping: {} as any,
-      fileColumns: [] as Array<string>,
+      dataColumns: [] as Array<string>,
       selectedData: {} as any,
-      isFieldClicked: false
+      isFieldClicked: false,
+      fields: process.env["VUE_APP_MAPPING_EXPORD"] ? JSON.parse(process.env["VUE_APP_MAPPING_EXPORD"]) : {},
+      customFields: {} as any
     }
   },
   computed: {
     ...mapGetters({
-      currentFacility: 'user/getCurrentFacility'
+      currentFacility: 'user/getCurrentFacility',
+      fieldMappings: 'user/getFieldMappings'
     })
   },
-  ionViewDidEnter() {
-    // TODO: make api call to get the CSV file, instead of upload file option
-    this.file = {}
+  async ionViewDidEnter() {
     this.content = []
+    await this.fetchPackedOrders();
   },
   methods: {
-    async parse(event: any) {
-      const file = event.target.files[0];
-      try {
-        if (file) {
-          this.content = await parseCsv(file).then(res => res);
-          // get the column names from the file
-          this.fileColumns = Object.keys(this.content[0]);
-          // generate default mappings for the columns
-          this.fieldMapping = this.fileColumns.reduce((fieldMapping: any, field: string) => {
-            fieldMapping[field] = field
-            return fieldMapping;
-          }, {})
-        } else {
-          logger.error("No file upload. Please try again");
+    async fetchPackedOrders() {
+      // TODO: need to set a timeout, as when the orders size gets big then the api might take long time to return the information
+
+      const payload = {
+        params: {
+          configId: 'MDM_PACKED_SHIPMENT',
+          mimeTypeId: 'application/octet',
+          facilityId: this.currentFacility.facilityId
         }
+      }
+
+      try {
+        const resp = await UploadService.fetchPackedOrders(payload);
+
+        if(resp.status == 200 && resp.data) {
+          // generating mapping only when we get the packed orders information
+          this.generateFieldMapping();
+          await this.parse(resp.data)
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        showToast(translate('Failed to get packed orders information'))
+        logger.error('Failed to get packed orders', err)
+      }
+    },
+    generateFieldMapping() {
+      this.fieldMapping = Object.keys(this.fields).reduce((fieldMapping: any, field: string) => {
+        fieldMapping[field] = field
+        return fieldMapping;
+      }, {})
+    },
+    async parse(data: any) {
+      try {
+        this.content = await parseCsv(data).then(res => res);
+        // get the column names from the data
+        this.dataColumns = Object.keys(this.content[0]);
       } catch {
         this.content = []
-        logger.error("Please upload a valid csv to continue");
+        logger.error("Failed to parse the data");
       }
     },
     async addCustomLabel(field: any) {
       const alert = await alertController.create({
-        header: this.$t('Define custom label for', { field }),
+        header: this.$t('Define custom label for', { label: this.fields[field].label }),
         buttons: [{
           text: translate('Cancel'),
           role: 'cancel'
@@ -124,10 +173,8 @@ export default defineComponent({
             }
 
             this.fieldMapping[field] = value ? value : field;
-            // once the field value is changed and if that field is already selected, then updating the data as well
-            if(this.selectedData[field]) {
-              this.selectedData[field] = this.fieldMapping[field]
-            }
+            // selecting the field value when the label for the field is changed
+            this.selectedData[field] = this.fieldMapping[field]
           }
         }],
         inputs: [{
@@ -166,6 +213,11 @@ export default defineComponent({
         }, {}))
       })
 
+      // adding custom fields in the data
+      Object.keys(this.customFields).map((field: any) => {
+        downloadData.map((data: any) => data[field] = this.customFields[field].value)
+      })
+
       const alert = await alertController.create({
         header: this.$t("Download packed orders"),
         message: this.$t("Make sure all the labels provided are correct."),
@@ -185,13 +237,80 @@ export default defineComponent({
     },
     selectAll() {
       this.selectedData = JSON.parse(JSON.stringify(this.fieldMapping))
+    },
+    async addFieldMapping() {
+      let mappings: any = {};
+
+      Object.keys(this.fieldMapping).map((mapping) => {
+        let isSelected = false;
+        if(this.selectedData[mapping]) {
+          isSelected = true
+        }
+
+        mappings[mapping] = { value: this.fieldMapping[mapping], isSelected, label: this.fields[mapping].label }
+      })
+
+      const createMappingModal = await modalController.create({
+        component: CreateMappingModal,
+        componentProps: { content: this.content, mappings: { ...mappings, ...this.customFields }, mappingType: 'EXPORD'}
+      });
+      return createMappingModal.present();
+    },
+    mapFields(mapping: any) {
+      const fieldMapping = JSON.parse(JSON.stringify(mapping));
+      const mappingValue = fieldMapping.value
+
+      this.fieldMapping = {}
+      this.customFields = {}
+      this.selectedData = {}
+
+      Object.keys(mappingValue).map((mapping) => {
+        if(mappingValue[mapping].isCustomField) {
+          this.customFields[mapping] = {
+            value: mappingValue[mapping].value,
+            label: mapping,
+            isSelected: true,
+            isCustomField: true
+          }
+        } else {
+          this.fieldMapping[mapping] = mappingValue[mapping].value
+        }
+
+        if(mappingValue[mapping].isSelected && !mappingValue[mapping].isCustomField) {
+          this.selectedData[mapping] = mappingValue[mapping].value
+        }
+      })
+    },
+    async addCustomField() {
+      const customFieldModal = await modalController.create({
+        component: CustomFieldModal,
+        componentProps: { customFields: this.customFields }
+      });
+
+      customFieldModal.onDidDismiss().then((result) => {
+        if(result.data && result.data.value) {
+          this.customFields[result.data.value.key] = {
+            value: result.data.value.value,
+            label: result.data.value.key,
+            isSelected: true,
+            isCustomField: true
+          }
+        }
+      })
+
+      return customFieldModal.present();
+    },
+    removeCustomField(key: any) {
+      delete this.customFields[key];
     }
   },
   setup() {
     const router = useRouter();
 
     return {
+      addOutline,
       pencilOutline,
+      trashOutline,
       router
     }
   }

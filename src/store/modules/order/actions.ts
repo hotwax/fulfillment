@@ -29,23 +29,23 @@ const actions: ActionTree<OrderState, RootState> = {
 
     try {
       // maintaining an object containing information of shipmentIds for each order
-    const shipmentIdsForOrders = await UtilService.findShipmentIdsForOrders(picklistBinIds, orderIds);
+    const shipmentIdsForOrderAndPicklistBin = await UtilService.findShipmentIdsForOrders(picklistBinIds, orderIds);
 
-    let shipmentPackagesByOrder = {} as any, itemInformationByOrder = {} as any, carrierPartyIdsByShipment = {} as any, carrierShipmentBoxType = {} as any
+    let shipmentPackagesByOrderAndPicklistBin = {} as any, itemInformationByOrder = {} as any, carrierPartyIdsByShipment = {} as any, carrierShipmentBoxType = {} as any
 
     // storing all the shipmentIds for all the orders in an array to use furthur
-    const orderShipmentIds = [...(new Set(Object.values(shipmentIdsForOrders).flat()))] as Array<string>
+    const orderShipmentIds = [...(new Set(Object.values(shipmentIdsForOrderAndPicklistBin).flat()))] as Array<string>
 
     // TODO: handle case when shipmentIds is empty
     // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
-    const [shipmentPackagesByOrderInformation, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
+    const [shipmentPackagesByOrderInformationAndPicklistBin, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
 
     // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
     const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
 
-    shipmentPackagesByOrder = {
-      ...shipmentPackagesByOrder,
-      ...shipmentPackagesByOrderInformation
+    shipmentPackagesByOrderAndPicklistBin = {
+      ...shipmentPackagesByOrderAndPicklistBin,
+      ...shipmentPackagesByOrderInformationAndPicklistBin
     }
 
     itemInformationByOrder = {
@@ -66,7 +66,7 @@ const actions: ActionTree<OrderState, RootState> = {
     inProgressOrders = inProgressOrders.map((order: any) => {
 
       // if for an order shipment information is not available then returning the same order information again
-      if(!shipmentIdsForOrders[order.orderId]) {
+      if(!shipmentIdsForOrderAndPicklistBin[`${order.orderId}_${order.picklistBinId}`]) {
           // if there are no shipment for the order, there is some issue with the order
           if (picklistBinIds.includes(order.picklistBinId) && orderIds.includes(order.orderId)) {
             return {
@@ -79,8 +79,14 @@ const actions: ActionTree<OrderState, RootState> = {
 
       order.items.map((item: any) => {
         // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
-        item.shipmentItemSeqId = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)?.shipmentItemSeqId
-        item.selectedBox = shipmentPackagesByOrder[item.orderId]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+        const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)
+
+        if(shipment) {
+          item.shipmentId = shipment.shipmentId
+          item.shipmentItemSeqId = shipment.shipmentItemSeqId
+        }
+
+        item.selectedBox = shipmentPackagesByOrderAndPicklistBin[`${item.orderId}_${item.picklistBinId}`]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
       })
 
       const orderItem = order.items[0];
@@ -88,8 +94,8 @@ const actions: ActionTree<OrderState, RootState> = {
 
       return {
         ...order,
-        shipmentIds: shipmentIdsForOrders[orderItem.orderId],
-        shipmentPackages: shipmentPackagesByOrder[orderItem.orderId],
+        shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
+        shipmentPackages: shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
         carrierPartyIds,
         shipmentBoxTypeByCarrierParty: carrierPartyIds.reduce((shipmentBoxType: any, carrierPartyId: any) => {
           if(shipmentBoxType[carrierPartyId]) {
@@ -102,6 +108,8 @@ const actions: ActionTree<OrderState, RootState> = {
         }, {})
       }
     })
+
+    this.dispatch('util/fetchShipmentBoxTypeDesc', [...new Set(Object.values(carrierShipmentBoxType).flat())])
     } catch(err) {
       inProgressOrders = inProgressOrders.map((order: any) => {
         orderIds.includes(order.orderId) && (order.hasMissingInfo = true);
@@ -252,7 +260,7 @@ const actions: ActionTree<OrderState, RootState> = {
             picklistBinId: orderItem.picklistBinId,
             items: order.doclist.docs,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
-            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc
           }
         })
       } else {

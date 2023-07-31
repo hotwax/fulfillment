@@ -41,7 +41,7 @@
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
-                  {{ order.customerName }}
+                  <strong>{{ order.customerName }}</strong>
                   <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
                 </ion-label>
               </div>
@@ -67,7 +67,7 @@
             </div>
             <!-- TODO: implement functionality to change the type of box -->
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
-              <ion-button @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
+              <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
             </div>
 
@@ -120,7 +120,7 @@
                     <ion-item lines="none">
                       <ion-label>{{ $t("Select issue") }}</ion-label>
                       <ion-select interface="popover" @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
-                        <ion-select-option v-for="reason in rejectReasons" :key="reason.enumCode" :value="reason.enumCode">{{ $t(reason.description) }}</ion-select-option>
+                        <ion-select-option v-for="reason in rejectReasons" :key="reason.enumId" :value="reason.enumId">{{ reason.description ? $t(reason.description) : reason.enumId }}</ion-select-option>
                       </ion-select>
                     </ion-item>
                   </div>
@@ -246,14 +246,16 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       rejectReasons: 'util/getRejectReasons',
       currentEComStore: 'user/getCurrentEComStore',
-      userPreference: 'user/getUserPreference'
-    })
+      userPreference: 'user/getUserPreference',
+      boxTypeDesc: 'util/getShipmentBoxDesc'
+    }),
   },
   data() {
     return {
       picklists: [] as any,
       defaultShipmentBoxType: '',
       itemsIssueSegmentSelected: [] as any,
+      addingBoxForOrderIds: [] as any
     }
   },
   methods: {
@@ -267,7 +269,7 @@ export default defineComponent({
       // when selecting the report segment for the first time defining the value for rejectReason,
       // as in current flow once moving to reject segment we can't pack an order
       if(ev.detail.value === 'issue') {
-        item.rejectReason = this.rejectReasons[0].enumCode // setting the first reason as default
+        item.rejectReason = this.rejectReasons[0].enumId // setting the first reason as default
         order.hasRejectedItem = true
         this.itemsIssueSegmentSelected.push(`${item.orderId}-${item.orderItemSeqId}`)
       } else {
@@ -488,7 +490,9 @@ export default defineComponent({
 
       form.append('facilityId', this.currentFacility.facilityId)
 
-      order.items.map((item: any, index: number) => {
+      const items = JSON.parse(JSON.stringify(order.items));
+
+      items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
         let prefix = 'rtp'
@@ -520,6 +524,19 @@ export default defineComponent({
             this.updateOrderQuery()
           } else {
             order.isModified = false;
+
+            // updating the shipment information on item level
+            const itemInformationByOrderResp = await UtilService.findShipmentItemInformation(order.shipmentIds);
+            const itemInformation = itemInformationByOrderResp[order.orderId]
+
+            itemInformation?.map((orderItem: any) => {
+              const item = items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
+
+              item.shipmentId = orderItem.shipmentId
+              item.shipmentItemSeqId = orderItem.shipmentItemSeqId
+            })
+            order.items = items
+
             await this.store.dispatch('order/updateInProgressOrder', order)
           }
           showToast(translate('Order updated successfully'))
@@ -662,7 +679,7 @@ export default defineComponent({
     },
     async fetchShipmentRouteSegmentInformation(shipmentIds: Array<string>) {
       const payload = {
-        "inpurFields": {
+        "inputFields": {
           "carrierPartyId": "_NA_",
           "carrierPartyId_op": "notEqual",
           "shipmentId": shipmentIds,
@@ -711,6 +728,8 @@ export default defineComponent({
       return defaultBoxType;
     },
     async addShipmentBox(order: any) {
+      this.addingBoxForOrderIds.push(order.orderId)
+
       const { carrierPartyId, shipmentMethodTypeId } = await this.fetchShipmentRouteSegmentInformation(order.shipmentIds)
       
       if(!this.defaultShipmentBoxType) {
@@ -739,10 +758,11 @@ export default defineComponent({
         showToast(translate('Failed to add box'))
         logger.error('Failed to add box', err)
       }
+      this.addingBoxForOrderIds.splice(this.addingBoxForOrderIds.indexOf(order.orderId), 1)
     },
     getShipmentPackageNameAndType(shipmentPackage: any, order: any) {
       // TODO
-      return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? `Box ${shipmentPackage.packageName} | ${order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0]}` : ''
+      return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? `Box ${shipmentPackage.packageName} | ${this.boxTypeDesc(order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0])}` : ''
     },
     async updateQueryString(queryString: string) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
