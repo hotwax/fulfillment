@@ -31,6 +31,10 @@ import { dxpComponents } from '@hotwax/dxp-components';
 import { setProductIdentificationPref, getProductIdentificationPref } from '@hotwax/oms-api';
 
 
+import permissionPlugin from '@/authorization';
+import permissionRules from '@/authorization/Rules';
+import permissionActions from '@/authorization/Actions';
+
 const app = createApp(App)
   .use(IonicVue, {
     mode: 'md'
@@ -44,7 +48,9 @@ const app = createApp(App)
   .use(dxpComponents, {
     defaultImgUrl: require("@/assets/images/defaultImage.png"),
     setProductIdentificationPref,
-    getProductIdentificationPref
+    getProductIdentificationPref,
+    rules: permissionRules,
+    actions: permissionActions
   });
 
 router.isReady().then(() => {

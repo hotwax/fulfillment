@@ -53,12 +53,12 @@
         </ion-item>
         <div class="actions">
           <div>
-            <ion-button fill="outline" color="secondary" size="medium" @click="recycleOutstandingOrders()">{{ $t("Recycle all open orders") }}</ion-button>
-            <ion-button fill="outline" color="secondary" size="medium" @click="recycleInProgressOrders()">{{ $t("Recycle all in progress orders") }}</ion-button>
+            <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER)" fill="outline" color="secondary" size="medium" @click="recycleOutstandingOrders()">{{ $t("Recycle all open orders") }}</ion-button>
+            <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER)" fill="outline" color="secondary" size="medium" @click="recycleInProgressOrders()">{{ $t("Recycle all in progress orders") }}</ion-button>
             <!-- <ion-button fill="outline" color="secondary" size="medium">{{ $t("Recycle all orders") }}</ion-button> -->
           </div>
           <div>
-            <ion-button v-if="isStoreFulfillmentTurnOn" fill="outline" color="danger" size="medium" @click="turnOffFulfillment()">{{ $t("Turn off fulfillment") }}</ion-button>
+            <ion-button :disabled="!hasPermission(Actions.APP_TURN_OFF_STORE)" v-if="isStoreFulfillmentTurnOn" fill="outline" color="danger" size="medium" @click="turnOffFulfillment()">{{ $t("Turn off fulfillment") }}</ion-button>
             <ion-button v-else fill="outline" color="success" size="medium" @click="turnOnFulfillment()">{{ $t("Turn on fulfillment") }}</ion-button>
           </div>
         </div>
@@ -145,7 +145,11 @@ import { showToast } from '@/utils';
 import { hasError } from '@/adapter';
 import { translate } from '@/i18n';
 import logger from '@/logger';
+<<<<<<< HEAD
 import { useProductIdentificationStore } from '@hotwax/dxp-components';
+=======
+import { Actions, hasPermission } from '@/authorization'
+>>>>>>> bfeb6a10a812637d6e5adf8d868ea3ee8de2c015
 
 export default defineComponent({
   name: 'Settings',
@@ -300,7 +304,8 @@ export default defineComponent({
     },
     async setFacility (event: any) {
       // not updating the facility when the current facility in vuex state and the selected facility are same
-      if(this.currentFacility.facilityId === event.detail.value) {
+      // or when an empty value is given (on logout)
+      if (this.currentFacility.facilityId === event.detail.value || !event.detail.value) {
         return;
       }
 
@@ -454,7 +459,8 @@ export default defineComponent({
     },
     async setEComStore(event: any) {
       // not updating the ecomstore when the current value in vuex state and selected value are same
-      if(this.currentEComStore.productStoreId === event.detail.value) {
+      // or when an empty value is given (on logout)
+      if (this.currentEComStore.productStoreId === event.detail.value || !event.detail.value) {
         return;
       }
 
@@ -502,15 +508,20 @@ export default defineComponent({
     /* End Product Identifier */
 
     return {
+      Actions,
       codeWorkingOutline,
       ellipsisVerticalOutline,
       globeOutline,
       timeOutline,
       router,
       store,
+<<<<<<< HEAD
       productIdentificationOptions,
       setProductIdentificationPref,
       productIdentificationPref
+=======
+      hasPermission
+>>>>>>> bfeb6a10a812637d6e5adf8d868ea3ee8de2c015
     }
   }
 });

@@ -76,12 +76,10 @@ export default defineComponent({
       const instanceURL = this.instanceUrl.trim().toLowerCase();
       if(!this.baseURL) this.store.dispatch("user/setUserInstanceUrl", this.alias[instanceURL] ? this.alias[instanceURL] : instanceURL);
       const { username, password } = this;
-      this.store.dispatch("user/login", { username, password }).then((data: any) => {
-        if (data.token) {
-          this.username = ''
-          this.password = ''
-          this.$router.push('/')
-        }
+      this.store.dispatch("user/login", { username: username.trim(), password }).then(() => {
+        this.username = ''
+        this.password = ''
+        this.$router.push('/')
       })
     }
   },
