@@ -145,11 +145,8 @@ import { showToast } from '@/utils';
 import { hasError } from '@/adapter';
 import { translate } from '@/i18n';
 import logger from '@/logger';
-<<<<<<< HEAD
 import { useProductIdentificationStore } from '@hotwax/dxp-components';
-=======
 import { Actions, hasPermission } from '@/authorization'
->>>>>>> bfeb6a10a812637d6e5adf8d868ea3ee8de2c015
 
 export default defineComponent({
   name: 'Settings',
@@ -515,13 +512,10 @@ export default defineComponent({
       timeOutline,
       router,
       store,
-<<<<<<< HEAD
       productIdentificationOptions,
       setProductIdentificationPref,
-      productIdentificationPref
-=======
+      productIdentificationPref,
       hasPermission
->>>>>>> bfeb6a10a812637d6e5adf8d868ea3ee8de2c015
     }
   }
 });

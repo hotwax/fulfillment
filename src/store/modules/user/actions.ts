@@ -10,7 +10,6 @@ import { Settings } from 'luxon'
 import { updateInstanceUrl, updateToken, resetConfig } from '@/adapter'
 import logger from '@/logger'
 import { useProductIdentificationStore } from '@hotwax/dxp-components'
-import store from '@/store'
 import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from '@/authorization'
 
 const actions: ActionTree<UserState, RootState> = {
@@ -115,6 +114,12 @@ const actions: ActionTree<UserState, RootState> = {
         // TODO Internationalise text
         showToast(translate(resp.data._EVENT_MESSAGE_));
       }
+      
+      // Get product identification from api using dxp-component and set the state if eComStore is defined
+      if (preferredStore.productStoreId) {
+        await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
+          .catch((error) => logger.error('Failed to fetch identification preference', error));
+      }
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
       // TODO Check if handling of specific status codes is required.
@@ -138,44 +143,6 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    * update current facility information
    */
-<<<<<<< HEAD
-  async getProfile({ commit, dispatch }) {
-    try {
-      const resp = await UserService.getProfile()
-      if (resp.data.userTimeZone) {
-        Settings.defaultZone = resp.data.userTimeZone;
-      }
-
-      // logic to remove duplicate facilities
-      const facilityIds = new Set();
-      const facilities = [] as Array<any>;
-
-      resp.data.facilities.map((facility: any) => {
-        if (!facilityIds.has(facility.facilityId)) {
-          facilityIds.add(facility.facilityId)
-          facilities.push(facility)
-        }
-      })
-
-      resp.data.facilities = facilities
-
-      const currentFacility = resp.data.facilities.length > 0 ? resp.data.facilities[0] : {};
-      resp.data.stores = await dispatch('getEComStores', { facilityId: currentFacility.facilityId })
-
-      dispatch('getFieldMappings')
-      commit(types.USER_INFO_UPDATED, resp.data);
-      commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
-    } catch (err) {
-      logger.error('Failed to fetch user profile information', err)
-    }
-  },
-
-  /**
-   * update current facility information
-   */
-  async setFacility({ commit, dispatch, state }, payload) {
-    const user = JSON.parse(JSON.stringify(state.current as any));
-=======
   async setFacility ({ commit, state }, payload) {
     const userProfile = JSON.parse(JSON.stringify(state.current as any));
     userProfile.stores = await UserService.getEComStores(undefined, payload.facility.facilityId);
@@ -188,7 +155,6 @@ const actions: ActionTree<UserState, RootState> = {
       store && (preferredStore = store)
     }
     commit(types.USER_INFO_UPDATED, userProfile);
->>>>>>> bfeb6a10a812637d6e5adf8d868ea3ee8de2c015
     commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
     commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
     this.dispatch('order/clearOrders')
@@ -213,52 +179,6 @@ const actions: ActionTree<UserState, RootState> = {
     updateInstanceUrl(payload)
   },
 
-<<<<<<< HEAD
-  async getEComStores({ commit }, payload) {
-    let resp;
-
-    try {
-      const param = {
-        "inputFields": {
-          "facilityId": payload.facilityId,
-          "storeName_op": "not-empty"
-        },
-        "fieldList": ["productStoreId", "storeName"],
-        "entityName": "ProductStoreFacilityDetail",
-        "distinct": "Y",
-        "noConditionFind": "Y"
-      }
-
-      resp = await UserService.getEComStores(param);
-      if (!hasError(resp)) {
-        const eComStores = resp.data.docs
-
-        const userPref = await UserService.getUserPreference({
-          'userPrefTypeId': 'SELECTED_BRAND'
-        });
-        const userPrefStore = eComStores.find((store: any) => store.productStoreId == userPref.data.userPrefValue)
-
-        commit(types.USER_CURRENT_ECOM_STORE_UPDATED, userPrefStore ? userPrefStore : eComStores.length > 0 ? eComStores[0] : {});
-
-        // Get product identification from api using dxp-component and set the state if eComStore is defined
-        const currEcomStore = store.getters['user/getCurrentEComStore']; 
-        if (currEcomStore.productStoreId) {
-          await useProductIdentificationStore().getIdentificationPref(currEcomStore.productStoreId)
-            .catch((error) => logger.error('Failed to fetch identification preference', error));
-        }
-
-        return eComStores
-      } else {
-        throw resp.data
-      }
-    } catch (error) {
-      logger.error('Failed to get ecom stores', error);
-    }
-    return []
-  },
-
-=======
->>>>>>> bfeb6a10a812637d6e5adf8d868ea3ee8de2c015
   /**
    *  update current eComStore information
   */
