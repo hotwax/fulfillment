@@ -45,7 +45,39 @@ const updateFacility = async (payload: any): Promise<any> => {
   })
 }
 
-const recycleInProgressOrders = async(payload: any): Promise<any> => {
+const updateFacilityToGroup = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateFacilityToGroup",
+    method: "post",
+    data: payload
+  })
+}
+
+const addFacilityToGroup = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/addFacilityToGroup",
+    method: "post",
+    data: payload
+  })
+}
+
+const getFacilityGroupDetails = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: payload
+  })
+}
+
+const getFacilityGroupAndMemberDetails = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: payload
+  })
+}
+
+const recycleInProgressOrders = async (payload: any): Promise<any> => {
   return api({
     url: "service/bulkRejectStoreInProgressOrders",
     method: "post",
@@ -97,7 +129,7 @@ const getEComStores = async (token: any, facilityId: any): Promise<any> => {
       baseURL,
       params,
       headers: {
-        Authorization:  'Bearer ' + token,
+        Authorization: 'Bearer ' + token,
         'Content-Type': 'application/json'
       }
     });
@@ -234,7 +266,7 @@ const getUserProfile = async (token: any): Promise<any> => {
       method: "get",
       baseURL,
       headers: {
-        Authorization:  'Bearer ' + token,
+        Authorization: 'Bearer ' + token,
         'Content-Type': 'application/json'
       }
     });
@@ -286,6 +318,7 @@ const getFieldMappings = async (payload: any): Promise <any> => {
 }
 
 export const UserService = {
+    addFacilityToGroup,
     createFieldMapping,
     deleteFieldMapping,
     login,
@@ -293,6 +326,8 @@ export const UserService = {
     getEComStores,
     getFacilityDetails,
     getFieldMappings,
+    getFacilityGroupDetails,
+    getFacilityGroupAndMemberDetails,
     getInProgressOrdersCount,
     getOutstandingOrdersCount,
     getUserProfile,
@@ -303,5 +338,6 @@ export const UserService = {
     setUserTimeZone,
     getUserPermissions,
     updateFacility,
+    updateFacilityToGroup,
     updateFieldMapping
 }

@@ -206,6 +206,8 @@
   "To Name": "To Name",
   "Tracking Code": "Código de Seguimiento",
   "Tracking ID": "ID de Seguimiento",
+  "Turn off Ecom inventory": "Turn off Ecom inventory",
+  "Turn on Ecom inventory": "Turn on Ecom inventory",
   "Turn off fulfillment": "Desactivar Cumplimiento",
   "Turn on fulfillment": "Activar Cumplimiento",
   "Turn on fulfillment for ": "Activar cumplimiento para {facilityName}",

@@ -58,8 +58,12 @@
             <!-- <ion-button fill="outline" color="secondary" size="medium">{{ $t("Recycle all orders") }}</ion-button> -->
           </div>
           <div>
-            <ion-button :disabled="!hasPermission(Actions.APP_TURN_OFF_STORE)" v-if="isStoreFulfillmentTurnOn" fill="outline" color="danger" size="medium" @click="turnOffFulfillment()">{{ $t("Turn off fulfillment") }}</ion-button>
-            <ion-button v-else fill="outline" color="success" size="medium" @click="turnOnFulfillment()">{{ $t("Turn on fulfillment") }}</ion-button>
+            <ion-button :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" v-if="isStoreFulfillmentTurnOn" fill="outline" color="danger" size="medium" @click="turnOffFulfillment()">{{ $t("Turn off fulfillment") }}</ion-button>
+            <ion-button :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" v-else fill="outline" color="success" size="medium" @click="turnOnFulfillment()">{{ $t("Turn on fulfillment") }}</ion-button>
+          </div>
+          <div>
+            <ion-button :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG)" v-if="isEcomInvTurnedOn" fill="outline" color="danger" size="medium" @click="turnOffEcomInv()">{{ $t("Turn off eCom inventory") }}</ion-button>
+            <ion-button :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG)" v-else fill="outline" color="success" size="medium" @click="turnOnEcomInv()">{{ $t("Turn on eCom inventory") }}</ion-button>
           </div>
         </div>
 
@@ -138,6 +142,7 @@ export default defineComponent({
     return {
       baseURL: process.env.VUE_APP_BASE_URL,
       currentFacilityDetails: {} as any,
+      facilityGroupDetails: {} as any,
       outstandingOrdersCount: 0,
       inProgressOrdersCount: 0
     };
@@ -153,10 +158,15 @@ export default defineComponent({
     isStoreFulfillmentTurnOn() {
       // considered that if facility details are not available then also fulfillment will be turned on
       return this.currentFacilityDetails.maximumOrderLimit != 0
+    },
+    isEcomInvTurnedOn() {
+      // if facilityGroupDetails are there, configuration is turned on
+      return Object.keys(this.facilityGroupDetails).length
     }
   },
   ionViewWillEnter() {
     this.getCurrentFacilityDetails()
+    this.getEcomInvStatus()
     this.getOutstandingOrdersCount()
     this.getInProgressOrdersCount()
   },
@@ -249,6 +259,45 @@ export default defineComponent({
         logger.error('Failed to fetch current facility details', err)
       }
     },
+    async getEcomInvStatus() {
+      let resp: any;
+      try {
+        this.facilityGroupDetails = {}
+
+        resp = await UserService.getFacilityGroupDetails({
+          "entityName": "FacilityGroup",
+          "inputFields": {
+            "facilityGroupTypeId": 'SHOPIFY_GROUP_FAC'
+          },
+          "fieldList": ["facilityGroupId", "facilityGroupTypeId"],
+          "viewSize": 1,
+        })
+
+        if (!hasError(resp)) {
+          const facilityGroupData = resp.data.docs[0]
+          resp = await UserService.getFacilityGroupDetails({
+            "entityName": "FacilityGroupAndMember",
+            "inputFields": {
+              "facilityId": this.currentFacility.facilityId,
+              "facilityGroupId": facilityGroupData.facilityGroupId
+            },
+            "fieldList": ["facilityGroupId", "facilityId", "fromDate"],
+            "viewSize": 1,
+            "filterByDate": 'Y'
+          })
+
+          if (!hasError(resp)) {
+            this.facilityGroupDetails = resp.data.docs[0]
+            this.facilityGroupDetails.facilityGroupId = facilityGroupData.facilityGroupId
+          }
+          else throw resp.data
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        logger.error('Failed to fetch eCom inventory config', err)
+      }
+    },
     async openRecyclePopover(ev: Event) {
       const popover = await popoverController.create({
         component: RecyclePopover,
@@ -307,6 +356,43 @@ export default defineComponent({
         logger.error('Failed to update facility', err)
       }
     },
+    async updateFacilityToGroup() {
+      let resp;
+      try {
+        resp = await UserService.updateFacilityToGroup({
+          "facilityId": this.currentFacility.facilityId,
+          "facilityGroupId": this.facilityGroupDetails.facilityGroupId,
+          "fromDate": this.facilityGroupDetails.fromDate
+        })
+
+        if (!hasError(resp)) {
+          showToast(translate('ECom inventory status updated successfully'))
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        showToast(translate('Failed to update eCom inventory status'))
+        logger.error('Failed to update eCom inventory status', err)
+      }
+    },
+    async addFacilityToGroup() {
+      let resp;
+      try {
+        resp = await UserService.addFacilityToGroup({
+          "facilityId": this.currentFacility.facilityId,
+          "facilityGroupId": this.facilityGroupDetails.facilityGroupId
+        })
+
+        if (!hasError(resp)) {
+          showToast(translate('ECom inventory status updated successfully'))
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        showToast(translate('Failed to update eCom inventory status'))
+        logger.error('Failed to update eCom inventory status', err)
+      }
+    },
     async turnOnFulfillment() {
       const alert = await alertController.create({
         header: this.$t('Turn on fulfillment for ', { facilityName: this.currentFacility.name }),
@@ -347,6 +433,40 @@ export default defineComponent({
             this.updateFacility(0);
           }
         }]
+      });
+
+      await alert.present();
+    },
+    async turnOnEcomInv() {
+      const alert = await alertController.create({
+        header: this.$t('Turn on eCom inventory for ', { facilityName: this.currentFacility.name }),
+        message: translate('Are you sure you want perform this action?'),
+        buttons: [{
+          text: translate('Cancel'),
+          role: 'cancel'
+        }, {
+          text: translate('Save'),
+          handler: async () => {
+            await this.addFacilityToGroup()
+          }
+        }],
+      });
+
+      await alert.present();
+    },
+    async turnOffEcomInv() {
+      const alert = await alertController.create({
+        header: this.$t('Turn off eCom inventory for ', { facilityName: this.currentFacility.name }),
+        message: translate('Are you sure you want perform this action?'),
+        buttons: [{
+          text: translate('Cancel'),
+          role: 'cancel'
+        }, {
+          text: translate('Save'),
+          handler: async () => {
+            await this.updateFacilityToGroup()
+          }
+        }],
       });
 
       await alert.present();
