@@ -30,6 +30,10 @@ import store from './store'
 import { dxpComponents } from '@hotwax/dxp-components'
 import { login, confirmSessionEnd, logout, loader } from './user-utils';
 
+import permissionPlugin from '@/authorization';
+import permissionRules from '@/authorization/Rules';
+import permissionActions from '@/authorization/Actions';
+
 const app = createApp(App)
   .use(IonicVue, {
     mode: 'md'
@@ -45,7 +49,9 @@ const app = createApp(App)
     confirmSessionEnd,
     logout,
     loader,
-    appLoginUrl: process.env.VUE_APP_LOGIN_URL as string
+    appLoginUrl: process.env.VUE_APP_LOGIN_URL as string,
+    rules: permissionRules,
+    actions: permissionActions
   });
 
 router.isReady().then(() => {

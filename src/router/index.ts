@@ -8,6 +8,17 @@ import store from '@/store'
 import Exim from "@/views/Exim.vue"
 import UploadImportOrders from "@/views/UploadImportOrders.vue"
 import DownloadPackedOrders from "@/views/DownloadPackedOrders.vue"
+import { hasPermission } from '@/authorization';
+import { showToast } from '@/utils'
+import { translate } from '@/i18n'
+import 'vue-router'
+
+// Defining types for the meta values
+declare module 'vue-router' {
+  interface RouteMeta {
+    permissionId?: string;
+  }
+}
 import SavedMappings from "@/views/SavedMappings.vue"
 import { Login, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
@@ -33,42 +44,60 @@ const routes: Array<RouteRecordRaw> = [
     path: '/open-orders',
     name: 'OpenOrders',
     component: OpenOrders,
-    beforeEnter: authGuard
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_OPEN_ORDERS_VIEW"
+    }
   },
   {
     path: '/in-progress',
     name: 'InProgress',
     component: InProgress,
-    beforeEnter: authGuard
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_IN_PROGRESS_ORDERS_VIEW"
+    }
   },
   {
     path: '/completed',
     name: 'Completed',
     component: Completed,
-    beforeEnter: authGuard
-  },
-  {
-    path: '/login',
-    name: 'Login',
-    component: Login
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_COMPLETED_ORDERS_VIEW"
+    }
   },
   {
     path: "/exim",
     name: "EXIM",
     component: Exim,
-    beforeEnter: authGuard
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_EXIM_VIEW"
+    }
   },
   {
     path: "/upload-import-orders",
     name: "UploadImportOrders",
     component: UploadImportOrders,
-    beforeEnter: authGuard
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_UPLOAD_IMPORT_ORDERS_VIEW"
+    }
   },
   {
     path: "/download-packed-orders",
     name: "DownloadPackedOrders",
     component: DownloadPackedOrders,
-    beforeEnter: authGuard
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_DOWNLOAD_PACKED_ORDERS_VIEW"
+    }
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: Login
   },
   {
     path: "/saved-mappings",
@@ -87,6 +116,18 @@ const routes: Array<RouteRecordRaw> = [
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes
+})
+
+router.beforeEach((to, from) => {
+  if (to.meta.permissionId && !hasPermission(to.meta.permissionId)) {
+    let redirectToPath = from.path;
+    // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
+    if (redirectToPath == "/login" || redirectToPath == "/") redirectToPath = "/settings";
+    else showToast(translate('You do not have permission to access this page'));
+    return {
+      path: redirectToPath,
+    }
+  }
 })
 
 export default router
