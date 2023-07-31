@@ -27,6 +27,8 @@ import './theme/variables.css';
 
 import i18n from './i18n'
 import store from './store'
+import { dxpComponents } from '@hotwax/dxp-components'
+import { login, confirmSessionEnd, logout, loader } from './user-utils';
 
 const app = createApp(App)
   .use(IonicVue, {
@@ -37,7 +39,14 @@ const app = createApp(App)
   })
   .use(router)
   .use(i18n)
-  .use(store);
+  .use(store)
+  .use(dxpComponents, {
+    login,
+    confirmSessionEnd,
+    logout,
+    loader,
+    appLoginUrl: process.env.VUE_APP_LOGIN_URL as string
+  });
 
 router.isReady().then(() => {
   app.mount('#app');

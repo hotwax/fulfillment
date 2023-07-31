@@ -3,28 +3,25 @@ import { RouteRecordRaw } from 'vue-router';
 import Completed from '@/views/Completed.vue'
 import InProgress from '@/views/InProgress.vue'
 import OpenOrders from "@/views/OpenOrders.vue"
-import Login from '@/views/Login.vue'
 import Settings from "@/views/Settings.vue"
 import store from '@/store'
 import Exim from "@/views/Exim.vue"
 import UploadImportOrders from "@/views/UploadImportOrders.vue"
 import DownloadPackedOrders from "@/views/DownloadPackedOrders.vue"
 import SavedMappings from "@/views/SavedMappings.vue"
+import { Login, useAuthStore } from '@hotwax/dxp-components';
+import { loader } from '@/user-utils';
 
-const authGuard = (to: any, from: any, next: any) => {
-  if (store.getters['user/isAuthenticated']) {
-      next()
-  } else {
-    next("/login")
+const authGuard = async (to: any, from: any, next: any) => {
+  const authStore = useAuthStore()
+  if (!authStore.isAuthenticated || !store.getters['user/isAuthenticated']) {
+    await loader.present('Authenticating')
+    // TODO use authenticate() when support is there
+    const redirectUrl = window.location.origin + '/login'
+    window.location.href = `${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`
+    loader.dismiss()
   }
-};
-
-const loginGuard = (to: any, from: any, next: any) => {
-  if (!store.getters['user/isAuthenticated']) {
-      next()
-  } else {
-    next("/")
-  }
+  next()
 };
 
 const routes: Array<RouteRecordRaw> = [
@@ -53,8 +50,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/login',
     name: 'Login',
-    component: Login,
-    beforeEnter: loginGuard
+    component: Login
   },
   {
     path: "/exim",
