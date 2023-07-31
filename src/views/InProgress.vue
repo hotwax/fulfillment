@@ -70,7 +70,7 @@
               <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageName(shipmentPackage, order) }} | 
                 <ion-select style="padding: 0 0 0 2px;" interface="popover" @ionChange="onBoxTypeChange($event.detail.value, shipmentPackage, order)" :value="getShipmentPackageType(shipmentPackage, order)">
-                    <ion-select-option v-for="boxType in getShipmentBoxTypes(shipmentPackage, order)" :key="boxType" :value="boxType">{{ boxType }}</ion-select-option>
+                    <ion-select-option v-for="boxType in getShipmentBoxTypes(shipmentPackage, order)" :key="boxType" :value="boxType">{{ boxTypeDesc(boxType) }}</ion-select-option>
                 </ion-select>
               </ion-chip>
             </div>
@@ -250,7 +250,8 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       rejectReasons: 'util/getRejectReasons',
       currentEComStore: 'user/getCurrentEComStore',
-      userPreference: 'user/getUserPreference'
+      userPreference: 'user/getUserPreference',
+      boxTypeDesc: 'util/getShipmentBoxDesc'
     }),
   },
   data() {
@@ -769,7 +770,7 @@ export default defineComponent({
       if(shipmentPackage.newBoxType){
         return shipmentPackage.newBoxType;
       }
-      return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? `${order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0]}` : ''
+      return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0] : ''
     },
     getShipmentPackageName(shipmentPackage: any, order: any) {
       return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? `Box ${shipmentPackage.packageName}` : ''

@@ -108,6 +108,8 @@ const actions: ActionTree<OrderState, RootState> = {
         }, {})
       }
     })
+
+    this.dispatch('util/fetchShipmentBoxTypeDesc', [...new Set(Object.values(carrierShipmentBoxType).flat())])
     } catch(err) {
       inProgressOrders = inProgressOrders.map((order: any) => {
         orderIds.includes(order.orderId) && (order.hasMissingInfo = true);
