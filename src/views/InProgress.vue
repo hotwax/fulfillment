@@ -326,6 +326,8 @@ export default defineComponent({
                 'orderId': order.orderId
               }
 
+              const shipmentIds: Array<any> = [...new Set(order.items.map((item: any) => item.shipmentId))]
+
               emitter.emit('presentLoader');
               try {
                 const resp = await OrderService.packOrder(params);
@@ -335,11 +337,11 @@ export default defineComponent({
                   throw resp.data
                 }
                 if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
-                  await OrderService.printShippingLabelAndPackingSlip(order.shipmentIds)
+                  await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
                 } else if(data.includes('printPackingSlip')) {
-                  await OrderService.printPackingSlip(order.shipmentIds)
+                  await OrderService.printPackingSlip(shipmentIds)
                 } else if(data.includes('printShippingLabel')) {
-                  await OrderService.printShippingLabel(order.shipmentIds)
+                  await OrderService.printShippingLabel(shipmentIds)
                 }
                 // TODO: handle the case of fetching in progress orders after packing an order
                 // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
@@ -397,7 +399,7 @@ export default defineComponent({
 
               // Considering only unique shipment IDs
               // TODO check reason for redundant shipment IDs
-              const shipmentIds = [...new Set(orderList.map((order: any) => order.shipmentIds).flat())] as Array<string>
+              const shipmentIds = orderList.map((order: any) => [...new Set(order.items.map((item: any) => item.shipmentId).flat())]).flat() as Array<string>
 
               try {
                 const resp = await OrderService.packOrders({
