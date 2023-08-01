@@ -44,6 +44,10 @@ const app = createApp(App)
   .use(router)
   .use(i18n)
   .use(store)
+  .use(permissionPlugin, {
+    rules: permissionRules,
+    actions: permissionActions
+  })
   .use(dxpComponents, {
     login,
     logout,
