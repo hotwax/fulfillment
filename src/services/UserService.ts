@@ -77,7 +77,7 @@ const getFacilityGroupAndMemberDetails = async (payload: any): Promise<any> => {
   })
 }
 
-const recycleInProgressOrders = async (payload: any): Promise<any> => {
+const recycleInProgressOrders = async(payload: any): Promise<any> => {
   return api({
     url: "service/bulkRejectStoreInProgressOrders",
     method: "post",
@@ -129,7 +129,7 @@ const getEComStores = async (token: any, facilityId: any): Promise<any> => {
       baseURL,
       params,
       headers: {
-        Authorization: 'Bearer ' + token,
+        Authorization:  'Bearer ' + token,
         'Content-Type': 'application/json'
       }
     });
@@ -266,7 +266,7 @@ const getUserProfile = async (token: any): Promise<any> => {
       method: "get",
       baseURL,
       headers: {
-        Authorization: 'Bearer ' + token,
+        Authorization:  'Bearer ' + token,
         'Content-Type': 'application/json'
       }
     });
