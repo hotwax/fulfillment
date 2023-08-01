@@ -155,7 +155,9 @@
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
-      <div class="empty-state" v-else>{{ currentFacility.name }} {{ $t(" doesn't have any orders in progress right now.") }} </div>
+      <div class="empty-state" v-else>
+        <p v-html="getErrorMessage()"></p>
+      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -255,10 +257,15 @@ export default defineComponent({
       picklists: [] as any,
       defaultShipmentBoxType: '',
       itemsIssueSegmentSelected: [] as any,
+      orderBoxes: [] as any,
+      searchedQuery: '',
       addingBoxForOrderIds: [] as any
     }
   },
   methods: {
+    getErrorMessage() {
+      return this.searchedQuery === '' ? this.$t("doesn't have any orders in progress right now.", { facilityName: this.currentFacility.name }) : this.$t( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+    },
     getInProgressOrders() {
       return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
     },
@@ -770,6 +777,7 @@ export default defineComponent({
       inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       inProgressOrdersQuery.queryString = queryString
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
+      this.searchedQuery = queryString;
     },
     async updateOrderQuery(size?: any, queryString?: any) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
