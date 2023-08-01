@@ -392,7 +392,7 @@ export default defineComponent({
 
               // Considering only unique shipment IDs
               // TODO check reason for redundant shipment IDs
-              const shipmentIds = [...new Set(orderList.map((order: any) => order.items.map((item: any) => item.shipmentId).flat()).flat())] as Array<string>
+              const shipmentIds = orderList.map((order: any) => [...new Set(order.items.map((item: any) => item.shipmentId).flat())]).flat() as Array<string>
 
               try {
                 const resp = await OrderService.packOrders({
