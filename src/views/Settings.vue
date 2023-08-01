@@ -63,7 +63,7 @@
           </div>
           <div>
             <ion-button :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG)" v-if="isEcomInvTurnedOn" fill="outline" color="danger" size="medium" @click="turnOffEcomInv()">{{ $t("Turn off eCom inventory") }}</ion-button>
-            <ion-button :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG)" v-else fill="outline" color="success" size="medium" @click="turnOnEcomInv()">{{ $t("Turn on eCom inventory") }}</ion-button>
+            <ion-button :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG)" v-else-if="isEcomInvConfigured" fill="outline" color="success" size="medium" @click="turnOnEcomInv()">{{ $t("Turn on eCom inventory") }}</ion-button>
           </div>
         </div>
 
@@ -160,8 +160,13 @@ export default defineComponent({
       return this.currentFacilityDetails.maximumOrderLimit != 0
     },
     isEcomInvTurnedOn() {
-      // if facilityGroupDetails are there, configuration is turned on
-      return Object.keys(this.facilityGroupDetails).length
+      // if facilityGroupDetails are there with fromDate (using fromDate as a flag for
+      // getting data from getFacilityGroupAndMemberDetails) - facility is turned on
+      return Object.keys(this.facilityGroupDetails).length && this.facilityGroupDetails?.fromDate
+    },
+    isEcomInvConfigured() {
+      // if facilityGroupDetails are there with facilityGroupId, configuration is there but turned off
+      return Object.keys(this.facilityGroupDetails).length && this.facilityGroupDetails?.facilityGroupId
     }
   },
   ionViewWillEnter() {
@@ -274,21 +279,21 @@ export default defineComponent({
         })
 
         if (!hasError(resp)) {
-          const facilityGroupData = resp.data.docs[0]
-          resp = await UserService.getFacilityGroupDetails({
+          // using facilityGroupId as a flag for getting data from getFacilityGroupDetails
+          this.facilityGroupDetails.facilityGroupId = resp.data.docs[0].facilityGroupId
+          resp = await UserService.getFacilityGroupAndMemberDetails({
             "entityName": "FacilityGroupAndMember",
             "inputFields": {
               "facilityId": this.currentFacility.facilityId,
-              "facilityGroupId": facilityGroupData.facilityGroupId
+              "facilityGroupId": this.facilityGroupDetails.facilityGroupId
             },
-            "fieldList": ["facilityGroupId", "facilityId", "fromDate"],
+            "fieldList": ["facilityId", "fromDate"],
             "viewSize": 1,
             "filterByDate": 'Y'
           })
 
           if (!hasError(resp)) {
-            this.facilityGroupDetails = resp.data.docs[0]
-            this.facilityGroupDetails.facilityGroupId = facilityGroupData.facilityGroupId
+            this.facilityGroupDetails = { ...this.facilityGroupDetails, ...resp.data.docs[0] }
           }
           else throw resp.data
         } else {
@@ -423,7 +428,7 @@ export default defineComponent({
     async turnOffFulfillment() {
       const alert = await alertController.create({
         header: this.$t('Turn off fulfillment for ', { facilityName: this.currentFacility.name }),
-        message: translate('Are you sure you want perform this action?'),
+        message: translate('Are you sure you want to perform this action?'),
         buttons: [{
           text: translate('Cancel'),
           role: 'cancel'
@@ -440,7 +445,7 @@ export default defineComponent({
     async turnOnEcomInv() {
       const alert = await alertController.create({
         header: this.$t('Turn on eCom inventory for ', { facilityName: this.currentFacility.name }),
-        message: translate('Are you sure you want perform this action?'),
+        message: translate('Are you sure you want to perform this action?'),
         buttons: [{
           text: translate('Cancel'),
           role: 'cancel'
@@ -457,7 +462,7 @@ export default defineComponent({
     async turnOffEcomInv() {
       const alert = await alertController.create({
         header: this.$t('Turn off eCom inventory for ', { facilityName: this.currentFacility.name }),
-        message: translate('Are you sure you want perform this action?'),
+        message: translate('Are you sure you want to perform this action?'),
         buttons: [{
           text: translate('Cancel'),
           role: 'cancel'
