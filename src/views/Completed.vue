@@ -107,7 +107,7 @@
                 </ion-button>
               </div>
               <div class="desktop-only">
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
+                <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -123,7 +123,7 @@
         </ion-fab-button>
       </ion-fab>
       <div class="empty-state" v-else>
-        {{ currentFacility.name }}{{ $t(" doesn't have any completed orders right now.") }}
+        <p v-html="getErrorMessage()"></p>
       </div>
     </ion-content>
   </ion-page>
@@ -170,6 +170,7 @@ import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import { translate } from '@/i18n';
 import { OrderService } from '@/services/OrderService';
 import logger from '@/logger';
+import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
   name: 'Home',
@@ -201,7 +202,8 @@ export default defineComponent({
   data() {
     return {
       shipmentMethods: [] as Array<any>,
-      carrierPartyIds: [] as Array<any>
+      carrierPartyIds: [] as Array<any>,
+      searchedQuery: ''
     }
   },
   computed: {
@@ -223,6 +225,9 @@ export default defineComponent({
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   methods: {
+    getErrorMessage() {
+      return this.searchedQuery === '' ? this.$t("doesn't have any completed orders right now.", { facilityName: this.currentFacility.name }) : this.$t( "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+    },
     hasAnyPackedShipment(): boolean {
       return this.completedOrders.list.some((order: any) => {
         return order.shipments && order.shipments.some((shipment: any) => shipment.statusId === "SHIPMENT_PACKED");
@@ -454,6 +459,7 @@ export default defineComponent({
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       completedOrdersQuery.queryString = queryString
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+      this.searchedQuery = queryString;
     },
     async updateSelectedShipmentMethods (method: string) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
@@ -582,12 +588,14 @@ export default defineComponent({
     const router = useRouter();
 
     return {
+      Actions,
       copyToClipboard,
       checkmarkDoneOutline,
       downloadOutline,
       ellipsisVerticalOutline,
       formatUtcDate,
       getFeature,
+      hasPermission,
       optionsOutline,
       pricetagOutline,
       printOutline,

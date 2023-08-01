@@ -124,6 +124,48 @@ const actions: ActionTree<UtilState, RootState> = {
     }
 
     return shipmentMethodTypeDesc;
+  },
+
+  async fetchShipmentBoxTypeDesc({ commit, state }, shipmentBoxIds) {
+    let shipmentBoxTypeDesc = JSON.parse(JSON.stringify(state.shipmentBoxTypeDesc))
+    const cachedShipmentBoxIds = Object.keys(shipmentBoxTypeDesc);
+    const ids = shipmentBoxIds.filter((boxId: string) => !cachedShipmentBoxIds.includes(boxId))
+
+    if(!ids.length) return shipmentBoxTypeDesc;
+
+    try {
+      const payload = {
+        "inputFields": {
+          "shipmentBoxTypeId": ids,
+          "shipmentBoxTypeId_op": "in"
+        },
+        "fieldList": ["shipmentBoxTypeId", "description"],
+        "entityName": "ShipmentBoxType",
+        "viewSize": ids.length
+      }
+
+      const resp = await UtilService.fetchShipmentBoxTypeDesc(payload);
+
+      if(!hasError(resp)) {
+        const shipmentBoxResp = {} as any
+        resp.data.docs.map((shipmentBoxInformation: any) => {
+          shipmentBoxResp[shipmentBoxInformation.shipmentBoxTypeId] = shipmentBoxInformation.description
+        })
+
+        shipmentBoxTypeDesc = {
+          ...shipmentBoxTypeDesc,
+          ...shipmentBoxResp
+        }
+
+        commit(types.UTIL_SHIPMENT_BOXES_UPDATED, shipmentBoxTypeDesc)
+      } else {
+        throw resp.data
+      }
+    } catch(err) {
+      logger.error('Error fetching shipment boxes description', err)
+    }
+
+    return shipmentBoxTypeDesc;
   }
 }
 

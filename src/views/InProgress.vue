@@ -155,7 +155,9 @@
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
-      <div class="empty-state" v-else>{{ currentFacility.name }} {{ $t(" doesn't have any orders in progress right now.") }} </div>
+      <div class="empty-state" v-else>
+        <p v-html="getErrorMessage()"></p>
+      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -246,7 +248,8 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       rejectReasons: 'util/getRejectReasons',
       currentEComStore: 'user/getCurrentEComStore',
-      userPreference: 'user/getUserPreference'
+      userPreference: 'user/getUserPreference',
+      boxTypeDesc: 'util/getShipmentBoxDesc'
     }),
   },
   data() {
@@ -254,10 +257,15 @@ export default defineComponent({
       picklists: [] as any,
       defaultShipmentBoxType: '',
       itemsIssueSegmentSelected: [] as any,
+      orderBoxes: [] as any,
+      searchedQuery: '',
       addingBoxForOrderIds: [] as any
     }
   },
   methods: {
+    getErrorMessage() {
+      return this.searchedQuery === '' ? this.$t("doesn't have any orders in progress right now.", { facilityName: this.currentFacility.name }) : this.$t( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+    },
     getInProgressOrders() {
       return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
     },
@@ -319,6 +327,8 @@ export default defineComponent({
               }
 
               let toast: any;
+              const shipmentIds: Array<any> = [...new Set(order.items.map((item: any) => item.shipmentId))]
+              emitter.emit('presentLoader');
               try {
                 emitter.emit('presentLoader');
                 const resp = await OrderService.packOrder(params);
@@ -333,11 +343,11 @@ export default defineComponent({
                   toast.present()
 
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabelAndPackingSlip(order.shipmentIds)
-                  } else if(data.includes('printPackingSlip')) {
-                    await OrderService.printPackingSlip(order.shipmentIds)
-                  } else if(data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(order.shipmentIds)
+                    await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                  } else if (data.includes('printPackingSlip')) {
+                    await OrderService.printPackingSlip(shipmentIds)
+                  } else if (data.includes('printShippingLabel')) {
+                    await OrderService.printShippingLabel(shipmentIds)
                   }
 
                   toast.dismiss()
@@ -399,10 +409,10 @@ export default defineComponent({
                 });
               }
 
+              let toast: any;
               // Considering only unique shipment IDs
               // TODO check reason for redundant shipment IDs
-              const shipmentIds = [...new Set(orderList.map((order: any) => order.shipmentIds).flat())] as Array<string>
-              let toast: any;
+              const shipmentIds = orderList.map((order: any) => [...new Set(order.items.map((item: any) => item.shipmentId).flat())]).flat() as Array<string>
 
               try {
                 const resp = await OrderService.packOrders({
@@ -785,7 +795,7 @@ export default defineComponent({
     },
     getShipmentPackageNameAndType(shipmentPackage: any, order: any) {
       // TODO
-      return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? `Box ${shipmentPackage.packageName} | ${order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0]}` : ''
+      return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? `Box ${shipmentPackage.packageName} | ${this.boxTypeDesc(order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0])}` : ''
     },
     async updateQueryString(queryString: string) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
@@ -793,6 +803,7 @@ export default defineComponent({
       inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       inProgressOrdersQuery.queryString = queryString
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
+      this.searchedQuery = queryString;
     },
     async updateOrderQuery(size?: any, queryString?: any) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))

@@ -11,6 +11,9 @@ const mutations: MutationTree <UtilState> = {
   },
   [types.UTIL_SHIPMENT_METHODS_UPDATED] (state, payload) {
     state.shipmentMethodTypeDesc = payload
+  },
+  [types.UTIL_SHIPMENT_BOXES_UPDATED] (state, payload) {
+    state.shipmentBoxTypeDesc = payload
   }
 }
 export default mutations;

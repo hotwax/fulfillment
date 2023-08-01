@@ -8,7 +8,7 @@
 
     <ion-content>
       <ion-list>
-        <ion-menu-toggle auto-hide="false" v-for="(page, index) in appPages" :key="index">
+        <ion-menu-toggle auto-hide="false" v-for="(page, index) in getValidMenuItems(appPages)" :key="index">
           <ion-item
             button
             router-direction="root"
@@ -42,6 +42,7 @@ import { mapGetters } from "vuex";
 import { mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline } from "ionicons/icons";
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
+import { hasPermission } from "@/authorization";
 
 export default defineComponent({
   name: "Menu",
@@ -63,6 +64,11 @@ export default defineComponent({
       currentFacility: 'user/getCurrentFacility',
     })
   },
+  methods: {
+    getValidMenuItems(appPages: any) {
+      return appPages.filter((appPage: any) => (!appPage.meta || !appPage.meta.permissionId) || hasPermission(appPage.meta.permissionId));
+    }
+  },
   setup() {
     const store = useStore();
     const router = useRouter();
@@ -73,25 +79,37 @@ export default defineComponent({
         url: "/open-orders",
         iosIcon: mailUnreadOutline,
         mdIcon: mailUnreadOutline,
+        meta: {
+          permissionId: "APP_OPEN_ORDERS_VIEW"
+        }
       },
       {
         title: "In Progress",
         url: "/in-progress",
         iosIcon: mailOpenOutline,
         mdIcon: mailOpenOutline,
+        meta: {
+          permissionId: "APP_IN_PROGRESS_ORDERS_VIEW"
+        }
       },
       {
         title: "Completed",
         url: "/completed",
         iosIcon: checkmarkDoneOutline,
         mdIcon: checkmarkDoneOutline,
+        meta: {
+          permissionId: "APP_COMPLETED_ORDERS_VIEW"
+        }
       },
       {
         title: "EXIM",
         url: "/exim",
         iosIcon: swapVerticalOutline,
         mdIcon: swapVerticalOutline,
-        childRoutes: ["/download-packed-orders", "/upload-import-orders", "/saved-mappings"] // defined child routes as to enable the correct menu when we are on a route that is not listed in the menu
+        childRoutes: ["/download-packed-orders", "/upload-import-orders", "/saved-mappings"], // defined child routes as to enable the correct menu when we are on a route that is not listed in the menu
+        meta: {
+          permissionId: "APP_EXIM_VIEW"
+        }
       },
       {
         title: "Settings",
@@ -113,7 +131,8 @@ export default defineComponent({
       mailOpenOutline,
       checkmarkDoneOutline,
       settingsOutline,
-      store
+      store,
+      hasPermission
     };
   }
 });
