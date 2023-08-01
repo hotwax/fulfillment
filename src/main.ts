@@ -28,7 +28,7 @@ import './theme/variables.css';
 import i18n from './i18n'
 import store from './store'
 import { dxpComponents } from '@hotwax/dxp-components'
-import { login, confirmSessionEnd, logout, loader } from './user-utils';
+import { login, logout, loader } from './user-utils';
 
 import permissionPlugin from '@/authorization';
 import permissionRules from '@/authorization/Rules';
@@ -46,7 +46,6 @@ const app = createApp(App)
   .use(store)
   .use(dxpComponents, {
     login,
-    confirmSessionEnd,
     logout,
     loader,
     appLoginUrl: process.env.VUE_APP_LOGIN_URL as string,
