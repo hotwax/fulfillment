@@ -83,6 +83,8 @@ const actions: ActionTree<UserState, RootState> = {
         Settings.defaultZone = userProfile.userTimeZone;
       }
 
+      dispatch('getFieldMappings')
+
       // TODO user single mutation
       commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
       commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
