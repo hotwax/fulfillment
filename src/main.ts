@@ -52,9 +52,7 @@ const app = createApp(App)
     login,
     logout,
     loader,
-    appLoginUrl: process.env.VUE_APP_LOGIN_URL as string,
-    rules: permissionRules,
-    actions: permissionActions
+    appLoginUrl: process.env.VUE_APP_LOGIN_URL as string
   });
 
 router.isReady().then(() => {
