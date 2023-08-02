@@ -326,11 +326,10 @@ export default defineComponent({
                 'orderId': order.orderId
               }
 
+              emitter.emit('presentLoader');
               let toast: any;
               const shipmentIds: Array<any> = [...new Set(order.items.map((item: any) => item.shipmentId))]
-              emitter.emit('presentLoader');
               try {
-                emitter.emit('presentLoader');
                 const resp = await OrderService.packOrder(params);
                 if (hasError(resp)) {
                   throw resp.data
