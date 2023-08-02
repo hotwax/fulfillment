@@ -45,12 +45,14 @@ const app = createApp(App)
   .use(router)
   .use(i18n)
   .use(store)
+  .use(permissionPlugin, {
+    rules: permissionRules,
+    actions: permissionActions
+  })
   .use(dxpComponents, {
     defaultImgUrl: require("@/assets/images/defaultImage.png"),
     setProductIdentificationPref,
-    getProductIdentificationPref,
-    rules: permissionRules,
-    actions: permissionActions
+    getProductIdentificationPref
   });
 
 router.isReady().then(() => {
