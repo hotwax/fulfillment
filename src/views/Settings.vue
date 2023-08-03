@@ -78,7 +78,11 @@
       </ion-item>
       <ion-item>
         <ion-label>{{ userProfile !== null ? userProfile.partyName : '' }}</ion-label>
-        <ion-button fill="outline" color="medium" @click="logout()">{{ $t("Logout") }}</ion-button>
+        <ion-button color="danger" @click="logout()">{{ $t("Logout") }}</ion-button>
+        <ion-button fill="outline" @click="goToLaunchpad()">
+          {{ $t("Go to Launchpad") }}
+          <ion-icon slot="end" :icon="openOutline" />
+        </ion-button>
       </ion-item>
     </ion-content>
   </ion-page>
@@ -104,7 +108,7 @@ import {
   modalController,
 alertController} from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, timeOutline } from 'ionicons/icons'
+import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, timeOutline, openOutline} from 'ionicons/icons'
 import RecyclePopover from '@/views/RecyclePopover.vue'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
@@ -261,8 +265,12 @@ export default defineComponent({
     logout () {
       this.store.dispatch('user/logout').then(() => {
         this.store.dispatch('order/clearOrders')
-        window.location.href = process.env.VUE_APP_LOGIN_URL as string
+        const redirectUrl = window.location.origin + '/login'
+        window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
       })
+    },
+    goToLaunchpad() {
+      window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
     },
     async setFacility (event: any) {
       // not updating the facility when the current facility in vuex state and the selected facility are same
@@ -451,6 +459,7 @@ export default defineComponent({
       ellipsisVerticalOutline,
       globeOutline,
       timeOutline,
+      openOutline,
       router,
       store,
       hasPermission
