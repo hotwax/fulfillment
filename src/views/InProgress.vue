@@ -155,7 +155,9 @@
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
-      <div class="empty-state" v-else>{{ currentFacility.name }} {{ $t(" doesn't have any orders in progress right now.") }} </div>
+      <div class="empty-state" v-else>
+        <p v-html="getErrorMessage()"></p>
+      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -255,10 +257,15 @@ export default defineComponent({
       picklists: [] as any,
       defaultShipmentBoxType: '',
       itemsIssueSegmentSelected: [] as any,
+      orderBoxes: [] as any,
+      searchedQuery: '',
       addingBoxForOrderIds: [] as any
     }
   },
   methods: {
+    getErrorMessage() {
+      return this.searchedQuery === '' ? this.$t("doesn't have any orders in progress right now.", { facilityName: this.currentFacility.name }) : this.$t( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+    },
     getInProgressOrders() {
       return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
     },
@@ -319,30 +326,44 @@ export default defineComponent({
                 'orderId': order.orderId
               }
 
+              let toast: any;
+              const shipmentIds: Array<any> = [...new Set(order.items.map((item: any) => item.shipmentId))]
               emitter.emit('presentLoader');
               try {
+                emitter.emit('presentLoader');
                 const resp = await OrderService.packOrder(params);
-                if (resp.status === 200 && !hasError(resp)) {
-                  showToast(translate('Order packed successfully'));
-                } else {
+                if (hasError(resp)) {
                   throw resp.data
                 }
-                if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
-                  await OrderService.printShippingLabelAndPackingSlip(order.shipmentIds)
-                } else if(data.includes('printPackingSlip')) {
-                  await OrderService.printPackingSlip(order.shipmentIds)
-                } else if(data.includes('printShippingLabel')) {
-                  await OrderService.printShippingLabel(order.shipmentIds)
+                emitter.emit('dismissLoader');
+
+                if (data.length) {
+                  // additional parameters for dismiss button and manual dismiss ability
+                  toast = await showToast(translate('Order packed successfully. Document generation in process'), true, true)
+                  toast.present()
+
+                  if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
+                    await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                  } else if (data.includes('printPackingSlip')) {
+                    await OrderService.printPackingSlip(shipmentIds)
+                  } else if (data.includes('printShippingLabel')) {
+                    await OrderService.printShippingLabel(shipmentIds)
+                  }
+
+                  toast.dismiss()
+                } else {
+                  showToast(translate('Order packed successfully'));
                 }
                 // TODO: handle the case of fetching in progress orders after packing an order
                 // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
                 await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery()]);
               } catch (err) {
+                // in case of error, if loader and toast are not dismissed above
+                if (toast) toast.dismiss()
+                emitter.emit('dismissLoader');
                 showToast(translate('Failed to pack order'))
                 logger.error('Failed to pack order', err)
               }
-
-              emitter.emit('dismissLoader');
             }
           }]
         });
@@ -388,36 +409,48 @@ export default defineComponent({
                 });
               }
 
+              let toast: any;
               // Considering only unique shipment IDs
               // TODO check reason for redundant shipment IDs
-              const shipmentIds = [...new Set(orderList.map((order: any) => order.shipmentIds).flat())] as Array<string>
+              const shipmentIds = orderList.map((order: any) => [...new Set(order.items.map((item: any) => item.shipmentId).flat())]).flat() as Array<string>
 
               try {
                 const resp = await OrderService.packOrders({
                   shipmentIds
                 });
-                if (resp.status === 200 && !hasError(resp)) {
-                  showToast(translate('Orders packed successfully'));
-                } else {
+                if (hasError(resp)) {
                   throw resp.data
                 }
+                emitter.emit('dismissLoader');
+
                 // TODO: need to check that do we need to pass all the shipmentIds for an order or just need to pass
                 // the associated ids, currently passing the associated shipmentId
-                if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
-                  await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
-                } else if(data.includes('printPackingSlip')) {
-                  await OrderService.printPackingSlip(shipmentIds)
-                } else if(data.includes('printShippingLabel')) {
-                  await OrderService.printShippingLabel(shipmentIds)
+                if (data.length) {
+                  // additional parameters for dismiss button and manual dismiss ability
+                  toast = await showToast(translate('Order packed successfully. Document generation in process'), true, true)
+                  toast.present()
+                  if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
+                    await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                  } else if (data.includes('printPackingSlip')) {
+                    await OrderService.printPackingSlip(shipmentIds)
+                  } else if (data.includes('printShippingLabel')) {
+                    await OrderService.printShippingLabel(shipmentIds)
+                  }
+
+                  toast.dismiss()
+                } else {
+                  showToast(translate('Order packed successfully'));
                 }
                   // TODO: handle the case of fetching in progress orders after packing multiple orders
                   // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
                 await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery()])
               } catch (err) {
+                // in case of error, if loader and toast are not dismissed above
+                if (toast) toast.dismiss()
+                emitter.emit('dismissLoader');
                 showToast(translate('Failed to pack orders'))
                 logger.error('Failed to pack orders', err)
               }
-              emitter.emit('dismissLoader');
             }
           }]
         });
@@ -770,6 +803,7 @@ export default defineComponent({
       inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       inProgressOrdersQuery.queryString = queryString
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
+      this.searchedQuery = queryString;
     },
     async updateOrderQuery(size?: any, queryString?: any) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
