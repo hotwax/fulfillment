@@ -24,7 +24,8 @@ const userModule: Module<UserState, RootState> = {
         mappingType: '',
         name: '',
         value: {}
-      }
+      },
+      locale: 'en'
     },
     getters,
     actions,
