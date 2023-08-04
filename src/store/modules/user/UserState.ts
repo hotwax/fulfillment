@@ -8,7 +8,7 @@ export default interface UserState {
     preference: {
         printShippingLabel: boolean,
         printPackingSlip: boolean
-    }
+    };
     fieldMappings: object | null;
     currentMapping: {
         id: string;
@@ -16,4 +16,5 @@ export default interface UserState {
         name: string;
         value: object;
     };
+    locale: string;
 }

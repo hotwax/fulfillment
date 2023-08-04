@@ -10,6 +10,9 @@
         <ion-title v-else>{{ inProgressOrders.query.viewSize }} {{ $t('of') }} {{ inProgressOrders.total }} {{ $t('orders') }}</ion-title>
 
         <ion-buttons slot="end">
+          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER)" fill="clear" color="danger" @click="recycleInProgressOrders()">
+            {{ $t("Reject all") }}
+          </ion-button>
           <ion-menu-button menu="end" :disabled="!inProgressOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
@@ -208,6 +211,8 @@ import { prepareOrderQuery } from '@/utils/solrHelper';
 import { UtilService } from '@/services/UtilService';
 import { DateTime } from 'luxon';
 import logger from '@/logger';
+import { UserService } from '@/services/UserService';
+import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
   name: 'InProgress',
@@ -326,11 +331,10 @@ export default defineComponent({
                 'orderId': order.orderId
               }
 
+              emitter.emit('presentLoader');
               let toast: any;
               const shipmentIds: Array<any> = [...new Set(order.items.map((item: any) => item.shipmentId))]
-              emitter.emit('presentLoader');
               try {
-                emitter.emit('presentLoader');
                 const resp = await OrderService.packOrder(params);
                 if (hasError(resp)) {
                   throw resp.data
@@ -820,6 +824,40 @@ export default defineComponent({
       picklist.isGeneratingPicklist = true;
       await OrderService.printPicklist(picklist.id)
       picklist.isGeneratingPicklist = false;
+    },
+    async recycleInProgressOrders() {
+      const alert = await alertController.create({
+        header: translate('Reject in progress orders'),
+        message: this.$t('Are you sure you want to reject in progress order(s)?', { ordersCount: this.inProgressOrders.total }),
+        buttons: [{
+          text: translate('No'),
+          role: 'cancel'
+        }, {
+          text: translate('Yes'),
+          handler: async () => {
+            let resp;
+
+            try {
+              resp = await UserService.recycleInProgressOrders({
+                "facilityId": this.currentFacility.facilityId,
+                "productStoreId": this.currentEComStore.productStoreId,
+                "reasonId": "INACTIVE_STORE"
+              })
+
+              if(!hasError(resp)) {
+                showToast(translate('Rejecting has been started. All in progress orders will be rejected shortly.'))
+              } else {
+                throw resp.data
+              }
+            } catch(err) {
+              showToast(translate('Failed to reject in progress orders'))
+              logger.error('Failed to reject in progress orders', err)
+            }
+          }
+        }]
+      });
+
+      await alert.present();
     }
   },
   async mounted () {
@@ -835,6 +873,7 @@ export default defineComponent({
     const store = useStore();
 
     return {
+      Actions,
       copyToClipboard,
       addOutline,
       printOutline,
@@ -842,6 +881,7 @@ export default defineComponent({
       optionsOutline,
       formatUtcDate,
       getFeature,
+      hasPermission,
       checkmarkDoneOutline,
       pricetagOutline,
       store

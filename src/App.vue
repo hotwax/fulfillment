@@ -36,7 +36,8 @@ export default defineComponent({
     ...mapGetters({
       userToken: 'user/getUserToken',
       instanceUrl: 'user/getInstanceUrl',
-      userProfile: 'user/getUserProfile'
+      userProfile: 'user/getUserProfile',
+      locale: 'user/getLocale'
     })
   },
   methods: {
@@ -118,6 +119,7 @@ export default defineComponent({
     if (this.userProfile && this.userProfile.userTimeZone) {
       Settings.defaultZone = this.userProfile.userTimeZone;
     }
+    this.$i18n.locale = this.locale;
   },
   unmounted() {
     emitter.off('presentLoader', this.presentLoader);
