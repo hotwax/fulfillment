@@ -22,7 +22,11 @@
               <ion-card-title>{{ userProfile?.partyName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button fill="outline" color="danger" @click="logout()">{{ $t("Logout") }}</ion-button>
+          <ion-button color="danger" @click="logout()">{{ $t("Logout") }}</ion-button>
+          <ion-button fill="outline" @click="goToLaunchpad()">
+            {{ $t("Go to Launchpad") }}
+            <ion-icon slot="end" :icon="openOutline" />
+          </ion-button>
           <!-- Commenting this code as we currently do not have reset password functionality -->
           <!-- <ion-button fill="outline" color="medium">{{ $t("Reset password") }}</ion-button> -->
         </ion-card>
