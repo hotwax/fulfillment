@@ -37,8 +37,10 @@ const authGuard = async (to: any, from: any, next: any) => {
 
 const loginGuard = (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
-  if (authStore.isAuthenticated && !to.query?.token && !to.query?.oms) {
-    next('/')
+  if (authStore.isAuthenticated) {
+    // if route has token and oms do the login flow processing
+    if (to.query?.token && to.query?.oms) next()
+    else next('/')
   }
   next();
 };
