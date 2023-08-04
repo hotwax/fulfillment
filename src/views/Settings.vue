@@ -57,13 +57,6 @@
             <ion-button v-else fill="outline" color="success" size="medium" @click="turnOnFulfillment()">{{ $t("Turn on fulfillment") }}</ion-button>
           </div>
         </div>
-
-        <ion-item class="mobile-only">
-          <ion-button fill="clear">{{ $t("Recycle all open orders") }}</ion-button>
-          <ion-button slot="end" fill="clear" color="medium" @click="openRecyclePopover">
-            <ion-icon :icon="ellipsisVerticalOutline" slot="icon-only" />
-          </ion-button>
-        </ion-item>
       </ion-card>
 
       <ion-item>
@@ -95,12 +88,11 @@ import {
   IonSelectOption, 
   IonTitle, 
   IonToolbar,
-  popoverController,
   modalController,
-alertController} from '@ionic/vue';
+  alertController
+} from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, timeOutline } from 'ionicons/icons'
-import RecyclePopover from '@/views/RecyclePopover.vue'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import TimeZoneModal from '@/views/timezone-modal.vue'
@@ -175,15 +167,6 @@ export default defineComponent({
       } catch(err) {
         logger.error('Failed to fetch current facility details', err)
       }
-    },
-    async openRecyclePopover(ev: Event) {
-      const popover = await popoverController.create({
-        component: RecyclePopover,
-        event: ev,
-        translucent: true,
-        showBackdrop: false,
-      });
-      return popover.present();
     },
     logout () {
       this.store.dispatch('user/logout').then(() => {

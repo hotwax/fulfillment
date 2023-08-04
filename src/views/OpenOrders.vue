@@ -9,7 +9,7 @@
         <ion-title v-else>{{ openOrders.query.viewSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
      
         <ion-buttons slot="end">
-          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER)" fill="outline" color="secondary" @click="recycleOutstandingOrders()">
+          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER)" fill="clear" color="danger" @click="recycleOutstandingOrders()">
             {{ $t("Recycle all open orders") }}
           </ion-button>
           <ion-menu-button menu="end" :disabled="!openOrders.total">
