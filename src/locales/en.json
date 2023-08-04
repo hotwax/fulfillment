@@ -1,6 +1,6 @@
 {
   "App": "App",
-  "A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores sellling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.": "A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores sellling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.",
+  "A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.": "A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.",
   "doesn't have any completed orders right now.": "{facilityName} doesn't have any completed orders right now.",
   "doesn't have any orders in progress right now.": "{facilityName} doesn't have any orders in progress right now.",
   "doesn't have any outstanding orders right now.": "{facilityName} doesn't have any outstanding orders right now.",

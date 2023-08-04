@@ -171,7 +171,7 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    *  Update the i18n locale
   */
- setLocale({ commit }, payload) {
+  setLocale({ commit }, payload) {
     i18n.global.locale = payload
     commit(types.USER_LOCALE_UPDATED, payload)
   },
