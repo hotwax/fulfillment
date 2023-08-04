@@ -53,11 +53,6 @@
         </ion-item>
         <div class="actions">
           <div>
-            <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER)" fill="outline" color="secondary" size="medium" @click="recycleOutstandingOrders()">{{ $t("Recycle all open orders") }}</ion-button>
-            <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER)" fill="outline" color="secondary" size="medium" @click="recycleInProgressOrders()">{{ $t("Recycle all in progress orders") }}</ion-button>
-            <!-- <ion-button fill="outline" color="secondary" size="medium">{{ $t("Recycle all orders") }}</ion-button> -->
-          </div>
-          <div>
             <ion-button :disabled="!hasPermission(Actions.APP_TURN_OFF_STORE)" v-if="isStoreFulfillmentTurnOn" fill="outline" color="danger" size="medium" @click="turnOffFulfillment()">{{ $t("Turn off fulfillment") }}</ion-button>
             <ion-button v-else fill="outline" color="success" size="medium" @click="turnOnFulfillment()">{{ $t("Turn on fulfillment") }}</ion-button>
           </div>
@@ -137,9 +132,7 @@ export default defineComponent({
   data() {
     return {
       baseURL: process.env.VUE_APP_BASE_URL,
-      currentFacilityDetails: {} as any,
-      outstandingOrdersCount: 0,
-      inProgressOrdersCount: 0
+      currentFacilityDetails: {} as any
     };
   },
   computed: {
@@ -157,74 +150,8 @@ export default defineComponent({
   },
   ionViewWillEnter() {
     this.getCurrentFacilityDetails()
-    this.getOutstandingOrdersCount()
-    this.getInProgressOrdersCount()
   },
   methods: {
-    async getOutstandingOrdersCount() {
-      let resp;
-
-      try {
-        this.outstandingOrdersCount = 0
-
-        const payload = {
-          "json": {
-            "params": {
-              "rows": "0",
-              "group": true,
-              "group.field": "orderId",
-              "group.limit": 10000,
-              "group.ngroups": true,
-              "q.op": "AND"
-            },
-            "query": "(*:*)",
-            "filter": ["docType: OISGIR", "quantityNotAvailable: 0", "isPicked: N", "-shipmentMethodTypeId: STOREPICKUP", "-fulfillmentStatus: Cancelled", "orderStatusId: ORDER_APPROVED", "orderTypeId: SALES_ORDER", `facilityId: ${this.currentFacility.facilityId}`, `productStoreId: ${this.currentEComStore.productStoreId}`]
-          }
-        }
-
-        resp = await UserService.getOutstandingOrdersCount(payload)
-
-        if(!hasError(resp)) {
-          this.outstandingOrdersCount = resp.data.grouped.orderId.ngroups
-        } else {
-          throw resp.data
-        }
-      } catch(err) {
-        logger.error('Failed to get outstanding orders count', err)
-      }
-    },
-    async getInProgressOrdersCount() {
-      let resp;
-
-      try {
-        this.inProgressOrdersCount = 0
-
-        const payload = {
-          "json": {
-            "params": {
-              "rows": "0",
-              "group": true,
-              "group.field": "picklistBinId",
-              "group.limit": 10000,
-              "group.ngroups": true,
-              "q.op": "AND"
-            },
-            "query": "(*:*)",
-            "filter": ["docType: OISGIR", "picklistItemStatusId: PICKITEM_PENDING", "-shipmentMethodTypeId: STOREPICKUP", "-fulfillmentStatus: Rejected", `facilityId: ${this.currentFacility.facilityId}`, `productStoreId: ${this.currentEComStore.productStoreId}`]
-          }
-        }
-
-        resp = await UserService.getInProgressOrdersCount(payload)
-
-        if(!hasError(resp)) {
-          this.inProgressOrdersCount = resp.data.grouped.picklistBinId.ngroups
-        } else {
-          throw resp.data
-        }
-      } catch(err) {
-        logger.error('Failed to get inProgress orders count', err)
-      }
-    },
     async getCurrentFacilityDetails() {
       let resp: any;
       try {
@@ -277,8 +204,6 @@ export default defineComponent({
         });
         this.store.dispatch('order/clearOrders')
         this.getCurrentFacilityDetails();
-        this.getOutstandingOrdersCount();
-        this.getInProgressOrdersCount();
       }
     },
     async changeTimeZone() {
@@ -351,74 +276,6 @@ export default defineComponent({
 
       await alert.present();
     },
-    async recycleOutstandingOrders() {
-      const alert = await alertController.create({
-        header: translate('Recycle outstanding orders'),
-        message: this.$t('Are you sure you want to recycle outstanding order(s)?', { ordersCount: this.outstandingOrdersCount }),
-        buttons: [{
-          text: translate('No'),
-          role: 'cancel'
-        }, {
-          text: translate('Yes'),
-          handler: async () => {
-            let resp;
-
-            try {
-              resp = await UserService.recycleOutstandingOrders({
-                "facilityId": this.currentFacility.facilityId,
-                "productStoreId": this.currentEComStore.productStoreId,
-                "reasonId": "INACTIVE_STORE"
-              })
-
-              if(!hasError(resp)) {
-                showToast(translate('Recycling has been started. All outstanding orders will be recycled shortly.'))
-              } else {
-                throw resp.data
-              }
-            } catch(err) {
-              showToast(translate('Failed to recycle outstanding orders'))
-              logger.error('Failed to recycle outstanding orders', err)
-            }
-          }
-        }]
-      });
-
-      await alert.present();
-    },
-    async recycleInProgressOrders() {
-      const alert = await alertController.create({
-        header: translate('Recycle in progress orders'),
-        message: this.$t('Are you sure you want to recycle in progress order(s)?', { ordersCount: this.inProgressOrdersCount }),
-        buttons: [{
-          text: translate('No'),
-          role: 'cancel'
-        }, {
-          text: translate('Yes'),
-          handler: async () => {
-            let resp;
-
-            try {
-              resp = await UserService.recycleInProgressOrders({
-                "facilityId": this.currentFacility.facilityId,
-                "productStoreId": this.currentEComStore.productStoreId,
-                "reasonId": "INACTIVE_STORE"
-              })
-
-              if(!hasError(resp)) {
-                showToast(translate('Recycling has been started. All in progress orders will be recycled shortly.'))
-              } else {
-                throw resp.data
-              }
-            } catch(err) {
-              showToast(translate('Failed to recycle in progress orders'))
-              logger.error('Failed to recycle in progress orders', err)
-            }
-          }
-        }]
-      });
-
-      await alert.present();
-    },
     async setEComStore(event: any) {
       // not updating the ecomstore when the current value in vuex state and selected value are same
       // or when an empty value is given (on logout)
@@ -430,8 +287,6 @@ export default defineComponent({
         await this.store.dispatch('user/setEComStore', {
           'eComStore': this.userProfile.stores.find((str: any) => str.productStoreId == event.detail.value)
         })
-        this.getOutstandingOrdersCount();
-        this.getInProgressOrdersCount();
       }
     },
     setPrintShippingLabelPreference (ev: any) {

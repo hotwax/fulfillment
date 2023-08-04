@@ -10,6 +10,9 @@
         <ion-title v-else>{{ inProgressOrders.query.viewSize }} {{ $t('of') }} {{ inProgressOrders.total }} {{ $t('orders') }}</ion-title>
 
         <ion-buttons slot="end">
+          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER)" fill="outline" color="secondary" size="medium" @click="recycleInProgressOrders()">
+            {{ $t("Recycle all in progress orders") }}
+          </ion-button>
           <ion-menu-button menu="end" :disabled="!inProgressOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
@@ -208,6 +211,8 @@ import { prepareOrderQuery } from '@/utils/solrHelper';
 import { UtilService } from '@/services/UtilService';
 import { DateTime } from 'luxon';
 import logger from '@/logger';
+import { UserService } from '@/services/UserService';
+import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
   name: 'InProgress',
@@ -820,6 +825,40 @@ export default defineComponent({
       picklist.isGeneratingPicklist = true;
       await OrderService.printPicklist(picklist.id)
       picklist.isGeneratingPicklist = false;
+    },
+    async recycleInProgressOrders() {
+      const alert = await alertController.create({
+        header: translate('Recycle in progress orders'),
+        message: this.$t('Are you sure you want to recycle in progress order(s)?', { ordersCount: this.inProgressOrders.total }),
+        buttons: [{
+          text: translate('No'),
+          role: 'cancel'
+        }, {
+          text: translate('Yes'),
+          handler: async () => {
+            let resp;
+
+            try {
+              resp = await UserService.recycleInProgressOrders({
+                "facilityId": this.currentFacility.facilityId,
+                "productStoreId": this.currentEComStore.productStoreId,
+                "reasonId": "INACTIVE_STORE"
+              })
+
+              if(!hasError(resp)) {
+                showToast(translate('Recycling has been started. All in progress orders will be recycled shortly.'))
+              } else {
+                throw resp.data
+              }
+            } catch(err) {
+              showToast(translate('Failed to recycle in progress orders'))
+              logger.error('Failed to recycle in progress orders', err)
+            }
+          }
+        }]
+      });
+
+      await alert.present();
     }
   },
   async mounted () {
@@ -835,6 +874,7 @@ export default defineComponent({
     const store = useStore();
 
     return {
+      Actions,
       copyToClipboard,
       addOutline,
       printOutline,
@@ -842,6 +882,7 @@ export default defineComponent({
       optionsOutline,
       formatUtcDate,
       getFeature,
+      hasPermission,
       checkmarkDoneOutline,
       pricetagOutline,
       store

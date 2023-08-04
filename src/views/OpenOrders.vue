@@ -9,6 +9,9 @@
         <ion-title v-else>{{ openOrders.query.viewSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
      
         <ion-buttons slot="end">
+          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER)" fill="outline" color="secondary" @click="recycleOutstandingOrders()">
+            {{ $t("Recycle all open orders") }}
+          </ion-button>
           <ion-menu-button menu="end" :disabled="!openOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
@@ -123,19 +126,24 @@ import {
   IonThumbnail, 
   IonTitle, 
   IonToolbar, 
-  modalController } from '@ionic/vue';
+  modalController,
+  alertController
+} from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import Image from '@/components/Image.vue'
-import { copyToClipboard, formatUtcDate, getFeature } from '@/utils'
+import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import emitter from '@/event-bus';
 import logger from '@/logger';
+import { translate } from '@/i18n';
+import { UserService } from '@/services/UserService';
+import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -280,6 +288,39 @@ export default defineComponent({
       openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
     },
+    async recycleOutstandingOrders() {
+      const alert = await alertController.create({
+        header: translate('Recycle outstanding orders'),
+        message: this.$t('Are you sure you want to recycle outstanding order(s)?', { ordersCount: this.openOrders.total }),
+        buttons: [{
+          text: translate('No'),
+          role: 'cancel'
+        }, {
+          text: translate('Yes'),
+          handler: async () => {
+            let resp;
+
+            try {
+              resp = await UserService.recycleOutstandingOrders({
+                "facilityId": this.currentFacility.facilityId,
+                "productStoreId": this.currentEComStore.productStoreId,
+                "reasonId": "INACTIVE_STORE"
+              })
+
+              if (!hasError(resp)) {
+                showToast(translate('Recycling has been started. All outstanding orders will be recycled shortly.'))
+              } else {
+                throw resp.data
+              }
+            } catch (err) {
+              showToast(translate('Failed to recycle outstanding orders'))
+              logger.error('Failed to recycle outstanding orders', err)
+            }
+          }
+        }]
+      });
+      await alert.present();
+    },
   },
   async mounted () {
     emitter.on('updateOrderQuery', this.updateOrderQuery)
@@ -293,9 +334,11 @@ export default defineComponent({
     const store = useStore();
 
     return{
+      Actions,
       copyToClipboard,
       formatUtcDate,
       getFeature,
+      hasPermission,
       optionsOutline,
       pricetagOutline,
       printOutline,
