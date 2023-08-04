@@ -317,7 +317,7 @@ export default defineComponent({
     },
     logout () {
       this.store.dispatch('user/logout').then(() => {
-        this.store.dispatch('order/clearOrders')
+        this.store.dispatch('order/clearOrders') 
         const redirectUrl = window.location.origin + '/login'
         window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
       })
