@@ -10,7 +10,7 @@
      
         <ion-buttons slot="end">
           <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER)" fill="clear" color="danger" @click="recycleOutstandingOrders()">
-            {{ $t("Recycle all open orders") }}
+            {{ $t("Reject all") }}
           </ion-button>
           <ion-menu-button menu="end" :disabled="!openOrders.total">
             <ion-icon :icon="optionsOutline" />
@@ -290,8 +290,8 @@ export default defineComponent({
     },
     async recycleOutstandingOrders() {
       const alert = await alertController.create({
-        header: translate('Recycle outstanding orders'),
-        message: this.$t('Are you sure you want to recycle outstanding order(s)?', { ordersCount: this.openOrders.total }),
+        header: translate('Reject outstanding orders'),
+        message: this.$t('Are you sure you want to reject outstanding order(s)?', { ordersCount: this.openOrders.total }),
         buttons: [{
           text: translate('No'),
           role: 'cancel'
@@ -308,13 +308,13 @@ export default defineComponent({
               })
 
               if (!hasError(resp)) {
-                showToast(translate('Recycling has been started. All outstanding orders will be recycled shortly.'))
+                showToast(translate('Rejecting has been started. All outstanding orders will be rejected shortly.'))
               } else {
                 throw resp.data
               }
             } catch (err) {
-              showToast(translate('Failed to recycle outstanding orders'))
-              logger.error('Failed to recycle outstanding orders', err)
+              showToast(translate('Failed to reject outstanding orders'))
+              logger.error('Failed to reject outstanding orders', err)
             }
           }
         }]

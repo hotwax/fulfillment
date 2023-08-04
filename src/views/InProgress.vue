@@ -11,7 +11,7 @@
 
         <ion-buttons slot="end">
           <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER)" fill="clear" color="danger" @click="recycleInProgressOrders()">
-            {{ $t("Recycle all in progress orders") }}
+            {{ $t("Reject all") }}
           </ion-button>
           <ion-menu-button menu="end" :disabled="!inProgressOrders.total">
             <ion-icon :icon="optionsOutline" />
@@ -828,8 +828,8 @@ export default defineComponent({
     },
     async recycleInProgressOrders() {
       const alert = await alertController.create({
-        header: translate('Recycle in progress orders'),
-        message: this.$t('Are you sure you want to recycle in progress order(s)?', { ordersCount: this.inProgressOrders.total }),
+        header: translate('Reject in progress orders'),
+        message: this.$t('Are you sure you want to reject in progress order(s)?', { ordersCount: this.inProgressOrders.total }),
         buttons: [{
           text: translate('No'),
           role: 'cancel'
@@ -846,13 +846,13 @@ export default defineComponent({
               })
 
               if(!hasError(resp)) {
-                showToast(translate('Recycling has been started. All in progress orders will be recycled shortly.'))
+                showToast(translate('Rejecting has been started. All in progress orders will be rejected shortly.'))
               } else {
                 throw resp.data
               }
             } catch(err) {
-              showToast(translate('Failed to recycle in progress orders'))
-              logger.error('Failed to recycle in progress orders', err)
+              showToast(translate('Failed to reject in progress orders'))
+              logger.error('Failed to reject in progress orders', err)
             }
           }
         }]
