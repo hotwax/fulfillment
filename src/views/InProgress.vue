@@ -68,7 +68,9 @@
             <!-- TODO: implement functionality to change the type of box -->
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
               <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
-              <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
+              <ion-label>
+                <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
+              </ion-label>
             </div>
 
             <div v-for="(item, index) in order.items" :key="index" class="order-item">
