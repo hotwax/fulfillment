@@ -5,7 +5,7 @@ import UserState from './UserState'
 import * as types from './mutation-types'
 import { showToast } from '@/utils'
 import { hasError } from '@/adapter'
-import { translate } from '@/i18n'
+import i18n, { translate } from '@/i18n'
 import { Settings } from 'luxon'
 import { updateInstanceUrl, updateToken, resetConfig } from '@/adapter'
 import logger from '@/logger'
@@ -166,6 +166,14 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_INFO_UPDATED, current);
       showToast(translate("Time zone updated successfully"));
     }
+  },
+
+  /**
+   *  Update the i18n locale
+  */
+  setLocale({ commit }, payload) {
+    i18n.global.locale = payload
+    commit(types.USER_LOCALE_UPDATED, payload)
   },
 
   // Set User Instance Url
