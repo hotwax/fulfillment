@@ -22,7 +22,11 @@
               <ion-card-title>{{ userProfile?.partyName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button fill="outline" color="danger" @click="logout()">{{ $t("Logout") }}</ion-button>
+          <ion-button color="danger" @click="logout()">{{ $t("Logout") }}</ion-button>
+          <ion-button fill="outline" @click="goToLaunchpad()">
+            {{ $t("Go to Launchpad") }}
+            <ion-icon slot="end" :icon="openOutline" />
+          </ion-button>
           <!-- Commenting this code as we currently do not have reset password functionality -->
           <!-- <ion-button fill="outline" color="medium">{{ $t("Reset password") }}</ion-button> -->
         </ion-card>
@@ -314,8 +318,12 @@ export default defineComponent({
     logout () {
       this.store.dispatch('user/logout').then(() => {
         this.store.dispatch('order/clearOrders')
-        this.router.push('/login');
+        const redirectUrl = window.location.origin + '/login'
+        window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
       })
+    },
+    goToLaunchpad() {
+      window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
     },
     async setFacility (event: any) {
       // not updating the facility when the current facility in vuex state and the selected facility are same
