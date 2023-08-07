@@ -180,6 +180,7 @@ import {
   IonLabel,
   IonMenuButton,
   IonPage,
+  IonRow,
   IonSearchbar,
   IonSegment,
   IonSegmentButton,
@@ -191,8 +192,7 @@ import {
   IonTitle,
   IonToolbar,
   alertController,
-  popoverController,
-  IonRow
+  popoverController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline, optionsOutline } from 'ionicons/icons'
@@ -230,6 +230,7 @@ export default defineComponent({
     IonLabel,
     IonMenuButton,
     IonPage,
+    IonRow,
     IonSearchbar,
     IonSegment,
     IonSegmentButton,
@@ -240,8 +241,7 @@ export default defineComponent({
     IonThumbnail,   
     IonTitle,
     IonToolbar,
-    ViewSizeSelector,
-    IonRow
+    ViewSizeSelector
   },
   computed: {
     ...mapGetters({
