@@ -65,11 +65,11 @@
               <ion-skeleton-text animated />
               <ion-skeleton-text animated />
             </div>
-            <!-- TODO: implement functionality to change the type of box (We are showing the Package Type the first element of package type array) -->
+            <!-- TODO: implement functionality to change the type of box -->
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
               <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageName(shipmentPackage, order) }} | 
-                <ion-select style="padding: 0 0 0 2px;" interface="popover" @ionChange="onBoxTypeChange($event.detail.value, shipmentPackage, order)" :value="getShipmentPackageType(shipmentPackage, order)">
+                <ion-select class="ion-no-padding" interface="popover" @ionChange="onBoxTypeChange($event.detail.value, shipmentPackage, order)" :value="getShipmentPackageType(shipmentPackage, order)">
                     <ion-select-option v-for="boxType in getShipmentBoxTypes(shipmentPackage, order)" :key="boxType" :value="boxType">{{ boxTypeDesc(boxType) }}</ion-select-option>
                 </ion-select>
               </ion-chip>
@@ -489,7 +489,7 @@ export default defineComponent({
       this.itemsIssueSegmentSelected = []
       await this.store.dispatch('order/findInProgressOrders')
     },
-    async updateOrder(order: any) {      
+    async updateOrder(order: any) { 
       const form = new FormData()
 
       form.append('facilityId', this.currentFacility.facilityId)
