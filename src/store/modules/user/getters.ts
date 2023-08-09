@@ -45,6 +45,9 @@ const getters: GetterTree <UserState, RootState> = {
     },  
     getCurrentMapping(state) {
         return JSON.parse(JSON.stringify(state.currentMapping))
+    },
+    getLocale (state) {
+        return state.locale;
     }
 }
 export default getters;

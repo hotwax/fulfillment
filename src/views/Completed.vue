@@ -123,7 +123,7 @@
         </ion-fab-button>
       </ion-fab>
       <div class="empty-state" v-else>
-        {{ currentFacility.name }}{{ $t(" doesn't have any completed orders right now.") }}
+        <p v-html="getErrorMessage()"></p>
       </div>
     </ion-content>
   </ion-page>
@@ -202,7 +202,8 @@ export default defineComponent({
   data() {
     return {
       shipmentMethods: [] as Array<any>,
-      carrierPartyIds: [] as Array<any>
+      carrierPartyIds: [] as Array<any>,
+      searchedQuery: ''
     }
   },
   computed: {
@@ -224,6 +225,9 @@ export default defineComponent({
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   methods: {
+    getErrorMessage() {
+      return this.searchedQuery === '' ? this.$t("doesn't have any completed orders right now.", { facilityName: this.currentFacility.name }) : this.$t( "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+    },
     hasAnyPackedShipment(): boolean {
       return this.completedOrders.list.some((order: any) => {
         return order.shipments && order.shipments.some((shipment: any) => shipment.statusId === "SHIPMENT_PACKED");
@@ -455,6 +459,7 @@ export default defineComponent({
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       completedOrdersQuery.queryString = queryString
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+      this.searchedQuery = queryString;
     },
     async updateSelectedShipmentMethods (method: string) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
