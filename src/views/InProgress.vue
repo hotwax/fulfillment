@@ -72,7 +72,7 @@
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
               <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-row>
-                <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageName(shipmentPackage, order) }} | 
+                <ion-chip v-for="shipmentPackage in order.shipmentPackages" v-show="order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId]" :key="shipmentPackage.shipmentId">{{ `Box ${shipmentPackage?.packageName}` }} | 
                   <ion-select class="ion-no-padding" interface="popover" @ionChange="onBoxTypeChange($event.detail.value, shipmentPackage, order)" :value="getShipmentPackageType(shipmentPackage, order)">
                       <ion-select-option v-for="boxType in getShipmentBoxTypes(shipmentPackage, order)" :key="boxType" :value="boxType">{{ boxTypeDesc(boxType) }}</ion-select-option>
                   </ion-select>
@@ -806,14 +806,14 @@ export default defineComponent({
       this.addingBoxForOrderIds.splice(this.addingBoxForOrderIds.indexOf(order.orderId), 1)
     },
     getShipmentPackageType(shipmentPackage: any, order: any) {
-      const packageType = order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId].find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId) : '';
-      if(packageType === undefined){
-        return '';
+      let packageType = '';
+      if(order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId]){
+        packageType = order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId].find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId);
+        if(!packageType){
+          packageType = order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0];
+        }
       }
       return packageType;
-    },
-    getShipmentPackageName(shipmentPackage: any, order: any) {
-      return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? `Box ${shipmentPackage.packageName}` : ''
     },
     getShipmentBoxTypes(shipmentPackage: any, order: any){
       return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] : []
