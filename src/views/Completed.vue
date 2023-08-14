@@ -107,6 +107,7 @@
                 </ion-button>
               </div>
               <div class="desktop-only">
+                <ion-button v-if="order.missingLabelImage" fill="outline" @click="showShippingLabelErrorModal(order)">{{ $t("Shipping label error") }}</ion-button>
                 <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
               </div>
             </div>
@@ -153,7 +154,8 @@ import {
   IonTitle,
   IonToolbar,
   alertController,
-  popoverController
+  popoverController,
+  modalController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
@@ -170,6 +172,7 @@ import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import { translate } from '@/i18n';
 import { OrderService } from '@/services/OrderService';
 import logger from '@/logger';
+import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
@@ -581,6 +584,17 @@ export default defineComponent({
       }
 
       order.isGeneratingShippingLabel = false;
+    },
+    async showShippingLabelErrorModal(order: any){
+      // Getting all the shipment ids
+      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId);
+      const shippingLabelErrorModal = await modalController.create({
+        component: ShippingLabelErrorModal,
+        componentProps: {
+          shipmentIds
+        }
+      });
+      return shippingLabelErrorModal.present();
     }
   },
   setup() {
