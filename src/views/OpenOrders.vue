@@ -49,9 +49,11 @@
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ orders.doclist.docs[0].orderName }}</ion-label>
                 </ion-chip>
-                <ion-button fill="clear" class="mobile-only" color="danger">
+
+                <!-- Todo: add functionality to the refresh button -->
+                <!-- <ion-button fill="clear" class="mobile-only" color="danger">
                   <ion-icon slot="icon-only" :icon="refreshCircleOutline" />
-                </ion-button>
+                </ion-button> -->
               </div>
 
               <div class="order-metadata">
