@@ -73,7 +73,7 @@
               <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-row>
                 <ion-chip v-for="shipmentPackage in order.shipmentPackages" v-show="order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId]" :key="shipmentPackage.shipmentId">{{ `Box ${shipmentPackage?.packageName}` }} | 
-                  <ion-select class="ion-no-padding" interface="popover" @ionChange="onBoxTypeChange($event.detail.value, shipmentPackage, order)" :value="getShipmentPackageType(shipmentPackage, order)">
+                  <ion-select class="ion-no-padding" interface="popover" @ionChange="updateShipmentBoxType($event.detail.value, shipmentPackage, order)" :value="getShipmentPackageType(shipmentPackage, order)">
                       <ion-select-option v-for="boxType in getShipmentBoxTypes(shipmentPackage, order)" :key="boxType" :value="boxType">{{ boxTypeDesc(boxType) }}</ion-select-option>
                   </ion-select>
                 </ion-chip>
@@ -807,11 +807,8 @@ export default defineComponent({
     },
     getShipmentPackageType(shipmentPackage: any, order: any) {
       let packageType = '';
-      if(order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId]){
-        packageType = order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId].find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId);
-        if(!packageType){
-          packageType = order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0];
-        }
+      if(order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId].length){
+        packageType = order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId].find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId) ? order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId].find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId)  : order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0];
       }
       return packageType;
     },
@@ -842,7 +839,7 @@ export default defineComponent({
       await OrderService.printPicklist(picklist.id)
       picklist.isGeneratingPicklist = false;
     },
-    onBoxTypeChange(value: string, shipmentPackage: any, order: any){
+    updateShipmentBoxType(value: string, shipmentPackage: any, order: any){
       shipmentPackage.shipmentBoxTypeId = value;
       order.isModified = true;
       this.store.dispatch('order/updateInProgressOrder', order);
