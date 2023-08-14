@@ -37,6 +37,7 @@ import {
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { closeOutline } from "ionicons/icons";
+import { OrderService } from "@/services/OrderService";
 export default defineComponent({
   name: "ShippingLabelErrorModal",
   components: { 
@@ -51,7 +52,19 @@ export default defineComponent({
     IonItem,
     IonList
   },
-  props: ['gatewayMessages'],
+  data() {
+    return {
+      gatewayMessages: []
+    }
+  },
+  props: ['shipmentIds'],
+  async mounted() {
+    // fetching the data of shipping label error by passing shipmentIds
+    const shipmentLabelErrorData = await OrderService.fetchShipmentLabelError(this.shipmentIds);
+
+    // Getting all the gateway messages
+    this.gatewayMessages = shipmentLabelErrorData.map((doc: any) => doc.gatewayMessage);
+  },
   methods: {
     closeModal() {
       modalController.dismiss({ dismissed: true });

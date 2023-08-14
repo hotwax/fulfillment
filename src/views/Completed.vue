@@ -581,16 +581,12 @@ export default defineComponent({
       order.isGeneratingShippingLabel = false;
     },
     async showShippingLabelErrorModal(order: any){
-      // Getting all the shipment ids and fetching the data of shipping label error by passing them
+      // Getting all the shipment ids
       const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId);
-      const shipmentLabelErrorData = await OrderService.fetchShipmentLabelError(shipmentIds);
-
-      // Getting all the gateway messages and opening modal by passing them as props
-      const gatewayMessages = shipmentLabelErrorData.map((doc: any) => doc.gatewayMessage);
       const shippingLabelErrorModal = await modalController.create({
         component: ShippingLabelErrorModal,
         componentProps: {
-          gatewayMessages
+          shipmentIds
         }
       });
       return shippingLabelErrorModal.present();
