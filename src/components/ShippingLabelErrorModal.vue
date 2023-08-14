@@ -12,10 +12,10 @@
   <ion-content>
     <div class="box-type">
       <ion-list lines="none">
-        <ion-item v-for="message, index in gatewayMessages" :key="index">
+        <ion-item v-for="message, index in shipmentLabelErrorMessages" :key="index">
           <ion-label>{{ message }}</ion-label>
         </ion-item>
-        <div v-if="!gatewayMessages.length">{{ $t("No data Found.") }}</div>
+        <div v-if="!shipmentLabelErrorMessages.length">{{ $t("No data Found.") }}</div>
       </ion-list>
     </div>
   </ion-content>
@@ -54,16 +54,13 @@ export default defineComponent({
   },
   data() {
     return {
-      gatewayMessages: []
+      shipmentLabelErrorMessages: []
     }
   },
   props: ['shipmentIds'],
   async mounted() {
-    // fetching the data of shipping label error by passing shipmentIds
-    const shipmentLabelErrorData = await OrderService.fetchShipmentLabelError(this.shipmentIds);
-
-    // Getting all the gateway messages
-    this.gatewayMessages = shipmentLabelErrorData.map((doc: any) => doc.gatewayMessage);
+    // Fetching shipment label errors
+    this.shipmentLabelErrorMessages = await OrderService.fetchShipmentLabelError(this.shipmentIds);
   },
   methods: {
     closeModal() {

@@ -300,22 +300,23 @@ const fetchShipmentLabelError = async (shipmentIds: Array<string>): Promise<any>
       "gatewayMessage": null,
       "gatewayMessage_op": "notEqual",
       "gatewayStatus": "error", 
-      "gatewayStatus_op": "equals"
+      "gatewayStatus_op": "equals",
+      "fieldList": ["shipmentId", "gatewayMessage"],
+      "viewSize": 20,
     }
   }
 
   try {
-    const resp = await api({
+    const resp: any = await api({
       url: "performFind",
       method: "get",
       params
     })
 
-    if (!resp || resp.status !== 200 || hasError(resp)) {
-      throw resp?.data;
+    if (resp.status !== 200 || hasError(resp)) {
+      throw resp.data;
     }
-
-    shipmentLabelError = resp?.data.docs;
+    shipmentLabelError = resp.data.docs.map((doc: any) => doc.gatewayMessage);
   } catch (err) {
     logger.error('Failed to fetch shipment label error', err)
   }
