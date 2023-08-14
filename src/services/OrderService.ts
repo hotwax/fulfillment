@@ -300,10 +300,10 @@ const fetchShipmentLabelError = async (shipmentIds: Array<string>): Promise<any>
       "gatewayMessage": null,
       "gatewayMessage_op": "notEqual",
       "gatewayStatus": "error", 
-      "gatewayStatus_op": "equals",
-      "fieldList": ["shipmentId", "gatewayMessage"],
-      "viewSize": 20,
-    }
+      "gatewayStatus_op": "equals"
+    },
+    "fieldList": ["shipmentId", "gatewayMessage"],
+    "viewSize": 20,
   }
 
   try {
