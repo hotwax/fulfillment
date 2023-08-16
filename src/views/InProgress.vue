@@ -72,9 +72,9 @@
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
               <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-row>
-                <ion-chip v-for="shipmentPackage in order.shipmentPackages" v-show="order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId]" :key="shipmentPackage.shipmentId">{{ `Box ${shipmentPackage?.packageName}` }} | 
-                  <ion-select class="ion-no-padding" interface="popover" @ionChange="updateShipmentBoxType($event.detail.value, shipmentPackage, order)" :value="getShipmentPackageType(shipmentPackage, order)">
-                      <ion-select-option v-for="boxType in getShipmentBoxTypes(shipmentPackage, order)" :key="boxType" :value="boxType">{{ boxTypeDesc(boxType) }}</ion-select-option>
+                <ion-chip v-for="shipmentPackage in order.shipmentPackages" v-show="shipmentPackage.shipmentBoxTypes.length" :key="shipmentPackage.shipmentId">{{ `Box ${shipmentPackage?.packageName}` }} | 
+                  <ion-select class="ion-no-padding" interface="popover" @ionChange="updateShipmentBoxType($event.detail.value, shipmentPackage, order)" :value="getShipmentPackageType(shipmentPackage)">
+                      <ion-select-option v-for="boxType in shipmentPackage.shipmentBoxTypes" :key="boxType" :value="boxType">{{ boxTypeDesc(boxType) }}</ion-select-option>
                   </ion-select>
                 </ion-chip>
               </ion-row>
@@ -805,15 +805,12 @@ export default defineComponent({
       }
       this.addingBoxForOrderIds.splice(this.addingBoxForOrderIds.indexOf(order.orderId), 1)
     },
-    getShipmentPackageType(shipmentPackage: any, order: any) {
+    getShipmentPackageType(shipmentPackage: any) {
       let packageType = '';
-      if(order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId].length){
-        packageType = order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId].find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId) ? order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId].find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId)  : order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0];
+      if(shipmentPackage.shipmentBoxTypes.length){
+        packageType = shipmentPackage.shipmentBoxTypes.find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId) ? shipmentPackage.shipmentBoxTypes.find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId) : shipmentPackage.shipmentBoxTypes[0];
       }
       return packageType;
-    },
-    getShipmentBoxTypes(shipmentPackage: any, order: any){
-      return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] : []
     },
     async updateQueryString(queryString: string) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))

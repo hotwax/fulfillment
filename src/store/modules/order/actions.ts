@@ -90,22 +90,31 @@ const actions: ActionTree<OrderState, RootState> = {
       })
 
       const orderItem = order.items[0];
-      const carrierPartyIds = [...new Set(orderShipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())]
+      const carrierPartyIds = [...new Set(orderShipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())];
+
+      const shipmentBoxTypeByCarrierParty = carrierPartyIds.reduce((shipmentBoxType: any, carrierPartyId: any) => {
+        if(shipmentBoxType[carrierPartyId]) {
+          shipmentBoxType[carrierPartyId].push(carrierShipmentBoxType[carrierPartyId])
+        } else {
+          shipmentBoxType[carrierPartyId] = carrierShipmentBoxType[carrierPartyId]
+        }
+
+        return shipmentBoxType
+      }, {});
+
+      const shipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].map((shipmentPackage: any) => {
+        return {
+          ...shipmentPackage,
+          shipmentBoxTypes: shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] : []
+        }
+      });
 
       return {
         ...order,
         shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
-        shipmentPackages: shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
+        shipmentPackages: shipmentPackages,
         carrierPartyIds,
-        shipmentBoxTypeByCarrierParty: carrierPartyIds.reduce((shipmentBoxType: any, carrierPartyId: any) => {
-          if(shipmentBoxType[carrierPartyId]) {
-            shipmentBoxType[carrierPartyId].push(carrierShipmentBoxType[carrierPartyId])
-          } else {
-            shipmentBoxType[carrierPartyId] = carrierShipmentBoxType[carrierPartyId]
-          }
-
-          return shipmentBoxType
-        }, {})
+        shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty
       }
     })
 
