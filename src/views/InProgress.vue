@@ -831,13 +831,13 @@ export default defineComponent({
     },
     async recycleInProgressOrders() {
       const alert = await alertController.create({
-        header: translate('Reject in progress orders'),
-        message: this.$t('Are you sure you want to reject in progress order(s)?', { ordersCount: this.inProgressOrders.total }),
+        header: translate('Reject all in progress orders'),
+        message: this.$t('Reject in progress orders.', { ordersCount: this.inProgressOrders.total }),
         buttons: [{
-          text: translate('No'),
+          text: translate('Cancel'),
           role: 'cancel'
         }, {
-          text: translate('Yes'),
+          text: translate('Reject'),
           handler: async () => {
             let resp;
 
