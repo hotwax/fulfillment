@@ -26,7 +26,7 @@ export default interface OrderState {
     query: {
       viewIndex: number,
       viewSize: any,
-      selectedPicklists: Array<string>,
+      selectedPicklist: string,
       queryString: string
     }
   }
