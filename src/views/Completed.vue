@@ -107,6 +107,7 @@
                 </ion-button>
               </div>
               <div class="desktop-only">
+                <ion-button v-if="order.missingLabelImage" fill="outline" @click="showShippingLabelErrorModal(order)">{{ $t("Shipping label error") }}</ion-button>
                 <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
               </div>
             </div>
@@ -123,7 +124,7 @@
         </ion-fab-button>
       </ion-fab>
       <div class="empty-state" v-else>
-        {{ currentFacility.name }}{{ $t(" doesn't have any completed orders right now.") }}
+        <p v-html="getErrorMessage()"></p>
       </div>
     </ion-content>
   </ion-page>
@@ -153,7 +154,8 @@ import {
   IonTitle,
   IonToolbar,
   alertController,
-  popoverController
+  popoverController,
+  modalController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
@@ -170,6 +172,7 @@ import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import { translate } from '@/i18n';
 import { OrderService } from '@/services/OrderService';
 import logger from '@/logger';
+import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
@@ -202,7 +205,8 @@ export default defineComponent({
   data() {
     return {
       shipmentMethods: [] as Array<any>,
-      carrierPartyIds: [] as Array<any>
+      carrierPartyIds: [] as Array<any>,
+      searchedQuery: ''
     }
   },
   computed: {
@@ -224,6 +228,9 @@ export default defineComponent({
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   methods: {
+    getErrorMessage() {
+      return this.searchedQuery === '' ? this.$t("doesn't have any completed orders right now.", { facilityName: this.currentFacility.name }) : this.$t( "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+    },
     hasAnyPackedShipment(): boolean {
       return this.completedOrders.list.some((order: any) => {
         return order.shipments && order.shipments.some((shipment: any) => shipment.statusId === "SHIPMENT_PACKED");
@@ -455,6 +462,7 @@ export default defineComponent({
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       completedOrdersQuery.queryString = queryString
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+      this.searchedQuery = queryString;
     },
     async updateSelectedShipmentMethods (method: string) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
@@ -576,6 +584,17 @@ export default defineComponent({
       }
 
       order.isGeneratingShippingLabel = false;
+    },
+    async showShippingLabelErrorModal(order: any){
+      // Getting all the shipment ids
+      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId);
+      const shippingLabelErrorModal = await modalController.create({
+        component: ShippingLabelErrorModal,
+        componentProps: {
+          shipmentIds
+        }
+      });
+      return shippingLabelErrorModal.present();
     }
   },
   setup() {

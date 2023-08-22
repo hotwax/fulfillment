@@ -5,39 +5,22 @@ import UserState from './UserState'
 import * as types from './mutation-types'
 import { showToast } from '@/utils'
 import { hasError } from '@/adapter'
-import { translate } from '@/i18n'
+import i18n, { translate } from '@/i18n'
 import { Settings } from 'luxon'
 import { updateInstanceUrl, updateToken, resetConfig } from '@/adapter'
 import logger from '@/logger'
 import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from '@/authorization'
+import { useAuthStore } from '@hotwax/dxp-components'
 
 const actions: ActionTree<UserState, RootState> = {
 
   /**
  * Login user and return token
  */
-  async login ({ commit }, { username, password }) {
+  async login ({ commit, dispatch }, payload) {
     try {
-      const resp = await UserService.login(username, password);
-      // Further we will have only response having 2xx status
-      // https://axios-http.com/docs/handling_errors
-      // We haven't customized validateStatus method and default behaviour is for all status other than 2xx
-      // TODO Check if we need to handle all 2xx status other than 200
-
-
-      /* ---- Guard clauses starts here --- */
-      // Know about Guard clauses here: https://learningactors.com/javascript-guard-clauses-how-you-can-refactor-conditional-logic/
-      // https://medium.com/@scadge/if-statements-design-guard-clauses-might-be-all-you-need-67219a1a981a
-
-
-      // If we have any error most possible reason is incorrect credentials.
-      if (hasError(resp)) {
-        showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
-        logger.error("error", resp.data._ERROR_MESSAGE_);
-        return Promise.reject(new Error(resp.data._ERROR_MESSAGE_));
-      }
-
-      const token = resp.data.token;
+      const {token, oms} = payload;
+      dispatch("setUserInstanceUrl", oms);
 
       // Getting the permissions list from server
       const permissionId = process.env.VUE_APP_PERMISSION_ID;
@@ -100,19 +83,16 @@ const actions: ActionTree<UserState, RootState> = {
         Settings.defaultZone = userProfile.userTimeZone;
       }
 
+      dispatch('getFieldMappings')
+
       // TODO user single mutation
       commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
       commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
       commit(types.USER_INFO_UPDATED, userProfile);
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       commit(types.USER_TOKEN_CHANGED, { newToken: token })
-      updateToken(resp.data.token)
+      updateToken(token)
 
-      // Handling case for warnings like password may expire in few days
-      if (resp.data._EVENT_MESSAGE_ && resp.data._EVENT_MESSAGE_.startsWith("Alert:")) {
-        // TODO Internationalise text
-        showToast(translate(resp.data._EVENT_MESSAGE_));
-      }
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
       // TODO Check if handling of specific status codes is required.
@@ -126,11 +106,15 @@ const actions: ActionTree<UserState, RootState> = {
    * Logout user
    */
   async logout ({ commit }) {
+    const authStore = useAuthStore()
     // TODO add any other tasks if need
     commit(types.USER_END_SESSION)
     this.dispatch('order/clearOrders')
     resetConfig();
     resetPermissions();
+
+    // reset plugin state on logout
+    authStore.$reset()
   },
 
   /**
@@ -164,6 +148,14 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_INFO_UPDATED, current);
       showToast(translate("Time zone updated successfully"));
     }
+  },
+
+  /**
+   *  Update the i18n locale
+  */
+  setLocale({ commit }, payload) {
+    i18n.global.locale = payload
+    commit(types.USER_LOCALE_UPDATED, payload)
   },
 
   // Set User Instance Url

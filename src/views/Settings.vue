@@ -3,96 +3,206 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button slot="start" />
-        <ion-title>{{ $t("Store Settings") }}</ion-title>
+        <ion-title>{{ $t("Settings") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     
     <ion-content>
-      <ion-item>
-        <ion-label>{{ $t("Store") }}</ion-label>
-        <ion-select interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
-          <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
-        </ion-select>
-      </ion-item>
-
-      <ion-item>
-        <ion-icon :icon="globeOutline" slot="start" />
-        <ion-label>{{$t("eCom Store")}}</ion-label>
-        <ion-select interface="popover" :value="currentEComStore.productStoreId" @ionChange="setEComStore($event)">
-          <ion-select-option v-for="store in (userProfile ? userProfile.stores : [])" :key="store.productStoreId" :value="store.productStoreId" >{{ store.storeName }}</ion-select-option>
-        </ion-select>
-      </ion-item>
-
-      <ion-item>
-        <ion-icon :icon="codeWorkingOutline" slot="start"/>
-        <ion-label>{{ $t("OMS") }}</ion-label>
-        <p slot="end">{{ baseURL ? baseURL : instanceUrl }}</p>
-      </ion-item>
-
-      <!-- TODO: Add functionality to make document printing functionality global -->
-      <ion-card>
-        <ion-item lines="none">
-          <ion-label class="text-wrap">{{ $t("Documents to print when packing orders") }}</ion-label>
-        </ion-item>
-        <ion-item>
-          <ion-label>{{ $t("Shipping label") }}</ion-label>
-          <ion-checkbox :checked="userPreference.printShippingLabel" @ionChange="setPrintShippingLabelPreference($event)" slot="end" />
-        </ion-item>
-        <ion-item lines="none">
-          <ion-label>{{ $t("Packing slip") }}</ion-label>
-          <ion-checkbox :checked="userPreference.printPackingSlip" @ionChange="setPrintPackingSlipPreference($event)" slot="end" />
-        </ion-item>
-      </ion-card>
-
-      <ion-card>
-        <ion-item lines="none">
-          <ion-label>{{ $t("Fulfillment") }} : {{ isStoreFulfillmentTurnOn ? $t("On") : $t("Off") }}</ion-label>
-        </ion-item>
-        <ion-item lines="none">
-          <ion-label class="text-wrap">{{ $t("has outstanding orders and in progress orders.", {storeName: currentFacility.name, outstandingOrdersCount, inProgressOrdersCount}) }}</ion-label>
-        </ion-item>
-        <div class="actions">
-          <div>
-            <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER)" fill="outline" color="secondary" size="medium" @click="recycleOutstandingOrders()">{{ $t("Recycle all open orders") }}</ion-button>
-            <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER)" fill="outline" color="secondary" size="medium" @click="recycleInProgressOrders()">{{ $t("Recycle all in progress orders") }}</ion-button>
-            <!-- <ion-button fill="outline" color="secondary" size="medium">{{ $t("Recycle all orders") }}</ion-button> -->
-          </div>
-          <div>
-            <ion-button :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" v-if="isStoreFulfillmentTurnOn" fill="outline" color="danger" size="medium" @click="turnOffFulfillment()">{{ $t("Turn off fulfillment") }}</ion-button>
-            <ion-button :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" v-else fill="outline" color="success" size="medium" @click="turnOnFulfillment()">{{ $t("Turn on fulfillment") }}</ion-button>
-          </div>
-          <div>
-            <ion-button :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG)" v-if="isEcomInvTurnedOn" fill="outline" color="danger" size="medium" @click="turnOffEcomInv()">{{ $t("Turn off eCom inventory") }}</ion-button>
-            <ion-button :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG)" v-else-if="isEcomInvConfigured" fill="outline" color="success" size="medium" @click="turnOnEcomInv()">{{ $t("Turn on eCom inventory") }}</ion-button>
-          </div>
-        </div>
-
-        <ion-item class="mobile-only">
-          <ion-button fill="clear">{{ $t("Recycle all open orders") }}</ion-button>
-          <ion-button slot="end" fill="clear" color="medium" @click="openRecyclePopover">
-            <ion-icon :icon="ellipsisVerticalOutline" slot="icon-only" />
+      <div class="user-profile">
+        <ion-card>
+          <ion-item lines="full">
+            <ion-avatar slot="start" v-if="userProfile?.partyImageUrl">
+              <Image :src="userProfile.partyImageUrl"/>
+            </ion-avatar>
+            <!-- ion-no-padding to remove extra side/horizontal padding as additional padding 
+            is added on sides from ion-item and ion-padding-vertical to compensate the removed
+            vertical padding -->
+            <ion-card-header class="ion-no-padding ion-padding-vertical">
+              <ion-card-subtitle>{{ userProfile?.userLoginId }}</ion-card-subtitle>
+              <ion-card-title>{{ userProfile?.partyName }}</ion-card-title>
+            </ion-card-header>
+          </ion-item>
+          <ion-button color="danger" @click="logout()">{{ $t("Logout") }}</ion-button>
+          <ion-button fill="outline" @click="goToLaunchpad()">
+            {{ $t("Go to Launchpad") }}
+            <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
-        </ion-item>
-      </ion-card>
+          <!-- Commenting this code as we currently do not have reset password functionality -->
+          <!-- <ion-button fill="outline" color="medium">{{ $t("Reset password") }}</ion-button> -->
+        </ion-card>
+      </div>
 
-      <ion-item>
-        <ion-icon :icon="timeOutline" slot="start"/>                
-        <ion-label> {{ userProfile && userProfile.userTimeZone ? userProfile.userTimeZone : '-' }} </ion-label>
-        <ion-button @click="changeTimeZone()" fill="outline" color="dark">{{ $t("Change") }}</ion-button>
-      </ion-item>
-      <ion-item>
-        <ion-label>{{ userProfile !== null ? userProfile.partyName : '' }}</ion-label>
-        <ion-button fill="outline" color="medium" @click="logout()">{{ $t("Logout") }}</ion-button>
-      </ion-item>
+      <div class="section-header">
+        <h1>{{ $t('OMS') }}</h1>
+      </div>
+
+      <section>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-subtitle>
+              {{ $t("OMS instance") }}
+            </ion-card-subtitle>
+            <ion-card-title>
+              {{ instanceUrl }}
+            </ion-card-title>
+          </ion-card-header>
+
+          <ion-card-content>
+            {{ $t('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
+          </ion-card-content>
+
+          <ion-button @click="goToOms" fill="clear">
+            {{ $t('Go to OMS') }}
+            <ion-icon slot="end" :icon="openOutline" />
+          </ion-button>
+        </ion-card>
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-subtitle>
+              {{ $t("Product Store") }}
+            </ion-card-subtitle>
+            <ion-card-title>
+              {{ $t("Store") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ $t('A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.') }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-label> {{ $t("Select store") }} </ion-label>
+            <ion-select interface="popover" :value="currentEComStore.productStoreId" @ionChange="setEComStore($event)">
+              <ion-select-option v-for="store in (userProfile ? userProfile.stores : [])" :key="store.productStoreId" :value="store.productStoreId" >{{ store.storeName }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-card>
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ $t("Facility") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ $t('Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.') }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-label>{{ $t("Select facility") }}</ion-label>
+            <ion-select interface="popover" :value="currentFacility?.facilityId" @ionChange="setFacility($event)">
+              <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-card>
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ $t("Online Order Fulfillment") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ $t('Specify whether the store should fulfill online orders or not.') }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-label>{{ $t("Fulfill online orders") }}</ion-label>
+            <!-- Using v-model on isStoreFulfilmentTurnedOn for programmatically re-updating the toggle value -->
+            <ion-toggle :disabled="!hasPermission(Actions.APP_TURN_OFF_STORE)" v-model="isStoreFulfilmentTurnedOn" @ionChange="updateFulfillmentStatus($event)" slot="end" />
+          </ion-item>
+        </ion-card>
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ $t("Sell inventory online") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ $t("Control whether the store's inventory should be made available for online sales or not.") }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-label>{{ $t("Sell online") }}</ion-label>
+            <ion-toggle slot="end" />
+          </ion-item>
+        </ion-card>
+      </section>
+
+      <hr />
+
+      <div class="section-header">
+        <h1>
+          {{ $t('App') }}
+          <p class="overline">{{ "Version: " + appVersion }}</p>
+        </h1>
+        <p class="overline">{{ "Built: " + getDateTime(appInfo.builtTime) }}</p>
+      </div>
+
+      <section>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ $t('Timezone') }}
+            </ion-card-title>
+          </ion-card-header>
+
+          <ion-card-content>
+            {{ $t('The timezone you select is used to ensure automations you schedule are always accurate to the time you select.') }}
+          </ion-card-content>
+
+          <ion-item lines="none">
+            <ion-label> {{ userProfile && userProfile.userTimeZone ? userProfile.userTimeZone : '-' }} </ion-label>
+            <ion-button @click="changeTimeZone()" slot="end" fill="outline" color="dark">{{ $t("Change") }}</ion-button>
+          </ion-item>
+        </ion-card>
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ $t("Language") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ $t('Select your preferred language.') }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-label>{{ $t("Choose language") }}</ion-label>
+            <ion-select interface="popover" :value="locale" @ionChange="setLocale($event.detail.value)">
+              <ion-select-option v-for="locale in Object.keys(locales)" :key="locale" :value="locale" >{{ locales[locale] }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-card>
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ $t("Additional documents") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ $t('Print supplementary documents with the shipment for package identification.') }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-label>{{ $t("Generate shipping label") }}</ion-label>
+            <ion-toggle :checked="userPreference.printShippingLabel" @ionChange="setPrintShippingLabelPreference($event)" slot="end" />
+          </ion-item>
+          <ion-item lines="none">
+            <ion-label>{{ $t("Generate packing slip") }}</ion-label>
+            <ion-toggle :checked="userPreference.printPackingSlip" @ionChange="setPrintPackingSlipPreference($event)" slot="end" />
+          </ion-item>
+        </ion-card>
+      </section>
     </ion-content>
   </ion-page>
 </template>
 
 <script lang="ts">
 import { 
+  IonAvatar,
   IonButton, 
   IonCard, 
-  IonCheckbox, 
+  IonCardContent,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardSubtitle,
   IonContent, 
   IonHeader,
   IonIcon, 
@@ -103,13 +213,13 @@ import {
   IonSelect, 
   IonSelectOption, 
   IonTitle, 
+  IonToggle,
   IonToolbar,
-  popoverController,
   modalController,
-alertController} from '@ionic/vue';
+  alertController
+} from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, timeOutline } from 'ionicons/icons'
-import RecyclePopover from '@/views/RecyclePopover.vue'
+import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, openOutline, timeOutline } from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import TimeZoneModal from '@/views/timezone-modal.vue'
@@ -119,13 +229,19 @@ import { hasError } from '@/adapter';
 import { translate } from '@/i18n';
 import logger from '@/logger';
 import { Actions, hasPermission } from '@/authorization'
+import { DateTime } from 'luxon';
+import Image from '@/components/Image.vue';
 
 export default defineComponent({
   name: 'Settings',
   components: { 
+    IonAvatar,
     IonButton,
     IonCard,
-    IonCheckbox,
+    IonCardContent,
+    IonCardHeader,
+    IonCardTitle,
+    IonCardSubtitle,
     IonContent, 
     IonHeader, 
     IonIcon,
@@ -136,15 +252,21 @@ export default defineComponent({
     IonSelect, 
     IonSelectOption,
     IonTitle, 
-    IonToolbar
+    IonToggle,
+    IonToolbar,
+    Image
   },
   data() {
     return {
       baseURL: process.env.VUE_APP_BASE_URL,
+      appInfo: (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any,
+      appVersion: "",
+      locales: process.env.VUE_APP_LOCALES ? JSON.parse(process.env.VUE_APP_LOCALES) : {"en": "English"},
       currentFacilityDetails: {} as any,
       facilityGroupDetails: {} as any,
       outstandingOrdersCount: 0,
-      inProgressOrdersCount: 0
+      inProgressOrdersCount: 0,
+      isStoreFulfilmentTurnedOn: true
     };
   },
   computed: {
@@ -153,9 +275,10 @@ export default defineComponent({
       currentFacility: 'user/getCurrentFacility',
       instanceUrl: 'user/getInstanceUrl',
       currentEComStore: 'user/getCurrentEComStore',
-      userPreference: 'user/getUserPreference'
+      userPreference: 'user/getUserPreference',
+      locale: 'user/getLocale'
     }),
-    isStoreFulfillmentTurnOn() {
+    fulfillmentStatus() {
       // considered that if facility details are not available then also fulfillment will be turned on
       return this.currentFacilityDetails.maximumOrderLimit != 0
     },
@@ -169,77 +292,14 @@ export default defineComponent({
       return Object.keys(this.facilityGroupDetails).length && this.facilityGroupDetails?.facilityGroupId
     }
   },
+  mounted() {
+    this.appVersion = this.appInfo.branch ? (this.appInfo.branch + "-" + this.appInfo.revision) : this.appInfo.tag;
+  },
   ionViewWillEnter() {
     this.getCurrentFacilityDetails()
     this.getEcomInvStatus()
-    this.getOutstandingOrdersCount()
-    this.getInProgressOrdersCount()
   },
   methods: {
-    async getOutstandingOrdersCount() {
-      let resp;
-
-      try {
-        this.outstandingOrdersCount = 0
-
-        const payload = {
-          "json": {
-            "params": {
-              "rows": "0",
-              "group": true,
-              "group.field": "orderId",
-              "group.limit": 10000,
-              "group.ngroups": true,
-              "q.op": "AND"
-            },
-            "query": "(*:*)",
-            "filter": ["docType: OISGIR", "quantityNotAvailable: 0", "isPicked: N", "-shipmentMethodTypeId: STOREPICKUP", "-fulfillmentStatus: Cancelled", "orderStatusId: ORDER_APPROVED", "orderTypeId: SALES_ORDER", `facilityId: ${this.currentFacility.facilityId}`, `productStoreId: ${this.currentEComStore.productStoreId}`]
-          }
-        }
-
-        resp = await UserService.getOutstandingOrdersCount(payload)
-
-        if(!hasError(resp)) {
-          this.outstandingOrdersCount = resp.data.grouped.orderId.ngroups
-        } else {
-          throw resp.data
-        }
-      } catch(err) {
-        logger.error('Failed to get outstanding orders count', err)
-      }
-    },
-    async getInProgressOrdersCount() {
-      let resp;
-
-      try {
-        this.inProgressOrdersCount = 0
-
-        const payload = {
-          "json": {
-            "params": {
-              "rows": "0",
-              "group": true,
-              "group.field": "picklistBinId",
-              "group.limit": 10000,
-              "group.ngroups": true,
-              "q.op": "AND"
-            },
-            "query": "(*:*)",
-            "filter": ["docType: OISGIR", "picklistItemStatusId: PICKITEM_PENDING", "-shipmentMethodTypeId: STOREPICKUP", "-fulfillmentStatus: Rejected", `facilityId: ${this.currentFacility.facilityId}`, `productStoreId: ${this.currentEComStore.productStoreId}`]
-          }
-        }
-
-        resp = await UserService.getInProgressOrdersCount(payload)
-
-        if(!hasError(resp)) {
-          this.inProgressOrdersCount = resp.data.grouped.picklistBinId.ngroups
-        } else {
-          throw resp.data
-        }
-      } catch(err) {
-        logger.error('Failed to get inProgress orders count', err)
-      }
-    },
     async getCurrentFacilityDetails() {
       let resp: any;
       try {
@@ -262,6 +322,10 @@ export default defineComponent({
         }
       } catch(err) {
         logger.error('Failed to fetch current facility details', err)
+      } finally {
+        // declaration of isStoreFulfilmentTurnedOn in lifecycle hooks always
+        // returns 'true' because of the != 0 condition, hence, updating it here
+        this.isStoreFulfilmentTurnedOn = this.currentFacilityDetails?.maximumOrderLimit != 0
       }
     },
     async getEcomInvStatus() {
@@ -303,20 +367,15 @@ export default defineComponent({
         logger.error('Failed to fetch eCom inventory config', err)
       }
     },
-    async openRecyclePopover(ev: Event) {
-      const popover = await popoverController.create({
-        component: RecyclePopover,
-        event: ev,
-        translucent: true,
-        showBackdrop: false,
-      });
-      return popover.present();
-    },
     logout () {
       this.store.dispatch('user/logout').then(() => {
         this.store.dispatch('order/clearOrders')
-        this.router.push('/login');
+        const redirectUrl = window.location.origin + '/login'
+        window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
       })
+    },
+    goToLaunchpad() {
+      window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
     },
     async setFacility (event: any) {
       // not updating the facility when the current facility in vuex state and the selected facility are same
@@ -331,8 +390,6 @@ export default defineComponent({
         });
         this.store.dispatch('order/clearOrders')
         this.getCurrentFacilityDetails();
-        this.getOutstandingOrdersCount();
-        this.getInProgressOrdersCount();
       }
     },
     async changeTimeZone() {
@@ -398,12 +455,20 @@ export default defineComponent({
         logger.error('Failed to update eCom inventory status', err)
       }
     },
+    async updateFulfillmentStatus(event: any) {
+      // condition to stop alert from re-popping as ionChange is triggered
+      // because isStoreFulfilmentTurnedOn is updated
+      if (event.detail.checked === this.fulfillmentStatus) return
+      event.detail.checked ? this.turnOnFulfillment() : this.turnOffFulfillment()
+    },
     async turnOnFulfillment() {
       const alert = await alertController.create({
         header: this.$t('Turn on fulfillment for ', { facilityName: this.currentFacility.name }),
         buttons: [{
           text: translate('Cancel'),
-          role: 'cancel'
+          handler: () => {
+            this.isStoreFulfilmentTurnedOn = this.fulfillmentStatus
+          }
         }, {
           text: translate('Save'),
           handler: (data) => {
@@ -431,7 +496,9 @@ export default defineComponent({
         message: translate('Are you sure you want to perform this action?'),
         buttons: [{
           text: translate('Cancel'),
-          role: 'cancel'
+          handler: () => {
+            this.isStoreFulfilmentTurnedOn = this.fulfillmentStatus
+          }
         }, {
           text: translate('Save'),
           handler: () => {
@@ -555,8 +622,6 @@ export default defineComponent({
         await this.store.dispatch('user/setEComStore', {
           'eComStore': this.userProfile.stores.find((str: any) => str.productStoreId == event.detail.value)
         })
-        this.getOutstandingOrdersCount();
-        this.getInProgressOrdersCount();
       }
     },
     setPrintShippingLabelPreference (ev: any) {
@@ -564,6 +629,15 @@ export default defineComponent({
     },
     setPrintPackingSlipPreference (ev: any){
       this.store.dispatch('user/setUserPreference', { printPackingSlip: ev.detail.checked })
+    },
+    getDateTime(time: any) {
+      return DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED);
+    },
+    setLocale(locale: string) {
+      this.store.dispatch('user/setLocale',locale)
+    },
+    goToOms(){
+      window.open(this.instanceUrl.startsWith('http') ? this.instanceUrl.replace('api/', "") : `https://${this.instanceUrl}.hotwax.io/`, '_blank', 'noopener, noreferrer');
     }
   },
   setup() {
@@ -575,6 +649,7 @@ export default defineComponent({
       codeWorkingOutline,
       ellipsisVerticalOutline,
       globeOutline,
+      openOutline,
       timeOutline,
       router,
       store,
@@ -585,7 +660,26 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.text-wrap {
-  white-space: normal;
+ion-card > ion-button {
+  margin: var(--spacer-xs);
+}
+section {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  align-items: start;
+}
+.user-profile {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+}
+hr {
+  border-top: 1px solid var(--ion-color-medium);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacer-xs) 10px 0px;
 }
 </style>
