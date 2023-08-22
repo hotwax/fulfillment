@@ -178,7 +178,7 @@ export default defineComponent({
       }
     },
     async confirmSave() {
-      const message = this.$t("Are you sure you want to save the edited changes? This action is irreversible.");
+      const message = this.$t("Are you sure you want to remove the current pickers from the picklist and replace them with new pickers?");
       const alert = await alertController.create({
         header: this.$t("Edit pickers"),
         message,
@@ -187,7 +187,7 @@ export default defineComponent({
             text: this.$t("Cancel"),
           },
           {
-            text: this.$t("Save"),
+            text: this.$t("Replace"),
             handler: () => {
               this.save();
             }
@@ -208,7 +208,7 @@ export default defineComponent({
           picklistId: this.selectedPicklist.id
         });
         if (resp.status === 200 && !hasError(resp)) {
-          showToast(translate('Picker(s) edited successfully'))
+          showToast(translate("Pickers successfully replaced in the picklist with the new selections."))
           // editedPicklist will be passed through modal to in-progress page for manually
           // upading the UI due to solr issue
           this.editedPicklist = {
