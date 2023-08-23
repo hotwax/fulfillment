@@ -106,7 +106,7 @@
           <ion-item lines="none">
             <ion-label>{{ $t("Fulfill online orders") }}</ion-label>
             <!-- Using v-model on isStoreFulfilmentTurnedOn for programmatically re-updating the toggle value -->
-            <ion-toggle :disabled="!hasPermission(Actions.APP_TURN_OFF_STORE)" v-model="isStoreFulfilmentTurnedOn" @ionChange="updateFulfillmentStatus($event)" slot="end" />
+            <ion-toggle :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" v-model="isStoreFulfilmentTurnedOn" @ionChange="updateFulfillmentStatus($event)" slot="end" />
           </ion-item>
         </ion-card>
 
@@ -121,7 +121,7 @@
           </ion-card-content>
           <ion-item lines="none">
             <ion-label>{{ $t("Sell online") }}</ion-label>
-            <ion-toggle slot="end" />
+            <ion-toggle :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG) || (!eComInvStatus || !eComInvConfigStatus)" v-model="isEComInvTurnedOn" @ionChange="updateEComInvStatus($event)" slot="end" />
           </ion-item>
         </ion-card>
       </section>
@@ -266,7 +266,8 @@ export default defineComponent({
       facilityGroupDetails: {} as any,
       outstandingOrdersCount: 0,
       inProgressOrdersCount: 0,
-      isStoreFulfilmentTurnedOn: true
+      isStoreFulfilmentTurnedOn: true,
+      isEComInvTurnedOn: true
     };
   },
   computed: {
@@ -282,14 +283,14 @@ export default defineComponent({
       // considered that if facility details are not available then also fulfillment will be turned on
       return this.currentFacilityDetails.maximumOrderLimit != 0
     },
-    isEcomInvTurnedOn() {
+    eComInvStatus() {
       // if facilityGroupDetails are there with fromDate (using fromDate as a flag for
       // getting data from getFacilityGroupAndMemberDetails) - facility is turned on
-      return Object.keys(this.facilityGroupDetails).length && this.facilityGroupDetails?.fromDate
+      return !!(Object.keys(this.facilityGroupDetails).length && this.facilityGroupDetails?.fromDate)
     },
-    isEcomInvConfigured() {
+    eComInvConfigStatus() {
       // if facilityGroupDetails are there with facilityGroupId, configuration is there but turned off
-      return Object.keys(this.facilityGroupDetails).length && this.facilityGroupDetails?.facilityGroupId
+      return !!(Object.keys(this.facilityGroupDetails).length && this.facilityGroupDetails?.facilityGroupId)
     }
   },
   mounted() {
@@ -365,6 +366,10 @@ export default defineComponent({
         }
       } catch (err) {
         logger.error('Failed to fetch eCom inventory config', err)
+      } finally {
+        // updating it here as facilityGroupDetails is not available in the lifecycle hooks
+        // and using the computed property in the lifecycle hook is not updating it later
+        this.isEComInvTurnedOn = !!(Object.keys(this.facilityGroupDetails).length && this.facilityGroupDetails?.fromDate)
       }
     },
     logout () {
@@ -461,6 +466,12 @@ export default defineComponent({
       if (event.detail.checked === this.fulfillmentStatus) return
       event.detail.checked ? this.turnOnFulfillment() : this.turnOffFulfillment()
     },
+    async updateEComInvStatus(event: any) {
+      // condition to stop alert from re-popping as ionChange is triggered
+      // because isEComInvStatus is updated
+      if (event.detail.checked === this.eComInvStatus) return
+      event.detail.checked ? this.turnOnEComInv() : this.turnOffEComInv()
+    },
     async turnOnFulfillment() {
       const alert = await alertController.create({
         header: this.$t('Turn on fulfillment for ', { facilityName: this.currentFacility.name }),
@@ -509,13 +520,15 @@ export default defineComponent({
 
       await alert.present();
     },
-    async turnOnEcomInv() {
+    async turnOnEComInv() {
       const alert = await alertController.create({
         header: this.$t('Turn on eCom inventory for ', { facilityName: this.currentFacility.name }),
         message: translate('Are you sure you want to perform this action?'),
         buttons: [{
           text: translate('Cancel'),
-          role: 'cancel'
+          handler: () => {
+            this.isEComInvTurnedOn = this.eComInvStatus
+          }
         }, {
           text: translate('Save'),
           handler: async () => {
@@ -526,13 +539,15 @@ export default defineComponent({
 
       await alert.present();
     },
-    async turnOffEcomInv() {
+    async turnOffEComInv() {
       const alert = await alertController.create({
         header: this.$t('Turn off eCom inventory for ', { facilityName: this.currentFacility.name }),
         message: translate('Are you sure you want to perform this action?'),
         buttons: [{
           text: translate('Cancel'),
-          role: 'cancel'
+          handler: () => {
+            this.isEComInvTurnedOn = this.eComInvStatus
+          }
         }, {
           text: translate('Save'),
           handler: async () => {
