@@ -36,7 +36,8 @@ export default defineComponent({
     ...mapGetters({
       userToken: 'user/getUserToken',
       instanceUrl: 'user/getInstanceUrl',
-      userProfile: 'user/getUserProfile'
+      userProfile: 'user/getUserProfile',
+      locale: 'user/getLocale'
     })
   },
   methods: {
@@ -59,7 +60,8 @@ export default defineComponent({
     },
     async unauthorised() {
       this.store.dispatch("user/logout");
-      this.router.push("/login")
+      const redirectUrl = window.location.origin + '/login';
+      window.location.href = `${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`;
     },
     playAnimation() {
       const aside = document.querySelector('aside') as Element
@@ -117,6 +119,7 @@ export default defineComponent({
     if (this.userProfile && this.userProfile.userTimeZone) {
       Settings.defaultZone = this.userProfile.userTimeZone;
     }
+    this.$i18n.locale = this.locale;
   },
   unmounted() {
     emitter.off('presentLoader', this.presentLoader);

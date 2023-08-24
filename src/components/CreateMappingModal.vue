@@ -111,14 +111,17 @@ export default defineComponent({
         return
       }
       const id = this.generateUniqueMappingPrefId();
+      const mappings = {} as any;
 
       // removing label from mappings as we don't need to save label with the mappings as it will just increase the size of the value
       Object.keys(this.fieldMapping).map((mapping) => {
-        this.fieldMapping[mapping] && delete this.fieldMapping[mapping].label
-        return;
+        mappings[mapping] = {
+          value: this.fieldMapping[mapping].value,
+          isSelected: this.fieldMapping[mapping].isSelected
+        }
       })
 
-      await this.store.dispatch("user/createFieldMapping", { id, name: this.mappingName, value: this.fieldMapping, mappingType: this.mappingType })
+      await this.store.dispatch("user/createFieldMapping", { id, name: this.mappingName, value: mappings, mappingType: this.mappingType })
       this.closeModal();
     },
     areAllFieldsSelected() {

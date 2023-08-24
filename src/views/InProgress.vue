@@ -10,6 +10,9 @@
         <ion-title v-else>{{ inProgressOrders.query.viewSize }} {{ $t('of') }} {{ inProgressOrders.total }} {{ $t('orders') }}</ion-title>
 
         <ion-buttons slot="end">
+          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !inProgressOrders.total" fill="clear" color="danger" @click="recycleInProgressOrders()">
+            {{ $t("Reject all") }}
+          </ion-button>
           <ion-menu-button menu="end" :disabled="!inProgressOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
@@ -68,7 +71,9 @@
             <!-- TODO: implement functionality to change the type of box -->
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
               <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
-              <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
+              <ion-row>
+                <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
+              </ion-row>
             </div>
 
             <div v-for="(item, index) in order.items" :key="index" class="order-item">
@@ -155,7 +160,9 @@
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
-      <div class="empty-state" v-else>{{ currentFacility.name }} {{ $t(" doesn't have any orders in progress right now.") }} </div>
+      <div class="empty-state" v-else>
+        <p v-html="getErrorMessage()"></p>
+      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -178,6 +185,7 @@ import {
   IonLabel,
   IonMenuButton,
   IonPage,
+  IonRow,
   IonSearchbar,
   IonSegment,
   IonSegmentButton,
@@ -206,6 +214,8 @@ import { prepareOrderQuery } from '@/utils/solrHelper';
 import { UtilService } from '@/services/UtilService';
 import { DateTime } from 'luxon';
 import logger from '@/logger';
+import { UserService } from '@/services/UserService';
+import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
   name: 'InProgress',
@@ -227,6 +237,7 @@ export default defineComponent({
     IonLabel,
     IonMenuButton,
     IonPage,
+    IonRow,
     IonSearchbar,
     IonSegment,
     IonSegmentButton,
@@ -255,10 +266,15 @@ export default defineComponent({
       picklists: [] as any,
       defaultShipmentBoxType: '',
       itemsIssueSegmentSelected: [] as any,
+      orderBoxes: [] as any,
+      searchedQuery: '',
       addingBoxForOrderIds: [] as any
     }
   },
   methods: {
+    getErrorMessage() {
+      return this.searchedQuery === '' ? this.$t("doesn't have any orders in progress right now.", { facilityName: this.currentFacility.name }) : this.$t( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+    },
     getInProgressOrders() {
       return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
     },
@@ -320,29 +336,42 @@ export default defineComponent({
               }
 
               emitter.emit('presentLoader');
+              let toast: any;
+              const shipmentIds: Array<any> = [...new Set(order.items.map((item: any) => item.shipmentId))]
               try {
                 const resp = await OrderService.packOrder(params);
-                if (resp.status === 200 && !hasError(resp)) {
-                  showToast(translate('Order packed successfully'));
-                } else {
+                if (hasError(resp)) {
                   throw resp.data
                 }
-                if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
-                  await OrderService.printShippingLabelAndPackingSlip(order.shipmentIds)
-                } else if(data.includes('printPackingSlip')) {
-                  await OrderService.printPackingSlip(order.shipmentIds)
-                } else if(data.includes('printShippingLabel')) {
-                  await OrderService.printShippingLabel(order.shipmentIds)
+                emitter.emit('dismissLoader');
+
+                if (data.length) {
+                  // additional parameters for dismiss button and manual dismiss ability
+                  toast = await showToast(translate('Order packed successfully. Document generation in process'), true, true)
+                  toast.present()
+
+                  if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
+                    await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                  } else if (data.includes('printPackingSlip')) {
+                    await OrderService.printPackingSlip(shipmentIds)
+                  } else if (data.includes('printShippingLabel')) {
+                    await OrderService.printShippingLabel(shipmentIds)
+                  }
+
+                  toast.dismiss()
+                } else {
+                  showToast(translate('Order packed successfully'));
                 }
                 // TODO: handle the case of fetching in progress orders after packing an order
                 // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
                 await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery()]);
               } catch (err) {
+                // in case of error, if loader and toast are not dismissed above
+                if (toast) toast.dismiss()
+                emitter.emit('dismissLoader');
                 showToast(translate('Failed to pack order'))
                 logger.error('Failed to pack order', err)
               }
-
-              emitter.emit('dismissLoader');
             }
           }]
         });
@@ -388,36 +417,48 @@ export default defineComponent({
                 });
               }
 
+              let toast: any;
               // Considering only unique shipment IDs
               // TODO check reason for redundant shipment IDs
-              const shipmentIds = [...new Set(orderList.map((order: any) => order.shipmentIds).flat())] as Array<string>
+              const shipmentIds = orderList.map((order: any) => [...new Set(order.items.map((item: any) => item.shipmentId).flat())]).flat() as Array<string>
 
               try {
                 const resp = await OrderService.packOrders({
                   shipmentIds
                 });
-                if (resp.status === 200 && !hasError(resp)) {
-                  showToast(translate('Orders packed successfully'));
-                } else {
+                if (hasError(resp)) {
                   throw resp.data
                 }
+                emitter.emit('dismissLoader');
+
                 // TODO: need to check that do we need to pass all the shipmentIds for an order or just need to pass
                 // the associated ids, currently passing the associated shipmentId
-                if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
-                  await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
-                } else if(data.includes('printPackingSlip')) {
-                  await OrderService.printPackingSlip(shipmentIds)
-                } else if(data.includes('printShippingLabel')) {
-                  await OrderService.printShippingLabel(shipmentIds)
+                if (data.length) {
+                  // additional parameters for dismiss button and manual dismiss ability
+                  toast = await showToast(translate('Order packed successfully. Document generation in process'), true, true)
+                  toast.present()
+                  if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
+                    await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                  } else if (data.includes('printPackingSlip')) {
+                    await OrderService.printPackingSlip(shipmentIds)
+                  } else if (data.includes('printShippingLabel')) {
+                    await OrderService.printShippingLabel(shipmentIds)
+                  }
+
+                  toast.dismiss()
+                } else {
+                  showToast(translate('Order packed successfully'));
                 }
                   // TODO: handle the case of fetching in progress orders after packing multiple orders
                   // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
                 await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery()])
               } catch (err) {
+                // in case of error, if loader and toast are not dismissed above
+                if (toast) toast.dismiss()
+                emitter.emit('dismissLoader');
                 showToast(translate('Failed to pack orders'))
                 logger.error('Failed to pack orders', err)
               }
-              emitter.emit('dismissLoader');
             }
           }]
         });
@@ -770,6 +811,7 @@ export default defineComponent({
       inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       inProgressOrdersQuery.queryString = queryString
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
+      this.searchedQuery = queryString;
     },
     async updateOrderQuery(size?: any, queryString?: any) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
@@ -786,6 +828,40 @@ export default defineComponent({
       picklist.isGeneratingPicklist = true;
       await OrderService.printPicklist(picklist.id)
       picklist.isGeneratingPicklist = false;
+    },
+    async recycleInProgressOrders() {
+      const alert = await alertController.create({
+        header: translate('Reject in progress orders'),
+        message: this.$t('Are you sure you want to reject in progress order(s)?', { ordersCount: this.inProgressOrders.total }),
+        buttons: [{
+          text: translate('No'),
+          role: 'cancel'
+        }, {
+          text: translate('Yes'),
+          handler: async () => {
+            let resp;
+
+            try {
+              resp = await UserService.recycleInProgressOrders({
+                "facilityId": this.currentFacility.facilityId,
+                "productStoreId": this.currentEComStore.productStoreId,
+                "reasonId": "INACTIVE_STORE"
+              })
+
+              if(!hasError(resp)) {
+                showToast(translate('Rejecting has been started. All in progress orders will be rejected shortly.'))
+              } else {
+                throw resp.data
+              }
+            } catch(err) {
+              showToast(translate('Failed to reject in progress orders'))
+              logger.error('Failed to reject in progress orders', err)
+            }
+          }
+        }]
+      });
+
+      await alert.present();
     }
   },
   async mounted () {
@@ -801,6 +877,7 @@ export default defineComponent({
     const store = useStore();
 
     return {
+      Actions,
       copyToClipboard,
       addOutline,
       printOutline,
@@ -808,6 +885,7 @@ export default defineComponent({
       optionsOutline,
       formatUtcDate,
       getFeature,
+      hasPermission,
       checkmarkDoneOutline,
       pricetagOutline,
       store

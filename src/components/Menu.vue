@@ -106,7 +106,7 @@ export default defineComponent({
         url: "/exim",
         iosIcon: swapVerticalOutline,
         mdIcon: swapVerticalOutline,
-        childRoutes: ["/download-packed-orders", "/upload-import-orders"], // defined child routes as to enable the correct menu when we are on a route that is not listed in the menu
+        childRoutes: ["/download-packed-orders", "/upload-import-orders", "/saved-mappings"], // defined child routes as to enable the correct menu when we are on a route that is not listed in the menu
         meta: {
           permissionId: "APP_EXIM_VIEW"
         }

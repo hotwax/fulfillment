@@ -31,6 +31,8 @@ import { dxpComponents } from '@hotwax/dxp-components';
 
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
+import { dxpComponents } from '@hotwax/dxp-components'
+import { login, logout, loader } from './user-utils';
 
 const app = createApp(App)
   .use(IonicVue, {
@@ -46,6 +48,12 @@ const app = createApp(App)
     defaultImgUrl: require("@/assets/images/defaultImage.png"),
     rules: permissionRules,
     actions: permissionActions
+  })
+  .use(dxpComponents, {
+    login,
+    logout,
+    loader,
+    appLoginUrl: process.env.VUE_APP_LOGIN_URL as string
   });
 
 router.isReady().then(() => {

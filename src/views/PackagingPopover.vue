@@ -11,7 +11,7 @@
       </ion-item>
       <ion-item button lines="none">
         <ion-icon slot="start" :icon="refresh" />
-        {{ $t("Recycle order") }}
+        {{ $t("Reject order") }}
       </ion-item>
     </ion-list>
   </ion-content>
