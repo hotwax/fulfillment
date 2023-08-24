@@ -35,7 +35,7 @@
       </div>
     </ion-list>
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-      <ion-fab-button :disabled="!selectedPickers.length" @click="confirmSave()">
+      <ion-fab-button :disabled="evaluateSelectedPickers()" @click="confirmSave()">
         <ion-icon :icon="saveOutline" />
       </ion-fab-button>
     </ion-fab>
@@ -170,6 +170,15 @@ export default defineComponent({
           }))
           // for default selection of pickers already associated with the picklist
           this.selectedPickers = this.pickers.filter((picker: any) => this.selectedPicklist.pickerIds.includes(picker.id))
+
+          // case for 'System Generated' picker
+          if (!this.selectedPickers.length) {
+            // as selectedPickers will be empty, we manually add the entry
+            this.selectedPickers = [{
+              name: this.selectedPicklist.pickersName,
+              id: null
+            }]
+          }
         } else {
           throw resp.data
         }
@@ -202,9 +211,13 @@ export default defineComponent({
       })
     },
     async resetPicker() {
+      // remove the 'System Generated' entry through filtering based on ID
+      const pickerIds = this.selectedPickers.map((picker: any) => picker.id).filter((id: any) => id !== null)
+      const pickersNameArray = this.selectedPickers.filter((picker: any) => pickerIds.includes(picker.id)).map((picker: any) => picker.name.split(' ')[0])
+
       try {
         const resp = await UtilService.resetPicker({
-          pickerIds: this.selectedPickers.map((picker: any) => picker.id),
+          pickerIds,
           picklistId: this.selectedPicklist.id
         });
         if (resp.status === 200 && !hasError(resp)) {
@@ -213,8 +226,8 @@ export default defineComponent({
           // upading the UI due to solr issue
           this.editedPicklist = {
             ...this.selectedPicklist,
-            pickerIds: this.selectedPickers.map((picker: any) => picker.id),
-            pickersName: this.selectedPickers.map((picker: any) => picker.name.split(' ')[0]).join(', ')
+            pickerIds,
+            pickersName: pickersNameArray.join(', ')
           }
         } else {
           throw resp.data
@@ -223,6 +236,13 @@ export default defineComponent({
         showToast(translate('Something went wrong, could not edit picker(s)'))
         logger.error('Something went wrong, could not edit picker(s)')
       }
+    },
+    evaluateSelectedPickers() {
+      // disable the save button if only 'System Generate' entry is there
+      // or if no pickers are selected
+      return (this.selectedPickers.length === 1
+        && this.selectedPickers[0].name === 'System Generated')
+        || (!this.selectedPickers.length)
     },
     closeModal() {
       modalController.dismiss({
