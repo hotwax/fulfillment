@@ -241,7 +241,7 @@ export default defineComponent({
       // disable the save button if only 'System Generate' entry is there
       // or if no pickers are selected
       return (this.selectedPickers.length === 1
-        && this.selectedPickers[0].name === 'System Generated')
+        && !this.selectedPickers[0].id)
         || (!this.selectedPickers.length)
     },
     closeModal() {
