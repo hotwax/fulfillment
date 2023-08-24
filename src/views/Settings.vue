@@ -350,18 +350,18 @@ export default defineComponent({
           throw resp.data
         }
       } catch(err) {
-        console.log("Failed to fetch total orders count", err);
+        console.error("Failed to fetch total orders count", err);
       }
     },
     updateOrderLimitMode() {
       this.fulfillmentOrderLimit = this.currentFacilityDetails?.maximumOrderLimit
       if(this.currentFacilityDetails?.maximumOrderLimit == 0){
-          this.orderLimitMode = 'no-capacity'
-        }else if(this.currentFacilityDetails?.maximumOrderLimit == null || ""){
-          this.orderLimitMode = 'unlimited'
-        }else{
-          this.orderLimitMode = 'custom'
-        }
+        this.orderLimitMode = 'no-capacity'
+      }else if(this.currentFacilityDetails?.maximumOrderLimit == null || this.currentFacilityDetails?.maximumOrderLimit == ""){
+        this.orderLimitMode = 'unlimited'
+      }else{
+        this.orderLimitMode = 'custom'
+      }
     },
     logout () {
       this.store.dispatch('user/logout').then(() => {
