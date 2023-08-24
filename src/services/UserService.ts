@@ -37,6 +37,15 @@ const getFacilityDetails = async (payload: any): Promise<any> => {
   })
 }
 
+const getCurrentOrderCount = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: payload,
+    cached: true
+  })
+}
+
 const updateFacility = async (payload: any): Promise<any> => {
   return api({
     url: "service/updateFacility",

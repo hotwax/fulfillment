@@ -101,12 +101,23 @@
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ $t('Specify whether the store should fulfill online orders or not.') }}
+            {{ $t('Configure the order fulfillment capacity of your facility.') }}
           </ion-card-content>
-          <ion-item lines="none">
-            <ion-label>{{ $t("Fulfill online orders") }}</ion-label>
-            <!-- Using v-model on isStoreFulfilmentTurnedOn for programmatically re-updating the toggle value -->
-            <ion-toggle :disabled="!hasPermission(Actions.APP_TURN_OFF_STORE)" v-model="isStoreFulfilmentTurnedOn" @ionChange="updateFulfillmentStatus($event)" slot="end" />
+          <ion-card-content>
+            {{ $t("Setting fulfillment capacity to 0 disables new order from being allocated to this facility. Leave this empty if this facility's fulfillment capacity is unrestricted.") }}
+          </ion-card-content>
+          <ion-item lines="none" v-if="orderLimitMode === 'custom'">
+            <ion-text>{{currentFacilityDetails?.orderCount}}</ion-text>
+            <ion-progress-bar class="ion-margin" :value="currentFacilityDetails?.orderCount / fulfillmentOrderLimit"></ion-progress-bar>
+            <ion-chip :outline="true" @click="changeOrderLimitPopover">{{currentFacilityDetails?.maximumOrderLimit}}</ion-chip>
+          </ion-item>      
+          <ion-item lines="none" v-if="orderLimitMode === 'unlimited'">
+            <ion-label>{{ $t("orders allocated today", {orderCount: currentFacilityDetails?.orderCount}) }}</ion-label>
+            <ion-chip :outline="true" @click="changeOrderLimitPopover">{{ $t("Unlimited") }}</ion-chip>
+          </ion-item>      
+          <ion-item lines="none" v-if="orderLimitMode === 'no-capacity'">
+            <ion-label>{{ $t("orders in fulfillment queue", {orderCount: currentFacilityDetails?.orderCount}) }}</ion-label>
+            <ion-chip :outline="true" @click="changeOrderLimitPopover" color="danger" fill="outline">{{ fulfillmentOrderLimit }}</ion-chip>
           </ion-item>
         </ion-card>
 
@@ -203,6 +214,7 @@ import {
   IonCardHeader,
   IonCardTitle,
   IonCardSubtitle,
+  IonChip,
   IonContent, 
   IonHeader,
   IonIcon, 
@@ -210,13 +222,16 @@ import {
   IonLabel, 
   IonMenuButton,
   IonPage, 
+  IonProgressBar,
   IonSelect, 
   IonSelectOption, 
   IonTitle, 
+  IonText,
   IonToggle,
   IonToolbar,
   modalController,
-  alertController
+  alertController,
+  popoverController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, openOutline, timeOutline } from 'ionicons/icons'
@@ -231,6 +246,7 @@ import logger from '@/logger';
 import { Actions, hasPermission } from '@/authorization'
 import { DateTime } from 'luxon';
 import Image from '@/components/Image.vue';
+import orderLimitPopover from '@/views/orderLimitPopover.vue'
 
 export default defineComponent({
   name: 'Settings',
@@ -242,6 +258,7 @@ export default defineComponent({
     IonCardHeader,
     IonCardTitle,
     IonCardSubtitle,
+    IonChip,
     IonContent, 
     IonHeader, 
     IonIcon,
@@ -249,9 +266,11 @@ export default defineComponent({
     IonLabel, 
     IonMenuButton,
     IonPage, 
+    IonProgressBar,
     IonSelect, 
     IonSelectOption,
     IonTitle, 
+    IonText,
     IonToggle,
     IonToolbar,
     Image
@@ -263,7 +282,8 @@ export default defineComponent({
       appVersion: "",
       locales: process.env.VUE_APP_LOCALES ? JSON.parse(process.env.VUE_APP_LOCALES) : {"en": "English"},
       currentFacilityDetails: {} as any,
-      isStoreFulfilmentTurnedOn: true
+      orderLimitMode: 'custom',
+      fulfillmentOrderLimit: 0
     };
   },
   computed: {
@@ -285,6 +305,7 @@ export default defineComponent({
   },
   ionViewWillEnter() {
     this.getCurrentFacilityDetails()
+    this.getCurrentOrdersCount()
   },
   methods: {
     async getCurrentFacilityDetails() {
@@ -310,10 +331,37 @@ export default defineComponent({
       } catch(err) {
         logger.error('Failed to fetch current facility details', err)
       } finally {
-        // declaration of isStoreFulfilmentTurnedOn in lifecycle hooks always
-        // returns 'true' because of the != 0 condition, hence, updating it here
-        this.isStoreFulfilmentTurnedOn = this.currentFacilityDetails?.maximumOrderLimit != 0
+        this.updateOrderLimitMode()
       }
+    },
+    async getCurrentOrdersCount() {
+      let resp: any;
+      try {
+        resp = await UserService.getFacilityDetails({
+          "entityName": "FacilityOrderCount",
+          "inputFields": {
+            "facilityId": this.currentFacility.facilityId
+          }
+        })
+
+        if(!hasError(resp) && resp.data.count) {
+          this.currentFacilityDetails.orderCount = resp.data.count
+        } else {
+          throw resp.data
+        }
+      } catch(err) {
+        console.log("Failed to fetch total orders count", err);
+      }
+    },
+    updateOrderLimitMode() {
+      this.fulfillmentOrderLimit = this.currentFacilityDetails?.maximumOrderLimit
+      if(this.currentFacilityDetails?.maximumOrderLimit == 0){
+          this.orderLimitMode = 'no-capacity'
+        }else if(this.currentFacilityDetails?.maximumOrderLimit == null || ""){
+          this.orderLimitMode = 'unlimited'
+        }else{
+          this.orderLimitMode = 'custom'
+        }
     },
     logout () {
       this.store.dispatch('user/logout').then(() => {
@@ -324,6 +372,24 @@ export default defineComponent({
     },
     goToLaunchpad() {
       window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
+    },
+    async changeOrderLimitPopover(ev: Event) {
+      const popover = await popoverController.create({
+        component: orderLimitPopover,
+        event: ev,
+        translucent: true,
+        showBackdrop: false,
+        componentProps: {fulfillmentOrderLimit: this.fulfillmentOrderLimit}
+      });
+      popover.present();
+
+      const result = await popover.onDidDismiss(); 
+      
+      if(result.data != undefined && result.data !== this.fulfillmentOrderLimit){
+        const resultData = result.data;
+        await this.updateFacility(resultData)
+        this.updateOrderLimitMode()
+      }
     },
     async setFacility (event: any) {
       // not updating the facility when the current facility in vuex state and the selected facility are same
@@ -346,18 +412,18 @@ export default defineComponent({
       });
       return timeZoneModal.present();
     },
-    async updateFacility(maximumOrderLimit: number) {
+    async updateFacility(maximumOrderLimit: any) {
       let resp;
 
       try {
         resp = await UserService.updateFacility({
           "facilityId": this.currentFacility.facilityId,
-          maximumOrderLimit
+          maximumOrderLimit: maximumOrderLimit
         })
 
         if(!hasError(resp)) {
-          this.currentFacilityDetails.maximumOrderLimit = maximumOrderLimit
-          showToast(translate('Facility updated successfully'))
+          this.currentFacilityDetails.maximumOrderLimit = maximumOrderLimit === "" ? null : maximumOrderLimit
+          showToast(translate('Order fulfillment capacity updated successfully'))
         } else {
           throw resp.data
         }
@@ -370,55 +436,6 @@ export default defineComponent({
       // condition to stop alert from re-popping as ionChange is triggered
       // because isStoreFulfilmentTurnedOn is updated
       if (event.detail.checked === this.fulfillmentStatus) return
-      event.detail.checked ? this.turnOnFulfillment() : this.turnOffFulfillment()
-    },
-    async turnOnFulfillment() {
-      const alert = await alertController.create({
-        header: this.$t('Turn on fulfillment for ', { facilityName: this.currentFacility.name }),
-        buttons: [{
-          text: translate('Cancel'),
-          handler: () => {
-            this.isStoreFulfilmentTurnedOn = this.fulfillmentStatus
-          }
-        }, {
-          text: translate('Save'),
-          handler: (data) => {
-            // Adding this extra check as min attribute does not work when providing input using keyboard
-            if (data.setLimit <= 0) {
-              showToast(translate('Provide a value greater than 0'))
-              return;
-            }
-            this.updateFacility(data.setLimit)
-          }
-        }],
-        inputs: [{
-          name: 'setLimit',
-          min: 1,
-          type: 'number',
-          placeholder: translate('Set Limit')
-        }],
-      });
-
-      await alert.present();
-    },
-    async turnOffFulfillment() {
-      const alert = await alertController.create({
-        header: this.$t('Turn off fulfillment for ', { facilityName: this.currentFacility.name }),
-        message: translate('Are you sure you want perform this action?'),
-        buttons: [{
-          text: translate('Cancel'),
-          handler: () => {
-            this.isStoreFulfilmentTurnedOn = this.fulfillmentStatus
-          }
-        }, {
-          text: translate('Save'),
-          handler: () => {
-            this.updateFacility(0);
-          }
-        }]
-      });
-
-      await alert.present();
     },
     async setEComStore(event: any) {
       // not updating the ecomstore when the current value in vuex state and selected value are same
