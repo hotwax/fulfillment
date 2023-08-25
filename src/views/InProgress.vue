@@ -908,7 +908,7 @@ export default defineComponent({
         }
       });
 
-      editPickersModal.onDidDismiss().then(async (result) => {
+      editPickersModal.onDidDismiss().then((result) => {
         // manually updating the picklist data as UI is not updated because same data
         // is returned from solr on fetchPickersInformation API call
         if (result.data?.editedPicklist) {
