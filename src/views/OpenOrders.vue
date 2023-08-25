@@ -49,11 +49,6 @@
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ orders.doclist.docs[0].orderName }}</ion-label>
                 </ion-chip>
-
-                <!-- Todo: add functionality to the refresh button -->
-                <!-- <ion-button fill="clear" class="mobile-only" color="danger">
-                  <ion-icon slot="icon-only" :icon="refreshCircleOutline" />
-                </ion-button> -->
               </div>
 
               <div class="order-metadata">
@@ -132,7 +127,7 @@ import {
   alertController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } from 'ionicons/icons';
+import { optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { ShopifyImg } from '@hotwax/dxp-components';
@@ -344,7 +339,6 @@ export default defineComponent({
       optionsOutline,
       pricetagOutline,
       printOutline,
-      refreshCircleOutline,
       store
     }
   }
