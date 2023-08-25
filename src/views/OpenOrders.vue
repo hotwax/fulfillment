@@ -287,13 +287,13 @@ export default defineComponent({
     },
     async recycleOutstandingOrders() {
       const alert = await alertController.create({
-        header: translate('Reject outstanding orders'),
-        message: this.$t('Are you sure you want to reject outstanding order(s)?', { ordersCount: this.openOrders.total }),
+        header: translate('Reject all open orders'),
+        message: this.$t('Reject open orders.', { ordersCount: this.openOrders.total }),
         buttons: [{
-          text: translate('No'),
+          text: translate('Cancel'),
           role: 'cancel'
         }, {
-          text: translate('Yes'),
+          text: translate('Reject'),
           handler: async () => {
             let resp;
 
