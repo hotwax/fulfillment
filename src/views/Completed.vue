@@ -82,11 +82,11 @@
               </div>
             </div>
 
-            <!-- TODO: implement functionality to mobile view -->
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="clear" >{{ $t("Ship Now") }}</ion-button>
-                <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover">
+                <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ $t("Shipped") }}</ion-button>
+                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="clear" @click="shipOrder(order)">{{ $t("Ship Now") }}</ion-button>
+                <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover(order)">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -96,7 +96,7 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ $t("Shipped") }}</ion-button>
-                <ion-button  :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="shipOrder(order)" v-else>{{ $t("Ship Now") }}</ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="shipOrder(order)" v-else>{{ $t("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="regenerateShippingLabel(order)">
                   {{ $t("Regenerate Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
@@ -365,12 +365,19 @@ export default defineComponent({
       return shipOrderAlert.present();
     },
 
-    async shippingPopover(ev: Event) {
+    async shippingPopover(order:any) {
       const popover = await popoverController.create({
         component: Popover,
-        event: ev,
         translucent: true,
         showBackdrop: false,
+        componentProps: {
+          order,
+          printPackingSlip: this.printPackingSlip,
+          regenerateShippingLabel: this.regenerateShippingLabel,
+          unpackOrder: this.unpackOrder,
+          showShippingLabelErrorModal: this.showShippingLabelErrorModal,
+          hasPackedShipments: this.hasPackedShipments
+        }
       });
       return popover.present();
     },
