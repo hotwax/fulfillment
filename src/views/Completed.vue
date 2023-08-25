@@ -86,7 +86,7 @@
               <ion-item>
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ $t("Shipped") }}</ion-button>
                 <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="clear" @click="shipOrder(order)">{{ $t("Ship Now") }}</ion-button>
-                <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover(order)">
+                <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover($event, order)">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -365,11 +365,12 @@ export default defineComponent({
       return shipOrderAlert.present();
     },
 
-    async shippingPopover(order:any) {
+    async shippingPopover(ev: Event, order:any) {
       const popover = await popoverController.create({
         component: Popover,
         translucent: true,
         showBackdrop: false,
+        event: ev,
         componentProps: {
           order,
           printPackingSlip: this.printPackingSlip,
