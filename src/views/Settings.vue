@@ -264,8 +264,6 @@ export default defineComponent({
       locales: process.env.VUE_APP_LOCALES ? JSON.parse(process.env.VUE_APP_LOCALES) : {"en": "English"},
       currentFacilityDetails: {} as any,
       facilityGroupDetails: {} as any,
-      outstandingOrdersCount: 0,
-      inProgressOrdersCount: 0,
       isStoreFulfilmentTurnedOn: true,
       isEComInvTurnedOn: true
     };
