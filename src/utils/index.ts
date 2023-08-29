@@ -16,12 +16,12 @@ const hasError = (response: any) => {
 
 const showToast = async (message: string, options?: any) => {  
   const config = {
-     message,
-     ...options
+    message,
+    ...options
   } as any;
 
-  if(!options.position) config.position = 'bottom';
-  if(options.canDismiss){
+  if (!options.position) config.position = 'bottom';
+  if (options.canDismiss) {
     config.buttons = [
       {
         text: translate('Dismiss'),
