@@ -238,6 +238,7 @@
   "Turn on fulfillment": "Activar Cumplimiento",
   "Turn on fulfillment for ": "Activar cumplimiento para {facilityName}",
   "Turn off fulfillment for ": "Desactivar cumplimiento para {facilityName}",
+  "Unable to open as browser is blocking pop-ups.": "Unable to open { documentName } as browser is blocking pop-ups.",
   "Unpack": "Desempacar",
   "Unpacking this order will send it back to 'In progress' and it will have to be repacked.": "Desempacar este pedido lo enviará de vuelta a 'En curso' y tendrá que ser vuelto a empacar.",
   "Update": "Update",

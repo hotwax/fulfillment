@@ -238,6 +238,7 @@
   "Turn on fulfillment": "Turn on fulfillment",
   "Turn on fulfillment for ": "Turn on fulfillment for { facilityName }",
   "Turn off fulfillment for ": "Turn off fulfillment for { facilityName }",
+  "Unable to open as browser is blocking pop-ups.": "Unable to open { documentName } as browser is blocking pop-ups.",
   "Unpack": "Unpack",
   "Unpacking this order will send it back to 'In progress' and it will have to be repacked.": "Unpacking this order will send it back to 'In progress' and it will have to be repacked.",
   "Update": "Update",
