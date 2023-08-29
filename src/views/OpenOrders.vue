@@ -49,11 +49,6 @@
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ orders.doclist.docs[0].orderName }}</ion-label>
                 </ion-chip>
-
-                <!-- Todo: add functionality to the refresh button -->
-                <!-- <ion-button fill="clear" class="mobile-only" color="danger">
-                  <ion-icon slot="icon-only" :icon="refreshCircleOutline" />
-                </ion-button> -->
               </div>
 
               <div class="order-metadata">
@@ -69,7 +64,7 @@
                 <div class="product-info">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <Image :src="getProduct(order.productId).mainImageUrl" />
+                      <ShopifyImg :src="getProduct(order.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ order.productSku }}</p>
@@ -132,10 +127,10 @@ import {
   alertController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } from 'ionicons/icons';
+import { optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
-import Image from '@/components/Image.vue'
+import { ShopifyImg } from '@hotwax/dxp-components';
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
@@ -150,7 +145,7 @@ import { Actions, hasPermission } from '@/authorization'
 export default defineComponent({
   name: 'OpenOrders',
   components: {
-    Image,
+    ShopifyImg,
     IonButton,
     IonButtons,  
     IonCard,
@@ -292,13 +287,13 @@ export default defineComponent({
     },
     async recycleOutstandingOrders() {
       const alert = await alertController.create({
-        header: translate('Reject outstanding orders'),
-        message: this.$t('Are you sure you want to reject outstanding order(s)?', { ordersCount: this.openOrders.total }),
+        header: translate('Reject all open orders'),
+        message: this.$t('Reject open orders.', { ordersCount: this.openOrders.total }),
         buttons: [{
-          text: translate('No'),
+          text: translate('Cancel'),
           role: 'cancel'
         }, {
-          text: translate('Yes'),
+          text: translate('Reject'),
           handler: async () => {
             let resp;
 
@@ -344,7 +339,6 @@ export default defineComponent({
       optionsOutline,
       pricetagOutline,
       printOutline,
-      refreshCircleOutline,
       store
     }
   }
