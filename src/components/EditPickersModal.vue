@@ -35,7 +35,7 @@
       </div>
     </ion-list>
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-      <ion-fab-button :disabled="arePickersSelected()" @click="confirmSave()">
+      <ion-fab-button :disabled="arePickersNotSelected()" @click="confirmSave()">
         <ion-icon :icon="saveOutline" />
       </ion-fab-button>
     </ion-fab>
@@ -101,8 +101,9 @@ export default defineComponent({
       editedPicklist: {} as any
     }
   },
-  mounted() {
-    this.findPickers()
+  async mounted() {
+    await this.findPickers(this.selectedPicklist.pickerIds)
+    this.selectAlreadyAssociatedPickers()
   },
   props: ['selectedPicklist'],
   methods: {
@@ -118,11 +119,16 @@ export default defineComponent({
         this.selectedPickers.push(this.pickers.find((picker: any) => picker.id == id))
       }
     },
-    async findPickers() {
+    async findPickers(pickerIds?: Array<any>) {
       let inputFields = {}
       this.pickers = []
 
-      if (this.queryString.length > 0) {
+      if (pickerIds?.length) {
+        inputFields = {
+          partyId_value: pickerIds,
+          partyId_op: 'in'
+        }
+      } else if (this.queryString.length > 0) {
         inputFields = {
           firstName_value: this.queryString,
           firstName_op: 'contains',
@@ -165,17 +171,6 @@ export default defineComponent({
             id: picker.partyId,
             externalId: picker.externalId
           }))
-          // for default selection of pickers already associated with the picklist
-          this.selectedPickers = this.pickers.filter((picker: any) => this.selectedPicklist.pickerIds.includes(picker.id))
-
-          // case for 'System Generated' picker
-          if (!this.selectedPickers.length) {
-            // as selectedPickers will be empty, we manually add the entry
-            this.selectedPickers = [{
-              name: this.selectedPicklist.pickersName,
-              id: null
-            }]
-          }
         } else {
           throw resp.data
         }
@@ -234,8 +229,8 @@ export default defineComponent({
         logger.error('Something went wrong, could not edit picker(s)')
       }
     },
-    arePickersSelected() {
-      // disable the save button if only 'System Generate' entry is there
+    arePickersNotSelected() {
+      // disable the save button if only 'System Generated' entry is there
       // or if no pickers are selected
       return (this.selectedPickers.length === 1
         && !this.selectedPickers[0].id)
@@ -247,6 +242,19 @@ export default defineComponent({
         editedPicklist: this.editedPicklist
       });
     },
+    selectAlreadyAssociatedPickers() {
+      // for default selection of pickers already associated with the picklist
+      this.selectedPickers = this.pickers.filter((picker: any) => this.selectedPicklist.pickerIds.includes(picker.id))
+
+      // case for 'System Generated' picker
+      if (!this.selectedPickers.length) {
+        // as selectedPickers will be empty, we manually add the entry
+        this.selectedPickers = [{
+          name: this.selectedPicklist.pickersName,
+          id: null
+        }]
+      }
+    }
   },
   setup() {
     const store = useStore();
