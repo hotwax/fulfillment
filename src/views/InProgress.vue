@@ -171,7 +171,7 @@
       </div>
     </ion-content>
     <!-- only show footer buttons if 'All orders' is not selected -->
-    <ion-footer v-if="selectedPicklistId.length">
+    <ion-footer v-if="selectedPicklistId">
       <ion-toolbar>
         <ion-buttons slot="end">
           <ion-button fill="outline" color="primary" @click="editPickers(getPicklist(selectedPicklistId))">
@@ -911,7 +911,7 @@ export default defineComponent({
       editPickersModal.onDidDismiss().then((result) => {
         // manually updating the picklist data as UI is not updated because same data
         // is returned from solr on fetchPickersInformation API call
-        if (result.data?.editedPicklist) {
+        if (result.data?.editedPicklist && Object.keys(result.data?.editedPicklist).length) {
           const editedPicklist = result.data.editedPicklist
           this.picklists = JSON.parse(JSON.stringify(this.picklists.map((picklist: any) => picklist.id === editedPicklist.id ? picklist = editedPicklist : picklist)))
         }

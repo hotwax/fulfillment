@@ -15,7 +15,7 @@
     <ion-row>
       <ion-chip v-for="picker in selectedPickers" :key="picker.id">
         <ion-label>{{ picker.name }}</ion-label>
-        <ion-icon :icon="closeCircle" @click="removePicker(picker.id)" />
+        <ion-icon :icon="closeCircle" @click="updateSelectedPickers(picker.id)" />
       </ion-chip>
     </ion-row>
 
@@ -25,7 +25,7 @@
         {{ 'No picker found' }}
       </div>
       <div v-else>
-        <ion-item v-for="(picker, index) in pickers" :key="index" @click="selectPicker(picker.id)">
+        <ion-item v-for="(picker, index) in pickers" :key="index" @click="updateSelectedPickers(picker.id)">
           <ion-label>
             {{ picker.name }}
             <p>{{ picker.externalId ? picker.externalId : picker.id }}</p>
@@ -35,7 +35,7 @@
       </div>
     </ion-list>
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-      <ion-fab-button :disabled="evaluateSelectedPickers()" @click="confirmSave()">
+      <ion-fab-button :disabled="arePickersSelected()" @click="confirmSave()">
         <ion-icon :icon="saveOutline" />
       </ion-fab-button>
     </ion-fab>
@@ -109,17 +109,14 @@ export default defineComponent({
     isPickerSelected(id: string) {
       return this.selectedPickers.some((picker: any) => picker.id == id)
     },
-    selectPicker(id: string) {
-      const picker = this.selectedPickers.some((picker: any) => picker.id == id)
+    updateSelectedPickers(id: string) {
+      const picker = this.isPickerSelected(id)
       if (picker) {
         // if picker is already selected then removing that picker from the list on click
         this.selectedPickers = this.selectedPickers.filter((picker: any) => picker.id != id)
       } else {
         this.selectedPickers.push(this.pickers.find((picker: any) => picker.id == id))
       }
-    },
-    removePicker(id: string) {
-      this.selectedPickers = this.selectedPickers.filter((picker: any) => picker.id != id)
     },
     async findPickers() {
       let inputFields = {}
@@ -237,7 +234,7 @@ export default defineComponent({
         logger.error('Something went wrong, could not edit picker(s)')
       }
     },
-    evaluateSelectedPickers() {
+    arePickersSelected() {
       // disable the save button if only 'System Generate' entry is there
       // or if no pickers are selected
       return (this.selectedPickers.length === 1
