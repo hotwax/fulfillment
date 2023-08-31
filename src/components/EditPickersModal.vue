@@ -62,7 +62,7 @@ import {
   IonRow,
   IonSearchbar,
   modalController,
-alertController
+  alertController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { close, closeCircle, saveOutline } from "ionicons/icons";
