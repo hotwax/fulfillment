@@ -7,63 +7,61 @@
         </ion-button>
       </ion-buttons>
       <ion-title>{{ $t("Report an issue") }}</ion-title>
-      <ion-buttons slot="end">
-        <ion-button fill="clear">{{ $t("Save") }}</ion-button>
+      <ion-buttons slot="end" @click="save(order)">
+        <ion-button color="primary" fill="clear">{{ $t("Save") }}</ion-button>
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
 
  <ion-content>
-   <ion-card>
+    <ion-card>
      <div class="card-header">
        <div class="order-tags">
-         <ion-chip outline>
-           <ion-icon :icon="pricetag" />
-           <ion-label>NN10584</ion-label>
-         </ion-chip>
+          <ion-chip @click="copyToClipboard(order.orderName, 'Copied to clipboard')" outline>
+            <ion-icon :icon="pricetag" />
+            <ion-label>{{ order.orderName }}</ion-label>
+          </ion-chip>
        </div>
 
        <div class="order-primary-info">
-         <ion-label>
-           Darooty Magwood
-           <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
-         </ion-label>
+          <ion-label>
+            <strong>{{ order.customerName }}</strong>
+            <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+          </ion-label>
        </div>
 
        <div class="order-metadata">
-         <ion-label>
-           Next Day Shipping
-           <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
-         </ion-label>
+          <ion-label>
+            <strong>{{ order.shipmentMethodTypeDesc }}</strong>
+            <p v-if="order.reservedDatetime">{{ $t("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
+          </ion-label>
        </div>
      </div>
     </ion-card>
 
-    <ion-card>
+    <ion-card v-for="(item, index) in order.items" :key="index" >
       <div class="order-item">
         <div class="product-info">
           <ion-item lines="none">
             <ion-thumbnail slot="start">
-              <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
+              <Image :src="getProduct(item.productId).mainImageUrl" />
             </ion-thumbnail>
             <ion-label>
-              <p class="overline">WJ06-XL-PURPLE</p>
-              Juno Jacket
-              <p>Blue XL</p>
+              <p class="overline">{{ item.productSku }}</p>
+              {{ item.productName }}
+              <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
             </ion-label>
           </ion-item>
         </div>
-
         <div class="product-metadata">
-          <ion-note>49 {{ $t("pieces in stock") }}</ion-note>
+          <ion-note>{{ item.itemQuantity }} {{ $t("pieces in stock") }}</ion-note>
         </div>
       </div>
-
-      <ion-item>
-        <ion-label>{{ $t("Select an issue") }}</ion-label>
-        <ion-select value="a">
-          <ion-select-option value="a">Out of stock</ion-select-option>
-          <ion-select-option value="b">Worn display</ion-select-option>
+      
+      <ion-item lines="none">
+        <ion-label>{{ $t("Select issue") }}</ion-label>
+        <ion-select interface="popover" @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
+          <ion-select-option v-for="reason in rejectReasons" :key="reason.enumId" :value="reason.enumId">{{ reason.description ? $t(reason.description) : reason.enumId }}</ion-select-option>
         </ion-select>
       </ion-item>
     </ion-card> 
@@ -90,34 +88,48 @@ import {
   modalController } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { closeOutline, pricetag } from "ionicons/icons";
+import { mapGetters } from 'vuex';
+import { copyToClipboard, formatUtcDate, getFeature } from '@/utils';
+import Image from '@/components/Image.vue'
 export default defineComponent({
   name: "ReportIssueModal",
   components: { 
-     IonCard,
-     IonChip,  
-     IonButtons,
-     IonButton,
-     IonContent,
-     IonHeader,
-     IonIcon,
-     IonItem,
-     IonLabel,
-     IonNote,
-     IonSelect,
-     IonSelectOption,
-     IonTitle,
-     IonThumbnail,
-     IonToolbar
+    IonCard,
+    IonChip,  
+    IonButtons,
+    IonButton,
+    IonContent,
+    IonHeader,
+    IonIcon,
+    IonItem,
+    IonLabel,
+    IonNote,
+    IonSelect,
+    IonSelectOption,
+    IonTitle,
+    IonThumbnail,
+    IonToolbar,
+    Image
+  }, 
+  computed: {
+    ...mapGetters({
+      getProduct: 'product/getProduct',
+      rejectReasons: 'util/getRejectReasons',
+    }),
   },
   methods: {
     closeModal() {
       modalController.dismiss({ dismissed: true });
     },
   },
+  props: ['order', 'save', 'updateRejectReason'],
   setup() {
     return {
       closeOutline,
-      pricetag
+      pricetag,
+      copyToClipboard,
+      formatUtcDate,
+      getFeature
     };
   },
 });

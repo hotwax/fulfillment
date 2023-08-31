@@ -137,7 +137,7 @@
             <div class="mobile-only">
               <ion-item>
                 <ion-button fill="clear"  :disabled="order.isModified || order.hasMissingInfo" @click="packOrder(order)">{{ $t("Pack using default packaging") }}</ion-button>
-                <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
+                <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover($event, order)">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -296,10 +296,18 @@ export default defineComponent({
       }
       await this.store.dispatch('order/updateInProgressOrder', order)
     },
-    async packagingPopover(ev: Event) {
+    async packagingPopover(ev: Event, order:any) {
       const popover = await popoverController.create({
         component: Popover,
         event: ev,
+        componentProps:{ 
+          order,
+          updateBox: this.updateBox,
+          addingBoxForOrderIds: this.addingBoxForOrderIds,
+          addShipmentBox: this.addShipmentBox,
+          save: this.save,
+          updateRejectReason: this.updateRejectReason
+        },
         translucent: true,
         showBackdrop: false,
       });

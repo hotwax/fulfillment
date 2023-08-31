@@ -1,4 +1,5 @@
 {
+  "Add": "Add",
   "App": "App",
   "A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.": "A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.",
   "doesn't have any completed orders right now.": "{facilityName} no tiene ningún pedido completado en este moment.",
@@ -18,6 +19,7 @@
   "Are you sure you want to reject in progress order(s)?": "Are you sure you want to reject { ordersCount } in progress order(s)?",
   "Assign Pickers": "Asignar Recolectores",
   "Box added successfully": "Caja agregada exitosamente",
+  "Box": "Box",
   "Boxes": "Cajas",
   "Cancel": "Cancelar",
   "Click the backdrop to dismiss.": "Haz clic en el fondo para cerrar.",

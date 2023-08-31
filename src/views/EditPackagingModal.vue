@@ -7,8 +7,8 @@
         </ion-button>
       </ion-buttons>
       <ion-title>{{ $t("Edit packaging") }}</ion-title>
-      <ion-buttons slot="end">
-        <ion-button fill="clear">{{ $t("Save") }}</ion-button>
+      <ion-buttons slot="end" @click="save(order)">
+        <ion-button color="primary" fill="clear">{{ $t("Save") }}</ion-button>
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
@@ -17,47 +17,45 @@
     <ion-card>
       <div class="card-header">
         <div class="order-tags">
-          <ion-chip outline>
+          <ion-chip @click="copyToClipboard(order.orderName, 'Copied to clipboard')" outline>
             <ion-icon :icon="pricetag" />
-            <ion-label>NN10584</ion-label>
+            <ion-label>{{ order.orderName }}</ion-label>
           </ion-chip>
         </div>
 
         <div class="order-primary-info">
           <ion-label>
-            Darooty Magwood
-            <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
+            <strong>{{ order.customerName }}</strong>
+            <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
           </ion-label>
         </div>
 
         <div class="order-metadata">
           <ion-label>
-            Next Day Shipping
-            <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
+            <strong>{{ order.shipmentMethodTypeDesc }}</strong>
+            <p v-if="order.reservedDatetime">{{ $t("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
           </ion-label>
         </div>
       </div>
 
-      <div class="order-item">
+      <div v-for="(item, index) in order.items" :key="index" class="order-item">
         <div class="product-info">
           <ion-item lines="none">
             <ion-thumbnail slot="start">
-              <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
+              <Image :src="getProduct(item.productId).mainImageUrl" />
             </ion-thumbnail>
             <ion-label>
-              <p class="overline">WJ06-XL-PURPLE</p>
-              Juno Jacket
-              <p>Blue XL</p>
+              <p class="overline">{{ item.productSku }}</p>
+              {{ item.productName }}
+              <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
             </ion-label>
           </ion-item>
         </div>
 
         <div class="product-metadata">
-          <ion-item lines="none">   
-            <ion-label>{{ $t("Select box") }}</ion-label>
-            <ion-select>
-              <ion-select-option>Box A Type 3</ion-select-option>
-              <ion-select-option>Box B Type 2</ion-select-option>
+          <ion-item lines="none">
+            <ion-select aria-label="Select box" interface="popover" @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
+              <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName"> {{ $t("Box") }} {{ shipmentPackage.packageName }}</ion-select-option>
             </ion-select>
           </ion-item>
         </div>
@@ -67,14 +65,16 @@
     <ion-list>
       <ion-item lines="none">
         <ion-note slot="start">{{ $t('Boxes') }}</ion-note>
-        <ion-button fill="clear" slot="end">
+        <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="clear" slot="end">
           {{ $t("Add") }}
           <ion-icon :icon="addCircleOutline"/>
         </ion-button>
       </ion-item>
-      <ion-item>
-        <ion-label>Box A</ion-label>
-        <ion-select value="3">
+
+      <!-- Todo: Need to add the box type changing functionality -->
+      <ion-item v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">
+        <ion-label>{{ shipmentPackage.packageName }}</ion-label>
+        <ion-select interface="popover" value="3">
           <ion-select-option value="1">Type 1</ion-select-option>
           <ion-select-option value="2">Type 2</ion-select-option>
           <ion-select-option value="3">Type 3</ion-select-option>  
@@ -105,6 +105,9 @@ import {
   modalController } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { addCircleOutline, closeOutline, pricetag } from "ionicons/icons";
+import { mapGetters } from 'vuex';
+import { copyToClipboard, formatUtcDate, getFeature} from '@/utils';
+import Image from '@/components/Image.vue'
 export default defineComponent({
   name: "EditPackagingModal",
   components: { 
@@ -124,17 +127,27 @@ export default defineComponent({
     IonThumbnail,
     IonTitle,
     IonToolbar,
+    Image
+  }, 
+  computed: {
+    ...mapGetters({
+      getProduct: 'product/getProduct'
+    }),
   },
   methods: {
     closeModal() {
       modalController.dismiss({ dismissed: true });
-    },
+    }
   },
+  props: ['order', 'updateBox', 'addingBoxForOrderIds', 'addShipmentBox', 'save'],
   setup() {
     return {
       addCircleOutline,
       closeOutline,
-      pricetag
+      pricetag,
+      copyToClipboard,
+      formatUtcDate,
+      getFeature 
     };
   },
 });
