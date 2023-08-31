@@ -246,7 +246,7 @@ import logger from '@/logger';
 import { Actions, hasPermission } from '@/authorization'
 import { DateTime } from 'luxon';
 import Image from '@/components/Image.vue';
-import orderLimitPopover from '@/views/orderLimitPopover.vue'
+import OrderLimitPopover from '@/views/OrderLimitPopover.vue'
 
 export default defineComponent({
   name: 'Settings',
@@ -303,9 +303,9 @@ export default defineComponent({
   mounted() {
     this.appVersion = this.appInfo.branch ? (this.appInfo.branch + "-" + this.appInfo.revision) : this.appInfo.tag;
   },
-  ionViewWillEnter() {
-    this.getCurrentFacilityDetails()
-    this.getCurrentOrdersCount()
+  async ionViewWillEnter() {
+    await this.getCurrentFacilityDetails()
+    await this.getCurrentOrdersCount()
   },
   methods: {
     async getCurrentFacilityDetails() {
@@ -337,13 +337,12 @@ export default defineComponent({
     async getCurrentOrdersCount() {
       let resp: any;
       try {
-        resp = await UserService.getFacilityDetails({
+        resp = await UserService.getCurrentOrdersCount({
           "entityName": "FacilityOrderCount",
           "inputFields": {
             "facilityId": this.currentFacility.facilityId
           }
         })
-
         if(!hasError(resp) && resp.data.count) {
           this.currentFacilityDetails.orderCount = resp.data.count
         } else {
@@ -375,7 +374,7 @@ export default defineComponent({
     },
     async changeOrderLimitPopover(ev: Event) {
       const popover = await popoverController.create({
-        component: orderLimitPopover,
+        component: OrderLimitPopover,
         event: ev,
         translucent: true,
         showBackdrop: false,

@@ -109,12 +109,9 @@
   "Map all fields": "Map all fields",
   "Mapping name": "Mapping name",
   "Mismatch": "Inconsistencia",
-<<<<<<< HEAD
   "No": "No",
   "No Capacity": "No Capacity",
-  "No capacity removes sets the fulfillment capacity to 0, preventing any new orders from being allocated to this facility. Use the \"Reject all orders\" option in the fulfillment pages to clear your facilities fulfillment queue. <br/><br/>  To add a fulfillment capacity to this facility, use the custom option.": "No capacity removes sets the fulfillment capacity to 0, preventing any new orders from being allocated to this facility. Use the \"Reject all orders\" option in the fulfillment pages to clear your facilities fulfillment queue. <br/><br/>  To add a fulfillment capacity to this facility, use the custom option.",
-=======
->>>>>>> 04f84c131e2f571d53035eb722edea3a19cdef04
+  "No capacity removes sets the fulfillment capacity to 0, preventing any new orders from being allocated to this facility. Use the \"Reject all orders\" option in the fulfillment pages to clear your facilities fulfillment queue. To add a fulfillment capacity to this facility, use the custom option.": "No capacity removes sets the fulfillment capacity to 0, preventing any new orders from being allocated to this facility. Use the \"Reject all orders\" option in the fulfillment pages to clear your facilities fulfillment queue. {space}To add a fulfillment capacity to this facility, use the custom option.",
   "No data Found.": "No data Found.",
   "No new file upload. Please try again": "No se cargó ningún archivo nuevo. Por favor, inténtalo nuevamente.",
   "No reason": "Sin motivo",

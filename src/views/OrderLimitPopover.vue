@@ -60,7 +60,7 @@ export default defineComponent({
         this.showOrderLimitAlert("Custom fulfillment capacity", "", true)
       } else if (limit === 'no-capacity') {
         this.setLimit = 0
-        this.showOrderLimitAlert("No fulfillment capacity", "No capacity removes sets the fulfillment capacity to 0, preventing any new orders from being allocated to this facility. Use the \"Reject all orders\" option in the fulfillment pages to clear your facilities fulfillment queue.", false)
+        this.showOrderLimitAlert("No fulfillment capacity", "No capacity removes sets the fulfillment capacity to 0, preventing any new orders from being allocated to this facility. Use the \"Reject all orders\" option in the fulfillment pages to clear your facilities fulfillment queue. To add a fulfillment capacity to this facility, use the custom option.", false)
       } else if (limit === 'unlimited') {
         this.setLimit = ""
         this.showOrderLimitAlert("Unlimited fulfillment capacity", "Unlimited capacity removes the fulfillment capacity limit entirely. To add a fulfillment capacity to this facility, use the custom option.", false)
@@ -69,7 +69,7 @@ export default defineComponent({
     async showOrderLimitAlert(header: any, message: any, showInput = false) {
       const alert = await alertController.create({
         header: translate(header),
-        message: translate(message),
+        message: translate(message, {space: '</br></br>'}),
         inputs: showInput ? [{
           name: "setLimit",
           placeholder: "Order fulfillment capacity",
