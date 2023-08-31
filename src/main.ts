@@ -27,11 +27,10 @@ import './theme/variables.css';
 
 import i18n from './i18n'
 import store from './store'
-
 import permissionPlugin from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
-import { dxpComponents } from '@hotwax/dxp-components'
+import { dxpComponents } from '@hotwax/dxp-components'; 
 import { login, logout, loader } from './user-utils';
 
 const app = createApp(App)
@@ -49,6 +48,7 @@ const app = createApp(App)
     actions: permissionActions
   })
   .use(dxpComponents, {
+    defaultImgUrl: require("@/assets/images/defaultImage.png"),
     login,
     logout,
     loader,
