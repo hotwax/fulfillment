@@ -11,7 +11,7 @@
         {{ $t("Unpack") }}
       </ion-item>
       <ion-item button v-if="order.missingLabelImage" lines="none" @click="showShippingLabelErrorModal(order)">
-        {{ $t("Shipping label error") }}
+        {{ $t("Shipping Label Error") }}
       </ion-item>
     </ion-list>
   </ion-content>
