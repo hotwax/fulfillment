@@ -209,7 +209,7 @@
   "Shipped Orders": "Pedidos Enviados",
   "Shipping Method": "Shipping Method",
   "Shipping label": "Etiqueta de Envío",
-  "Shipping label error": "Shipping label error",
+  "Shipping Label Error": "Shipping label error",
   "Shipping Label generated successfully": "Etiqueta de Envío generada exitosamente",
   "Shipping labels": "Etiquetas de Envío",
   "Some of the mapping fields are missing in the CSV: ": "Some of the mapping fields are missing in the CSV: {missingFields}",

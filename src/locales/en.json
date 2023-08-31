@@ -208,7 +208,7 @@
   "Shipped Orders": "Shipped Orders",
   "Shipping Method": "Shipping Method",
   "Shipping label": "Shipping label",
-  "Shipping label error": "Shipping label error",
+  "Shipping Label Error": "Shipping Label Error",
   "Shipping Label generated successfully": "Shipping Label generated successfully",
   "Shipping labels": "Shipping labels",
   "Some of the mapping fields are missing in the CSV: ": "Some of the mapping fields are missing in the CSV: {missingFields}",
