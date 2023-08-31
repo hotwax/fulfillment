@@ -121,7 +121,7 @@
           </ion-card-content>
           <ion-item lines="none">
             <ion-label>{{ $t("Sell online") }}</ion-label>
-            <ion-toggle :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG) || (!eComInvStatus || !eComInvConfigStatus)" v-model="isEComInvTurnedOn" @ionChange="updateEComInvStatus($event)" slot="end" />
+            <ion-toggle :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG) || !facilityGroupDetails?.facilityGroupId" v-model="isEComInvEnabled" @click="updateEComInvStatus($event)" slot="end" />
           </ion-item>
         </ion-card>
       </section>
@@ -265,7 +265,7 @@ export default defineComponent({
       currentFacilityDetails: {} as any,
       facilityGroupDetails: {} as any,
       isStoreFulfilmentTurnedOn: true,
-      isEComInvTurnedOn: true
+      isEComInvEnabled: false
     };
   },
   computed: {
@@ -280,15 +280,6 @@ export default defineComponent({
     fulfillmentStatus() {
       // considered that if facility details are not available then also fulfillment will be turned on
       return this.currentFacilityDetails.maximumOrderLimit != 0
-    },
-    eComInvStatus() {
-      // if facilityGroupDetails are there with fromDate (using fromDate as a flag for
-      // getting data from getFacilityGroupAndMemberDetails) - facility is turned on
-      return !!(Object.keys(this.facilityGroupDetails).length && this.facilityGroupDetails?.fromDate)
-    },
-    eComInvConfigStatus() {
-      // if facilityGroupDetails are there with facilityGroupId, configuration is there but turned off
-      return !!(Object.keys(this.facilityGroupDetails).length && this.facilityGroupDetails?.facilityGroupId)
     }
   },
   mounted() {
@@ -330,6 +321,7 @@ export default defineComponent({
     async getEcomInvStatus() {
       let resp: any;
       try {
+        this.isEComInvEnabled = false
         this.facilityGroupDetails = {}
 
         resp = await UserService.getFacilityGroupDetails({
@@ -357,17 +349,17 @@ export default defineComponent({
 
           if (!hasError(resp)) {
             this.facilityGroupDetails = { ...this.facilityGroupDetails, ...resp.data.docs[0] }
+
+            // When getting data from group member enabling the eCom inventory
+            this.isEComInvEnabled = true
+          } else {
+            throw resp.data
           }
-          else throw resp.data
         } else {
           throw resp.data
         }
       } catch (err) {
         logger.error('Failed to fetch eCom inventory config', err)
-      } finally {
-        // updating it here as facilityGroupDetails is not available in the lifecycle hooks
-        // and using the computed property in the lifecycle hook is not updating it later
-        this.isEComInvTurnedOn = !!(Object.keys(this.facilityGroupDetails).length && this.facilityGroupDetails?.fromDate)
       }
     },
     logout () {
@@ -393,6 +385,7 @@ export default defineComponent({
         });
         this.store.dispatch('order/clearOrders')
         this.getCurrentFacilityDetails();
+        this.getEcomInvStatus();
       }
     },
     async changeTimeZone() {
@@ -427,10 +420,12 @@ export default defineComponent({
         resp = await UserService.updateFacilityToGroup({
           "facilityId": this.currentFacility.facilityId,
           "facilityGroupId": this.facilityGroupDetails.facilityGroupId,
-          "fromDate": this.facilityGroupDetails.fromDate
+          "fromDate": this.facilityGroupDetails.fromDate,
+          "thruDate": DateTime.now().toMillis()
         })
 
         if (!hasError(resp)) {
+          this.isEComInvEnabled = false
           showToast(translate('ECom inventory status updated successfully'))
         } else {
           throw resp.data
@@ -449,6 +444,7 @@ export default defineComponent({
         })
 
         if (!hasError(resp)) {
+          this.isEComInvEnabled = true
           showToast(translate('ECom inventory status updated successfully'))
         } else {
           throw resp.data
@@ -465,10 +461,33 @@ export default defineComponent({
       event.detail.checked ? this.turnOnFulfillment() : this.turnOffFulfillment()
     },
     async updateEComInvStatus(event: any) {
-      // condition to stop alert from re-popping as ionChange is triggered
-      // because isEComInvStatus is updated
-      if (event.detail.checked === this.eComInvStatus) return
-      event.detail.checked ? this.turnOnEComInv() : this.turnOffEComInv()
+      event.stopImmediatePropagation();
+
+      // Using `not` as the click event returns the current status of toggle, but on click we want to change the toggle status
+      const isChecked = !event.target.checked;
+      const header = isChecked ? 'Turn on eCom inventory for ' : 'Turn off eCom inventory for '
+      const message = 'Are you sure you want to perform this action?'
+
+      const alert = await alertController.create({
+        header: this.$t(header, { facilityName: this.currentFacility.name }),
+        message: translate(message),
+        buttons: [{
+          text: translate('Cancel'),
+          role: ''
+        }, {
+          text: translate('Save'),
+          role: 'success'
+        }],
+      });
+
+      await alert.present();
+
+      const { role } = await alert.onDidDismiss();
+
+      if(role) {
+        isChecked ? await this.addFacilityToGroup() : await this.updateFacilityToGroup()
+      }
+
     },
     async turnOnFulfillment() {
       const alert = await alertController.create({
@@ -514,44 +533,6 @@ export default defineComponent({
             this.updateFacility(0);
           }
         }]
-      });
-
-      await alert.present();
-    },
-    async turnOnEComInv() {
-      const alert = await alertController.create({
-        header: this.$t('Turn on eCom inventory for ', { facilityName: this.currentFacility.name }),
-        message: translate('Are you sure you want to perform this action?'),
-        buttons: [{
-          text: translate('Cancel'),
-          handler: () => {
-            this.isEComInvTurnedOn = this.eComInvStatus
-          }
-        }, {
-          text: translate('Save'),
-          handler: async () => {
-            await this.addFacilityToGroup()
-          }
-        }],
-      });
-
-      await alert.present();
-    },
-    async turnOffEComInv() {
-      const alert = await alertController.create({
-        header: this.$t('Turn off eCom inventory for ', { facilityName: this.currentFacility.name }),
-        message: translate('Are you sure you want to perform this action?'),
-        buttons: [{
-          text: translate('Cancel'),
-          handler: () => {
-            this.isEComInvTurnedOn = this.eComInvStatus
-          }
-        }, {
-          text: translate('Save'),
-          handler: async () => {
-            await this.updateFacilityToGroup()
-          }
-        }],
       });
 
       await alert.present();
