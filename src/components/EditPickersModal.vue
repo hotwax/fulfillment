@@ -190,22 +190,24 @@ export default defineComponent({
           {
             text: this.$t("Replace"),
             handler: () => {
-              this.save();
+              this.resetPicker().then(() => {
+                this.closeModal()
+              })
             }
           }
         ],
       });
       return alert.present();
     },
-    save() {
-      this.resetPicker().then(() => {
-        this.closeModal()
-      })
-    },
     async resetPicker() {
       // remove the 'System Generated' entry through filtering based on ID
-      const pickerIds = this.selectedPickers.map((picker: any) => picker.id).filter((id: any) => id !== null)
-      const pickersNameArray = this.selectedPickers.filter((picker: any) => pickerIds.includes(picker.id)).map((picker: any) => picker.name.split(' ')[0])
+      let pickersNameArray = [] as any;
+      const pickerIds = this.selectedPickers.map((picker: any) => {
+        if (picker.id) {
+          pickersNameArray.push(picker.name.split(' ')[0])
+        }
+        return picker.id
+      }).filter((id: any) => id)
 
       try {
         const resp = await UtilService.resetPicker({
@@ -246,7 +248,10 @@ export default defineComponent({
       // for default selection of pickers already associated with the picklist
       this.selectedPickers = this.pickers.filter((picker: any) => this.selectedPicklist.pickerIds.includes(picker.id))
 
-      // case for 'System Generated' picker
+      // case for 'System Generated' picker -
+      // 'System Generated' picker will be visible only if no pickers are associated with the
+      // picklist. Hence, either 'System Generated' will be shown or all names will be shown
+      // and not both 
       if (!this.selectedPickers.length) {
         // as selectedPickers will be empty, we manually add the entry
         this.selectedPickers = [{
