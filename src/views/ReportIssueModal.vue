@@ -13,30 +13,30 @@
     </ion-toolbar>
   </ion-header>
 
- <ion-content>
+  <ion-content>
     <ion-card>
-     <div class="card-header">
-       <div class="order-tags">
+      <div class="card-header">
+        <div class="order-tags">
           <ion-chip @click="copyToClipboard(order.orderName, 'Copied to clipboard')" outline>
             <ion-icon :icon="pricetag" />
             <ion-label>{{ order.orderName }}</ion-label>
           </ion-chip>
-       </div>
+        </div>
 
-       <div class="order-primary-info">
+        <div class="order-primary-info">
           <ion-label>
             <strong>{{ order.customerName }}</strong>
             <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
           </ion-label>
-       </div>
+        </div>
 
-       <div class="order-metadata">
+        <div class="order-metadata">
           <ion-label>
             <strong>{{ order.shipmentMethodTypeDesc }}</strong>
             <p v-if="order.reservedDatetime">{{ $t("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
           </ion-label>
-       </div>
-     </div>
+        </div>
+      </div>
     </ion-card>
 
     <ion-card v-for="(item, index) in order.items" :key="index" >
@@ -72,8 +72,8 @@
 import { 
   IonCard,
   IonChip,  
-  IonButtons,
   IonButton,
+  IonButtons,
   IonContent,
   IonHeader,
   IonIcon,
@@ -82,8 +82,8 @@ import {
   IonNote,
   IonSelect,
   IonSelectOption,
-  IonTitle,
   IonThumbnail,
+  IonTitle,
   IonToolbar,
   modalController } from "@ionic/vue";
 import { defineComponent } from "vue";
@@ -94,10 +94,11 @@ import Image from '@/components/Image.vue'
 export default defineComponent({
   name: "ReportIssueModal",
   components: { 
+    Image,
     IonCard,
     IonChip,  
-    IonButtons,
     IonButton,
+    IonButtons,
     IonContent,
     IonHeader,
     IonIcon,
@@ -106,10 +107,9 @@ export default defineComponent({
     IonNote,
     IonSelect,
     IonSelectOption,
-    IonTitle,
     IonThumbnail,
+    IonTitle,
     IonToolbar,
-    Image
   }, 
   computed: {
     ...mapGetters({
@@ -126,10 +126,10 @@ export default defineComponent({
   setup() {
     return {
       closeOutline,
-      pricetag,
       copyToClipboard,
       formatUtcDate,
-      getFeature
+      getFeature,
+      pricetag
     };
   },
 });

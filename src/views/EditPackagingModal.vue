@@ -86,8 +86,8 @@
 
 <script>
 import { 
-  IonButtons,
   IonButton,
+  IonButtons,
   IonCard,
   IonChip,
   IonContent,
@@ -106,13 +106,14 @@ import {
 import { defineComponent } from "vue";
 import { addCircleOutline, closeOutline, pricetag } from "ionicons/icons";
 import { mapGetters } from 'vuex';
-import { copyToClipboard, formatUtcDate, getFeature} from '@/utils';
+import { copyToClipboard, formatUtcDate, getFeature } from '@/utils';
 import Image from '@/components/Image.vue'
 export default defineComponent({
   name: "EditPackagingModal",
   components: { 
-    IonButtons,
+    Image,
     IonButton,
+    IonButtons,
     IonCard,
     IonChip,
     IonContent,
@@ -127,7 +128,6 @@ export default defineComponent({
     IonThumbnail,
     IonTitle,
     IonToolbar,
-    Image
   }, 
   computed: {
     ...mapGetters({
@@ -139,15 +139,15 @@ export default defineComponent({
       modalController.dismiss({ dismissed: true });
     }
   },
-  props: ['order', 'updateBox', 'addingBoxForOrderIds', 'addShipmentBox', 'save'],
+  props: ['addingBoxForOrderIds', 'addShipmentBox', 'order', 'save', 'updateBox'],
   setup() {
     return {
       addCircleOutline,
       closeOutline,
-      pricetag,
       copyToClipboard,
       formatUtcDate,
-      getFeature 
+      getFeature,
+      pricetag
     };
   },
 });

@@ -39,10 +39,10 @@ export default defineComponent({
       const editmodal = await modalController.create({
         component: EditPackagingModal,
         componentProps: {
-          order: this.order,
-          updateBox: this.updateBox,
           addingBoxForOrderIds: this.addingBoxForOrderIds,
           addShipmentBox: this.addShipmentBox,
+          order: this.order,
+          updateBox: this.updateBox,
           save: this.save
         }
       });
@@ -60,12 +60,12 @@ export default defineComponent({
       return reportmodal.present();
     }
   },
-  props: ['order', 'updateBox', 'addingBoxForOrderIds', 'addShipmentBox', 'save', 'updateRejectReason'],
+  props: ['addingBoxForOrderIds', 'addShipmentBox', 'order',  'save', 'updateBox', 'updateRejectReason'],
   setup() {
     return {
-        pencil,
-        warning,
-        refresh
+      pencil,
+      refresh,
+      warning
     }
   }
 });
