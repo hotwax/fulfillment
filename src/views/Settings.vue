@@ -382,11 +382,10 @@ export default defineComponent({
       });
       popover.present();
 
-      const result = await popover.onDidDismiss(); 
-      
+      const result = await popover.onDidDismiss();
+      // Note: here result.data returns 0 in some cases that's why it is compared with 'undefined'.
       if(result.data != undefined && result.data !== this.fulfillmentOrderLimit){
-        const resultData = result.data;
-        await this.updateFacility(resultData)
+        await this.updateFacility(result.data)
         this.updateOrderLimitMode()
       }
     },
