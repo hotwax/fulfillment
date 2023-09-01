@@ -106,16 +106,16 @@
           <ion-card-content>
             {{ $t("Setting fulfillment capacity to 0 disables new order from being allocated to this facility. Leave this empty if this facility's fulfillment capacity is unrestricted.") }}
           </ion-card-content>
-          <ion-item lines="none" v-if="orderLimitMode === 'custom'">
+          <ion-item lines="none" v-if="orderLimitType === 'custom'">
             <ion-text>{{currentFacilityDetails?.orderCount}}</ion-text>
             <ion-progress-bar class="ion-margin" :value="currentFacilityDetails?.orderCount / fulfillmentOrderLimit"></ion-progress-bar>
             <ion-chip :outline="true" @click="changeOrderLimitPopover">{{currentFacilityDetails?.maximumOrderLimit}}</ion-chip>
           </ion-item>      
-          <ion-item lines="none" v-if="orderLimitMode === 'unlimited'">
+          <ion-item lines="none" v-if="orderLimitType === 'unlimited'">
             <ion-label>{{ $t("orders allocated today", {orderCount: currentFacilityDetails?.orderCount}) }}</ion-label>
             <ion-chip :outline="true" @click="changeOrderLimitPopover">{{ $t("Unlimited") }}</ion-chip>
           </ion-item>      
-          <ion-item lines="none" v-if="orderLimitMode === 'no-capacity'">
+          <ion-item lines="none" v-if="orderLimitType === 'no-capacity'">
             <ion-label>{{ $t("orders in fulfillment queue", {orderCount: currentFacilityDetails?.orderCount}) }}</ion-label>
             <ion-chip :outline="true" @click="changeOrderLimitPopover" color="danger" fill="outline">{{ fulfillmentOrderLimit }}</ion-chip>
           </ion-item>
@@ -282,7 +282,7 @@ export default defineComponent({
       appVersion: "",
       locales: process.env.VUE_APP_LOCALES ? JSON.parse(process.env.VUE_APP_LOCALES) : {"en": "English"},
       currentFacilityDetails: {} as any,
-      orderLimitMode: 'custom',
+      orderLimitType: 'custom',
       fulfillmentOrderLimit: 0
     };
   },
@@ -306,6 +306,7 @@ export default defineComponent({
   async ionViewWillEnter() {
     await this.getCurrentFacilityDetails()
     await this.getCurrentOrdersCount()
+    this.updateOrderLimitType()
   },
   methods: {
     async getCurrentFacilityDetails() {
@@ -330,8 +331,6 @@ export default defineComponent({
         }
       } catch(err) {
         logger.error('Failed to fetch current facility details', err)
-      } finally {
-        this.updateOrderLimitMode()
       }
     },
     async getCurrentOrdersCount() {
@@ -343,7 +342,7 @@ export default defineComponent({
             "facilityId": this.currentFacility.facilityId
           }
         })
-        if(!hasError(resp) && resp.data.count) {
+        if (!hasError(resp) && resp.data.count) {
           this.currentFacilityDetails.orderCount = resp.data.count
         } else {
           throw resp.data
@@ -352,14 +351,16 @@ export default defineComponent({
         console.error("Failed to fetch total orders count", err);
       }
     },
-    updateOrderLimitMode() {
+    updateOrderLimitType() {
       this.fulfillmentOrderLimit = this.currentFacilityDetails?.maximumOrderLimit
-      if(this.currentFacilityDetails?.maximumOrderLimit == 0){
-        this.orderLimitMode = 'no-capacity'
-      }else if(this.currentFacilityDetails?.maximumOrderLimit == null || this.currentFacilityDetails?.maximumOrderLimit == ""){
-        this.orderLimitMode = 'unlimited'
-      }else{
-        this.orderLimitMode = 'custom'
+      if (this.currentFacilityDetails?.maximumOrderLimit === undefined) {
+        this.orderLimitType = 'unlimited'
+      } else if (this.currentFacilityDetails?.maximumOrderLimit === 0) {
+        this.orderLimitType = 'no-capacity'
+      } else if (this.currentFacilityDetails?.maximumOrderLimit === null || this.currentFacilityDetails?.maximumOrderLimit === "") {
+        this.orderLimitType = 'unlimited'
+      } else {
+        this.orderLimitType = 'custom'
       }
     },
     logout () {
@@ -386,7 +387,7 @@ export default defineComponent({
       // Note: here result.data returns 0 in some cases that's why it is compared with 'undefined'.
       if(result.data != undefined && result.data !== this.fulfillmentOrderLimit){
         await this.updateFacility(result.data)
-        this.updateOrderLimitMode()
+        this.updateOrderLimitType()
       }
     },
     async setFacility (event: any) {
@@ -410,13 +411,13 @@ export default defineComponent({
       });
       return timeZoneModal.present();
     },
-    async updateFacility(maximumOrderLimit: any) {
+    async updateFacility(maximumOrderLimit: number | string) {
       let resp;
 
       try {
         resp = await UserService.updateFacility({
           "facilityId": this.currentFacility.facilityId,
-          maximumOrderLimit: maximumOrderLimit
+          maximumOrderLimit
         })
 
         if(!hasError(resp)) {

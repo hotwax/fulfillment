@@ -4,15 +4,15 @@
       <ion-item lines="none">
         <ion-card-subtitle>{{ $t("Fulfillment Capacity") }}</ion-card-subtitle>
       </ion-item>
-      <ion-item button @click="updateOrderLimit('unlimited')">
+      <ion-item button @click="updateOrderLimitType('unlimited')">
         <ion-icon slot="end" :icon="lockOpenOutline" />
         {{ $t("Unlimited Capacity") }}
       </ion-item>
-      <ion-item button @click="updateOrderLimit('no-capacity')">
+      <ion-item button @click="updateOrderLimitType('no-capacity')">
         {{ $t("No Capacity") }}
         <ion-icon slot="end" :icon="lockClosedOutline" />
       </ion-item>
-      <ion-item button lines="none" @click="updateOrderLimit('custom')">
+      <ion-item button lines="none" @click="updateOrderLimitType('custom')">
         {{ $t("Custom") }}
       </ion-item>
     </ion-list>
@@ -55,13 +55,13 @@ export default defineComponent({
     }
   },
   methods: {
-    async updateOrderLimit(capacity: string) {
-      if (capacity === 'custom') {
+    async updateOrderLimitType(orderLimitType: string) {
+      if (orderLimitType === 'custom') {
         this.showOrderLimitAlert("Custom fulfillment capacity", "", true)
-      } else if (capacity === 'no-capacity') {
+      } else if (orderLimitType === 'no-capacity') {
         this.setLimit = 0
         this.showOrderLimitAlert("No fulfillment capacity", "No capacity removes sets the fulfillment capacity to 0, preventing any new orders from being allocated to this facility. Use the \"Reject all orders\" option in the fulfillment pages to clear your facilities fulfillment queue. To add a fulfillment capacity to this facility, use the custom option.", false)
-      } else if (capacity === 'unlimited') {
+      } else if (orderLimitType === 'unlimited') {
         this.setLimit = ""
         this.showOrderLimitAlert("Unlimited fulfillment capacity", "Unlimited capacity removes the fulfillment capacity limit entirely. To add a fulfillment capacity to this facility, use the custom option.", false)
       }
