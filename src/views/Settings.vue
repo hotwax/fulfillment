@@ -353,11 +353,9 @@ export default defineComponent({
     },
     updateOrderLimitType() {
       this.fulfillmentOrderLimit = this.currentFacilityDetails?.maximumOrderLimit
-      if (this.currentFacilityDetails?.maximumOrderLimit === undefined) {
-        this.orderLimitType = 'unlimited'
-      } else if (this.currentFacilityDetails?.maximumOrderLimit === 0) {
+      if (this.currentFacilityDetails?.maximumOrderLimit === 0) {
         this.orderLimitType = 'no-capacity'
-      } else if (this.currentFacilityDetails?.maximumOrderLimit === null || this.currentFacilityDetails?.maximumOrderLimit === "") {
+      } else if (this.currentFacilityDetails?.maximumOrderLimit === undefined || this.currentFacilityDetails?.maximumOrderLimit === null || this.currentFacilityDetails?.maximumOrderLimit === "") {
         this.orderLimitType = 'unlimited'
       } else {
         this.orderLimitType = 'custom'
