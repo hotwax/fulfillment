@@ -429,11 +429,6 @@ export default defineComponent({
         logger.error('Failed to update facility', err)
       }
     },
-    async updateFulfillmentStatus(event: any) {
-      // condition to stop alert from re-popping as ionChange is triggered
-      // because isStoreFulfilmentTurnedOn is updated
-      if (event.detail.checked === this.fulfillmentStatus) return
-    },
     async setEComStore(event: any) {
       // not updating the ecomstore when the current value in vuex state and selected value are same
       // or when an empty value is given (on logout)
