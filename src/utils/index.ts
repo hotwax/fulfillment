@@ -20,7 +20,9 @@ const showToast = async (message: string, options?: any) => {
     ...options
   } as any;
 
-  if (!options.position) config.position = 'bottom';
+  if (!options.position) {
+    config.position = 'bottom';
+  }
   if (options.canDismiss) {
     config.buttons = [
       {
