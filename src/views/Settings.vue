@@ -246,7 +246,7 @@ import logger from '@/logger';
 import { Actions, hasPermission } from '@/authorization'
 import { DateTime } from 'luxon';
 import Image from '@/components/Image.vue';
-import OrderLimitPopover from '@/views/OrderLimitPopover.vue'
+import OrderLimitPopover from '@/components/OrderLimitPopover.vue'
 
 export default defineComponent({
   name: 'Settings',
@@ -282,8 +282,8 @@ export default defineComponent({
       appVersion: "",
       locales: process.env.VUE_APP_LOCALES ? JSON.parse(process.env.VUE_APP_LOCALES) : {"en": "English"},
       currentFacilityDetails: {} as any,
-      orderLimitType: 'custom',
-      fulfillmentOrderLimit: 0
+      orderLimitType: 'unlimited',
+      fulfillmentOrderLimit: "" as number | string
     };
   },
   computed: {
@@ -305,15 +305,14 @@ export default defineComponent({
   },
   async ionViewWillEnter() {
     await this.getCurrentFacilityDetails()
-    await this.getCurrentOrdersCount()
-    this.updateOrderLimitType()
+    await this.getFacilityOrderCount()
   },
   methods: {
     async getCurrentFacilityDetails() {
       let resp: any;
       try {
         this.currentFacilityDetails = {}
-
+        
         resp = await UserService.getFacilityDetails({
           "entityName": "Facility",
           "inputFields": {
@@ -322,7 +321,7 @@ export default defineComponent({
           "viewSize": 1,
           "fieldList": ["maximumOrderLimit", "facilityId"]
         })
-
+        
         if(!hasError(resp) && resp.data.count) {
           // using index 0 as we will only get a single record
           this.currentFacilityDetails = resp.data.docs[0]
@@ -333,7 +332,7 @@ export default defineComponent({
         logger.error('Failed to fetch current facility details', err)
       }
     },
-    async getCurrentOrdersCount() {
+    async getFacilityOrderCount() {
       let resp: any;
       try {
         resp = await UserService.getCurrentOrdersCount({
@@ -344,18 +343,19 @@ export default defineComponent({
         })
         if (!hasError(resp) && resp.data.count) {
           this.currentFacilityDetails.orderCount = resp.data.count
+          this.updateOrderLimitType()
         } else {
           throw resp.data
         }
       } catch(err) {
-        console.error("Failed to fetch total orders count", err);
+        logger.error("Failed to fetch total orders count", err);
       }
     },
     updateOrderLimitType() {
       this.fulfillmentOrderLimit = this.currentFacilityDetails?.maximumOrderLimit
-      if (this.currentFacilityDetails?.maximumOrderLimit === 0) {
+      if (this.fulfillmentOrderLimit === 0) {
         this.orderLimitType = 'no-capacity'
-      } else if (this.currentFacilityDetails?.maximumOrderLimit === undefined || this.currentFacilityDetails?.maximumOrderLimit === null || this.currentFacilityDetails?.maximumOrderLimit === "") {
+      } else if (this.fulfillmentOrderLimit === undefined || this.fulfillmentOrderLimit === null || this.fulfillmentOrderLimit === "") {
         this.orderLimitType = 'unlimited'
       } else {
         this.orderLimitType = 'custom'
