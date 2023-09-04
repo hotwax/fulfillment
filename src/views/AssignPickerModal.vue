@@ -24,7 +24,7 @@
       <!-- TODO: added click event on the item as when using the ionChange event then it's getting
       called every time the v-for loop runs and then removes or adds the currently rendered picker
       -->
-      <div v-if="!pickers.length">{{ 'No picker found' }}</div>
+      <div class="ion-padding" v-if="!pickers.length">{{ 'No picker found' }}</div>
       <div v-else>
         <ion-item v-for="(picker, index) in pickers" :key="index" @click="selectPicker(picker.id)">
           <ion-label>
