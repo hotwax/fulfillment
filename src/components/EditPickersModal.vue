@@ -179,9 +179,9 @@ export default defineComponent({
       }
     },
     async confirmSave() {
-      const message = this.$t("Are you sure you want to remove the current pickers from the picklist and replace them with new pickers?");
+      const message = this.$t("Replace current pickers with new selection?");
       const alert = await alertController.create({
-        header: this.$t("Edit pickers"),
+        header: this.$t("Replace pickers"),
         message,
         buttons: [
           {

@@ -1,7 +1,6 @@
 {
   "All": "All",
   "App": "App",
-  "Are you sure you want to remove the current pickers from the picklist and replace them with new pickers?": "Are you sure you want to remove the current pickers from the picklist and replace them with new pickers?",
   "A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.": "A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.",
   "doesn't have any completed orders right now.": "{facilityName} no tiene ningún pedido completado en este moment.",
   "doesn't have any orders in progress right now.": "{facilityName} no tiene ningún pedido en curso en este moment.",
@@ -182,6 +181,8 @@
   "Rejecting has been started. All outstanding orders will be rejected shortly.": "Rejecting has been started. All outstanding orders will be rejected shortly.",
   "Regenerate Shipping Label": "Regenerate Shipping Label",
   "Replace": "Replace",
+  "Replace pickers": "Replace pickers",
+  "Replace current pickers with new selection?": "Replace current pickers with new selection?",
   "Report": "Reporte",
   "Report an issue": "Reportar un problema",
   "Result Size": "Tamaño del Resultado",
