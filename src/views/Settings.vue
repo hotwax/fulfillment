@@ -294,25 +294,19 @@ export default defineComponent({
       currentEComStore: 'user/getCurrentEComStore',
       userPreference: 'user/getUserPreference',
       locale: 'user/getLocale'
-    }),
-    fulfillmentStatus() {
-      // considered that if facility details are not available then also fulfillment will be turned on
-      return this.currentFacilityDetails.maximumOrderLimit != 0
-    }
+    })
   },
   mounted() {
     this.appVersion = this.appInfo.branch ? (this.appInfo.branch + "-" + this.appInfo.revision) : this.appInfo.tag;
   },
   async ionViewWillEnter() {
-    await this.getCurrentFacilityDetails()
-    await this.getFacilityOrderCount()
+    this.getCurrentFacilityDetails()
+    this.getFacilityOrderCount()
   },
   methods: {
     async getCurrentFacilityDetails() {
       let resp: any;
-      try {
-        this.currentFacilityDetails = {}
-        
+      try {        
         resp = await UserService.getFacilityDetails({
           "entityName": "Facility",
           "inputFields": {
@@ -324,7 +318,11 @@ export default defineComponent({
         
         if(!hasError(resp) && resp.data.count) {
           // using index 0 as we will only get a single record
-          this.currentFacilityDetails = resp.data.docs[0]
+          this.currentFacilityDetails = {
+            ...this.currentFacilityDetails,
+            ...resp.data.docs[0]
+          }
+          this.updateOrderLimitType()
         } else {
           throw resp.data
         }
@@ -338,13 +336,17 @@ export default defineComponent({
         resp = await UserService.getCurrentOrdersCount({
           "entityName": "FacilityOrderCount",
           "inputFields": {
-            "facilityId": this.currentFacility.facilityId
-          }
+            "facilityId": this.currentFacility.facilityId,
+            "entryDate": DateTime.now().toMillis(),
+          },
+          "viewSize": 1,
+          "fieldList": ["entryDate", "lastOrderCount"],
         })
-        if (!hasError(resp) && resp.data.count) {
-          this.currentFacilityDetails.orderCount = resp.data.count
-          this.updateOrderLimitType()
+        if (!hasError(resp) && resp.data.count) {          
+          // using index 0 as we will only get a single record
+          this.currentFacilityDetails.orderCount = resp.data.docs[0].lastOrderCount
         } else {
+          this.currentFacilityDetails.orderCount = 0
           throw resp.data
         }
       } catch(err) {
