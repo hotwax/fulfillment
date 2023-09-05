@@ -13,7 +13,7 @@
           <ion-label>{{ $t("Shipped orders") }}</ion-label>
           <ion-label class="ion-text-right ion-padding-end">{{ file.name }}</ion-label>
           <input :placeholder="$t('Select CSV')" @change="parse" ref="file" class="ion-hide" type="file" id="orderInputFile"/>
-          <label for="orderInputFile">{{ $t("Upload") }}</label>
+          <label for="orderInputFile">{{ $t("Import CSV") }}</label>
         </ion-item>
 
         <ion-list>
