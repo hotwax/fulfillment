@@ -528,8 +528,15 @@ export default defineComponent({
 
       // TODO: update alert message when itemsToReject contains a single item and also in some specific conditions
       let message;
-      if(!outOfStockItem) {
-        message = this.$t('Are you sure you want to perform this action?')
+      if (!outOfStockItem) {
+        const firstItem = itemsToReject[0];
+        if (itemsToReject.length === 1) {
+          if (firstItem.rejectReason === "REJ_RSN_DAMAGED") message = this.$t('is identified as damaged. This order item will be unassigned from the store and sent to be rebrokered.', { productName: firstItem.productName });
+          else if (firstItem.rejectReason === "WORN_DISPLAY") message = this.$t('is identified as worn display. This order item will be unassigned from the store and sent to be rebrokered.', { productName: firstItem.productName });
+          else if (firstItem.rejectReason === "MISMATCH") message = this.$t('is identified as mismatched. This order item will be unassigned from the store and sent to be rebrokered.', { productName: firstItem.productName });
+        } else {
+          message = this.$t(', and other products were identified as unfulfillable.These items will be unassigned from this store and sent to be rebrokered.', { productName: firstItem.productName, products: itemsToReject.length - 1, space: '<br /><br />' });
+        }
       } else {
         const productName = outOfStockItem.productName
 
