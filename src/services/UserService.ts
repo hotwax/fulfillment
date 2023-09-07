@@ -41,8 +41,7 @@ const getCurrentOrdersCount = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
     method: "get",
-    params: payload,
-    cached: true
+    params: payload
   })
 }
 

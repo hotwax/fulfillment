@@ -300,8 +300,7 @@ export default defineComponent({
     this.appVersion = this.appInfo.branch ? (this.appInfo.branch + "-" + this.appInfo.revision) : this.appInfo.tag;
   },
   async ionViewWillEnter() {
-    this.getCurrentFacilityDetails()
-    this.getFacilityOrderCount()
+    Promise.all([this.getCurrentFacilityDetails(), this.getFacilityOrderCount()]);
   },
   methods: {
     async getCurrentFacilityDetails() {
