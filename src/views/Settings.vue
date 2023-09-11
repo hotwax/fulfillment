@@ -345,7 +345,6 @@ export default defineComponent({
           // using index 0 as we will only get a single record
           this.currentFacilityDetails.orderCount = resp.data.docs[0].lastOrderCount
         } else {
-          this.currentFacilityDetails.orderCount = 0
           throw resp.data
         }
       } catch(err) {

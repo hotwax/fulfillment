@@ -1,9 +1,9 @@
 <template>
   <ion-content>
     <ion-list>
-      <ion-item lines="none">
-        <ion-card-subtitle>{{ $t("Fulfillment Capacity") }}</ion-card-subtitle>
-      </ion-item>
+      <ion-list-header>
+        {{ $t("Fulfillment capacity") }}
+      </ion-list-header>
       <ion-item button @click="updateOrderLimitType('unlimited')">
         <ion-icon slot="end" :icon="lockOpenOutline" />
         {{ $t("Unlimited Capacity") }}
@@ -21,11 +21,11 @@
   
 <script lang="ts">
 import {
-  IonCardSubtitle,
   IonContent,
   IonIcon,
   IonItem,
   IonList,
+  IonListHeader,
   alertController,
   popoverController
 } from "@ionic/vue";
@@ -40,7 +40,7 @@ export default defineComponent({
     IonIcon,
     IonItem,
     IonList,
-    IonCardSubtitle
+    IonListHeader
   },
   setup() {
     return {
@@ -74,7 +74,7 @@ export default defineComponent({
 
       this.showOrderLimitAlert(header, message, showInput)
     },
-    async showOrderLimitAlert(header: any, message: any, showInput: boolean) {
+    async showOrderLimitAlert(header: string, message: string, showInput: boolean) {
       const alert = await alertController.create({
         header: translate(header),
         message: translate(message, {space: '</br></br>'}),
