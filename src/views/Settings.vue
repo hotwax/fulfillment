@@ -332,7 +332,7 @@ export default defineComponent({
     async getFacilityOrderCount() {
       let resp: any;
       try {
-        resp = await UserService.getCurrentOrdersCount({
+        resp = await UserService.getFacilityOrderCount({
           "entityName": "FacilityOrderCount",
           "inputFields": {
             "facilityId": this.currentFacility.facilityId,
@@ -349,6 +349,7 @@ export default defineComponent({
           throw resp.data
         }
       } catch(err) {
+        this.currentFacilityDetails.orderCount = 0
         logger.error("Failed to fetch total orders count", err);
       }
     },
@@ -356,10 +357,10 @@ export default defineComponent({
       this.fulfillmentOrderLimit = this.currentFacilityDetails?.maximumOrderLimit
       if (this.fulfillmentOrderLimit === 0) {
         this.orderLimitType = 'no-capacity'
-      } else if (this.fulfillmentOrderLimit === undefined || this.fulfillmentOrderLimit === null || this.fulfillmentOrderLimit === "") {
-        this.orderLimitType = 'unlimited'
-      } else {
+      } else if (this.fulfillmentOrderLimit) {
         this.orderLimitType = 'custom'
+      } else {
+        this.orderLimitType = 'unlimited'
       }
     },
     logout () {
@@ -376,7 +377,6 @@ export default defineComponent({
       const popover = await popoverController.create({
         component: OrderLimitPopover,
         event: ev,
-        translucent: true,
         showBackdrop: false,
         componentProps: {fulfillmentOrderLimit: this.fulfillmentOrderLimit}
       });

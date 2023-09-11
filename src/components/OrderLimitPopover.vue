@@ -34,7 +34,7 @@ import { lockClosedOutline, lockOpenOutline } from 'ionicons/icons'
 import { translate } from '@/i18n';
 import { showToast } from '@/utils';
 export default defineComponent({
-  name: "OrderLimitPopver",
+  name: "OrderLimitPopover",
   components: {
     IonContent,
     IonIcon,
@@ -56,15 +56,23 @@ export default defineComponent({
   },
   methods: {
     async updateOrderLimitType(orderLimitType: string) {
+      let header = "Unlimited fulfillment capacity"
+      let message = "Unlimited capacity removes the fulfillment capacity limit entirely. To add a fulfillment capacity to this facility, use the custom option."
+      let showInput = false
+
       if (orderLimitType === 'custom') {
-        this.showOrderLimitAlert("Custom fulfillment capacity", "", true)
+        header = "Custom fulfillment capacity"
+        message = ""
+        showInput = true
       } else if (orderLimitType === 'no-capacity') {
         this.setLimit = 0
-        this.showOrderLimitAlert("No fulfillment capacity", "No capacity removes sets the fulfillment capacity to 0, preventing any new orders from being allocated to this facility. Use the \"Reject all orders\" option in the fulfillment pages to clear your facilities fulfillment queue. To add a fulfillment capacity to this facility, use the custom option.", false)
+        header = "No fulfillment capacity"
+        message = "No capacity removes sets the fulfillment capacity to 0, preventing any new orders from being allocated to this facility. Use the \"Reject all orders\" option in the fulfillment pages to clear your facilities fulfillment queue. To add a fulfillment capacity to this facility, use the custom option."
       } else if (orderLimitType === 'unlimited') {
         this.setLimit = ""
-        this.showOrderLimitAlert("Unlimited fulfillment capacity", "Unlimited capacity removes the fulfillment capacity limit entirely. To add a fulfillment capacity to this facility, use the custom option.", false)
       }
+
+      this.showOrderLimitAlert(header, message, showInput)
     },
     async showOrderLimitAlert(header: any, message: any, showInput: boolean) {
       const alert = await alertController.create({

@@ -37,7 +37,7 @@ const getFacilityDetails = async (payload: any): Promise<any> => {
   })
 }
 
-const getCurrentOrdersCount = async (payload: any): Promise<any> => {
+const getFacilityOrderCount = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
     method: "get",
@@ -284,6 +284,7 @@ export const UserService = {
     getAvailableTimeZones,
     getEComStores,
     getFacilityDetails,
+    getFacilityOrderCount,
     getFieldMappings,
     getUserProfile,
     getPreferredStore,
@@ -294,5 +295,4 @@ export const UserService = {
     getUserPermissions,
     updateFacility,
     updateFieldMapping,
-    getCurrentOrdersCount
 }
