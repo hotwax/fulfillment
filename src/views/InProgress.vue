@@ -539,14 +539,11 @@ export default defineComponent({
 
         if (itemsToReject.length === 1 && ordersCount) {
           message = this.$t("is identified as unfulfillable. other orders containing this product will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
-        }
-        else if (itemsToReject.length === 1 && !ordersCount) {
+        } else if (itemsToReject.length === 1 && !ordersCount) {
           message = this.$t("is identified as unfulfillable. This order item will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />' })
-        }
-        else if (itemsToReject.length > 1 && ordersCount) {
+        } else if (itemsToReject.length > 1 && ordersCount) {
           message = this.$t(", and other products are identified as unfulfillable. other orders containing these products will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
-        }
-        else {
+        } else {
           message = this.$t(", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />' })
         }
       }
