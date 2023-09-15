@@ -522,7 +522,7 @@ export default defineComponent({
       const shipmentIdResps = await Promise.all(requestParams.map((params) => UtilService.findShipmentIdsForOrders(params.picklistBinIds, params.orderIds)))
       return Object.assign({}, ...shipmentIdResps)
     },
-    async reportIssue(issueOrder: any, itemsToReject: any) {
+    async reportIssue(order: any, itemsToReject: any) {
       // finding is there any item that is `out of stock` as we need to display the message accordingly
       const outOfStockItem = itemsToReject.find((item: any) => item.rejectReason === 'NOT_IN_STOCK')
 
@@ -535,14 +535,14 @@ export default defineComponent({
         const itemsToRejectNotInStock = itemsToReject.filter((item: any) => item.rejectReason === 'NOT_IN_STOCK');
         
         // TODO: ordersCount is not correct as current we are identifying orders count by only checking items visible on UI and not other orders        
-        const ordersCount = this.inProgressOrders.list.map((order: any) => order.items.filter((item: any) => itemsToRejectNotInStock.some((outOfStockItem: any) => outOfStockItem.productSku === item.productSku) && item.orderId !== issueOrder.orderId))?.filter((item: any) => item.length).length;
+        const ordersCount = this.inProgressOrders.list.map((inProgressOrder: any) => inProgressOrder.items.filter((item: any) => itemsToRejectNotInStock.some((outOfStockItem: any) => outOfStockItem.productSku === item.productSku) && item.orderId !== order.orderId))?.filter((item: any) => item.length).length;
 
         if (itemsToReject.length === 1 && ordersCount) {
-          message = this.$t("is identified as unfulfillable. other orders containing this product will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
+          message = this.$t("is identified as unfulfillable. other containing this product will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
         } else if (itemsToReject.length === 1 && !ordersCount) {
           message = this.$t("is identified as unfulfillable. This order item will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />' })
         } else if (itemsToReject.length > 1 && ordersCount) {
-          message = this.$t(", and other products are identified as unfulfillable. other orders containing these products will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
+          message = this.$t(", and other products are identified as unfulfillable. other containing these products will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
         } else {
           message = this.$t(", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />' })
         }
@@ -558,7 +558,7 @@ export default defineComponent({
             text: this.$t("Report"),
             role: 'confirm',
             handler: async() => {
-              await this.updateOrder(issueOrder);
+              await this.updateOrder(order);
             }
           }]
         });
