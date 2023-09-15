@@ -84,7 +84,7 @@
 
             <div class="mobile-only">
               <ion-item>
-                <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ $t("Shipped") }}</ion-button>
+                <ion-button v-if="!hasPackedShipments(order)" :disabled="true" fill="clear">{{ $t("Shipped") }}</ion-button>
                 <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="clear" @click="shipOrder(order)">{{ $t("Ship Now") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover($event, order)">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
