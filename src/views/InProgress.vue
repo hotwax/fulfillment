@@ -338,11 +338,11 @@ export default defineComponent({
         component: Popover,
         event: ev,
         componentProps:{ 
-          order,
-          updateBox: this.updateBox,
           addingBoxForOrderIds: this.addingBoxForOrderIds,
           addShipmentBox: this.addShipmentBox,
+          order,
           save: this.save,
+          updateBox: this.updateBox,
           updateRejectReason: this.updateRejectReason
         },
         translucent: true,

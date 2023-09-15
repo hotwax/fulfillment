@@ -44,7 +44,7 @@
         <div class="product-info">
           <ion-item lines="none">
             <ion-thumbnail slot="start">
-              <Image :src="getProduct(item.productId).mainImageUrl" />
+              <ShopifyImg size="small" :src="getProduct(item.productId).mainImageUrl" />
             </ion-thumbnail>
             <ion-label>
               <p class="overline">{{ item.productSku }}</p>
@@ -90,11 +90,10 @@ import { defineComponent } from "vue";
 import { closeOutline, pricetag } from "ionicons/icons";
 import { mapGetters } from 'vuex';
 import { copyToClipboard, formatUtcDate, getFeature } from '@/utils';
-import Image from '@/components/Image.vue'
+import { ShopifyImg } from '@hotwax/dxp-components';
 export default defineComponent({
   name: "ReportIssueModal",
-  components: { 
-    Image,
+  components: {
     IonCard,
     IonChip,  
     IonButton,
@@ -110,6 +109,7 @@ export default defineComponent({
     IonThumbnail,
     IonTitle,
     IonToolbar,
+    ShopifyImg
   }, 
   computed: {
     ...mapGetters({

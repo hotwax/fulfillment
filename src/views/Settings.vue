@@ -215,8 +215,8 @@ import {
   IonTitle, 
   IonToggle,
   IonToolbar,
-  modalController,
-  alertController
+  alertController,
+  modalController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, openOutline, timeOutline } from 'ionicons/icons'
