@@ -98,16 +98,16 @@
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ $t("Shipped") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="shipOrder(order)" v-else>{{ $t("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="regenerateShippingLabel(order)">
-                  {{ $t("Regenerate Shipping Label") }}
+                  {{ $t("Regenerate shipping label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="printPackingSlip(order)">
-                  {{ $t("Print Customer Letter") }}
+                  {{ $t("Print customer letter") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
                 </ion-button>
               </div>
               <div class="desktop-only">
-                <ion-button v-if="order.missingLabelImage" fill="outline" @click="showShippingLabelErrorModal(order)">{{ $t("Shipping Label Error") }}</ion-button>
+                <ion-button v-if="order.missingLabelImage" fill="outline" @click="showShippingLabelErrorModal(order)">{{ $t("Shipping label error") }}</ion-button>
                 <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
               </div>
             </div>
@@ -368,17 +368,17 @@ export default defineComponent({
     async shippingPopover(ev: Event, order:any) {
       const popover = await popoverController.create({
         component: Popover,
-        translucent: true,
-        showBackdrop: false,
-        event: ev,
         componentProps: {
+          hasPackedShipments: this.hasPackedShipments,
           order,
           printPackingSlip: this.printPackingSlip,
           regenerateShippingLabel: this.regenerateShippingLabel,
-          unpackOrder: this.unpackOrder,
           showShippingLabelErrorModal: this.showShippingLabelErrorModal,
-          hasPackedShipments: this.hasPackedShipments
-        }
+          unpackOrder: this.unpackOrder
+        },
+        event: ev,
+        translucent: true,
+        showBackdrop: false,
       });
       return popover.present();
     },

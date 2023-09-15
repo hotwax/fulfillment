@@ -2,16 +2,16 @@
   <ion-content>
     <ion-list>
       <ion-item button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="regenerateShippingLabel(order)">
-        {{ $t("Regenerate Shipping Label") }}
+        {{ $t("Regenerate shipping label") }}
       </ion-item>
       <ion-item button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="printPackingSlip(order)">
-        {{ $t("Print Customer Letter") }}
+        {{ $t("Print customer letter") }}
       </ion-item>
       <ion-item button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" @click="unpackOrder(order)">
         {{ $t("Unpack") }}
       </ion-item>
       <ion-item button v-if="order.missingLabelImage" lines="none" @click="showShippingLabelErrorModal(order)">
-        {{ $t("Shipping Label Error") }}
+        {{ $t("Shipping label error") }}
       </ion-item>
     </ion-list>
   </ion-content>
@@ -35,21 +35,21 @@ export default defineComponent({
   },
   setup() {
     return {
-      printOutline,
-      lockOpenOutline,
-      receiptOutline,
-      warningOutline,
+      Actions,
       hasPermission,
-      Actions
+      lockOpenOutline,
+      printOutline,
+      receiptOutline,
+      warningOutline
     }
   },
   props: [
+    'hasPackedShipments',
     'order',
     'printPackingSlip',
     'regenerateShippingLabel',
-    'unpackOrder',
     'showShippingLabelErrorModal',
-    'hasPackedShipments'
+    'unpackOrder'
   ]
 });
 </script> 
