@@ -531,9 +531,9 @@ export default defineComponent({
       if (!outOfStockItem) {
         const firstItem = itemsToReject[0];
         if (itemsToReject.length === 1) {
-          message = this.$t('is identified as. This order item will be unassigned from the store and sent to be rebrokered.', { productName: firstItem.productName, rejectReason: firstItem.rejectReason === "REJ_RSN_DAMAGED" ? 'damaged' : (firstItem.rejectReason === "WORN_DISPLAY" ? 'worn display' : 'mismatched')});
+          message = this.$t('is identified as. This order item will be unassigned from the store and sent to be rebrokered.', { productName: firstItem.productName, rejectReason: ((this.rejectReasons.find((rejectReason: {[key: string]: any}) => rejectReason.enumId === firstItem.rejectReason)).description).toLowerCase() });
         } else {
-          message = this.$t(', and other products were identified as unfulfillable.These items will be unassigned from this store and sent to be rebrokered.', { productName: firstItem.productName, products: itemsToReject.length - 1, space: '<br /><br />' });
+          message = this.$t(', and other products were identified as unfulfillable. These items will be unassigned from this store and sent to be rebrokered.', { productName: firstItem.productName, products: itemsToReject.length - 1, space: '<br /><br />' });
         }
       } else {
         const productName = outOfStockItem.productName

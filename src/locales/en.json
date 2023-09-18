@@ -265,5 +265,5 @@
   "You do not have permission to access this page": "You do not have permission to access this page",
   "Zip Code": "Zip Code",
   ", and other products are identified as unfulfillable. other orders containing these products will be unassigned from this store and sent to be rebrokered.": "{ productName }, and { products } other products are identified as unfulfillable. { space } { orders } other orders containing these products will be unassigned from this store and sent to be rebrokered.",
-  ", and other products were identified as unfulfillable.These items will be unassigned from this store and sent to be rebrokered.": "{ productName }, and { products } other products were identified as unfulfillable. { space } These items will be unassigned from this store and sent to be rebrokered."
+  ", and other products were identified as unfulfillable. These items will be unassigned from this store and sent to be rebrokered.": "{ productName }, and { products } other products were identified as unfulfillable. { space } These items will be unassigned from this store and sent to be rebrokered."
 }
