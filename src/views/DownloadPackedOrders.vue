@@ -3,7 +3,7 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-back-button slot="start" default-href="/exim" />
-        <ion-title>{{ $t("Download packed orders") }}</ion-title>
+        <ion-title>{{ $t("Export packed orders") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -51,7 +51,7 @@
         </ion-list>
 
         <ion-button size="large" :disabled="!content.length" color="medium" @click="download" expand="block">
-          {{ $t("Download") }}
+          {{ $t("Export") }}
         </ion-button>
 
       </main>
