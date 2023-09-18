@@ -23,19 +23,25 @@
     <ion-content id="view-size-selector">
       <ion-searchbar v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="inProgressOrders.total">
-        <div class="filters">
-          <ion-item v-for="picklist in picklists" :key="picklist.id" lines="none">
-            <ion-checkbox :checked="inProgressOrders.query.selectedPicklists.includes(picklist.id)" slot="start" @ion-change="updateSelectedPicklists(picklist.id)"/>
-            <ion-label class="ion-text-wrap">
-              {{ picklist.pickersName }}
-              <p>{{ picklist.date }}</p>
-            </ion-label>
-            <ion-spinner color="primary" slot="end" v-if="picklist.isGeneratingPicklist" name="crescent" />
-            <ion-button v-else fill="outline" slot="end" @click="printPicklist(picklist)">
-              <ion-icon :icon="printOutline" />
-            </ion-button>
-          </ion-item>
-        </div>
+        <ion-radio-group v-model="selectedPicklistId" @ionChange="updateSelectedPicklist($event.detail.value)">
+          <ion-row class="filters">
+            <ion-item lines="none">
+              <!-- empty value '' for 'All orders' radio -->
+              <ion-radio value="" slot="start" /> 
+              <ion-label class="ion-text-wrap">
+                {{ $t('All') }}
+                <p>{{ $t('picklists', { count: picklists.length }) }}</p>
+              </ion-label>
+            </ion-item>
+            <ion-item lines="none" v-for="picklist in picklists" :key="picklist.id">
+              <ion-radio :value="picklist.id" slot="start" />
+              <ion-label class="ion-text-wrap">
+                {{ picklist.pickersName }}
+                <p>{{ picklist.date }}</p>
+              </ion-label>
+            </ion-item>
+          </ion-row>
+        </ion-radio-group>
 
         <div class="results">
           <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="packOrders()">{{ $t("Pack orders") }}</ion-button>
@@ -164,6 +170,22 @@
         <p v-html="getErrorMessage()"></p>
       </div>
     </ion-content>
+    <!-- only show footer buttons if 'All orders' is not selected -->
+    <ion-footer v-if="selectedPicklistId">
+      <ion-toolbar>
+        <ion-buttons slot="end">
+          <ion-button fill="outline" color="primary" @click="editPickers(getPicklist(selectedPicklistId))">
+            <ion-icon slot="start" :icon="pencilOutline" />
+            {{ $t("Edit Pickers") }}
+          </ion-button>
+          <ion-button fill="solid" color="primary" @click="printPicklist(getPicklist(selectedPicklistId))">
+            <ion-spinner v-if="getPicklist(selectedPicklistId).isGeneratingPicklist" slot="start" name="crescent" />
+            <ion-icon v-else slot="start" :icon="printOutline" />
+            {{ $t("Print Picklist") }}
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-footer>
   </ion-page>
 </template>
 
@@ -172,11 +194,11 @@ import {
   IonButton,
   IonButtons,
   IonCard,
-  IonCheckbox,
   IonChip,
   IonContent,
   IonFab,
   IonFabButton,
+  IonFooter,
   IonHeader,
   IonItem,
   IonIcon,
@@ -186,6 +208,8 @@ import {
   IonMenuButton,
   IonPage,
   IonRow,
+  IonRadio,
+  IonRadioGroup,
   IonSearchbar,
   IonSegment,
   IonSegmentButton,
@@ -197,10 +221,19 @@ import {
   IonTitle,
   IonToolbar,
   alertController,
-  popoverController
+  popoverController,
+  modalController,
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { printOutline, addOutline, ellipsisVerticalOutline, checkmarkDoneOutline, pricetagOutline, optionsOutline } from 'ionicons/icons'
+import {
+  addOutline,
+  checkmarkDoneOutline,
+  ellipsisVerticalOutline,
+  pencilOutline,
+  pricetagOutline,
+  printOutline,
+  optionsOutline
+} from 'ionicons/icons'
 import Popover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils';
@@ -216,6 +249,7 @@ import { DateTime } from 'luxon';
 import logger from '@/logger';
 import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
+import EditPickersModal from '@/components/EditPickersModal.vue';
 
 export default defineComponent({
   name: 'InProgress',
@@ -224,11 +258,11 @@ export default defineComponent({
     IonButton,
     IonButtons,
     IonCard,
-    IonCheckbox,
-    IonChip,  
+    IonChip,
     IonContent,
     IonFab,
     IonFabButton,
+    IonFooter,
     IonHeader,
     IonItem,
     IonIcon,
@@ -238,6 +272,8 @@ export default defineComponent({
     IonMenuButton,
     IonPage,
     IonRow,
+    IonRadio,
+    IonRadioGroup,
     IonSearchbar,
     IonSegment,
     IonSegmentButton,
@@ -268,7 +304,8 @@ export default defineComponent({
       itemsIssueSegmentSelected: [] as any,
       orderBoxes: [] as any,
       searchedQuery: '',
-      addingBoxForOrderIds: [] as any
+      addingBoxForOrderIds: [] as any,
+      selectedPicklistId: ''
     }
   },
   methods: {
@@ -347,7 +384,7 @@ export default defineComponent({
 
                 if (data.length) {
                   // additional parameters for dismiss button and manual dismiss ability
-                  toast = await showToast(translate('Order packed successfully. Document generation in process'), true, true)
+                  toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
                   toast.present()
 
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
@@ -435,7 +472,7 @@ export default defineComponent({
                 // the associated ids, currently passing the associated shipmentId
                 if (data.length) {
                   // additional parameters for dismiss button and manual dismiss ability
-                  toast = await showToast(translate('Order packed successfully. Document generation in process'), true, true)
+                  toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
                   toast.present()
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
                     await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
@@ -491,8 +528,15 @@ export default defineComponent({
 
       // TODO: update alert message when itemsToReject contains a single item and also in some specific conditions
       let message;
-      if(!outOfStockItem) {
-        message = this.$t('Are you sure you want to perform this action?')
+      if (!outOfStockItem) {
+
+        // This variable is used in messages to display name of first rejected item from the itemsToReject array
+        const rejectedItem = itemsToReject[0];
+        if (itemsToReject.length === 1) {
+          message = this.$t('is identified as. This order item will be unassigned from the store and sent to be rebrokered.', { productName: rejectedItem.productName, rejectReason: ((this.rejectReasons.find((rejectReason: {[key: string]: any}) => rejectReason.enumId === rejectedItem.rejectReason)).description).toLowerCase() });
+        } else {
+          message = this.$t(', and other products were identified as unfulfillable. These items will be unassigned from this store and sent to be rebrokered.', { productName: rejectedItem.productName, products: itemsToReject.length - 1, space: '<br /><br />' });
+        }
       } else {
         const productName = outOfStockItem.productName
 
@@ -669,15 +713,19 @@ export default defineComponent({
                 return picklists;
               }
 
+              const pickerIds = [] as Array<string> 
               // if firstName is not found then adding default name `System Generated`
               const pickersName = pickersInformation.pickerFacet.buckets.length ? pickersInformation.pickerFacet.buckets.reduce((pickers: Array<string>, picker: any) => {
-                pickers.push(picker.val.split('/')[1].split(' ')[0]) // having picker val in format 10001/FirstName LastName, we only need to display firstName
+                const val = picker.val.split('/') // having picker val in format 10001/FirstName LastName, split will change it into [pickerId, FirstName LastName]
+                pickerIds.push(val[0]) // storing pickerIds for usage in edit pickers modal
+                pickers.push(val[1].split(' ')[0]) // having val[0] as 'firstname lastname', we only need to display firstName
                 return pickers
               }, []) : ['System Generated']
 
               picklists.push({
                 id: picklist.picklistId,
                 pickersName: pickersName.join(', '),
+                pickerIds,
                 date: DateTime.fromMillis(picklist.picklistDate).toLocaleString(DateTime.TIME_SIMPLE),
                 isGeneratingPicklist: false  // used to display the spinner on the button when trying to generate picklist
               })
@@ -692,6 +740,9 @@ export default defineComponent({
         logger.error('No picklist facets found', err)
       }
     },
+    getPicklist(id: string) {
+      return this.picklists.find((picklist: any) => picklist.id === id)
+    },
     async loadMoreInProgressOrders(event: any) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
       inProgressOrdersQuery.viewIndex++;
@@ -701,19 +752,12 @@ export default defineComponent({
     isInProgressOrderScrollable() {
       return ((this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any)) <  this.inProgressOrders.query.viewSize;
     },
-    async updateSelectedPicklists(id: string) {
+    async updateSelectedPicklist(id: string) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
-      const selectedPicklists = inProgressOrdersQuery.selectedPicklists
-
-      if(selectedPicklists.includes(id)) {
-        selectedPicklists.splice(selectedPicklists.indexOf(id), 1)
-      } else {
-        selectedPicklists.push(id)
-      }
 
       // making view size default when changing the shipment method to correctly fetch orders
       inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      inProgressOrdersQuery.selectedPicklists = selectedPicklists
+      inProgressOrdersQuery.selectedPicklist = id
       inProgressOrdersQuery.viewIndex = 0
 
       this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
@@ -862,7 +906,26 @@ export default defineComponent({
       });
 
       await alert.present();
-    }
+    },
+    async editPickers(selectedPicklist: any) {
+      const editPickersModal = await modalController.create({
+        component: EditPickersModal,
+        componentProps: {
+          selectedPicklist
+        }
+      });
+
+      editPickersModal.onDidDismiss().then((result) => {
+        // manually updating the picklist data as UI is not updated because same data
+        // is returned from solr on fetchPickersInformation API call
+        if (result.data?.editedPicklist && Object.keys(result.data?.editedPicklist).length) {
+          const editedPicklist = result.data.editedPicklist
+          this.picklists = JSON.parse(JSON.stringify(this.picklists.map((picklist: any) => picklist.id === editedPicklist.id ? picklist = editedPicklist : picklist)))
+        }
+      })
+
+      return editPickersModal.present();
+    },
   },
   async mounted () {
     this.store.dispatch('util/fetchRejectReasons')
@@ -881,6 +944,7 @@ export default defineComponent({
       copyToClipboard,
       addOutline,
       printOutline,
+      pencilOutline,
       ellipsisVerticalOutline,
       optionsOutline,
       formatUtcDate,

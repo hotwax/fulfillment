@@ -234,8 +234,8 @@ const actions: ActionTree<OrderState, RootState> = {
       }
 
       // preparing filters separately those are based on some condition
-      if(inProgressQuery.selectedPicklists.length) {
-        params.filters['picklistId'] = {value: inProgressQuery.selectedPicklists, op: 'OR'}
+      if (inProgressQuery.selectedPicklist) {
+        params.filters['picklistId'] = { value: inProgressQuery.selectedPicklist }
       }
 
       const orderQueryPayload = prepareOrderQuery(params)
