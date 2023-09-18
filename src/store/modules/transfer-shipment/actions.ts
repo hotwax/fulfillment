@@ -93,7 +93,6 @@ const actions: ActionTree<TransferShipmentState, RootState> = {
       } else {
         throw resp.data
       }
-      console.log("===========resp====", resp);
       commit(types.TRANSFER_SHIPMENT_CURRENT_UPDATED, { currentShipment : currentShipment})
     } catch (err: any) {
       showToast(translate('Something went wrong'));
