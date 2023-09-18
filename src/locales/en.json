@@ -90,6 +90,7 @@
   "Go to Launchpad": "Go to Launchpad",
   "is identified as unfulfillable. other containing this product will be unassigned from this store and sent to be rebrokered.": "{ productName } is identified as unfulfillable.  { space } { orders } other { orderText } containing this product will be unassigned from this store and sent to be rebrokered.",
   "is identified as unfulfillable. This order item will be unassigned from this store and sent to be rebrokered.": "{ productName } is identified as unfulfillable. { space } This order item will be unassigned from this store and sent to be rebrokered.",
+  "is identified as. This order item will be unassigned from the store and sent to be rebrokered.": "{ productName } is identified as { rejectReason }. This order item will be unassigned from the store and sent to be rebrokered.",
   "item": "item",
   "items": "items",
   "Import": "Import",
@@ -267,5 +268,6 @@
   "You do not have permission to access this page": "You do not have permission to access this page",
   "Zip Code": "Zip Code",
   ", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.": "{ productName }, and { products } other products are identified as unfulfillable. { space } These order items will be unassigned from this store and sent to be rebrokered.",
-  ", and other products are identified as unfulfillable. other containing these products will be unassigned from this store and sent to be rebrokered.": "{ productName }, and { products } other products are identified as unfulfillable. { space } { orders } other { orderText } containing these products will be unassigned from this store and sent to be rebrokered."
+  ", and other products are identified as unfulfillable. other containing these products will be unassigned from this store and sent to be rebrokered.": "{ productName }, and { products } other products are identified as unfulfillable. { space } { orders } other { orderText } containing these products will be unassigned from this store and sent to be rebrokered.",
+  ", and other products were identified as unfulfillable. These items will be unassigned from this store and sent to be rebrokered.": "{ productName }, and { products } other products were identified as unfulfillable. { space } These items will be unassigned from this store and sent to be rebrokered."
 }
