@@ -74,6 +74,7 @@ export default defineComponent({
       }
 
       emitter.emit('updateOrderQuery', size)
+      emitter.emit('updateTransferShipmentQuery', size)
       // closing the menu after selecting any view size
       menuController.close()
     }
@@ -99,6 +100,10 @@ export default defineComponent({
       // TODO: check if we can use a single getter to get the data, currently when trying that the values are not reactive
       viewSize = computed(() => store.getters['order/getCompletedOrders'].query.viewSize)
       total = computed(() => store.getters['order/getCompletedOrders'].total)
+    } else if(route.name === 'TransferShipments') {
+      // TODO: check if we can use a single getter to get the data, currently when trying that the values are not reactive
+      viewSize = computed(() => store.getters['transferShipment/getTransferShipments'].query.viewSize)
+      total = computed(() => store.getters['transferShipment/getTransferShipments'].total)
     }
 
     return {

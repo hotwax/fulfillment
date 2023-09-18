@@ -3,4 +3,5 @@ export default interface UtilState {
   partyNames: any;
   shipmentMethodTypeDesc: any;
   shipmentBoxTypeDesc: any;
+  transferShipmentStatusDesc: any;
 }

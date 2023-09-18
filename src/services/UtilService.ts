@@ -304,6 +304,14 @@ const fetchShipmentBoxTypeDesc = async (query: any): Promise <any>  => {
   });
 }
 
+const fetchTransferShipmentStatusDesc = async (query: any): Promise <any>  => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
 const resetPicker = async (payload: any): Promise<any> => {
   return api({
     url: "/service/resetPicker",
@@ -326,6 +334,7 @@ export const UtilService = {
   fetchShipmentBoxTypeDesc,
   fetchShipmentMethods,
   fetchShipmentMethodTypeDesc,
+  fetchTransferShipmentStatusDesc,
   findShipmentPackages,
   fetchShipmentRouteSegmentInformation,
   getAvailablePickers,

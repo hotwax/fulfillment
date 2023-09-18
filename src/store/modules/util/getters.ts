@@ -14,6 +14,9 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   getShipmentBoxDesc: (state) => (shipmentBoxId: string) => {
     return state.shipmentBoxTypeDesc[shipmentBoxId] ? state.shipmentBoxTypeDesc[shipmentBoxId] : shipmentBoxId
+  },
+  getTransferShipmentStatusDesc: (state) => (statusId: string) => {
+    return state.transferShipmentStatusDesc[statusId] ? state.transferShipmentStatusDesc[statusId] : statusId
   }
 }
 export default getters;

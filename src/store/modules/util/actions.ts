@@ -166,6 +166,48 @@ const actions: ActionTree<UtilState, RootState> = {
     }
 
     return shipmentBoxTypeDesc;
+  },
+
+  async fetchTransferShipmentStatusDesc({ commit, state }, statusIds) {
+    let transferShipmentStatusDesc = JSON.parse(JSON.stringify(state.transferShipmentStatusDesc))
+    const cachedStatusIds = Object.keys(transferShipmentStatusDesc);
+    const ids = statusIds.filter((statusId: string) => !cachedStatusIds.includes(statusId))
+
+    if (!ids.length) return transferShipmentStatusDesc;
+
+    try {
+      const payload = {
+        "inputFields": {
+          "statusId": ids,
+          "statusId_op": "in"
+        },
+        "fieldList": ["statusId", "description"],
+        "entityName": "StatusItem",
+        "viewSize": ids.length
+      }
+
+      const resp = await UtilService.fetchTransferShipmentStatusDesc(payload);
+
+      if (!hasError(resp)) {
+        const shipmentStatusResp = {} as any
+        resp.data.docs.map((statusItem: any) => {
+          shipmentStatusResp[statusItem.statusId] = statusItem.description
+        })
+
+        transferShipmentStatusDesc = {
+          ...transferShipmentStatusDesc,
+          ...shipmentStatusResp
+        }
+
+        commit(types.UTIL_TRANSFER_SHIPMENT_STATUSES_UPDATED, transferShipmentStatusDesc)
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Error fetching transfer shipment status description', err)
+    }
+
+    return transferShipmentStatusDesc;
   }
 }
 

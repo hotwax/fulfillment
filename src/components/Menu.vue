@@ -39,7 +39,7 @@ import {
 } from "@ionic/vue";
 import { computed, defineComponent } from "vue";
 import { mapGetters } from "vuex";
-import { mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline } from "ionicons/icons";
+import { mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline, arrowBackOutline } from "ionicons/icons";
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 import { hasPermission } from "@/authorization";
@@ -99,6 +99,15 @@ export default defineComponent({
         mdIcon: checkmarkDoneOutline,
         meta: {
           permissionId: "APP_COMPLETED_ORDERS_VIEW"
+        }
+      },
+      {
+        title: "Transfer Shipments",
+        url: "/transfer-shipments",
+        iosIcon: arrowBackOutline,
+        mdIcon: arrowBackOutline,
+        meta: {
+          permissionId: "APP_TRANSFER_SHIPMENT_VIEW"
         }
       },
       {

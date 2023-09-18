@@ -4,6 +4,8 @@ import Completed from '@/views/Completed.vue'
 import InProgress from '@/views/InProgress.vue'
 import OpenOrders from "@/views/OpenOrders.vue"
 import Settings from "@/views/Settings.vue"
+import TransferShipments from '@/views/TransferShipments.vue'
+import TransferShipmentDetails from '@/views/TransferShipmentDetail.vue'
 import store from '@/store'
 import Exim from "@/views/Exim.vue"
 import UploadImportOrders from "@/views/UploadImportOrders.vue"
@@ -73,6 +75,25 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     meta: {
       permissionId: "APP_COMPLETED_ORDERS_VIEW"
+    }
+  },
+  {
+    path: '/transfer-shipments',
+    name: 'TransferShipments',
+    component: TransferShipments,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_TRANSFER_SHIPMENT_VIEW"
+    }
+  },
+  {
+    path: '/transfer-shipments/:id',
+    name: 'TransferShipmentDetails',
+    component: TransferShipmentDetails,
+    props: true,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_TRANSFER_SHIPMENT_VIEW"
     }
   },
   {
