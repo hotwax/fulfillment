@@ -89,6 +89,7 @@
   "Generate shipping label": "Generate shipping label",
   "Go to OMS": "Go to OMS",
   "Go to Launchpad": "Go to Launchpad",
+  "is identified as. This order item will be unassigned from the store and sent to be rebrokered.": "{ productName } is identified as { rejectReason }. This order item will be unassigned from the store and sent to be rebrokered.",
   "item": "item",
   "items": "items",
   "Import": "Import",
@@ -263,5 +264,6 @@
   "You are shipping orders. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this orders?": "You are shipping { count } order. { space } You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this order? | You are shipping { count } orders. { space } You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship these orders?",
   "You do not have permission to access this page": "You do not have permission to access this page",
   "Zip Code": "Zip Code",
-  ", and other products are identified as unfulfillable. other orders containing these products will be unassigned from this store and sent to be rebrokered.": "{ productName }, and { products } other products are identified as unfulfillable. { space } { orders } other orders containing these products will be unassigned from this store and sent to be rebrokered."
+  ", and other products are identified as unfulfillable. other orders containing these products will be unassigned from this store and sent to be rebrokered.": "{ productName }, and { products } other products are identified as unfulfillable. { space } { orders } other orders containing these products will be unassigned from this store and sent to be rebrokered.",
+  ", and other products were identified as unfulfillable. These items will be unassigned from this store and sent to be rebrokered.": "{ productName }, and { products } other products were identified as unfulfillable. { space } These items will be unassigned from this store and sent to be rebrokered."
 }
