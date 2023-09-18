@@ -401,6 +401,7 @@ export default defineComponent({
         });
         this.store.dispatch('order/clearOrders')
         this.getCurrentFacilityDetails();
+        this.getFacilityOrderCount();
       }
     },
     async changeTimeZone() {
