@@ -60,12 +60,6 @@ const actions: ActionTree<TransferShipmentState, RootState> = {
         transferShipments = resp.data.docs
         if (transferShipments) {
           this.dispatch('util/fetchTransferShipmentStatusDesc', [...new Set(transferShipments.map((shipment: any) => shipment.statusId))])
-          transferShipments = transferShipments.map((transferShipment: any) => {
-            return {
-              ...transferShipment,
-              estimatedShipDate: transferShipment.createdDate,
-            }
-          })
         }
         
       } else {
