@@ -159,7 +159,7 @@ import {
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
-import Popover from '@/views/ShippingPopover.vue'
+import ShippingPopover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
@@ -367,22 +367,27 @@ export default defineComponent({
 
     async shippingPopover(ev: Event, order:any) {
       const popover = await popoverController.create({
-        component: Popover,
+        component: ShippingPopover,
         componentProps: {
-          hasPackedShipments: this.hasPackedShipments,
-          order,
-          printPackingSlip: this.printPackingSlip,
-          regenerateShippingLabel: this.regenerateShippingLabel,
-          showShippingLabelErrorModal: this.showShippingLabelErrorModal,
-          unpackOrder: this.unpackOrder
+          hasPackedShipments: this.hasPackedShipments(order),
+          order
         },
         event: ev,
         translucent: true,
         showBackdrop: false,
       });
+
+      popover.onDidDismiss().then((result) => {
+        const selectedMethod = result.data.selectedMethod
+
+        // Calls method which is clicked on the popover, functions name returns when popover dismiss.
+        if(typeof(this[selectedMethod]) === 'function') {
+          (this as any)[selectedMethod](order);
+        }
+      })
+
       return popover.present();
     },
-
     async fetchShipmentMethods() {
       const payload = prepareOrderQuery({
         viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data

@@ -1,16 +1,16 @@
 <template>
   <ion-content>
     <ion-list>
-      <ion-item button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="regenerateShippingLabel(order)">
+      <ion-item button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="closeModal('regenerateShippingLabel')">
         {{ $t("Regenerate shipping label") }}
       </ion-item>
-      <ion-item button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="printPackingSlip(order)">
+      <ion-item button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="closeModal('printPackingSlip')">
         {{ $t("Print customer letter") }}
       </ion-item>
-      <ion-item button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" @click="unpackOrder(order)">
+      <ion-item button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments" @click="closeModal('unpackOrder')">
         {{ $t("Unpack") }}
       </ion-item>
-      <ion-item button v-if="order.missingLabelImage" lines="none" @click="showShippingLabelErrorModal(order)">
+      <ion-item button v-if="order.missingLabelImage" lines="none" @click="closeModal('showShippingLabelErrorModal')">
         {{ $t("Shipping label error") }}
       </ion-item>
     </ion-list>
@@ -26,12 +26,20 @@ import {
 import { defineComponent } from "vue";
 import { printOutline, lockOpenOutline, receiptOutline, warningOutline } from 'ionicons/icons'
 import { Actions, hasPermission } from '@/authorization'
+import { popoverController } from "@ionic/core";
 export default defineComponent({
   name: "ShippingPopover",
   components: { 
     IonContent,
     IonItem,
     IonList,
+  },
+  props: ['hasPackedShipments', 'order'],
+  methods: {
+    closeModal(eventName: string) {
+      // Sending function name to be called after popover dismiss.
+      popoverController.dismiss({selectedMethod: eventName})
+    }
   },
   setup() {
     return {
@@ -42,14 +50,6 @@ export default defineComponent({
       receiptOutline,
       warningOutline
     }
-  },
-  props: [
-    'hasPackedShipments',
-    'order',
-    'printPackingSlip',
-    'regenerateShippingLabel',
-    'showShippingLabelErrorModal',
-    'unpackOrder'
-  ]
+  }
 });
 </script> 
