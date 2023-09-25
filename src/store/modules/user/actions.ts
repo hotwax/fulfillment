@@ -1,13 +1,14 @@
 import { UserService } from '@/services/UserService'
 import { ActionTree } from 'vuex'
 import RootState from '@/store/RootState'
+import store from '@/store';
 import UserState from './UserState'
 import * as types from './mutation-types'
 import { showToast } from '@/utils'
 import { hasError } from '@/adapter'
 import i18n, { translate } from '@/i18n'
 import { Settings } from 'luxon'
-import { logout, updateInstanceUrl, updateToken, resetConfig } from '@/adapter'
+import { logout, updateInstanceUrl, updateToken, resetConfig, getUserFacilities } from '@/adapter'
 import logger from '@/logger'
 import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from '@/authorization'
 import { useAuthStore } from '@hotwax/dxp-components'
@@ -50,9 +51,16 @@ const actions: ActionTree<UserState, RootState> = {
       }
 
       const userProfile = await UserService.getUserProfile(token);
+      
+      //fetching user facilities
+      const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_STOREFULFILLMENT_ADMIN" );
+      const baseURL = store.getters['user/getBaseUrl'];
+      const facilities = await getUserFacilities(token, baseURL, userProfile?.partyId, "OMS_FULFILLMENT", isAdminUser);
 
-      if (!userProfile.facilities.length) throw 'Unable to login. User is not assocaited with any facility'
 
+      if (!facilities.length) throw 'Unable to login. User is not assocaited with any facility'
+
+      userProfile.facilities = facilities;
       // Getting unique facilities
       userProfile.facilities.reduce((uniqueFacilities: any, facility: any, index: number) => {
         if (uniqueFacilities.includes(facility.facilityId)) userProfile.facilities.splice(index, 1);
