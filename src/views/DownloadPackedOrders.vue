@@ -29,7 +29,12 @@
           </ion-list-header>
           <ion-reorder-group @ionItemReorder="doReorder($event)" :disabled="false">
             <ion-item :key="field" v-for="(value, field) in selectedFieldMappings">
-              <ion-icon v-if="!customFields[field]" @click="updateSelectedData(field)" slot="start" color="danger" :icon="removeCircleOutline"/>
+              <ion-button v-if="!customFields[field]" slot="start" fill="clear" @click="updateSelectedData(field)">
+                <ion-icon color="danger" :icon="removeCircleOutline"/>
+              </ion-button>
+              <ion-button v-else slot="start" fill="clear" @click="removeCustomField(field)">
+                <ion-icon :icon="trashOutline" />
+              </ion-button>
               <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
               <ion-button v-if="!customFields[field] && value === field" fill="outline" @click="addCustomLabel(field)">{{ $t('Custom Label') }}</ion-button>
               <!-- Using multiple if's instead of wrapping in a single parent div, to style the component properly without adding any extra css -->
@@ -38,9 +43,6 @@
                 <ion-icon :icon="pencilOutline" />
               </ion-button>
               <ion-label v-if="customFields[field]" slot="end">{{ value }}</ion-label>
-              <ion-button v-if="customFields[field]" slot="end" fill="clear" @click="removeCustomField(field)">
-                <ion-icon :icon="trashOutline" />
-              </ion-button>
               <ion-reorder slot="end"/>
             </ion-item>
           </ion-reorder-group>
@@ -51,7 +53,9 @@
           <ion-button fill="clear" @click="selectAll" :disabled="!Object.keys(fieldMapping).length">{{ $t('Select all') }}</ion-button>
 
           <ion-item :key="field" v-for="(value, field) in fieldMapping" v-show="!selectedData[field]">
-            <ion-icon @click="updateSelectedData(field)" slot="start" color="success" :icon="addCircleOutline"/>
+            <ion-button slot="start" fill="clear" @click="updateSelectedData(field)">
+              <ion-icon color="success" :icon="addCircleOutline"/>
+            </ion-button>
             <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
           </ion-item>
         </ion-list>
