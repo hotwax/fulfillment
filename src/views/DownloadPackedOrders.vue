@@ -72,7 +72,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { mapGetters } from "vuex";
+import { mapGetters, useStore } from "vuex";
 import { alertController, IonBackButton, IonButton, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonReorder, IonReorderGroup, IonTitle, IonToolbar, modalController } from '@ionic/vue'
 import { addCircleOutline, addOutline, cloudDownloadOutline, pencilOutline, removeCircleOutline, trashOutline } from 'ionicons/icons'
 import { parseCsv, jsonToCsv, showToast } from '@/utils';
@@ -124,6 +124,7 @@ export default defineComponent({
   },
   async ionViewDidEnter() {
     this.content = []
+    this.store.dispatch('user/getFieldMappings')
     await this.fetchPackedOrders();
   },
   methods: {
@@ -369,6 +370,7 @@ export default defineComponent({
     },
   },
   setup() {
+    const store = useStore();
     const router = useRouter();
 
     return {
@@ -377,6 +379,7 @@ export default defineComponent({
       cloudDownloadOutline,
       pencilOutline,
       removeCircleOutline,
+      store,
       trashOutline,
       router
     }

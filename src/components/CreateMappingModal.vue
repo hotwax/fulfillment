@@ -88,7 +88,7 @@ export default defineComponent({
   },
   props: ["content", "mappings", "mappingType"],
   mounted() {
-    // mappings needs to be in format { <key>: { value: <value>, label: <label>, isSelected | optional: <boolean> }}
+    // mappings needs to be in format { <key>: { value: <value>, label: <label>, isSelected | optional: <boolean>, isCustomField | optional: <boolean> }}
     this.fieldMapping = JSON.parse(JSON.stringify(this.mappings));
     this.fileColumns = Object.keys(this.content[0]);
   },
