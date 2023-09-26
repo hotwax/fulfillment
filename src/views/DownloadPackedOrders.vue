@@ -202,6 +202,9 @@ export default defineComponent({
       if(this.selectedData[field]) {
         delete this.selectedData[field]
         delete this.selectedFieldMappings[field]
+
+        // change the field label to default on removing the field from the selected fields
+        this.fieldMapping[field] = field
       } else {
         this.selectedData[field] = this.fieldMapping[field]
         this.selectedFieldMappings[field] = this.fieldMapping[field]

@@ -115,7 +115,11 @@ export default defineComponent({
 
       // removing label from mappings as we don't need to save label with the mappings as it will just increase the size of the value
       Object.keys(this.fieldMapping).map((mapping) => {
-        mappings[mapping] = {
+        mappings[mapping] = this.fieldMapping[mapping].isCustomField ? {
+          value: this.fieldMapping[mapping].value,
+          isSelected: this.fieldMapping[mapping].isSelected,
+          isCustomField: this.fieldMapping[mapping].isCustomField
+        } : {
           value: this.fieldMapping[mapping].value,
           isSelected: this.fieldMapping[mapping].isSelected
         }
