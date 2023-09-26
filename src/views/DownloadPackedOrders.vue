@@ -23,8 +23,8 @@
         </ion-list>
 
         <ion-list>
-          <!-- TODO: check if we can have button inside header and if yes how to move the button to end -->
-          <ion-list-header>{{ $t('Selected Fields: ') }} {{ Object.keys(selectedFieldMappings).length }}
+          <ion-list-header>
+            <ion-label>{{ $t('Selected Fields: ') }} {{ Object.keys(selectedFieldMappings).length }}</ion-label>
             <ion-button fill="clear" @click="addCustomField()" :disabled="!Object.keys(fieldMapping).length">{{ $t('Add custom field') }}</ion-button>
           </ion-list-header>
           <ion-reorder-group @ionItemReorder="doReorder($event)" :disabled="false">
