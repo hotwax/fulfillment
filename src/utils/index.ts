@@ -20,10 +20,10 @@ const showToast = async (message: string, options?: any) => {
     ...options
   } as any;
 
-  if (!options.position) {
+  if (!options?.position) {
     config.position = 'bottom';
   }
-  if (options.canDismiss) {
+  if (options?.canDismiss) {
     config.buttons = [
       {
         text: translate('Dismiss'),
@@ -31,13 +31,13 @@ const showToast = async (message: string, options?: any) => {
       },
     ]
   }
-  if (!options.manualDismiss) {
+  if (!options?.manualDismiss) {
     config.duration = 3000;
   }
 
   const toast = await toastController.create(config)
   // present toast if manual dismiss is not needed
-  return !options.manualDismiss ? toast.present() : toast
+  return !options?.manualDismiss ? toast.present() : toast
 }
 
 const handleDateTimeInput = (dateTimeValue: any) => {
