@@ -374,7 +374,7 @@ export default defineComponent({
     },
     async turnOnFulfillment() {
       const alert = await alertController.create({
-        header: this.$t('Turn on fulfillment for ', { facilityName: this.currentFacility.name }),
+        header: this.$t('Turn on fulfillment for ', { facilityName: this.currentFacility.facilityName }),
         buttons: [{
           text: translate('Cancel'),
           handler: () => {
@@ -403,7 +403,7 @@ export default defineComponent({
     },
     async turnOffFulfillment() {
       const alert = await alertController.create({
-        header: this.$t('Turn off fulfillment for ', { facilityName: this.currentFacility.name }),
+        header: this.$t('Turn off fulfillment for ', { facilityName: this.currentFacility.facilityName }),
         message: translate('Are you sure you want perform this action?'),
         buttons: [{
           text: translate('Cancel'),
