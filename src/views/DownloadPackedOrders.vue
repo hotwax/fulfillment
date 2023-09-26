@@ -55,16 +55,6 @@
             <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
           </ion-item>
         </ion-list>
-
-        <ion-list>
-          <ion-item :key="key" v-for="(field, key) in customFields">
-            <ion-label>{{ key }}</ion-label>
-            <ion-label slot="end">{{ field.value }}</ion-label>
-            <ion-button slot="end" fill="clear" @click="removeCustomField(key)">
-              <ion-icon :icon="trashOutline" />
-            </ion-button>
-          </ion-item>
-        </ion-list>
       </main>
 
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
@@ -256,8 +246,24 @@ export default defineComponent({
       return alert.present();
     },
     selectAll() {
-      this.selectedData = JSON.parse(JSON.stringify(this.fieldMapping))
-      this.selectedFieldMappings = JSON.parse(JSON.stringify(this.fieldMapping))
+      const fields = JSON.parse(JSON.stringify(this.fieldMapping))
+
+      const unselectedFields = Object.keys(fields).reduce((unselectedFields: any, field) => {
+        if(!this.selectedFieldMappings[field]) {
+          unselectedFields[field] = fields[field]
+        }
+
+        return unselectedFields
+      }, {})
+
+      this.selectedData = {
+        ...this.selectedFieldMappings,
+        ...unselectedFields
+      }
+      this.selectedFieldMappings = {
+        ...this.selectedFieldMappings,
+        ...unselectedFields
+      }
     },
     async addFieldMapping() {
       let mappings: any = {};
