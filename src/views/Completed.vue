@@ -67,20 +67,44 @@
               </div>
             </div>
 
-            <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
-              <div class="product-info">
-                <ion-item lines="none">
-                  <ion-thumbnail slot="start">
-                    <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
-                  </ion-thumbnail>
+            <ion-list>
+              <ion-item-group>
+                <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
+                  <ion-item lines="none" class="product-info">
+                    <ion-thumbnail slot="start">
+                      <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ item.productSku }}</p>
+                      {{ item.virtualProductName }}
+                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                    </ion-label>
+                  </ion-item>
+                </div>
+              </ion-item-group>
+
+              <ion-item-group>
+                <ion-item-divider color="light">
                   <ion-label>
-                    <p class="overline">{{ item.productSku }}</p>
-                    {{ item.virtualProductName }}
-                    <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                    <p>Primary identifier</p>
+                    <p>Secondary identifier</p>
                   </ion-label>
-                </ion-item>
-              </div>
-            </div>
+                </ion-item-divider>
+
+                <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
+                  <ion-item lines="none" class="product-info">
+                    <ion-thumbnail slot="start">
+                      <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ item.productSku }}</p>
+                      {{ item.virtualProductName }}
+                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                    </ion-label>
+                  </ion-item>
+                </div>
+              </ion-item-group>
+            </ion-list>
 
             <!-- TODO: implement functionality to mobile view -->
             <div class="mobile-only">
@@ -145,7 +169,9 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonItem,
+  IonItemDivider,
   IonLabel,
+  IonList,
   IonMenuButton,
   IonPage,
   IonSearchbar,
@@ -192,7 +218,9 @@ export default defineComponent({
     IonInfiniteScroll,
     IonInfiniteScrollContent,
     IonItem,
+    IonItemDivider,
     IonLabel,
+    IonList,
     IonMenuButton,
     IonPage,
     IonSearchbar,

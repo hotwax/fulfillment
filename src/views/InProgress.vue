@@ -82,63 +82,108 @@
               </ion-row>
             </div>
 
-            <div v-for="(item, index) in order.items" :key="index" class="order-item">
-              <div class="product-info">
-                <ion-item lines="none">
-                  <ion-thumbnail slot="start">
-                    <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
-                  </ion-thumbnail>
-                  <ion-label>
-                    <p class="overline">{{ item.productSku }}</p>
-                    {{ item.productName }}
-                    <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
-                  </ion-label>
-                </ion-item>
-              </div>
-
-              <div class="desktop-only" v-if="!order.shipmentPackages && !order.hasMissingInfo">
-                <ion-segment>
-                  <ion-segment-button><ion-skeleton-text animated /></ion-segment-button>
-                  <ion-segment-button><ion-skeleton-text animated /></ion-segment-button>
-                </ion-segment>
-                <div class="segments">
-                  <ion-item lines="none">
-                    <ion-skeleton-text animated />
+            <ion-list>
+              <ion-item-group>
+                <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
+                  <ion-item lines="none" class="product-info">
+                    <ion-thumbnail slot="start">
+                      <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ item.productSku }}</p>
+                      {{ item.productName }}
+                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                    </ion-label>
                   </ion-item>
-                </div>
-              </div>
-              <div class="desktop-only" v-else-if="order.shipmentPackages">
-                <ion-segment @ionChange="changeSegment($event, item, order)" :value="isIssueSegmentSelectedForItem(item) ? 'issue' : 'pack'">
-                  <ion-segment-button value="pack">
-                    <ion-label>{{ $t("Ready to pack") }}</ion-label>
-                  </ion-segment-button>
-                  <ion-segment-button value="issue">
-                    <ion-label>{{ $t("Report an issue") }}</ion-label>
-                  </ion-segment-button>
-                </ion-segment>
-                <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
-                <div class="segments" v-if="order.shipmentPackages && order.shipmentPackages.length">
-                  <!-- TODO: add functionality to update box type -->
-                  <div v-if="!isIssueSegmentSelectedForItem(item)">
-                    <ion-item lines="none">
-                      <ion-label>{{ $t("Select box") }}</ion-label>
-                      <ion-select interface="popover" @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
-                        <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName">{{ shipmentPackage.packageName }}</ion-select-option>
-                      </ion-select>
-                    </ion-item>
-                  </div>
-                  <div v-else>
-                    <ion-item lines="none">
-                      <ion-label>{{ $t("Select issue") }}</ion-label>
-                      <ion-select interface="popover" @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
-                        <ion-select-option v-for="reason in rejectReasons" :key="reason.enumId" :value="reason.enumId">{{ reason.description ? $t(reason.description) : reason.enumId }}</ion-select-option>
-                      </ion-select>
-                    </ion-item>
-                  </div>
-                </div>
-              </div>
 
-            </div>
+                  <div class="desktop-only" v-if="!order.shipmentPackages && !order.hasMissingInfo">
+                    <ion-segment>
+                      <ion-segment-button><ion-skeleton-text animated /></ion-segment-button>
+                      <ion-segment-button><ion-skeleton-text animated /></ion-segment-button>
+                    </ion-segment>
+                    <div class="segments">
+                      <ion-item lines="none">
+                        <ion-skeleton-text animated />
+                      </ion-item>
+                    </div>
+                  </div>
+                  <div class="desktop-only" v-else-if="order.shipmentPackages">
+                    <ion-segment @ionChange="changeSegment($event, item, order)" :value="isIssueSegmentSelectedForItem(item) ? 'issue' : 'pack'">
+                      <ion-segment-button value="pack">
+                        <ion-label>{{ $t("Ready to pack") }}</ion-label>
+                      </ion-segment-button>
+                      <ion-segment-button value="issue">
+                        <ion-label>{{ $t("Report an issue") }}</ion-label>
+                      </ion-segment-button>
+                    </ion-segment>
+                    <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
+                    <div class="segments" v-if="order.shipmentPackages && order.shipmentPackages.length">
+                      <!-- TODO: add functionality to update box type -->
+                      <div v-if="!isIssueSegmentSelectedForItem(item)">
+                        <ion-item lines="none">
+                          <ion-label>{{ $t("Select box") }}</ion-label>
+                          <ion-select interface="popover" @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
+                            <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName">{{ shipmentPackage.packageName }}</ion-select-option>
+                          </ion-select>
+                        </ion-item>
+                      </div>
+                      <div v-else>
+                        <ion-item lines="none">
+                          <ion-label>{{ $t("Select issue") }}</ion-label>
+                          <ion-select interface="popover" @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
+                            <ion-select-option v-for="reason in rejectReasons" :key="reason.enumId" :value="reason.enumId">{{ reason.description ? $t(reason.description) : reason.enumId }}</ion-select-option>
+                          </ion-select>
+                        </ion-item>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ion-item-group>
+
+              
+              <ion-item-group>
+                <ion-item-divider color="light">
+                  <ion-label>
+                    <p>Primary identifier</p>
+                    <p>Secondary identifier</p>
+                  </ion-label>
+                  <ion-button id="reject-reason-popover" slot="end" fill="outline" color="danger">
+                    {{ $t("Report an issue") }}
+                  </ion-button>
+                  <ion-popover trigger="reject-reason-popover" translucent dismissOnSelect showBackdrop="false" side="top">
+                    <ion-content>
+                      <ion-item button v-for="reason in rejectReasons" :key="reason.enumId" :value="reason.enumId" lines="none">
+                        {{ reason.description ? $t(reason.description) : reason.enumId }}  
+                      </ion-item>
+                    </ion-content>
+                  </ion-popover>
+                </ion-item-divider>
+
+                <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
+                  <ion-item lines="none" class="product-info">
+                    <ion-thumbnail slot="start">
+                      <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ item.productSku }}</p>
+                      {{ item.productName }}
+                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                    </ion-label>
+                  </ion-item>
+
+                  <div class="desktop-only" v-if="order.shipmentPackages && order.shipmentPackages.length">
+                    <div v-if="!isIssueSegmentSelectedForItem(item)">
+                      <ion-item lines="none">
+                        <ion-label>{{ $t("Select box") }}</ion-label>
+                        <ion-select interface="popover" @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
+                          <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName">{{ shipmentPackage.packageName }}</ion-select-option>
+                        </ion-select>
+                      </ion-item>
+                    </div>
+                  </div>
+                </div>
+              </ion-item-group>
+            </ion-list>
 
             <div class="mobile-only">
               <ion-item>
@@ -201,12 +246,16 @@ import {
   IonFooter,
   IonHeader,
   IonItem,
+  IonItemDivider,
+  IonItemGroup,
   IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonLabel,
+  IonList,
   IonMenuButton,
   IonPage,
+  IonPopover,
   IonRow,
   IonRadio,
   IonRadioGroup,
@@ -265,12 +314,16 @@ export default defineComponent({
     IonFooter,
     IonHeader,
     IonItem,
+    IonItemDivider,
+    IonItemGroup,
     IonIcon,
     IonInfiniteScroll,
     IonInfiniteScrollContent,
     IonLabel,
+    IonList,
     IonMenuButton,
     IonPage,
+    IonPopover,
     IonRow,
     IonRadio,
     IonRadioGroup,

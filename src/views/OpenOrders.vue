@@ -59,10 +59,10 @@
               </div>
             </div>
 
-            <div v-for="order in orders.doclist.docs" :key="order">
-              <div class="order-item">
-                <div class="product-info">
-                  <ion-item lines="none">
+            <ion-list>
+              <ion-item-group>
+                <div v-for="order in orders.doclist.docs" :key="order.orderItemSeqId" class="order-item">
+                  <ion-item lines="none" class="product-info">
                     <ion-thumbnail slot="start">
                       <ShopifyImg :src="getProduct(order.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
@@ -73,8 +73,30 @@
                     </ion-label>
                   </ion-item>
                 </div>
-              </div>
-            </div>
+              </ion-item-group>
+
+              <ion-item-group>
+                <ion-item-divider color="light">
+                  <ion-label>
+                    <p>Primary identifier</p>
+                    <p>Secondary identifier</p>
+                  </ion-label>
+                </ion-item-divider>
+
+                <div v-for="order in orders.doclist.docs" :key="order.orderItemSeqId" class="order-item">
+                  <ion-item lines="none" class="product-info">
+                    <ion-thumbnail slot="start">
+                      <ShopifyImg :src="getProduct(order.productId).mainImageUrl" size="small"/>
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ order.productSku }}</p>
+                      {{ order.virtualProductName }}
+                      <p>{{ getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
+                    </ion-label>
+                  </ion-item>
+                </div>
+              </ion-item-group>
+            </ion-list>
 
             <!-- TODO: add functionality to the buttons-->
             <!-- <div class="actions">
@@ -112,11 +134,14 @@ import {
   IonFab, 
   IonFabButton, 
   IonHeader, 
-  IonLabel, 
   IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonItem, 
+  IonItemDivider,
+  IonItemGroup,
+  IonLabel, 
+  IonList,
   IonMenuButton,
   IonPage, 
   IonSearchbar, 
@@ -155,11 +180,14 @@ export default defineComponent({
     IonFab,
     IonFabButton,
     IonHeader,
-    IonLabel,
     IonIcon,
     IonInfiniteScroll,
     IonInfiniteScrollContent,
     IonItem,
+    IonItemDivider,
+    IonItemGroup,
+    IonLabel,
+    IonList,
     IonMenuButton,
     IonPage,
     IonSearchbar,
