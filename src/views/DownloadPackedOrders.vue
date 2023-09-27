@@ -48,7 +48,7 @@
           </ion-reorder-group>
         </ion-list>
 
-        <ion-list>
+        <ion-list v-show="!areAllFieldsSelected">
           <ion-list-header>{{ $t("Select the fields you want to include in your export") }}</ion-list-header>
           <ion-button fill="clear" @click="selectAll" :disabled="!Object.keys(fieldMapping).length">{{ $t('Select all') }}</ion-button>
 
@@ -120,7 +120,10 @@ export default defineComponent({
     ...mapGetters({
       currentFacility: 'user/getCurrentFacility',
       fieldMappings: 'user/getFieldMappings'
-    })
+    }),
+    areAllFieldsSelected() {
+      return Object.keys(this.fieldMapping).every((field: any) => this.selectedFieldMappings[field])
+    }
   },
   async ionViewDidEnter() {
     this.content = []
