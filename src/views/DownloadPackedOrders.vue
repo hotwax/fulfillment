@@ -23,47 +23,58 @@
         </ion-list>
 
         <ion-list>
+          <ion-list-header>
+            <ion-label>{{ $t('Selected Fields: ') }} {{ Object.keys(selectedFieldMappings).length }}</ion-label>
+            <ion-button fill="clear" @click="addCustomField()" :disabled="!Object.keys(fieldMapping).length">{{ $t('Add custom field') }}</ion-button>
+          </ion-list-header>
+          <ion-reorder-group @ionItemReorder="doReorder($event)" :disabled="false">
+            <ion-item :key="field" v-for="(value, field) in selectedFieldMappings">
+              <ion-button v-if="!customFields[field]" slot="start" fill="clear" @click="updateSelectedData(field)">
+                <ion-icon color="danger" :icon="removeCircleOutline"/>
+              </ion-button>
+              <ion-button v-else slot="start" fill="clear" @click="removeCustomField(field)">
+                <ion-icon :icon="trashOutline" />
+              </ion-button>
+              <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
+              <ion-button v-if="!customFields[field] && value === field" fill="outline" @click="addCustomLabel(field)">{{ $t('Custom Label') }}</ion-button>
+              <!-- Using multiple if's instead of wrapping in a single parent div, to style the component properly without adding any extra css -->
+              <ion-label v-if="!customFields[field] && value !== field" slot="end">{{ value }}</ion-label>
+              <ion-button v-if="!customFields[field] && value !== field" slot="end" fill="clear" @click="addCustomLabel(field)">
+                <ion-icon :icon="pencilOutline" />
+              </ion-button>
+              <ion-label v-if="customFields[field]" slot="end">{{ value }}</ion-label>
+              <ion-reorder slot="end"/>
+            </ion-item>
+          </ion-reorder-group>
+        </ion-list>
+
+        <ion-list v-show="!areAllFieldsSelected">
           <ion-list-header>{{ $t("Select the fields you want to include in your export") }}</ion-list-header>
           <ion-button fill="clear" @click="selectAll" :disabled="!Object.keys(fieldMapping).length">{{ $t('Select all') }}</ion-button>
 
-          <ion-item :key="field" v-for="(value, field) in fieldMapping">
-            <ion-checkbox :checked="selectedData[field]" @click="isFieldClicked=true" @ionChange="updateSelectedData(field)" slot="start"/>
+          <ion-item :key="field" v-for="(value, field) in fieldMapping" v-show="!selectedData[field]">
+            <ion-button slot="start" fill="clear" @click="updateSelectedData(field)">
+              <ion-icon color="success" :icon="addCircleOutline"/>
+            </ion-button>
             <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
-            <ion-button v-if="value === field" fill="outline" @click="addCustomLabel(field)">{{ $t('Custom Label') }}</ion-button>
-            <!-- Using multiple if's instead of wrapping in a single parent div, to style the component properly without adding any extra css -->
-            <ion-label v-if="value !== field" slot="end">{{ value }}</ion-label>
-            <ion-button v-if="value !== field" slot="end" fill="clear" @click="addCustomLabel(field)">
-              <ion-icon :icon="pencilOutline" />
-            </ion-button>
           </ion-item>
         </ion-list>
-
-        <ion-list>
-          <ion-button fill="clear" @click="addCustomField()" :disabled="!Object.keys(fieldMapping).length">{{ $t('Add custom field') }}</ion-button>
-
-          <ion-item :key="key" v-for="(field, key) in customFields">
-            <ion-label>{{ key }}</ion-label>
-            <ion-label slot="end">{{ field.value }}</ion-label>
-            <ion-button slot="end" fill="clear" @click="removeCustomField(key)">
-              <ion-icon :icon="trashOutline" />
-            </ion-button>
-          </ion-item>
-        </ion-list>
-
-        <ion-button size="large" :disabled="!content.length" color="medium" @click="download" expand="block">
-          {{ $t("Export") }}
-        </ion-button>
-
       </main>
+
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button @click="download" :disabled="!content.length">
+          <ion-icon :icon="cloudDownloadOutline" />
+        </ion-fab-button>
+      </ion-fab>
     </ion-content>
   </ion-page>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { mapGetters } from "vuex";
-import { alertController, IonBackButton, IonButton, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonTitle, IonToolbar, modalController } from '@ionic/vue'
-import { addOutline, pencilOutline, trashOutline } from 'ionicons/icons'
+import { mapGetters, useStore } from "vuex";
+import { alertController, IonBackButton, IonButton, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonReorder, IonReorderGroup, IonTitle, IonToolbar, modalController } from '@ionic/vue'
+import { addCircleOutline, addOutline, cloudDownloadOutline, pencilOutline, removeCircleOutline, trashOutline } from 'ionicons/icons'
 import { parseCsv, jsonToCsv, showToast } from '@/utils';
 import { translate } from "@/i18n";
 import logger from '@/logger';
@@ -78,9 +89,10 @@ export default defineComponent({
   components: {
     IonBackButton,
     IonButton,
-    IonCheckbox,
     IonChip,
     IonContent,
+    IonFab,
+    IonFabButton,
     IonHeader,
     IonIcon,
     IonItem,
@@ -88,6 +100,8 @@ export default defineComponent({
     IonList,
     IonListHeader,
     IonPage,
+    IonReorder,
+    IonReorderGroup,
     IonTitle,
     IonToolbar
   },
@@ -97,19 +111,23 @@ export default defineComponent({
       fieldMapping: {} as any,
       dataColumns: [] as Array<string>,
       selectedData: {} as any,
-      isFieldClicked: false,
       fields: process.env["VUE_APP_MAPPING_EXPORD"] ? JSON.parse(process.env["VUE_APP_MAPPING_EXPORD"]) : {},
-      customFields: {} as any
+      customFields: {} as any,
+      selectedFieldMappings: {} as any
     }
   },
   computed: {
     ...mapGetters({
       currentFacility: 'user/getCurrentFacility',
       fieldMappings: 'user/getFieldMappings'
-    })
+    }),
+    areAllFieldsSelected() {
+      return Object.keys(this.fieldMapping).every((field: any) => this.selectedFieldMappings[field])
+    }
   },
   async ionViewDidEnter() {
     this.content = []
+    this.store.dispatch('user/getFieldMappings')
     await this.fetchPackedOrders();
   },
   methods: {
@@ -128,8 +146,6 @@ export default defineComponent({
         const resp = await UploadService.fetchPackedOrders(payload);
 
         if(resp.status == 200 && resp.data) {
-          // generating mapping only when we get the packed orders information
-          this.generateFieldMapping();
           await this.parse(resp.data)
         } else {
           throw resp.data
@@ -150,6 +166,8 @@ export default defineComponent({
         this.content = await parseCsv(data).then(res => res);
         // get the column names from the data
         this.dataColumns = Object.keys(this.content[0]);
+        // generating mapping only when we get the packed orders information and parsing of data is successfull
+        this.generateFieldMapping();
       } catch {
         this.content = []
         logger.error("Failed to parse the data");
@@ -175,6 +193,7 @@ export default defineComponent({
             this.fieldMapping[field] = value ? value : field;
             // selecting the field value when the label for the field is changed
             this.selectedData[field] = this.fieldMapping[field]
+            this.selectedFieldMappings[field] = this.fieldMapping[field]
           }
         }],
         inputs: [{
@@ -188,14 +207,15 @@ export default defineComponent({
       await alert.present();
     },
     updateSelectedData(field: any) {
-      // Using isFieldClicked variable as when checked property is changed programatically it calls this method, resulting in wrong behaviour
-      if(this.isFieldClicked) {
-        if(this.selectedData[field]) {
-          delete this.selectedData[field]
-        } else {
-          this.selectedData[field] = this.fieldMapping[field]
-        }
-        this.isFieldClicked = false;
+      if(this.selectedData[field]) {
+        delete this.selectedData[field]
+        delete this.selectedFieldMappings[field]
+
+        // change the field label to default on removing the field from the selected fields
+        this.fieldMapping[field] = field
+      } else {
+        this.selectedData[field] = this.fieldMapping[field]
+        this.selectedFieldMappings[field] = this.fieldMapping[field]
       }
     },
     async download() {
@@ -207,15 +227,16 @@ export default defineComponent({
       const downloadData = [] as any
 
       this.content.map((order: any) => {
-        downloadData.push(Object.keys(this.selectedData).reduce((orderInfo: any, property: string) => {
-          orderInfo[this.selectedData[property]] = order[property]
+        downloadData.push(Object.keys(this.selectedFieldMappings).reduce((orderInfo: any, property: string) => {
+          const isCustomField = !order[property]
+
+          if(isCustomField) {
+            orderInfo[property] = this.selectedFieldMappings[property]
+          } else {
+            orderInfo[this.selectedFieldMappings[property]] = order[property]
+          }
           return orderInfo
         }, {}))
-      })
-
-      // adding custom fields in the data
-      Object.keys(this.customFields).map((field: any) => {
-        downloadData.map((data: any) => data[field] = this.customFields[field].value)
       })
 
       const alert = await alertController.create({
@@ -236,23 +257,54 @@ export default defineComponent({
       return alert.present();
     },
     selectAll() {
-      this.selectedData = JSON.parse(JSON.stringify(this.fieldMapping))
+      const fields = JSON.parse(JSON.stringify(this.fieldMapping))
+
+      const unselectedFields = Object.keys(fields).reduce((unselectedFields: any, field) => {
+        if(!this.selectedFieldMappings[field]) {
+          unselectedFields[field] = fields[field]
+        }
+
+        return unselectedFields
+      }, {})
+
+      this.selectedData = {
+        ...this.selectedFieldMappings,
+        ...unselectedFields
+      }
+      this.selectedFieldMappings = {
+        ...this.selectedFieldMappings,
+        ...unselectedFields
+      }
     },
     async addFieldMapping() {
       let mappings: any = {};
 
-      Object.keys(this.fieldMapping).map((mapping) => {
+      // added the support to loop on selectedFieldMappings as to save the order of fields, if changed on reordering
+      Object.keys(this.selectedFieldMappings).map((mapping) => {
         let isSelected = false;
-        if(this.selectedData[mapping]) {
-          isSelected = true
-        }
 
-        mappings[mapping] = { value: this.fieldMapping[mapping], isSelected, label: this.fields[mapping].label }
+        if(this.customFields[mapping]) {
+          mappings[mapping] = {
+            value: this.customFields[mapping].value,
+            label: mapping,
+            isSelected: true,
+            isCustomField: true
+          }
+        } else if(this.selectedFieldMappings[mapping]) {
+          isSelected = true
+          mappings[mapping] = { value: this.fieldMapping[mapping], isSelected, label: this.fields[mapping].label }
+        }
+      })
+
+      Object.keys(this.fieldMapping).map((mapping) => {
+        if(!mappings[mapping]) {
+          mappings[mapping] = { value: this.fieldMapping[mapping], isSelected: false, label: this.fields[mapping].label }
+        }
       })
 
       const createMappingModal = await modalController.create({
         component: CreateMappingModal,
-        componentProps: { content: this.content, mappings: { ...mappings, ...this.customFields }, mappingType: 'EXPORD'}
+        componentProps: { content: this.content, mappings: { ...mappings }, mappingType: 'EXPORD'}
       });
       return createMappingModal.present();
     },
@@ -263,6 +315,7 @@ export default defineComponent({
       this.fieldMapping = {}
       this.customFields = {}
       this.selectedData = {}
+      this.selectedFieldMappings = {}
 
       Object.keys(mappingValue).map((mapping) => {
         if(mappingValue[mapping].isCustomField) {
@@ -272,12 +325,14 @@ export default defineComponent({
             isSelected: true,
             isCustomField: true
           }
+          this.selectedFieldMappings[mapping] = mappingValue[mapping].value
         } else {
           this.fieldMapping[mapping] = mappingValue[mapping].value
         }
 
         if(mappingValue[mapping].isSelected && !mappingValue[mapping].isCustomField) {
           this.selectedData[mapping] = mappingValue[mapping].value
+          this.selectedFieldMappings[mapping] = mappingValue[mapping].value
         }
       })
     },
@@ -295,6 +350,8 @@ export default defineComponent({
             isSelected: true,
             isCustomField: true
           }
+
+          this.selectedFieldMappings[result.data.value.key] = result.data.value.value
         }
       })
 
@@ -302,14 +359,30 @@ export default defineComponent({
     },
     removeCustomField(key: any) {
       delete this.customFields[key];
-    }
+      delete this.selectedFieldMappings[key];
+    },
+    doReorder(event: CustomEvent) {
+      // making the item reorder action as complete
+      let updatedSeq = event.detail.complete(JSON.parse(JSON.stringify(Object.keys(this.selectedFieldMappings))));
+
+      this.selectedFieldMappings = updatedSeq.reduce((updatedData: any, field: string) => {
+        updatedData[field] = this.selectedFieldMappings[field]
+
+        return updatedData
+      }, {})
+    },
   },
   setup() {
+    const store = useStore();
     const router = useRouter();
 
     return {
+      addCircleOutline,
       addOutline,
+      cloudDownloadOutline,
       pencilOutline,
+      removeCircleOutline,
+      store,
       trashOutline,
       router
     }
