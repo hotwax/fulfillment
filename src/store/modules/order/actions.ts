@@ -310,6 +310,7 @@ const actions: ActionTree<OrderState, RootState> = {
       ...payload,
       queryString: openOrderQuery.queryString,
       viewSize: openOrderQuery.viewSize,
+      sort: payload.sort ? payload.sort : "orderDate asc",
       filters: {
         quantityNotAvailable: { value: 0 },
         isPicked: { value: 'N' },
