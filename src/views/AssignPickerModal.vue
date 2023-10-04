@@ -99,6 +99,7 @@ export default defineComponent({
       pickers: []
     }
   },
+  props: ["order"], // if we have order in props then create picklist for this single order only
   methods: {
     isPickerSelected(id) {
       return this.selectedPickers.some((picker) => picker.id == id)
@@ -121,9 +122,14 @@ export default defineComponent({
 
       // creating picklist for orders that are currently in the list, means those are currently in the selected viewSize
       const orderItems = []
-      this.openOrders.list.map((order) => {
-        order.doclist.docs.map((item) => orderItems.push(item))
-      });
+
+      if(this.order) {
+        this.order.doclist.docs.map((item) => orderItems.push(item))
+      } else {
+        this.openOrders.list.map((order) => {
+          order.doclist.docs.map((item) => orderItems.push(item))
+        });
+      }
 
       const formData = new FormData();
       formData.append("facilityId", this.currentFacility.facilityId);
