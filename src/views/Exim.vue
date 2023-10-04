@@ -12,18 +12,18 @@
         <ion-card>
           <ion-card-header>
             <ion-card-subtitle>
-              {{ $t("Download") }}
+              {{ $t("Export") }}
             </ion-card-subtitle>
             <ion-card-title>
               {{ $t('Packed Orders') }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ $t("Download orders that are packed and haven't been shipped yet. Use the downloaded file to send the packed order details to a carrier where shipping labels and tracking codes will be generated.") }}
+            {{ $t("Export orders that are packed and haven't been shipped yet. Use the exported file to send the packed order details to a carrier where shipping labels and tracking codes will be generated.") }}
           </ion-card-content>
           <div class="border-top">
             <ion-button fill="clear" @click="downloadPackedOrders">
-              {{ $t('Download') }}
+              {{ $t('Export') }}
               <ion-icon slot="end" :icon="downloadOutline" />
             </ion-button>
           </div>

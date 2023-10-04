@@ -45,7 +45,7 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip @click="copyToClipboard(orders.doclist.docs[0].orderName, 'Copied to clipboard')" outline>
+                <ion-chip @click="orderActionsPopover(orders, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ orders.doclist.docs[0].orderName }}</ion-label>
                 </ion-chip>
@@ -124,14 +124,15 @@ import {
   IonTitle, 
   IonToolbar, 
   modalController,
-  alertController
+  alertController,
+  popoverController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { ShopifyImg } from '@hotwax/dxp-components';
-import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
+import { formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
@@ -141,6 +142,7 @@ import logger from '@/logger';
 import { translate } from '@/i18n';
 import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
+import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -185,7 +187,7 @@ export default defineComponent({
   },
   methods: {
     getErrorMessage() {
-      return this.searchedQuery === '' ? this.$t("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility.name }) : this.$t( "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+      return this.searchedQuery === '' ? this.$t("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility.facilityName }) : this.$t( "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
     },
     getOpenOrders() {
       return this.openOrders.list.slice(0, (this.openOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
@@ -318,6 +320,15 @@ export default defineComponent({
       });
       await alert.present();
     },
+    async orderActionsPopover(order: any, ev: Event) {
+      const popover = await popoverController.create({
+        component: OrderActionsPopover,
+        componentProps: { order },
+        showBackdrop: false,
+        event: ev
+      });
+      return popover.present();
+    }
   },
   async mounted () {
     emitter.on('updateOrderQuery', this.updateOrderQuery)
@@ -332,7 +343,6 @@ export default defineComponent({
 
     return{
       Actions,
-      copyToClipboard,
       formatUtcDate,
       getFeature,
       hasPermission,

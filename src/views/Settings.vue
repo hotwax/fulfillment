@@ -37,25 +37,7 @@
       </div>
 
       <section>
-        <ion-card>
-          <ion-card-header>
-            <ion-card-subtitle>
-              {{ $t("OMS instance") }}
-            </ion-card-subtitle>
-            <ion-card-title>
-              {{ instanceUrl }}
-            </ion-card-title>
-          </ion-card-header>
-
-          <ion-card-content>
-            {{ $t('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
-          </ion-card-content>
-
-          <ion-button @click="goToOms" fill="clear">
-            {{ $t('Go to OMS') }}
-            <ion-icon slot="end" :icon="openOutline" />
-          </ion-button>
-        </ion-card>
+        <OmsInstanceNavigator />
 
         <ion-card>
           <ion-card-header>
@@ -89,7 +71,7 @@
           <ion-item lines="none">
             <ion-label>{{ $t("Select facility") }}</ion-label>
             <ion-select interface="popover" :value="currentFacility?.facilityId" @ionChange="setFacility($event)">
-              <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
+              <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.facilityName }}</ion-select-option>
             </ion-select>
           </ion-item>
         </ion-card>
@@ -363,10 +345,14 @@ export default defineComponent({
       }
     },
     logout () {
-      this.store.dispatch('user/logout').then(() => {
+      this.store.dispatch('user/logout', { isUserUnauthorised: false }).then((redirectionUrl) => {
         this.store.dispatch('order/clearOrders')
-        const redirectUrl = window.location.origin + '/login'
-        window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+
+        // if not having redirection url then redirect the user to launchpad
+        if(!redirectionUrl) {
+          const redirectUrl = window.location.origin + '/login'
+          window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+        }
       })
     },
     goToLaunchpad() {
@@ -469,7 +455,7 @@ export default defineComponent({
       const message = 'Are you sure you want to perform this action?'
 
       const alert = await alertController.create({
-        header: this.$t(header, { facilityName: this.currentFacility.name }),
+        header: this.$t(header, { facilityName: this.currentFacility.facilityName }),
         message: translate(message),
         buttons: [{
           text: translate('Cancel'),
@@ -491,7 +477,7 @@ export default defineComponent({
     },
     async turnOnFulfillment() {
       const alert = await alertController.create({
-        header: this.$t('Turn on fulfillment for ', { facilityName: this.currentFacility.name }),
+        header: this.$t('Turn on fulfillment for ', { facilityName: this.currentFacility.facilityName }),
         buttons: [{
           text: translate('Cancel'),
           handler: () => {
@@ -520,8 +506,8 @@ export default defineComponent({
     },
     async turnOffFulfillment() {
       const alert = await alertController.create({
-        header: this.$t('Turn off fulfillment for ', { facilityName: this.currentFacility.name }),
-        message: translate('Are you sure you want to perform this action?'),
+        header: this.$t('Turn off fulfillment for ', { facilityName: this.currentFacility.facilityName }),
+        message: translate('Are you sure you want perform this action?'),
         buttons: [{
           text: translate('Cancel'),
           handler: () => {
@@ -561,9 +547,6 @@ export default defineComponent({
     },
     setLocale(locale: string) {
       this.store.dispatch('user/setLocale',locale)
-    },
-    goToOms(){
-      window.open(this.instanceUrl.startsWith('http') ? this.instanceUrl.replace('api/', "") : `https://${this.instanceUrl}.hotwax.io/`, '_blank', 'noopener, noreferrer');
     }
   },
   setup() {
