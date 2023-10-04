@@ -1,11 +1,12 @@
 <template>
   <ion-content>
     <ion-list>
+      <ion-list-header>{{ $t('Options') }}</ion-list-header>
       <ion-item button @click="copyInfo">
         <ion-icon slot="end" :icon="copyOutline" />
         {{ $t("Copy ID") }}
       </ion-item>
-      <ion-item button @click="assignPickers">
+      <ion-item button lines="none" @click="assignPickers">
         <ion-icon slot="end" :icon="bagCheckOutline" />
         {{ $t("Pick order") }}
       </ion-item>
@@ -19,6 +20,7 @@ import {
   IonIcon,
   IonItem,
   IonList,
+  IonListHeader,
   modalController,
   popoverController,
 } from "@ionic/vue";
@@ -34,6 +36,7 @@ export default defineComponent({
     IonIcon,
     IonItem,
     IonList,
+    IonListHeader
   },
   props: ["order"],
   methods: {
