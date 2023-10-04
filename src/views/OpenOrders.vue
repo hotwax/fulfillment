@@ -73,6 +73,14 @@
                     </ion-label>
                   </ion-item>
                 </div>
+
+                <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+                <div class="product-metadata">
+                  <ion-note v-if="getProductStock(order.productId).quantityOnHandTotal">{{ getProductStock(order.productId).quantityOnHandTotal }} {{ $t('pieces in stock') }}</ion-note>
+                  <ion-button fill="clear" v-else size="small" @click="fetchProductStock(order.productId)">
+                    <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                  </ion-button>
+                </div>
               </div>
             </div>
 
@@ -118,6 +126,7 @@ import {
   IonInfiniteScrollContent,
   IonItem, 
   IonMenuButton,
+  IonNote,
   IonPage, 
   IonSearchbar, 
   IonThumbnail, 
@@ -128,7 +137,7 @@ import {
   popoverController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
+import { cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { ShopifyImg } from '@hotwax/dxp-components';
@@ -163,6 +172,7 @@ export default defineComponent({
     IonInfiniteScrollContent,
     IonItem,
     IonMenuButton,
+    IonNote,
     IonPage,
     IonSearchbar,
     IonThumbnail,
@@ -176,7 +186,8 @@ export default defineComponent({
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
       currentEComStore: 'user/getCurrentEComStore',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
+      getProductStock: 'stock/getProductStock'
     })
   },
   data () {
@@ -328,6 +339,9 @@ export default defineComponent({
         event: ev
       });
       return popover.present();
+    },
+    fetchProductStock(productId: string) {
+      this.store.dispatch('stock/fetchStock', { productId })
     }
   },
   async mounted () {
@@ -343,6 +357,7 @@ export default defineComponent({
 
     return{
       Actions,
+      cubeOutline,
       formatUtcDate,
       getFeature,
       hasPermission,
