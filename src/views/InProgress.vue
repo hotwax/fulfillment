@@ -138,6 +138,12 @@
                 </div>
               </div>
 
+              <div class="product-metadata">
+                <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ $t('pieces in stock') }}</ion-note>
+                <ion-button fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                </ion-button>
+              </div>
             </div>
 
             <div class="mobile-only">
@@ -206,6 +212,7 @@ import {
   IonInfiniteScrollContent,
   IonLabel,
   IonMenuButton,
+  IonNote,
   IonPage,
   IonRow,
   IonRadio,
@@ -228,6 +235,7 @@ import { defineComponent } from 'vue';
 import {
   addOutline,
   checkmarkDoneOutline,
+  cubeOutline,
   ellipsisVerticalOutline,
   pencilOutline,
   pricetagOutline,
@@ -270,6 +278,7 @@ export default defineComponent({
     IonInfiniteScrollContent,
     IonLabel,
     IonMenuButton,
+    IonNote,
     IonPage,
     IonRow,
     IonRadio,
@@ -294,7 +303,8 @@ export default defineComponent({
       rejectReasons: 'util/getRejectReasons',
       currentEComStore: 'user/getCurrentEComStore',
       userPreference: 'user/getUserPreference',
-      boxTypeDesc: 'util/getShipmentBoxDesc'
+      boxTypeDesc: 'util/getShipmentBoxDesc',
+      getProductStock: 'stock/getProductStock'
     }),
   },
   data() {
@@ -934,6 +944,9 @@ export default defineComponent({
 
       return editPickersModal.present();
     },
+    fetchProductStock(productId: string) {
+      this.store.dispatch('stock/fetchStock', { productId })
+    }
   },
   async mounted () {
     this.store.dispatch('util/fetchRejectReasons')
@@ -950,6 +963,7 @@ export default defineComponent({
     return {
       Actions,
       copyToClipboard,
+      cubeOutline,
       addOutline,
       printOutline,
       pencilOutline,
