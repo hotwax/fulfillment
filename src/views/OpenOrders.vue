@@ -20,7 +20,7 @@
     </ion-header>
     
     <ion-content id="view-size-selector">
-      <ion-searchbar :value="openOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
+      <ion-searchbar class="better-name-here" :value="openOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="openOrders.total">
         <div class="filters">
           <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
@@ -33,7 +33,7 @@
         </div>
 
         <div class="results">
-          <ion-button class="bulk-action desktop-only" fill="outline" size="large" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
+          <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
 
           <ion-card class="order" v-for="(orders, index) in getOpenOrders()" :key="index">
             <div class="order-header">

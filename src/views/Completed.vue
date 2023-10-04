@@ -17,7 +17,7 @@
     </ion-header>
     
     <ion-content id="view-size-selector">
-      <ion-searchbar :value="completedOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)" />
+      <ion-searchbar class="better-name-here" :value="completedOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)" />
 
       <div v-if="completedOrders.total">
 

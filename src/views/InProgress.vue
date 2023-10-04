@@ -21,7 +21,7 @@
     </ion-header>
     
     <ion-content id="view-size-selector">
-      <ion-searchbar v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
+      <ion-searchbar class="better-name-here" v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="inProgressOrders.total">
         <ion-radio-group v-model="selectedPicklistId" @ionChange="updateSelectedPicklist($event.detail.value)">
           <ion-row class="filters">
