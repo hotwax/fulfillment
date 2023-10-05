@@ -93,7 +93,7 @@
             <!-- TODO: implement functionality to mobile view -->
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="clear" >{{ $t("Ship Now") }}</ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && !hasPermission(Actions.APP_SHIP_ORDER))" fill="clear" >{{ $t("Ship Now") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -104,7 +104,7 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ $t("Shipped") }}</ion-button>
-                <ion-button  :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="shipOrder(order)" v-else>{{ $t("Ship Now") }}</ion-button>
+                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && !hasPermission(Actions.APP_SHIP_ORDER))" @click="shipOrder(order)">{{ $t("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="regenerateShippingLabel(order)">
                   {{ $t("Regenerate Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
@@ -609,6 +609,13 @@ export default defineComponent({
     },
     fetchProductStock(productId: string) {
       this.store.dispatch('stock/fetchStock', { productId })
+    },
+    isTrackingRequiredForAnyShipmentPackage(order: any) {
+      if (!order.shipmentPackages) {
+        return false
+      }
+
+      return order.shipmentPackages.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
     }
   },
   setup() {

@@ -149,7 +149,7 @@ const fetchShipmentPackages = async (shipmentIds: Array<string>): Promise<any> =
       "trackingCode_op": "empty",
       "shipmentItemSeqId_op": "not-empty"
     },
-    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId"],
+    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "isTrackingRequired"],
     "viewSize": 250,  // maximum records we could have
     "distinct": "Y"
   }
