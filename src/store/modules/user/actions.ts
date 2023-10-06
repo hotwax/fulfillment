@@ -125,8 +125,13 @@ const actions: ActionTree<UserState, RootState> = {
     if(!payload?.isUserUnauthorised) {
       let resp = await logout();
 
-      // Added logic to remove the `//` from the resp as in case of get request we are having the extra characters and in case of post we are having 403
-      resp = JSON.parse(resp.startsWith('//') ? resp.replace('//', '') : resp)
+      // wrapping the parsing logic in try catch as in some case the logout api makes redirection, and then we are unable to parse the resp and thus the logout process halts
+      try {
+        // Added logic to remove the `//` from the resp as in case of get request we are having the extra characters and in case of post we are having 403
+        resp = JSON.parse(resp.startsWith('//') ? resp.replace('//', '') : resp)
+      } catch(err) {
+        logger.error('Error parsing data', err)
+      }
 
       if(resp.logoutAuthType == 'SAML2SSO') {
         redirectionUrl = resp.logoutUrl
