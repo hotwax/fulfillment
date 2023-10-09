@@ -10,7 +10,7 @@
       <ion-item button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments" @click="closeModal('unpackOrder')">
         {{ $t("Unpack") }}
       </ion-item>
-      <ion-item button v-if="order.missingLabelImage" lines="none" @click="closeModal('showShippingLabelErrorModal')">
+      <ion-item button :disabled="!order.missingLabelImage" lines="none" @click="closeModal('showShippingLabelErrorModal')">
         {{ $t("Shipping label error") }}
       </ion-item>
     </ion-list>
@@ -36,9 +36,9 @@ export default defineComponent({
   },
   props: ['hasPackedShipments', 'order'],
   methods: {
-    closeModal(eventName: string) {
+    closeModal(selectedMethod: string) {
       // Sending function name to be called after popover dismiss.
-      popoverController.dismiss({selectedMethod: eventName})
+      popoverController.dismiss({selectedMethod: selectedMethod})
     }
   },
   setup() {

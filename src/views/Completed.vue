@@ -388,12 +388,12 @@ export default defineComponent({
         showBackdrop: false,
       });
 
-      popover.onDidDismiss().then((result) => {
+      popover.onDidDismiss().then(async(result) => {
         const selectedMethod = result.data.selectedMethod
 
         // Calls method which is clicked on the popover, functions name returns when popover dismiss.
         if(typeof(this[selectedMethod]) === 'function') {
-          (this as any)[selectedMethod](order);
+          await (this as any)[selectedMethod](order);
         }
       })
 
