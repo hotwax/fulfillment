@@ -41,7 +41,7 @@
           </ion-item>
         </div>
         <div class="results">
-          <ion-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo()" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ $t("Ship") }}</ion-button>
+          <ion-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo() || !hasPermission(Actions.APP_SHIP_ORDER)" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ $t("Ship") }}</ion-button>
 
           <ion-card class="order" v-for="(order, index) in getCompletedOrders()" :key="index">
             <div class="order-header">
@@ -127,7 +127,7 @@
       </div>
       <!-- TODO: make mobile view functional -->
       <ion-fab v-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button  @click="bulkShipOrders()">
+        <ion-fab-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo() || !hasPermission(Actions.APP_SHIP_ORDER)" @click="bulkShipOrders()">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -331,6 +331,15 @@ export default defineComponent({
             text: this.$t("Ship"),
             handler: async () => {
               let orderList = JSON.parse(JSON.stringify(this.completedOrders.list))
+
+              // if there are orders with tracking required and label image present
+              const trackingRequiredOrders = orderList.filter((order: any) => this.isTrackingRequiredForAnyShipmentPackage(order))
+              if (trackingRequiredOrders.length) {
+                const orderHasMissingLabelImage = orderList.some((order: any) => order.missingLabelImage)
+                if (!orderHasMissingLabelImage) {
+                  orderList = trackingRequiredOrders
+                }
+              }
 
               let shipmentIds = orderList.reduce((shipmentIds: any, order: any) => {
                 if (order.shipments) {
