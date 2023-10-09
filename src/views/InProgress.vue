@@ -21,7 +21,7 @@
     </ion-header>
     
     <ion-content id="view-size-selector">
-      <ion-searchbar v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
+      <ion-searchbar class="better-name-here" v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="inProgressOrders.total">
         <ion-radio-group v-model="selectedPicklistId" @ionChange="updateSelectedPicklist($event.detail.value)">
           <ion-row class="filters">
@@ -138,6 +138,12 @@
                 </div>
               </div>
 
+              <div class="product-metadata">
+                <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ $t('pieces in stock') }}</ion-note>
+                <ion-button fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                </ion-button>
+              </div>
             </div>
 
             <div class="mobile-only">
@@ -206,6 +212,7 @@ import {
   IonInfiniteScrollContent,
   IonLabel,
   IonMenuButton,
+  IonNote,
   IonPage,
   IonRow,
   IonRadio,
@@ -228,6 +235,7 @@ import { defineComponent } from 'vue';
 import {
   addOutline,
   checkmarkDoneOutline,
+  cubeOutline,
   ellipsisVerticalOutline,
   pencilOutline,
   pricetagOutline,
@@ -270,6 +278,7 @@ export default defineComponent({
     IonInfiniteScrollContent,
     IonLabel,
     IonMenuButton,
+    IonNote,
     IonPage,
     IonRow,
     IonRadio,
@@ -294,7 +303,8 @@ export default defineComponent({
       rejectReasons: 'util/getRejectReasons',
       currentEComStore: 'user/getCurrentEComStore',
       userPreference: 'user/getUserPreference',
-      boxTypeDesc: 'util/getShipmentBoxDesc'
+      boxTypeDesc: 'util/getShipmentBoxDesc',
+      getProductStock: 'stock/getProductStock'
     }),
   },
   data() {
@@ -310,7 +320,7 @@ export default defineComponent({
   },
   methods: {
     getErrorMessage() {
-      return this.searchedQuery === '' ? this.$t("doesn't have any orders in progress right now.", { facilityName: this.currentFacility.name }) : this.$t( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+      return this.searchedQuery === '' ? this.$t("doesn't have any orders in progress right now.", { facilityName: this.currentFacility.facilityName }) : this.$t( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
     },
     getInProgressOrders() {
       return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
@@ -539,12 +549,20 @@ export default defineComponent({
         }
       } else {
         const productName = outOfStockItem.productName
+        const itemsToRejectNotInStock = itemsToReject.filter((item: any) => item.rejectReason === 'NOT_IN_STOCK');
+        
+        // TODO: ordersCount is not correct as current we are identifying orders count by only checking items visible on UI and not other orders        
+        const ordersCount = this.inProgressOrders.list.map((inProgressOrder: any) => inProgressOrder.items.filter((item: any) => itemsToRejectNotInStock.some((outOfStockItem: any) => outOfStockItem.productSku === item.productSku) && item.orderId !== order.orderId))?.filter((item: any) => item.length).length;
 
-        // TODO: ordersCount is not correct as current we are identifying orders count by only checking items visible on UI and not other orders
-        const ordersCount = this.inProgressOrders.list.map((order: any) => order.items.filter((item: any) => item.productSku === outOfStockItem.productSku))?.filter((item: any) => item.length).length
-
-        // displaying product count decrement by 1 as we are displaying one product sku directly.
-        message = this.$t(", and other products are identified as unfulfillable. other orders containing these products will be unassigned from this store and sent to be rebrokered.", {productName, products: itemsToReject.length - 1, space: '<br /><br />', orders: ordersCount})
+        if (itemsToReject.length === 1 && ordersCount) {
+          message = this.$t("is identified as unfulfillable. other containing this product will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
+        } else if (itemsToReject.length === 1 && !ordersCount) {
+          message = this.$t("is identified as unfulfillable. This order item will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />' })
+        } else if (itemsToReject.length > 1 && ordersCount) {
+          message = this.$t(", and other products are identified as unfulfillable. other containing these products will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
+        } else {
+          message = this.$t(", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />' })
+        }
       }
       const alert = await alertController
         .create({
@@ -926,6 +944,9 @@ export default defineComponent({
 
       return editPickersModal.present();
     },
+    fetchProductStock(productId: string) {
+      this.store.dispatch('stock/fetchStock', { productId })
+    }
   },
   async mounted () {
     this.store.dispatch('util/fetchRejectReasons')
@@ -942,6 +963,7 @@ export default defineComponent({
     return {
       Actions,
       copyToClipboard,
+      cubeOutline,
       addOutline,
       printOutline,
       pencilOutline,
