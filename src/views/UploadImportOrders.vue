@@ -60,7 +60,7 @@ import { hasError } from '@/adapter';
 import logger from '@/logger';
 import { addOutline } from "ionicons/icons"
 import CreateMappingModal from "@/components/CreateMappingModal.vue";
-import { mapGetters } from 'vuex';
+import { mapGetters, useStore } from 'vuex';
 
 export default defineComponent({
   name: 'UploadImportOrders',
@@ -99,6 +99,7 @@ export default defineComponent({
     this.file = {}
     this.content = []
     this.generateFieldMapping();
+    this.store.dispatch('user/getFieldMappings')
     // this.$refs.file.value = null;
   },
   methods: {
@@ -216,10 +217,12 @@ export default defineComponent({
   },
   setup() {
     const router = useRouter();
+    const store = useStore();
     
     return {
       addOutline,
-      router
+      router,
+      store
     }
   }
 });

@@ -3,6 +3,7 @@ import { translate } from '@/i18n';
 import logger from '@/logger';
 import { showToast } from '@/utils';
 import store from '@/store';
+import { cogOutline } from 'ionicons/icons';
 
 const findOpenOrders = async (query: any): Promise<any> => {
   return api({
@@ -191,7 +192,12 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
     // Generate local file URL for the blob received
     const pdfUrl = window.URL.createObjectURL(resp.data);
     // Open the file in new tab
-    (window as any).open(pdfUrl, "_blank").focus();
+    try {
+      (window as any).open(pdfUrl, "_blank").focus();
+    }
+    catch {
+      showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'packing slip'}), { icon: cogOutline });
+    }
 
   } catch (err) {
     showToast(translate('Failed to print packing slip'))
@@ -218,7 +224,12 @@ const printShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
     // Generate local file URL for the blob received
     const pdfUrl = window.URL.createObjectURL(resp.data);
     // Open the file in new tab
-    (window as any).open(pdfUrl, "_blank").focus();
+    try {
+      (window as any).open(pdfUrl, "_blank").focus();
+    }
+    catch {
+      showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'shipping label'}), { icon: cogOutline });
+    }
 
   } catch (err) {
     showToast(translate('Failed to print shipping label'))
@@ -246,7 +257,12 @@ const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>): Pro
     // Generate local file URL for the blob received
     const pdfUrl = window.URL.createObjectURL(resp.data);
     // Open the file in new tab
-    (window as any).open(pdfUrl, "_blank").focus();
+    try {
+      (window as any).open(pdfUrl, "_blank").focus();
+    }
+    catch {
+      showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'shipping label and packing slip'}), { icon: cogOutline });
+    }
 
   } catch (err) {
     showToast(translate('Failed to print shipping label and packing slip'))
@@ -272,8 +288,12 @@ const printPicklist = async (picklistId: string): Promise<any> => {
     // Generate local file URL for the blob received
     const pdfUrl = window.URL.createObjectURL(resp.data);
     // Open the file in new tab
-    (window as any).open(pdfUrl, "_blank").focus();
-
+    try {
+      (window as any).open(pdfUrl, "_blank").focus();
+    }
+    catch {
+      showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'picklist'}), { icon: cogOutline });
+    }
   } catch (err) {
     showToast(translate('Failed to print picklist'))
     logger.error("Failed to print picklist", err)
