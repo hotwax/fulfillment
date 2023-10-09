@@ -298,7 +298,7 @@ export default defineComponent({
           "viewSize": 1,
           "fieldList": ["maximumOrderLimit", "facilityId"]
         })
-        
+
         if(!hasError(resp) && resp.data.count) {
           // using index 0 as we will only get a single record
           this.currentFacilityDetails = {
