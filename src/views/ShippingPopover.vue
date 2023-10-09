@@ -24,7 +24,7 @@ import {
   IonList
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { printOutline, lockOpenOutline, receiptOutline, warningOutline } from 'ionicons/icons'
+import { lockOpenOutline, printOutline, receiptOutline, warningOutline } from 'ionicons/icons'
 import { Actions, hasPermission } from '@/authorization'
 import { popoverController } from "@ionic/core";
 export default defineComponent({
@@ -38,7 +38,7 @@ export default defineComponent({
   methods: {
     closeModal(selectedMethod: string) {
       // Sending function name to be called after popover dismiss.
-      popoverController.dismiss({selectedMethod: selectedMethod})
+      popoverController.dismiss({selectedMethod})
     }
   },
   setup() {

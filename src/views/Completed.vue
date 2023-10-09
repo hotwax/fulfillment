@@ -389,9 +389,9 @@ export default defineComponent({
       });
 
       popover.onDidDismiss().then(async(result) => {
-        const selectedMethod = result.data.selectedMethod
+        const selectedMethod = result.data?.selectedMethod
 
-        // Calls method which is clicked on the popover, functions name returns when popover dismiss.
+        // Retrieved the method name on popover dismissal and respective method is called.
         if(typeof(this[selectedMethod]) === 'function') {
           await (this as any)[selectedMethod](order);
         }
