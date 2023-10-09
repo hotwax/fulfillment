@@ -125,7 +125,6 @@
           </ion-infinite-scroll>
         </div>
       </div>
-      <!-- TODO: make mobile view functional -->
       <ion-fab v-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo() || !hasPermission(Actions.APP_SHIP_ORDER)" @click="bulkShipOrders()">
           <ion-icon :icon="checkmarkDoneOutline" />
