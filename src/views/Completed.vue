@@ -17,7 +17,7 @@
     </ion-header>
     
     <ion-content id="view-size-selector">
-      <ion-searchbar :value="completedOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)" />
+      <ion-searchbar class="better-name-here" :value="completedOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)" />
 
       <div v-if="completedOrders.total">
 
@@ -71,7 +71,7 @@
               <div class="product-info">
                 <ion-item lines="none">
                   <ion-thumbnail slot="start">
-                    <Image :src="getProduct(item.productId).mainImageUrl" />
+                    <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
                     <p class="overline">{{ item.productSku }}</p>
@@ -79,6 +79,14 @@
                     <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                 </ion-item>
+              </div>
+
+              <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+              <div class="product-metadata">
+                <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ $t('pieces in stock') }}</ion-note>
+                <ion-button fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                </ion-button>
               </div>
             </div>
 
@@ -107,6 +115,7 @@
                 </ion-button>
               </div>
               <div class="desktop-only">
+                <ion-button v-if="order.missingLabelImage" fill="outline" @click="showShippingLabelErrorModal(order)">{{ $t("Shipping label error") }}</ion-button>
                 <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
               </div>
             </div>
@@ -146,6 +155,7 @@ import {
   IonItem,
   IonLabel,
   IonMenuButton,
+  IonNote,
   IonPage,
   IonSearchbar,
   IonSpinner,
@@ -153,16 +163,17 @@ import {
   IonTitle,
   IonToolbar,
   alertController,
-  popoverController
+  popoverController,
+  modalController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
+import { cubeOutline, printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter'
-import Image from '@/components/Image.vue'
+import { ShopifyImg } from '@hotwax/dxp-components';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import emitter from '@/event-bus';
@@ -170,12 +181,13 @@ import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import { translate } from '@/i18n';
 import { OrderService } from '@/services/OrderService';
 import logger from '@/logger';
+import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
   name: 'Home',
   components: {
-    Image,
+    ShopifyImg,
     IonButton,
     IonButtons,
     IonCard,
@@ -191,6 +203,7 @@ export default defineComponent({
     IonItem,
     IonLabel,
     IonMenuButton,
+    IonNote,
     IonPage,
     IonSearchbar,
     IonSpinner,
@@ -213,7 +226,8 @@ export default defineComponent({
       currentFacility: 'user/getCurrentFacility',
       currentEComStore: 'user/getCurrentEComStore',
       getPartyName: 'util/getPartyName',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
+      getProductStock: 'stock/getProductStock'
     })
   },
   async mounted() {
@@ -226,7 +240,7 @@ export default defineComponent({
   },
   methods: {
     getErrorMessage() {
-      return this.searchedQuery === '' ? this.$t("doesn't have any completed orders right now.", { facilityName: this.currentFacility.name }) : this.$t( "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+      return this.searchedQuery === '' ? this.$t("doesn't have any completed orders right now.", { facilityName: this.currentFacility.facilityName }) : this.$t( "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
     },
     hasAnyPackedShipment(): boolean {
       return this.completedOrders.list.some((order: any) => {
@@ -581,6 +595,20 @@ export default defineComponent({
       }
 
       order.isGeneratingShippingLabel = false;
+    },
+    async showShippingLabelErrorModal(order: any){
+      // Getting all the shipment ids
+      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId);
+      const shippingLabelErrorModal = await modalController.create({
+        component: ShippingLabelErrorModal,
+        componentProps: {
+          shipmentIds
+        }
+      });
+      return shippingLabelErrorModal.present();
+    },
+    fetchProductStock(productId: string) {
+      this.store.dispatch('stock/fetchStock', { productId })
     }
   },
   setup() {
@@ -591,6 +619,7 @@ export default defineComponent({
       Actions,
       copyToClipboard,
       checkmarkDoneOutline,
+      cubeOutline,
       downloadOutline,
       ellipsisVerticalOutline,
       formatUtcDate,

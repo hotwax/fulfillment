@@ -9,7 +9,7 @@
         <ion-title v-else>{{ openOrders.query.viewSize }} {{ $t('of') }} {{ openOrders.total }} {{ $t('orders') }}</ion-title>
      
         <ion-buttons slot="end">
-          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER)" fill="clear" color="danger" @click="recycleOutstandingOrders()">
+          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !openOrders.total" fill="clear" color="danger" @click="recycleOutstandingOrders()">
             {{ $t("Reject all") }}
           </ion-button>
           <ion-menu-button menu="end" :disabled="!openOrders.total">
@@ -20,7 +20,7 @@
     </ion-header>
     
     <ion-content id="view-size-selector">
-      <ion-searchbar :value="openOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
+      <ion-searchbar class="better-name-here" :value="openOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="openOrders.total">
         <div class="filters">
           <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
@@ -33,7 +33,7 @@
         </div>
 
         <div class="results">
-          <ion-button class="bulk-action desktop-only" fill="outline" size="large" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
+          <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ $t("Print Picksheet") }}</ion-button>
 
           <ion-card class="order" v-for="(orders, index) in getOpenOrders()" :key="index">
             <div class="order-header">
@@ -45,13 +45,10 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip @click="copyToClipboard(orders.doclist.docs[0].orderName, 'Copied to clipboard')" outline>
+                <ion-chip @click="orderActionsPopover(orders, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ orders.doclist.docs[0].orderName }}</ion-label>
                 </ion-chip>
-                <ion-button fill="clear" class="mobile-only" color="danger">
-                  <ion-icon slot="icon-only" :icon="refreshCircleOutline" />
-                </ion-button>
               </div>
 
               <div class="order-metadata">
@@ -67,7 +64,7 @@
                 <div class="product-info">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <Image :src="getProduct(order.productId).mainImageUrl" />
+                      <ShopifyImg :src="getProduct(order.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ order.productSku }}</p>
@@ -75,6 +72,14 @@
                       <p>{{ getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
                     </ion-label>
                   </ion-item>
+                </div>
+
+                <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+                <div class="product-metadata">
+                  <ion-note v-if="getProductStock(order.productId).quantityOnHandTotal">{{ getProductStock(order.productId).quantityOnHandTotal }} {{ $t('pieces in stock') }}</ion-note>
+                  <ion-button fill="clear" v-else size="small" @click="fetchProductStock(order.productId)">
+                    <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                  </ion-button>
                 </div>
               </div>
             </div>
@@ -121,20 +126,22 @@ import {
   IonInfiniteScrollContent,
   IonItem, 
   IonMenuButton,
+  IonNote,
   IonPage, 
   IonSearchbar, 
   IonThumbnail, 
   IonTitle, 
   IonToolbar, 
   modalController,
-  alertController
+  alertController,
+  popoverController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { optionsOutline, pricetagOutline, printOutline, refreshCircleOutline } from 'ionicons/icons';
+import { cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
-import Image from '@/components/Image.vue'
-import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
+import { ShopifyImg } from '@hotwax/dxp-components';
+import { formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
@@ -144,11 +151,12 @@ import logger from '@/logger';
 import { translate } from '@/i18n';
 import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
+import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 
 export default defineComponent({
   name: 'OpenOrders',
   components: {
-    Image,
+    ShopifyImg,
     IonButton,
     IonButtons,  
     IonCard,
@@ -164,6 +172,7 @@ export default defineComponent({
     IonInfiniteScrollContent,
     IonItem,
     IonMenuButton,
+    IonNote,
     IonPage,
     IonSearchbar,
     IonThumbnail,
@@ -177,7 +186,8 @@ export default defineComponent({
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
       currentEComStore: 'user/getCurrentEComStore',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
+      getProductStock: 'stock/getProductStock'
     })
   },
   data () {
@@ -188,7 +198,7 @@ export default defineComponent({
   },
   methods: {
     getErrorMessage() {
-      return this.searchedQuery === '' ? this.$t("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility.name }) : this.$t( "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+      return this.searchedQuery === '' ? this.$t("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility.facilityName }) : this.$t( "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
     },
     getOpenOrders() {
       return this.openOrders.list.slice(0, (this.openOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
@@ -290,13 +300,13 @@ export default defineComponent({
     },
     async recycleOutstandingOrders() {
       const alert = await alertController.create({
-        header: translate('Reject outstanding orders'),
-        message: this.$t('Are you sure you want to reject outstanding order(s)?', { ordersCount: this.openOrders.total }),
+        header: translate('Reject all open orders'),
+        message: this.$t('Reject open orders.', { ordersCount: this.openOrders.total }),
         buttons: [{
-          text: translate('No'),
+          text: translate('Cancel'),
           role: 'cancel'
         }, {
-          text: translate('Yes'),
+          text: translate('Reject'),
           handler: async () => {
             let resp;
 
@@ -321,6 +331,18 @@ export default defineComponent({
       });
       await alert.present();
     },
+    async orderActionsPopover(order: any, ev: Event) {
+      const popover = await popoverController.create({
+        component: OrderActionsPopover,
+        componentProps: { order },
+        showBackdrop: false,
+        event: ev
+      });
+      return popover.present();
+    },
+    fetchProductStock(productId: string) {
+      this.store.dispatch('stock/fetchStock', { productId })
+    }
   },
   async mounted () {
     emitter.on('updateOrderQuery', this.updateOrderQuery)
@@ -335,14 +357,13 @@ export default defineComponent({
 
     return{
       Actions,
-      copyToClipboard,
+      cubeOutline,
       formatUtcDate,
       getFeature,
       hasPermission,
       optionsOutline,
       pricetagOutline,
       printOutline,
-      refreshCircleOutline,
       store
     }
   }

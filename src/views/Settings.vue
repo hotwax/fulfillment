@@ -37,25 +37,7 @@
       </div>
 
       <section>
-        <ion-card>
-          <ion-card-header>
-            <ion-card-subtitle>
-              {{ $t("OMS instance") }}
-            </ion-card-subtitle>
-            <ion-card-title>
-              {{ instanceUrl }}
-            </ion-card-title>
-          </ion-card-header>
-
-          <ion-card-content>
-            {{ $t('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
-          </ion-card-content>
-
-          <ion-button @click="goToOms" fill="clear">
-            {{ $t('Go to OMS') }}
-            <ion-icon slot="end" :icon="openOutline" />
-          </ion-button>
-        </ion-card>
+        <OmsInstanceNavigator />
 
         <ion-card>
           <ion-card-header>
@@ -89,7 +71,7 @@
           <ion-item lines="none">
             <ion-label>{{ $t("Select facility") }}</ion-label>
             <ion-select interface="popover" :value="currentFacility?.facilityId" @ionChange="setFacility($event)">
-              <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
+              <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.facilityName }}</ion-select-option>
             </ion-select>
           </ion-item>
         </ion-card>
@@ -106,7 +88,7 @@
           <ion-item lines="none">
             <ion-label>{{ $t("Fulfill online orders") }}</ion-label>
             <!-- Using v-model on isStoreFulfilmentTurnedOn for programmatically re-updating the toggle value -->
-            <ion-toggle :disabled="!hasPermission(Actions.APP_TURN_OFF_STORE)" v-model="isStoreFulfilmentTurnedOn" @ionChange="updateFulfillmentStatus($event)" slot="end" />
+            <ion-toggle :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" v-model="isStoreFulfilmentTurnedOn" @ionChange="updateFulfillmentStatus($event)" slot="end" />
           </ion-item>
         </ion-card>
 
@@ -121,7 +103,7 @@
           </ion-card-content>
           <ion-item lines="none">
             <ion-label>{{ $t("Sell online") }}</ion-label>
-            <ion-toggle slot="end" />
+            <ion-toggle :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG) || !facilityGroupDetails?.facilityGroupId" v-model="isEComInvEnabled" @click="updateEComInvStatus($event)" slot="end" />
           </ion-item>
         </ion-card>
       </section>
@@ -263,7 +245,9 @@ export default defineComponent({
       appVersion: "",
       locales: process.env.VUE_APP_LOCALES ? JSON.parse(process.env.VUE_APP_LOCALES) : {"en": "English"},
       currentFacilityDetails: {} as any,
-      isStoreFulfilmentTurnedOn: true
+      facilityGroupDetails: {} as any,
+      isStoreFulfilmentTurnedOn: true,
+      isEComInvEnabled: false
     };
   },
   computed: {
@@ -285,6 +269,7 @@ export default defineComponent({
   },
   ionViewWillEnter() {
     this.getCurrentFacilityDetails()
+    this.getEcomInvStatus()
   },
   methods: {
     async getCurrentFacilityDetails() {
@@ -315,11 +300,59 @@ export default defineComponent({
         this.isStoreFulfilmentTurnedOn = this.currentFacilityDetails?.maximumOrderLimit != 0
       }
     },
+    async getEcomInvStatus() {
+      let resp: any;
+      try {
+        this.isEComInvEnabled = false
+        this.facilityGroupDetails = {}
+
+        resp = await UserService.getFacilityGroupDetails({
+          "entityName": "FacilityGroup",
+          "inputFields": {
+            "facilityGroupTypeId": 'SHOPIFY_GROUP_FAC'
+          },
+          "fieldList": ["facilityGroupId", "facilityGroupTypeId"],
+          "viewSize": 1,
+        })
+
+        if (!hasError(resp)) {
+          // using facilityGroupId as a flag for getting data from getFacilityGroupDetails
+          this.facilityGroupDetails.facilityGroupId = resp.data.docs[0].facilityGroupId
+          resp = await UserService.getFacilityGroupAndMemberDetails({
+            "entityName": "FacilityGroupAndMember",
+            "inputFields": {
+              "facilityId": this.currentFacility.facilityId,
+              "facilityGroupId": this.facilityGroupDetails.facilityGroupId
+            },
+            "fieldList": ["facilityId", "fromDate"],
+            "viewSize": 1,
+            "filterByDate": 'Y'
+          })
+
+          if (!hasError(resp)) {
+            this.facilityGroupDetails = { ...this.facilityGroupDetails, ...resp.data.docs[0] }
+
+            // When getting data from group member enabling the eCom inventory
+            this.isEComInvEnabled = true
+          } else {
+            throw resp.data
+          }
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        logger.error('Failed to fetch eCom inventory config', err)
+      }
+    },
     logout () {
-      this.store.dispatch('user/logout').then(() => {
+      this.store.dispatch('user/logout', { isUserUnauthorised: false }).then((redirectionUrl) => {
         this.store.dispatch('order/clearOrders')
-        const redirectUrl = window.location.origin + '/login'
-        window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+
+        // if not having redirection url then redirect the user to launchpad
+        if(!redirectionUrl) {
+          const redirectUrl = window.location.origin + '/login'
+          window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+        }
       })
     },
     goToLaunchpad() {
@@ -338,6 +371,7 @@ export default defineComponent({
         });
         this.store.dispatch('order/clearOrders')
         this.getCurrentFacilityDetails();
+        this.getEcomInvStatus();
       }
     },
     async changeTimeZone() {
@@ -366,15 +400,84 @@ export default defineComponent({
         logger.error('Failed to update facility', err)
       }
     },
+    async updateFacilityToGroup() {
+      let resp;
+      try {
+        resp = await UserService.updateFacilityToGroup({
+          "facilityId": this.currentFacility.facilityId,
+          "facilityGroupId": this.facilityGroupDetails.facilityGroupId,
+          "fromDate": this.facilityGroupDetails.fromDate,
+          "thruDate": DateTime.now().toMillis()
+        })
+
+        if (!hasError(resp)) {
+          this.isEComInvEnabled = false
+          showToast(translate('ECom inventory status updated successfully'))
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        showToast(translate('Failed to update eCom inventory status'))
+        logger.error('Failed to update eCom inventory status', err)
+      }
+    },
+    async addFacilityToGroup() {
+      let resp;
+      try {
+        resp = await UserService.addFacilityToGroup({
+          "facilityId": this.currentFacility.facilityId,
+          "facilityGroupId": this.facilityGroupDetails.facilityGroupId
+        })
+
+        if (!hasError(resp)) {
+          this.isEComInvEnabled = true
+          showToast(translate('ECom inventory status updated successfully'))
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        showToast(translate('Failed to update eCom inventory status'))
+        logger.error('Failed to update eCom inventory status', err)
+      }
+    },
     async updateFulfillmentStatus(event: any) {
       // condition to stop alert from re-popping as ionChange is triggered
       // because isStoreFulfilmentTurnedOn is updated
       if (event.detail.checked === this.fulfillmentStatus) return
       event.detail.checked ? this.turnOnFulfillment() : this.turnOffFulfillment()
     },
+    async updateEComInvStatus(event: any) {
+      event.stopImmediatePropagation();
+
+      // Using `not` as the click event returns the current status of toggle, but on click we want to change the toggle status
+      const isChecked = !event.target.checked;
+      const header = isChecked ? 'Turn on eCom inventory for ' : 'Turn off eCom inventory for '
+      const message = 'Are you sure you want to perform this action?'
+
+      const alert = await alertController.create({
+        header: this.$t(header, { facilityName: this.currentFacility.facilityName }),
+        message: translate(message),
+        buttons: [{
+          text: translate('Cancel'),
+          role: ''
+        }, {
+          text: translate('Save'),
+          role: 'success'
+        }],
+      });
+
+      await alert.present();
+
+      const { role } = await alert.onDidDismiss();
+
+      if(role) {
+        isChecked ? await this.addFacilityToGroup() : await this.updateFacilityToGroup()
+      }
+
+    },
     async turnOnFulfillment() {
       const alert = await alertController.create({
-        header: this.$t('Turn on fulfillment for ', { facilityName: this.currentFacility.name }),
+        header: this.$t('Turn on fulfillment for ', { facilityName: this.currentFacility.facilityName }),
         buttons: [{
           text: translate('Cancel'),
           handler: () => {
@@ -403,7 +506,7 @@ export default defineComponent({
     },
     async turnOffFulfillment() {
       const alert = await alertController.create({
-        header: this.$t('Turn off fulfillment for ', { facilityName: this.currentFacility.name }),
+        header: this.$t('Turn off fulfillment for ', { facilityName: this.currentFacility.facilityName }),
         message: translate('Are you sure you want perform this action?'),
         buttons: [{
           text: translate('Cancel'),
@@ -444,9 +547,6 @@ export default defineComponent({
     },
     setLocale(locale: string) {
       this.store.dispatch('user/setLocale',locale)
-    },
-    goToOms(){
-      window.open(this.instanceUrl.startsWith('http') ? this.instanceUrl.replace('api/', "") : `https://${this.instanceUrl}.hotwax.io/`, '_blank', 'noopener, noreferrer');
     }
   },
   setup() {

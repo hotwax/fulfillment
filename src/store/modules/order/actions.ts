@@ -243,8 +243,8 @@ const actions: ActionTree<OrderState, RootState> = {
       }
 
       // preparing filters separately those are based on some condition
-      if(inProgressQuery.selectedPicklists.length) {
-        params.filters['picklistId'] = {value: inProgressQuery.selectedPicklists, op: 'OR'}
+      if (inProgressQuery.selectedPicklist) {
+        params.filters['picklistId'] = { value: inProgressQuery.selectedPicklist }
       }
 
       const orderQueryPayload = prepareOrderQuery(params)
@@ -319,6 +319,7 @@ const actions: ActionTree<OrderState, RootState> = {
       ...payload,
       queryString: openOrderQuery.queryString,
       viewSize: openOrderQuery.viewSize,
+      sort: payload.sort ? payload.sort : "orderDate asc",
       filters: {
         quantityNotAvailable: { value: 0 },
         isPicked: { value: 'N' },

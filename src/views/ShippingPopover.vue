@@ -1,6 +1,7 @@
 <template>
   <ion-content>
     <ion-list>
+      <!-- TODO: Need to give Shipping Label Error Option -->
       <ion-item button>
         <ion-icon slot="start" :icon="printOutline" />
         {{ $t("Shipping label") }}

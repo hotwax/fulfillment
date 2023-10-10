@@ -88,7 +88,7 @@ export default defineComponent({
   },
   props: ["content", "mappings", "mappingType"],
   mounted() {
-    // mappings needs to be in format { <key>: { value: <value>, label: <label>, isSelected | optional: <boolean> }}
+    // mappings needs to be in format { <key>: { value: <value>, label: <label>, isSelected | optional: <boolean>, isCustomField | optional: <boolean> }}
     this.fieldMapping = JSON.parse(JSON.stringify(this.mappings));
     this.fileColumns = Object.keys(this.content[0]);
   },
@@ -115,7 +115,11 @@ export default defineComponent({
 
       // removing label from mappings as we don't need to save label with the mappings as it will just increase the size of the value
       Object.keys(this.fieldMapping).map((mapping) => {
-        mappings[mapping] = {
+        mappings[mapping] = this.fieldMapping[mapping].isCustomField ? {
+          value: this.fieldMapping[mapping].value,
+          isSelected: this.fieldMapping[mapping].isSelected,
+          isCustomField: this.fieldMapping[mapping].isCustomField
+        } : {
           value: this.fieldMapping[mapping].value,
           isSelected: this.fieldMapping[mapping].isSelected
         }
