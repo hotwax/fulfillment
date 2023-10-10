@@ -17,7 +17,7 @@
     </ion-header>
     
     <ion-content id="view-size-selector">
-      <ion-searchbar :value="completedOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)" />
+      <ion-searchbar class="better-name-here" :value="completedOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)" />
 
       <div v-if="completedOrders.total">
 
@@ -79,6 +79,14 @@
                     <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                 </ion-item>
+              </div>
+
+              <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+              <div class="product-metadata">
+                <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ $t('pieces in stock') }}</ion-note>
+                <ion-button fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                </ion-button>
               </div>
             </div>
 
@@ -147,6 +155,7 @@ import {
   IonItem,
   IonLabel,
   IonMenuButton,
+  IonNote,
   IonPage,
   IonSearchbar,
   IonSpinner,
@@ -158,7 +167,7 @@ import {
   modalController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
+import { cubeOutline, printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
@@ -194,6 +203,7 @@ export default defineComponent({
     IonItem,
     IonLabel,
     IonMenuButton,
+    IonNote,
     IonPage,
     IonSearchbar,
     IonSpinner,
@@ -216,7 +226,8 @@ export default defineComponent({
       currentFacility: 'user/getCurrentFacility',
       currentEComStore: 'user/getCurrentEComStore',
       getPartyName: 'util/getPartyName',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
+      getProductStock: 'stock/getProductStock'
     })
   },
   async mounted() {
@@ -229,7 +240,7 @@ export default defineComponent({
   },
   methods: {
     getErrorMessage() {
-      return this.searchedQuery === '' ? this.$t("doesn't have any completed orders right now.", { facilityName: this.currentFacility.name }) : this.$t( "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+      return this.searchedQuery === '' ? this.$t("doesn't have any completed orders right now.", { facilityName: this.currentFacility.facilityName }) : this.$t( "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
     },
     hasAnyPackedShipment(): boolean {
       return this.completedOrders.list.some((order: any) => {
@@ -595,6 +606,9 @@ export default defineComponent({
         }
       });
       return shippingLabelErrorModal.present();
+    },
+    fetchProductStock(productId: string) {
+      this.store.dispatch('stock/fetchStock', { productId })
     }
   },
   setup() {
@@ -605,6 +619,7 @@ export default defineComponent({
       Actions,
       copyToClipboard,
       checkmarkDoneOutline,
+      cubeOutline,
       downloadOutline,
       ellipsisVerticalOutline,
       formatUtcDate,
