@@ -279,15 +279,15 @@ ion-thumbnail > img {
 }
 
 .filters ion-item:first-child {
-  margin-left: var(--spacer-xs);
+  margin-left: var(--spacer-sm);
 }
 
 .filters ion-item:last-child {
-  margin-right: var(--spacer-xs);
+  margin-right: var(--spacer-sm);
 }
 
 .bulk-action {
-  margin: var(--spacer-sm) var(--spacer-sm) var(--spacer-xl);
+  margin: var(--spacer-xl) var(--spacer-sm) var(--spacer-lg);
 }
 
 img {
@@ -372,12 +372,19 @@ img {
 
 @media (min-width: 991px) {
   /* shipment card desktop layout start */
+  ion-searchbar.better-name-here {
+    padding-top: var(--spacer-base);
+    padding-inline: var(--spacer-sm)
+  }
+
   .results {
     max-width: 1100px;
     margin-inline: auto;
   }
 
   .order {
+    margin-inline: var(--spacer-sm);
+    margin-block-end: var(--spacer-lg);
     box-shadow: 3px 8px 18px -2px rgba(0,0,0, .2), -2px -2px 13px -6px rgba(0,0,0, .2);
   }
 

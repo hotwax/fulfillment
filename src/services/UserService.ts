@@ -37,11 +37,51 @@ const getFacilityDetails = async (payload: any): Promise<any> => {
   })
 }
 
+const getFacilityOrderCount = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: payload
+  })
+}
+
 const updateFacility = async (payload: any): Promise<any> => {
   return api({
     url: "service/updateFacility",
     method: "post",
     data: payload
+  })
+}
+
+const updateFacilityToGroup = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateFacilityToGroup",
+    method: "post",
+    data: payload
+  })
+}
+
+const addFacilityToGroup = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/addFacilityToGroup",
+    method: "post",
+    data: payload
+  })
+}
+
+const getFacilityGroupDetails = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: payload
+  })
+}
+
+const getFacilityGroupAndMemberDetails = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: payload
   })
 }
 
@@ -270,13 +310,17 @@ const getFieldMappings = async (payload: any): Promise <any> => {
 }
 
 export const UserService = {
+    addFacilityToGroup,
     createFieldMapping,
     deleteFieldMapping,
     login,
     getAvailableTimeZones,
     getEComStores,
     getFacilityDetails,
+    getFacilityOrderCount,
     getFieldMappings,
+    getFacilityGroupDetails,
+    getFacilityGroupAndMemberDetails,
     getUserProfile,
     getPreferredStore,
     recycleInProgressOrders,
@@ -285,5 +329,6 @@ export const UserService = {
     setUserTimeZone,
     getUserPermissions,
     updateFacility,
+    updateFacilityToGroup,
     updateFieldMapping
 }
