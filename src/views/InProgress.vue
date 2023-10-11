@@ -74,13 +74,12 @@
               <ion-skeleton-text animated />
               <ion-skeleton-text animated />
             </div>
-            <!-- TODO: implement functionality to change the type of box -->
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
               <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-row>
                 <ion-chip v-for="shipmentPackage in order.shipmentPackages" v-show="shipmentPackage.shipmentBoxTypes.length" :key="shipmentPackage.shipmentId">{{ `Box ${shipmentPackage?.packageName}` }} | 
                   <ion-select class="ion-no-padding" interface="popover" @ionChange="updateShipmentBoxType($event.detail.value, shipmentPackage, order)" :value="getShipmentPackageType(shipmentPackage)">
-                      <ion-select-option v-for="boxType in shipmentPackage.shipmentBoxTypes" :key="boxType" :value="boxType">{{ boxTypeDesc(boxType) }}</ion-select-option>
+                    <ion-select-option v-for="boxType in shipmentPackage.shipmentBoxTypes" :key="boxTypeDesc(boxType)" :value="boxType">{{ boxTypeDesc(boxType) }}</ion-select-option>
                   </ion-select>
                 </ion-chip>
               </ion-row>
@@ -898,7 +897,7 @@ export default defineComponent({
       await OrderService.printPicklist(picklist.id)
       picklist.isGeneratingPicklist = false;
     },
-    updateShipmentBoxType(value: string, shipmentPackage: any, order: any){
+    updateShipmentBoxType(value: string, shipmentPackage: any, order: any) {
       shipmentPackage.shipmentBoxTypeId = value;
       order.isModified = true;
       this.store.dispatch('order/updateInProgressOrder', order);
