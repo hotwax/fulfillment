@@ -596,6 +596,11 @@ export default defineComponent({
       const form = new FormData()
 
       form.append('facilityId', this.currentFacility.facilityId)
+      form.append('orderId', order.orderId)
+
+      order.shipmentIds.map((shipmentId: string) => {
+        form.append('shipmentIds', shipmentId)
+      })
 
       const items = JSON.parse(JSON.stringify(order.items));
 
@@ -622,6 +627,8 @@ export default defineComponent({
         form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
         form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
       })
+
+      form.append('picklistBinId', order.picklistBinId)
 
       try {
         const resp = await OrderService.updateOrder({
