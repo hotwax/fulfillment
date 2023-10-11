@@ -77,10 +77,9 @@
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
               <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-row>
-                <ion-chip v-for="shipmentPackage in order.shipmentPackages" v-show="shipmentPackage.shipmentBoxTypes.length" :key="shipmentPackage.shipmentId">{{ `Box ${shipmentPackage?.packageName}` }} | 
-                  <ion-select class="ion-no-padding" interface="popover" @ionChange="updateShipmentBoxType($event.detail.value, shipmentPackage, order)" :value="getShipmentPackageType(shipmentPackage)">
-                    <ion-select-option v-for="boxType in shipmentPackage.shipmentBoxTypes" :key="boxTypeDesc(boxType)" :value="boxType">{{ boxTypeDesc(boxType) }}</ion-select-option>
-                  </ion-select>
+                <ion-chip v-for="shipmentPackage in order.shipmentPackages" v-show="shipmentPackage.shipmentBoxTypes.length" :key="shipmentPackage.shipmentId" @click="updateShipmentBoxType(shipmentPackage, order, $event)">
+                  {{ `Box ${shipmentPackage?.packageName}` }} | {{ boxTypeDesc(getShipmentPackageType(shipmentPackage)) }}
+                  <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </ion-row>
             </div>
@@ -237,6 +236,7 @@ import {
 import { defineComponent } from 'vue';
 import {
   addOutline,
+  caretDownOutline,
   checkmarkDoneOutline,
   cubeOutline,
   ellipsisVerticalOutline,
@@ -261,6 +261,7 @@ import logger from '@/logger';
 import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
 import EditPickersModal from '@/components/EditPickersModal.vue';
+import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 
 export default defineComponent({
   name: 'InProgress',
@@ -598,6 +599,14 @@ export default defineComponent({
 
       const items = JSON.parse(JSON.stringify(order.items));
 
+      // creating updated data for shipment packages
+      order.shipmentPackages.map((shipmentPackage: any, index: number) => {
+        form.append(`box_shipmentId_${index}`, shipmentPackage.shipmentId)
+        form.append(`${index}_box_rowSubmit`, ''+index)
+        form.append(`box_shipmentBoxTypeId_${index}`, shipmentPackage.shipmentBoxTypeId)
+      })
+
+      // creating updated data for items
       items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
@@ -609,9 +618,6 @@ export default defineComponent({
           form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
         }
 
-        form.append(`box_shipmentId_${index}`, item.shipmentId)
-        form.append(`${index}_box_rowSubmit`, ''+index)
-        form.append(`box_shipmentBoxTypeId_${index}`, shipmentPackage.shipmentBoxTypeId)
         form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
         form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
         form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
@@ -897,10 +903,24 @@ export default defineComponent({
       await OrderService.printPicklist(picklist.id)
       picklist.isGeneratingPicklist = false;
     },
-    updateShipmentBoxType(value: string, shipmentPackage: any, order: any) {
-      shipmentPackage.shipmentBoxTypeId = value;
-      order.isModified = true;
-      this.store.dispatch('order/updateInProgressOrder', order);
+    async updateShipmentBoxType(shipmentPackage: any, order: any, ev: CustomEvent) {
+
+      const popover = await popoverController.create({
+        component: ShipmentBoxTypePopover,
+        event: ev,
+        showBackdrop: false,
+        componentProps: { shipmentPackage }
+      });
+
+      popover.present();
+
+      const result = await popover.onDidDismiss();
+
+      if(result.data) {
+        shipmentPackage.shipmentBoxTypeId = result.data;
+        order.isModified = true;
+        this.store.dispatch('order/updateInProgressOrder', order);
+      }
     },
     async recycleInProgressOrders() {
       const alert = await alertController.create({
@@ -973,6 +993,7 @@ export default defineComponent({
 
     return {
       Actions,
+      caretDownOutline,
       copyToClipboard,
       cubeOutline,
       addOutline,
