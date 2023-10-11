@@ -89,8 +89,8 @@
                     <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
-                    <p class="overline">{{ item.productSku }}</p>
-                    {{ item.productName }}
+                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
                     <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                 </ion-item>
@@ -231,7 +231,7 @@ import {
   popoverController,
   modalController,
 } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
 import {
   addOutline,
   checkmarkDoneOutline,
@@ -246,7 +246,7 @@ import Popover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils';
 import { hasError } from '@/adapter';
-import { ShopifyImg } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, ShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue';
 import { OrderService } from '@/services/OrderService';
 import emitter from '@/event-bus';
@@ -959,21 +959,25 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const productIdentificationStore = useProductIdentificationStore();
+    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
 
     return {
       Actions,
-      copyToClipboard,
-      cubeOutline,
       addOutline,
-      printOutline,
-      pencilOutline,
+      copyToClipboard,
+      checkmarkDoneOutline,
+      cubeOutline,
       ellipsisVerticalOutline,
-      optionsOutline,
       formatUtcDate,
       getFeature,
+      getProductIdentificationValue,
       hasPermission,
-      checkmarkDoneOutline,
+      optionsOutline,
+      pencilOutline,
       pricetagOutline,
+      printOutline,
+      productIdentificationPref,
       store
     }
   }

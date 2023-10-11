@@ -17,6 +17,7 @@ import { mapGetters, useStore } from 'vuex';
 import { initialise, resetConfig } from '@/adapter'
 import { useRouter } from 'vue-router';
 import { Settings } from 'luxon'
+import { useProductIdentificationStore } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: 'App',
@@ -37,7 +38,8 @@ export default defineComponent({
       userToken: 'user/getUserToken',
       instanceUrl: 'user/getInstanceUrl',
       userProfile: 'user/getUserProfile',
-      locale: 'user/getLocale'
+      locale: 'user/getLocale',
+      currentEComStore: 'user/getCurrentEComStore'
     })
   },
   methods: {
@@ -124,6 +126,10 @@ export default defineComponent({
       Settings.defaultZone = this.userProfile.userTimeZone;
     }
     this.$i18n.locale = this.locale;
+
+    // Get product identification from api using dxp-component
+    await useProductIdentificationStore().getIdentificationPref(this.currentEComStore?.productStoreId)
+      .catch((error) => console.error(error));
   },
   unmounted() {
     emitter.off('presentLoader', this.presentLoader);

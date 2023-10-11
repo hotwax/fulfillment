@@ -67,8 +67,8 @@
                       <ShopifyImg :src="getProduct(order.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ order.productSku }}</p>
-                      {{ order.virtualProductName }}
+                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(order.productId)) }}</p>
+                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(order.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(order.productId)) : order.productName }}
                       <p>{{ getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
                     </ion-label>
                   </ion-item>
@@ -136,11 +136,11 @@ import {
   alertController,
   popoverController
 } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
-import { ShopifyImg } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, ShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
@@ -354,16 +354,20 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const productIdentificationStore = useProductIdentificationStore();
+    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
 
     return{
       Actions,
       cubeOutline,
       formatUtcDate,
       getFeature,
+      getProductIdentificationValue,
       hasPermission,
       optionsOutline,
       pricetagOutline,
       printOutline,
+      productIdentificationPref,
       store
     }
   }
