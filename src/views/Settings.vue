@@ -319,7 +319,7 @@ export default defineComponent({
           "entityName": "FacilityOrderCount",
           "inputFields": {
             "facilityId": this.currentFacility.facilityId,
-            "entryDate": DateTime.now().toMillis(),
+            "entryDate": DateTime.now().toFormat('yyyy-MM-dd'),
           },
           "viewSize": 1,
           "fieldList": ["entryDate", "lastOrderCount"],
