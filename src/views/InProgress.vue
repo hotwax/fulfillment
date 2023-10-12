@@ -914,7 +914,7 @@ export default defineComponent({
 
       // Don't open popover when not having shipmentBoxTypes available
       if(!shipmentPackage.shipmentBoxTypes.length) {
-        console.error('Failed to fetch shipment box types')
+        logger.error('Failed to fetch shipment box types')
         return;
       }
 
