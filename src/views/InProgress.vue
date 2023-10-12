@@ -607,7 +607,7 @@ export default defineComponent({
       // creating updated data for shipment packages
       order.shipmentPackages.map((shipmentPackage: any, index: number) => {
         form.append(`box_shipmentId_${index}`, shipmentPackage.shipmentId)
-        form.append(`${index}_box_rowSubmit`, ''+index)
+        form.append(`${index}_box_rowSubmit_`, ''+index)
         form.append(`box_shipmentBoxTypeId_${index}`, shipmentPackage.shipmentBoxTypeId)
       })
 
