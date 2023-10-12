@@ -3,25 +3,25 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-back-button slot="start" default-href="/exim" />
-        <ion-title>{{ $t("Import shipped orders") }}</ion-title>
+        <ion-title>{{ translate("Import shipped orders") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content>
       <main>
         <ion-item>
-          <ion-label>{{ $t("Shipped orders") }}</ion-label>
+          <ion-label>{{ translate("Shipped orders") }}</ion-label>
           <ion-label class="ion-text-right ion-padding-end">{{ file.name }}</ion-label>
-          <input :placeholder="$t('Select CSV')" @change="parse" ref="file" class="ion-hide" type="file" id="orderInputFile"/>
-          <label for="orderInputFile">{{ $t("Upload") }}</label>
+          <input :placeholder="translate('Select CSV')" @change="parse" ref="file" class="ion-hide" type="file" id="orderInputFile"/>
+          <label for="orderInputFile">{{ translate("Upload") }}</label>
         </ion-item>
 
         <ion-list>
-          <ion-list-header>{{ $t("Saved mappings") }}</ion-list-header>
+          <ion-list-header>{{ translate("Saved mappings") }}</ion-list-header>
           <div>
             <ion-chip :disabled="!content.length" :outline=true @click="addFieldMapping()">
               <ion-icon :icon="addOutline" />
-              <ion-label>{{ $t("New mapping") }}</ion-label>
+              <ion-label>{{ translate("New mapping") }}</ion-label>
             </ion-chip>
             <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('IMPORD') ?? []" :key="index" @click="mapFields(mapping.value)" :outline=true>
               {{ mapping.name }}
@@ -30,18 +30,18 @@
         </ion-list>
 
         <ion-list>
-          <ion-list-header>{{ $t("Select the column for the following information in the uploaded CSV.") }}</ion-list-header>
+          <ion-list-header>{{ translate("Select the column for the following information in the uploaded CSV.") }}</ion-list-header>
 
           <ion-item :key="field" v-for="(fieldValues, field) in fields">
-            <ion-label>{{ $t(fieldValues.label) }}</ion-label>
-            <ion-select interface="popover" v-if="content.length" :placeholder="$t('Select')" v-model="fieldMapping[field].value">
+            <ion-label>{{ translate(fieldValues.label) }}</ion-label>
+            <ion-select interface="popover" v-if="content.length" :placeholder="translate('Select')" v-model="fieldMapping[field].value">
               <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
             </ion-select>
           </ion-item>
         </ion-list>
 
         <ion-button :disabled="!content.length" color="medium" @click="save" expand="block">
-          {{ $t("Save") }}
+          {{ translate("Save") }}
         </ion-button>
 
       </main>
@@ -54,7 +54,7 @@ import { defineComponent } from 'vue';
 import { useRouter } from 'vue-router';
 import { IonChip, IonIcon, IonPage, IonSelect, IonSelectOption, IonHeader, IonList, IonListHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonButton, alertController, modalController } from '@ionic/vue'
 import { parseCsv, showToast } from '@/utils';
-import { translate } from "@/i18n";
+import { translate } from "@hotwax/dxp-components";
 import { UploadService } from "@/services/UploadService"
 import { hasError } from '@/adapter';
 import logger from '@/logger';
@@ -147,13 +147,13 @@ export default defineComponent({
         "configId": "IMP_TRACK_NUM"
       }
       const alert = await alertController.create({
-        header: this.$t("Import shipped orders"),
-        message: this.$t("Make sure all the mappings you have selected is correct."),
+        header: translate("Import shipped orders"),
+        message: translate("Make sure all the mappings you have selected is correct."),
         buttons: [{
-          text: this.$t("Cancel"),
+          text: translate("Cancel"),
           role: 'cancel',
         }, {
-          text: this.$t("Upload"),
+          text: translate("Upload"),
           handler: async () => {
             try {
               const resp = await UploadService.uploadJsonFile(UploadService.prepareUploadJsonPayload({
@@ -222,7 +222,8 @@ export default defineComponent({
     return {
       addOutline,
       router,
-      store
+      store,
+      translate
     }
   }
 });

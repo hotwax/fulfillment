@@ -3,7 +3,7 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button slot="start" />
-        <ion-title>{{ $t("Settings") }}</ion-title>
+        <ion-title>{{ translate("Settings") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     
@@ -22,18 +22,18 @@
               <ion-card-title>{{ userProfile?.partyName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" @click="logout()">{{ $t("Logout") }}</ion-button>
+          <ion-button color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
           <ion-button fill="outline" @click="goToLaunchpad()">
-            {{ $t("Go to Launchpad") }}
+            {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
           <!-- Commenting this code as we currently do not have reset password functionality -->
-          <!-- <ion-button fill="outline" color="medium">{{ $t("Reset password") }}</ion-button> -->
+          <!-- <ion-button fill="outline" color="medium">{{ translate("Reset password") }}</ion-button> -->
         </ion-card>
       </div>
 
       <div class="section-header">
-        <h1>{{ $t('OMS') }}</h1>
+        <h1>{{ translate('OMS') }}</h1>
       </div>
 
       <section>
@@ -42,17 +42,17 @@
         <ion-card>
           <ion-card-header>
             <ion-card-subtitle>
-              {{ $t("Product Store") }}
+              {{ translate("Product Store") }}
             </ion-card-subtitle>
             <ion-card-title>
-              {{ $t("Store") }}
+              {{ translate("Store") }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ $t('A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.') }}
+            {{ translate('A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.') }}
           </ion-card-content>
           <ion-item lines="none">
-            <ion-label> {{ $t("Select store") }} </ion-label>
+            <ion-label> {{ translate("Select store") }} </ion-label>
             <ion-select interface="popover" :value="currentEComStore.productStoreId" @ionChange="setEComStore($event)">
               <ion-select-option v-for="store in (userProfile ? userProfile.stores : [])" :key="store.productStoreId" :value="store.productStoreId" >{{ store.storeName }}</ion-select-option>
             </ion-select>
@@ -62,14 +62,14 @@
         <ion-card>
           <ion-card-header>
             <ion-card-title>
-              {{ $t("Facility") }}
+              {{ translate("Facility") }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ $t('Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.') }}
+            {{ translate('Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.') }}
           </ion-card-content>
           <ion-item lines="none">
-            <ion-label>{{ $t("Select facility") }}</ion-label>
+            <ion-label>{{ translate("Select facility") }}</ion-label>
             <ion-select interface="popover" :value="currentFacility?.facilityId" @ionChange="setFacility($event)">
               <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.facilityName }}</ion-select-option>
             </ion-select>
@@ -79,13 +79,13 @@
         <ion-card>
           <ion-card-header>
             <ion-card-title>
-              {{ $t("Online Order Fulfillment") }}
+              {{ translate("Online Order Fulfillment") }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ $t('Configure the order fulfillment capacity of your facility.') }}
+            {{ translate('Configure the order fulfillment capacity of your facility.') }}
             <br/><br/>
-            {{ $t("Setting fulfillment capacity to 0 disables new order from being allocated to this facility. Leave this empty if this facility's fulfillment capacity is unrestricted.") }}
+            {{ translate("Setting fulfillment capacity to 0 disables new order from being allocated to this facility. Leave this empty if this facility's fulfillment capacity is unrestricted.") }}
           </ion-card-content>
           <ion-item lines="none" v-if="orderLimitType === 'custom'">
             <ion-text>{{ currentFacilityDetails?.orderCount }}</ion-text>
@@ -93,11 +93,11 @@
             <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{currentFacilityDetails?.maximumOrderLimit}}</ion-chip>
           </ion-item>      
           <ion-item lines="none" v-else-if="orderLimitType === 'unlimited'">
-            <ion-label>{{ $t("orders allocated today", {orderCount: currentFacilityDetails?.orderCount}) }}</ion-label>
-            <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{ $t("Unlimited") }}</ion-chip>
+            <ion-label>{{ translate("orders allocated today", {orderCount: currentFacilityDetails?.orderCount}) }}</ion-label>
+            <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{ translate("Unlimited") }}</ion-chip>
           </ion-item>      
           <ion-item lines="none" v-else>
-            <ion-label>{{ $t("orders in fulfillment queue", {orderCount: currentFacilityDetails?.orderCount}) }}</ion-label>
+            <ion-label>{{ translate("orders in fulfillment queue", {orderCount: currentFacilityDetails?.orderCount}) }}</ion-label>
             <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover" color="danger" fill="outline">{{ fulfillmentOrderLimit }}</ion-chip>
           </ion-item>
         </ion-card>
@@ -105,14 +105,14 @@
         <ion-card>
           <ion-card-header>
             <ion-card-title>
-              {{ $t("Sell inventory online") }}
+              {{ translate("Sell inventory online") }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ $t("Control whether the store's inventory should be made available for online sales or not.") }}
+            {{ translate("Control whether the store's inventory should be made available for online sales or not.") }}
           </ion-card-content>
           <ion-item lines="none">
-            <ion-label>{{ $t("Sell online") }}</ion-label>
+            <ion-label>{{ translate("Sell online") }}</ion-label>
             <ion-toggle :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG) || !facilityGroupDetails?.facilityGroupId" v-model="isEComInvEnabled" @click="updateEComInvStatus($event)" slot="end" />
           </ion-item>
         </ion-card>
@@ -122,7 +122,7 @@
 
       <div class="section-header">
         <h1>
-          {{ $t('App') }}
+          {{ translate('App') }}
           <p class="overline">{{ "Version: " + appVersion }}</p>
         </h1>
         <p class="overline">{{ "Built: " + getDateTime(appInfo.builtTime) }}</p>
@@ -132,52 +132,37 @@
         <ion-card>
           <ion-card-header>
             <ion-card-title>
-              {{ $t('Timezone') }}
+              {{ translate('Timezone') }}
             </ion-card-title>
           </ion-card-header>
 
           <ion-card-content>
-            {{ $t('The timezone you select is used to ensure automations you schedule are always accurate to the time you select.') }}
+            {{ translate('The timezone you select is used to ensure automations you schedule are always accurate to the time you select.') }}
           </ion-card-content>
 
           <ion-item lines="none">
             <ion-label> {{ userProfile && userProfile.userTimeZone ? userProfile.userTimeZone : '-' }} </ion-label>
-            <ion-button @click="changeTimeZone()" slot="end" fill="outline" color="dark">{{ $t("Change") }}</ion-button>
+            <ion-button @click="changeTimeZone()" slot="end" fill="outline" color="dark">{{ translate("Change") }}</ion-button>
           </ion-item>
         </ion-card>
+
+        <LanguageSwitcher />
 
         <ion-card>
           <ion-card-header>
             <ion-card-title>
-              {{ $t("Language") }}
+              {{ translate("Additional documents") }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ $t('Select your preferred language.') }}
+            {{ translate('Print supplementary documents with the shipment for package identification.') }}
           </ion-card-content>
           <ion-item lines="none">
-            <ion-label>{{ $t("Choose language") }}</ion-label>
-            <ion-select interface="popover" :value="locale" @ionChange="setLocale($event.detail.value)">
-              <ion-select-option v-for="locale in Object.keys(locales)" :key="locale" :value="locale" >{{ locales[locale] }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-        </ion-card>
-
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>
-              {{ $t("Additional documents") }}
-            </ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            {{ $t('Print supplementary documents with the shipment for package identification.') }}
-          </ion-card-content>
-          <ion-item lines="none">
-            <ion-label>{{ $t("Generate shipping label") }}</ion-label>
+            <ion-label>{{ translate("Generate shipping label") }}</ion-label>
             <ion-toggle :checked="userPreference.printShippingLabel" @ionChange="setPrintShippingLabelPreference($event)" slot="end" />
           </ion-item>
           <ion-item lines="none">
-            <ion-label>{{ $t("Generate packing slip") }}</ion-label>
+            <ion-label>{{ translate("Generate packing slip") }}</ion-label>
             <ion-toggle :checked="userPreference.printPackingSlip" @ionChange="setPrintPackingSlipPreference($event)" slot="end" />
           </ion-item>
         </ion-card>
@@ -222,7 +207,7 @@ import TimeZoneModal from '@/views/timezone-modal.vue'
 import { UserService } from '@/services/UserService';
 import { showToast } from '@/utils';
 import { hasError } from '@/adapter';
-import { translate } from '@/i18n';
+import { translate } from '@hotwax/dxp-components';
 import logger from '@/logger';
 import { Actions, hasPermission } from '@/authorization'
 import { DateTime } from 'luxon';
@@ -511,7 +496,7 @@ export default defineComponent({
       const message = 'Are you sure you want to perform this action?'
 
       const alert = await alertController.create({
-        header: this.$t(header, { facilityName: this.currentFacility.facilityName }),
+        header: translate(header, { facilityName: this.currentFacility.facilityName }),
         message: translate(message),
         buttons: [{
           text: translate('Cancel'),
@@ -570,7 +555,8 @@ export default defineComponent({
       timeOutline,
       router,
       store,
-      hasPermission
+      hasPermission,
+      translate
     }
   }
 });

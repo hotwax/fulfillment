@@ -6,9 +6,9 @@
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
-      <ion-title>{{ $t("Report an issue") }}</ion-title>
+      <ion-title>{{ translate("Report an issue") }}</ion-title>
       <ion-buttons slot="end">
-        <ion-button fill="clear">{{ $t("Save") }}</ion-button>
+        <ion-button fill="clear">{{ translate("Save") }}</ion-button>
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
@@ -26,14 +26,14 @@
        <div class="order-primary-info">
          <ion-label>
            Darooty Magwood
-           <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
+           <p>{{ translate("Ordered") }} 27th January 2020 9:24 PM EST</p>
          </ion-label>
        </div>
 
        <div class="order-metadata">
          <ion-label>
            Next Day Shipping
-           <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
+           <p>{{ translate("Ordered") }} 28th January 2020 2:32 PM EST</p>
          </ion-label>
        </div>
      </div>
@@ -55,12 +55,12 @@
         </div>
 
         <div class="product-metadata">
-          <ion-note>49 {{ $t("pieces in stock") }}</ion-note>
+          <ion-note>49 {{ translate("pieces in stock") }}</ion-note>
         </div>
       </div>
 
       <ion-item>
-        <ion-label>{{ $t("Select an issue") }}</ion-label>
+        <ion-label>{{ translate("Select an issue") }}</ion-label>
         <ion-select value="a">
           <ion-select-option value="a">Out of stock</ion-select-option>
           <ion-select-option value="b">Worn display</ion-select-option>
@@ -90,6 +90,8 @@ import {
   modalController } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { closeOutline, pricetag } from "ionicons/icons";
+import { translate } from '@hotwax/dxp-components'
+
 export default defineComponent({
   name: "ReportIssueModal",
   components: { 
@@ -117,7 +119,8 @@ export default defineComponent({
   setup() {
     return {
       closeOutline,
-      pricetag
+      pricetag,
+      translate
     };
   },
 });
