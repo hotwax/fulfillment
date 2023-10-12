@@ -74,11 +74,13 @@
               <ion-skeleton-text animated />
               <ion-skeleton-text animated />
             </div>
-            <!-- TODO: implement functionality to change the type of box -->
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
               <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-row>
-                <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">{{ getShipmentPackageNameAndType(shipmentPackage, order) }}</ion-chip>
+                <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click="updateShipmentBoxType(shipmentPackage, order, $event)">
+                  {{ `Box ${shipmentPackage?.packageName}` }} {{ shipmentPackage.shipmentBoxTypes.length ? `| ${boxTypeDesc(getShipmentPackageType(shipmentPackage))}` : '' }}
+                  <ion-icon :icon="caretDownOutline" />
+                </ion-chip>
               </ion-row>
             </div>
 
@@ -234,6 +236,7 @@ import {
 import { defineComponent } from 'vue';
 import {
   addOutline,
+  caretDownOutline,
   checkmarkDoneOutline,
   cubeOutline,
   ellipsisVerticalOutline,
@@ -258,6 +261,7 @@ import logger from '@/logger';
 import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
 import EditPickersModal from '@/components/EditPickersModal.vue';
+import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 
 export default defineComponent({
   name: 'InProgress',
@@ -588,13 +592,26 @@ export default defineComponent({
       this.itemsIssueSegmentSelected = []
       await this.store.dispatch('order/findInProgressOrders')
     },
-    async updateOrder(order: any) {
+    async updateOrder(order: any) { 
       const form = new FormData()
 
       form.append('facilityId', this.currentFacility.facilityId)
+      form.append('orderId', order.orderId)
+
+      order.shipmentIds.map((shipmentId: string) => {
+        form.append('shipmentIds', shipmentId)
+      })
 
       const items = JSON.parse(JSON.stringify(order.items));
 
+      // creating updated data for shipment packages
+      order.shipmentPackages.map((shipmentPackage: any, index: number) => {
+        form.append(`box_shipmentId_${index}`, shipmentPackage.shipmentId)
+        form.append(`${index}_box_rowSubmit_`, ''+index)
+        form.append(`box_shipmentBoxTypeId_${index}`, shipmentPackage.shipmentBoxTypeId)
+      })
+
+      // creating updated data for items
       items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
@@ -606,13 +623,12 @@ export default defineComponent({
           form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
         }
 
-        form.append(`box_shipmentId_${index}`, item.shipmentId)
-        form.append(`${index}_box_rowSubmit`, ''+index)
-        form.append(`box_shipmentBoxTypeId_${index}`, order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0])
         form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
         form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
         form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
       })
+
+      form.append('picklistBinId', order.picklistBinId)
 
       try {
         const resp = await OrderService.updateOrder({
@@ -863,9 +879,12 @@ export default defineComponent({
       }
       this.addingBoxForOrderIds.splice(this.addingBoxForOrderIds.indexOf(order.orderId), 1)
     },
-    getShipmentPackageNameAndType(shipmentPackage: any, order: any) {
-      // TODO
-      return order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? `Box ${shipmentPackage.packageName} | ${this.boxTypeDesc(order.shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId][0])}` : ''
+    getShipmentPackageType(shipmentPackage: any) {
+      let packageType = '';
+      if(shipmentPackage.shipmentBoxTypes.length){
+        packageType = shipmentPackage.shipmentBoxTypes.find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId) ? shipmentPackage.shipmentBoxTypes.find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId) : shipmentPackage.shipmentBoxTypes[0];
+      }
+      return packageType;
     },
     async updateQueryString(queryString: string) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
@@ -890,6 +909,31 @@ export default defineComponent({
       picklist.isGeneratingPicklist = true;
       await OrderService.printPicklist(picklist.id)
       picklist.isGeneratingPicklist = false;
+    },
+    async updateShipmentBoxType(shipmentPackage: any, order: any, ev: CustomEvent) {
+
+      // Don't open popover when not having shipmentBoxTypes available
+      if(!shipmentPackage.shipmentBoxTypes.length) {
+        logger.error('Failed to fetch shipment box types')
+        return;
+      }
+
+      const popover = await popoverController.create({
+        component: ShipmentBoxTypePopover,
+        event: ev,
+        showBackdrop: false,
+        componentProps: { shipmentPackage }
+      });
+
+      popover.present();
+
+      const result = await popover.onDidDismiss();
+
+      if(result.data) {
+        shipmentPackage.shipmentBoxTypeId = result.data;
+        order.isModified = true;
+        this.store.dispatch('order/updateInProgressOrder', order);
+      }
     },
     async recycleInProgressOrders() {
       const alert = await alertController.create({
@@ -962,6 +1006,7 @@ export default defineComponent({
 
     return {
       Actions,
+      caretDownOutline,
       copyToClipboard,
       cubeOutline,
       addOutline,
