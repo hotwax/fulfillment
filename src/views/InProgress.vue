@@ -77,8 +77,8 @@
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
               <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ $t("Add Box") }}</ion-button>
               <ion-row>
-                <ion-chip v-for="shipmentPackage in order.shipmentPackages" v-show="shipmentPackage.shipmentBoxTypes.length" :key="shipmentPackage.shipmentId" @click="updateShipmentBoxType(shipmentPackage, order, $event)">
-                  {{ `Box ${shipmentPackage?.packageName}` }} | {{ boxTypeDesc(getShipmentPackageType(shipmentPackage)) }}
+                <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click="updateShipmentBoxType(shipmentPackage, order, $event)">
+                  {{ `Box ${shipmentPackage?.packageName}` }} {{ shipmentPackage.shipmentBoxTypes.length ? `| ${boxTypeDesc(getShipmentPackageType(shipmentPackage))}` : '' }}
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </ion-row>
@@ -911,6 +911,12 @@ export default defineComponent({
       picklist.isGeneratingPicklist = false;
     },
     async updateShipmentBoxType(shipmentPackage: any, order: any, ev: CustomEvent) {
+
+      // Don't open popover when not having shipmentBoxTypes available
+      if(!shipmentPackage.shipmentBoxTypes.length) {
+        console.error('Failed to fetch shipment box types')
+        return;
+      }
 
       const popover = await popoverController.create({
         component: ShipmentBoxTypePopover,
