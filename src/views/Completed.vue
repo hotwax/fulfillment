@@ -63,6 +63,7 @@
                 <ion-label>
                   {{ order.shipmentMethodTypeDesc }}
                   <p v-if="order.reservedDatetime">{{ $t("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                  <p v-if="order.trackingCode">{{ $t("Tracking Code") }} {{ order.trackingCode }}</p>
                 </ion-label>
               </div>
             </div>
