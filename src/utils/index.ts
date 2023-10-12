@@ -1,4 +1,4 @@
-import { translate } from '@/i18n';
+import { translate } from '@hotwax/dxp-components';
 import store from '@/store';
 import { JsonToCsvOption } from '@/types';
 import { Plugins } from '@capacitor/core';

@@ -2,18 +2,18 @@
   <ion-content>
     <ion-list>
       <ion-list-header>
-        {{ $t("Fulfillment capacity") }}
+        {{ translate("Fulfillment capacity") }}
       </ion-list-header>
       <ion-item button @click="updateOrderLimitType('unlimited')">
         <ion-icon slot="end" :icon="lockOpenOutline" />
-        {{ $t("Unlimited Capacity") }}
+        {{ translate("Unlimited Capacity") }}
       </ion-item>
       <ion-item button @click="updateOrderLimitType('no-capacity')">
-        {{ $t("No Capacity") }}
+        {{ translate("No Capacity") }}
         <ion-icon slot="end" :icon="lockClosedOutline" />
       </ion-item>
       <ion-item button lines="none" @click="updateOrderLimitType('custom')">
-        {{ $t("Custom") }}
+        {{ translate("Custom") }}
       </ion-item>
     </ion-list>
   </ion-content>
@@ -31,7 +31,7 @@ import {
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { lockClosedOutline, lockOpenOutline } from 'ionicons/icons'
-import { translate } from '@/i18n';
+import { translate } from '@hotwax/dxp-components'
 import { showToast } from '@/utils';
 export default defineComponent({
   name: "OrderLimitPopover",
@@ -41,12 +41,6 @@ export default defineComponent({
     IonItem,
     IonList,
     IonListHeader
-  },
-  setup() {
-    return {
-      lockClosedOutline,
-      lockOpenOutline
-    }
   },
   props: ['fulfillmentOrderLimit'],
   data() {
@@ -111,6 +105,13 @@ export default defineComponent({
       })
       await alert.present()
     }
-  }
+  },
+  setup() {
+    return {
+      lockClosedOutline,
+      lockOpenOutline,
+      translate
+    }
+  },
 });
 </script> 
