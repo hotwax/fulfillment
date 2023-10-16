@@ -41,7 +41,7 @@
           </ion-item>
         </div>
         <div class="results">
-          <ion-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo() || !hasPermission(Actions.APP_SHIP_ORDER)" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ $t("Ship") }}</ion-button>
+          <ion-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo() || !hasPermission(Actions.APP_FORCE_SHIP_ORDER)" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ $t("Ship") }}</ion-button>
 
           <ion-card class="order" v-for="(order, index) in getCompletedOrders()" :key="index">
             <div class="order-header">
@@ -93,7 +93,7 @@
             <!-- TODO: implement functionality to mobile view -->
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && !hasPermission(Actions.APP_SHIP_ORDER))" fill="clear" >{{ $t("Ship Now") }}</ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ $t("Ship Now") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -104,7 +104,7 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ $t("Shipped") }}</ion-button>
-                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && !hasPermission(Actions.APP_SHIP_ORDER))" @click="shipOrder(order)">{{ $t("Ship Now") }}</ion-button>
+                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click="shipOrder(order)">{{ $t("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="regenerateShippingLabel(order)">
                   {{ $t("Regenerate Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
@@ -126,7 +126,7 @@
         </div>
       </div>
       <ion-fab v-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo() || !hasPermission(Actions.APP_SHIP_ORDER)" @click="bulkShipOrders()">
+        <ion-fab-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo() || !hasPermission(Actions.APP_FORCE_SHIP_ORDER)" @click="bulkShipOrders()">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -334,8 +334,8 @@ export default defineComponent({
               // if there are orders with tracking required and label image present
               const trackingRequiredOrders = orderList.filter((order: any) => this.isTrackingRequiredForAnyShipmentPackage(order))
               if (trackingRequiredOrders.length) {
-                const orderHasMissingLabelImage = orderList.some((order: any) => order.missingLabelImage)
-                if (!orderHasMissingLabelImage) {
+                const isTrackingCodeRequired = orderList.some((order: any) => order.missingLabelImage)
+                if (!isTrackingCodeRequired) {
                   orderList = trackingRequiredOrders
                 }
               }
