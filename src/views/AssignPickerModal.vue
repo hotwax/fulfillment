@@ -6,8 +6,8 @@
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
-      <ion-title>{{ $t("Assign Pickers") }}</ion-title>
-      <ion-button :disabled="!selectedPickers.length" fill="clear" slot="end" @click="printPicklist()">{{ $t('Print Picklist') }}</ion-button>
+      <ion-title>{{ translate("Assign Pickers") }}</ion-title>
+      <ion-button :disabled="!selectedPickers.length" fill="clear" slot="end" @click="printPicklist()">{{ translate('Print Picklist') }}</ion-button>
     </ion-toolbar>
   </ion-header>
 
@@ -20,7 +20,7 @@
     </ion-row>
 
     <ion-list>
-      <ion-list-header>{{ $t("Staff") }}</ion-list-header>
+      <ion-list-header>{{ translate("Staff") }}</ion-list-header>
       <!-- TODO: added click event on the item as when using the ionChange event then it's getting
       called every time the v-for loop runs and then removes or adds the currently rendered picker
       -->
@@ -61,7 +61,7 @@ import { closeOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { showToast } from "@/utils";
 import { hasError } from "@/adapter";
-import { translate } from "@/i18n";
+import { translate } from '@hotwax/dxp-components'
 import { UtilService } from "@/services/UtilService";
 import emitter from "@/event-bus";
 import logger from "@/logger"
@@ -235,7 +235,8 @@ export default defineComponent({
 
     return {
       closeOutline,
-      store
+      store,
+      translate
     };
   },
 });

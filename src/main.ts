@@ -25,14 +25,14 @@ import '@ionic/vue/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 
-import i18n from './i18n'
 import store from './store'
 import permissionPlugin from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
-import { dxpComponents } from '@hotwax/dxp-components'; 
-import { login, logout, loader } from './user-utils';
-import { getConfig, getProductIdentificationPref, initialise, setProductIdentificationPref } from './adapter';
+import { dxpComponents } from '@hotwax/dxp-components';
+import { login, logout, loader } from '@/utils/user';
+import { getConfig, getProductIdentificationPref, initialise, setProductIdentificationPref, setUserLocale } from './adapter';
+import localeMessages from '@/locales';
 
 const app = createApp(App)
   .use(IonicVue, {
@@ -42,7 +42,6 @@ const app = createApp(App)
     level: process.env.VUE_APP_DEFAULT_LOG_LEVEL
   })
   .use(router)
-  .use(i18n)
   .use(store)
   .use(permissionPlugin, {
     rules: permissionRules,
@@ -57,7 +56,9 @@ const app = createApp(App)
     getConfig,
     getProductIdentificationPref,
     initialise,
-    setProductIdentificationPref
+    setProductIdentificationPref,
+    localeMessages,
+    setUserLocale,
   });
 
 router.isReady().then(() => {

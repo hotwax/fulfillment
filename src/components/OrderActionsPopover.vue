@@ -1,14 +1,14 @@
 <template>
   <ion-content>
     <ion-list>
-      <ion-list-header>{{ $t('Options') }}</ion-list-header>
+      <ion-list-header>{{ translate('Options') }}</ion-list-header>
       <ion-item button @click="copyInfo">
         <ion-icon slot="end" :icon="copyOutline" />
-        {{ $t("Copy ID") }}
+        {{ translate("Copy ID") }}
       </ion-item>
       <ion-item button lines="none" @click="assignPickers">
         <ion-icon slot="end" :icon="bagCheckOutline" />
-        {{ $t("Pick order") }}
+        {{ translate("Pick order") }}
       </ion-item>
     </ion-list>
   </ion-content>
@@ -28,6 +28,7 @@ import { defineComponent } from "vue";
 import { bagCheckOutline, copyOutline } from 'ionicons/icons'
 import { copyToClipboard } from "@/utils";
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
+import { translate } from "@hotwax/dxp-components";
 
 export default defineComponent({
   name: "OrderActionsPopover",
@@ -66,7 +67,8 @@ export default defineComponent({
     return {
       bagCheckOutline,
       copyOutline,
-      copyToClipboard
+      copyToClipboard,
+      translate
     }
   }
 });

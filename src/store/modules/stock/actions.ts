@@ -6,7 +6,7 @@ import * as types from './mutation-types'
 import { hasError } from '@/adapter'
 import logger from '@/logger'
 import { showToast } from '@/utils'
-import { translate } from '@/i18n'
+import { translate } from '@hotwax/dxp-components'
 
 const actions: ActionTree<StockState, RootState> = {
   async fetchStock({ commit }, { productId }) {
