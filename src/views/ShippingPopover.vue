@@ -2,16 +2,16 @@
   <ion-content>
     <ion-list>
       <ion-item button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="closeModal('regenerateShippingLabel')">
-        {{ $t("Regenerate shipping label") }}
+        {{ translate("Regenerate shipping label") }}
       </ion-item>
       <ion-item button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="closeModal('printPackingSlip')">
-        {{ $t("Print customer letter") }}
+        {{ translate("Print customer letter") }}
       </ion-item>
       <ion-item button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments" @click="closeModal('unpackOrder')">
-        {{ $t("Unpack") }}
+        {{ translate("Unpack") }}
       </ion-item>
       <ion-item button :disabled="!order.missingLabelImage" lines="none" @click="closeModal('showShippingLabelErrorModal')">
-        {{ $t("Shipping label error") }}
+        {{ translate("Shipping label error") }}
       </ion-item>
     </ion-list>
   </ion-content>
@@ -27,6 +27,8 @@ import { defineComponent } from "vue";
 import { lockOpenOutline, printOutline, receiptOutline, warningOutline } from 'ionicons/icons'
 import { Actions, hasPermission } from '@/authorization'
 import { popoverController } from "@ionic/core";
+import { translate } from "@hotwax/dxp-components";
+
 export default defineComponent({
   name: "ShippingPopover",
   components: { 
@@ -48,7 +50,8 @@ export default defineComponent({
       lockOpenOutline,
       printOutline,
       receiptOutline,
-      warningOutline
+      warningOutline,
+      translate 
     }
   }
 });
