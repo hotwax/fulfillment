@@ -17,6 +17,7 @@ import { mapGetters, useStore } from 'vuex';
 import { initialise, resetConfig } from '@/adapter'
 import { useRouter } from 'vue-router';
 import { Settings } from 'luxon'
+import { translate } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: 'App',
@@ -36,8 +37,7 @@ export default defineComponent({
     ...mapGetters({
       userToken: 'user/getUserToken',
       instanceUrl: 'user/getInstanceUrl',
-      userProfile: 'user/getUserProfile',
-      locale: 'user/getLocale'
+      userProfile: 'user/getUserProfile'
     })
   },
   methods: {
@@ -48,7 +48,7 @@ export default defineComponent({
       if (!this.loader) {
         this.loader = await loadingController
           .create({
-            message: options.message ? this.$t(options.message) : this.$t("Click the backdrop to dismiss."),
+            message: options.message ? translate(options.message) : translate("Click the backdrop to dismiss."),
             translucent: true,
             backdropDismiss: options.backdropDismiss
           });
@@ -110,7 +110,7 @@ export default defineComponent({
   async mounted() {
     this.loader = await loadingController
       .create({
-        message: this.$t("Click the backdrop to dismiss."),
+        message: translate("Click the backdrop to dismiss."),
         translucent: true,
         backdropDismiss: true
       });
@@ -123,7 +123,6 @@ export default defineComponent({
     if (this.userProfile && this.userProfile.userTimeZone) {
       Settings.defaultZone = this.userProfile.userTimeZone;
     }
-    this.$i18n.locale = this.locale;
   },
   unmounted() {
     emitter.off('presentLoader', this.presentLoader);
@@ -136,7 +135,8 @@ export default defineComponent({
     const router = useRouter();
     return {
       router,
-      store
+      store,
+      translate
     }
   }
 });

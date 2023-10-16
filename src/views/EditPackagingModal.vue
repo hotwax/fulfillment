@@ -6,9 +6,9 @@
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
-      <ion-title>{{ $t("Edit packaging") }}</ion-title>
+      <ion-title>{{ translate("Edit packaging") }}</ion-title>
       <ion-buttons slot="end" @click="save(order)">
-        <ion-button color="primary" fill="clear">{{ $t("Save") }}</ion-button>
+        <ion-button color="primary" fill="clear">{{ translate("Save") }}</ion-button>
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
@@ -25,15 +25,15 @@
 
         <div class="order-primary-info">
           <ion-label>
-            <strong>{{ order.customerName }}</strong>
-            <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+            {{ order.customerName }}
+            <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
           </ion-label>
         </div>
 
         <div class="order-metadata">
           <ion-label>
-            <strong>{{ order.shipmentMethodTypeDesc }}</strong>
-            <p v-if="order.reservedDatetime">{{ $t("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
+            {{ order.shipmentMethodTypeDesc }}
+            <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
           </ion-label>
         </div>
       </div>
@@ -55,7 +55,7 @@
         <div class="product-metadata">
           <ion-item lines="none">
             <ion-select aria-label="Select box" interface="popover" @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
-              <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName"> {{ $t("Box") }} {{ shipmentPackage.packageName }}</ion-select-option>
+              <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName"> {{ translate("Box") }} {{ shipmentPackage.packageName }}</ion-select-option>
             </ion-select>
           </ion-item>
         </div>
@@ -64,9 +64,9 @@
 
     <ion-list>
       <ion-item lines="none">
-        <ion-note slot="start">{{ $t('Boxes') }}</ion-note>
+        <ion-note slot="start">{{ translate('Boxes') }}</ion-note>
         <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="clear" slot="end">
-          {{ $t("Add") }}
+          {{ translate("Add") }}
           <ion-icon :icon="addCircleOutline"/>
         </ion-button>
       </ion-item>
@@ -107,7 +107,7 @@ import { defineComponent } from "vue";
 import { addCircleOutline, closeOutline, pricetag } from "ionicons/icons";
 import { mapGetters } from 'vuex';
 import { copyToClipboard, formatUtcDate, getFeature } from '@/utils';
-import { ShopifyImg } from '@hotwax/dxp-components';
+import { ShopifyImg, translate } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: "EditPackagingModal",
@@ -148,7 +148,8 @@ export default defineComponent({
       copyToClipboard,
       formatUtcDate,
       getFeature,
-      pricetag
+      pricetag,
+      translate
     };
   },
 });

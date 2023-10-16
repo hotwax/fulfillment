@@ -6,7 +6,7 @@
           <ion-icon slot="icon-only" :icon="close" />
         </ion-button>
       </ion-buttons>
-      <ion-title>{{ $t("Edit pickers") }}</ion-title>
+      <ion-title>{{ translate("Edit pickers") }}</ion-title>
     </ion-toolbar>
   </ion-header>
   
@@ -20,7 +20,7 @@
     </ion-row>
 
     <ion-list>
-      <ion-list-header>{{ $t("Staff") }}</ion-list-header>
+      <ion-list-header>{{ translate("Staff") }}</ion-list-header>
       <div class="ion-padding" v-if="!pickers.length">
         {{ 'No picker found' }}
       </div>
@@ -70,7 +70,7 @@ import { useStore } from "vuex";
 import { hasError, showToast } from '@/utils';
 import logger from "@/logger"
 import { UtilService } from "@/services/UtilService";
-import { translate } from "@/i18n";
+import { translate } from '@hotwax/dxp-components'
 
 export default defineComponent({
   name: "EditPickersModal",
@@ -179,16 +179,16 @@ export default defineComponent({
       }
     },
     async confirmSave() {
-      const message = this.$t("Replace current pickers with new selection?");
+      const message = translate("Replace current pickers with new selection?");
       const alert = await alertController.create({
-        header: this.$t("Replace pickers"),
+        header: translate("Replace pickers"),
         message,
         buttons: [
           {
-            text: this.$t("Cancel"),
+            text: translate("Cancel"),
           },
           {
-            text: this.$t("Replace"),
+            text: translate("Replace"),
             handler: () => {
               this.resetPicker().then(() => {
                 this.closeModal()
@@ -267,7 +267,8 @@ export default defineComponent({
       close,
       saveOutline,
       closeCircle,
-      store
+      store,
+      translate
     };
   }
 });

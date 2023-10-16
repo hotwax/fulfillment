@@ -16,7 +16,7 @@
             class="hydrated"
             :class="{ selected: selectedIndex === index }">
             <ion-icon slot="start" :ios="page.iosIcon" :md="page.mdIcon" />
-            <ion-label>{{ $t(page.title) }}</ion-label>
+            <ion-label>{{ translate(page.title) }}</ion-label>
           </ion-item>
         </ion-menu-toggle>
       </ion-list>
@@ -43,6 +43,7 @@ import { mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutli
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 import { hasPermission } from "@/authorization";
+import { translate } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: "Menu",
@@ -125,14 +126,15 @@ export default defineComponent({
     })
 
     return {
-      selectedIndex,
       appPages,
+      checkmarkDoneOutline,
+      hasPermission,
       mailUnreadOutline,
       mailOpenOutline,
-      checkmarkDoneOutline,
+      selectedIndex,
       settingsOutline,
       store,
-      hasPermission
+      translate
     };
   }
 });

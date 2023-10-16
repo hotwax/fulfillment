@@ -6,22 +6,22 @@
           <ion-icon :icon="close" />
         </ion-button>
       </ion-buttons>
-      <ion-title>{{ $t("CSV Mapping") }}</ion-title>
+      <ion-title>{{ translate("CSV Mapping") }}</ion-title>
     </ion-toolbar>
   </ion-header>
 
   <ion-item>
-    <ion-label>{{ $t("Mapping name") }}</ion-label>
-    <ion-input :placeholder="$t('Field mapping name')" v-model="mappingName" />
+    <ion-label>{{ translate("Mapping name") }}</ion-label>
+    <ion-input :placeholder="translate('Field mapping name')" v-model="mappingName" />
   </ion-item>
 
   <ion-content class="ion-padding">
     <div>
       <ion-list>
         <ion-item :key="field" v-for="(fieldValues, field) in fieldMapping">
-          <ion-label>{{ $t(fieldValues.label) }}</ion-label>
+          <ion-label>{{ translate(fieldValues.label) }}</ion-label>
           <ion-input v-if="mappingType === 'EXPORD'" slot="end" v-model="fieldValues.value"></ion-input>
-          <ion-select v-else interface="popover" :placeholder = "$t('Select')" v-model="fieldValues.value">
+          <ion-select v-else interface="popover" :placeholder = "translate('Select')" v-model="fieldValues.value">
             <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
           </ion-select>
         </ion-item>
@@ -58,7 +58,7 @@ import { defineComponent } from "vue";
 import { close, save, saveOutline } from "ionicons/icons";
 import { useStore, mapGetters } from "vuex";
 import { showToast } from '@/utils';
-import { translate } from "@/i18n";
+import { translate } from '@hotwax/dxp-components'
 
 export default defineComponent({
   name: "CreateMappingModal",
@@ -143,7 +143,8 @@ export default defineComponent({
       close,
       save,
       saveOutline,
-      store
+      store,
+      translate
     };
   }
 });

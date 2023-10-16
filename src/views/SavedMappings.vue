@@ -3,24 +3,24 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-back-button slot="start" default-href="/exim" />
-        <ion-title>{{ $t("Saved mappings") }}</ion-title>
+        <ion-title>{{ translate("Saved mappings") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content>
       <main>
         <div class="empty-state" v-if="!areFieldMappingsAvailable">
-          <p>{{ $t("There are no saved CSV mappings to show. Create a new mapping from a file upload screen")}}</p>
+          <p>{{ translate("There are no saved CSV mappings to show. Create a new mapping from a file upload screen")}}</p>
         </div>
         <section v-else>
           <ion-list v-if="Object.keys(fieldMappings('IMPORD')).length">
-            <ion-list-header>{{ $t("Import Orders") }}</ion-list-header>
+            <ion-list-header>{{ translate("Import Orders") }}</ion-list-header>
             <ion-item v-for="(mapping, index) in fieldMappings('IMPORD')" :key="index" @click="viewMappingConfiguration(index, 'IMPORD')" detail button>
               <ion-label>{{ mapping.name }}</ion-label>
             </ion-item>
           </ion-list>
           <ion-list v-if="Object.keys(fieldMappings('EXPORD')).length">
-            <ion-list-header>{{ $t("Export Orders") }}</ion-list-header>
+            <ion-list-header>{{ translate("Export Orders") }}</ion-list-header>
             <ion-item v-for="(mapping, index) in fieldMappings('EXPORD')" :key="index" @click="viewMappingConfiguration(index, 'EXPORD')" detail button>
               <ion-label>{{ mapping.name }}</ion-label>
             </ion-item>
@@ -54,6 +54,7 @@ import { useRouter } from 'vue-router'
 import { mapGetters, useStore } from 'vuex'
 import emitter from '@/event-bus';
 import MappingConfiguration from '@/components/MappingConfiguration.vue'
+import { translate } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: 'SavedMappings',
@@ -112,6 +113,7 @@ export default defineComponent({
     return {
       router,
       store,
+      translate
     };
   }
 })

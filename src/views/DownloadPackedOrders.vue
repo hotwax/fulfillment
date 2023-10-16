@@ -3,18 +3,18 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-back-button slot="start" default-href="/exim" />
-        <ion-title>{{ $t("Export packed orders") }}</ion-title>
+        <ion-title>{{ translate("Export packed orders") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content>
       <main>
         <ion-list>
-          <ion-list-header>{{ $t("Saved mappings") }}</ion-list-header>
+          <ion-list-header>{{ translate("Saved mappings") }}</ion-list-header>
           <div>
             <ion-chip :disabled="!content.length" :outline=true @click="addFieldMapping()">
               <ion-icon :icon="addOutline" />
-              <ion-label>{{ $t("New mapping") }}</ion-label>
+              <ion-label>{{ translate("New mapping") }}</ion-label>
             </ion-chip>
             <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('EXPORD') ?? []" :key="index" @click="mapFields(mapping)" :outline=true>
               {{ mapping.name }}
@@ -24,8 +24,8 @@
 
         <ion-list>
           <ion-list-header>
-            <ion-label>{{ $t('Selected Fields: ') }} {{ Object.keys(selectedFieldMappings).length }}</ion-label>
-            <ion-button fill="clear" @click="addCustomField()" :disabled="!Object.keys(fieldMapping).length">{{ $t('Add custom field') }}</ion-button>
+            <ion-label>{{ translate('Selected Fields: ') }} {{ Object.keys(selectedFieldMappings).length }}</ion-label>
+            <ion-button fill="clear" @click="addCustomField()" :disabled="!Object.keys(fieldMapping).length">{{ translate('Add custom field') }}</ion-button>
           </ion-list-header>
           <ion-reorder-group @ionItemReorder="doReorder($event)" :disabled="false">
             <ion-item :key="field" v-for="(value, field) in selectedFieldMappings">
@@ -36,7 +36,7 @@
                 <ion-icon :icon="trashOutline" />
               </ion-button>
               <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
-              <ion-button v-if="!customFields[field] && value === field" fill="outline" @click="addCustomLabel(field)">{{ $t('Custom Label') }}</ion-button>
+              <ion-button v-if="!customFields[field] && value === field" fill="outline" @click="addCustomLabel(field)">{{ translate('Custom Label') }}</ion-button>
               <!-- Using multiple if's instead of wrapping in a single parent div, to style the component properly without adding any extra css -->
               <ion-label v-if="!customFields[field] && value !== field" slot="end">{{ value }}</ion-label>
               <ion-button v-if="!customFields[field] && value !== field" slot="end" fill="clear" @click="addCustomLabel(field)">
@@ -49,8 +49,8 @@
         </ion-list>
 
         <ion-list v-show="!areAllFieldsSelected">
-          <ion-list-header>{{ $t("Select the fields you want to include in your export") }}</ion-list-header>
-          <ion-button fill="clear" @click="selectAll" :disabled="!Object.keys(fieldMapping).length">{{ $t('Select all') }}</ion-button>
+          <ion-list-header>{{ translate("Select the fields you want to include in your export") }}</ion-list-header>
+          <ion-button fill="clear" @click="selectAll" :disabled="!Object.keys(fieldMapping).length">{{ translate('Select all') }}</ion-button>
 
           <ion-item :key="field" v-for="(value, field) in fieldMapping" v-show="!selectedData[field]">
             <ion-button slot="start" fill="clear" @click="updateSelectedData(field)">
@@ -76,7 +76,7 @@ import { mapGetters, useStore } from "vuex";
 import { alertController, IonBackButton, IonButton, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonReorder, IonReorderGroup, IonTitle, IonToolbar, modalController } from '@ionic/vue'
 import { addCircleOutline, addOutline, cloudDownloadOutline, pencilOutline, removeCircleOutline, trashOutline } from 'ionicons/icons'
 import { parseCsv, jsonToCsv, showToast } from '@/utils';
-import { translate } from "@/i18n";
+import { translate } from "@hotwax/dxp-components"
 import logger from '@/logger';
 import { DateTime } from 'luxon';
 import { useRouter } from 'vue-router';
@@ -175,7 +175,7 @@ export default defineComponent({
     },
     async addCustomLabel(field: any) {
       const alert = await alertController.create({
-        header: this.$t('Define custom label for', { label: this.fields[field].label }),
+        header: translate('Define custom label for', { label: this.fields[field].label }),
         buttons: [{
           text: translate('Cancel'),
           role: 'cancel'
@@ -240,13 +240,13 @@ export default defineComponent({
       })
 
       const alert = await alertController.create({
-        header: this.$t("Download packed orders"),
-        message: this.$t("Make sure all the labels provided are correct."),
+        header: translate("Download packed orders"),
+        message: translate("Make sure all the labels provided are correct."),
         buttons: [{
-          text: this.$t("Cancel"),
+          text: translate("Cancel"),
           role: 'cancel',
         }, {
-          text: this.$t("Download"),
+          text: translate("Download"),
           handler: async () => {
             const fileName = `HCPackedOrders-${this.currentFacility.facilityId}-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`
             await jsonToCsv(downloadData, { download: true, name: fileName })
@@ -384,7 +384,8 @@ export default defineComponent({
       removeCircleOutline,
       store,
       trashOutline,
-      router
+      router,
+      translate
     }
   }
 });

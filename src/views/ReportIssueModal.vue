@@ -6,9 +6,10 @@
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
-      <ion-title>{{ $t("Report an issue") }}</ion-title>
+      <ion-title>{{ translate("Report an issue") }}</ion-title>
       <ion-buttons slot="end" @click="save(order)">
         <ion-button color="primary" fill="clear">{{ $t("Save") }}</ion-button>
+        <ion-button color="primar" fill="clear">{{ translate("Save") }}</ion-button>
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
@@ -25,14 +26,14 @@
 
         <div class="order-primary-info">
           <ion-label>
-            <strong>{{ order.customerName }}</strong>
-            <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+            {{ order.customerName }}
+            <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
           </ion-label>
         </div>
 
         <div class="order-metadata">
           <ion-label>
-            <strong>{{ order.shipmentMethodTypeDesc }}</strong>
+            {{ order.shipmentMethodTypeDesc }}
             <p v-if="order.reservedDatetime">{{ $t("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
           </ion-label>
         </div>
@@ -54,14 +55,14 @@
           </ion-item>
         </div>
         <div class="product-metadata">
-          <ion-note>{{ item.itemQuantity }} {{ $t("pieces in stock") }}</ion-note>
+          <ion-note>{{ item.itemQuantity }} {{ translate("pieces in stock") }}</ion-note>
         </div>
       </div>
       
       <ion-item lines="none">
-        <ion-label>{{ $t("Select issue") }}</ion-label>
+        <ion-label>{{ translate("Select issue") }}</ion-label>
         <ion-select interface="popover" @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
-          <ion-select-option v-for="reason in rejectReasons" :key="reason.enumId" :value="reason.enumId">{{ reason.description ? $t(reason.description) : reason.enumId }}</ion-select-option>
+          <ion-select-option v-for="reason in rejectReasons" :key="reason.enumId" :value="reason.enumId">{{ reason.description ? translate(reason.description) : reason.enumId }}</ion-select-option>
         </ion-select>
       </ion-item>
     </ion-card> 
@@ -90,7 +91,8 @@ import { defineComponent } from "vue";
 import { closeOutline, pricetag } from "ionicons/icons";
 import { mapGetters } from 'vuex';
 import { copyToClipboard, formatUtcDate, getFeature } from '@/utils';
-import { ShopifyImg } from '@hotwax/dxp-components';
+import { ShopifyImg, translate } from '@hotwax/dxp-components';
+
 export default defineComponent({
   name: "ReportIssueModal",
   components: {
@@ -129,7 +131,8 @@ export default defineComponent({
       copyToClipboard,
       formatUtcDate,
       getFeature,
-      pricetag
+      pricetag,
+      translate
     };
   },
 });

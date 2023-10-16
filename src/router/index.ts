@@ -10,7 +10,7 @@ import UploadImportOrders from "@/views/UploadImportOrders.vue"
 import DownloadPackedOrders from "@/views/DownloadPackedOrders.vue"
 import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
-import { translate } from '@/i18n'
+import { translate } from '@hotwax/dxp-components'
 import 'vue-router'
 
 // Defining types for the meta values
@@ -21,7 +21,7 @@ declare module 'vue-router' {
 }
 import SavedMappings from "@/views/SavedMappings.vue"
 import { useAuthStore, Login } from '@hotwax/dxp-components'
-import { loader } from '@/user-utils';
+import { loader } from '@/utils/user';
 
 const authGuard = async (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
