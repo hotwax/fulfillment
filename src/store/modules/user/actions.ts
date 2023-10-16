@@ -86,7 +86,7 @@ const actions: ActionTree<UserState, RootState> = {
       }
 
       // Get product identification from api using dxp-component
-      await useProductIdentificationStore().getIdentificationPref(preferredStoreId)
+      await useProductIdentificationStore().getIdentificationPref(preferredStoreId ? preferredStoreId : preferredStore.productStoreId)
         .catch((error) => console.error(error));
 
       /*  ---- Guard clauses ends here --- */
