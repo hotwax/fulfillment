@@ -1,5 +1,5 @@
 import { api, client, hasError } from '@/adapter';
-import { translate } from '@/i18n';
+import { translate } from '@hotwax/dxp-components'
 import logger from '@/logger';
 import { showToast } from '@/utils';
 import store from '@/store';

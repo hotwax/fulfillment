@@ -3,15 +3,15 @@
     <ion-list>
       <ion-item button @click="editPackaging">
         <ion-icon slot="start" :icon="pencil" />
-        {{ $t("Edit packaging") }}
+        {{ translate("Edit packaging") }}
       </ion-item>
       <ion-item button @click="reportIssue">
         <ion-icon slot="start" :icon="warning" />
-        {{ $t("Report an issue") }}
+        {{ translate("Report an issue") }}
       </ion-item>
       <ion-item button lines="none">
         <ion-icon slot="start" :icon="refresh" />
-        {{ $t("Reject order") }}
+        {{ translate("Reject order") }}
       </ion-item>
     </ion-list>
   </ion-content>
@@ -29,6 +29,7 @@ import { defineComponent } from "vue";
 import EditPackagingModal from '@/views/EditPackagingModal.vue'
 import ReportIssueModal from '@/views/ReportIssueModal.vue'
 import { pencil, warning, refresh } from 'ionicons/icons'
+import { translate } from "@hotwax/dxp-components";
 
 export default defineComponent({
   name: "PackagingPopover",
@@ -54,9 +55,10 @@ export default defineComponent({
   },
   setup() {
     return {
-        pencil,
-        warning,
-        refresh    
+      pencil,
+      warning,
+      refresh,
+      translate
     }
   }
 });

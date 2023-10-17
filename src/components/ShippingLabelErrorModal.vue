@@ -6,7 +6,7 @@
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
-      <ion-title>{{ $t("Shipping label error") }}</ion-title>
+      <ion-title>{{ translate("Shipping label error") }}</ion-title>
     </ion-toolbar>
   </ion-header>
   <ion-content>
@@ -15,7 +15,7 @@
         <ion-item v-for="message, index in shipmentLabelErrorMessages" :key="index">
           <ion-label>{{ message }}</ion-label>
         </ion-item>
-        <div v-if="!shipmentLabelErrorMessages.length">{{ $t("No data Found.") }}</div>
+        <div v-if="!shipmentLabelErrorMessages.length">{{ translate("No data Found.") }}</div>
       </ion-list>
     </div>
   </ion-content>
@@ -38,6 +38,8 @@ import {
 import { defineComponent } from "vue";
 import { closeOutline } from "ionicons/icons";
 import { OrderService } from "@/services/OrderService";
+import { translate } from "@hotwax/dxp-components";
+
 export default defineComponent({
   name: "ShippingLabelErrorModal",
   components: { 
@@ -69,7 +71,8 @@ export default defineComponent({
   },
   setup() {
     return {
-      closeOutline
+      closeOutline,
+      translate
     };
   },
 });
