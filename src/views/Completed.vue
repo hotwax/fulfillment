@@ -329,13 +329,13 @@ export default defineComponent({
             text: translate("Ship"),
             handler: async () => {
               let orderList = JSON.parse(JSON.stringify(this.completedOrders.list))
-
-              // if there are orders with tracking required and label image present
+              // orders with tracking required and missing label must be excluded
               const trackingRequiredOrders = orderList.filter((order: any) => this.isTrackingRequiredForAnyShipmentPackage(order))
               if (trackingRequiredOrders.length) {
-                const isTrackingCodeRequired = orderList.some((order: any) => order.missingLabelImage)
-                if (!isTrackingCodeRequired) {
-                  orderList = trackingRequiredOrders
+                // filtering and excluding orders having missing label image with tracking required
+                const trackingRequiredAndMissingLabelOrders = trackingRequiredOrders.filter((order: any) => order.missingLabelImage).map((order: any) => order.orderId)
+                if (trackingRequiredAndMissingLabelOrders.length) {
+                  orderList = orderList.filter((order: any) => !trackingRequiredAndMissingLabelOrders.includes(order.orderId))
                 }
               }
 
