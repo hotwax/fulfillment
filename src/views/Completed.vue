@@ -41,7 +41,7 @@
           </ion-item>
         </div>
         <div class="results">
-          <ion-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo() || !hasPermission(Actions.APP_FORCE_SHIP_ORDER)" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
+          <ion-button :disabled="!hasPermission(Actions.APP_FORCE_SHIP_ORDER)" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
           <ion-card class="order" v-for="(order, index) in getCompletedOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
@@ -331,12 +331,18 @@ export default defineComponent({
               let orderList = JSON.parse(JSON.stringify(this.completedOrders.list))
               // orders with tracking required and missing label must be excluded
               const trackingRequiredOrders = orderList.filter((order: any) => this.isTrackingRequiredForAnyShipmentPackage(order))
+              let trackingRequiredAndMissingLabelOrders: any
               if (trackingRequiredOrders.length) {
                 // filtering and excluding orders having missing label image with tracking required
-                const trackingRequiredAndMissingLabelOrders = trackingRequiredOrders.filter((order: any) => order.missingLabelImage).map((order: any) => order.orderId)
+                trackingRequiredAndMissingLabelOrders = trackingRequiredOrders.filter((order: any) => order.missingLabelImage).map((order: any) => order.orderId)
                 if (trackingRequiredAndMissingLabelOrders.length) {
                   orderList = orderList.filter((order: any) => !trackingRequiredAndMissingLabelOrders.includes(order.orderId))
                 }
+              }
+
+              if (!orderList.length) {
+                showToast(translate("No orders are currently able to be shipped due to missing tracking codes."))
+                return;
               }
 
               let shipmentIds = orderList.reduce((shipmentIds: any, order: any) => {
@@ -366,8 +372,10 @@ export default defineComponent({
               try {
                 const resp = await OrderService.bulkShipOrders(payload)
 
-                if(resp.status == 200 && !hasError(resp)) {
-                  showToast(translate('Orders shipped successfully'))
+                if (resp.status == 200 && !hasError(resp)) {
+                  !trackingRequiredAndMissingLabelOrders.length
+                    ? showToast(translate('Orders shipped successfully'))
+                    : showToast(translate('out of cannot be shipped due to missing tracking codes.', { remainingOrders: trackingRequiredAndMissingLabelOrders.length, totalOrders: packedOrdersCount }))
                   // TODO: handle the case of data not updated correctly
                   await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
