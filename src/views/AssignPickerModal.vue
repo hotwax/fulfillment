@@ -7,7 +7,6 @@
         </ion-button>
       </ion-buttons>
       <ion-title>{{ translate("Assign Pickers") }}</ion-title>
-      <ion-button :disabled="!selectedPickers.length" fill="clear" slot="end" @click="printPicklist()">{{ translate('Print Picklist') }}</ion-button>
     </ion-toolbar>
   </ion-header>
 
@@ -36,6 +35,12 @@
       </div>
     </ion-list>
   </ion-content>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button :disabled="!selectedPickers.length" @click="printPicklist()">
+      <ion-icon :icon="saveOutline" />
+    </ion-fab-button>
+  </ion-fab>
 </template>
 
 <script>
@@ -45,6 +50,8 @@ import {
   IonCheckbox,
   IonChip,
   IonContent,
+  IonFab,
+  IonFabButton,
   IonHeader,
   IonIcon,
   IonItem,
@@ -57,7 +64,7 @@ import {
   IonToolbar,
   modalController } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { closeOutline } from "ionicons/icons";
+import { closeOutline, saveOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { showToast } from "@/utils";
 import { hasError } from "@/adapter";
@@ -75,6 +82,8 @@ export default defineComponent({
     IonCheckbox,
     IonChip,
     IonContent,
+    IonFab,
+    IonFabButton,
     IonHeader,
     IonIcon,
     IonItem,
@@ -235,6 +244,7 @@ export default defineComponent({
 
     return {
       closeOutline,
+      saveOutline,
       store,
       translate
     };
