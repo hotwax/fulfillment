@@ -8,8 +8,7 @@
       </ion-buttons>
       <ion-title>{{ translate("Report an issue") }}</ion-title>
       <ion-buttons slot="end" @click="save(order)">
-        <ion-button color="primary" fill="clear">{{ $t("Save") }}</ion-button>
-        <ion-button color="primar" fill="clear">{{ translate("Save") }}</ion-button>
+        <ion-button color="primary" fill="clear">{{ translate("Save") }}</ion-button>
       </ion-buttons>
     </ion-toolbar>
   </ion-header>

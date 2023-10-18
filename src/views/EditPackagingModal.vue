@@ -74,10 +74,8 @@
       <!-- Todo: Need to add the box type changing functionality -->
       <ion-item v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">
         <ion-label>{{ shipmentPackage.packageName }}</ion-label>
-        <ion-select interface="popover" value="3">
-          <ion-select-option value="1">Type 1</ion-select-option>
-          <ion-select-option value="2">Type 2</ion-select-option>
-          <ion-select-option value="3">Type 3</ion-select-option>  
+        <ion-select interface="popover" :disabled="!shipmentPackage.shipmentBoxTypes.length" @ionChange="updateShipmentBoxType(shipmentPackage, order, $event)" :value="boxTypeDesc(getShipmentPackageType(shipmentPackage))" >
+          <ion-select-option v-for="boxType in shipmentPackage.shipmentBoxTypes" :key="boxTypeDesc(boxType)" :value="boxTypeDesc(boxType)">{{ boxTypeDesc(boxType) }}</ion-select-option>
         </ion-select>
       </ion-item>
     </ion-list>
@@ -105,7 +103,7 @@ import {
   modalController } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { addCircleOutline, closeOutline, pricetag } from "ionicons/icons";
-import { mapGetters } from 'vuex';
+import { mapGetters, useStore } from 'vuex';
 import { copyToClipboard, formatUtcDate, getFeature } from '@/utils';
 import { ShopifyImg, translate } from '@hotwax/dxp-components';
 
@@ -132,16 +130,33 @@ export default defineComponent({
   }, 
   computed: {
     ...mapGetters({
-      getProduct: 'product/getProduct'
+      getProduct: 'product/getProduct',
+      boxTypeDesc: 'util/getShipmentBoxDesc',
     }),
   },
   methods: {
     closeModal() {
       modalController.dismiss({ dismissed: true });
+    },
+    getShipmentPackageType(shipmentPackage) {
+      let packageType = '';
+      if(shipmentPackage.shipmentBoxTypes.length){
+        packageType = shipmentPackage.shipmentBoxTypes.find((boxType) => boxType === shipmentPackage.shipmentBoxTypeId) ? shipmentPackage.shipmentBoxTypes.find((boxType) => boxType === shipmentPackage.shipmentBoxTypeId) : shipmentPackage.shipmentBoxTypes[0];
+      }
+      return packageType;
+    },
+    async updateShipmentBoxType(shipmentPackage, order, event) {
+      if(event.detail.value){
+        shipmentPackage.shipmentBoxTypeId = event.detail.value;
+        order.isModified = true;
+        this.store.dispatch('order/updateInProgressOrder', order);
+      }
     }
   },
   props: ['addingBoxForOrderIds', 'addShipmentBox', 'order', 'save', 'updateBox'],
   setup() {
+    const store = useStore()
+
     return {
       addCircleOutline,
       closeOutline,
@@ -149,6 +164,7 @@ export default defineComponent({
       formatUtcDate,
       getFeature,
       pricetag,
+      store,
       translate
     };
   },
