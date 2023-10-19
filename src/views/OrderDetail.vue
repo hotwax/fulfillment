@@ -127,7 +127,7 @@
             <ion-icon slot="start" :icon="archiveOutline" />
             {{ translate("Pick order") }}
           </ion-button>
-          <div v-else class="desktop-only">
+          <div v-else-if="orderCategory === 'Completed'" class="desktop-only">
             <ion-button v-if="!hasPackedShipments(order)" :disabled="true">
               <ion-icon slot="start" :icon="bagCheckOutline" />
               {{ translate("Shipped") }}
@@ -144,9 +144,9 @@
               {{ translate("Print Customer Letter") }}
               <ion-spinner color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
             </ion-button>
-          </div>
-          <div class="desktop-only">
-            <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+            <div class="desktop-only">
+              <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+            </div>
           </div>
         </div>
       </ion-card>
@@ -375,9 +375,8 @@ export default defineComponent({
                 } else {
                   showToast(translate('Order packed successfully'));
                 }
-                // TODO: handle the case of fetching in progress orders after packing an order
-                // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
-                await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery()]);
+                this.router.replace('/in-progress')
+                this.store.dispatch('order/updateCurrent', {})
               } catch (err) {
                 // in case of error, if loader and toast are not dismissed above
                 if (toast) toast.dismiss()
@@ -391,7 +390,6 @@ export default defineComponent({
       return confirmPackOrder.present();
     },
     async fetchPickersInformation() {
-
       const orderQueryPayload = prepareOrderQuery({
         viewSize: '0',  // passing viewSize as 0 as we don't need any data
         groupBy: 'picklistBinId',
@@ -509,6 +507,8 @@ export default defineComponent({
       // dismissing the popover once the picker modal is closed
       assignPickerModal.onDidDismiss().finally(() => {
         this.closePopover();
+        this.router.replace('/open-orders')
+        this.store.dispatch('order/updateCurrent', {})
       });
 
       return assignPickerModal.present();
@@ -631,7 +631,6 @@ export default defineComponent({
       return {};
     },
     async updateShipmentBoxType(shipmentPackage: any, order: any, ev: CustomEvent) {
-
       // Don't open popover when not having shipmentBoxTypes available
       if (!shipmentPackage.shipmentBoxTypes.length) {
         logger.error('Failed to fetch shipment box types')
@@ -851,8 +850,8 @@ export default defineComponent({
 
         if (!hasError(resp)) {
           showToast(translate('Order shipped successfully'))
-          // TODO: handle the case of data not updated correctly
-          await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+          this.router.replace('/completed')
+          this.store.dispatch('order/updateCurrent', {})
         } else {
           throw resp.data
         }
@@ -977,7 +976,8 @@ export default defineComponent({
                 if(resp.status == 200 && !hasError(resp)) {
                   showToast(translate('Order unpacked successfully'))
                   // TODO: handle the case of data not updated correctly
-                  await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+                  this.router.replace('/completed')
+                  this.store.dispatch('order/updateCurrent', {})
                 } else {
                   throw resp.data
                 }
