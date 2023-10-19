@@ -347,6 +347,22 @@ const actions: ActionTree<OrderState, RootState> = {
         total = resp.data.grouped.orderId.ngroups
         orders = resp.data.grouped.orderId.groups
         this.dispatch('product/getProductInformation', { orders })
+
+        orders = orders.map((order: any) => {
+          const orderItem = order.doclist.docs[0];
+          return {
+            customerId: orderItem.customerId,
+            customerName: orderItem.customerName,
+            orderId: orderItem.orderId,
+            orderDate: orderItem.orderDate,
+            orderName: orderItem.orderName,
+            groupValue: order.groupValue,
+            items: order.doclist.docs,
+            shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
+            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+            reservedDatetime: orderItem.reservedDatetime
+          }
+        })
       } else {
         throw resp.data
       }
@@ -508,9 +524,11 @@ const actions: ActionTree<OrderState, RootState> = {
     await dispatch('fetchInProgressOrdersAdditionalInformation', { viewIndex: payload.viewIndex});
     commit(types.ORDER_INPROGRESS_QUERY_UPDATED, payload)
   },
+
   async updateCompletedOrderIndex({ commit }, payload) {
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, payload)
   },
+
   async updateOpenOrderIndex({ commit }, payload) {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
   }

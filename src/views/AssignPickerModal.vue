@@ -133,10 +133,10 @@ export default defineComponent({
       const orderItems = []
 
       if(this.order) {
-        this.order.doclist.docs.map((item) => orderItems.push(item))
+        this.order.items.map((item) => orderItems.push(item))
       } else {
         this.openOrders.list.map((order) => {
-          order.doclist.docs.map((item) => orderItems.push(item))
+          order.items.map((item) => orderItems.push(item))
         });
       }
 
