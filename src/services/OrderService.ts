@@ -173,6 +173,39 @@ const fetchShipmentPackages = async (shipmentIds: Array<string>): Promise<any> =
   return shipmentPackages;
 }
 
+const fetchTrackingCodes = async (shipmentIds: Array<string>): Promise<any> => {
+  let shipmentTrackingCodes = [];
+  const params = {
+    "entityName": "ShipmentPackageRouteSeg",
+    "inputFields": {
+      "shipmentId": shipmentIds,
+      "shipmentId_op": "in",
+      "shipmentItemSeqId_op": "not-empty"
+    },
+    "fieldList": ["shipmentId", "shipmentPackageSeqId", "trackingCode"],
+    "viewSize": 250,  // maximum records we could have
+    "distinct": "Y"
+  }
+
+  try {
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    })
+
+    if (!hasError(resp)) {
+      shipmentTrackingCodes = resp?.data.docs;
+    } else if (!resp?.data.error || (resp.data.error && resp.data.error !== "No record found")) {
+      return Promise.reject(resp?.data.error);
+    }
+  } catch (err) {
+    logger.error('Failed to fetch tracking codes for shipments', err)
+  }
+
+  return shipmentTrackingCodes;
+}
+
 const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
   try {
     // Get packing slip from the server
@@ -357,6 +390,7 @@ export const OrderService = {
   bulkShipOrders,
   fetchShipments,
   fetchShipmentPackages,
+  fetchTrackingCodes,
   findCompletedOrders,
   findInProgressOrders,
   findOpenOrders,
