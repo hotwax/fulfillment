@@ -35,49 +35,49 @@
         <div class="results">
           <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picksheet") }}</ion-button>
 
-          <ion-card class="order" v-for="(orders, index) in getOpenOrders()" :key="index">
+          <ion-card button @click.prevent="viewOrder(order)" class="order" v-for="(order, index) in getOpenOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
-                  <strong>{{ orders.doclist.docs[0].customerName }}</strong>
-                  <p>{{ translate("Ordered") }} {{ formatUtcDate(orders.doclist.docs[0].orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                  <strong>{{ order.customerName }}</strong>
+                  <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
                 </ion-label>
               </div>
 
               <div class="order-tags">
-                <ion-chip @click="orderActionsPopover(orders, $event)" outline>
+                <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
-                  <ion-label>{{ orders.doclist.docs[0].orderName }}</ion-label>
+                  <ion-label>{{ order.orderName }}</ion-label>
                 </ion-chip>
               </div>
 
               <div class="order-metadata">
                 <ion-label>
-                  {{ orders.doclist.docs[0].shipmentMethodTypeDesc }}
-                  <p v-if="orders.doclist.docs[0].reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(orders.doclist.docs[0].reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                  {{ order.shipmentMethodTypeDesc }}
+                  <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
                 </ion-label>
               </div>
             </div>
 
-            <div v-for="order in orders.doclist.docs" :key="order">
+            <div v-for="item in order.items" :key="item">
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <ShopifyImg :src="getProduct(order.productId).mainImageUrl" size="small"/>
+                      <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ order.productSku }}</p>
-                      {{ order.virtualProductName }}
-                      <p>{{ getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
+                      {{ item.virtualProductName }}
+                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                     </ion-label>
                   </ion-item>
                 </div>
 
                 <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
                 <div class="product-metadata">
-                  <ion-note v-if="getProductStock(order.productId).quantityOnHandTotal">{{ getProductStock(order.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button fill="clear" v-else size="small" @click="fetchProductStock(order.productId)">
+                  <ion-note v-if="getProductStock(order.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
                 </div>
