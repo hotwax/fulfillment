@@ -5,8 +5,8 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button slot="start" />
-        <ion-title v-if="!completedOrders.total">{{ completedOrders.total }} {{ $t('orders') }}</ion-title>
-        <ion-title v-else>{{ completedOrders.query.viewSize }} {{ $t('of') }} {{ completedOrders.total }} {{ completedOrders.total ? $t('order') : $t('orders') }}</ion-title>
+        <ion-title v-if="!completedOrders.total">{{ completedOrders.total }} {{ translate('orders') }}</ion-title>
+        <ion-title v-else>{{ completedOrders.query.viewSize }} {{ translate('of') }} {{ completedOrders.total }} {{ completedOrders.total ? translate('order') : translate('orders') }}</ion-title>
 
         <ion-buttons slot="end">
           <ion-menu-button menu="end" :disabled="!completedOrders.total">
@@ -26,7 +26,7 @@
             <ion-checkbox slot="start" :checked="completedOrders.query.selectedCarrierPartyIds.includes(carrierPartyId.val)" @ionChange="updateSelectedCarrierPartyIds(carrierPartyId.val)"/>
             <ion-label>
               {{ getPartyName(carrierPartyId.val.split('/')[0]) }}
-              <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? $t('package') : $t("packages") }}</p>
+              <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? translate('package') : translate("packages") }}</p>
             </ion-label>
             <!-- TODO: make the print icon functional -->
             <!-- <ion-icon :icon="printOutline" /> -->
@@ -36,19 +36,19 @@
             <ion-checkbox slot="start" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)" @ionChange="updateSelectedShipmentMethods(shipmentMethod.val)"/>
             <ion-label>
               {{ getShipmentMethodDesc(shipmentMethod.val) }}
-              <p>{{ shipmentMethod.groups }} {{ shipmentMethod.groups > 1 ? $t('orders') : $t('order') }}, {{ shipmentMethod.itemCount }} {{ shipmentMethod.itemCount > 1 ? $t('items') : $t('item') }}</p>
+              <p>{{ shipmentMethod.groups }} {{ shipmentMethod.groups > 1 ? translate('orders') : translate('order') }}, {{ shipmentMethod.itemCount }} {{ shipmentMethod.itemCount > 1 ? translate('items') : translate('item') }}</p>
             </ion-label>
           </ion-item>
         </div>
         <div class="results">
-          <ion-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo()" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ $t("Ship") }}</ion-button>
+          <ion-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo()" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
 
           <ion-card class="order" v-for="(order, index) in getCompletedOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
                   <strong>{{ order.customerName }}</strong>
-                  <p>{{ $t("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                  <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
                 </ion-label>
               </div>
 
@@ -62,7 +62,7 @@
               <div class="order-metadata">
                 <ion-label>
                   {{ order.shipmentMethodTypeDesc }}
-                  <p v-if="order.reservedDatetime">{{ $t("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                  <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
                   <p v-if="order.trackingCode">{{ $t("Tracking Code") }} {{ order.trackingCode }}</p>
                 </ion-label>
               </div>
@@ -84,7 +84,7 @@
 
               <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
               <div class="product-metadata">
-                <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ $t('pieces in stock') }}</ion-note>
+                <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
                 <ion-button fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
@@ -94,7 +94,7 @@
             <!-- TODO: implement functionality to mobile view -->
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="clear" >{{ $t("Ship Now") }}</ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="clear" >{{ translate("Ship Now") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -104,25 +104,25 @@
             <!-- TODO: make the buttons functional -->
             <div class="actions">
               <div class="desktop-only">
-                <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ $t("Shipped") }}</ion-button>
-                <ion-button  :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="shipOrder(order)" v-else>{{ $t("Ship Now") }}</ion-button>
+                <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
+                <ion-button  :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="shipOrder(order)" v-else>{{ translate("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="regenerateShippingLabel(order)">
-                  {{ $t("Regenerate Shipping Label") }}
+                  {{ translate("Regenerate Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="printPackingSlip(order)">
-                  {{ $t("Print Customer Letter") }}
+                  {{ translate("Print Customer Letter") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
                 </ion-button>
               </div>
               <div class="desktop-only">
-                <ion-button v-if="order.missingLabelImage" fill="outline" @click="showShippingLabelErrorModal(order)">{{ $t("Shipping label error") }}</ion-button>
-                <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ $t("Unpack") }}</ion-button>
+                <ion-button v-if="order.missingLabelImage" fill="outline" @click="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
+                <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
               </div>
             </div>
           </ion-card>
           <ion-infinite-scroll @ionInfinite="loadMoreCompletedOrders($event)" threshold="100px" :disabled="!isCompletedOrderScrollable()">
-            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"/>
+            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
           </ion-infinite-scroll>
         </div>
       </div>
@@ -179,7 +179,7 @@ import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import emitter from '@/event-bus';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
-import { translate } from '@/i18n';
+import { translate } from '@hotwax/dxp-components'
 import { OrderService } from '@/services/OrderService';
 import logger from '@/logger';
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
@@ -241,7 +241,7 @@ export default defineComponent({
   },
   methods: {
     getErrorMessage() {
-      return this.searchedQuery === '' ? this.$t("doesn't have any completed orders right now.", { facilityName: this.currentFacility.facilityName }) : this.$t( "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+      return this.searchedQuery === '' ? translate("doesn't have any completed orders right now.", { facilityName: this.currentFacility.facilityName }) : translate( "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
     },
     hasAnyPackedShipment(): boolean {
       return this.completedOrders.list.some((order: any) => {
@@ -323,13 +323,13 @@ export default defineComponent({
       }).length;
       const shipOrderAlert = await alertController
         .create({
-           header: this.$t("Ship orders"),
-           message: this.$tc("You are shipping orders. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this orders?", {count: packedOrdersCount, space: '<br /><br />'}),
+           header: translate("Ship orders"),
+           message: translate("You are shipping orders. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this orders?", {count: packedOrdersCount, space: '<br /><br />'}),
            buttons: [{
             role: "cancel",
-            text: this.$t("Cancel"),
+            text: translate("Cancel"),
           }, {
-            text: this.$t("Ship"),
+            text: translate("Ship"),
             handler: async () => {
               let orderList = JSON.parse(JSON.stringify(this.completedOrders.list))
 
@@ -513,13 +513,13 @@ export default defineComponent({
     async unpackOrder(order: any) {
       const unpackOrderAlert = await alertController
         .create({
-           header: this.$t("Unpack"),
-           message: this.$t("Unpacking this order will send it back to 'In progress' and it will have to be repacked."),
+           header: translate("Unpack"),
+           message: translate("Unpacking this order will send it back to 'In progress' and it will have to be repacked."),
            buttons: [{
             role: "cancel",
-            text: this.$t("Cancel"),
+            text: translate("Cancel"),
           }, {
-            text: this.$t("Unpack"),
+            text: translate("Unpack"),
             handler: async () => {
               const payload = {
                 orderId: order.orderId,
@@ -630,7 +630,8 @@ export default defineComponent({
       pricetagOutline,
       printOutline,
       router,
-      store
+      store,
+      translate
     }
   }
 });

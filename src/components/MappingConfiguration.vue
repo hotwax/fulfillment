@@ -1,7 +1,7 @@
 <template>
   <section>
     <ion-item>
-      <ion-label>{{ $t("Mapping name") }}</ion-label>
+      <ion-label>{{ translate("Mapping name") }}</ion-label>
       <ion-input v-model="currentMapping.name" />
     </ion-item>
 
@@ -16,11 +16,11 @@
       <div>
         <ion-button size="small" @click="updateMapping()">
           <ion-icon slot="start" :icon="saveOutline"/>
-          {{ $t("Save Changes") }}
+          {{ translate("Save Changes") }}
         </ion-button>
         <ion-button size="small" fill="outline" color="danger" @click="deleteMapping()">
           <ion-icon slot="start" :icon="trashOutline" />
-          {{ $t("Delete mapping") }}
+          {{ translate("Delete mapping") }}
         </ion-button>
       </div>
     </div>
@@ -28,11 +28,11 @@
     <div class="ion-padding-top actions mobile-only">
       <ion-button expand="block" @click="updateMapping()">
         <ion-icon slot="start" :icon="saveOutline"/>
-        {{ $t("Save Changes") }}
+        {{ translate("Save Changes") }}
       </ion-button>
       <ion-button fill="outline" color="danger" expand="block" @click="deleteMapping()">
         <ion-icon slot="start" :icon="trashOutline" />
-        {{ $t("Delete mapping") }}
+        {{ translate("Delete mapping") }}
       </ion-button>
     </div>
   </section>
@@ -52,7 +52,7 @@ import { defineComponent } from "vue";
 import { close, save, saveOutline, trashOutline } from "ionicons/icons";
 import { useStore, mapGetters } from "vuex";
 import { showToast } from "@/utils";
-import { translate } from "@/i18n";
+import { translate } from '@hotwax/dxp-components'
 
 export default defineComponent({
   name: "MappingConfiguration",
@@ -80,16 +80,16 @@ export default defineComponent({
   },
   methods: {
     async deleteMapping() {
-      const message = this.$t("Are you sure you want to delete this CSV mapping? This action cannot be undone.");
+      const message = translate("Are you sure you want to delete this CSV mapping? This action cannot be undone.");
       const alert = await alertController.create({
-        header: this.$t("Delete mapping"),
+        header: translate("Delete mapping"),
         message,
         buttons: [
           {
-            text: this.$t("Cancel"),
+            text: translate("Cancel"),
           },
           {
-            text: this.$t("Delete"),
+            text: translate("Delete"),
             handler: () => {
               this.store.dispatch("user/deleteFieldMapping", this.currentMapping)}
           }
@@ -109,16 +109,16 @@ export default defineComponent({
         showToast(translate("Map all fields"));
         return;
       }
-      const message = this.$t("Are you sure you want to update this CSV mapping? This action cannot be undone.");
+      const message = translate("Are you sure you want to update this CSV mapping? This action cannot be undone.");
       const alert = await alertController.create({
-        header: this.$t("Update mapping"),
+        header: translate("Update mapping"),
         message,
         buttons: [
           {
-            text: this.$t("Cancel"),
+            text: translate("Cancel"),
           },
           {
-            text: this.$t("Update"),
+            text: translate("Update"),
             handler: () => {
               this.store.dispatch('user/updateFieldMapping', this.currentMapping)
             }
@@ -135,7 +135,8 @@ export default defineComponent({
       save,
       saveOutline,
       trashOutline,
-      store
+      store,
+      translate
     };
   }
 });

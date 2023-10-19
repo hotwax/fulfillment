@@ -6,8 +6,7 @@
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
-      <ion-title>{{ $t("Assign Pickers") }}</ion-title>
-      <ion-button :disabled="!selectedPickers.length" fill="clear" slot="end" @click="printPicklist()">{{ $t('Print Picklist') }}</ion-button>
+      <ion-title>{{ translate("Assign Pickers") }}</ion-title>
     </ion-toolbar>
   </ion-header>
 
@@ -20,7 +19,7 @@
     </ion-row>
 
     <ion-list>
-      <ion-list-header>{{ $t("Staff") }}</ion-list-header>
+      <ion-list-header>{{ translate("Staff") }}</ion-list-header>
       <!-- TODO: added click event on the item as when using the ionChange event then it's getting
       called every time the v-for loop runs and then removes or adds the currently rendered picker
       -->
@@ -36,6 +35,12 @@
       </div>
     </ion-list>
   </ion-content>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button :disabled="!selectedPickers.length" @click="printPicklist()">
+      <ion-icon :icon="saveOutline" />
+    </ion-fab-button>
+  </ion-fab>
 </template>
 
 <script>
@@ -45,6 +50,8 @@ import {
   IonCheckbox,
   IonChip,
   IonContent,
+  IonFab,
+  IonFabButton,
   IonHeader,
   IonIcon,
   IonItem,
@@ -57,11 +64,11 @@ import {
   IonToolbar,
   modalController } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { closeOutline } from "ionicons/icons";
+import { closeOutline, saveOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { showToast } from "@/utils";
 import { hasError } from "@/adapter";
-import { translate } from "@/i18n";
+import { translate } from '@hotwax/dxp-components'
 import { UtilService } from "@/services/UtilService";
 import emitter from "@/event-bus";
 import logger from "@/logger"
@@ -75,6 +82,8 @@ export default defineComponent({
     IonCheckbox,
     IonChip,
     IonContent,
+    IonFab,
+    IonFabButton,
     IonHeader,
     IonIcon,
     IonItem,
@@ -124,10 +133,10 @@ export default defineComponent({
       const orderItems = []
 
       if(this.order) {
-        this.order.doclist.docs.map((item) => orderItems.push(item))
+        this.order.items.map((item) => orderItems.push(item))
       } else {
         this.openOrders.list.map((order) => {
-          order.doclist.docs.map((item) => orderItems.push(item))
+          order.items.map((item) => orderItems.push(item))
         });
       }
 
@@ -235,7 +244,9 @@ export default defineComponent({
 
     return {
       closeOutline,
-      store
+      saveOutline,
+      store,
+      translate
     };
   },
 });
