@@ -35,7 +35,7 @@
         <div class="results">
           <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picksheet") }}</ion-button>
 
-          <ion-card button class="order" v-for="(order, index) in getOpenOrders()" :key="index">
+          <ion-card button @click.prevent="viewOrder(order)" class="order" v-for="(order, index) in getOpenOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
@@ -44,7 +44,7 @@
                 </ion-label>
               </div>
 
-              <div class="order-tags">
+              <div class="desktop-only">
                 <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderName }}</ion-label>
@@ -342,7 +342,14 @@ export default defineComponent({
     },
     fetchProductStock(productId: string) {
       this.store.dispatch('stock/fetchStock', { productId })
-    }
+    },
+    async viewOrder(order: any) {
+      // TODO: find a better approach to handle the case that when in open segment we can click on
+      // order card to route on the order details page but not in the packed segment
+      this.store.dispatch('order/updateCurrent', order).then(() => {
+        this.$router.push({ path: `/order-detail/${order.orderId}` })
+      })
+    },
   },
   async mounted () {
     emitter.on('updateOrderQuery', this.updateOrderQuery)

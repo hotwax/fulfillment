@@ -43,7 +43,7 @@
         <div class="results">
           <ion-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo()" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
 
-          <ion-card class="order" v-for="(order, index) in getCompletedOrders()" :key="index">
+          <ion-card button @click.prevent="viewOrder(order)" class="order" v-for="(order, index) in getCompletedOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
@@ -53,7 +53,7 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip @click="copyToClipboard(order.orderName, 'Copied to clipboard')" outline>
+                <ion-chip @click.stop="copyToClipboard(order.orderName, 'Copied to clipboard')" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderName }}</ion-label>
                 </ion-chip>
@@ -84,7 +84,7 @@
               <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
               <div class="product-metadata">
                 <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+                <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
               </div>
@@ -94,7 +94,7 @@
             <div class="mobile-only">
               <ion-item>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="clear" >{{ translate("Ship Now") }}</ion-button>
-                <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover">
+                <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -104,19 +104,19 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
-                <ion-button  :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="shipOrder(order)" v-else>{{ translate("Ship Now") }}</ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="regenerateShippingLabel(order)">
+                <ion-button  :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click.stop="shipOrder(order)" v-else>{{ translate("Ship Now") }}</ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate("Regenerate Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="printPackingSlip(order)">
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
                   {{ translate("Print Customer Letter") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
                 </ion-button>
               </div>
               <div class="desktop-only">
-                <ion-button v-if="order.missingLabelImage" fill="outline" @click="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
-                <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+                <ion-button v-if="order.missingLabelImage" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
+                <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -609,7 +609,15 @@ export default defineComponent({
     },
     fetchProductStock(productId: string) {
       this.store.dispatch('stock/fetchStock', { productId })
-    }
+    },
+    async viewOrder(order: any) {
+      console.log(order)
+      // TODO: find a better approach to handle the case that when in open segment we can click on
+      // order card to route on the order details page but not in the packed segment
+      this.store.dispatch('order/updateCurrent', order).then(() => {
+        this.$router.push({ path: `/order-detail/${order.orderId}` })
+      })
+    },
   },
   setup() {
     const store = useStore();

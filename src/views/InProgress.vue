@@ -46,7 +46,7 @@
         <div class="results">
           <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="packOrders()">{{ translate("Pack orders") }}</ion-button>
 
-          <ion-card class="order" v-for="(order, index) in getInProgressOrders()" :key="index">
+          <ion-card button @click.prevent="viewOrder(order)" class="order" v-for="(order, index) in getInProgressOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
@@ -56,7 +56,7 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip @click="copyToClipboard(order.orderName, 'Copied to clipboard')" outline>
+                <ion-chip @click.stop="copyToClipboard(order.orderName, 'Copied to clipboard')" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderName }}</ion-label>
                 </ion-chip>
@@ -75,9 +75,9 @@
               <ion-skeleton-text animated />
             </div>
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
-              <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
+              <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
               <ion-row>
-                <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click="updateShipmentBoxType(shipmentPackage, order, $event)">
+                <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
                   {{ `Box ${shipmentPackage?.packageName}` }} {{ shipmentPackage.shipmentBoxTypes.length ? `| ${boxTypeDesc(getShipmentPackageType(shipmentPackage))}` : '' }}
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
@@ -110,7 +110,7 @@
                 </div>
               </div>
               <div class="desktop-only" v-else-if="order.shipmentPackages">
-                <ion-segment @ionChange="changeSegment($event, item, order)" :value="isIssueSegmentSelectedForItem(item) ? 'issue' : 'pack'">
+                <ion-segment @ionChange.prevent.stop="changeSegment($event, item, order)" :value="isIssueSegmentSelectedForItem(item) ? 'issue' : 'pack'">
                   <ion-segment-button value="pack">
                     <ion-label>{{ translate("Ready to pack") }}</ion-label>
                   </ion-segment-button>
@@ -142,7 +142,7 @@
 
               <div class="product-metadata">
                 <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+                <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
               </div>
@@ -150,8 +150,8 @@
 
             <div class="mobile-only">
               <ion-item>
-                <ion-button fill="clear"  :disabled="order.isModified || order.hasMissingInfo" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
-                <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
+                <ion-button fill="clear"  :disabled="order.isModified || order.hasMissingInfo" @click.stop="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+                <ion-button slot="end" fill="clear" color="medium" @click.stop="packagingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -159,8 +159,8 @@
 
             <div class="actions">
               <div>
-                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click="packOrder(order)">{{ translate("Pack") }}</ion-button>
-                <ion-button :disabled="order.hasMissingInfo" fill="outline" @click="save(order)">{{ translate("Save") }}</ion-button>
+                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click.stop="packOrder(order)">{{ translate("Pack") }}</ion-button>
+                <ion-button :disabled="order.hasMissingInfo" fill="outline" @click.stop="save(order)">{{ translate("Save") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -245,7 +245,7 @@ import {
   printOutline,
   optionsOutline
 } from 'ionicons/icons'
-import Popover from "@/views/PackagingPopover.vue";
+import PackagingPopover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils';
 import { hasError } from '@/adapter';
@@ -349,7 +349,7 @@ export default defineComponent({
     },
     async packagingPopover(ev: Event) {
       const popover = await popoverController.create({
-        component: Popover,
+        component: PackagingPopover,
         event: ev,
         translucent: true,
         showBackdrop: false,
@@ -990,6 +990,13 @@ export default defineComponent({
     },
     fetchProductStock(productId: string) {
       this.store.dispatch('stock/fetchStock', { productId })
+    },
+    async viewOrder(order: any) {
+      // TODO: find a better approach to handle the case that when in open segment we can click on
+      // order card to route on the order details page but not in the packed segment
+      this.store.dispatch('order/updateCurrent', order).then(() => {
+        this.$router.push({ path: `/order-detail/${order.orderId}` })
+      })
     }
   },
   async mounted () {
