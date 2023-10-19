@@ -67,7 +67,7 @@
                       <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ order.productSku }}</p>
+                      <p class="overline">{{ item.productSku }}</p>
                       {{ item.virtualProductName }}
                       <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                     </ion-label>
@@ -76,7 +76,7 @@
 
                 <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
                 <div class="product-metadata">
-                  <ion-note v-if="getProductStock(order.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
                   <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
