@@ -1,4 +1,5 @@
 export default {
+    "APP_ORDER_DETAILS_VIEW": "",
     "APP_OPEN_ORDERS_VIEW": "",
     "APP_IN_PROGRESS_ORDERS_VIEW": "",
     "APP_COMPLETED_ORDERS_VIEW": "",

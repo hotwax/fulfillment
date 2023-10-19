@@ -3,6 +3,7 @@ import { RouteRecordRaw } from 'vue-router';
 import Completed from '@/views/Completed.vue'
 import InProgress from '@/views/InProgress.vue'
 import OpenOrders from "@/views/OpenOrders.vue"
+import OrderDetails from "@/views/OrderDetails.vue"
 import Settings from "@/views/Settings.vue"
 import store from '@/store'
 import Exim from "@/views/Exim.vue"
@@ -73,6 +74,15 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     meta: {
       permissionId: "APP_COMPLETED_ORDERS_VIEW"
+    }
+  },
+  {
+    path: '/orders/:id',
+    name: 'Order details',
+    component: OrderDetails,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_ORDER_DETAILS_VIEW"
     }
   },
   {

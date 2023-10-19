@@ -100,6 +100,67 @@ const updateOrder = async (payload: any): Promise<any> => {
   })
 }
 
+const fetchOrderItemShipGroup = async (payload: any): Promise<any> => {
+  let shipGroup = {};
+
+  const params = {
+    "entityName": "OrderItemShipGroup",
+    "inputFields": {
+      "orderId": payload.orderId,
+      "shipGroupSeqId": payload.shipGroupSeqId,
+    },
+    "fieldList": ["orderId", "shipGroupSeqId", "facilityId", "shipmentMethodTypeId", "contactMechId"],
+    "distinct": "Y"
+  }
+
+  try {
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    })
+
+    if (!hasError(resp)) {
+      shipGroup = resp?.data.docs[0];
+    } else if (!resp?.data.error || (resp.data.error && resp.data.error !== "No record found")) {
+      return Promise.reject(resp?.data.error);
+    }
+  } catch (err) {
+    logger.error('Failed to fetch shipments for orders', err)
+  }
+
+  return shipGroup;
+}
+
+const fetchShippingAddress = async (contactMechId: string): Promise<any> => {
+  let shippingAddress = {};
+
+  const params = {
+    "entityName": "PostalAddressAndGeo",
+    "inputFields": {
+      "contactMechId": contactMechId,
+    },
+  }
+
+  try {
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    })
+
+    if (!hasError(resp)) {
+      shippingAddress = resp?.data.docs[0];
+    } else if (!resp?.data.error || (resp.data.error && resp.data.error !== "No record found")) {
+      return Promise.reject(resp?.data.error);
+    }
+  } catch (err) {
+    logger.error('Failed to fetch shipments for orders', err)
+  }
+
+  return shippingAddress;
+}
+
 const fetchShipments = async (picklistBinIds: Array<string>, orderIds: Array<string>, originFacilityId: string, statusId = ["SHIPMENT_SHIPPED", "SHIPMENT_PACKED"]): Promise<any> => {
   let shipments = [];
 
@@ -362,5 +423,7 @@ export const OrderService = {
   shipOrder,
   unpackOrder,
   updateOrder,
-  fetchShipmentLabelError
+  fetchShipmentLabelError,
+  fetchOrderItemShipGroup,
+  fetchShippingAddress
 }

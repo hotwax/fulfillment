@@ -1,4 +1,5 @@
 export default interface OrderState {
+  current: any,
   open: {
     list: any,
     total: number,

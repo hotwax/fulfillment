@@ -11,6 +11,9 @@ const getters: GetterTree<OrderState, RootState> = {
   },
   getCompletedOrders (state) {
     return state.completed;
+  },
+  getCurrentOrder (state) {
+    return state.current;
   }
 };
 export default getters;

@@ -10,6 +10,10 @@
         <ion-icon slot="end" :icon="bagCheckOutline" />
         {{ translate("Pick order") }}
       </ion-item>
+      <ion-item button lines="none" @click="viewOrder">
+        <ion-icon slot="end" :icon="arrowForwardOutline" />
+        {{ translate("Order details") }}
+      </ion-item>
     </ion-list>
   </ion-content>
 </template>
@@ -25,10 +29,12 @@ import {
   popoverController,
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { bagCheckOutline, copyOutline } from 'ionicons/icons'
+import { arrowForwardOutline, bagCheckOutline, copyOutline } from 'ionicons/icons'
 import { copyToClipboard } from "@/utils";
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { translate } from "@hotwax/dxp-components";
+import { useRouter } from 'vue-router'
+import { useStore } from 'vuex';
 
 export default defineComponent({
   name: "OrderActionsPopover",
@@ -62,13 +68,27 @@ export default defineComponent({
 
       return assignPickerModal.present();
     },
+    async viewOrder() {
+      this.store.dispatch('order/setCurrentOrder', { order: this.order }).then(() => {
+        if (this.order.doclist.docs) {
+          const orderDetail = this.order.doclist.docs[0];
+          this.router.push({ path: `/orders/${orderDetail.orderId}` });
+        }
+      });
+    }
   },
   setup() {
+    const router = useRouter();
+    const store = useStore();
+    
     return {
+      arrowForwardOutline,
       bagCheckOutline,
       copyOutline,
       copyToClipboard,
-      translate
+      translate,
+      router,
+      store
     }
   }
 });

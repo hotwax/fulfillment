@@ -448,6 +448,28 @@ const actions: ActionTree<OrderState, RootState> = {
     return resp;
   },
 
+  async setCurrentOrder ({ commit }, { order }) {
+    let resp;
+
+    try {
+      resp = await OrderService.fetchOrderItemShipGroup(order);
+      if (!hasError(resp)) {
+        const contactMechId = resp.data.contactMechId;
+        resp = await OrderService.fetchShippingAddress(contactMechId);
+        if (!hasError(resp)) {
+          order = {
+            ...order,
+            shippingAddress: resp.data
+          }  
+        }
+      }
+    } catch (err: any) {
+      logger.error("Error in setting current order", err);
+      return Promise.reject(new Error(err))
+    }
+    commit(types.ORDER_CURRENT_UPDATED, order)
+  },
+
   async clearOrders ({ commit }) {
     commit(types.ORDER_INPROGRESS_CLEARED)
     commit(types.ORDER_OPEN_CLEARED)

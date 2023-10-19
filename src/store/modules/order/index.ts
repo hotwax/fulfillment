@@ -8,6 +8,7 @@ import RootState from '../../RootState'
 const orderModule: Module<OrderState, RootState> = {
   namespaced: true,
   state: {
+    current: {},
     open: {
       list: [],
       total: 0,
