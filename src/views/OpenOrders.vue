@@ -44,7 +44,7 @@
                 </ion-label>
               </div>
 
-              <div class="desktop-only">
+              <div class="order-tags">
                 <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderName }}</ion-label>
@@ -344,8 +344,6 @@ export default defineComponent({
       this.store.dispatch('stock/fetchStock', { productId })
     },
     async viewOrder(order: any) {
-      // TODO: find a better approach to handle the case that when in open segment we can click on
-      // order card to route on the order details page but not in the packed segment
       this.store.dispatch('order/updateCurrent', order).then(() => {
         this.$router.push({ path: `/order-detail/${order.orderId}` })
       })

@@ -2,6 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
+        <!-- TODO add back button functionality -->
         <ion-back-button slot="start" />
         <ion-title>{{ translate("Order details") }}</ion-title>
       </ion-toolbar>
