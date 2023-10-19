@@ -509,6 +509,71 @@ const actions: ActionTree<OrderState, RootState> = {
 
   async updateOpenOrderIndex({ commit }, payload) {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
+  },
+
+  async fetchShipGroupInformationForOrder({ commit }, payload) {
+    const params = {
+      groupBy: 'shipGroupSeqId',
+      filters: {
+        '-fulfillmentStatus': { value: '(Rejected OR Cancelled)' }, // excluding groups for which fulfillment is cancelled or rejected
+        orderId: { value: '10600' }
+      }
+    }
+
+    const orderQueryPayload = prepareOrderQuery(params)
+
+    let resp, total, shipGroups;
+
+    try {
+      resp = await OrderService.findOrderShipGroup(orderQueryPayload);
+      if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.shipGroupSeqId.matches > 0) {
+        total = resp.data.grouped.shipGroupSeqId.ngroups
+        shipGroups = resp.data.grouped.shipGroupSeqId.groups
+
+        // creating the key as orders as the product information action accept only the orders as a param
+        this.dispatch('product/getProductInformation', { orders: shipGroups })
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Failed to fetch ship group information for order', err)
+    }
+
+    shipGroups = shipGroups.map((shipGroup: any) => {
+      const shipItem = shipGroup.doclist.docs[0]
+
+      return {
+        groupCategory: '',
+        items: shipGroup.doclist.docs,
+        shippingInstructions: shipItem.shippingInstructions,
+        facilityId: shipItem.facilityId,
+        facilityTypeId: shipItem.facilityTypeId,
+        facilityName: shipItem.facilityName,
+        shipmentId: shipItem.shipmentId
+      }
+    })
+    
+    console.log('shipGroups', shipGroups)
+
+    let shipmentIds = [];
+
+    if(total) {
+      shipmentIds = shipGroups.map((shipGroup: any) => shipGroup.shipmentId).filter((shipmentId: string) => shipmentId)
+    }
+
+    if(!shipmentIds.length) {
+      return shipGroups;
+    }
+
+    let shipGroupInformation = [];
+
+    try {
+      shipGroupInformation = []
+    } catch(err) {
+      logger.error('Failed to fetch information for ship groups', err)
+    }
+
+    return shipGroups;
   }
 }
 

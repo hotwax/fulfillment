@@ -92,6 +92,55 @@
               </div>
             </div> -->
           </ion-card>
+
+          <!-- TODO: REMOVE THIS CARDS FROM HERE ADDED FOR TESTING PURPOSE -->
+          <ion-card v-for="shipGroup in shipGroups" :key="shipGroup.shipmentId">
+            <ion-item lines="none">
+              <div>
+                <p>{{ shipGroup.facilityTypeId }}</p>
+                <h2>{{ shipGroup.facilityName }}</h2>
+              </div>
+              <ion-badge slot="end">{{ shipGroup.category }}</ion-badge>
+            </ion-item>
+
+            <ion-item v-if="shipGroup.carrierPartyId">
+              <ion-label>{{ shipGroup.carrierPartyId }}</ion-label>
+              {{ shipGroup.trackingCode }}
+            </ion-item>
+
+            <ion-item v-if="shipGroup.shippingInstructions" color="light" lines="none">
+              <ion-label class="ion-text-wrap">
+                <p class="overline">{{ translate("Handling Instructions") }}</p>
+                <p>{{ shipGroup.shippingInstructions }}</p>
+              </ion-label>
+            </ion-item>
+
+            <ion-item v-for="item in shipGroup.items" :key="item.productId" lines="none">
+              <ion-thumbnail slot="start">
+                <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small" />
+              </ion-thumbnail>
+              <ion-label class="ion-text-wrap">
+                <h5>{{ getProduct(item.productId).brandName }}</h5>
+                <h2>{{ getProduct(item.productId).productName }}</h2>
+                <p class="ion-text-wrap">{{ getProduct(item.productId).internalName }}</p>
+                <p class="overline">{{ getIdentificationId(getProduct(item.productId).goodIdentifications, goodIdentificationTypeId) }}</p>
+                <p v-if="getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')">{{ translate("Color") }}: {{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/') }}</p>
+                <p v-if="getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')">{{ translate("Size") }}: {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/') }}</p>
+              </ion-label>
+              <!-- Only show stock if its not a ship to store order -->
+              <!-- <div v-if="!isShipToStoreOrder">
+                <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal >= 0" :color="updateColor(getProductStock(item.productId).quantityOnHandTotal)">
+                  {{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}
+                </ion-note>
+                <ion-spinner v-else-if="isFetchingStock" color="medium" name="crescent" />
+                <ion-button v-else fill="clear" @click.stop="fetchProductStock(item.productId)">
+                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                </ion-button>
+              </div> -->
+            </ion-item>
+          </ion-card>
+          <!-- CARD TESTING ENDS HERE -->
+
           <ion-infinite-scroll @ionInfinite="loadMoreOpenOrders($event)" threshold="100px" :disabled="!isOpenOrdersScrollable()">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
           </ion-infinite-scroll>
@@ -141,7 +190,7 @@ import { cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ioni
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { ShopifyImg } from '@hotwax/dxp-components';
-import { formatUtcDate, getFeature, showToast } from '@/utils'
+import { formatUtcDate, getFeature, getIdentificationId, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
@@ -193,7 +242,9 @@ export default defineComponent({
   data () {
     return {
       shipmentMethods: [] as Array<any>,
-      searchedQuery: ''
+      searchedQuery: '',
+      shipGroups: [] as Array<any>,
+      goodIdentificationTypeId: process.env.VUE_APP_PRDT_IDENT_TYPE_ID,
     }
   },
   methods: {
@@ -346,6 +397,7 @@ export default defineComponent({
   },
   async mounted () {
     emitter.on('updateOrderQuery', this.updateOrderQuery)
+    this.shipGroups = await this.store.dispatch('order/fetchShipGroupInformationForOrder') as any;
     await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
   },
   unmounted() {
@@ -360,6 +412,7 @@ export default defineComponent({
       cubeOutline,
       formatUtcDate,
       getFeature,
+      getIdentificationId,
       hasPermission,
       optionsOutline,
       pricetagOutline,

@@ -343,6 +343,15 @@ const fetchShipmentLabelError = async (shipmentIds: Array<string>): Promise<any>
   return shipmentLabelError;
 }
 
+const findOrderShipGroup = async (query: any): Promise<any> => {
+  return api({
+    // TODO: We can replace this with any API
+    url: "solr-query",
+    method: "post",
+    data: query
+  });
+}
+
 export const OrderService = {
   addShipmentBox,
   bulkShipOrders,
@@ -351,6 +360,7 @@ export const OrderService = {
   findCompletedOrders,
   findInProgressOrders,
   findOpenOrders,
+  findOrderShipGroup,
   packOrder,
   packOrders,
   printPackingSlip,

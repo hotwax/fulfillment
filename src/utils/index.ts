@@ -117,4 +117,14 @@ const copyToClipboard = async (value: string, text?: string) => {
   });
 }
 
-export { copyToClipboard, formatDate, formatUtcDate, getFeature, handleDateTimeInput, showToast, hasError, parseCsv, jsonToCsv}
+const getIdentificationId = (identifications: any, id: string) => {
+  let  externalId = ''
+  if (identifications) {
+    const externalIdentification = identifications.find((identification: any) => identification.startsWith(id))
+    const externalIdentificationSplit = externalIdentification ? externalIdentification.split('/') : [];
+    externalId = externalIdentificationSplit[1] ? externalIdentificationSplit[1] : '';
+  }
+  return externalId;
+}
+
+export { copyToClipboard, formatDate, formatUtcDate, getFeature, getIdentificationId, handleDateTimeInput, showToast, hasError, parseCsv, jsonToCsv}
