@@ -274,6 +274,7 @@ const actions: ActionTree<OrderState, RootState> = {
             orderName: orderItem.orderName,
             groupValue: order.groupValue,
             picklistBinId: orderItem.picklistBinId,
+            picklistId: orderItem.picklistId,
             items: order.doclist.docs,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
             shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
@@ -634,7 +635,7 @@ const actions: ActionTree<OrderState, RootState> = {
     shipGroups = payload.shipGroups.map((shipGroup: any) => {
       const reservedShipGroupForOrder = shipGroups.find((group: any) => shipGroup.shipGroupSeqId === group.doclist.docs[0].shipGroupSeqId)
 
-      const reservedShipGroup = reservedShipGroupForOrder.groupValue ? reservedShipGroupForOrder.doclist.docs[0] : ''
+      const reservedShipGroup = reservedShipGroupForOrder?.groupValue ? reservedShipGroupForOrder.doclist.docs[0] : ''
 
       return reservedShipGroup ? {
         ...shipGroup,
