@@ -473,26 +473,27 @@ const actions: ActionTree<OrderState, RootState> = {
     emitter.emit('dismissLoader');
     return resp;
   },
-  async fetchShippingAddress ({ commit }, currentOrder) {
+  async fetchShippingAddress ({ commit, state }) {
     let resp;
+    let order = JSON.parse(JSON.stringify(state.current))
 
     try {
-      resp = await OrderService.fetchOrderItemShipGroup(currentOrder);
+      resp = await OrderService.fetchOrderItemShipGroup(order);
       if (resp) {
         const contactMechId = resp.contactMechId;
-
         resp = await OrderService.fetchShippingAddress(contactMechId);
+
         if (resp) {
-          currentOrder = {
-            ...currentOrder,
+          order = {
+            ...order,
             shippingAddress: resp
-          }  
+          }
         }
       }
     } catch (err: any) {
       logger.error("Error in setting current order", err);
     }
-    commit(types.ORDER_CURRENT_UPDATED, { order: currentOrder })
+    commit(types.ORDER_CURRENT_UPDATED, { order })
   },
 
   async clearOrders ({ commit }) {
@@ -542,7 +543,8 @@ const actions: ActionTree<OrderState, RootState> = {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
   },
 
-  async fetchShipGroupForOrder({ dispatch }, order) {
+  async fetchShipGroupForOrder({ dispatch, state }) {
+    const order = JSON.parse(JSON.stringify(state.current))
     const params = {
       groupBy: 'shipGroupSeqId',
       filters: {
@@ -591,12 +593,13 @@ const actions: ActionTree<OrderState, RootState> = {
     this.dispatch('util/fetchFacilityTypeInformation', facilityTypeIds)
 
     // fetching reservation information for shipGroup from OISGIR doc
-    await dispatch('fetchAdditionalShipGroupForOrder', { shipGroups, order });
+    await dispatch('fetchAdditionalShipGroupForOrder', { shipGroups });
   },
 
-  async fetchAdditionalShipGroupForOrder({ commit }, payload) {
+  async fetchAdditionalShipGroupForOrder({ commit, state }, payload) {
+    const order = JSON.parse(JSON.stringify(state.current))
     const shipGroupSeqIds = payload.shipGroups.map((shipGroup: any) => shipGroup.shipGroupSeqId)
-    const orderId = payload.order.orderId
+    const orderId = order.orderId
 
     const params = {
       groupBy: 'shipGroupSeqId',
@@ -633,7 +636,7 @@ const actions: ActionTree<OrderState, RootState> = {
         items: reservedShipGroupForOrder.doclist.docs,
         carrierPartyId: reservedShipGroup.carrierPartyId,
         shipmentId: reservedShipGroup.shipmentId,
-        groupCategory: getOrderCategory(payload.order),  // category defines that the order is in which state like open, inProgress or completed
+        groupCategory: getOrderCategory(order),  // category defines that the order is in which state like open, inProgress or completed
       } : {
         ...shipGroup
       }
@@ -663,9 +666,9 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('Failed to fetch information for ship groups', err)
     }
 
-    payload.order['shipGroups'] = shipGroups
+    order['shipGroups'] = shipGroups
 
-    commit(types.ORDER_CURRENT_UPDATED, { order: payload.order })
+    commit(types.ORDER_CURRENT_UPDATED, { order })
 
     return shipGroups;
   },
@@ -673,8 +676,8 @@ const actions: ActionTree<OrderState, RootState> = {
   // TODO clear current on logout
   async updateCurrent ({ commit, dispatch }, payload) {
     commit(types.ORDER_CURRENT_UPDATED, { order: payload })
-    await dispatch('fetchShippingAddress', payload);
-    dispatch('fetchShipGroupForOrder', payload)
+    await dispatch('fetchShippingAddress');
+    await dispatch('fetchShipGroupForOrder');
   },
 }
 
