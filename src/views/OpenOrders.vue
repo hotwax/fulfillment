@@ -93,51 +93,56 @@
             </div> -->
           </ion-card>
 
-          <!-- TODO: REMOVE THIS CARDS FROM HERE ADDED FOR TESTING PURPOSE -->
+          <!-- TODO: REMOVE THIS CARDS FROM HERE, ADDED FOR TESTING PURPOSE -->
+          <ion-label>{{ 'Other shipments in this order' }}</ion-label>
           <ion-card v-for="shipGroup in shipGroups" :key="shipGroup.shipmentId">
             <ion-item lines="none">
               <div>
                 <p>{{ shipGroup.facilityTypeId }}</p>
                 <h2>{{ shipGroup.facilityName }}</h2>
               </div>
-              <ion-badge slot="end">{{ shipGroup.category }}</ion-badge>
+              <ion-badge :color="shipGroup.category ? 'primary' : 'medium'" slot="end">{{ shipGroup.category ? shipGroup.category : 'Pending allocation' }}</ion-badge>
             </ion-item>
 
-            <ion-item v-if="shipGroup.carrierPartyId">
-              <ion-label>{{ shipGroup.carrierPartyId }}</ion-label>
+            <!-- TODO: add if check for carrierPartyId, not added now just to check the UI -->
+            <ion-item>
+              <ion-label>{{ shipGroup.carrierPartyId ? getPartyName(shipGroup.carrierPartyId) : '_NA_' }}</ion-label>
               {{ shipGroup.trackingCode }}
+              <ion-icon :icon="locateOutline" />
             </ion-item>
 
-            <ion-item v-if="shipGroup.shippingInstructions" color="light" lines="none">
+            <!-- TODO: add if check for shipping instructions, not added now just to check the UI -->
+            <ion-item color="light" lines="none">
               <ion-label class="ion-text-wrap">
                 <p class="overline">{{ translate("Handling Instructions") }}</p>
-                <p>{{ shipGroup.shippingInstructions }}</p>
+                <p>{{ shipGroup.shippingInstructions ? shipGroup.shippingInstructions : 'Sample Handling instructions' }}</p>
               </ion-label>
             </ion-item>
 
-            <ion-item v-for="item in shipGroup.items" :key="item.productId" lines="none">
-              <ion-thumbnail slot="start">
-                <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small" />
-              </ion-thumbnail>
-              <ion-label class="ion-text-wrap">
-                <h5>{{ getProduct(item.productId).brandName }}</h5>
-                <h2>{{ getProduct(item.productId).productName }}</h2>
-                <p class="ion-text-wrap">{{ getProduct(item.productId).internalName }}</p>
-                <p class="overline">{{ getIdentificationId(getProduct(item.productId).goodIdentifications, goodIdentificationTypeId) }}</p>
-                <p v-if="getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')">{{ translate("Color") }}: {{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/') }}</p>
-                <p v-if="getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')">{{ translate("Size") }}: {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/') }}</p>
-              </ion-label>
-              <!-- Only show stock if its not a ship to store order -->
-              <!-- <div v-if="!isShipToStoreOrder">
-                <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal >= 0" :color="updateColor(getProductStock(item.productId).quantityOnHandTotal)">
-                  {{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}
-                </ion-note>
-                <ion-spinner v-else-if="isFetchingStock" color="medium" name="crescent" />
-                <ion-button v-else fill="clear" @click.stop="fetchProductStock(item.productId)">
-                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
-                </ion-button>
-              </div> -->
-            </ion-item>
+            <div v-for="item in shipGroup.items" :key="item">
+              <div class="order-item">
+                <div class="product-info">
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ getProduct(item.productId).sku }}</p>
+                      {{ getProduct(item.productId).parentProductName }}
+                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                    </ion-label>
+                  </ion-item>
+                </div>
+
+                <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+                <div class="product-metadata">
+                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                    <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                  </ion-button>
+                </div>
+              </div>
+            </div>
           </ion-card>
           <!-- CARD TESTING ENDS HERE -->
 
@@ -186,7 +191,7 @@ import {
   popoverController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
+import { cubeOutline, locateOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { ShopifyImg } from '@hotwax/dxp-components';
@@ -236,7 +241,8 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       currentEComStore: 'user/getCurrentEComStore',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
-      getProductStock: 'stock/getProductStock'
+      getProductStock: 'stock/getProductStock',
+      getPartyName: 'util/getPartyName'
     })
   },
   data () {
@@ -397,7 +403,8 @@ export default defineComponent({
   },
   async mounted () {
     emitter.on('updateOrderQuery', this.updateOrderQuery)
-    this.shipGroups = await this.store.dispatch('order/fetchShipGroupInformationForOrder') as any;
+    this.shipGroups = await this.store.dispatch('order/fetchShipGroupForOrder') as any;
+    // await this.store.dispatch('order/fetchAdditionalShipGroupForOrder')
     await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
   },
   unmounted() {
@@ -414,6 +421,7 @@ export default defineComponent({
       getFeature,
       getIdentificationId,
       hasPermission,
+      locateOutline,
       optionsOutline,
       pricetagOutline,
       printOutline,

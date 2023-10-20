@@ -385,9 +385,18 @@ const findOrderShipGroup = async (query: any): Promise<any> => {
   });
 }
 
+const fetchAdditionalShipGroupForOrder = async (params: any): Promise<any> => {
+  return await api({
+    url: "performFind",
+    method: "get",
+    params
+  })
+}
+
 export const OrderService = {
   addShipmentBox,
   bulkShipOrders,
+  fetchAdditionalShipGroupForOrder,
   fetchShipments,
   fetchShipmentPackages,
   fetchTrackingCodes,

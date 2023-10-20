@@ -517,13 +517,14 @@ const actions: ActionTree<OrderState, RootState> = {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
   },
 
-  async fetchShipGroupInformationForOrder({ commit }, payload) {
+  async fetchShipGroupForOrder({ dispatch }, orderId = 10610) {
     const params = {
       groupBy: 'shipGroupSeqId',
       filters: {
-        '-fulfillmentStatus': { value: '(Rejected OR Cancelled)' }, // excluding groups for which fulfillment is cancelled or rejected
-        orderId: { value: '10600' }
-      }
+        '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+        orderId: { value: orderId }
+      },
+      docType: 'ORDER'
     }
 
     const orderQueryPayload = prepareOrderQuery(params)
@@ -549,32 +550,84 @@ const actions: ActionTree<OrderState, RootState> = {
       const shipItem = shipGroup.doclist.docs[0]
 
       return {
-        groupCategory: '',
         items: shipGroup.doclist.docs,
-        shippingInstructions: shipItem.shippingInstructions,
         facilityId: shipItem.facilityId,
         facilityTypeId: shipItem.facilityTypeId,
         facilityName: shipItem.facilityName,
-        shipmentId: shipItem.shipmentId
+        shippingMethod: shipItem.shippingMethod,
+        orderId: shipItem.orderId,
+        shipGroupSeqId: shipItem.shipGroupSeqId
       }
     })
-    
-    console.log('shipGroups', shipGroups)
 
-    let shipmentIds = [];
+    // fetching reservation information for shipGroup from OISGIR doc
+    // return dispatch('fetchAdditionalShipGroupForOrder', { shipGroups, orderId });
+    return await dispatch('fetchAdditionalShipGroupForOrder', { shipGroups, orderId });
+  },
 
-    if(total) {
-      shipmentIds = shipGroups.map((shipGroup: any) => shipGroup.shipmentId).filter((shipmentId: string) => shipmentId)
+  async fetchAdditionalShipGroupForOrder({ commit }, payload) {
+    const shipGroupSeqIds = payload.shipGroups.map((shipGroup: any) => shipGroup.shipGroupSeqId)
+    const orderId = payload.orderId
+
+    const params = {
+      groupBy: 'shipGroupSeqId',
+      filters: {
+        'shipGroupSeqId': { value: shipGroupSeqIds },
+        '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+        orderId: { value: orderId }
+      }
     }
 
-    if(!shipmentIds.length) {
-      return shipGroups;
-    }
+    const orderQueryPayload = prepareOrderQuery(params)
 
-    let shipGroupInformation = [];
+    let resp, total, shipGroups: any;
 
     try {
-      shipGroupInformation = []
+      resp = await OrderService.findOrderShipGroup(orderQueryPayload);
+      if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.shipGroupSeqId.matches > 0) {
+        total = resp.data.grouped.shipGroupSeqId.ngroups
+        shipGroups = resp.data.grouped.shipGroupSeqId.groups
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Failed to fetch ship group information for order', err)
+    }
+
+    shipGroups = payload.shipGroups.map((shipGroup: any) => {
+      const reservedShipGroupForOrder = shipGroups.find((group: any) => shipGroup.shipGroupSeqId === group.doclist.docs[0].shipGroupSeqId)
+
+      const reservedShipGroup = reservedShipGroupForOrder.groupValue ? reservedShipGroupForOrder.doclist.docs[0] : ''
+
+      return reservedShipGroup ? {
+        ...shipGroup,
+        carrierPartyId: reservedShipGroup.carrierPartyId,
+        shipmentId: reservedShipGroup.shipmentId,
+        groupCategory: '',  // category defines that the order is in which state like open, inProgress or completed
+      } : {
+        ...shipGroup
+      }
+    })
+
+    const carrierPartyIds: Array<string> = [];
+    const shipmentIds: Array<string> = [];
+
+    if(total) {
+      shipGroups.map((shipGroup: any) => {
+        if(shipGroup.shipmentId) shipmentIds.push(shipGroup.shipmentId)
+        if(shipGroup.carrierPartyId) carrierPartyIds.push(shipGroup.carrierPartyId)
+      })
+    }
+
+    try {
+      this.dispatch('util/fetchPartyInformation', carrierPartyIds)
+      const shipmentTrackingCodes = await OrderService.fetchTrackingCodes(shipmentIds)
+
+      shipGroups.find((shipGroup: any) => {
+        const trackingCode = shipmentTrackingCodes.find((shipmentTrackingCode: any) => shipGroup.shipmentId === shipmentTrackingCode.shipmentId)?.trackingCode
+
+        shipGroup.trackingCode = trackingCode ? trackingCode : 'TRACKING CODE';
+      })
     } catch(err) {
       logger.error('Failed to fetch information for ship groups', err)
     }
