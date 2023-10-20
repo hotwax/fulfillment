@@ -8,6 +8,7 @@ import * as types from './mutation-types'
 import { prepareOrderQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
+import { getOrderCategory } from '@/utils/order'
 
 
 const actions: ActionTree<OrderState, RootState> = {
@@ -541,12 +542,13 @@ const actions: ActionTree<OrderState, RootState> = {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
   },
 
-  async fetchShipGroupForOrder({ dispatch }, orderId) {
+  async fetchShipGroupForOrder({ dispatch }, order) {
     const params = {
       groupBy: 'shipGroupSeqId',
       filters: {
+        '-shipGroupSeqId': { value: order.items[0].shipGroupSeqId },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        orderId: { value: orderId }
+        orderId: { value: order.orderId }
       },
       docType: 'ORDER'
     }
@@ -590,19 +592,19 @@ const actions: ActionTree<OrderState, RootState> = {
     this.dispatch('util/fetchFacilityTypeInformation', facilityTypeIds)
 
     // fetching reservation information for shipGroup from OISGIR doc
-    // return dispatch('fetchAdditionalShipGroupForOrder', { shipGroups, orderId });
-    return await dispatch('fetchAdditionalShipGroupForOrder', { shipGroups, orderId });
+    await dispatch('fetchAdditionalShipGroupForOrder', { shipGroups, order });
   },
 
   async fetchAdditionalShipGroupForOrder({ commit }, payload) {
     const shipGroupSeqIds = payload.shipGroups.map((shipGroup: any) => shipGroup.shipGroupSeqId)
-    const orderId = payload.orderId
+    const orderId = payload.order.orderId
 
     const params = {
       groupBy: 'shipGroupSeqId',
       filters: {
         'shipGroupSeqId': { value: shipGroupSeqIds },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+        '-fulfillmentStatus': { value: ['Rejected', 'Cancelled'] },
         orderId: { value: orderId }
       }
     }
@@ -630,9 +632,10 @@ const actions: ActionTree<OrderState, RootState> = {
 
       return reservedShipGroup ? {
         ...shipGroup,
+        items: reservedShipGroupForOrder.doclist.docs,
         carrierPartyId: reservedShipGroup.carrierPartyId,
         shipmentId: reservedShipGroup.shipmentId,
-        groupCategory: '',  // category defines that the order is in which state like open, inProgress or completed
+        groupCategory: getOrderCategory(payload.order),  // category defines that the order is in which state like open, inProgress or completed
       } : {
         ...shipGroup
       }
@@ -662,6 +665,10 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('Failed to fetch information for ship groups', err)
     }
 
+    payload.order['shipGroups'] = shipGroups
+
+    commit(types.ORDER_CURRENT_UPDATED, { order: payload.order })
+
     return shipGroups;
   },
 
@@ -669,6 +676,7 @@ const actions: ActionTree<OrderState, RootState> = {
   async updateCurrent ({ commit, dispatch }, payload) {
     commit(types.ORDER_CURRENT_UPDATED, { order: payload })
     await dispatch('fetchShippingAddress', payload);
+    dispatch('fetchShipGroupForOrder', payload)
   },
 }
 

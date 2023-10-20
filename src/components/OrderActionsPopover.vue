@@ -68,7 +68,6 @@ export default defineComponent({
       return assignPickerModal.present();
     },
     async viewOrder() {
-      console.log(this.order)
       this.store.dispatch('order/updateCurrent', this.order).then(() => {
         this.closePopover();
         this.$router.push({ path: `/order-detail/${this.order.orderId}` })
