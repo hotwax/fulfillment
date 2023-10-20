@@ -109,6 +109,7 @@
             </ion-button>
           </ion-item>
         </div>
+
         <div v-else-if="orderCategory === 'Completed'" class="mobile-only">
           <ion-item>
             <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="clear" >{{ translate("Ship Now") }}</ion-button>
@@ -119,41 +120,45 @@
         </div>
 
         <div class="actions">
-          <ion-button v-if="orderCategory === 'In Progress'" :disabled="order.hasMissingInfo" @click="packOrder(order)">
-            <ion-icon slot="start" :icon="personAddOutline" />
-            {{ translate("Pack order") }}
-          </ion-button>
-          <ion-button v-else-if="orderCategory === 'Open'" @click="assignPickers">
-            <ion-icon slot="start" :icon="archiveOutline" />
-            {{ translate("Pick order") }}
-          </ion-button>
-          <div v-else-if="orderCategory === 'Completed'" class="desktop-only">
-            <ion-button v-if="!hasPackedShipments(order)" :disabled="true">
-              <ion-icon slot="start" :icon="bagCheckOutline" />
-              {{ translate("Shipped") }}
+          <!-- positive -->
+          <div>  
+            <ion-button v-if="orderCategory === 'In Progress'" :disabled="order.hasMissingInfo" @click="packOrder(order)">
+              <ion-icon slot="start" :icon="personAddOutline" />
+              {{ translate("Pack order") }}
             </ion-button>
-            <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click.stop="shipOrder(order)">
-              <ion-icon slot="start" :icon="bagCheckOutline" />
-              {{ translate("Ship order") }}
+            <ion-button v-else-if="orderCategory === 'Open'" @click="assignPickers">
+              <ion-icon slot="start" :icon="archiveOutline" />
+              {{ translate("Pick order") }}
             </ion-button>
-            <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
-              {{ translate("Regenerate Shipping Label") }}
-              <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
-            </ion-button>
-            <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
-              {{ translate("Print Customer Letter") }}
-              <ion-spinner color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
-            </ion-button>
-            <div class="desktop-only">
-              <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+            <div v-else-if="orderCategory === 'Completed'" class="desktop-only">
+              <ion-button v-if="!hasPackedShipments(order)" :disabled="true">
+                <ion-icon slot="start" :icon="bagCheckOutline" />
+                {{ translate("Shipped") }}
+              </ion-button>
+              <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click.stop="shipOrder(order)">
+                <ion-icon slot="start" :icon="bagCheckOutline" />
+                {{ translate("Ship order") }}
+              </ion-button>
+              <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
+                {{ translate("Regenerate Shipping Label") }}
+                <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
+              </ion-button>
+              <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
+                {{ translate("Print Customer Letter") }}
+                <ion-spinner color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
+              </ion-button>
             </div>
+          </div>
+          <!-- negative -->
+          <div class="desktop-only">
+            <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
           </div>
         </div>
       </ion-card>
 
       <ShippingDetails />
       
-      <ion-label v-if="order.shipGroups?.length">{{ translate('Other shipments in this order') }}</ion-label>
+      <h4 v-if="order.shipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
       <ion-card v-for="shipGroup in order.shipGroups" :key="shipGroup.shipmentId">
         <ion-card-header>
           <div>
@@ -163,14 +168,12 @@
           <ion-badge :color="shipGroup.category ? 'primary' : 'medium'">{{ shipGroup.category ? shipGroup.category : translate('Pending allocation') }}</ion-badge>
         </ion-card-header>
 
-        <!-- TODO: add if check for carrierPartyId, not added now just to check the UI -->
         <ion-item v-if="shipGroup.carrierPartyId">
-          <ion-label>{{ getPartyName(shipGroup.carrierPartyId) }}</ion-label>
-          {{ shipGroup.trackingCode }}
-          <ion-icon :icon="locateOutline" />
+          {{ getPartyName(shipGroup.carrierPartyId) }}
+          <ion-label slot="end">{{ shipGroup.trackingCode }}</ion-label>
+          <ion-icon slot="end" :icon="locateOutline" />
         </ion-item>
 
-        <!-- TODO: add if check for shipping instructions, not added now just to check the UI -->
         <ion-item v-if="shipGroup.shippingInstructions" color="light" lines="none">
           <ion-label class="ion-text-wrap">
             <p class="overline">{{ translate("Handling Instructions") }}</p>
@@ -178,30 +181,22 @@
           </ion-label>
         </ion-item>
 
-        <div v-for="item in shipGroup.items" :key="item">
-          <div class="order-item">
-            <div class="product-info">
-              <ion-item lines="none">
-                <ion-thumbnail slot="start">
-                  <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
-                </ion-thumbnail>
-                <ion-label>
-                  <p class="overline">{{ getProduct(item.productId).sku }}</p>
-                  {{ getProduct(item.productId).parentProductName }}
-                  <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
-                </ion-label>
-              </ion-item>
-            </div>
-
-            <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
-            <div class="product-metadata">
-              <ion-note v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-              <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
-                <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
-              </ion-button>
-            </div>
+        <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
+          <ion-thumbnail slot="start">
+            <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+          </ion-thumbnail>
+          <ion-label>
+            <p class="overline">{{ getProduct(item.productId).sku }}</p>
+            {{ getProduct(item.productId).parentProductName }}
+          </ion-label>
+          <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+          <div slot="end" class="product-metadata">
+            <ion-note v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+            <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
+              <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+            </ion-button>
           </div>
-        </div>
+        </ion-item>
       </ion-card>
     </ion-content>
   </ion-page>

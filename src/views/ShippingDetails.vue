@@ -1,7 +1,11 @@
 <template>
-  <ion-card>
-    <ion-card-content>
-      <h2>{{ translate('Destination') }}</h2>  
+  <div class="shipgroup-details">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          {{ translate('Destination') }}
+        </ion-card-title>
+      </ion-card-header>
       <ion-item lines="none">
         <ion-label>
           <h3>{{ currentOrder?.shippingAddress?.toName }}</h3>
@@ -11,33 +15,33 @@
           <p>{{ currentOrder?.shippingAddress?.stateName ? currentOrder?.shippingAddress?.stateName + "," : "" }} {{ currentOrder.shippingAddress?.countryName }}</p>
         </ion-label>
       </ion-item>
-      <ion-item lines="none">
-        <ion-label>
-          <h2>{{ translate('Handling Instructions') }}</h2>
-          <p>{{ currentOrder?.shippingInstructions ? currentOrder?.shippingInstructions : "-" }}</p>
+      <ion-item color="light" lines="none">
+        <ion-label class="ion-text-wrap">
+          <p class="overline">{{ translate("Handling Instructions") }}</p>
+          <p>{{ currentOrder?.shippingInstructions ? currentOrder?.shippingInstructions : 'Sample Handling instructions' }}</p>
         </ion-label>
       </ion-item>
       <ion-item lines="none" v-if="currentOrder.trackingCode">
         <ion-label>
-                    <p>{{ currentOrder.trackingCode }}</p>
+          {{ currentOrder.trackingCode }}
         </ion-label>        
         <ion-button fill="clear" @click="printShippingLabel(currentOrder)">
           <ion-icon :icon="openOutline" slot="end"></ion-icon>
         </ion-button>
       </ion-item>
       <ion-item lines="none" v-if="!currentOrder.trackingCode && ['PICKITEM_PICKED', 'PICKITEM_COMPLETED'].includes(currentOrder?.items[0]?.picklistItemStatusId)">
-        <ion-label v-for="message, index in shipmentLabelErrorMessages" :key="index">
-            {{ message }}
+        <ion-label class="ion-text-wrap" v-if="shipmentLabelErrorMessages">
+          {{ shipmentLabelErrorMessages }}
         </ion-label>
-        <ion-label v-if="!shipmentLabelErrorMessages.length">
-          <p>{{ translate('No carrier error') }}</p>
+        <ion-label v-else>
+          {{ translate('No carrier error') }}
         </ion-label>
         <ion-button fill="clear" @click="retryShippingLabel(currentOrder)">
           <ion-icon :icon="refreshSharp" slot="end" ></ion-icon>
         </ion-button>
       </ion-item>
-    </ion-card-content>
-  </ion-card>
+    </ion-card>
+  </div>
 </template>
 
 <script lang="ts">
@@ -45,7 +49,8 @@
     IonLabel,
     IonItem,
     IonCard,
-    IonCardContent
+    IonCardHeader,
+    IonCardTitle
   } from "@ionic/vue";
   import { defineComponent } from "vue";
   import { openOutline, refreshSharp } from "ionicons/icons";
@@ -61,11 +66,12 @@
       IonLabel,
       IonItem,
       IonCard,
-      IonCardContent
+      IonCardHeader,
+      IonCardTitle
     },
     data() {
       return {
-        shipmentLabelErrorMessages: []
+        shipmentLabelErrorMessages: ""
       }
     },
     computed: {
@@ -73,10 +79,11 @@
         currentOrder: 'order/getCurrent'
       })
     },
-    async ionViewWillEnter() {
+    async mounted() {
       // Fetching shipment label errors
       const shipmentIds = this.currentOrder.shipments.map((shipment: any) => shipment.shipmentId);
-      this.shipmentLabelErrorMessages = await OrderService.fetchShipmentLabelError(shipmentIds);
+      const labelErrors = await OrderService.fetchShipmentLabelError(shipmentIds);
+      this.shipmentLabelErrorMessages = labelErrors.join(', ');
     },
     methods: {
       async printShippingLabel(order: any) {
@@ -105,3 +112,13 @@
     }
   });
   </script>
+
+  <style>
+
+  .shipgroup-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(343px, 1fr));
+    gap: 10px;
+  }
+
+  </style>
