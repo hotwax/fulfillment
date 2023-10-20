@@ -451,6 +451,7 @@ const actions: ActionTree<OrderState, RootState> = {
         reservedDatetime: orderItem.reservedDatetime,
         groupValue: order.groupValue,
         picklistBinId: orderItem.picklistBinId,
+        picklistId: orderItem.picklistId,
         items: order.doclist.docs,
         shipmentId: orderItem.shipmentId,
         shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
