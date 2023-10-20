@@ -53,9 +53,10 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip @click="copyToClipboard(order.orderName, 'Copied to clipboard')" outline>
+                <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderName }}</ion-label>
+                  <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </div>
 
@@ -85,7 +86,7 @@
               <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
               <div class="product-metadata">
                 <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+                <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
               </div>
@@ -95,7 +96,7 @@
             <div class="mobile-only">
               <ion-item>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="clear" >{{ translate("Ship Now") }}</ion-button>
-                <ion-button slot="end" fill="clear" color="medium" @click="shippingPopover">
+                <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -105,19 +106,19 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
-                <ion-button  :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="shipOrder(order)" v-else>{{ translate("Ship Now") }}</ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="regenerateShippingLabel(order)">
+                <ion-button  :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click.stop="shipOrder(order)" v-else>{{ translate("Ship Now") }}</ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate("Regenerate Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click="printPackingSlip(order)">
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
                   {{ translate("Print Customer Letter") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
                 </ion-button>
               </div>
               <div class="desktop-only">
-                <ion-button v-if="order.missingLabelImage" fill="outline" @click="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
-                <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+                <ion-button v-if="order.missingLabelImage" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
+                <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -168,7 +169,7 @@ import {
   modalController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { cubeOutline, printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
+import { caretDownOutline, cubeOutline, printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
@@ -184,6 +185,7 @@ import { OrderService } from '@/services/OrderService';
 import logger from '@/logger';
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'
+import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 
 export default defineComponent({
   name: 'Home',
@@ -610,7 +612,19 @@ export default defineComponent({
     },
     fetchProductStock(productId: string) {
       this.store.dispatch('stock/fetchStock', { productId })
-    }
+    },
+    async orderActionsPopover(order: any, ev: Event) {
+      const popover = await popoverController.create({
+        component: OrderActionsPopover,
+        componentProps: {
+          order,
+          category: 'completed'
+        },
+        showBackdrop: false,
+        event: ev
+      });
+      return popover.present();
+    },
   },
   setup() {
     const store = useStore();
@@ -618,6 +632,7 @@ export default defineComponent({
 
     return {
       Actions,
+      caretDownOutline,
       copyToClipboard,
       checkmarkDoneOutline,
       cubeOutline,

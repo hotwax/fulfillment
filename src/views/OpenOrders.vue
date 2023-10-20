@@ -35,7 +35,7 @@
         <div class="results">
           <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picksheet") }}</ion-button>
 
-          <ion-card button class="order" v-for="(order, index) in getOpenOrders()" :key="index">
+          <ion-card class="order" v-for="(order, index) in getOpenOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
@@ -48,6 +48,7 @@
                 <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderName }}</ion-label>
+                  <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </div>
 
@@ -137,7 +138,7 @@ import {
   popoverController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
+import { caretDownOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { ShopifyImg } from '@hotwax/dxp-components';
@@ -334,7 +335,10 @@ export default defineComponent({
     async orderActionsPopover(order: any, ev: Event) {
       const popover = await popoverController.create({
         component: OrderActionsPopover,
-        componentProps: { order },
+        componentProps: { 
+          order,
+          category: 'open'
+        },
         showBackdrop: false,
         event: ev
       });
@@ -357,6 +361,7 @@ export default defineComponent({
 
     return{
       Actions,
+      caretDownOutline,
       cubeOutline,
       formatUtcDate,
       getFeature,

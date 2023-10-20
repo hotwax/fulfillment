@@ -60,6 +60,9 @@ const mutations: MutationTree <OrderState> = {
         queryString: ''
       }
     }
-  }
+  },
+  [types.ORDER_CURRENT_UPDATED] (state, payload) {
+    state.current = payload.order
+  },
 }
 export default mutations;
