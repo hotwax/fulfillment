@@ -49,7 +49,6 @@
     IonLabel,
     IonItem,
     IonCard,
-    IonCardContent,
     IonCardHeader,
     IonCardTitle
   } from "@ionic/vue";
@@ -67,7 +66,6 @@
       IonLabel,
       IonItem,
       IonCard,
-      IonCardContent,
       IonCardHeader,
       IonCardTitle
     },
