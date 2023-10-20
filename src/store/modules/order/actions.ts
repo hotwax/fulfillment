@@ -556,7 +556,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const orderQueryPayload = prepareOrderQuery(params)
 
-    let resp, total, shipGroups;
+    let resp, total, shipGroups = [];
     const facilityTypeIds: Array<string> = [];
 
     try {
@@ -572,6 +572,11 @@ const actions: ActionTree<OrderState, RootState> = {
       }
     } catch (err) {
       logger.error('Failed to fetch ship group information for order', err)
+    }
+
+    // return if shipGroups are not found for order
+    if(!shipGroups.length) {
+      return;
     }
 
     shipGroups = shipGroups.map((shipGroup: any) => {
@@ -612,7 +617,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const orderQueryPayload = prepareOrderQuery(params)
 
-    let resp, total, shipGroups: any;
+    let resp, total, shipGroups: any = [];
 
     try {
       resp = await OrderService.findOrderShipGroup(orderQueryPayload);
