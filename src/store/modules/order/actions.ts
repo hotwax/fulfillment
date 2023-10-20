@@ -275,7 +275,8 @@ const actions: ActionTree<OrderState, RootState> = {
             picklistBinId: orderItem.picklistBinId,
             items: order.doclist.docs,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
-            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc
+            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+            shippingInstructions: orderItem.shippingInstructions
           }
         })
       } else {
@@ -366,6 +367,7 @@ const actions: ActionTree<OrderState, RootState> = {
             items: order.doclist.docs,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
             shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+            shippingInstructions: orderItem.shippingInstructions,
             reservedDatetime: orderItem.reservedDatetime
           }
         })
@@ -451,6 +453,7 @@ const actions: ActionTree<OrderState, RootState> = {
         shipmentId: orderItem.shipmentId,
         shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
         shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+        shippingInstructions: orderItem.shippingInstructions,
         isGeneratingShippingLabel: false,
         isGeneratingPackingSlip: false
       }
@@ -468,6 +471,27 @@ const actions: ActionTree<OrderState, RootState> = {
 
     emitter.emit('dismissLoader');
     return resp;
+  },
+  async fetchShippingAddress ({ commit }, currentOrder) {
+    let resp;
+
+    try {
+      resp = await OrderService.fetchOrderItemShipGroup(currentOrder);
+      if (resp) {
+        const contactMechId = resp.contactMechId;
+
+        resp = await OrderService.fetchShippingAddress(contactMechId);
+        if (resp) {
+          currentOrder = {
+            ...currentOrder,
+            shippingAddress: resp
+          }  
+        }
+      }
+    } catch (err: any) {
+      logger.error("Error in setting current order", err);
+    }
+    commit(types.ORDER_CURRENT_UPDATED, { order: currentOrder })
   },
 
   async clearOrders ({ commit }) {
@@ -518,8 +542,9 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   // TODO clear current on logout
-  updateCurrent ({ commit }, payload) {
+  async updateCurrent ({ commit, dispatch }, payload) {
     commit(types.ORDER_CURRENT_UPDATED, { order: payload })
+    await dispatch('fetchShippingAddress', payload);
   },
 }
 
