@@ -17,9 +17,9 @@
             <ion-icon :icon="pricetagOutline" />
             <ion-label>{{ order.orderId }}</ion-label>
           </ion-chip>
-          <ion-chip v-if="orderCategory !== 'Open'" outline>
+          <ion-chip v-if="orderCategory !== 'Open'" outline @click="printPicklist(order)">
             <ion-icon :icon="documentTextOutline" />
-            <ion-label>{{ translate('Linked picklist') }}: {{ order.picklistBinId }}</ion-label>
+            <ion-label>{{ translate('Linked picklist') }}: {{ order.picklistId }}</ion-label>
           </ion-chip>
           <!-- <ion-chip outline> 
             <ion-icon :icon="cashOutline" />
@@ -328,6 +328,9 @@ export default defineComponent({
     this.orderCategory = getOrderCategory(this.order.items[0])
   },
   methods: {
+    async printPicklist (order: any) {
+      await OrderService.printPicklist(order.picklistId)
+    },
     async openShipmentBoxPopover(ev: Event, item: any, order: any) {
       const popover = await popoverController.create({
         component: ShipmentBoxPopover,
