@@ -159,29 +159,26 @@
 
       <ShippingDetails />
       
-      <h4>{{ 'Other shipments in this order' }}</h4>
-      <ion-card v-for="shipGroup in shipGroups" :key="shipGroup.shipmentId">
-        <ion-item lines="none">
-          <ion-label>
-            <p class="overline">{{ getfacilityTypeDesc(shipGroup.facilityTypeId) }}</p>
-            <h1>{{ shipGroup.facilityName }}</h1>
-          </ion-label>
-          <ion-badge :color="shipGroup.category ? 'primary' : 'medium'" slot="end">{{ shipGroup.category ? shipGroup.category : 'Pending allocation' }}</ion-badge>
+      <h4 v-if="order.shipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
+      <ion-card v-for="shipGroup in order.shipGroups" :key="shipGroup.shipmentId">
+        <ion-card-header>
+          <div>
+            <ion-card-subtitle class="overline">{{ getfacilityTypeDesc(shipGroup.facilityTypeId) }}</ion-card-subtitle>
+            <ion-card-title>{{ shipGroup.facilityName }}</ion-card-title>
+          </div>
+          <ion-badge :color="shipGroup.category ? 'primary' : 'medium'">{{ shipGroup.category ? shipGroup.category : translate('Pending allocation') }}</ion-badge>
+        </ion-card-header>
+
+        <ion-item v-if="shipGroup.carrierPartyId">
+          {{ getPartyName(shipGroup.carrierPartyId) }}
+          <ion-label slot="end"></ion-label>{{ shipGroup.trackingCode }}</ion-label>
+          <ion-icon slot="end" :icon="locateOutline" />
         </ion-item>
 
-        <!-- TODO: add if check for carrierPartyId, not added now just to check the UI -->
-        <ion-item>
-          {{ shipGroup.carrierPartyId ? getPartyName(shipGroup.carrierPartyId) : '_NA_' }}
-          
-          <ion-label slot="end">{{ shipGroup.trackingCode }}</ion-label>
-          <ion-icon :icon="locateOutline" slot="end"/>
-        </ion-item>
-
-        <!-- TODO: add if check for shipping instructions, not added now just to check the UI -->
-        <ion-item color="light" lines="none">
+        <ion-item v-if="shipGroup.shippingInstructions" color="light" lines="none">
           <ion-label class="ion-text-wrap">
             <p class="overline">{{ translate("Handling Instructions") }}</p>
-            <p>{{ shipGroup.shippingInstructions ? shipGroup.shippingInstructions : 'Sample Handling instructions' }}</p>
+            <p>{{ shipGroup.shippingInstructions }}</p>
           </ion-label>
         </ion-item>
 
@@ -214,6 +211,9 @@ import {
   IonBackButton,
   IonButton,
   IonCard,
+  IonCardHeader,
+  IonCardSubtitle,
+  IonCardTitle,
   IonChip,
   IonContent,
   IonHeader,
@@ -279,6 +279,9 @@ export default defineComponent({
     IonButton,
     IonCard,
     IonChip,
+    IonCardHeader,
+    IonCardSubtitle,
+    IonCardTitle,
     IonContent,
     IonHeader,
     IonIcon,
@@ -318,13 +321,11 @@ export default defineComponent({
       picklists: [] as any,
       addingBoxForOrderIds: [] as any,
       defaultShipmentBoxType: '',
-      itemsIssueSegmentSelected: [] as any,
-      shipGroups: [] as any
+      itemsIssueSegmentSelected: [] as any
     }
   },
   async ionViewDidEnter() {
     this.orderCategory = getOrderCategory(this.order.items[0])
-    this.shipGroups = await this.store.dispatch('order/fetchShipGroupForOrder', this.order.orderId) as any;
   },
   methods: {
     async openShipmentBoxPopover(ev: Event, item: any, order: any) {
