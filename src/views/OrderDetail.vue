@@ -150,6 +150,7 @@
           </div>
         </div>
       </ion-card>
+      <ShippingDetails />
     </ion-content>
   </ion-page>
 </template>
@@ -214,6 +215,7 @@ import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
 import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
+import ShippingDetails from '@/views/ShippingDetails.vue';
 
 export default defineComponent({
   name: "OrderDetail",
@@ -237,6 +239,7 @@ export default defineComponent({
     IonTitle,
     IonToolbar,
     IonThumbnail,
+    ShippingDetails
   },
   computed: {
     ...mapGetters({
