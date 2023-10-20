@@ -150,6 +150,57 @@
           </div>
         </div>
       </ion-card>
+
+      <ion-label>{{ 'Other shipments in this order' }}</ion-label>
+      <ion-card v-for="shipGroup in shipGroups" :key="shipGroup.shipmentId">
+        <ion-item lines="none">
+          <div>
+            <p>{{ getfacilityTypeDesc(shipGroup.facilityTypeId) }}</p>
+            <h2>{{ shipGroup.facilityName }}</h2>
+          </div>
+          <ion-badge :color="shipGroup.category ? 'primary' : 'medium'" slot="end">{{ shipGroup.category ? shipGroup.category : 'Pending allocation' }}</ion-badge>
+        </ion-item>
+
+        <!-- TODO: add if check for carrierPartyId, not added now just to check the UI -->
+        <ion-item>
+          <ion-label>{{ shipGroup.carrierPartyId ? getPartyName(shipGroup.carrierPartyId) : '_NA_' }}</ion-label>
+          {{ shipGroup.trackingCode }}
+          <ion-icon :icon="locateOutline" />
+        </ion-item>
+
+        <!-- TODO: add if check for shipping instructions, not added now just to check the UI -->
+        <ion-item color="light" lines="none">
+          <ion-label class="ion-text-wrap">
+            <p class="overline">{{ translate("Handling Instructions") }}</p>
+            <p>{{ shipGroup.shippingInstructions ? shipGroup.shippingInstructions : 'Sample Handling instructions' }}</p>
+          </ion-label>
+        </ion-item>
+
+        <div v-for="item in shipGroup.items" :key="item">
+          <div class="order-item">
+            <div class="product-info">
+              <ion-item lines="none">
+                <ion-thumbnail slot="start">
+                  <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                </ion-thumbnail>
+                <ion-label>
+                  <p class="overline">{{ getProduct(item.productId).sku }}</p>
+                  {{ getProduct(item.productId).parentProductName }}
+                  <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                </ion-label>
+              </ion-item>
+            </div>
+
+            <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+            <div class="product-metadata">
+              <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+              <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+              </ion-button>
+            </div>
+          </div>
+        </div>
+      </ion-card>
     </ion-content>
   </ion-page>
 </template>
@@ -191,6 +242,7 @@ import {
   documentTextOutline,
   ellipsisVerticalOutline,
   fileTrayOutline,
+  locateOutline,
   personAddOutline,
   pricetagOutline,
   trashBinOutline
@@ -250,6 +302,8 @@ export default defineComponent({
       order: "order/getCurrent",
       rejectReasons: 'util/getRejectReasons',
       userPreference: 'user/getUserPreference',
+      getPartyName: 'util/getPartyName',
+      getfacilityTypeDesc: 'util/getFacilityTypeDesc'
     })
   },
   data() {
@@ -261,10 +315,12 @@ export default defineComponent({
       addingBoxForOrderIds: [] as any,
       defaultShipmentBoxType: '',
       itemsIssueSegmentSelected: [] as any,
+      shipGroups: [] as any
     }
   },
-  ionViewDidEnter() {
+  async ionViewDidEnter() {
     this.orderCategory = getOrderCategory(this.order.items[0])
+    this.shipGroups = await this.store.dispatch('order/fetchShipGroupForOrder', this.order.orderId) as any;
   },
   methods: {
     async openShipmentBoxPopover(ev: Event, item: any, order: any) {
@@ -1011,6 +1067,7 @@ export default defineComponent({
       formatUtcDate,
       getFeature,
       hasPermission,
+      locateOutline,
       personAddOutline,
       pricetagOutline,
       router,

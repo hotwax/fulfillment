@@ -517,7 +517,7 @@ const actions: ActionTree<OrderState, RootState> = {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
   },
 
-  async fetchShipGroupForOrder({ dispatch }, orderId = 10610) {
+  async fetchShipGroupForOrder({ dispatch }, orderId) {
     const params = {
       groupBy: 'shipGroupSeqId',
       filters: {
