@@ -530,6 +530,7 @@ const actions: ActionTree<OrderState, RootState> = {
     const orderQueryPayload = prepareOrderQuery(params)
 
     let resp, total, shipGroups;
+    const facilityTypeIds: Array<string> = [];
 
     try {
       resp = await OrderService.findOrderShipGroup(orderQueryPayload);
@@ -549,6 +550,8 @@ const actions: ActionTree<OrderState, RootState> = {
     shipGroups = shipGroups.map((shipGroup: any) => {
       const shipItem = shipGroup.doclist.docs[0]
 
+      facilityTypeIds.push(shipItem.facilityTypeId)
+
       return {
         items: shipGroup.doclist.docs,
         facilityId: shipItem.facilityId,
@@ -559,6 +562,8 @@ const actions: ActionTree<OrderState, RootState> = {
         shipGroupSeqId: shipItem.shipGroupSeqId
       }
     })
+
+    this.dispatch('util/fetchFacilityTypeInformation', facilityTypeIds)
 
     // fetching reservation information for shipGroup from OISGIR doc
     // return dispatch('fetchAdditionalShipGroupForOrder', { shipGroups, orderId });
@@ -626,6 +631,7 @@ const actions: ActionTree<OrderState, RootState> = {
       shipGroups.find((shipGroup: any) => {
         const trackingCode = shipmentTrackingCodes.find((shipmentTrackingCode: any) => shipGroup.shipmentId === shipmentTrackingCode.shipmentId)?.trackingCode
 
+        // TODO: Remove default value check
         shipGroup.trackingCode = trackingCode ? trackingCode : 'TRACKING CODE';
       })
     } catch(err) {

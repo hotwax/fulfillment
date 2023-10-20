@@ -98,7 +98,7 @@
           <ion-card v-for="shipGroup in shipGroups" :key="shipGroup.shipmentId">
             <ion-item lines="none">
               <div>
-                <p>{{ shipGroup.facilityTypeId }}</p>
+                <p>{{ getfacilityTypeDesc(shipGroup.facilityTypeId) }}</p>
                 <h2>{{ shipGroup.facilityName }}</h2>
               </div>
               <ion-badge :color="shipGroup.category ? 'primary' : 'medium'" slot="end">{{ shipGroup.category ? shipGroup.category : 'Pending allocation' }}</ion-badge>
@@ -242,7 +242,8 @@ export default defineComponent({
       currentEComStore: 'user/getCurrentEComStore',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       getProductStock: 'stock/getProductStock',
-      getPartyName: 'util/getPartyName'
+      getPartyName: 'util/getPartyName',
+      getfacilityTypeDesc: 'util/getFacilityTypeDesc'
     })
   },
   data () {
