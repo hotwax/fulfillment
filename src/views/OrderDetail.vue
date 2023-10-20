@@ -181,23 +181,22 @@
           </ion-label>
         </ion-item>
 
-          <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
-            <ion-thumbnail slot="start">
-              <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
-            </ion-thumbnail>
-            <ion-label>
-              <p class="overline">{{ getProduct(item.productId).sku }}</p>
-              {{ getProduct(item.productId).parentProductName }}
-            </ion-label>
-          </ion-item>
-
-          <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+        <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
+          <ion-thumbnail slot="start">
+            <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+          </ion-thumbnail>
+          <ion-label>
+            <p class="overline">{{ getProduct(item.productId).sku }}</p>
+            {{ getProduct(item.productId).parentProductName }}
+          </ion-label>
+        <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
           <div slot="end" class="product-metadata">
             <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
             <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
               <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
             </ion-button>
           </div>
+        </ion-item>
       </ion-card>
     </ion-content>
   </ion-page>
