@@ -11,10 +11,10 @@
           <p>{{ currentOrder?.shippingAddress?.stateName ? currentOrder?.shippingAddress?.stateName + "," : "" }} {{ currentOrder.shippingAddress?.countryName }}</p>
         </ion-label>
       </ion-item>
-      <ion-item lines="none">
-        <ion-label>
-          <h2>{{ translate('Handling Instructions') }}</h2>
-          <p>{{ currentOrder?.shippingInstructions ? currentOrder?.shippingInstructions : "-" }}</p>
+      <ion-item color="light" lines="none">
+        <ion-label class="ion-text-wrap">
+          <p class="overline">{{ translate("Handling Instructions") }}</p>
+          <p>{{ currentOrder?.shippingInstructions ? currentOrder?.shippingInstructions : 'Sample Handling instructions' }}</p>
         </ion-label>
       </ion-item>
       <ion-item lines="none" v-if="currentOrder.trackingCode">
