@@ -69,10 +69,10 @@ export default defineComponent({
       return assignPickerModal.present();
     },
     async viewOrder() {
-      this.store.dispatch('order/setCurrentOrder', { order: this.order }).then(() => {
-        if (this.order.doclist.docs) {
-          const orderDetail = this.order.doclist.docs[0];
-          this.router.push({ path: `/orders/${orderDetail.orderId}` });
+      await this.store.dispatch('order/setCurrentOrder', { order: this.order }).then(() => {
+        if (this.order) {
+          this.closePopover();
+          this.router.push({ path: `/orders/${this.order.orderId}` });
         }
       });
     }

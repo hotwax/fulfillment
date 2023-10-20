@@ -100,14 +100,14 @@ const updateOrder = async (payload: any): Promise<any> => {
   })
 }
 
-const fetchOrderItemShipGroup = async (payload: any): Promise<any> => {
+const fetchOrderItemShipGroup = async (order: any): Promise<any> => {
   let shipGroup = {};
 
   const params = {
     "entityName": "OrderItemShipGroup",
     "inputFields": {
-      "orderId": payload.orderId,
-      "shipGroupSeqId": payload.shipGroupSeqId,
+      "orderId": order.orderId,
+      "shipGroupSeqId": order.items[0].shipGroupSeqId,
     },
     "fieldList": ["orderId", "shipGroupSeqId", "facilityId", "shipmentMethodTypeId", "contactMechId"],
     "distinct": "Y"
@@ -157,6 +157,7 @@ const fetchShippingAddress = async (contactMechId: string): Promise<any> => {
   } catch (err) {
     logger.error('Failed to fetch shipments for orders', err)
   }
+  console.log("==========shippingAddress==", shippingAddress);
 
   return shippingAddress;
 }

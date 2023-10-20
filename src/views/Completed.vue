@@ -53,7 +53,7 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip @click="copyToClipboard(order.orderName, 'Copied to clipboard')" outline>
+                <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderName }}</ion-label>
                 </ion-chip>
@@ -184,6 +184,7 @@ import { OrderService } from '@/services/OrderService';
 import logger from '@/logger';
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'
+import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 
 export default defineComponent({
   name: 'Home',
@@ -383,6 +384,15 @@ export default defineComponent({
         event: ev,
         translucent: true,
         showBackdrop: false,
+      });
+      return popover.present();
+    },
+    async orderActionsPopover(order: any, ev: Event) {
+      const popover = await popoverController.create({
+        component: OrderActionsPopover,
+        componentProps: { order },
+        showBackdrop: false,
+        event: ev
       });
       return popover.present();
     },

@@ -275,7 +275,8 @@ const actions: ActionTree<OrderState, RootState> = {
             picklistBinId: orderItem.picklistBinId,
             items: order.doclist.docs,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
-            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc
+            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+            shippingInstructions: orderItem.shippingInstructions
           }
         })
       } else {
@@ -366,6 +367,7 @@ const actions: ActionTree<OrderState, RootState> = {
             items: order.doclist.docs,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
             shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+            shippingInstructions: orderItem.shippingInstructions,
             reservedDatetime: orderItem.reservedDatetime
           }
         })
@@ -451,6 +453,7 @@ const actions: ActionTree<OrderState, RootState> = {
         shipmentId: orderItem.shipmentId,
         shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
         shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+        shippingInstructions: orderItem.shippingInstructions,
         isGeneratingShippingLabel: false,
         isGeneratingPackingSlip: false
       }
@@ -475,19 +478,19 @@ const actions: ActionTree<OrderState, RootState> = {
 
     try {
       resp = await OrderService.fetchOrderItemShipGroup(order);
-      if (!hasError(resp)) {
-        const contactMechId = resp.data.contactMechId;
+      if (resp) {
+        const contactMechId = resp.contactMechId;
+
         resp = await OrderService.fetchShippingAddress(contactMechId);
-        if (!hasError(resp)) {
+        if (resp) {
           order = {
             ...order,
-            shippingAddress: resp.data
+            shippingAddress: resp
           }  
         }
       }
     } catch (err: any) {
       logger.error("Error in setting current order", err);
-      return Promise.reject(new Error(err))
     }
     commit(types.ORDER_CURRENT_UPDATED, order)
   },

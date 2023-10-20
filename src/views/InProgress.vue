@@ -56,7 +56,7 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip @click="copyToClipboard(order.orderName, 'Copied to clipboard')" outline>
+                <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderName }}</ion-label>
                 </ion-chip>
@@ -262,6 +262,7 @@ import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
 import EditPickersModal from '@/components/EditPickersModal.vue';
 import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
+import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 
 export default defineComponent({
   name: 'InProgress',
@@ -346,6 +347,15 @@ export default defineComponent({
         this.itemsIssueSegmentSelected.splice(itemIndex, 1)
       }
       await this.store.dispatch('order/updateInProgressOrder', order)
+    },
+    async orderActionsPopover(order: any, ev: Event) {
+      const popover = await popoverController.create({
+        component: OrderActionsPopover,
+        componentProps: { order },
+        showBackdrop: false,
+        event: ev
+      });
+      return popover.present();
     },
     async packagingPopover(ev: Event) {
       const popover = await popoverController.create({
