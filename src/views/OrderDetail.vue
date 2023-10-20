@@ -130,29 +130,28 @@
               <ion-icon slot="start" :icon="archiveOutline" />
               {{ translate("Pick order") }}
             </ion-button>
-              <div v-else-if="orderCategory === 'Completed'" class="desktop-only">
-                <ion-button v-if="!hasPackedShipments(order)" :disabled="true">
-                  <ion-icon slot="start" :icon="bagCheckOutline" />
-                  {{ translate("Shipped") }}
-                </ion-button>
-                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click.stop="shipOrder(order)">
-                  <ion-icon slot="start" :icon="bagCheckOutline" />
-                  {{ translate("Ship order") }}
-                </ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
-                  {{ translate("Regenerate Shipping Label") }}
-                  <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
-                </ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
-                  {{ translate("Print Customer Letter") }}
-                  <ion-spinner color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
-                </ion-button>
-              </div>
+            <div v-else-if="orderCategory === 'Completed'" class="desktop-only">
+              <ion-button v-if="!hasPackedShipments(order)" :disabled="true">
+                <ion-icon slot="start" :icon="bagCheckOutline" />
+                {{ translate("Shipped") }}
+              </ion-button>
+              <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click.stop="shipOrder(order)">
+                <ion-icon slot="start" :icon="bagCheckOutline" />
+                {{ translate("Ship order") }}
+              </ion-button>
+              <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
+                {{ translate("Regenerate Shipping Label") }}
+                <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
+              </ion-button>
+              <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
+                {{ translate("Print Customer Letter") }}
+                <ion-spinner color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
+              </ion-button>
             </div>
-            <!-- negative -->
-            <div class="desktop-only">
-              <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
-            </div>
+          </div>
+          <!-- negative -->
+          <div class="desktop-only">
+            <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
           </div>
         </div>
       </ion-card>
@@ -171,7 +170,7 @@
 
         <ion-item v-if="shipGroup.carrierPartyId">
           {{ getPartyName(shipGroup.carrierPartyId) }}
-          <ion-label slot="end"></ion-label>{{ shipGroup.trackingCode }}</ion-label>
+          <ion-label slot="end">{{ shipGroup.trackingCode }}</ion-label>
           <ion-icon slot="end" :icon="locateOutline" />
         </ion-item>
 
