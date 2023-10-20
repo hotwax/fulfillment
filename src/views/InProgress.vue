@@ -46,7 +46,7 @@
         <div class="results">
           <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="packOrders()">{{ translate("Pack orders") }}</ion-button>
 
-          <ion-card button @click.prevent="viewOrder(order)" class="order" v-for="(order, index) in getInProgressOrders()" :key="index">
+          <ion-card class="order" v-for="(order, index) in getInProgressOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
@@ -56,9 +56,10 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip @click.stop="copyToClipboard(order.orderName, 'Copied to clipboard')" outline>
+                <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderName }}</ion-label>
+                  <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </div>
 
@@ -262,6 +263,7 @@ import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
 import EditPickersModal from '@/components/EditPickersModal.vue';
 import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
+import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 
 export default defineComponent({
   name: 'InProgress',
@@ -991,11 +993,18 @@ export default defineComponent({
     fetchProductStock(productId: string) {
       this.store.dispatch('stock/fetchStock', { productId })
     },
-    async viewOrder(order: any) {
-      this.store.dispatch('order/updateCurrent', order).then(() => {
-        this.$router.push({ path: `/order-detail/${order.orderId}` })
-      })
-    }
+    async orderActionsPopover(order: any, ev: Event) {
+      const popover = await popoverController.create({
+        component: OrderActionsPopover,
+        componentProps: {
+          order,
+          category: 'in-progress'
+        },
+        showBackdrop: false,
+        event: ev
+      });
+      return popover.present();
+    },
   },
   async mounted () {
     this.store.dispatch('util/fetchRejectReasons')

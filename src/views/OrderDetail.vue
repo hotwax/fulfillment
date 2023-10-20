@@ -525,7 +525,7 @@ export default defineComponent({
       assignPickerModal.onDidDismiss().finally(() => {
         this.closePopover();
         this.store.dispatch('order/updateCurrent', {})
-        this.router.replace('/open-orders')
+        this.router.replace('/open')
       });
 
       return assignPickerModal.present();

@@ -43,7 +43,7 @@
         <div class="results">
           <ion-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo()" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
 
-          <ion-card button @click.prevent="viewOrder(order)" class="order" v-for="(order, index) in getCompletedOrders()" :key="index">
+          <ion-card class="order" v-for="(order, index) in getCompletedOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
@@ -53,9 +53,10 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip @click.stop="copyToClipboard(order.orderName, 'Copied to clipboard')" outline>
+                <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderName }}</ion-label>
+                  <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </div>
 
@@ -167,7 +168,7 @@ import {
   modalController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { cubeOutline, printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
+import { caretDownOutline, cubeOutline, printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
@@ -183,6 +184,7 @@ import { OrderService } from '@/services/OrderService';
 import logger from '@/logger';
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'
+import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 
 export default defineComponent({
   name: 'Home',
@@ -610,10 +612,17 @@ export default defineComponent({
     fetchProductStock(productId: string) {
       this.store.dispatch('stock/fetchStock', { productId })
     },
-    async viewOrder(order: any) {
-      this.store.dispatch('order/updateCurrent', order).then(() => {
-        this.$router.push({ path: `/order-detail/${order.orderId}` })
-      })
+    async orderActionsPopover(order: any, ev: Event) {
+      const popover = await popoverController.create({
+        component: OrderActionsPopover,
+        componentProps: {
+          order,
+          category: 'completed'
+        },
+        showBackdrop: false,
+        event: ev
+      });
+      return popover.present();
     },
   },
   setup() {
@@ -622,6 +631,7 @@ export default defineComponent({
 
     return {
       Actions,
+      caretDownOutline,
       copyToClipboard,
       checkmarkDoneOutline,
       cubeOutline,

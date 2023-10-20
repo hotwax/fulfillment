@@ -47,10 +47,10 @@ const loginGuard = (to: any, from: any, next: any) => {
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    redirect: '/open-orders'
+    redirect: '/open'
   },
   {
-    path: '/open-orders',
+    path: '/open',
     name: 'OpenOrders',
     component: OpenOrders,
     beforeEnter: authGuard,
