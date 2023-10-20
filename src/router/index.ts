@@ -82,7 +82,7 @@ const routes: Array<RouteRecordRaw> = [
     component: OrderDetail,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_IN_PROGRESS_ORDERS_VIEW"
+      permissionId: "APP_ORDER_DETAIL_VIEW"
     }
   },
   {

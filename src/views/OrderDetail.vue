@@ -94,7 +94,7 @@
               <ion-icon slot="end" :icon="cubeOutline"/>
             </ion-button>
             <!-- TODO make functional -->
-            <ion-button v-if="orderCategory === 'In Progress'" class="desktop-only" color="danger" fill="clear" size="small">
+            <ion-button v-if="orderCategory === 'In Progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
               {{ translate('Report an issue') }}
               <ion-icon slot="end" :icon="trashBinOutline"/>
             </ion-button>
@@ -103,7 +103,7 @@
 
         <div v-if="orderCategory === 'In Progress'" class="mobile-only">
           <ion-item>
-            <ion-button fill="clear" :disabled="order.isModified || order.hasMissingInfo" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+            <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
             <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
               <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
             </ion-button>
@@ -119,7 +119,7 @@
         </div>
 
         <div class="actions">
-          <ion-button v-if="orderCategory === 'In Progress'" :disabled="order.hasRejectedItem || order.hasMissingInfo" @click="packOrder(order)">
+          <ion-button v-if="orderCategory === 'In Progress'" :disabled="order.hasMissingInfo" @click="packOrder(order)">
             <ion-icon slot="start" :icon="personAddOutline" />
             {{ translate("Pack order") }}
           </ion-button>
@@ -171,6 +171,7 @@ import {
   IonPage,
   IonRow,
   IonSkeletonText,
+  IonSpinner,
   IonTitle,
   IonToolbar,
   IonThumbnail,
@@ -212,6 +213,7 @@ import PackagingPopover from "@/views/PackagingPopover.vue";
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
+import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
 
 export default defineComponent({
   name: "OrderDetail",
@@ -231,6 +233,7 @@ export default defineComponent({
     IonPage,
     IonRow,
     IonSkeletonText,
+    IonSpinner,
     IonTitle,
     IonToolbar,
     IonThumbnail,
@@ -264,9 +267,6 @@ export default defineComponent({
     this.orderCategory = getOrderCategory(this.order.items[0])
   },
   methods: {
-    isIssueSegmentSelectedForItem(item: any) {
-      return this.itemsIssueSegmentSelected.includes(`${item.orderId}-${item.orderItemSeqId}`)
-    },
     async openShipmentBoxPopover(ev: Event, item: any, order: any) {
       const popover = await popoverController.create({
         component: ShipmentBoxPopover,
@@ -298,8 +298,7 @@ export default defineComponent({
             text: translate("Confirm"),
             handler: () => {
               item.selectedBox = selectedBox;
-              order.isModified = true;
-              this.save(order)
+              this.updateOrder(order, 'box-selection');
             }
           }
         ],
@@ -375,8 +374,8 @@ export default defineComponent({
                 } else {
                   showToast(translate('Order packed successfully'));
                 }
-                this.router.replace('/in-progress')
                 this.store.dispatch('order/updateCurrent', {})
+                this.router.replace('/in-progress')
               } catch (err) {
                 // in case of error, if loader and toast are not dismissed above
                 if (toast) toast.dismiss()
@@ -495,6 +494,24 @@ export default defineComponent({
       });
       return popover.present();
     },
+    async openRejectReasonPopover(ev: Event, item: any, order: any) {
+      const reportIssuePopover = await popoverController.create({
+        component: ReportIssuePopover,
+        event: ev,
+        translucent: true,
+        showBackdrop: false,
+      });
+
+      reportIssuePopover.present();
+
+      const result = await reportIssuePopover.onDidDismiss();
+
+      if (result.data) {
+        item.rejectReason = result.data;
+        const itemsToReject = order.items.filter((item: any) => item.rejectReason)
+        this.reportIssue(order, itemsToReject)
+      }
+    },
     closePopover() {
       popoverController.dismiss();
     },
@@ -507,8 +524,8 @@ export default defineComponent({
       // dismissing the popover once the picker modal is closed
       assignPickerModal.onDidDismiss().finally(() => {
         this.closePopover();
-        this.router.replace('/open-orders')
         this.store.dispatch('order/updateCurrent', {})
+        this.router.replace('/open-orders')
       });
 
       return assignPickerModal.present();
@@ -650,7 +667,6 @@ export default defineComponent({
 
       if (result.data) {
         shipmentPackage.shipmentBoxTypeId = result.data;
-        order.isModified = true;
         this.store.dispatch('order/updateInProgressOrder', order);
       }
     },
@@ -684,7 +700,7 @@ export default defineComponent({
       this.itemsIssueSegmentSelected = []
       await this.store.dispatch('order/findInProgressOrders')
     },
-    async updateOrder(order: any) { 
+    async updateOrder(order: any, updateParameter: string) { 
       const form = new FormData()
 
       form.append('facilityId', this.currentFacility.facilityId)
@@ -708,7 +724,7 @@ export default defineComponent({
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
         let prefix = 'rtp'
-        if(this.isIssueSegmentSelectedForItem(item)) {
+        if(updateParameter === 'report') {
           prefix = 'rej'
           form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
         } else {
@@ -731,25 +747,19 @@ export default defineComponent({
         })
 
         if(!hasError(resp)) {
-          if (order.hasRejectedItem) {
-            this.updateOrderQuery()
-          } else {
-            order.isModified = false;
-
             // updating the shipment information on item level
-            const itemInformationByOrderResp = await UtilService.findShipmentItemInformation(order.shipmentIds);
-            const itemInformation = itemInformationByOrderResp[order.orderId]
+          const itemInformationByOrderResp = await UtilService.findShipmentItemInformation(order.shipmentIds);
+          const itemInformation = itemInformationByOrderResp[order.orderId]
 
-            itemInformation?.map((orderItem: any) => {
-              const item = items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
+          itemInformation?.map((orderItem: any) => {
+            const item = items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
 
-              item.shipmentId = orderItem.shipmentId
-              item.shipmentItemSeqId = orderItem.shipmentItemSeqId
-            })
-            order.items = items
+            item.shipmentId = orderItem.shipmentId
+            item.shipmentItemSeqId = orderItem.shipmentItemSeqId
+          })
+          order.items = items
 
-            await this.store.dispatch('order/updateInProgressOrder', order)
-          }
+          await this.store.dispatch('order/updateInProgressOrder', order)
           showToast(translate('Order updated successfully'))
         } else {
           throw resp.data;
@@ -758,14 +768,6 @@ export default defineComponent({
         showToast(translate('Failed to update order'))
         logger.error('Failed to update order', err)
       }
-    },
-    save(order: any) {
-      if (order.hasRejectedItem) {
-        const itemsToReject = order.items.filter((item: any) => item.rejectReason)
-        this.reportIssue(order, itemsToReject);
-        return;
-      }
-      this.updateOrder(order);
     },
     async reportIssue(order: any, itemsToReject: any) {
       // finding is there any item that is `out of stock` as we need to display the message accordingly
@@ -810,7 +812,7 @@ export default defineComponent({
             text: translate("Report"),
             role: 'confirm',
             handler: async() => {
-              await this.updateOrder(order);
+              await this.updateOrder(order, 'report');
             }
           }]
         });
@@ -850,8 +852,8 @@ export default defineComponent({
 
         if (!hasError(resp)) {
           showToast(translate('Order shipped successfully'))
-          this.router.replace('/completed')
           this.store.dispatch('order/updateCurrent', {})
+          this.router.replace('/completed')
         } else {
           throw resp.data
         }
@@ -976,8 +978,8 @@ export default defineComponent({
                 if(resp.status == 200 && !hasError(resp)) {
                   showToast(translate('Order unpacked successfully'))
                   // TODO: handle the case of data not updated correctly
-                  this.router.replace('/completed')
                   this.store.dispatch('order/updateCurrent', {})
+                  this.router.replace('/completed')
                 } else {
                   throw resp.data
                 }

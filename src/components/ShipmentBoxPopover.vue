@@ -18,7 +18,7 @@ import {
 import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: "ShipmentBoxTypePopover",
+  name: "ShipmentBoxPopover",
   components: { 
     IonContent,
     IonItem,
