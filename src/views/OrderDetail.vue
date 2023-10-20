@@ -1084,6 +1084,13 @@ export default defineComponent({
 });
 </script>
 
+ion-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0px;
+}
+
 <style scoped>
 .box-type {
   display: flex;
