@@ -1,7 +1,11 @@
 <template>
-  <ion-card>
-    <ion-card-content>
-      <h2>{{ translate('Destination') }}</h2>  
+  <div class="shipgroup-details">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          {{ translate('Destination') }}
+        </ion-card-title>
+      </ion-card-header>
       <ion-item lines="none">
         <ion-label>
           <h3>{{ currentOrder?.shippingAddress?.toName }}</h3>
@@ -36,8 +40,8 @@
           <ion-icon :icon="refreshSharp" slot="end" ></ion-icon>
         </ion-button>
       </ion-item>
-    </ion-card-content>
-  </ion-card>
+    </ion-card>
+  </div>
 </template>
 
 <script lang="ts">
@@ -45,7 +49,9 @@
     IonLabel,
     IonItem,
     IonCard,
-    IonCardContent
+    IonCardContent,
+    IonCardHeader,
+    IonCardTitle
   } from "@ionic/vue";
   import { defineComponent } from "vue";
   import { openOutline, refreshSharp } from "ionicons/icons";
@@ -61,7 +67,9 @@
       IonLabel,
       IonItem,
       IonCard,
-      IonCardContent
+      IonCardContent,
+      IonCardHeader,
+      IonCardTitle
     },
     data() {
       return {
@@ -105,3 +113,13 @@
     }
   });
   </script>
+
+  <style>
+
+  .shipgroup-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(343px, 1fr));
+    gap: 10px;
+  }
+
+  </style>
