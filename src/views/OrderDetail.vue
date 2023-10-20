@@ -159,45 +159,47 @@
       <ShippingDetails />
       
       <h4 v-if="order.shipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
-      <ion-card v-for="shipGroup in order.shipGroups" :key="shipGroup.shipmentId">
-        <ion-card-header>
-          <div>
-            <ion-card-subtitle class="overline">{{ getfacilityTypeDesc(shipGroup.facilityTypeId) }}</ion-card-subtitle>
-            <ion-card-title>{{ shipGroup.facilityName }}</ion-card-title>
-          </div>
-          <ion-badge :color="shipGroup.category ? 'primary' : 'medium'">{{ shipGroup.category ? shipGroup.category : translate('Pending allocation') }}</ion-badge>
-        </ion-card-header>
-
-        <ion-item v-if="shipGroup.carrierPartyId">
-          {{ getPartyName(shipGroup.carrierPartyId) }}
-          <ion-label slot="end">{{ shipGroup.trackingCode }}</ion-label>
-          <ion-icon slot="end" :icon="locateOutline" />
-        </ion-item>
-
-        <ion-item v-if="shipGroup.shippingInstructions" color="light" lines="none">
-          <ion-label class="ion-text-wrap">
-            <p class="overline">{{ translate("Handling Instructions") }}</p>
-            <p>{{ shipGroup.shippingInstructions }}</p>
-          </ion-label>
-        </ion-item>
-
-        <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
-          <ion-thumbnail slot="start">
-            <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
-          </ion-thumbnail>
-          <ion-label>
-            <p class="overline">{{ getProduct(item.productId).sku }}</p>
-            {{ getProduct(item.productId).parentProductName }}
-          </ion-label>
-          <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
-          <div slot="end" class="product-metadata">
-            <ion-note v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-            <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
-              <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
-            </ion-button>
-          </div>
-        </ion-item>
-      </ion-card>
+      <div class="shipgroup-details">
+        <ion-card v-for="shipGroup in order.shipGroups" :key="shipGroup.shipmentId">
+          <ion-card-header>
+            <div>
+              <ion-card-subtitle class="overline">{{ getfacilityTypeDesc(shipGroup.facilityTypeId) }}</ion-card-subtitle>
+              <ion-card-title>{{ shipGroup.facilityName }}</ion-card-title>
+            </div>
+            <ion-badge :color="shipGroup.category ? 'primary' : 'medium'">{{ shipGroup.category ? shipGroup.category : translate('Pending allocation') }}</ion-badge>
+          </ion-card-header>
+  
+          <ion-item v-if="shipGroup.carrierPartyId">
+            {{ getPartyName(shipGroup.carrierPartyId) }}
+            <ion-label slot="end">{{ shipGroup.trackingCode }}</ion-label>
+            <ion-icon slot="end" :icon="locateOutline" />
+          </ion-item>
+  
+          <ion-item v-if="shipGroup.shippingInstructions" color="light" lines="none">
+            <ion-label class="ion-text-wrap">
+              <p class="overline">{{ translate("Handling Instructions") }}</p>
+              <p>{{ shipGroup.shippingInstructions }}</p>
+            </ion-label>
+          </ion-item>
+  
+          <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
+            <ion-thumbnail slot="start">
+              <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+            </ion-thumbnail>
+            <ion-label>
+              <p class="overline">{{ getProduct(item.productId).sku }}</p>
+              {{ getProduct(item.productId).parentProductName }}
+            </ion-label>
+            <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+            <div slot="end" class="product-metadata">
+              <ion-note v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+              <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
+                <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+              </ion-button>
+            </div>
+          </ion-item>
+        </ion-card>
+      </div>  
     </ion-content>
   </ion-page>
 </template>
