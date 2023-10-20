@@ -151,6 +151,8 @@
         </div>
       </ion-card>
 
+      <ShippingDetails />
+      
       <ion-label>{{ 'Other shipments in this order' }}</ion-label>
       <ion-card v-for="shipGroup in shipGroups" :key="shipGroup.shipmentId">
         <ion-item lines="none">
@@ -266,6 +268,7 @@ import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
 import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
+import ShippingDetails from '@/views/ShippingDetails.vue';
 
 export default defineComponent({
   name: "OrderDetail",
@@ -289,6 +292,7 @@ export default defineComponent({
     IonTitle,
     IonToolbar,
     IonThumbnail,
+    ShippingDetails
   },
   computed: {
     ...mapGetters({
