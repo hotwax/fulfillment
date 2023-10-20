@@ -8,6 +8,7 @@ import store from '@/store'
 import Exim from "@/views/Exim.vue"
 import UploadImportOrders from "@/views/UploadImportOrders.vue"
 import DownloadPackedOrders from "@/views/DownloadPackedOrders.vue"
+import OrderDetail from "@/views/OrderDetail.vue"
 import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
 import { translate } from '@hotwax/dxp-components'
@@ -46,10 +47,10 @@ const loginGuard = (to: any, from: any, next: any) => {
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    redirect: '/open-orders'
+    redirect: '/open'
   },
   {
-    path: '/open-orders',
+    path: '/open',
     name: 'OpenOrders',
     component: OpenOrders,
     beforeEnter: authGuard,
@@ -73,6 +74,15 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     meta: {
       permissionId: "APP_COMPLETED_ORDERS_VIEW"
+    }
+  },
+  {
+    path: '/order-detail/:orderId',
+    name: 'OrderDetail',
+    component: OrderDetail,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_ORDER_DETAIL_VIEW"
     }
   },
   {

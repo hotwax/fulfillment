@@ -639,7 +639,12 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     return shipGroups;
-  }
+  },
+
+  // TODO clear current on logout
+  updateCurrent ({ commit }, payload) {
+    commit(types.ORDER_CURRENT_UPDATED, { order: payload })
+  },
 }
 
 export default actions;
