@@ -189,10 +189,10 @@
             <p class="overline">{{ getProduct(item.productId).sku }}</p>
             {{ getProduct(item.productId).parentProductName }}
           </ion-label>
-        <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+          <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
           <div slot="end" class="product-metadata">
-            <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-            <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+            <ion-note v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+            <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
               <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
             </ion-button>
           </div>
@@ -373,8 +373,8 @@ export default defineComponent({
       });
       return popover.present();
     },
-    fetchProductStock(productId: string) {
-      this.store.dispatch('stock/fetchStock', { productId })
+    fetchProductStock(productId: string, facilityId = '') {
+      this.store.dispatch('stock/fetchStock', { productId, facilityId })
     },
     async packOrder(order: any) {
       const confirmPackOrder = await alertController

@@ -547,7 +547,6 @@ const actions: ActionTree<OrderState, RootState> = {
       groupBy: 'shipGroupSeqId',
       filters: {
         '-shipGroupSeqId': { value: order.items[0].shipGroupSeqId },
-        '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
         orderId: { value: order.orderId }
       },
       docType: 'ORDER'
@@ -603,7 +602,6 @@ const actions: ActionTree<OrderState, RootState> = {
       groupBy: 'shipGroupSeqId',
       filters: {
         'shipGroupSeqId': { value: shipGroupSeqIds },
-        '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
         '-fulfillmentStatus': { value: ['Rejected', 'Cancelled'] },
         orderId: { value: orderId }
       }
