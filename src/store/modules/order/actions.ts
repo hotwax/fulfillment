@@ -8,6 +8,7 @@ import * as types from './mutation-types'
 import { prepareOrderQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
+import { getOrderCategory } from '@/utils/order'
 
 
 const actions: ActionTree<OrderState, RootState> = {
@@ -162,6 +163,7 @@ const actions: ActionTree<OrderState, RootState> = {
       const shipmentIds = [...new Set(shipments.map((shipment: any) => shipment.shipmentId))]
       // Get packed shipmentIds
       let shipmentPackages = [] as any;
+      let shipmentTrackingCodes = [] as any;
       if (shipmentIds.length > 0) {
         try {
             const shipmentIdBatches = [];
@@ -169,7 +171,9 @@ const actions: ActionTree<OrderState, RootState> = {
               shipmentIdBatches.push(shipmentIds.splice(0, batchSize))
             }
             const shipmentPackagesBatches = await Promise.all(shipmentIdBatches.map((shipmentIds) => OrderService.fetchShipmentPackages(shipmentIds)))
+            const trackingCodes = await Promise.all(shipmentIdBatches.map((shipmentIds) => OrderService.fetchTrackingCodes(shipmentIds)))
             shipmentPackages = shipmentPackagesBatches.flat();
+            shipmentTrackingCodes = trackingCodes.flat();
           } catch(err) {
             completedOrders = completedOrders.map((order: any) => {
               order.hasMissingPackageInfo = true;
@@ -194,6 +198,8 @@ const actions: ActionTree<OrderState, RootState> = {
           return currentShipmentPackages;
         }, []);
 
+        const trackingCode = shipmentTrackingCodes.find((shipmentTrackingCode: any) => shipmentTrackingCode.shipmentId == order.shipmentId)?.trackingCode
+
         // If there is any shipment package with missing tracking code, retry shipping label
         const missingLabelImage = currentShipmentPackages.length > 0;
 
@@ -201,6 +207,7 @@ const actions: ActionTree<OrderState, RootState> = {
           ...order,
           shipments: orderShipments,
           missingLabelImage,
+          trackingCode,
           shipmentPackages: currentShipmentPackages  // ShipmentPackages information is required when performing retryShippingLabel action
         }
       })
@@ -268,10 +275,12 @@ const actions: ActionTree<OrderState, RootState> = {
             orderName: orderItem.orderName,
             groupValue: order.groupValue,
             picklistBinId: orderItem.picklistBinId,
+            picklistId: orderItem.picklistId,
             items: order.doclist.docs,
             shipGroupSeqId: orderItem.shipGroupSeqId,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
-            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc
+            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+            shippingInstructions: orderItem.shippingInstructions
           }
         })
       } else {
@@ -364,6 +373,7 @@ const actions: ActionTree<OrderState, RootState> = {
             shipGroupSeqId: orderItem.shipGroupSeqId,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
             shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+            shippingInstructions: orderItem.shippingInstructions,
             reservedDatetime: orderItem.reservedDatetime
           }
         })
@@ -445,11 +455,13 @@ const actions: ActionTree<OrderState, RootState> = {
         reservedDatetime: orderItem.reservedDatetime,
         groupValue: order.groupValue,
         picklistBinId: orderItem.picklistBinId,
+        picklistId: orderItem.picklistId,
         items: order.doclist.docs,
         shipGroupSeqId: orderItem.shipGroupSeqId,
         shipmentId: orderItem.shipmentId,
         shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
         shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+        shippingInstructions: orderItem.shippingInstructions,
         isGeneratingShippingLabel: false,
         isGeneratingPackingSlip: false
       }
@@ -467,6 +479,29 @@ const actions: ActionTree<OrderState, RootState> = {
 
     emitter.emit('dismissLoader');
     return resp;
+  },
+
+  async fetchShippingAddress ({ commit, state }) {
+    let resp;
+    let order = JSON.parse(JSON.stringify(state.current))
+
+    try {
+      resp = await OrderService.fetchOrderItemShipGroup(order);
+      if (resp) {
+        const contactMechId = resp.contactMechId;
+        resp = await OrderService.fetchShippingAddress(contactMechId);
+
+        if (resp) {
+          order = {
+            ...order,
+            shippingAddress: resp
+          }
+        }
+      }
+    } catch (err: any) {
+      logger.error("Error in setting current order", err);
+    }
+    commit(types.ORDER_CURRENT_UPDATED,  order)
   },
 
   async clearOrders ({ commit }) {
@@ -648,12 +683,12 @@ const actions: ActionTree<OrderState, RootState> = {
     emitter.emit('dismissLoader');
   },
 
-  async getCompletedOrder ({ commit, dispatch, state }, payload) {
+  async getCompletedOrder({ commit, dispatch, state }, payload) {
     const current = state.current as any
-    if(current.orderId === payload.orderId && current.category === 'completed') {
+    if (current.orderId === payload.orderId && current.category === 'completed') {
       return
     }
-    
+
     const orders = JSON.parse(JSON.stringify(state.completed.list)) as Array<any>
     if (orders.length) {
       const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'completed')
@@ -717,8 +752,62 @@ const actions: ActionTree<OrderState, RootState> = {
     emitter.emit('dismissLoader');
   },
 
-  updateCurrent ({ commit }, order) {
-    commit(types.ORDER_CURRENT_UPDATED, order)
+  async fetchShipGroupForOrder({ dispatch, state }) {
+    const order = JSON.parse(JSON.stringify(state.current))
+    const params = {
+      groupBy: 'shipGroupSeqId',
+      filters: {
+        '-shipGroupSeqId': { value: order.items[0].shipGroupSeqId },
+        orderId: { value: order.orderId }
+      },
+      docType: 'ORDER'
+    }
+
+    const orderQueryPayload = prepareOrderQuery(params)
+
+    let resp, total, shipGroups = [];
+    const facilityTypeIds: Array<string> = [];
+
+    try {
+      resp = await OrderService.findOrderShipGroup(orderQueryPayload);
+      if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.shipGroupSeqId.matches > 0) {
+        total = resp.data.grouped.shipGroupSeqId.ngroups
+        shipGroups = resp.data.grouped.shipGroupSeqId.groups
+
+        // creating the key as orders as the product information action accept only the orders as a param
+        this.dispatch('product/getProductInformation', { orders: shipGroups })
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Failed to fetch ship group information for order', err)
+    }
+
+    // return if shipGroups are not found for order
+    if (!shipGroups.length) {
+      return;
+    }
+
+    shipGroups = shipGroups.map((shipGroup: any) => {
+      const shipItem = shipGroup.doclist.docs[0]
+
+      facilityTypeIds.push(shipItem.facilityTypeId)
+
+      return {
+        items: shipGroup.doclist.docs,
+        facilityId: shipItem.facilityId,
+        facilityTypeId: shipItem.facilityTypeId,
+        facilityName: shipItem.facilityName,
+        shippingMethod: shipItem.shippingMethod,
+        orderId: shipItem.orderId,
+        shipGroupSeqId: shipItem.shipGroupSeqId
+      }
+    })
+
+    this.dispatch('util/fetchFacilityTypeInformation', facilityTypeIds)
+
+    // fetching reservation information for shipGroup from OISGIR doc
+    await dispatch('fetchAdditionalShipGroupForOrder', { shipGroups });
   },
 
   async fetchCompletedOrderAdditionalInformation({ commit, state }) {
@@ -872,6 +961,90 @@ const actions: ActionTree<OrderState, RootState> = {
 
     // updating the state with the updated orders information
     commit(types.ORDER_CURRENT_UPDATED, current)
+  },
+
+  async fetchAdditionalShipGroupForOrder({ commit, state }, payload) {
+    const order = JSON.parse(JSON.stringify(state.current))
+    const shipGroupSeqIds = payload.shipGroups.map((shipGroup: any) => shipGroup.shipGroupSeqId)
+    const orderId = order.orderId
+
+    const params = {
+      groupBy: 'shipGroupSeqId',
+      filters: {
+        'shipGroupSeqId': { value: shipGroupSeqIds },
+        '-fulfillmentStatus': { value: ['Rejected', 'Cancelled'] },
+        orderId: { value: orderId }
+      }
+    }
+
+    const orderQueryPayload = prepareOrderQuery(params)
+
+    let resp, total, shipGroups: any = [];
+
+    try {
+      resp = await OrderService.findOrderShipGroup(orderQueryPayload);
+      if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.shipGroupSeqId.matches > 0) {
+        total = resp.data.grouped.shipGroupSeqId.ngroups
+        shipGroups = resp.data.grouped.shipGroupSeqId.groups
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Failed to fetch ship group information for order', err)
+    }
+
+    shipGroups = payload.shipGroups.map((shipGroup: any) => {
+      const reservedShipGroupForOrder = shipGroups.find((group: any) => shipGroup.shipGroupSeqId === group.doclist.docs[0].shipGroupSeqId)
+
+      const reservedShipGroup = reservedShipGroupForOrder?.groupValue ? reservedShipGroupForOrder.doclist.docs[0] : ''
+
+      return reservedShipGroup ? {
+        ...shipGroup,
+        items: reservedShipGroupForOrder.doclist.docs,
+        carrierPartyId: reservedShipGroup.carrierPartyId,
+        shipmentId: reservedShipGroup.shipmentId,
+        groupCategory: getOrderCategory(order),  // category defines that the order is in which state like open, inProgress or completed
+      } : {
+        ...shipGroup
+      }
+    })
+
+    const carrierPartyIds: Array<string> = [];
+    const shipmentIds: Array<string> = [];
+
+    if (total) {
+      shipGroups.map((shipGroup: any) => {
+        if (shipGroup.shipmentId) shipmentIds.push(shipGroup.shipmentId)
+        if (shipGroup.carrierPartyId) carrierPartyIds.push(shipGroup.carrierPartyId)
+      })
+    }
+
+    try {
+      this.dispatch('util/fetchPartyInformation', carrierPartyIds)
+      const shipmentTrackingCodes = await OrderService.fetchTrackingCodes(shipmentIds)
+
+      shipGroups.find((shipGroup: any) => {
+        const trackingCode = shipmentTrackingCodes.find((shipmentTrackingCode: any) => shipGroup.shipmentId === shipmentTrackingCode.shipmentId)?.trackingCode
+
+        // TODO: Remove default value check
+        shipGroup.trackingCode = trackingCode ? trackingCode : 'TRACKING CODE';
+      })
+    } catch (err) {
+      logger.error('Failed to fetch information for ship groups', err)
+    }
+
+    order['shipGroups'] = shipGroups
+
+    commit(types.ORDER_CURRENT_UPDATED, order)
+
+    return shipGroups;
+  },
+
+  // TODO clear current on logout
+  async updateCurrent({ commit, dispatch }, order) {
+    commit(types.ORDER_CURRENT_UPDATED, order)
+    await dispatch('fetchShippingAddress');
+    await dispatch('fetchShipGroupForOrder');
   },
 }
 

@@ -931,7 +931,7 @@ export default defineComponent({
 
       const result = await popover.onDidDismiss();
 
-      if(result.data) {
+      if(result.data && shipmentPackage.shipmentBoxTypeId !== result.data) {
         shipmentPackage.shipmentBoxTypeId = result.data;
         order.isModified = true;
         this.store.dispatch('order/updateInProgressOrder', order);

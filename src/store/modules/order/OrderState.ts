@@ -30,5 +30,5 @@ export default interface OrderState {
       queryString: string
     }
   },
-  current: Array<any>,
+  current: any,
 }
