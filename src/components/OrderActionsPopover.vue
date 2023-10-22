@@ -6,7 +6,7 @@
         <ion-icon slot="end" :icon="copyOutline" />
         {{ translate("Copy ID") }}
       </ion-item>
-      <ion-item v-if="category === 'open'" button lines="none" @click="assignPickers">
+      <ion-item v-if="category === 'open'" button @click="assignPickers">
         <ion-icon slot="end" :icon="bagCheckOutline" />
         {{ translate("Pick order") }}
       </ion-item>
@@ -68,10 +68,9 @@ export default defineComponent({
       return assignPickerModal.present();
     },
     async viewOrder() {
-      console.log(this.order)
       this.store.dispatch('order/updateCurrent', this.order).then(() => {
         this.closePopover();
-        this.$router.push({ path: `/order-detail/${this.order.orderId}` })
+        this.$router.push({ path: `${this.category}/order-detail/${this.order.orderId}/${this.order.shipGroupSeqId}` })
       })
     },
   },

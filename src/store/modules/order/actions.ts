@@ -255,11 +255,12 @@ const actions: ActionTree<OrderState, RootState> = {
         orders = resp.data.grouped.picklistBinId.groups
 
         // TODO get only product visible
-        this.dispatch('product/getProductInformation', { orders })
+        this.dispatch('product/getProductInformation', orders)
 
         orders = orders.map((order: any) => {
           const orderItem = order.doclist.docs[0];
           return {
+            category: 'in-progress',
             customerId: orderItem.customerId,
             customerName: orderItem.customerName,
             orderId: orderItem.orderId,
@@ -268,6 +269,7 @@ const actions: ActionTree<OrderState, RootState> = {
             groupValue: order.groupValue,
             picklistBinId: orderItem.picklistBinId,
             items: order.doclist.docs,
+            shipGroupSeqId: orderItem.shipGroupSeqId,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
             shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc
           }
@@ -346,11 +348,12 @@ const actions: ActionTree<OrderState, RootState> = {
       if (!hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
         total = resp.data.grouped.orderId.ngroups
         orders = resp.data.grouped.orderId.groups
-        this.dispatch('product/getProductInformation', { orders })
+        this.dispatch('product/getProductInformation', orders)
 
         orders = orders.map((order: any) => {
           const orderItem = order.doclist.docs[0];
           return {
+            category: 'open',
             customerId: orderItem.customerId,
             customerName: orderItem.customerName,
             orderId: orderItem.orderId,
@@ -358,6 +361,7 @@ const actions: ActionTree<OrderState, RootState> = {
             orderName: orderItem.orderName,
             groupValue: order.groupValue,
             items: order.doclist.docs,
+            shipGroupSeqId: orderItem.shipGroupSeqId,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
             shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
             reservedDatetime: orderItem.reservedDatetime
@@ -417,8 +421,7 @@ const actions: ActionTree<OrderState, RootState> = {
       if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
         total = resp.data.grouped.picklistBinId.ngroups
         orders = resp.data.grouped.picklistBinId.groups
-        this.dispatch('product/getProductInformation', { orders })
-        
+        this.dispatch('product/getProductInformation', orders)
       } else {
         throw resp.data
       }
@@ -433,6 +436,7 @@ const actions: ActionTree<OrderState, RootState> = {
       const orderItem = order.doclist.docs[0]; // basic information for the order
 
       return {
+        category: 'completed',
         customerId: orderItem.customerId,
         customerName: orderItem.customerName,
         orderId: orderItem.orderId,
@@ -442,6 +446,7 @@ const actions: ActionTree<OrderState, RootState> = {
         groupValue: order.groupValue,
         picklistBinId: orderItem.picklistBinId,
         items: order.doclist.docs,
+        shipGroupSeqId: orderItem.shipGroupSeqId,
         shipmentId: orderItem.shipmentId,
         shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
         shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
@@ -468,6 +473,7 @@ const actions: ActionTree<OrderState, RootState> = {
     commit(types.ORDER_INPROGRESS_CLEARED)
     commit(types.ORDER_OPEN_CLEARED)
     commit(types.ORDER_COMPLETED_CLEARED)
+    commit(types.ORDER_CURRENT_UPDATED, {})
   },
 
   async clearOpenOrders({ commit }) {
@@ -511,9 +517,361 @@ const actions: ActionTree<OrderState, RootState> = {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
   },
 
-  // TODO clear current on logout
-  updateCurrent ({ commit }, payload) {
-    commit(types.ORDER_CURRENT_UPDATED, { order: payload })
+  async getOpenOrder({ commit, state }, payload) {
+    const current = state.current as any
+    if (current.orderId === payload.orderId && current.category === 'open') {
+      return
+    }
+
+    const orders = JSON.parse(JSON.stringify(state.open.list)) as Array<any>
+    if (orders.length) {
+      const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'open')
+      if (order) {
+        commit(types.ORDER_CURRENT_UPDATED, order)
+        return
+      }
+    }
+
+    let resp, order = {};
+    emitter.emit('presentLoader');
+
+    const params = {
+      viewSize: 1,
+      filters: {
+        orderId: { value: payload.orderId },
+        quantityNotAvailable: { value: 0 },
+        isPicked: { value: 'N' },
+        '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+        '-fulfillmentStatus': { value: 'Cancelled' },
+        orderStatusId: { value: 'ORDER_APPROVED' },
+        orderTypeId: { value: 'SALES_ORDER' },
+        facilityId: { value: this.state.user.currentFacility.facilityId },
+        productStoreId: { value: this.state.user.currentEComStore.productStoreId }
+      }
+    }
+    const orderQueryPayload = prepareOrderQuery(params)
+    try {
+      resp = await OrderService.findOpenOrders(orderQueryPayload);
+      if (!hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
+        const orderItem = resp.data.grouped.orderId.groups[0].doclist.docs[0];
+        order = {
+          category: 'open',
+          customerId: orderItem.customerId,
+          customerName: orderItem.customerName,
+          orderId: orderItem.orderId,
+          orderDate: orderItem.orderDate,
+          orderName: orderItem.orderName,
+          groupValue: resp.data.grouped.orderId.groups[0].groupValue,
+          items: resp.data.grouped.orderId.groups[0].doclist.docs,
+          shipGroupSeqId: orderItem.shipGroupSeqId,
+          shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
+          shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+          reservedDatetime: orderItem.reservedDatetime
+        }
+        this.dispatch('product/getProductInformation', order)
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Something went wrong, could not fetch order details.', err)
+    }
+    commit(types.ORDER_CURRENT_UPDATED, order)
+    emitter.emit('dismissLoader');
+    return resp;
+  },
+
+  async getInProgressOrder ({ commit, state, dispatch }, payload) {
+    // if order is modified, we refetch it instead of returning from the state
+    if (!payload.isModified) {
+      const current = state.current as any
+      if (current.orderId === payload.orderId && current.category === 'in-progress') {
+        return
+      }
+
+      const orders = JSON.parse(JSON.stringify(state.inProgress.list)) as Array<any>
+      if (orders.length) {
+        const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'in-progress')
+        if (order) {
+          commit(types.ORDER_CURRENT_UPDATED, order)
+          return
+        }
+      }
+    }
+    emitter.emit('presentLoader');
+    let resp, order = {};
+
+    try {
+      const params = {
+        viewSize: 1,
+        sort: 'orderDate asc',
+        groupBy: 'picklistBinId',
+        filters: {
+          orderId: { value: payload.orderId },
+          picklistItemStatusId: { value: 'PICKITEM_PENDING' },
+          '-fulfillmentStatus': { value: 'Rejected' },
+          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+          facilityId: { value: this.state.user.currentFacility.facilityId },
+          productStoreId: { value: this.state.user.currentEComStore.productStoreId }
+        }
+      }
+
+      const orderQueryPayload = prepareOrderQuery(params)
+
+      resp = await OrderService.findInProgressOrders(orderQueryPayload);
+      if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
+        const orderItem = resp.data.grouped.picklistBinId.groups[0].doclist.docs[0];
+        order = {
+          category: 'in-progress',
+          customerId: orderItem.customerId,
+          customerName: orderItem.customerName,
+          orderId: orderItem.orderId,
+          orderDate: orderItem.orderDate,
+          orderName: orderItem.orderName,
+          groupValue: resp.data.grouped.picklistBinId.groups[0].groupValue,
+          picklistBinId: orderItem.picklistBinId,
+          items: resp.data.grouped.picklistBinId.groups[0].doclist.docs,
+          shipGroupSeqId: orderItem.shipGroupSeqId,
+          shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
+          shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+        }
+        this.dispatch('product/getProductInformation', order)
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Something went wrong', err)
+    }
+
+    commit(types.ORDER_CURRENT_UPDATED, order)
+    dispatch('fetchInProgressOrderAdditionalInformation');
+
+    emitter.emit('dismissLoader');
+  },
+
+  async getCompletedOrder ({ commit, dispatch, state }, payload) {
+    const current = state.current as any
+    if(current.orderId === payload.orderId && current.category === 'completed') {
+      return
+    }
+    
+    const orders = JSON.parse(JSON.stringify(state.completed.list)) as Array<any>
+    if (orders.length) {
+      const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'completed')
+      if (order) {
+        commit(types.ORDER_CURRENT_UPDATED, order)
+        return
+      }
+    }
+    emitter.emit('presentLoader');
+    let resp, order = {};
+
+    try {
+      const params = {
+        viewSize: 1,
+        groupBy: 'picklistBinId',
+        sort: 'orderDate asc',
+        filters: {
+          orderId: { value: payload.orderId },
+          picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
+          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+          facilityId: { value: this.state.user.currentFacility.facilityId },
+          productStoreId: { value: this.state.user.currentEComStore.productStoreId }
+        }
+      }
+
+      const orderQueryPayload = prepareOrderQuery(params)
+
+      resp = await OrderService.findCompletedOrders(orderQueryPayload);
+      if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
+        const orderItem = resp.data.grouped.picklistBinId.groups[0].doclist.docs[0];
+        order = {
+          category: 'completed',
+          customerId: orderItem.customerId,
+          customerName: orderItem.customerName,
+          orderId: orderItem.orderId,
+          orderDate: orderItem.orderDate,
+          orderName: orderItem.orderName,
+          reservedDatetime: orderItem.reservedDatetime,
+          groupValue: resp.data.grouped.picklistBinId.groups[0].groupValue,
+          picklistBinId: orderItem.picklistBinId,
+          items: resp.data.grouped.picklistBinId.groups[0].doclist.docs,
+          shipmentId: orderItem.shipmentId,
+          shipGroupSeqId: orderItem.shipGroupSeqId,
+          shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
+          shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+          isGeneratingShippingLabel: false,
+          isGeneratingPackingSlip: false
+        }
+
+        this.dispatch('product/getProductInformation', order)
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('No completed orders found', err)
+    }
+
+    commit(types.ORDER_CURRENT_UPDATED, order)
+    await dispatch('fetchCompletedOrderAdditionalInformation');
+
+    emitter.emit('dismissLoader');
+  },
+
+  updateCurrent ({ commit }, order) {
+    commit(types.ORDER_CURRENT_UPDATED, order)
+  },
+
+  async fetchCompletedOrderAdditionalInformation({ commit, state }) {
+    let current = JSON.parse(JSON.stringify(state.current))
+
+    try {
+      // fetchShipments accepts Array parameters for picklistBinId and orderId
+      const shipmentBatches = await OrderService.fetchShipments([current.picklistBinId], [current.orderId], this.state.user.currentFacility.facilityId)
+      const shipments = shipmentBatches.flat();
+      const shipmentIds = [...new Set(shipments.map((shipment: any) => shipment.shipmentId))] as Array<string>
+      let shipmentPackages = [] as any;
+      
+      // Get packed shipmentIds
+      if (shipmentIds.length) {
+        try {
+          const shipmentPackagesBatches = await OrderService.fetchShipmentPackages(shipmentIds)
+          shipmentPackages = shipmentPackagesBatches.flat();
+        } catch (err) {
+          current.hasMissingPackageInfo = true;
+          logger.error('Failed to fetch shipment packages for orders', err)
+        }
+      }
+
+      const orderShipments = shipments.filter((shipment: any) => current.orderId === shipment.primaryOrderId && shipment.picklistBinId === current.picklistBinId);
+      if (!orderShipments || !orderShipments.length) {
+        commit(types.ORDER_CURRENT_UPDATED, current)
+        return
+      }
+
+      const currentShipmentPackages = orderShipments.reduce((currentShipmentPackages: any, shipment: any) => {
+        currentShipmentPackages.push(...shipmentPackages.filter((shipmentPackage: any) => shipmentPackage.shipmentId === shipment.shipmentId));
+        return currentShipmentPackages;
+      }, []);
+
+      // If there is any shipment package with missing tracking code, retry shipping label
+      const missingLabelImage = currentShipmentPackages.length > 0;
+      current = {
+        ...current,
+        shipments: orderShipments,
+        missingLabelImage,
+        shipmentPackages: currentShipmentPackages  // ShipmentPackages information is required when performing retryShippingLabel action
+      }
+    } catch(err) {
+      current.hasMissingPackageInfo = true;
+      logger.error('Something went wrong', err)
+    }
+
+    commit(types.ORDER_CURRENT_UPDATED, current)
+  },
+
+  async fetchInProgressOrderAdditionalInformation({ commit, state }) {
+    let current = JSON.parse(JSON.stringify(state.current))
+
+    const picklistBinIds: Array<string> = [current.picklistBinId];
+    const orderIds: Array<string> = [current.orderId];
+
+    try {
+      // maintaining an object containing information of shipmentIds for each order
+      const shipmentIdsForOrderAndPicklistBin = await UtilService.findShipmentIdsForOrders(picklistBinIds, orderIds);
+
+      let shipmentPackagesByOrderAndPicklistBin = {} as any, itemInformationByOrder = {} as any, carrierPartyIdsByShipment = {} as any, carrierShipmentBoxType = {} as any
+
+      // storing all the shipmentIds for all the orders in an array to use furthur
+      const orderShipmentIds = [...(new Set(Object.values(shipmentIdsForOrderAndPicklistBin).flat()))] as Array<string>
+
+      // TODO: handle case when shipmentIds is empty
+      // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
+      const [shipmentPackagesByOrderInformationAndPicklistBin, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
+
+      // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
+      const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
+
+      shipmentPackagesByOrderAndPicklistBin = {
+        ...shipmentPackagesByOrderAndPicklistBin,
+        ...shipmentPackagesByOrderInformationAndPicklistBin
+      }
+
+      itemInformationByOrder = {
+        ...itemInformationByOrder,
+        ...itemInformationByOrderInformation
+      }
+
+      carrierPartyIdsByShipment = {
+        ...carrierPartyIdsByShipment,
+        ...carrierPartyIdsByShipmentInformation
+      }
+
+      carrierShipmentBoxType = {
+        ...carrierShipmentBoxType,
+        ...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
+      }
+
+        // if for an order shipment information is not available then returning the same order information again
+        if (!shipmentIdsForOrderAndPicklistBin[`${current.orderId}_${current.picklistBinId}`]) {
+          // if there are no shipment for the order, there is some issue with the order
+          if (picklistBinIds.includes(current.picklistBinId) && orderIds.includes(current.orderId)) {
+            current = {
+              ...current,
+              hasMissingInfo: true,
+            }
+            return
+          }
+          return
+        }
+
+        current.items.map((item: any) => {
+          // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
+          const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)
+
+          if (shipment) {
+            item.shipmentId = shipment.shipmentId
+            item.shipmentItemSeqId = shipment.shipmentItemSeqId
+          }
+
+          item.selectedBox = shipmentPackagesByOrderAndPicklistBin[`${item.orderId}_${item.picklistBinId}`]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+        })
+
+        const orderItem = current.items[0];
+        const carrierPartyIdsOnOrderShipment = [...new Set(orderShipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())];
+
+        const shipmentBoxTypeByCarrierParty = carrierPartyIdsOnOrderShipment.reduce((shipmentBoxType: any, carrierPartyId: any) => {
+          if (shipmentBoxType[carrierPartyId]) {
+            shipmentBoxType[carrierPartyId].push(carrierShipmentBoxType[carrierPartyId])
+          } else {
+            shipmentBoxType[carrierPartyId] = carrierShipmentBoxType[carrierPartyId]
+          }
+
+          return shipmentBoxType
+        }, {});
+
+        const shipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].map((shipmentPackage: any) => {
+          return {
+            ...shipmentPackage,
+            shipmentBoxTypes: shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] : []
+          }
+        });
+
+        current = {
+          ...current,
+          shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
+          shipmentPackages: shipmentPackages,
+          carrierPartyIdsOnOrderShipment,
+          shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty
+        }
+
+      this.dispatch('util/fetchShipmentBoxTypeDesc', [...new Set(Object.values(carrierShipmentBoxType).flat())])
+    } catch (err) {
+      current.hasMissingPackageInfo = true;
+      logger.error('Something went wrong', err)
+    }
+
+    // updating the state with the updated orders information
+    commit(types.ORDER_CURRENT_UPDATED, current)
   },
 }
 

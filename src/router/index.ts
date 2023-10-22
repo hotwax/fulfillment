@@ -77,7 +77,7 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/order-detail/:orderId',
+    path: '/:category/order-detail/:orderId/:shipGroupSeqId',
     name: 'OrderDetail',
     component: OrderDetail,
     beforeEnter: authGuard,

@@ -62,7 +62,7 @@ const mutations: MutationTree <OrderState> = {
     }
   },
   [types.ORDER_CURRENT_UPDATED] (state, payload) {
-    state.current = payload.order
+    state.current = payload
   },
 }
 export default mutations;
