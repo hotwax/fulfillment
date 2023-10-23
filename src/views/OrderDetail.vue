@@ -332,10 +332,10 @@ export default defineComponent({
   async ionViewDidEnter() {
     this.orderCategory = this.$route.params.category as string
     this.orderCategory === 'open'
-      ? await this.store.dispatch('order/getOpenOrder', { orderId: this.$route.params.orderId })
+      ? await this.store.dispatch('order/getOpenOrder', { orderId: this.$route.params.orderId, shipGroupSeqId: this.$route.params.shipGroupSeqId })
       : this.orderCategory === 'in-progress'
-        ? await this.store.dispatch('order/getInProgressOrder', { orderId: this.$route.params.orderId })
-        : await this.store.dispatch('order/getCompletedOrder', { orderId: this.$route.params.orderId })
+        ? await this.store.dispatch('order/getInProgressOrder', { orderId: this.$route.params.orderId, shipGroupSeqId: this.$route.params.shipGroupSeqId })
+        : await this.store.dispatch('order/getCompletedOrder', { orderId: this.$route.params.orderId, shipGroupSeqId: this.$route.params.shipGroupSeqId })
   },
   methods: {
     async printPicklist (order: any) {

@@ -554,13 +554,13 @@ const actions: ActionTree<OrderState, RootState> = {
 
   async getOpenOrder({ dispatch, state }, payload) {
     const current = state.current as any
-    if (current.orderId === payload.orderId && current.category === 'open') {
+    if (current.orderId === payload.orderId && current.category === 'open' && current.shipGroupSeqId === payload.shipGroupSeqId) {
       return
     }
 
     const orders = JSON.parse(JSON.stringify(state.open.list)) as Array<any>
     if (orders.length) {
-      const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'open')
+      const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'open' && payload.shipGroupSeqId === order.shipGroupSeqId)
       if (order) {
         dispatch('updateCurrent', order)
         return
@@ -576,6 +576,7 @@ const actions: ActionTree<OrderState, RootState> = {
         orderId: { value: payload.orderId },
         quantityNotAvailable: { value: 0 },
         isPicked: { value: 'N' },
+        shipGroupSeqId: { value: payload.shipGroupSeqId },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
         '-fulfillmentStatus': { value: 'Cancelled' },
         orderStatusId: { value: 'ORDER_APPROVED' },
@@ -615,17 +616,17 @@ const actions: ActionTree<OrderState, RootState> = {
     return resp;
   },
 
-  async getInProgressOrder ({ commit, state, dispatch }, payload) {
+  async getInProgressOrder ({ dispatch, state }, payload) {
     // if order is modified, we refetch it instead of returning from the state
     if (!payload.isModified) {
       const current = state.current as any
-      if (current.orderId === payload.orderId && current.category === 'in-progress') {
+      if (current.orderId === payload.orderId && current.category === 'in-progress' && current.shipGroupSeqId === payload.shipGroupSeqId) {
         return
       }
 
       const orders = JSON.parse(JSON.stringify(state.inProgress.list)) as Array<any>
       if (orders.length) {
-        const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'in-progress')
+        const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'in-progress' && payload.shipGroupSeqId === order.shipGroupSeqId)
         if (order) {
           dispatch('updateCurrent', order)
           return
@@ -643,6 +644,7 @@ const actions: ActionTree<OrderState, RootState> = {
         filters: {
           orderId: { value: payload.orderId },
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
+          shipGroupSeqId: { value: payload.shipGroupSeqId },
           '-fulfillmentStatus': { value: 'Rejected' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.state.user.currentFacility.facilityId },
@@ -685,13 +687,13 @@ const actions: ActionTree<OrderState, RootState> = {
 
   async getCompletedOrder({ dispatch, state }, payload) {
     const current = state.current as any
-    if (current.orderId === payload.orderId && current.category === 'completed') {
+    if (current.orderId === payload.orderId && current.category === 'completed' && current.shipGroupSeqId === payload.shipGroupSeqId) {
       return
     }
 
     const orders = JSON.parse(JSON.stringify(state.completed.list)) as Array<any>
     if (orders.length) {
-      const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'completed')
+      const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'completed' && payload.shipGroupSeqId === order.shipGroupSeqId)
       if (order) {
         dispatch('updateCurrent', order)
         return
@@ -709,6 +711,7 @@ const actions: ActionTree<OrderState, RootState> = {
           orderId: { value: payload.orderId },
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+          shipGroupSeqId: { value: payload.shipGroupSeqId },
           facilityId: { value: this.state.user.currentFacility.facilityId },
           productStoreId: { value: this.state.user.currentEComStore.productStoreId }
         }
