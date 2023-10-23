@@ -34,7 +34,7 @@
           {{ shipmentLabelErrorMessages }}
         </ion-label>
         <ion-label v-else>
-          {{ translate('No carrier error') }}
+          {{ translate('Missing shipping label') }}
         </ion-label>
         <ion-button fill="clear" @click="retryShippingLabel(currentOrder)">
           <ion-icon :icon="refreshSharp" slot="end" />
