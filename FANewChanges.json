@@ -198,7 +198,7 @@
   "Reject open orders.": "Rechazar { ordersCount } pedidos abiertos.",
   "Reject order": "Rechazar pedido",
   "Rejecting has been started. All in progress orders will be rejected shortly.": "Se ha iniciado el proceso de rechazo. Todos los pedidos en curso se rechazarán en breve.",
- "Rejecting has been started. All outstanding orders will be rejected shortly.": "Se ha iniciado el proceso de rechazo. Todos los pedidos pendientes se rechazarán en breve.",
+  "Rejecting has been started. All outstanding orders will be rejected shortly.": "Se ha iniciado el proceso de rechazo. Todos los pedidos pendientes se rechazarán en breve.",
   "Regenerate Shipping Label": "Volver a generar etiqueta de envío",
   "Replace": "Reemplazar",
   "Replace pickers": "Reemplazar recolectores",
