@@ -54,8 +54,10 @@
               <ion-skeleton-text animated />
               <ion-skeleton-text animated />
             </div>
-            <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
-              <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
+            <div class="box-type desktop-only" v-else-if="order.shipmentPackages">
+              <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />
+                {{ translate("Add Box") }}
+              </ion-button>
               <ion-row>
                 <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
                   {{ `Box ${shipmentPackage?.packageName}` }} {{ shipmentPackage.shipmentBoxTypes.length ? `| ${boxTypeDesc(getShipmentPackageType(shipmentPackage))}` : '' }}

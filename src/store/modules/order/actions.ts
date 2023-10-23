@@ -567,7 +567,7 @@ const actions: ActionTree<OrderState, RootState> = {
       }
     }
 
-    let resp, order = {};
+    let resp, order = {} as any;
     emitter.emit('presentLoader');
 
     const params = {
@@ -603,7 +603,7 @@ const actions: ActionTree<OrderState, RootState> = {
           shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
           reservedDatetime: orderItem.reservedDatetime
         }
-        this.dispatch('product/getProductInformation', order)
+        await this.dispatch('product/fetchProducts', { productIds: order.items.map((item: any) => item.productId) })
       } else {
         throw resp.data
       }
@@ -633,7 +633,7 @@ const actions: ActionTree<OrderState, RootState> = {
       }
     }
     emitter.emit('presentLoader');
-    let resp, order = {};
+    let resp, order = {} as any;
 
     try {
       const params = {
@@ -669,7 +669,7 @@ const actions: ActionTree<OrderState, RootState> = {
           shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
           shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
         }
-        this.dispatch('product/getProductInformation', order)
+        await this.dispatch('product/fetchProducts', { productIds: order.items.map((item: any) => item.productId) })
       } else {
         throw resp.data
       }
@@ -698,7 +698,7 @@ const actions: ActionTree<OrderState, RootState> = {
       }
     }
     emitter.emit('presentLoader');
-    let resp, order = {};
+    let resp, order = {} as  any;
 
     try {
       const params = {
@@ -738,7 +738,7 @@ const actions: ActionTree<OrderState, RootState> = {
           isGeneratingPackingSlip: false
         }
 
-        this.dispatch('product/getProductInformation', order)
+        await this.dispatch('product/fetchProducts', { productIds: order.items.map((item: any) => item.productId) })
       } else {
         throw resp.data
       }

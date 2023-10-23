@@ -44,18 +44,13 @@ const actions: ActionTree<ProductState, RootState> = {
     return resp;
   },
 
-  async getProductInformation ({ dispatch }, payload) {
+  async getProductInformation({ dispatch }, { orders }) {
     let productIds: any = new Set();
-    // checking if its a single order or multiple orders
-    Array.isArray(payload) ?
-      payload.forEach((list: any) => {
-        list.doclist.docs.forEach((order: any) => {
-          if (order.productId) productIds.add(order.productId)
-        })
-      }) :
-      payload.items.forEach((item: any) => {
-        if (item.productId) productIds.add(item.productId)
+    orders.forEach((list: any) => {
+      list.doclist.docs.forEach((order: any) => {
+        if (order.productId) productIds.add(order.productId)
       })
+    })
 
     productIds = [...productIds]
     if (productIds.length) {

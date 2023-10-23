@@ -81,6 +81,7 @@ const routes: Array<RouteRecordRaw> = [
     name: 'OrderDetail',
     component: OrderDetail,
     beforeEnter: authGuard,
+    props: true,
     meta: {
       permissionId: "APP_ORDER_DETAIL_VIEW"
     }
