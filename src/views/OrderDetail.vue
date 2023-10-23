@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button slot="start" :default-href="`/${orderCategory}`" />
+        <ion-back-button slot="start" :default-href="`/${category}`" />
         <ion-title>{{ translate("Order details") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -17,7 +17,7 @@
               <ion-icon :icon="pricetagOutline" />
               <ion-label>{{ order.orderId }}</ion-label>
             </ion-chip>
-            <ion-chip v-if="orderCategory !== 'open'" outline @click="printPicklist(order)">
+            <ion-chip v-if="category !== 'open'" outline @click="printPicklist(order)">
               <ion-icon :icon="documentTextOutline" />
               <ion-label>{{ translate('Linked picklist') }}: {{ order.picklistBinId }}</ion-label>
             </ion-chip>
@@ -27,7 +27,7 @@
             </ion-chip>
           </div>
           <div class="order-metadata">
-            <ion-badge>{{ orderCategory === 'open' ? translate('Open') : (orderCategory === 'in-progress' ? translate('In Progress') : translate('Completed')) }}</ion-badge>
+            <ion-badge>{{ category === 'open' ? translate('Open') : (category === 'in-progress' ? translate('In Progress') : translate('Completed')) }}</ion-badge>
           </div>
         </div>
 
@@ -48,7 +48,7 @@
             </div>
           </div>
 
-          <div v-if="orderCategory === 'in-progress'">
+          <div v-if="category === 'in-progress'">
             <div class="box-type desktop-only" v-if="!order.shipmentPackages && !order.hasMissingInfo">
               <ion-skeleton-text animated />
               <ion-skeleton-text animated />
@@ -80,7 +80,7 @@
               </ion-item>
             </div>
 
-            <div v-if="orderCategory === 'in-progress'" class="desktop-only" >
+            <div v-if="category === 'in-progress'" class="desktop-only" >
               <ion-chip outline @click="openShipmentBoxPopover($event, item, order)">
                 <ion-icon :icon="fileTrayOutline" />
                 {{ `Box ${item.selectedBox}` }} 
@@ -96,13 +96,13 @@
                 <ion-icon slot="end" :icon="cubeOutline"/>
               </ion-button>
               <!-- TODO make functional -->
-              <ion-button v-if="orderCategory === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
+              <ion-button v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
                 {{ translate('Report an issue') }}
                 <ion-icon slot="end" :icon="trashBinOutline"/>
               </ion-button>
             </div>
           </div>
-          <div v-if="orderCategory === 'in-progress'" class="mobile-only">
+          <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
               <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
@@ -111,7 +111,7 @@
             </ion-item>
           </div>
 
-          <div v-else-if="orderCategory === 'completed'" class="mobile-only">
+          <div v-else-if="category === 'completed'" class="mobile-only">
             <ion-item>
               <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="clear" >{{ translate("Ship Now") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
@@ -123,15 +123,15 @@
           <div class="actions">
             <!-- positive -->
             <div>  
-              <ion-button v-if="orderCategory === 'in-progress'" :disabled="order.hasMissingInfo" @click="packOrder(order)">
+              <ion-button v-if="category === 'in-progress'" :disabled="order.hasMissingInfo" @click="packOrder(order)">
                 <ion-icon slot="start" :icon="personAddOutline" />
                 {{ translate("Pack order") }}
               </ion-button>
-              <ion-button v-else-if="orderCategory === 'open'" @click="assignPickers">
+              <ion-button v-else-if="category === 'open'" @click="assignPickers">
                 <ion-icon slot="start" :icon="archiveOutline" />
                 {{ translate("Pick order") }}
               </ion-button>
-              <div v-else-if="orderCategory === 'completed'" class="desktop-only">
+              <div v-else-if="category === 'completed'" class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Shipped") }}
@@ -254,9 +254,8 @@ import {
   pricetagOutline,
   trashBinOutline
 } from 'ionicons/icons';
-import { ShopifyImg } from '@hotwax/dxp-components';
+import { translate, ShopifyImg } from '@hotwax/dxp-components';
 import { formatUtcDate, getFeature, showToast } from '@/utils'
-import { translate } from '@hotwax/dxp-components';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import emitter from '@/event-bus';
@@ -276,7 +275,7 @@ import ShippingDetails from '@/views/ShippingDetails.vue';
 
 export default defineComponent({
   name: "OrderDetail",
-  props: ['orderId'],
+  props: ['category', 'orderId', 'shipGroupSeqId'],
   components: {
     IonBackButton,
     IonBadge,
@@ -321,7 +320,6 @@ export default defineComponent({
   },
   data() {
     return {
-      orderCategory: '',
       carrierPartyIds: [] as Array<any>,
       shipmentMethods: [] as Array<any>,
       picklists: [] as any,
@@ -331,12 +329,11 @@ export default defineComponent({
     }
   },
   async ionViewDidEnter() {
-    this.orderCategory = this.$route.params.category as string
-    this.orderCategory === 'open'
-      ? await this.store.dispatch('order/getOpenOrder', { orderId: this.$route.params.orderId, shipGroupSeqId: this.$route.params.shipGroupSeqId })
-      : this.orderCategory === 'in-progress'
-        ? await this.store.dispatch('order/getInProgressOrder', { orderId: this.$route.params.orderId, shipGroupSeqId: this.$route.params.shipGroupSeqId })
-        : await this.store.dispatch('order/getCompletedOrder', { orderId: this.$route.params.orderId, shipGroupSeqId: this.$route.params.shipGroupSeqId })
+    this.category === 'open'
+      ? await this.store.dispatch('order/getOpenOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
+      : this.category === 'in-progress'
+        ? await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
+        : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
   },
   methods: {
     async printPicklist (order: any) {
@@ -374,7 +371,7 @@ export default defineComponent({
             handler: async () => {
               item.selectedBox = selectedBox;
               await this.updateOrder(order, 'box-selection');
-              await this.store.dispatch('order/getInProgressOrder', { orderId: this.$route.params.orderId, isModified: true })
+              await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, isModified: true })
             }
           }
         ],
@@ -450,7 +447,7 @@ export default defineComponent({
                 } else {
                   showToast(translate('Order packed successfully'));
                 }
-                this.router.replace(`/completed/order-detail/${this.$route.params.orderId}/${this.$route.params.shipGroupSeqId}`)
+                this.router.replace(`/completed/order-detail/${this.orderId}/${this.shipGroupSeqId}`)
               } catch (err) {
                 // in case of error, if loader and toast are not dismissed above
                 if (toast) toast.dismiss()
@@ -596,7 +593,7 @@ export default defineComponent({
       // dismissing the popover once the picker modal is closed
       assignPickerModal.onDidDismiss().finally(() => {
         popoverController.dismiss();
-        this.router.replace(`/in-progress/order-detail/${this.$route.params.orderId}/${this.$route.params.shipGroupSeqId}`)
+        this.router.replace(`/in-progress/order-detail/${this.orderId}/${this.shipGroupSeqId}`)
       });
 
       return assignPickerModal.present();
@@ -681,7 +678,7 @@ export default defineComponent({
 
         if(!hasError(resp)) {
           showToast(translate('Box added successfully'))
-          await this.store.dispatch('order/getInProgressOrder', { orderId: this.$route.params.orderId, isModified: true })
+          await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, isModified: true })
         } else {
           throw resp.data
         }
@@ -883,7 +880,7 @@ export default defineComponent({
             role: 'confirm',
             handler: async() => {
               await this.updateOrder(order, 'report');
-              await this.store.dispatch('order/getInProgressOrder', { orderId: this.$route.params.orderId, isModified: true })
+              await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, isModified: true })
             }
           }]
         });
@@ -1045,7 +1042,7 @@ export default defineComponent({
 
                 if(resp.status == 200 && !hasError(resp)) {
                   showToast(translate('Order unpacked successfully'))
-                  this.router.replace(`/in-progress/order-detail/${this.$route.params.orderId}/${this.$route.params.shipGroupSeqId}`)
+                  this.router.replace(`/in-progress/order-detail/${this.orderId}/${this.shipGroupSeqId}`)
                 } else {
                   throw resp.data
                 }
