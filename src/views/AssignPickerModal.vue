@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal"> 
+        <ion-button @click="closeModal()">
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -113,8 +113,8 @@ export default defineComponent({
     isPickerSelected(id) {
       return this.selectedPickers.some((picker) => picker.id == id)
     },
-    closeModal() {
-      modalController.dismiss({ dismissed: true });
+    closeModal(picklistId) {
+      modalController.dismiss({ dismissed: true, value: { picklistId } });
     },
     selectPicker(id) {
       const picker = this.selectedPickers.some((picker) => picker.id == id)
@@ -163,7 +163,7 @@ export default defineComponent({
       try {
         resp = await UtilService.createPicklist(formData);
         if (resp.status === 200 && !hasError(resp)) {
-          this.closeModal();
+          this.closeModal(resp.data.picklistId);
           showToast(translate('Picklist created successfully'))
 
           // generating picklist after creating a new picklist
