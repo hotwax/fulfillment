@@ -151,7 +151,7 @@
               </div>
             </div>
             <!-- negative -->
-            <div class="desktop-only">
+            <div class="desktop-only" v-if="category === 'completed'">
               <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
             </div>
           </div>
