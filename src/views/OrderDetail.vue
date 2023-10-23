@@ -591,9 +591,12 @@ export default defineComponent({
       });
 
       // dismissing the popover once the picker modal is closed
-      assignPickerModal.onDidDismiss().finally(() => {
+      assignPickerModal.onDidDismiss().then((result: any) => {
         popoverController.dismiss();
-        this.router.replace(`/in-progress/order-detail/${this.orderId}/${this.shipGroupSeqId}`)
+        // redirect to in-progress page only when we have picklist created successfully for the order
+        if(result?.data?.value?.picklistId) {
+          this.router.replace(`/in-progress/order-detail/${this.orderId}/${this.shipGroupSeqId}`)
+        }
       });
 
       return assignPickerModal.present();
