@@ -10,7 +10,6 @@ import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
 import { getOrderCategory } from '@/utils/order'
 
-
 const actions: ActionTree<OrderState, RootState> = {
   async fetchInProgressOrdersAdditionalInformation({ commit, state }, payload = { viewIndex: 0 }) {
     // getting all the orders from state
@@ -643,9 +642,10 @@ const actions: ActionTree<OrderState, RootState> = {
         items: reservedShipGroupForOrder.doclist.docs,
         carrierPartyId: reservedShipGroup.carrierPartyId,
         shipmentId: reservedShipGroup.shipmentId,
-        groupCategory: getOrderCategory(order),  // category defines that the order is in which state like open, inProgress or completed
+        category: getOrderCategory(reservedShipGroupForOrder.doclist.docs[0])
       } : {
-        ...shipGroup
+        ...shipGroup,
+        category: getOrderCategory(shipGroup.items[0])
       }
     })
 
