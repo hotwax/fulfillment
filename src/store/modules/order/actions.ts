@@ -10,7 +10,6 @@ import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
 import { getOrderCategory } from '@/utils/order'
 
-
 const actions: ActionTree<OrderState, RootState> = {
   async fetchInProgressOrdersAdditionalInformation({ commit, state }, payload = { viewIndex: 0 }) {
     // getting all the orders from state
@@ -481,6 +480,34 @@ const actions: ActionTree<OrderState, RootState> = {
     return resp;
   },
 
+  async fetchPaymentDetail({ commit, state }) {
+    try {
+      const order = JSON.parse(JSON.stringify(state.current));
+      const resp = await OrderService.fetchOrderPaymentPreferences(order.orderId);
+  
+      if (!hasError(resp)) {
+        const orderPaymentPreferences = resp?.data?.docs;
+  
+        if (orderPaymentPreferences.length > 0) {
+          const paymentMethodTypeIds = orderPaymentPreferences.map((orderPaymentPreference: any) => orderPaymentPreference.paymentMethodTypeId);
+          if (paymentMethodTypeIds.length > 0) {
+            this.dispatch('util/fetchPaymentMethodTypeDesc', paymentMethodTypeIds);
+          }
+  
+          const statusIds = orderPaymentPreferences.map((orderPaymentPreference: any) => orderPaymentPreference.statusId);
+          if (statusIds.length > 0) {
+            this.dispatch('util/fetchStatusDesc', statusIds);
+          }
+  
+          order.orderPaymentPreferences = orderPaymentPreferences;
+          commit(types.ORDER_CURRENT_UPDATED, { order });
+        }
+      }
+    } catch (err) {
+      logger.error("Error in fetching payment detail.", err);
+    }
+  },
+
   async fetchShippingAddress ({ commit, state }) {
     let resp;
     let order = JSON.parse(JSON.stringify(state.current))
@@ -757,6 +784,12 @@ const actions: ActionTree<OrderState, RootState> = {
 
   async fetchShipGroupForOrder({ dispatch, state }) {
     const order = JSON.parse(JSON.stringify(state.current))
+
+    // return if orderId is not found on order
+    if(!order?.orderId) {
+      return;
+    }
+
     const params = {
       groupBy: 'shipGroupSeqId',
       filters: {
@@ -792,7 +825,11 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     shipGroups = shipGroups.map((shipGroup: any) => {
-      const shipItem = shipGroup.doclist.docs[0]
+      const shipItem = shipGroup?.doclist?.docs[0]
+
+      if(!shipItem) {
+        return;
+      }
 
       facilityTypeIds.push(shipItem.facilityTypeId)
 
@@ -968,6 +1005,12 @@ const actions: ActionTree<OrderState, RootState> = {
 
   async fetchAdditionalShipGroupForOrder({ commit, state }, payload) {
     const order = JSON.parse(JSON.stringify(state.current))
+
+    // return if orderId is not found on order
+    if(!order?.orderId) {
+      return;
+    }
+
     const shipGroupSeqIds = payload.shipGroups.map((shipGroup: any) => shipGroup.shipGroupSeqId)
     const orderId = order.orderId
 
@@ -997,7 +1040,7 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     shipGroups = payload.shipGroups.map((shipGroup: any) => {
-      const reservedShipGroupForOrder = shipGroups.find((group: any) => shipGroup.shipGroupSeqId === group.doclist.docs[0].shipGroupSeqId)
+      const reservedShipGroupForOrder = shipGroups.find((group: any) => shipGroup.shipGroupSeqId === group.doclist?.docs[0]?.shipGroupSeqId)
 
       const reservedShipGroup = reservedShipGroupForOrder?.groupValue ? reservedShipGroupForOrder.doclist.docs[0] : ''
 
@@ -1006,9 +1049,10 @@ const actions: ActionTree<OrderState, RootState> = {
         items: reservedShipGroupForOrder.doclist.docs,
         carrierPartyId: reservedShipGroup.carrierPartyId,
         shipmentId: reservedShipGroup.shipmentId,
-        groupCategory: getOrderCategory(order),  // category defines that the order is in which state like open, inProgress or completed
+        category: getOrderCategory(reservedShipGroupForOrder.doclist.docs[0])
       } : {
-        ...shipGroup
+        ...shipGroup,
+        category: getOrderCategory(shipGroup.items[0])
       }
     })
 
@@ -1048,6 +1092,7 @@ const actions: ActionTree<OrderState, RootState> = {
     commit(types.ORDER_CURRENT_UPDATED, order)
     await dispatch('fetchShippingAddress');
     await dispatch('fetchShipGroupForOrder');
+    await dispatch('fetchPaymentDetail');
   },
 }
 

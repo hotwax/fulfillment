@@ -61,28 +61,22 @@ const handleParameterMatching = (orderVal: any, parameterVal: any, operation?: s
 }
 
 const getOrderCategory = (order: any) => {
-  const orderCategoryParametersEntries = Object.entries(orderCategoryParameters)
-  let result = '' as string
-  orderCategoryParametersEntries.forEach((entry: any) => {
+  const orderCategoryParameterEntries = Object.entries(orderCategoryParameters)
+  let result = ''
+  // using find, as once any of the category is matched then return from here;
+  orderCategoryParameterEntries.find((entry: any) => {
     const [category, parameters] = entry
     const paramKeys = Object.keys(parameters)
-    // used some as it will stop execution on a true condition
-    const isNotMatched = paramKeys.some((key: string) => {
-      if (
-        !Object.prototype.hasOwnProperty.call(order, key) ||
-        !handleParameterMatching(order[key], parameters[key].value, parameters[key]['OP'])
-      ) {
-        return true
-      }
-      return false
-    })
-    // break the loop if any param is not matched
-    if (isNotMatched) {
-      return
+    // used every as to check against each filtering property
+    const isMatched = paramKeys.every((key: string) => Object.prototype.hasOwnProperty.call(order, key) || handleParameterMatching(order[key], parameters[key].value, parameters[key]['OP']))
+
+    // return the value when all params matched for an order
+    if (isMatched) {
+      result = category;
+      return result;
     }
-    result = category
   })
-  return result
+  return result;
 }
 
 

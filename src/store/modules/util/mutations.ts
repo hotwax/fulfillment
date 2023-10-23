@@ -17,6 +17,12 @@ const mutations: MutationTree <UtilState> = {
   },
   [types.UTIL_FACILITY_TYPE_UPDATED] (state, payload) {
     state.facilityTypeDesc = payload
+  },
+  [types.UTIL_PAYMENT_METHODS_UPDATED] (state, payload) {
+    state.paymentMethodTypeDesc = payload
+  },
+  [types.UTIL_STATUS_UPDATED] (state, payload) {
+    state.statusDesc = payload
   }
 }
 export default mutations;
