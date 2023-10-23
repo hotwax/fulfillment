@@ -82,7 +82,7 @@
   "Failed to print shipping label and packing slip": "Error al imprimir la etiqueta de envío y el documento de embalaje",
   "Failed to save CSV mapping.": "Error al guardar el mapeo de CSV",
   "Failed to ship order": "Error al enviar el pedido",
-   "Failed to reject in progress orders": "Error al rechazar pedidos en curso",
+  "Failed to reject in progress orders": "Error al rechazar pedidos en curso",
   "Failed to reject outstanding orders": "Error al rechazar pedidos pendientes",
   "Failed to update CSV mapping.": "Error al actualizar el mapeo CSV.",
   "Failed to update eCom inventory status": "Error al actualizar el estado del inventario de comercio electrónico",
