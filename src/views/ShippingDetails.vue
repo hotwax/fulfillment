@@ -11,11 +11,11 @@
           <h3>{{ currentOrder?.shippingAddress?.toName }}</h3>
           <p>{{ currentOrder?.shippingAddress?.address1 }}</p>
           <p v-if="currentOrder?.shippingAddress?.address2">{{ currentOrder.shippingAddress.address2 }}</p>
-          <p>{{ currentOrder?.shippingAddress?.city ? currentOrder.shippingAddress.city + "," : "" }} {{ currentOrder.shippingAddress?.zipCode }}</p>
+          <p>{{ currentOrder?.shippingAddress?.city ? currentOrder.shippingAddress.city + "," : "" }} {{ currentOrder.shippingAddress?.postalCode }}</p>
           <p>{{ currentOrder?.shippingAddress?.stateName ? currentOrder.shippingAddress.stateName + "," : "" }} {{ currentOrder.shippingAddress?.countryName }}</p>
         </ion-label>
       </ion-item>
-      <ion-item color="light" lines="none">
+      <ion-item color="light" lines="none" v-if="currentOrder?.shippingInstructions">
         <ion-label class="ion-text-wrap">
           <p class="overline">{{ translate("Handling Instructions") }}</p>
           <p>{{ currentOrder?.shippingInstructions ? currentOrder.shippingInstructions : 'Sample Handling instructions' }}</p>
