@@ -526,7 +526,7 @@ const actions: ActionTree<OrderState, RootState> = {
         }
       }
     } catch (err: any) {
-      logger.error("Error in setting current order", err);
+      logger.error("Error in fetching shipping address information for current order", err);
     }
     commit(types.ORDER_CURRENT_UPDATED,  order)
   },
