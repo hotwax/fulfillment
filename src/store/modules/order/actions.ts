@@ -262,7 +262,7 @@ const actions: ActionTree<OrderState, RootState> = {
         orders = resp.data.grouped.picklistBinId.groups
 
         // TODO get only product visible
-        this.dispatch('product/getProductInformation', orders)
+        this.dispatch('product/getProductInformation', { orders })
 
         orders = orders.map((order: any) => {
           const orderItem = order.doclist.docs[0];
@@ -357,7 +357,7 @@ const actions: ActionTree<OrderState, RootState> = {
       if (!hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
         total = resp.data.grouped.orderId.ngroups
         orders = resp.data.grouped.orderId.groups
-        this.dispatch('product/getProductInformation', orders)
+        this.dispatch('product/getProductInformation', { orders })
 
         orders = orders.map((order: any) => {
           const orderItem = order.doclist.docs[0];
@@ -431,7 +431,7 @@ const actions: ActionTree<OrderState, RootState> = {
       if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
         total = resp.data.grouped.picklistBinId.ngroups
         orders = resp.data.grouped.picklistBinId.groups
-        this.dispatch('product/getProductInformation', orders)
+        this.dispatch('product/getProductInformation', { orders })
       } else {
         throw resp.data
       }
@@ -552,7 +552,7 @@ const actions: ActionTree<OrderState, RootState> = {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
   },
 
-  async getOpenOrder({ commit, state }, payload) {
+  async getOpenOrder({ dispatch, state }, payload) {
     const current = state.current as any
     if (current.orderId === payload.orderId && current.category === 'open') {
       return
@@ -562,7 +562,7 @@ const actions: ActionTree<OrderState, RootState> = {
     if (orders.length) {
       const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'open')
       if (order) {
-        commit(types.ORDER_CURRENT_UPDATED, order)
+        dispatch('updateCurrent', order)
         return
       }
     }
@@ -610,7 +610,7 @@ const actions: ActionTree<OrderState, RootState> = {
     } catch (err) {
       logger.error('Something went wrong, could not fetch order details.', err)
     }
-    commit(types.ORDER_CURRENT_UPDATED, order)
+    dispatch('updateCurrent', order)
     emitter.emit('dismissLoader');
     return resp;
   },
@@ -627,7 +627,7 @@ const actions: ActionTree<OrderState, RootState> = {
       if (orders.length) {
         const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'in-progress')
         if (order) {
-          commit(types.ORDER_CURRENT_UPDATED, order)
+          dispatch('updateCurrent', order)
           return
         }
       }
@@ -677,13 +677,13 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('Something went wrong', err)
     }
 
-    commit(types.ORDER_CURRENT_UPDATED, order)
+    dispatch('updateCurrent', order)
     dispatch('fetchInProgressOrderAdditionalInformation');
 
     emitter.emit('dismissLoader');
   },
 
-  async getCompletedOrder({ commit, dispatch, state }, payload) {
+  async getCompletedOrder({ dispatch, state }, payload) {
     const current = state.current as any
     if (current.orderId === payload.orderId && current.category === 'completed') {
       return
@@ -693,7 +693,7 @@ const actions: ActionTree<OrderState, RootState> = {
     if (orders.length) {
       const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'completed')
       if (order) {
-        commit(types.ORDER_CURRENT_UPDATED, order)
+        dispatch('updateCurrent', order)
         return
       }
     }
@@ -746,7 +746,7 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('No completed orders found', err)
     }
 
-    commit(types.ORDER_CURRENT_UPDATED, order)
+    dispatch('updateCurrent', order)
     await dispatch('fetchCompletedOrderAdditionalInformation');
 
     emitter.emit('dismissLoader');
@@ -810,7 +810,7 @@ const actions: ActionTree<OrderState, RootState> = {
     await dispatch('fetchAdditionalShipGroupForOrder', { shipGroups });
   },
 
-  async fetchCompletedOrderAdditionalInformation({ commit, state }) {
+  async fetchCompletedOrderAdditionalInformation({ dispatch, state }) {
     let current = JSON.parse(JSON.stringify(state.current))
 
     try {
@@ -833,7 +833,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
       const orderShipments = shipments.filter((shipment: any) => current.orderId === shipment.primaryOrderId && shipment.picklistBinId === current.picklistBinId);
       if (!orderShipments || !orderShipments.length) {
-        commit(types.ORDER_CURRENT_UPDATED, current)
+        dispatch('updateCurrent', current)
         return
       }
 
@@ -855,10 +855,10 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('Something went wrong', err)
     }
 
-    commit(types.ORDER_CURRENT_UPDATED, current)
+    dispatch('updateCurrent', current)
   },
 
-  async fetchInProgressOrderAdditionalInformation({ commit, state }) {
+  async fetchInProgressOrderAdditionalInformation({ dispatch, state }) {
     let current = JSON.parse(JSON.stringify(state.current))
 
     const picklistBinIds: Array<string> = [current.picklistBinId];
@@ -960,7 +960,7 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     // updating the state with the updated orders information
-    commit(types.ORDER_CURRENT_UPDATED, current)
+    dispatch('updateCurrent', current)
   },
 
   async fetchAdditionalShipGroupForOrder({ commit, state }, payload) {
