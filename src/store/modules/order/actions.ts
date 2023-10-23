@@ -500,7 +500,7 @@ const actions: ActionTree<OrderState, RootState> = {
           }
   
           order.orderPaymentPreferences = orderPaymentPreferences;
-          commit(types.ORDER_CURRENT_UPDATED, { order });
+          commit(types.ORDER_CURRENT_UPDATED, order);
         }
       }
     } catch (err) {
@@ -706,8 +706,7 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('Something went wrong', err)
     }
 
-    dispatch('updateCurrent', order)
-    dispatch('fetchInProgressOrderAdditionalInformation');
+    await dispatch('fetchInProgressOrderAdditionalInformation', order);
 
     emitter.emit('dismissLoader');
   },
@@ -776,9 +775,7 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('No completed orders found', err)
     }
 
-    dispatch('updateCurrent', order)
-    await dispatch('fetchCompletedOrderAdditionalInformation');
-
+    await dispatch('fetchCompletedOrderAdditionalInformation', order);
     emitter.emit('dismissLoader');
   },
 
@@ -850,8 +847,8 @@ const actions: ActionTree<OrderState, RootState> = {
     await dispatch('fetchAdditionalShipGroupForOrder', { shipGroups });
   },
 
-  async fetchCompletedOrderAdditionalInformation({ dispatch, state }) {
-    let current = JSON.parse(JSON.stringify(state.current))
+  async fetchCompletedOrderAdditionalInformation({ dispatch }, order) {
+    let current = JSON.parse(JSON.stringify(order))
 
     try {
       // fetchShipments accepts Array parameters for picklistBinId and orderId
@@ -898,8 +895,8 @@ const actions: ActionTree<OrderState, RootState> = {
     dispatch('updateCurrent', current)
   },
 
-  async fetchInProgressOrderAdditionalInformation({ dispatch, state }) {
-    let current = JSON.parse(JSON.stringify(state.current))
+  async fetchInProgressOrderAdditionalInformation({ dispatch }, order) {
+    let current = JSON.parse(JSON.stringify(order))
 
     const picklistBinIds: Array<string> = [current.picklistBinId];
     const orderIds: Array<string> = [current.orderId];
@@ -1000,7 +997,7 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     // updating the state with the updated orders information
-    dispatch('updateCurrent', current)
+    await dispatch('updateCurrent', current)
   },
 
   async fetchAdditionalShipGroupForOrder({ commit, state }, payload) {
