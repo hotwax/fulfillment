@@ -329,6 +329,7 @@ export default defineComponent({
     }
   },
   async ionViewDidEnter() {
+    this.store.dispatch('util/fetchRejectReasons')
     this.category === 'open'
       ? await this.store.dispatch('order/getOpenOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
       : this.category === 'in-progress'
@@ -371,7 +372,7 @@ export default defineComponent({
             handler: async () => {
               item.selectedBox = selectedBox;
               await this.updateOrder(order, 'box-selection');
-              await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, isModified: true })
+              await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
             }
           }
         ],
@@ -681,7 +682,7 @@ export default defineComponent({
 
         if(!hasError(resp)) {
           showToast(translate('Box added successfully'))
-          await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, isModified: true })
+          await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
         } else {
           throw resp.data
         }
@@ -883,7 +884,7 @@ export default defineComponent({
             role: 'confirm',
             handler: async() => {
               await this.updateOrder(order, 'report');
-              await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, isModified: true })
+              await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
             }
           }]
         });
