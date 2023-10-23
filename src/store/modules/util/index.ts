@@ -12,7 +12,9 @@ const utilModule: Module<UtilState, RootState> = {
     partyNames: {},
     shipmentMethodTypeDesc: {},
     shipmentBoxTypeDesc: {},
-    facilityTypeDesc: {}
+    facilityTypeDesc: {},
+    paymentMethodTypeDesc: {},
+    statusDesc: {}
   },
   getters,
   actions,

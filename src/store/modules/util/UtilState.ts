@@ -4,4 +4,6 @@ export default interface UtilState {
   shipmentMethodTypeDesc: any;
   shipmentBoxTypeDesc: any;
   facilityTypeDesc: any;
+  paymentMethodTypeDesc: any;
+  statusDesc: any;
 }

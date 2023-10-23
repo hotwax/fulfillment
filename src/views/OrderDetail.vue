@@ -21,10 +21,10 @@
             <ion-icon :icon="documentTextOutline" />
             <ion-label>{{ translate('Linked picklist') }}: {{ order.picklistId }}</ion-label>
           </ion-chip>
-          <!-- <ion-chip outline> 
+          <ion-chip outline v-if="order?.orderPaymentPreferences?.length > 0"> 
             <ion-icon :icon="cashOutline" />
-            <ion-label>{{ 'Payment method: status' }}</ion-label>
-          </ion-chip> -->
+            <ion-label>{{ getPaymentMethodDesc(order?.orderPaymentPreferences[0]?.paymentMethodTypeId)}} : {{ getStatusDesc(order?.orderPaymentPreferences[0]?.statusId) }}</ion-label>
+          </ion-chip>
         </div>
         <div class="order-metadata">
           <ion-badge>{{ translate(orderCategory) }}</ion-badge>
@@ -310,7 +310,9 @@ export default defineComponent({
       rejectReasons: 'util/getRejectReasons',
       userPreference: 'user/getUserPreference',
       getPartyName: 'util/getPartyName',
-      getfacilityTypeDesc: 'util/getFacilityTypeDesc'
+      getfacilityTypeDesc: 'util/getFacilityTypeDesc',
+      getPaymentMethodDesc: 'util/getPaymentMethodDesc',
+      getStatusDesc: 'util/getStatusDesc'
     })
   },
   data() {
