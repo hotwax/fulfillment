@@ -9,10 +9,10 @@
       <ion-item lines="none">
         <ion-label>
           <h3>{{ currentOrder?.shippingAddress?.toName }}</h3>
-          <p>{{ currentOrder?.shippingAddress?.address1 }}</p>
-          <p v-if="currentOrder?.shippingAddress?.address2">{{ currentOrder.shippingAddress.address2 }}</p>
-          <p>{{ currentOrder?.shippingAddress?.city ? currentOrder.shippingAddress.city + "," : "" }} {{ currentOrder.shippingAddress?.postalCode }}</p>
-          <p>{{ currentOrder?.shippingAddress?.stateName ? currentOrder.shippingAddress.stateName + "," : "" }} {{ currentOrder.shippingAddress?.countryName }}</p>
+          <p class="ion-text-wrap">{{ currentOrder?.shippingAddress?.address1 }}</p>
+          <p class="ion-text-wrap" v-if="currentOrder?.shippingAddress?.address2">{{ currentOrder.shippingAddress.address2 }}</p>
+          <p class="ion-text-wrap">{{ currentOrder?.shippingAddress?.city ? currentOrder.shippingAddress.city + "," : "" }} {{ currentOrder.shippingAddress?.postalCode }}</p>
+          <p class="ion-text-wrap">{{ currentOrder?.shippingAddress?.stateName ? currentOrder.shippingAddress.stateName + "," : "" }} {{ currentOrder.shippingAddress?.countryName }}</p>
         </ion-label>
       </ion-item>
       <ion-item color="light" lines="none" v-if="currentOrder?.shippingInstructions">
