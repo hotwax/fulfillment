@@ -99,7 +99,7 @@
   "Go to Launchpad": "Ir a Launchpad",
   "is identified as unfulfillable. other containing this product will be unassigned from this store and sent to be rebrokered.": "{ productName } Se identifica como no cumplible  { space } { orders } otros { orderText } que contienen este producto se desasignarán de esta tienda y se enviarán para ser revendidos.",
   "is identified as unfulfillable. This order item will be unassigned from this store and sent to be rebrokered.": "{ productName } se identifica como no cumplible. { espacio } Este elemento del pedido se desasignará de esta tienda y se enviará para ser revendido.",
-"is identified as. This order item will be unassigned from the store and sent to be rebrokered.": "{ productName } se identifica como { rejectReason }. Este elemento del pedido se desasignará de la tienda y se enviará para ser revendido.",
+  "is identified as. This order item will be unassigned from the store and sent to be rebrokered.": "{ productName } se identifica como { rejectReason }. Este elemento del pedido se desasignará de la tienda y se enviará para ser revendido.",
   "items": "artículos",
   "Import": "Importar",
   "Import Orders": "Importar Ordenes",
