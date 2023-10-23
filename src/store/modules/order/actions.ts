@@ -475,6 +475,33 @@ const actions: ActionTree<OrderState, RootState> = {
     emitter.emit('dismissLoader');
     return resp;
   },
+  async fetchPaymentDetail({ commit, state }) {
+    try {
+      const order = JSON.parse(JSON.stringify(state.current));
+      const resp = await OrderService.fetchOrderPaymentPreferences(order.orderId);
+  
+      if (!hasError(resp)) {
+        const orderPaymentPreferences = resp?.data?.docs;
+  
+        if (orderPaymentPreferences.length > 0) {
+          const paymentMethodTypeIds = orderPaymentPreferences.map((orderPaymentPreference: any) => orderPaymentPreference.paymentMethodTypeId);
+          if (paymentMethodTypeIds.length > 0) {
+            this.dispatch('util/fetchPaymentMethodTypeDesc', paymentMethodTypeIds);
+          }
+  
+          const statusIds = orderPaymentPreferences.map((orderPaymentPreference: any) => orderPaymentPreference.statusId);
+          if (statusIds.length > 0) {
+            this.dispatch('util/fetchStatusDesc', statusIds);
+          }
+  
+          order.orderPaymentPreferences = orderPaymentPreferences;
+          commit(types.ORDER_CURRENT_UPDATED, { order });
+        }
+      }
+    } catch (err) {
+      logger.error("Error in fetching payment detail.", err);
+    }
+  },
   async fetchShippingAddress ({ commit, state }) {
     let resp;
     let order = JSON.parse(JSON.stringify(state.current))
@@ -685,6 +712,7 @@ const actions: ActionTree<OrderState, RootState> = {
     commit(types.ORDER_CURRENT_UPDATED, { order: payload })
     await dispatch('fetchShippingAddress');
     await dispatch('fetchShipGroupForOrder');
+    await dispatch('fetchPaymentDetail');
   },
 }
 

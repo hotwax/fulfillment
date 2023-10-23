@@ -320,6 +320,22 @@ const fetchFacilityTypeInformation = async (query: any): Promise <any>  => {
   });
 }
 
+const fetchPaymentMethodTypeDesc = async (query: any): Promise <any>  => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
+const fetchStatusDesc = async (query: any): Promise <any>  => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
 export const UtilService = {
   createPicklist,
   fetchCarrierPartyIds,
@@ -331,6 +347,8 @@ export const UtilService = {
   fetchShipmentBoxTypeDesc,
   fetchShipmentMethods,
   fetchShipmentMethodTypeDesc,
+  fetchPaymentMethodTypeDesc,
+  fetchStatusDesc,
   fetchShipmentRouteSegmentInformation,
   findCarrierPartyIdsForShipment,
   findCarrierShipmentBoxType,

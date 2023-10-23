@@ -425,6 +425,23 @@ const fetchOrderItemShipGroup = async (order: any): Promise<any> => {
   return shipGroup;
 }
 
+const fetchOrderPaymentPreferences = async (orderId: any): Promise<any> => {
+  const params = {
+    "entityName": "OrderPaymentPreference",
+    "inputFields": {
+      "orderId": orderId,
+    },
+    "fieldList": ["orderId", "paymentMethodTypeId", "statusId"],
+    "distinct": "Y"
+  }
+
+  return await api({
+    url: "performFind",
+    method: "get",
+    params
+  });
+}
+
 const fetchShippingAddress = async (contactMechId: string): Promise<any> => {
   let shippingAddress = {};
 
@@ -477,5 +494,6 @@ export const OrderService = {
   updateOrder,
   fetchShipmentLabelError,
   fetchOrderItemShipGroup,
-  fetchShippingAddress
+  fetchShippingAddress,
+  fetchOrderPaymentPreferences
 }
