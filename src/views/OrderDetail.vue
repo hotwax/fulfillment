@@ -329,6 +329,7 @@ export default defineComponent({
     }
   },
   async ionViewDidEnter() {
+    this.store.dispatch('util/fetchRejectReasons')
     this.category === 'open'
       ? await this.store.dispatch('order/getOpenOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
       : this.category === 'in-progress'
