@@ -139,11 +139,11 @@ import {
   popoverController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { caretDownOutline, cubeOutline, locateOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
+import { caretDownOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { ShopifyImg } from '@hotwax/dxp-components';
-import { formatUtcDate, getFeature, getIdentificationId, showToast } from '@/utils'
+import { formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
@@ -366,9 +366,7 @@ export default defineComponent({
       cubeOutline,
       formatUtcDate,
       getFeature,
-      getIdentificationId,
       hasPermission,
-      locateOutline,
       optionsOutline,
       pricetagOutline,
       printOutline,
