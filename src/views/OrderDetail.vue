@@ -41,7 +41,7 @@
             </div>
             <div class="order-tags">
               <ion-chip outline>
-                <ion-icon :icon="pricetagOutline" />
+                <ion-icon :icon="ribbonOutline" />
                 <ion-label>{{ order.shipGroupSeqId }}</ion-label>
               </ion-chip>
             </div>
@@ -259,7 +259,8 @@ import {
   locateOutline,
   personAddOutline,
   pricetagOutline,
-  trashBinOutline
+  trashBinOutline,
+  ribbonOutline
 } from 'ionicons/icons';
 import { translate, ShopifyImg } from '@hotwax/dxp-components';
 import { formatUtcDate, getFeature, showToast } from '@/utils'
@@ -1092,6 +1093,7 @@ export default defineComponent({
       store,
       trashBinOutline,
       translate,
+      ribbonOutline
     };
   }
 });

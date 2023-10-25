@@ -84,10 +84,12 @@ export default defineComponent({
     })
   },
   async mounted() {
-    // Fetching shipment label errors
-    const shipmentIds = this.currentOrder.shipments?.map((shipment: any) => shipment.shipmentId);
-    const labelErrors = await OrderService.fetchShipmentLabelError(shipmentIds);
-    this.shipmentLabelErrorMessages = labelErrors.join(', ');
+    // Fetching shipment label errors 
+    const shipmentIds = this.currentOrder?.shipmentIds?.length > 0 ? this.currentOrder?.shipmentIds : this.currentOrder.shipments?.map((shipment: any) => shipment.shipmentId);
+    if (shipmentIds && shipmentIds.length > 0) {
+      const labelErrors = await OrderService.fetchShipmentLabelError(shipmentIds);
+      this.shipmentLabelErrorMessages = labelErrors.join(', ');
+    }
   },
   methods: {
     async printShippingLabel(order: any) {
