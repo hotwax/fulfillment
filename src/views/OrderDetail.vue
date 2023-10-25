@@ -39,6 +39,12 @@
                 <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
               </ion-label>
             </div>
+            <div class="order-tags">
+              <ion-chip outline>
+                <ion-icon :icon="pricetagOutline" />
+                <ion-label>{{ order.shipGroupSeqId }}</ion-label>
+              </ion-chip>
+            </div>
 
             <div class="order-metadata">
               <ion-label>
@@ -166,6 +172,7 @@
               <div>
                 <ion-card-subtitle class="overline">{{ getfacilityTypeDesc(shipGroup.facilityTypeId) }}</ion-card-subtitle>
                 <ion-card-title>{{ shipGroup.facilityName }}</ion-card-title>
+                {{ shipGroup.shipGroupSeqId }}
               </div>
               <ion-badge :color="shipGroup.category ? 'primary' : 'medium'">{{ shipGroup.category ? shipGroup.category : translate('Pending allocation') }}</ion-badge>
             </ion-card-header>
