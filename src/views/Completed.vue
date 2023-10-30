@@ -41,7 +41,7 @@
           </ion-item>
         </div>
         <div class="results">
-          <ion-button :disabled="!hasPermission(Actions.APP_FORCE_SHIP_ORDER)" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
+          <ion-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
           <ion-card class="order" v-for="(order, index) in getCompletedOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
@@ -125,7 +125,7 @@
         </div>
       </div>
       <ion-fab v-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo() || !hasPermission(Actions.APP_FORCE_SHIP_ORDER)" @click="bulkShipOrders()">
+        <ion-fab-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click="bulkShipOrders()">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -626,11 +626,12 @@ export default defineComponent({
       this.store.dispatch('stock/fetchStock', { productId })
     },
     isTrackingRequiredForAnyShipmentPackage(order: any) {
-      if (!order.shipmentPackages) {
-        return false
-      }
-
-      return order.shipmentPackages.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
+      return order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
+    },
+    hasAnyShipmentTrackingInfoMissing() {
+      return this.completedOrders.list.some((order: any) => {
+        return (order.shipmentPackages && order.shipmentPackages.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')) && order.missingLabelImage;
+      })
     }
   },
   setup() {
