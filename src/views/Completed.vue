@@ -41,8 +41,7 @@
           </ion-item>
         </div>
         <div class="results">
-          <ion-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo()" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
-
+          <ion-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
           <ion-card class="order" v-for="(order, index) in getCompletedOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
@@ -95,7 +94,7 @@
             <!-- TODO: implement functionality to mobile view -->
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="clear" >{{ translate("Ship Now") }}</ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && order.missingLabelImage && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -106,7 +105,7 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
-                <ion-button  :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click.stop="shipOrder(order)" v-else>{{ translate("Ship Now") }}</ion-button>
+                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && order.missingLabelImage && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate("Regenerate Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
@@ -127,9 +126,8 @@
           </ion-infinite-scroll>
         </div>
       </div>
-      <!-- TODO: make mobile view functional -->
       <ion-fab v-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button  @click="bulkShipOrders()">
+        <ion-fab-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click="bulkShipOrders()">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -188,7 +186,7 @@ import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 
 export default defineComponent({
-  name: 'Home',
+  name: 'Completed',
   components: {
     ShopifyImg,
     IonButton,
@@ -334,6 +332,21 @@ export default defineComponent({
             text: translate("Ship"),
             handler: async () => {
               let orderList = JSON.parse(JSON.stringify(this.completedOrders.list))
+              // orders with tracking required and missing label must be excluded
+              const trackingRequiredOrders = orderList.filter((order: any) => this.isTrackingRequiredForAnyShipmentPackage(order))
+              let trackingRequiredAndMissingLabelOrders: any
+              if (trackingRequiredOrders.length) {
+                // filtering and excluding orders having missing label image with tracking required
+                trackingRequiredAndMissingLabelOrders = trackingRequiredOrders.filter((order: any) => order.missingLabelImage).map((order: any) => order.orderId)
+                if (trackingRequiredAndMissingLabelOrders.length) {
+                  orderList = orderList.filter((order: any) => !trackingRequiredAndMissingLabelOrders.includes(order.orderId))
+                }
+              }
+
+              if (!orderList.length) {
+                showToast(translate("No orders are currently able to be shipped due to missing tracking codes."))
+                return;
+              }
 
               let shipmentIds = orderList.reduce((shipmentIds: any, order: any) => {
                 if (order.shipments) {
@@ -362,8 +375,10 @@ export default defineComponent({
               try {
                 const resp = await OrderService.bulkShipOrders(payload)
 
-                if(resp.status == 200 && !hasError(resp)) {
-                  showToast(translate('Orders shipped successfully'))
+                if (resp.status == 200 && !hasError(resp)) {
+                  !trackingRequiredAndMissingLabelOrders.length
+                    ? showToast(translate('Orders shipped successfully'))
+                    : showToast(translate('out of cannot be shipped due to missing tracking codes.', { remainingOrders: trackingRequiredAndMissingLabelOrders.length, totalOrders: packedOrdersCount }))
                   // TODO: handle the case of data not updated correctly
                   await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
@@ -612,6 +627,12 @@ export default defineComponent({
     },
     fetchProductStock(productId: string) {
       this.store.dispatch('stock/fetchStock', { productId })
+    },
+    isTrackingRequiredForAnyShipmentPackage(order: any) {
+      return order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
+    },
+    hasAnyShipmentTrackingInfoMissing() {
+      return this.completedOrders.list.some((order: any) => (order.shipmentPackages && this.isTrackingRequiredForAnyShipmentPackage(order)) && order.missingLabelImage)
     },
     async orderActionsPopover(order: any, ev: Event) {
       const popover = await popoverController.create({
