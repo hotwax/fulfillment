@@ -183,7 +183,7 @@ import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
-  name: 'Home',
+  name: 'Completed',
   components: {
     ShopifyImg,
     IonButton,
