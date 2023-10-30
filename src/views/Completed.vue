@@ -632,9 +632,7 @@ export default defineComponent({
       return order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
     },
     hasAnyShipmentTrackingInfoMissing() {
-      return this.completedOrders.list.some((order: any) => {
-        return (order.shipmentPackages && order.shipmentPackages.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')) && order.missingLabelImage;
-      })
+      return this.completedOrders.list.some((order: any) => (order.shipmentPackages && this.isTrackingRequiredForAnyShipmentPackage(order)) && order.missingLabelImage)
     },
     async orderActionsPopover(order: any, ev: Event) {
       const popover = await popoverController.create({
