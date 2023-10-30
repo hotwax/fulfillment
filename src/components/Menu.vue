@@ -77,9 +77,10 @@ export default defineComponent({
     const appPages = [
       {
         title: "Open",
-        url: "/open-orders",
+        url: "/open",
         iosIcon: mailUnreadOutline,
         mdIcon: mailUnreadOutline,
+        childRoutes: ["/open/"],
         meta: {
           permissionId: "APP_OPEN_ORDERS_VIEW"
         }
@@ -89,6 +90,7 @@ export default defineComponent({
         url: "/in-progress",
         iosIcon: mailOpenOutline,
         mdIcon: mailOpenOutline,
+        childRoutes: ["/in-progress/"],
         meta: {
           permissionId: "APP_IN_PROGRESS_ORDERS_VIEW"
         }
@@ -98,6 +100,7 @@ export default defineComponent({
         url: "/completed",
         iosIcon: checkmarkDoneOutline,
         mdIcon: checkmarkDoneOutline,
+        childRoutes: ["/completed/"],
         meta: {
           permissionId: "APP_COMPLETED_ORDERS_VIEW"
         }
@@ -122,7 +125,7 @@ export default defineComponent({
 
     const selectedIndex = computed(() => {
       const path = router.currentRoute.value.path
-      return appPages.findIndex((screen) => screen.url === path || screen.childRoutes?.includes(path))
+      return appPages.findIndex((screen) => screen.url === path || screen.childRoutes?.includes(path) || screen.childRoutes?.some((route) => path.includes(route)))
     })
 
     return {

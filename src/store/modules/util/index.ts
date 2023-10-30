@@ -11,7 +11,10 @@ const utilModule: Module<UtilState, RootState> = {
     rejectReasons: [],
     partyNames: {},
     shipmentMethodTypeDesc: {},
-    shipmentBoxTypeDesc: {}
+    shipmentBoxTypeDesc: {},
+    facilityTypeDesc: {},
+    paymentMethodTypeDesc: {},
+    statusDesc: {}
   },
   getters,
   actions,

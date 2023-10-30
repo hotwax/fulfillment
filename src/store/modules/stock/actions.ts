@@ -9,18 +9,19 @@ import { showToast } from '@/utils'
 import { translate } from '@hotwax/dxp-components'
 
 const actions: ActionTree<StockState, RootState> = {
-  async fetchStock({ commit }, { productId }) {
+  async fetchStock({ commit }, { productId, facilityId = '' }) {
+    const id = facilityId ? facilityId : this.state.user.currentFacility.facilityId
 
     try {
       const payload = {
         productId,
-        facilityId: this.state.user.currentFacility.facilityId
+        facilityId: id
       }
 
       const resp: any = await StockService.getInventoryAvailableByFacility(payload);
 
       if (!hasError(resp)) {
-        commit(types.STOCK_ADD_PRODUCT, { productId: payload.productId, stock: resp.data })
+        commit(types.STOCK_ADD_PRODUCT, { productId: payload.productId, facilityId: id, stock: resp.data })
       } else {
         throw resp.data;
       }
