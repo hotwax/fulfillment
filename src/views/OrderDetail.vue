@@ -119,7 +119,7 @@
 
           <div v-else-if="category === 'completed'" class="mobile-only">
             <ion-item>
-              <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="clear" >{{ translate("Ship Now") }}</ion-button>
+              <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && order.missingLabelImage && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -142,7 +142,7 @@
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Shipped") }}
                 </ion-button>
-                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click.stop="shipOrder(order)">
+                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && order.missingLabelImage && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Ship order") }}
                 </ion-button>
@@ -1067,6 +1067,9 @@ export default defineComponent({
         });
       return unpackOrderAlert.present();
     },
+    isTrackingRequiredForAnyShipmentPackage(order: any) {
+      return order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
+    }
   },
   setup() {
     const store = useStore();
