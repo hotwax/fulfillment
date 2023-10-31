@@ -931,6 +931,13 @@ export default defineComponent({
 
         if (!hasError(resp)) {
           showToast(translate('Order shipped successfully'))
+
+          // updating order locally after ship action is success, as solr takes some time to update
+          order.shipments.map((shipment: any) => {
+            if(shipment.shipmentId === order.shipmentId) shipment.statusId = 'SHIPMENT_SHIPPED'
+          })
+          this.store.dispatch('order/updateCurrent', order)
+
         } else {
           throw resp.data
         }
@@ -938,7 +945,6 @@ export default defineComponent({
         logger.error('Failed to ship order', err)
         showToast(translate('Failed to ship order'))
       }
-
     },
     async fetchShipmentMethods() {
       const payload = prepareOrderQuery({
