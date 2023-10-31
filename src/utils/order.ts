@@ -68,7 +68,7 @@ const getOrderCategory = (order: any) => {
     const [category, parameters] = entry
     const paramKeys = Object.keys(parameters)
     // used every as to check against each filtering property
-    const isMatched = paramKeys.every((key: string) => Object.prototype.hasOwnProperty.call(order, key) || handleParameterMatching(order[key], parameters[key].value, parameters[key]['OP']))
+    const isMatched = paramKeys.every((key: string) => Object.prototype.hasOwnProperty.call(order, key) && handleParameterMatching(order[key], parameters[key].value, parameters[key]['OP']))
 
     // return the value when all params matched for an order
     if (isMatched) {
