@@ -13,7 +13,7 @@
             <h3>{{ order.orderName }}</h3>
           </div>
           <div class="order-tags">
-            <ion-chip outline>
+            <ion-chip outline @click="copyToClipboard(order.orderId, 'Copied to clipboard')">
               <ion-icon :icon="pricetagOutline" />
               <ion-label>{{ order.orderId }}</ion-label>
             </ion-chip>
@@ -119,7 +119,7 @@
 
           <div v-else-if="category === 'completed'" class="mobile-only">
             <ion-item>
-              <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="clear" >{{ translate("Ship Now") }}</ion-button>
+              <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && order.missingLabelImage && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -142,7 +142,7 @@
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Shipped") }}
                 </ion-button>
-                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click.stop="shipOrder(order)">
+                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && order.missingLabelImage && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Ship order") }}
                 </ion-button>
@@ -263,7 +263,7 @@ import {
   ribbonOutline
 } from 'ionicons/icons';
 import { translate, ShopifyImg } from '@hotwax/dxp-components';
-import { formatUtcDate, getFeature, showToast } from '@/utils'
+import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import emitter from '@/event-bus';
@@ -379,8 +379,9 @@ export default defineComponent({
             text: translate("Confirm"),
             handler: async () => {
               item.selectedBox = selectedBox;
-              await this.updateOrder(order, 'box-selection');
-              await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
+              await this.updateOrder(order, 'box-selection').then(async () => {
+                await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
+              }).catch(err => err);
             }
           }
         ],
@@ -779,7 +780,7 @@ export default defineComponent({
       this.itemsIssueSegmentSelected = []
       await this.store.dispatch('order/findInProgressOrders')
     },
-    async updateOrder(order: any, updateParameter: string) { 
+    async updateOrder(order: any, updateParameter: string) {
       const form = new FormData()
 
       form.append('facilityId', this.currentFacility.facilityId)
@@ -840,12 +841,14 @@ export default defineComponent({
 
           await this.store.dispatch('order/updateInProgressOrder', order)
           showToast(translate('Order updated successfully'))
+          return Promise.resolve(order);
         } else {
           throw resp.data;
         }
       } catch (err) {
         showToast(translate('Failed to update order'))
         logger.error('Failed to update order', err)
+        return Promise.reject(err);
       }
     },
     async reportIssue(order: any, itemsToReject: any) {
@@ -891,8 +894,15 @@ export default defineComponent({
             text: translate("Report"),
             role: 'confirm',
             handler: async() => {
-              await this.updateOrder(order, 'report');
-              await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
+              await this.updateOrder(order, 'report').then(async () => {
+                // redirect user to inProgress list page only when the order has a single item, and the user initiated report action on the same
+                // update the current order only when order contains multiple items in it.
+                if(order.items.length === 1) {
+                  this.router.push('/in-progress')
+                } else {
+                  await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
+                }
+              }).catch(err => err);
             }
           }]
         });
@@ -931,6 +941,13 @@ export default defineComponent({
 
         if (!hasError(resp)) {
           showToast(translate('Order shipped successfully'))
+
+          // updating order locally after ship action is success, as solr takes some time to update
+          order.shipments.map((shipment: any) => {
+            if(shipment.shipmentId === order.shipmentId) shipment.statusId = 'SHIPMENT_SHIPPED'
+          })
+          this.store.dispatch('order/updateCurrent', order)
+
         } else {
           throw resp.data
         }
@@ -938,7 +955,6 @@ export default defineComponent({
         logger.error('Failed to ship order', err)
         showToast(translate('Failed to ship order'))
       }
-
     },
     async fetchShipmentMethods() {
       const payload = prepareOrderQuery({
@@ -1067,6 +1083,9 @@ export default defineComponent({
         });
       return unpackOrderAlert.present();
     },
+    isTrackingRequiredForAnyShipmentPackage(order: any) {
+      return order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
+    }
   },
   setup() {
     const store = useStore();
@@ -1079,6 +1098,7 @@ export default defineComponent({
       bagCheckOutline,
       cashOutline,
       caretDownOutline,
+      copyToClipboard,
       cubeOutline,
       documentTextOutline,
       ellipsisVerticalOutline,
