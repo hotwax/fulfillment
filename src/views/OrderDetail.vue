@@ -13,7 +13,7 @@
             <h3>{{ order.orderName }}</h3>
           </div>
           <div class="order-tags">
-            <ion-chip outline>
+            <ion-chip outline @click="copyToClipboard(order.orderId, 'Copied to clipboard')">
               <ion-icon :icon="pricetagOutline" />
               <ion-label>{{ order.orderId }}</ion-label>
             </ion-chip>
@@ -263,7 +263,7 @@ import {
   ribbonOutline
 } from 'ionicons/icons';
 import { translate, ShopifyImg } from '@hotwax/dxp-components';
-import { formatUtcDate, getFeature, showToast } from '@/utils'
+import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import emitter from '@/event-bus';
@@ -1082,6 +1082,7 @@ export default defineComponent({
       bagCheckOutline,
       cashOutline,
       caretDownOutline,
+      copyToClipboard,
       cubeOutline,
       documentTextOutline,
       ellipsisVerticalOutline,
