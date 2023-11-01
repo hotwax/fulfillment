@@ -141,7 +141,7 @@ const actions: ActionTree<UserState, RootState> = {
     }
 
     const authStore = useAuthStore()
-    const userStore = useAuthStore()
+    const userStore = useUserStore()
     // TODO add any other tasks if need
     commit(types.USER_END_SESSION)
     this.dispatch('order/clearOrders')
