@@ -199,12 +199,10 @@
                 {{ getProduct(item.productId).parentProductName }}
               </ion-label>
               <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
-              <div slot="end" class="product-metadata">
-                <ion-note v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
-                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
-                </ion-button>
-              </div>
+              <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+              <ion-button slot="end" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
+                <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+              </ion-button>
             </ion-item>
           </ion-card>
         </div>
