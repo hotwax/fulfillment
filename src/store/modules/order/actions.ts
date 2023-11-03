@@ -948,6 +948,8 @@ const actions: ActionTree<OrderState, RootState> = {
         ...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
       }
 
+      const orderShipmentPackages = this.state.util.productStoreShipmentMethCount > 0 ? await OrderService.fetchShipmentPackages(orderShipmentIds) : [];
+
         // if for an order shipment information is not available then returning the same order information again
         if (!shipmentIdsForOrderAndPicklistBin[`${current.orderId}_${current.picklistBinId}`]) {
           // if there are no shipment for the order, there is some issue with the order
@@ -993,12 +995,22 @@ const actions: ActionTree<OrderState, RootState> = {
           }
         });
 
+
+        const currentShipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].reduce((currentShipmentPackages: any, shipment: any) => {
+          currentShipmentPackages.push(...orderShipmentPackages.filter((shipmentPackage: any) => shipmentPackage.shipmentId === shipment.shipmentId ));
+          return currentShipmentPackages;
+        }, []);
+
+        // When the shipment method for product store is configured then only check for shipmentPackages otherwise we won't show missing label error button
+        const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
+
         current = {
           ...current,
           shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
           shipmentPackages: shipmentPackages,
           carrierPartyIdsOnOrderShipment,
-          shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty
+          shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty,
+          missingLabelImage
         }
 
       this.dispatch('util/fetchShipmentBoxTypeDesc', [...new Set(Object.values(carrierShipmentBoxType).flat())])

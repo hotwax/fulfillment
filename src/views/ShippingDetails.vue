@@ -29,7 +29,7 @@
           <ion-icon :icon="openOutline" slot="end" />
         </ion-button>
       </ion-item>
-      <ion-item lines="none" v-if="!currentOrder.trackingCode && currentOrder.shipmentPackages && ['PICKITEM_PICKED', 'PICKITEM_COMPLETED'].includes(currentOrder?.items[0]?.picklistItemStatusId)">
+      <ion-item lines="none" v-if="currentOrder.missingLabelImage || (!currentOrder.trackingCode && currentOrder.shipmentPackages && ['PICKITEM_PICKED', 'PICKITEM_COMPLETED'].includes(currentOrder?.items[0]?.picklistItemStatusId))">
         <ion-label class="ion-text-wrap" v-if="shipmentLabelErrorMessages">
           {{ shipmentLabelErrorMessages }}
         </ion-label>
