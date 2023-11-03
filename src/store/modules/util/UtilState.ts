@@ -6,4 +6,5 @@ export default interface UtilState {
   facilityTypeDesc: any;
   paymentMethodTypeDesc: any;
   statusDesc: any;
+  productStoreShipmentMethCount: number;
 }

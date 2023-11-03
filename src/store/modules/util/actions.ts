@@ -286,7 +286,36 @@ const actions: ActionTree<UtilState, RootState> = {
     }
 
     return statusDesc;
-  }
+  },
+
+  async findProductStoreShipmentMethCount({ commit }) {
+    let productStoreShipmentMethCount = 0
+    const params = {
+      "entityName": "ProductStoreShipmentMeth",
+      "inputFields": {
+        "partyId": "_NA_",
+        "partyId_op": "notEqual",
+        "roleTypeId": "CARRIER",
+        "productStoreId": this.state.user.currentEComStore.productStoreId
+      },
+      "fieldList": ['roleTypeId', "partyId"],
+      "viewSize": 1
+    }
+
+    try {
+      const resp = await UtilService.findProductStoreShipmentMethCount(params);
+
+      if(resp?.status == 200 && !hasError(resp) && resp.data.count) {
+        productStoreShipmentMethCount = resp.data.count
+      } else {
+        throw resp?.data
+      }
+    } catch(err) {
+      logger.error('Failed to find shipment method count for product store', err)
+    }
+
+    commit(types.UTIL_PRODUCT_STORE_SHIPMENT_METH_COUNT_UPDATED, productStoreShipmentMethCount)
+  },
 }
 
 export default actions;

@@ -23,6 +23,9 @@ const mutations: MutationTree <UtilState> = {
   },
   [types.UTIL_STATUS_UPDATED] (state, payload) {
     state.statusDesc = payload
+  },
+  [types.UTIL_PRODUCT_STORE_SHIPMENT_METH_COUNT_UPDATED] (state, payload) {
+    state.productStoreShipmentMethCount = payload
   }
 }
 export default mutations;
