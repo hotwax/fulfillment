@@ -211,7 +211,7 @@ const actions: ActionTree<OrderState, RootState> = {
         const trackingCode = shipmentTrackingCodes.find((shipmentTrackingCode: any) => shipmentTrackingCode.shipmentId == order.shipmentId)?.trackingCode
 
         // If there is any shipment package with missing tracking code, retry shipping label
-        const missingLabelImage = currentShipmentPackages.length > 0;
+        const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
 
         return {
           ...order,
@@ -891,7 +891,7 @@ const actions: ActionTree<OrderState, RootState> = {
       }, []);
 
       // If there is any shipment package with missing tracking code, retry shipping label
-      const missingLabelImage = currentShipmentPackages.length > 0;
+      const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
       current = {
         ...current,
         shipments: orderShipments,
