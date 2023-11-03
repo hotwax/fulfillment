@@ -63,7 +63,7 @@ import { OrderService } from '@/services/OrderService';
 import { hasError } from '@/adapter'
 
 export default defineComponent({
-  name: "CreateMappingModal",
+  name: "ShippingDetails",
   components: {
     IonButton,
     IonCard,
@@ -93,7 +93,7 @@ export default defineComponent({
   },
   methods: {
     async printShippingLabel(order: any) {
-      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
+      const shipmentIds = order?.shipmentIds?.length > 0 ? order?.shipmentIds : order.shipments?.map((shipment: any) => shipment.shipmentId);
       await OrderService.printShippingLabel(shipmentIds)
     },
     async retryShippingLabel(order: any) {
