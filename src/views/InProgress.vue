@@ -163,6 +163,10 @@
                 <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click.stop="packOrder(order)">{{ translate("Pack") }}</ion-button>
                 <ion-button :disabled="order.hasMissingInfo" fill="outline" @click.stop="save(order)">{{ translate("Save") }}</ion-button>
               </div>
+
+              <div class="desktop-only">
+                <ion-button v-if="order.missingLabelImage" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
+              </div>
             </div>
           </ion-card>
           <ion-infinite-scroll @ionInfinite="loadMoreInProgressOrders($event)" threshold="100px" :disabled="!isInProgressOrderScrollable()">
@@ -264,6 +268,7 @@ import { Actions, hasPermission } from '@/authorization'
 import EditPickersModal from '@/components/EditPickersModal.vue';
 import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
+import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue'
 
 export default defineComponent({
   name: 'InProgress',
@@ -1005,6 +1010,17 @@ export default defineComponent({
       });
       return popover.present();
     },
+    async showShippingLabelErrorModal(order: any) {
+      // Getting all the shipment ids
+      const shipmentIds = order.shipmentIds;
+      const shippingLabelErrorModal = await modalController.create({
+        component: ShippingLabelErrorModal,
+        componentProps: {
+          shipmentIds
+        }
+      });
+      return shippingLabelErrorModal.present();
+    }
   },
   async mounted () {
     this.store.dispatch('util/fetchRejectReasons')
