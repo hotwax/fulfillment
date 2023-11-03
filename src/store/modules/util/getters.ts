@@ -23,6 +23,9 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   getStatusDesc: (state) => (statusId: string) => {
     return state.statusDesc[statusId] ? state.statusDesc[statusId] : statusId
+  },
+  getProductStoreShipmentMethCount(state) {
+    return state.productStoreShipmentMethCount
   }
 }
 export default getters;
