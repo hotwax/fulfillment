@@ -101,7 +101,7 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       commit(types.USER_TOKEN_CHANGED, { newToken: token })
       updateToken(token)
-
+      this.dispatch('util/findProductStoreShipmentMethCount')
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
       // TODO Check if handling of specific status codes is required.
@@ -209,6 +209,7 @@ const actions: ActionTree<UserState, RootState> = {
       'userPrefTypeId': 'SELECTED_BRAND',
       'userPrefValue': payload.eComStore.productStoreId
     });
+    this.dispatch('util/findProductStoreShipmentMethCount')
   },
 
   setUserPreference({ commit }, payload){

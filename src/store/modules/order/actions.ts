@@ -63,6 +63,8 @@ const actions: ActionTree<OrderState, RootState> = {
       ...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
     }
 
+    const orderShipmentPackages = this.state.util.productStoreShipmentMethCount > 0 ? await OrderService.fetchShipmentPackages(orderShipmentIds) : [];
+
     inProgressOrders = inProgressOrders.map((order: any) => {
 
       // if for an order shipment information is not available then returning the same order information again
@@ -109,12 +111,21 @@ const actions: ActionTree<OrderState, RootState> = {
         }
       });
 
+      const currentShipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].reduce((currentShipmentPackages: any, shipment: any) => {
+        currentShipmentPackages.push(...orderShipmentPackages.filter((shipmentPackage: any) => shipmentPackage.shipmentId === shipment.shipmentId ));
+        return currentShipmentPackages;
+      }, []);
+
+      // When the shipment method for product store is configured then only check for shipmentPackages otherwise we won't show missing label error button
+      const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
+
       return {
         ...order,
         shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
         shipmentPackages: shipmentPackages,
         carrierPartyIds,
-        shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty
+        shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty,
+        missingLabelImage
       }
     })
 
@@ -1070,8 +1081,7 @@ const actions: ActionTree<OrderState, RootState> = {
       shipGroups.find((shipGroup: any) => {
         const trackingCode = shipmentTrackingCodes.find((shipmentTrackingCode: any) => shipGroup.shipmentId === shipmentTrackingCode.shipmentId)?.trackingCode
 
-        // TODO: Remove default value check
-        shipGroup.trackingCode = trackingCode ? trackingCode : 'TRACKING CODE';
+        shipGroup.trackingCode = trackingCode;
       })
     } catch (err) {
       logger.error('Failed to fetch information for ship groups', err)
