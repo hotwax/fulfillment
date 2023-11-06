@@ -221,7 +221,7 @@ export default defineComponent({
           this.editedPicklist = {
             ...this.selectedPicklist,
             pickerIds,
-            pickersName: pickersNameArray.join(', ')
+            pickersName: pickersNameArray.join(' ')
           }
         } else {
           throw resp.data

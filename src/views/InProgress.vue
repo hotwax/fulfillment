@@ -754,9 +754,9 @@ export default defineComponent({
               const pickersName = pickersInformation.pickerFacet.buckets.length ? pickersInformation.pickerFacet.buckets.reduce((pickers: Array<string>, picker: any) => {
                 const val = picker.val.split('/') // having picker val in format 10001/FirstName LastName, split will change it into [pickerId, FirstName LastName]
                 pickerIds.push(val[0]) // storing pickerIds for usage in edit pickers modal
-                pickers.push(val[1].split(' ')[0]) // having val[0] as 'firstname lastname', we only need to display firstName
+                pickers.push(val[1]) // having val[0] as 'firstname lastname', we only need to display firstName
                 return pickers
-              }, []) : ['System Generated']
+              }, []) : ['Syst6em Generated']
 
               picklists.push({
                 id: picklist.picklistId,
