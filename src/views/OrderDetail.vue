@@ -21,7 +21,7 @@
               <ion-icon :icon="documentTextOutline" />
               <ion-label>{{ translate('Linked picklist') }}: {{ order.picklistBinId }}</ion-label>
             </ion-chip>
-            <ion-chip outline v-if="order?.orderPaymentPreferences?.length > 0"> 
+            <ion-chip outline v-if="order?.orderPaymentPreferences?.length > 0" :color="order?.orderPaymentPreferences[0]?.statusId !== 'RECEIVED' ? 'warning' : ''">
               <ion-icon :icon="cashOutline" />
               <ion-label>{{ getPaymentMethodDesc(order?.orderPaymentPreferences[0]?.paymentMethodTypeId)}} : {{ getStatusDesc(order?.orderPaymentPreferences[0]?.statusId) }}</ion-label>
             </ion-chip>
