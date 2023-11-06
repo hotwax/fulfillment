@@ -756,7 +756,7 @@ export default defineComponent({
                 pickerIds.push(val[0]) // storing pickerIds for usage in edit pickers modal
                 pickers.push(val[1]) // having val[0] as 'firstname lastname', we only need to display firstName
                 return pickers
-              }, []) : ['Syst6em Generated']
+              }, []) : ['System Generated']
 
               picklists.push({
                 id: picklist.picklistId,
