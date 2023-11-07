@@ -470,6 +470,52 @@ const fetchShippingAddress = async (contactMechId: string): Promise<any> => {
   return shippingAddress;
 }
 
+const getCustomerContactNumber = async (orderId: string): Promise<any> => {
+  let contactNumber = ''
+  try {
+    let resp: any = await api({
+      url: "performFind",
+      method: "get",
+      params: {
+        "entityName": "OrderContactMech",
+        "inputFields": {
+          orderId,
+          "contactMechPurposeTypeId": "PHONE_SHIPPING"
+        },
+        "fieldList": ["orderId", "contactMechPurposeTypeId", "contactMechId"],
+        "viewSize": 1
+      }
+    })
+
+    if (!hasError(resp)) {
+      const contactMechId = resp.data.docs[0].contactMechId
+      resp = await api({
+        url: "performFind",
+        method: "get",
+        params: {
+          "entityName": "TelecomNumber",
+          "inputFields": {
+            contactMechId,
+          },
+          "fieldList": ["contactNumber", "contactMechId"],
+          "viewSize": 1
+        }
+      })
+      
+      if (!hasError(resp)) {
+        contactNumber = resp?.data.docs[0].contactNumber
+      } else {
+        throw resp.data
+      }
+    } else {
+      throw resp.data
+    }
+  } catch (err) {
+    logger.error('Failed to fetch customer phone number', err)
+  }
+  return contactNumber
+}
+
 export const OrderService = {
   addShipmentBox,
   bulkShipOrders,
@@ -495,5 +541,6 @@ export const OrderService = {
   fetchShipmentLabelError,
   fetchOrderItemShipGroup,
   fetchShippingAddress,
-  fetchOrderPaymentPreferences
+  fetchOrderPaymentPreferences,
+  getCustomerContactNumber
 }

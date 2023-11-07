@@ -542,6 +542,21 @@ const actions: ActionTree<OrderState, RootState> = {
     commit(types.ORDER_CURRENT_UPDATED,  order)
   },
 
+  async getCustomerContactNumber({ commit, state }) {
+    let order = JSON.parse(JSON.stringify(state.current))
+
+    try {
+      const contactNumber = await OrderService.getCustomerContactNumber(order.orderId);
+      order = {
+        ...order,
+        contactNumber
+      }
+    } catch (err: any) {
+      logger.error("Error in fetching customer phone number for current order", err);
+    }
+    commit(types.ORDER_CURRENT_UPDATED, order)
+  },
+
   async clearOrders ({ commit }) {
     commit(types.ORDER_INPROGRESS_CLEARED)
     commit(types.ORDER_OPEN_CLEARED)
@@ -1112,6 +1127,7 @@ const actions: ActionTree<OrderState, RootState> = {
     await dispatch('fetchShippingAddress');
     await dispatch('fetchShipGroupForOrder');
     await dispatch('fetchPaymentDetail');
+    await dispatch('getCustomerContactNumber');
   },
 }
 
