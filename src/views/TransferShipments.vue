@@ -41,7 +41,7 @@
                 {{ shipment.destinationFacilityName ? shipment.destinationFacilityName : shipment.destinationFacilityId }}
                 <p> {{ shipment.estimatedShipDate ? getFromattedDateTime(shipment.estimatedShipDate) : "-" }}</p>
               </ion-label>
-              <ion-note slot="end">{{ getTransferShipmentStatusDesc(shipment.statusId) }}</ion-note>
+              <ion-note slot="end">{{ getStatusDesc(shipment.statusId) }}</ion-note>
             </ion-item>
 
             <ion-infinite-scroll @ionInfinite="loadMoreTransferShipments($event)" threshold="100px" :disabled="!isTransferShipmentScrollable()">
@@ -132,7 +132,7 @@ export default defineComponent({
       getPartyName: 'util/getPartyName',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       currentShipment: 'transferShipment/getCurrentShipment',
-      getTransferShipmentStatusDesc: 'util/getTransferShipmentStatusDesc',
+      getStatusDesc: 'util/getStatusDesc',
     })
   },
   async mounted() {

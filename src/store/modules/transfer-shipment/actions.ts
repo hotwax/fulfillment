@@ -59,7 +59,7 @@ const actions: ActionTree<TransferShipmentState, RootState> = {
         total = resp.data.count
         transferShipments = resp.data.docs
         if (transferShipments) {
-          this.dispatch('util/fetchTransferShipmentStatusDesc', [...new Set(transferShipments.map((shipment: any) => shipment.statusId))])
+          this.dispatch('util/fetchStatusDesc', [...new Set(transferShipments.map((shipment: any) => shipment.statusId))])
         }
         
       } else {
