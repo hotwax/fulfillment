@@ -4,7 +4,7 @@
       <div class="order-primary-info">
         <ion-label>
           <strong>{{ currentShipment.customerName }}</strong>
-          <p>{{ currentShipment.createdDate ? this.getFromattedDateTime(currentShipment.createdDate) : "-" }}</p>
+          <p>{{ currentShipment.createdDate ? getFromattedDateTime(currentShipment.createdDate) : "-" }}</p>
         </ion-label>
       </div>
 
@@ -40,8 +40,8 @@
 
     <div class="actions">
       <div class="desktop-only">
-        <ion-button :disabled="!currentShipment.items || currentShipment.items.length === 0" @click="shipTransferShipment(currentShipment)">{{ $t("Ship Now") }}</ion-button>
-        <ion-button :disabled="!currentShipment.items || currentShipment.items.length === 0" @click="printShippingLabel(currentShipment)" fill="outline">{{ $t("Print Shipping Label") }}</ion-button>
+        <ion-button :disabled="!currentShipment.items || currentShipment.items.length === 0" @click="shipTransferShipment(currentShipment)">{{ translate("Ship Now") }}</ion-button>
+        <ion-button :disabled="!currentShipment.items || currentShipment.items.length === 0" @click="printShippingLabel(currentShipment)" fill="outline">{{ translate("Print Shipping Label") }}</ion-button>
       </div>
     </div>
   </ion-card>    
@@ -66,7 +66,7 @@ import { DateTime } from 'luxon';
 import { copyToClipboard, showToast } from '@/utils'
 import { hasError } from '@/adapter'
 import logger from '@/logger';
-import { translate } from "@/i18n";
+import { translate } from "@hotwax/dxp-components";
 import { Actions, hasPermission } from '@/authorization'
 import { TransferShipmentService } from '@/services/TransferShipmentService'
 
@@ -137,7 +137,8 @@ export default defineComponent({
       hasPermission,
       copyToClipboard,
       store,
-      router
+      router,
+      translate
     };
   },
 });

@@ -5,8 +5,8 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button slot="start" />
-        <ion-title v-if="!transferShipments.total">{{ transferShipments.total }} {{ $t('shipments') }}</ion-title>
-        <ion-title v-else>{{ transferShipments.query.viewSize }} {{ $t('of') }} {{ transferShipments.total }} {{ $t('shipments') }}</ion-title>
+        <ion-title v-if="!transferShipments.total">{{ transferShipments.total }} {{ translate('shipments') }}</ion-title>
+        <ion-title v-else>{{ transferShipments.query.viewSize }} {{ translate('of') }} {{ transferShipments.total }} {{ translate('shipments') }}</ion-title>
         <ion-buttons slot="end">
           <ion-menu-button menu="end" :disabled="!transferShipments.total">
             <ion-icon :icon="optionsOutline" />
@@ -16,7 +16,7 @@
     </ion-header>
     
     <ion-content id="view-size-selector">
-      <ion-searchbar :value="transferShipments.query.queryString" @keyup.enter="updateQueryString($event.target.value)" :placeholder="$t('Search transfer shipments')"/>
+      <ion-searchbar :value="transferShipments.query.queryString" @keyup.enter="updateQueryString($event.target.value)" :placeholder="translate('Search transfer shipments')"/>
       <div class="filters">
         <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId">
           <ion-checkbox slot="start" :checked="transferShipments.query.selectedCarrierPartyIds.includes(carrierPartyId)" @ionChange="updateSelectedCarrierPartyIds(carrierPartyId)"/>
@@ -39,13 +39,13 @@
               <ion-label>
                 <p fill="overline">{{shipment.shipmentId}} </p>
                 {{ shipment.destinationFacilityName ? shipment.destinationFacilityName : shipment.destinationFacilityId }}
-                <p> {{ shipment.estimatedShipDate ? this.getFromattedDateTime(shipment.estimatedShipDate) : "-" }}</p>
+                <p> {{ shipment.estimatedShipDate ? getFromattedDateTime(shipment.estimatedShipDate) : "-" }}</p>
               </ion-label>
               <ion-note slot="end">{{ getTransferShipmentStatusDesc(shipment.statusId) }}</ion-note>
             </ion-item>
 
             <ion-infinite-scroll @ionInfinite="loadMoreTransferShipments($event)" threshold="100px" :disabled="!isTransferShipmentScrollable()">
-              <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"/>
+              <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
             </ion-infinite-scroll>
           </div>
           <div class="empty-state" v-else>
@@ -86,6 +86,7 @@ import { mapGetters, useStore } from 'vuex'
 import { DateTime } from 'luxon';
 import { copyToClipboard, getFeature } from '@/utils'
 import { hasError } from '@/adapter'
+import { translate } from "@hotwax/dxp-components";
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import { TransferShipmentService } from '@/services/TransferShipmentService';
 import ShipmentDetails from '@/components/ShipmentDetails.vue'
@@ -147,7 +148,7 @@ export default defineComponent({
       return DateTime.fromMillis(time).toFormat('dd MMMM yyyy t a ZZZZ');
     },
     getErrorMessage() {
-      return this.searchedQuery === '' ? this.$t("doesn't have any transfer shipments right now.", { facilityName: this.currentFacility.name }) : this.$t( "No results found for . Try switching stores.", { searchedQuery: this.searchedQuery })
+      return this.searchedQuery === '' ? translate("doesn't have any transfer shipments right now.", { facilityName: this.currentFacility.name }) : translate( "No results found for . Try switching stores.", { searchedQuery: this.searchedQuery })
     },
     getTransferShipments() {
       return this.transferShipments.list.slice(0, (this.transferShipments.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
@@ -272,7 +273,8 @@ export default defineComponent({
       optionsOutline,
       printOutline,
       router,
-      store
+      store,
+      translate
     }
   }
 });

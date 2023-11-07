@@ -1,5 +1,5 @@
 import { ActionTree } from 'vuex'
-import { translate } from "@/i18n";
+import { translate } from "@hotwax/dxp-components";
 import RootState from '@/store/RootState'
 import TransferShipmentState from './TransferShipmentState'
 import emitter from '@/event-bus'
@@ -11,7 +11,7 @@ import { TransferShipmentService } from '@/services/TransferShipmentService'
 
 
 const actions: ActionTree<TransferShipmentState, RootState> = { 
-  async findTransferShipments({ commit, state }, payload = {}) {
+  async findTransferShipments({ commit, state }) {
     emitter.emit('presentLoader');
     let resp;
     const shipmentsQuery = JSON.parse(JSON.stringify(state.shipments.query))
