@@ -63,7 +63,7 @@
                 <ion-label>
                   {{ order.shipmentMethodTypeDesc }}
                   <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
-                  <p v-if="order.trackingCode">{{ $t("Tracking Code") }} {{ order.trackingCode }}</p>
+                  <p v-if="order.trackingCode">{{ translate("Tracking Code") }} {{ order.trackingCode }}</p>
                 </ion-label>
               </div>
             </div>
@@ -106,7 +106,7 @@
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
                 <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && order.missingLabelImage && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
+                <ion-button v-if="productStoreShipmentMethCount > 0" :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate("Regenerate Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
@@ -228,7 +228,8 @@ export default defineComponent({
       currentEComStore: 'user/getCurrentEComStore',
       getPartyName: 'util/getPartyName',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
-      getProductStock: 'stock/getProductStock'
+      getProductStock: 'stock/getProductStock',
+      productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount'
     })
   },
   async mounted() {
