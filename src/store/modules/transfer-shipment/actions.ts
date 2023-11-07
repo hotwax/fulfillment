@@ -102,6 +102,10 @@ const actions: ActionTree<TransferShipmentState, RootState> = {
 
   async updateTransferShipmentQueryIndex({ commit }, payload) {
     commit(types.TRANSFER_SHIPMENT_QUERY_UPDATED, payload)
+  },
+
+  async clearTransferShipments({ commit }) {
+    commit(types.TRANSFER_SHIPMENT_CLEARED)
   }
 }
 

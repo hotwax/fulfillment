@@ -3,7 +3,7 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-back-button :default-href="'/transfer-shipments'" slot="start" />
-        <ion-title>{{ $t("Shipment details") }}</ion-title>
+        <ion-title>{{ translate("Shipment details") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -25,6 +25,7 @@ import {
 import { defineComponent } from 'vue';
 import { add, checkmarkDone, barcodeOutline } from 'ionicons/icons';
 import { useStore } from "vuex";
+import { translate } from '@hotwax/dxp-components';
 import { copyToClipboard, formatUtcDate } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import ShipmentDetails from '@/components/ShipmentDetails.vue';
@@ -60,7 +61,8 @@ export default defineComponent({
       hasPermission,
       copyToClipboard,
       formatUtcDate,
-      store
+      store,
+      translate
     };
   },
 });

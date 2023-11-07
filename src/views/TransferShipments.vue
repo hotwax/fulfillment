@@ -72,11 +72,11 @@ import {
   IonItem,
   IonLabel,
   IonMenuButton,
+  IonNote,
   IonPage,
   IonSearchbar,
   IonTitle,
   IonToolbar,
-  IonNote,
   isPlatform
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
@@ -107,11 +107,11 @@ export default defineComponent({
     IonItem,
     IonLabel,
     IonMenuButton,
+    IonNote,
     IonPage,
     IonSearchbar,
     IonTitle,
     IonToolbar,
-    IonNote,
     ViewSizeSelector,
     ShipmentDetails
   },
@@ -140,7 +140,7 @@ export default defineComponent({
     emitter.on('updateTransferShipmentQuery', this.updateTransferShipmentQuery)
   },
   unmounted() {
-    this.store.dispatch('order/clearCompletedOrders')
+    this.store.dispatch('transferShipment/clearTransferShipments')
     emitter.on('updateTransferShipmentQuery', this.updateTransferShipmentQuery)
   },
   methods: {
@@ -234,7 +234,7 @@ export default defineComponent({
         selectedShipmentMethodTypeIds.splice(index, 1)
       }
 
-      // making view size default when changing the shipment method to correctly fetch orders
+      // making view size default when changing the shipment method to correctly fetch shipments
       transferShipmentsQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       transferShipmentsQuery.selectedShipmentMethodTypeIds = selectedShipmentMethodTypeIds
 
@@ -251,7 +251,7 @@ export default defineComponent({
         selectedCarrierPartyIds.splice(index, 1)
       }
 
-      // making view size default when changing the shipment method to correctly fetch orders
+      // making view size default when changing the shipment method to correctly fetch shipments
       transferShipmentsQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       transferShipmentsQuery.selectedCarrierPartyIds = selectedCarrierPartyIds
 
