@@ -8,6 +8,7 @@ import * as types from './mutation-types'
 import { hasError } from '@/adapter'
 import { showToast } from '@/utils';
 import { TransferShipmentService } from '@/services/TransferShipmentService'
+import { OrderService } from '@/services/OrderService'
 
 
 const actions: ActionTree<TransferShipmentState, RootState> = { 
@@ -80,9 +81,16 @@ const actions: ActionTree<TransferShipmentState, RootState> = {
 
       resp = await TransferShipmentService.getShipmentDetail(payload);
       if (resp.status === 200 && resp.data.items && !hasError(resp)) {
+        let missingLabelImage = false;
+        if (this.state.util.productStoreShipmentMethCount > 0) {
+          const missingLabelImagePackages = await OrderService.fetchShipmentPackages([currentShipment.shipmentId]);
+          missingLabelImage = missingLabelImagePackages.length > 0
+        }
+
         currentShipment = {
           ...currentShipment,
-          ...resp.data
+          ...resp.data,
+          missingLabelImage
         }
       } else {
         throw resp.data

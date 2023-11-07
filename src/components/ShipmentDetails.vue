@@ -41,7 +41,10 @@
     <div class="actions">
       <div class="desktop-only">
         <ion-button :disabled="!currentShipment.items || currentShipment.items.length === 0" @click="shipTransferShipment(currentShipment)">{{ translate("Ship Now") }}</ion-button>
-        <ion-button :disabled="!currentShipment.items || currentShipment.items.length === 0" @click="printShippingLabel(currentShipment)" fill="outline">{{ translate("Print Shipping Label") }}</ion-button>
+        <ion-button :disabled="!currentShipment.items || currentShipment.items.length === 0" @click="printShippingLabel(currentShipment)" fill="outline">
+          {{ translate("Print Shipping Label") }}
+          <ion-spinner color="primary" slot="end" v-if="currentShipment.isGeneratingShippingLabel" name="crescent" />
+        </ion-button>
       </div>
     </div>
   </ion-card>    
@@ -54,6 +57,7 @@ import {
   IonIcon,
   IonItem,
   IonLabel,
+  IonSpinner,
   IonThumbnail,
   IonChip
 } from '@ionic/vue';
@@ -69,6 +73,7 @@ import logger from '@/logger';
 import { translate } from "@hotwax/dxp-components";
 import { Actions, hasPermission } from '@/authorization'
 import { TransferShipmentService } from '@/services/TransferShipmentService'
+import { OrderService } from '@/services/OrderService'
 
 export default defineComponent({
   name: "ShipmentDetails",
@@ -78,6 +83,7 @@ export default defineComponent({
     IonIcon,
     IonItem,
     IonLabel,
+    IonSpinner,
     IonThumbnail,
     IonChip,
     Image,
@@ -121,8 +127,34 @@ export default defineComponent({
       }
     },
     async printShippingLabel(shipment: any) {
-      await TransferShipmentService.printShippingLabel(shipment?.shipmentId)
+      await OrderService.printShippingLabel([shipment?.shipmentId])
     },
+    async retryShippingLabel(shipment: any) {
+      const resp = await OrderService.retryShippingLabel([shipment?.shipmentId])
+      if (!hasError(resp)) {
+        showToast(translate("Shipping Label generated successfully"))
+        await this.printShippingLabel(shipment)
+      } else {
+        showToast(translate("Failed to generate shipping label"))
+      }
+    },
+    async regenerateShippingLabel(shipment: any) {
+      // if the request to print shipping label is not yet completed, then clicking multiple times on the button
+      // should not do anything
+      if (shipment.isGeneratingShippingLabel) {
+        return;
+      }
+
+      shipment.isGeneratingShippingLabel = true;
+
+      if (shipment.missingLabelImage) {
+        await this.retryShippingLabel(shipment)
+      } else {
+        await this.printShippingLabel(shipment)
+      }
+
+      shipment.isGeneratingShippingLabel = false;
+    }
   }, 
   setup() {
     const store = useStore(); 
