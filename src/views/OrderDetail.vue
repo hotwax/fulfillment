@@ -21,7 +21,7 @@
               <ion-icon :icon="documentTextOutline" />
               <ion-label>{{ translate('Linked picklist') }}: {{ order.picklistBinId }}</ion-label>
             </ion-chip>
-            <ion-chip outline v-if="order?.orderPaymentPreferences?.length > 0"> 
+            <ion-chip outline v-if="order?.orderPaymentPreferences?.length > 0" :color="statusColor[order?.orderPaymentPreferences[0]?.statusId]">
               <ion-icon :icon="cashOutline" />
               <ion-label>{{ getPaymentMethodDesc(order?.orderPaymentPreferences[0]?.paymentMethodTypeId)}} : {{ getStatusDesc(order?.orderPaymentPreferences[0]?.statusId) }}</ion-label>
             </ion-chip>
@@ -331,7 +331,17 @@ export default defineComponent({
       picklists: [] as any,
       addingBoxForOrderIds: [] as any,
       defaultShipmentBoxType: '',
-      itemsIssueSegmentSelected: [] as any
+      itemsIssueSegmentSelected: [] as any,
+      statusColor: {
+        'PAYMENT_AUTHORIZED': 'warning',
+        'PAYMENT_CANCELLED': 'warning',
+        'PAYMENT_DECLINED': 'warning',
+        'PAYMENT_NOT_AUTH': 'warning',
+        'PAYMENT_NOT_RECEIVED': 'warning',
+        'PAYMENT_RECEIVED': '',
+        'PAYMENT_REFUNDED': 'warning',
+        'PAYMENT_SETTLED': ''
+      } as any
     }
   },
   async ionViewDidEnter() {
