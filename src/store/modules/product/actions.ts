@@ -44,7 +44,7 @@ const actions: ActionTree<ProductState, RootState> = {
     return resp;
   },
 
-  async getProductInformation ({ dispatch }, { orders }) {
+  async getProductInformation({ dispatch }, { orders }) {
     let productIds: any = new Set();
     orders.forEach((list: any) => {
       list.doclist.docs.forEach((order: any) => {

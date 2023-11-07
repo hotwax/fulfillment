@@ -304,14 +304,6 @@ const fetchShipmentBoxTypeDesc = async (query: any): Promise <any>  => {
   });
 }
 
-const fetchTransferShipmentStatusDesc = async (query: any): Promise <any>  => {
-  return api({
-    url: "performFind",
-    method: "get",
-    params: query
-  });
-}
-
 const resetPicker = async (payload: any): Promise<any> => {
   return api({
     url: "/service/resetPicker",
@@ -320,23 +312,58 @@ const resetPicker = async (payload: any): Promise<any> => {
   })
 }
 
+const fetchFacilityTypeInformation = async (query: any): Promise <any>  => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
+const fetchPaymentMethodTypeDesc = async (query: any): Promise <any>  => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
+const fetchStatusDesc = async (query: any): Promise <any>  => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
+const findProductStoreShipmentMethCount = async (query: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
 export const UtilService = {
   createPicklist,
   fetchCarrierPartyIds,
-  findCarrierPartyIdsForShipment,
-  findCarrierShipmentBoxType,
   fetchDefaultShipmentBox,
+  fetchFacilityTypeInformation,
   fetchPartyInformation,
   fetchPicklistInformation,
   fetchRejectReasons,
-  findShipmentIdsForOrders,
-  findShipmentItemInformation,
   fetchShipmentBoxTypeDesc,
   fetchShipmentMethods,
   fetchShipmentMethodTypeDesc,
-  fetchTransferShipmentStatusDesc,
-  findShipmentPackages,
+  fetchPaymentMethodTypeDesc,
+  fetchStatusDesc,
   fetchShipmentRouteSegmentInformation,
+  findCarrierPartyIdsForShipment,
+  findCarrierShipmentBoxType,
+  findProductStoreShipmentMethCount,
+  findShipmentIdsForOrders,
+  findShipmentItemInformation,
+  findShipmentPackages,
   getAvailablePickers,
   resetPicker
 }

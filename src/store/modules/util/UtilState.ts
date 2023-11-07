@@ -3,5 +3,8 @@ export default interface UtilState {
   partyNames: any;
   shipmentMethodTypeDesc: any;
   shipmentBoxTypeDesc: any;
-  transferShipmentStatusDesc: any;
+  facilityTypeDesc: any;
+  paymentMethodTypeDesc: any;
+  statusDesc: any;
+  productStoreShipmentMethCount: number;
 }

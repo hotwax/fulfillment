@@ -15,8 +15,17 @@ const getters: GetterTree <UtilState, RootState> = {
   getShipmentBoxDesc: (state) => (shipmentBoxId: string) => {
     return state.shipmentBoxTypeDesc[shipmentBoxId] ? state.shipmentBoxTypeDesc[shipmentBoxId] : shipmentBoxId
   },
-  getTransferShipmentStatusDesc: (state) => (statusId: string) => {
-    return state.transferShipmentStatusDesc[statusId] ? state.transferShipmentStatusDesc[statusId] : statusId
+  getFacilityTypeDesc: (state) => (facilityTypeId: string) => {
+    return state.facilityTypeDesc[facilityTypeId] ? state.facilityTypeDesc[facilityTypeId] : ''
+  },
+  getPaymentMethodDesc: (state) => (paymentMethodTypeId: string) => {
+    return state.paymentMethodTypeDesc[paymentMethodTypeId] ? state.paymentMethodTypeDesc[paymentMethodTypeId] : paymentMethodTypeId
+  },
+  getStatusDesc: (state) => (statusId: string) => {
+    return state.statusDesc[statusId] ? state.statusDesc[statusId] : statusId
+  },
+  getProductStoreShipmentMethCount(state) {
+    return state.productStoreShipmentMethCount
   }
 }
 export default getters;

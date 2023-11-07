@@ -2,7 +2,7 @@
   <ion-menu side="start" content-id="main-content" type="overlay" :disabled="!isUserAuthenticated">
     <ion-header>
       <ion-toolbar>
-        <ion-title>{{ currentFacility.name }}</ion-title>
+        <ion-title>{{ currentFacility.facilityName }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -16,7 +16,7 @@
             class="hydrated"
             :class="{ selected: selectedIndex === index }">
             <ion-icon slot="start" :ios="page.iosIcon" :md="page.mdIcon" />
-            <ion-label>{{ $t(page.title) }}</ion-label>
+            <ion-label>{{ translate(page.title) }}</ion-label>
           </ion-item>
         </ion-menu-toggle>
       </ion-list>
@@ -43,6 +43,7 @@ import { mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutli
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 import { hasPermission } from "@/authorization";
+import { translate } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: "Menu",
@@ -76,9 +77,10 @@ export default defineComponent({
     const appPages = [
       {
         title: "Open",
-        url: "/open-orders",
+        url: "/open",
         iosIcon: mailUnreadOutline,
         mdIcon: mailUnreadOutline,
+        childRoutes: ["/open/"],
         meta: {
           permissionId: "APP_OPEN_ORDERS_VIEW"
         }
@@ -88,6 +90,7 @@ export default defineComponent({
         url: "/in-progress",
         iosIcon: mailOpenOutline,
         mdIcon: mailOpenOutline,
+        childRoutes: ["/in-progress/"],
         meta: {
           permissionId: "APP_IN_PROGRESS_ORDERS_VIEW"
         }
@@ -97,6 +100,7 @@ export default defineComponent({
         url: "/completed",
         iosIcon: checkmarkDoneOutline,
         mdIcon: checkmarkDoneOutline,
+        childRoutes: ["/completed/"],
         meta: {
           permissionId: "APP_COMPLETED_ORDERS_VIEW"
         }
@@ -130,18 +134,19 @@ export default defineComponent({
 
     const selectedIndex = computed(() => {
       const path = router.currentRoute.value.path
-      return appPages.findIndex((screen) => screen.url === path || screen.childRoutes?.includes(path))
+      return appPages.findIndex((screen) => screen.url === path || screen.childRoutes?.includes(path) || screen.childRoutes?.some((route) => path.includes(route)))
     })
 
     return {
-      selectedIndex,
       appPages,
+      checkmarkDoneOutline,
+      hasPermission,
       mailUnreadOutline,
       mailOpenOutline,
-      checkmarkDoneOutline,
+      selectedIndex,
       settingsOutline,
       store,
-      hasPermission
+      translate
     };
   }
 });

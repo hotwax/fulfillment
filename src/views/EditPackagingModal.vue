@@ -6,9 +6,9 @@
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
-      <ion-title>{{ $t("Edit packaging") }}</ion-title>
+      <ion-title>{{ translate("Edit packaging") }}</ion-title>
       <ion-buttons slot="end">
-        <ion-button fill="clear">{{ $t("Save") }}</ion-button>
+        <ion-button fill="clear">{{ translate("Save") }}</ion-button>
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
@@ -26,14 +26,14 @@
         <div class="order-primary-info">
           <ion-label>
             Darooty Magwood
-            <p>{{ $t("Ordered") }} 27th January 2020 9:24 PM EST</p>
+            <p>{{ translate("Ordered") }} 27th January 2020 9:24 PM EST</p>
           </ion-label>
         </div>
 
         <div class="order-metadata">
           <ion-label>
             Next Day Shipping
-            <p>{{ $t("Ordered") }} 28th January 2020 2:32 PM EST</p>
+            <p>{{ translate("Ordered") }} 28th January 2020 2:32 PM EST</p>
           </ion-label>
         </div>
       </div>
@@ -54,7 +54,7 @@
 
         <div class="product-metadata">
           <ion-item lines="none">   
-            <ion-label>{{ $t("Select box") }}</ion-label>
+            <ion-label>{{ translate("Select box") }}</ion-label>
             <ion-select>
               <ion-select-option>Box A Type 3</ion-select-option>
               <ion-select-option>Box B Type 2</ion-select-option>
@@ -66,9 +66,9 @@
 
     <ion-list>
       <ion-item lines="none">
-        <ion-note slot="start">{{ $t('Boxes') }}</ion-note>
+        <ion-note slot="start">{{ translate('Boxes') }}</ion-note>
         <ion-button fill="clear" slot="end">
-          {{ $t("Add") }}
+          {{ translate("Add") }}
           <ion-icon :icon="addCircleOutline"/>
         </ion-button>
       </ion-item>
@@ -105,6 +105,8 @@ import {
   modalController } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { addCircleOutline, closeOutline, pricetag } from "ionicons/icons";
+import { translate } from '@hotwax/dxp-components'
+
 export default defineComponent({
   name: "EditPackagingModal",
   components: { 
@@ -134,7 +136,8 @@ export default defineComponent({
     return {
       addCircleOutline,
       closeOutline,
-      pricetag
+      pricetag,
+      translate
     };
   },
 });

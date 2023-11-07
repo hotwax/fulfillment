@@ -2,7 +2,7 @@
   <ion-menu type="overlay" side="end">
     <ion-header>
       <ion-toolbar>
-        <ion-title>{{ $t(title) }}</ion-title>
+        <ion-title>{{ translate(title) }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -11,7 +11,7 @@
         <ion-radio-group :value="viewSize" @ionChange="updateViewSize($event.detail.value)">
           <ion-item v-for="count in prepareViewSizeOptions()" :key="count">
             <ion-radio slot="start" :value="count"/>
-            <ion-label>{{ count }} {{ count === 1 ? $t('order') : $t('orders') }}</ion-label>
+            <ion-label>{{ count }} {{ count === 1 ? translate('order') : translate('orders') }}</ion-label>
             <!-- TODO: add support to display the order items count -->
             <!-- <ion-note slot="end">10 items</ion-note> -->
           </ion-item>
@@ -39,6 +39,7 @@ import {
 import { computed, defineComponent } from "vue";
 import { useRoute } from "vue-router";
 import { useStore } from 'vuex';
+import { translate } from "@hotwax/dxp-components";
 
 export default defineComponent({
   name: "ViewSizeSelector",
@@ -111,6 +112,7 @@ export default defineComponent({
       route,
       title,
       total,
+      translate,
       viewSize
     }
   }

@@ -9,6 +9,7 @@ import productModule from "./modules/product"
 import orderModule from "./modules/order"
 import utilModule from "./modules/util"
 import transferShipmentModule from "./modules/transfer-shipment"
+import stockModule from "./modules/stock"
 import { setPermissions } from '@/authorization'
 
 
@@ -22,7 +23,7 @@ const state: any = {
 }
 
 const persistState = createPersistedState({
-    paths: ['user'],
+    paths: ['user', 'util.productStoreShipmentMethCount'],
     fetchBeforeUse: true
 })
 
@@ -38,6 +39,7 @@ const store = createStore<RootState>({
         'product': productModule,
         'order': orderModule,
         'util': utilModule,
+        'stock': stockModule,
         'transferShipment': transferShipmentModule
     },
 })

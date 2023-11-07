@@ -4,15 +4,15 @@
       <!-- TODO: Need to give Shipping Label Error Option -->
       <ion-item button>
         <ion-icon slot="start" :icon="printOutline" />
-        {{ $t("Shipping label") }}
+        {{ translate("Shipping label") }}
       </ion-item>
       <ion-item button>
         <ion-icon slot="start" :icon="printOutline" />
-        {{ $t("Customer letter") }}
+        {{ translate("Customer letter") }}
       </ion-item>
       <ion-item button lines="none">
         <ion-icon slot="start" :icon="lockOpenOutline" />
-        {{ $t("Unpack") }}
+        {{ translate("Unpack") }}
       </ion-item>
     </ion-list>
   </ion-content>
@@ -27,6 +27,8 @@ import {
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { printOutline, lockOpenOutline } from 'ionicons/icons'
+import { translate } from "@hotwax/dxp-components";
+
 export default defineComponent({
   name: "ShippingPopover",
   components: { 
@@ -38,7 +40,8 @@ export default defineComponent({
   setup() {
     return {
       printOutline,
-      lockOpenOutline    
+      lockOpenOutline,
+      translate 
     }
   }
 });

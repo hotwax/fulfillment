@@ -17,6 +17,7 @@ import { mapGetters, useStore } from 'vuex';
 import { initialise, resetConfig } from '@/adapter'
 import { useRouter } from 'vue-router';
 import { Settings } from 'luxon'
+import { translate } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: 'App',
@@ -36,18 +37,20 @@ export default defineComponent({
     ...mapGetters({
       userToken: 'user/getUserToken',
       instanceUrl: 'user/getInstanceUrl',
-      userProfile: 'user/getUserProfile',
-      locale: 'user/getLocale'
+      userProfile: 'user/getUserProfile'
     })
   },
   methods: {
-    async presentLoader() {
+    async presentLoader(options = { message: '', backdropDismiss: true }) {
+      // When having a custom message remove already existing loader
+      if(options.message && this.loader) this.dismissLoader();
+
       if (!this.loader) {
         this.loader = await loadingController
           .create({
-            message: this.$t("Click the backdrop to dismiss."),
+            message: options.message ? translate(options.message) : translate("Click the backdrop to dismiss."),
             translucent: true,
-            backdropDismiss: true
+            backdropDismiss: options.backdropDismiss
           });
       }
       this.loader.present();
@@ -59,7 +62,8 @@ export default defineComponent({
       }
     },
     async unauthorised() {
-      this.store.dispatch("user/logout");
+      // Mark the user as unauthorised, this will help in not making the logout api call in actions
+      this.store.dispatch("user/logout", { isUserUnauthorised: true });
       const redirectUrl = window.location.origin + '/login';
       window.location.href = `${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`;
     },
@@ -106,7 +110,7 @@ export default defineComponent({
   async mounted() {
     this.loader = await loadingController
       .create({
-        message: this.$t("Click the backdrop to dismiss."),
+        message: translate("Click the backdrop to dismiss."),
         translucent: true,
         backdropDismiss: true
       });
@@ -119,7 +123,6 @@ export default defineComponent({
     if (this.userProfile && this.userProfile.userTimeZone) {
       Settings.defaultZone = this.userProfile.userTimeZone;
     }
-    this.$i18n.locale = this.locale;
   },
   unmounted() {
     emitter.off('presentLoader', this.presentLoader);
@@ -132,7 +135,8 @@ export default defineComponent({
     const router = useRouter();
     return {
       router,
-      store
+      store,
+      translate
     }
   }
 });
