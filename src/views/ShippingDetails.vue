@@ -13,6 +13,7 @@
           <p class="ion-text-wrap" v-if="currentOrder?.shippingAddress?.address2">{{ currentOrder.shippingAddress.address2 }}</p>
           <p class="ion-text-wrap">{{ currentOrder?.shippingAddress?.city ? currentOrder.shippingAddress.city + "," : "" }} {{ currentOrder.shippingAddress?.postalCode }}</p>
           <p class="ion-text-wrap">{{ currentOrder?.shippingAddress?.stateName ? currentOrder.shippingAddress.stateName + "," : "" }} {{ currentOrder.shippingAddress?.countryName }}</p>
+          <p class="ion-text-wrap" v-if="currentOrder?.contactNumber">{{ currentOrder?.contactNumber }}</p>
         </ion-label>
       </ion-item>
       <ion-item color="light" lines="none" v-if="currentOrder?.shippingInstructions">
