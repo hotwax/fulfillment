@@ -27,11 +27,12 @@
       <div class="product-info">
         <ion-item>
           <ion-thumbnail slot="start">
-            <Image :src="item.imageUrl" />
+            <ShopifyImg :src="item.imageUrl" />
           </ion-thumbnail>
           <ion-label>
-            {{ item.internalName }}
-            <p>{{ item.productName }}</p>
+            <p class="overline">{{ item.sku }}</p>
+            {{ getProduct(item.productId).parentProductName }}
+            <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
           </ion-label>
           <ion-label slot="end">{{item.quantityOrdered ? item.quantityOrdered + " qty" : ""}}</ion-label>
         </ion-item>
@@ -40,8 +41,8 @@
 
     <div class="actions">
       <div class="desktop-only">
-        <ion-button :disabled="!currentShipment.items || currentShipment.items.length === 0" @click="shipTransferShipment(currentShipment)">{{ translate("Ship Now") }}</ion-button>
-        <ion-button :disabled="!currentShipment.items || currentShipment.items.length === 0" @click="printShippingLabel(currentShipment)" fill="outline">
+        <ion-button :disabled="currentShipment.statusId === 'SHIPMENT_SHIPPED' || currentShipment.items?.length === 0" @click="shipTransferShipment(currentShipment)">{{ translate("Ship Now") }}</ion-button>
+        <ion-button :disabled="currentShipment.items?.length === 0" @click="printShippingLabel(currentShipment)" fill="outline">
           {{ translate("Print Shipping Label") }}
           <ion-spinner color="primary" slot="end" v-if="currentShipment.isGeneratingShippingLabel" name="crescent" />
         </ion-button>
@@ -64,13 +65,12 @@ import {
 import { defineComponent } from 'vue';
 import { add, checkmarkDone, barcodeOutline, pricetagOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
-import Image from "@/components/Image.vue";
 import { useRouter } from 'vue-router';
 import { DateTime } from 'luxon';
-import { copyToClipboard, showToast } from '@/utils'
+import { copyToClipboard, showToast, getFeature } from '@/utils'
 import { hasError } from '@/adapter'
 import logger from '@/logger';
-import { translate } from "@hotwax/dxp-components";
+import { ShopifyImg, translate } from "@hotwax/dxp-components";
 import { Actions, hasPermission } from '@/authorization'
 import { TransferShipmentService } from '@/services/TransferShipmentService'
 import { OrderService } from '@/services/OrderService'
@@ -86,7 +86,7 @@ export default defineComponent({
     IonSpinner,
     IonThumbnail,
     IonChip,
-    Image,
+    ShopifyImg
   },
   props: ['query'],
   computed: {
@@ -168,6 +168,7 @@ export default defineComponent({
       checkmarkDone,
       hasPermission,
       copyToClipboard,
+      getFeature,
       store,
       router,
       translate

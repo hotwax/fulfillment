@@ -34,7 +34,10 @@
       </div>
       <main class="transfer-shipments">
         <section>
-          <div v-if="transferShipments.total">
+          <ion-list v-if="transferShipments.total">
+            <ion-list-header>
+              <ion-label>{{ translate('Approved transfer shipments') }}</ion-label>
+            </ion-list-header>
             <ion-item v-for="(shipment, index) in getTransferShipments()" :key="index" @click="viewShipmentDetail(shipment)" button detail>
               <ion-label>
                 <p fill="overline">{{shipment.shipmentId}} </p>
@@ -47,7 +50,7 @@
             <ion-infinite-scroll @ionInfinite="loadMoreTransferShipments($event)" threshold="100px" :disabled="!isTransferShipmentScrollable()">
               <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
             </ion-infinite-scroll>
-          </div>
+          </ion-list>
           <div class="empty-state" v-else>
             <p v-html="getErrorMessage()"></p>
           </div>
@@ -71,6 +74,8 @@ import {
   IonInfiniteScrollContent,
   IonItem,
   IonLabel,
+  IonList,
+  IonListHeader,
   IonMenuButton,
   IonNote,
   IonPage,
@@ -106,6 +111,8 @@ export default defineComponent({
     IonInfiniteScrollContent,
     IonItem,
     IonLabel,
+    IonList,
+    IonListHeader,
     IonMenuButton,
     IonNote,
     IonPage,

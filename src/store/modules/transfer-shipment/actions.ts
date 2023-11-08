@@ -27,7 +27,7 @@ const actions: ActionTree<TransferShipmentState, RootState> = {
       "noConditionFind": "Y",
       "viewSize": shipmentsQuery.viewSize,
       "viewIndex": shipmentsQuery.viewIndex,
-      "orderBy": "createdDate DESC"
+      "orderBy": "createdDate ASC"
     }
 
     if (shipmentsQuery.queryString) {
@@ -81,6 +81,8 @@ const actions: ActionTree<TransferShipmentState, RootState> = {
 
       resp = await TransferShipmentService.getShipmentDetail(payload);
       if (resp.status === 200 && resp.data.items && !hasError(resp)) {
+        await this.dispatch('product/fetchProducts', { productIds: resp.data.items?.map((item: any) => item.productId) })
+
         let missingLabelImage = false;
         if (this.state.util.productStoreShipmentMethCount > 0) {
           const missingLabelImagePackages = await OrderService.fetchShipmentPackages([currentShipment.shipmentId]);
