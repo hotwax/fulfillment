@@ -470,7 +470,7 @@ const fetchShippingAddress = async (contactMechId: string): Promise<any> => {
   return shippingAddress;
 }
 
-const getCustomerPhoneNumber = async (orderId: string): Promise<any> => {
+const getShippingPhoneNumber = async (orderId: string): Promise<any> => {
   let phoneNumber = '' as any
   try {
     let resp: any = await api({
@@ -543,5 +543,5 @@ export const OrderService = {
   fetchOrderItemShipGroup,
   fetchShippingAddress,
   fetchOrderPaymentPreferences,
-  getCustomerPhoneNumber
+  getShippingPhoneNumber
 }
