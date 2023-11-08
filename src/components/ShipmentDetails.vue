@@ -34,7 +34,7 @@
             {{ getProduct(item.productId).parentProductName }}
             <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
           </ion-label>
-          <ion-label slot="end">{{item.quantityOrdered ? item.quantityOrdered + " qty" : ""}}</ion-label>
+          <ion-note slot="end">{{item.quantityOrdered ? item.quantityOrdered + " qty" : ""}}</ion-note>
         </ion-item>
       </div>
     </div>
@@ -58,6 +58,7 @@ import {
   IonIcon,
   IonItem,
   IonLabel,
+  IonNote,
   IonSpinner,
   IonThumbnail,
   IonChip
@@ -83,6 +84,7 @@ export default defineComponent({
     IonIcon,
     IonItem,
     IonLabel,
+    IonNote,
     IonSpinner,
     IonThumbnail,
     IonChip,
