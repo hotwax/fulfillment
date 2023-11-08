@@ -1,7 +1,7 @@
 import { api, client, hasError } from '@/adapter';
 import { translate } from '@hotwax/dxp-components'
 import logger from '@/logger';
-import { showToast } from '@/utils';
+import { showToast, formatPhoneNumber } from '@/utils';
 import store from '@/store';
 import { cogOutline } from 'ionicons/icons';
 
@@ -470,6 +470,53 @@ const fetchShippingAddress = async (contactMechId: string): Promise<any> => {
   return shippingAddress;
 }
 
+const getShippingPhoneNumber = async (orderId: string): Promise<any> => {
+  let phoneNumber = '' as any
+  try {
+    let resp: any = await api({
+      url: "performFind",
+      method: "get",
+      params: {
+        "entityName": "OrderContactMech",
+        "inputFields": {
+          orderId,
+          "contactMechPurposeTypeId": "PHONE_SHIPPING"
+        },
+        "fieldList": ["orderId", "contactMechPurposeTypeId", "contactMechId"],
+        "viewSize": 1
+      }
+    })
+
+    if (!hasError(resp)) {
+      const contactMechId = resp.data.docs[0].contactMechId
+      resp = await api({
+        url: "performFind",
+        method: "get",
+        params: {
+          "entityName": "TelecomNumber",
+          "inputFields": {
+            contactMechId,
+          },
+          "fieldList": ["contactNumber", "countryCode", "areaCode", "contactMechId"],
+          "viewSize": 1
+        }
+      })
+      
+      if (!hasError(resp)) {
+        const { contactNumber, countryCode, areaCode } =  resp.data.docs[0]
+        phoneNumber = formatPhoneNumber(countryCode, areaCode, contactNumber)
+      } else {
+        throw resp.data
+      }
+    } else {
+      throw resp.data
+    }
+  } catch (err) {
+    logger.error('Failed to fetch customer phone number', err)
+  }
+  return phoneNumber
+}
+
 export const OrderService = {
   addShipmentBox,
   bulkShipOrders,
@@ -495,5 +542,6 @@ export const OrderService = {
   fetchShipmentLabelError,
   fetchOrderItemShipGroup,
   fetchShippingAddress,
-  fetchOrderPaymentPreferences
+  fetchOrderPaymentPreferences,
+  getShippingPhoneNumber
 }

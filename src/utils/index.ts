@@ -127,4 +127,14 @@ const getIdentificationId = (identifications: any, id: string) => {
   return externalId;
 }
 
-export { copyToClipboard, formatDate, formatUtcDate, getFeature, getIdentificationId, handleDateTimeInput, showToast, hasError, parseCsv, jsonToCsv}
+const formatPhoneNumber = (countryCode: string | null, areaCode: string | null, contactNumber: string | null)  => {
+  if (countryCode && areaCode) {
+    return `+${countryCode}-${areaCode}-${contactNumber}`;
+  } else if (countryCode) {
+    return `+${countryCode}-${contactNumber}`;
+  } else {
+    return contactNumber;
+  }
+}
+
+export { copyToClipboard, formatDate, formatPhoneNumber, formatUtcDate, getFeature, getIdentificationId, handleDateTimeInput, showToast, hasError, parseCsv, jsonToCsv}
