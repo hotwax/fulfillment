@@ -36,7 +36,7 @@
             <ion-item lines="none" v-for="picklist in picklists" :key="picklist.id">
               <ion-radio :value="picklist.id" slot="start" />
               <ion-label class="ion-text-wrap">
-                {{ picklist.pickersName }}
+               {{ picklist.pickersName }}
                 <p>{{ picklist.date }}</p>
               </ion-label>
             </ion-item>
@@ -749,14 +749,21 @@ export default defineComponent({
                 return picklists;
               }
 
-              const pickerIds = [] as Array<string> 
+              const pickerIds = [] as Array<string>
+      
               // if firstName is not found then adding default name `System Generated`
-              const pickersName = pickersInformation.pickerFacet.buckets.length ? pickersInformation.pickerFacet.buckets.reduce((pickers: Array<string>, picker: any) => {
-                const val = picker.val.split('/') // having picker val in format 10001/FirstName LastName, split will change it into [pickerId, FirstName LastName]
-                pickerIds.push(val[0]) // storing pickerIds for usage in edit pickers modal
-                pickers.push(val[1]) // having val[0] as 'firstname lastname', we only need to display firstName
-                return pickers
-              }, []) : ['System Generated']
+              const pickersName = pickersInformation.pickerFacet.buckets.length ? (
+                pickersInformation.pickerFacet.buckets.length === 1 ?
+                [pickersInformation.pickerFacet.buckets[0].val.split('/')[1]]:
+                  pickersInformation.pickerFacet.buckets.reduce((pickers: Array<string>, picker: any) => {
+                    const val = picker.val.split('/')
+                   
+                    pickerIds.push(val[0])
+                    pickers.push(val[1].split(' ')[0])
+                    
+                    return pickers
+                  }, [])
+              ) : ['System Generated']
 
               picklists.push({
                 id: picklist.picklistId,
@@ -765,7 +772,6 @@ export default defineComponent({
                 date: DateTime.fromMillis(picklist.picklistDate).toLocaleString(DateTime.TIME_SIMPLE),
                 isGeneratingPicklist: false  // used to display the spinner on the button when trying to generate picklist
               })
-
               return picklists
             }, [])
           }
