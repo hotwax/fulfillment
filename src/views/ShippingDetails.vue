@@ -38,7 +38,7 @@
           {{ translate('Missing shipping label') }}
         </ion-label>
         <ion-button fill="clear" @click="retryShippingLabel(currentOrder)">
-          <ion-icon :icon="refreshSharp" slot="end" />
+          <ion-icon :icon="refreshSharp" slot="icon-only" />
         </ion-button>
       </ion-item>
     </ion-card>
