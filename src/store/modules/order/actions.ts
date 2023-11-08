@@ -542,11 +542,11 @@ const actions: ActionTree<OrderState, RootState> = {
     commit(types.ORDER_CURRENT_UPDATED,  order)
   },
 
-  async getCustomerContactNumber({ commit, state }) {
+  async getCustomerPhoneNumber({ commit, state }) {
     let order = JSON.parse(JSON.stringify(state.current))
 
     try {
-      const contactNumber = await OrderService.getCustomerContactNumber(order.orderId);
+      const contactNumber = await OrderService.getCustomerPhoneNumber(order.orderId);
       order = {
         ...order,
         contactNumber
@@ -1127,7 +1127,7 @@ const actions: ActionTree<OrderState, RootState> = {
     await dispatch('fetchShippingAddress');
     await dispatch('fetchShipGroupForOrder');
     await dispatch('fetchPaymentDetail');
-    await dispatch('getCustomerContactNumber');
+    await dispatch('getCustomerPhoneNumber');
   },
 }
 

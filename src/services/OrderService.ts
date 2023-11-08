@@ -1,7 +1,7 @@
 import { api, client, hasError } from '@/adapter';
 import { translate } from '@hotwax/dxp-components'
 import logger from '@/logger';
-import { showToast } from '@/utils';
+import { showToast, formatPhoneNumber } from '@/utils';
 import store from '@/store';
 import { cogOutline } from 'ionicons/icons';
 
@@ -470,8 +470,8 @@ const fetchShippingAddress = async (contactMechId: string): Promise<any> => {
   return shippingAddress;
 }
 
-const getCustomerContactNumber = async (orderId: string): Promise<any> => {
-  let contactNumber = ''
+const getCustomerPhoneNumber = async (orderId: string): Promise<any> => {
+  let phoneNumber = '' as any
   try {
     let resp: any = await api({
       url: "performFind",
@@ -497,13 +497,14 @@ const getCustomerContactNumber = async (orderId: string): Promise<any> => {
           "inputFields": {
             contactMechId,
           },
-          "fieldList": ["contactNumber", "contactMechId"],
+          "fieldList": ["contactNumber", "countryCode", "areaCode", "contactMechId"],
           "viewSize": 1
         }
       })
       
       if (!hasError(resp)) {
-        contactNumber = resp?.data.docs[0].contactNumber
+        const { contactNumber, countryCode, areaCode } =  resp.data.docs[0]
+        phoneNumber = formatPhoneNumber(countryCode, areaCode, contactNumber)
       } else {
         throw resp.data
       }
@@ -513,7 +514,7 @@ const getCustomerContactNumber = async (orderId: string): Promise<any> => {
   } catch (err) {
     logger.error('Failed to fetch customer phone number', err)
   }
-  return contactNumber
+  return phoneNumber
 }
 
 export const OrderService = {
@@ -542,5 +543,5 @@ export const OrderService = {
   fetchOrderItemShipGroup,
   fetchShippingAddress,
   fetchOrderPaymentPreferences,
-  getCustomerContactNumber
+  getCustomerPhoneNumber
 }
