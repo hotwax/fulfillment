@@ -333,7 +333,7 @@ export default defineComponent({
       defaultShipmentBoxType: '',
       itemsIssueSegmentSelected: [] as any,
       statusColor: {
-        'PAYMENT_AUTHORIZED': 'warning',
+        'PAYMENT_AUTHORIZED': '',
         'PAYMENT_CANCELLED': 'warning',
         'PAYMENT_DECLINED': 'warning',
         'PAYMENT_NOT_AUTH': 'warning',
