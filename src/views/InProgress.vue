@@ -36,7 +36,7 @@
             <ion-item lines="none" v-for="picklist in picklists" :key="picklist.id">
               <ion-radio :value="picklist.id" slot="start" />
               <ion-label class="ion-text-wrap">
-               {{ picklist.pickersName }}
+              {{ picklist.pickersName }}
                 <p>{{ picklist.date }}</p>
               </ion-label>
             </ion-item>

@@ -25,7 +25,6 @@
     "boon-js": "^2.0.3",
     "core-js": "^3.6.5",
     "file-saver": "^2.0.5",
-    "i": "^0.3.7",
     "luxon": "^2.4.0",
     "mitt": "^2.1.0",
     "register-service-worker": "^1.7.1",
