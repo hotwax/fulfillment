@@ -196,6 +196,10 @@
             <ion-icon v-else slot="start" :icon="printOutline" />
             {{ translate("Print Picklist") }}
           </ion-button>
+          <ion-button fill="clear" color="primary" @click="openQRCodeModal(selectedPicklistId)">
+            <ion-icon slot="start" :icon="qrCodeOutline" />
+            {{ translate("Generate QR code") }}
+          </ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-footer>
@@ -246,9 +250,10 @@ import {
   cubeOutline,
   ellipsisVerticalOutline,
   pencilOutline,
+  optionsOutline,
   pricetagOutline,
   printOutline,
-  optionsOutline
+  qrCodeOutline
 } from 'ionicons/icons'
 import PackagingPopover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
@@ -269,11 +274,11 @@ import EditPickersModal from '@/components/EditPickersModal.vue';
 import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue'
+import QRCodeModal from '@/components/QRCodeModal.vue'
 
 export default defineComponent({
   name: 'InProgress',
   components: {
-    ShopifyImg,
     IonButton,
     IonButtons,
     IonCard,
@@ -304,6 +309,7 @@ export default defineComponent({
     IonThumbnail,   
     IonTitle,
     IonToolbar,
+    ShopifyImg,
     ViewSizeSelector
   },
   computed: {
@@ -1020,7 +1026,14 @@ export default defineComponent({
         }
       });
       return shippingLabelErrorModal.present();
-    }
+    },
+    async openQRCodeModal(picklistId: string) {
+      const qrCodeModal = await modalController.create({
+        component: QRCodeModal,
+        componentProps: { picklistId }
+      });
+      return qrCodeModal.present();
+    },
   },
   async mounted () {
     this.store.dispatch('util/fetchRejectReasons')
@@ -1049,6 +1062,7 @@ export default defineComponent({
       hasPermission,
       checkmarkDoneOutline,
       pricetagOutline,
+      qrCodeOutline,
       store,
       translate
     }
