@@ -34,6 +34,7 @@ import { copyToClipboard } from "@/utils";
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { translate } from "@hotwax/dxp-components";
 import { useStore } from 'vuex';
+import emitter from "@/event-bus";
 
 export default defineComponent({
   name: "OrderActionsPopover",
@@ -68,8 +69,10 @@ export default defineComponent({
       return assignPickerModal.present();
     },
     async viewOrder() {
+      emitter.emit("presentLoader")
       this.store.dispatch('order/updateCurrent', this.order).then(() => {
         this.closePopover();
+        emitter.emit("dismissLoader")
         this.$router.push({ path: `${this.category}/order-detail/${this.order.orderId}/${this.order.shipGroupSeqId}` })
       })
     },
