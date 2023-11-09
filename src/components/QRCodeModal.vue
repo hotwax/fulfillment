@@ -10,8 +10,8 @@
     </ion-toolbar>
   </ion-header>
   <ion-content>
-    <!-- size is given in px -->
-    <qrcode-vue class="center" :size='350' value="" />
+    <!-- size is given in px, render-as=svg for better quality -->
+    <qrcode-vue class="center" render-as="svg" :size='400' :value="link" />
   </ion-content>
 </template>
 
@@ -42,7 +42,7 @@ export default defineComponent({
     IonToolbar,
     QrcodeVue
   },
-  props: ["picklistId"],
+  props: ["picklistId", "link"],
   methods: {
     closeModal() {
       modalController.dismiss({ dismissed: true });
@@ -51,7 +51,7 @@ export default defineComponent({
   setup() {
     return {
       closeOutline
-    };
+    }
   },
 });
 </script>
