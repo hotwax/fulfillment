@@ -125,5 +125,6 @@ export default defineComponent({
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(343px, 1fr));
   gap: 10px;
+  align-items: start;
 }
 </style>
