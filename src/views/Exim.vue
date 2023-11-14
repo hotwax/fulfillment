@@ -3,7 +3,7 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button slot="start" />
-        <ion-title>{{ $t('EXIM') }}</ion-title>
+        <ion-title>{{ translate('EXIM') }}</ion-title>
       </ion-toolbar>
     </ion-header>
     
@@ -12,18 +12,18 @@
         <ion-card>
           <ion-card-header>
             <ion-card-subtitle>
-              {{ $t("Export") }}
+              {{ translate("Export") }}
             </ion-card-subtitle>
             <ion-card-title>
-              {{ $t('Packed Orders') }}
+              {{ translate('Packed Orders') }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ $t("Export orders that are packed and haven't been shipped yet. Use the exported file to send the packed order details to a carrier where shipping labels and tracking codes will be generated.") }}
+            {{ translate("Export orders that are packed and haven't been shipped yet. Use the exported file to send the packed order details to a carrier where shipping labels and tracking codes will be generated.") }}
           </ion-card-content>
           <div class="border-top">
             <ion-button fill="clear" @click="downloadPackedOrders">
-              {{ $t('Export') }}
+              {{ translate('Export') }}
               <ion-icon slot="end" :icon="downloadOutline" />
             </ion-button>
           </div>
@@ -32,18 +32,18 @@
         <ion-card>
           <ion-card-header>
             <ion-card-subtitle>
-              {{ $t("Import") }}
+              {{ translate("Import") }}
             </ion-card-subtitle>
             <ion-card-title>
-              {{ $t('Shipped Orders') }}
+              {{ translate('Shipped Orders') }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ $t('Import shipped order details from an external system based on tracking codes. Orders that have tracking codes will automatically be shipped at the end of the day.') }}
+            {{ translate('Import shipped order details from an external system based on tracking codes. Orders that have tracking codes will automatically be shipped at the end of the day.') }}
           </ion-card-content>
           <div class="border-top">
             <ion-button fill="clear" @click="uploadImportOrders">
-              {{ $t('Import') }}
+              {{ translate('Import') }}
               <ion-icon slot="end" :icon="cloudUploadOutline" />
             </ion-button>
           </div>
@@ -52,12 +52,12 @@
         <ion-card>
           <ion-card-header>
             <ion-card-title>
-              {{ $t('Saved mappings') }}
+              {{ translate('Saved mappings') }}
             </ion-card-title>
           </ion-card-header>
           <div class="border-top">
             <ion-button fill="clear" @click="viewSavedMappings">
-              {{ $t('View Saved Mappings') }}
+              {{ translate('View Saved Mappings') }}
               <ion-icon slot="end" :icon="bookmarkOutline" />
             </ion-button>
           </div>
@@ -86,6 +86,7 @@ import {
 import { defineComponent } from 'vue';
 import { bookmarkOutline, cloudUploadOutline, downloadOutline  } from 'ionicons/icons'
 import { useRouter } from 'vue-router';
+import { translate } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: 'Exim',
@@ -122,7 +123,8 @@ export default defineComponent({
       bookmarkOutline,
       cloudUploadOutline,
       downloadOutline,
-      router
+      router,
+      translate
     }
   }
 });

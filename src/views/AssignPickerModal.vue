@@ -2,12 +2,11 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal"> 
+        <ion-button @click="closeModal()">
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
-      <ion-title>{{ $t("Assign Pickers") }}</ion-title>
-      <ion-button :disabled="!selectedPickers.length" fill="clear" slot="end" @click="printPicklist()">{{ $t('Print Picklist') }}</ion-button>
+      <ion-title>{{ translate("Assign Pickers") }}</ion-title>
     </ion-toolbar>
   </ion-header>
 
@@ -20,7 +19,7 @@
     </ion-row>
 
     <ion-list>
-      <ion-list-header>{{ $t("Staff") }}</ion-list-header>
+      <ion-list-header>{{ translate("Staff") }}</ion-list-header>
       <!-- TODO: added click event on the item as when using the ionChange event then it's getting
       called every time the v-for loop runs and then removes or adds the currently rendered picker
       -->
@@ -36,6 +35,12 @@
       </div>
     </ion-list>
   </ion-content>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button :disabled="!selectedPickers.length" @click="printPicklist()">
+      <ion-icon :icon="saveOutline" />
+    </ion-fab-button>
+  </ion-fab>
 </template>
 
 <script>
@@ -45,6 +50,8 @@ import {
   IonCheckbox,
   IonChip,
   IonContent,
+  IonFab,
+  IonFabButton,
   IonHeader,
   IonIcon,
   IonItem,
@@ -57,11 +64,11 @@ import {
   IonToolbar,
   modalController } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { closeOutline } from "ionicons/icons";
+import { closeOutline, saveOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { showToast } from "@/utils";
 import { hasError } from "@/adapter";
-import { translate } from "@/i18n";
+import { translate } from '@hotwax/dxp-components'
 import { UtilService } from "@/services/UtilService";
 import emitter from "@/event-bus";
 import logger from "@/logger"
@@ -75,6 +82,8 @@ export default defineComponent({
     IonCheckbox,
     IonChip,
     IonContent,
+    IonFab,
+    IonFabButton,
     IonHeader,
     IonIcon,
     IonItem,
@@ -99,12 +108,13 @@ export default defineComponent({
       pickers: []
     }
   },
+  props: ["order"], // if we have order in props then create picklist for this single order only
   methods: {
     isPickerSelected(id) {
       return this.selectedPickers.some((picker) => picker.id == id)
     },
-    closeModal() {
-      modalController.dismiss({ dismissed: true });
+    closeModal(picklistId) {
+      modalController.dismiss({ dismissed: true, value: { picklistId } });
     },
     selectPicker(id) {
       const picker = this.selectedPickers.some((picker) => picker.id == id)
@@ -121,9 +131,14 @@ export default defineComponent({
 
       // creating picklist for orders that are currently in the list, means those are currently in the selected viewSize
       const orderItems = []
-      this.openOrders.list.map((order) => {
-        order.doclist.docs.map((item) => orderItems.push(item))
-      });
+
+      if(this.order) {
+        this.order.items.map((item) => orderItems.push(item))
+      } else {
+        this.openOrders.list.map((order) => {
+          order.items.map((item) => orderItems.push(item))
+        });
+      }
 
       const formData = new FormData();
       formData.append("facilityId", this.currentFacility.facilityId);
@@ -148,7 +163,7 @@ export default defineComponent({
       try {
         resp = await UtilService.createPicklist(formData);
         if (resp.status === 200 && !hasError(resp)) {
-          this.closeModal();
+          this.closeModal(resp.data.picklistId);
           showToast(translate('Picklist created successfully'))
 
           // generating picklist after creating a new picklist
@@ -229,7 +244,9 @@ export default defineComponent({
 
     return {
       closeOutline,
-      store
+      saveOutline,
+      store,
+      translate
     };
   },
 });

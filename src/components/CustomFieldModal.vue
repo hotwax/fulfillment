@@ -6,19 +6,19 @@
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
-      <ion-title>{{ $t("Add custom field") }}</ion-title>
+      <ion-title>{{ translate("Add custom field") }}</ion-title>
     </ion-toolbar>
   </ion-header>
 
   <ion-content>
     <ion-list>
       <ion-item lines="full">
-        <ion-label position="fixed">{{ $t("Key") }}</ion-label>
-        <ion-input :placeholder="$t('Enter key')" name="key" v-model="key" id="key" type="text" required />
+        <ion-label position="fixed">{{ translate("Key") }}</ion-label>
+        <ion-input :placeholder="translate('Enter key')" name="key" v-model="key" id="key" type="text" required />
       </ion-item>
       <ion-item>
-        <ion-label position="fixed">{{ $t("Value") }}</ion-label>
-        <ion-input :placeholder="$t('Enter value')" name="value" v-model="value" id="value" type="text" required />
+        <ion-label position="fixed">{{ translate("Value") }}</ion-label>
+        <ion-input :placeholder="translate('Enter value')" name="value" v-model="value" id="value" type="text" required />
       </ion-item>
     </ion-list>
 
@@ -51,7 +51,7 @@ import { defineComponent } from "vue";
 import { checkmarkDoneOutline, closeOutline } from "ionicons/icons";
 import { useStore } from "vuex";
 import { showToast } from "@/utils"
-import { translate } from "@/i18n";
+import { translate } from '@hotwax/dxp-components'
 
 export default defineComponent({
   name: "CustomFieldModal",
@@ -98,7 +98,8 @@ export default defineComponent({
     return {
       checkmarkDoneOutline,
       closeOutline,
-      store
+      store,
+      translate
     };
   },
 });

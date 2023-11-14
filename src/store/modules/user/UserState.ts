@@ -16,5 +16,4 @@ export default interface UserState {
         name: string;
         value: object;
     };
-    locale: string;
 }
