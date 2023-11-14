@@ -186,6 +186,12 @@
     <!-- only show footer buttons if 'All orders' is not selected -->
     <ion-footer v-if="selectedPicklistId">
       <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-button fill="clear" color="primary" @click="openQRCodeModal(selectedPicklistId)">
+            <ion-icon slot="start" :icon="qrCodeOutline" />
+            {{ translate("Generate QR code") }}
+          </ion-button>
+        </ion-buttons>
         <ion-buttons slot="end">
           <ion-button fill="outline" color="primary" @click="editPickers(getPicklist(selectedPicklistId))">
             <ion-icon slot="start" :icon="pencilOutline" />
@@ -246,9 +252,10 @@ import {
   cubeOutline,
   ellipsisVerticalOutline,
   pencilOutline,
+  optionsOutline,
   pricetagOutline,
   printOutline,
-  optionsOutline
+  qrCodeOutline
 } from 'ionicons/icons'
 import PackagingPopover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
@@ -269,11 +276,12 @@ import EditPickersModal from '@/components/EditPickersModal.vue';
 import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue'
+import QRCodeModal from '@/components/QRCodeModal.vue'
+import { useAuthStore } from '@hotwax/dxp-components'
 
 export default defineComponent({
   name: 'InProgress',
   components: {
-    ShopifyImg,
     IonButton,
     IonButtons,
     IonCard,
@@ -304,6 +312,7 @@ export default defineComponent({
     IonThumbnail,   
     IonTitle,
     IonToolbar,
+    ShopifyImg,
     ViewSizeSelector
   },
   computed: {
@@ -1020,7 +1029,15 @@ export default defineComponent({
         }
       });
       return shippingLabelErrorModal.present();
-    }
+    },
+    async openQRCodeModal(picklistId: string) {
+      const link = `${process.env.VUE_APP_PICKING_LOGIN_URL}?oms=${this.authStore.oms}&token=${this.authStore.token.value}&expirationTime=${this.authStore.token.expiration}&picklistId=${picklistId}`
+      const qrCodeModal = await modalController.create({
+        component: QRCodeModal,
+        componentProps: { picklistId, link }
+      });
+      return qrCodeModal.present();
+    },
   },
   async mounted () {
     this.store.dispatch('util/fetchRejectReasons')
@@ -1032,10 +1049,12 @@ export default defineComponent({
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   setup() {
+    const authStore = useAuthStore()
     const store = useStore();
 
     return {
       Actions,
+      authStore,
       caretDownOutline,
       copyToClipboard,
       cubeOutline,
@@ -1049,6 +1068,7 @@ export default defineComponent({
       hasPermission,
       checkmarkDoneOutline,
       pricetagOutline,
+      qrCodeOutline,
       store,
       translate
     }
