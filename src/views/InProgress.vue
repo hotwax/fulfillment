@@ -328,7 +328,7 @@ import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue'
 import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
 import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
-import { getKitProducts } from '@/utils/order';
+import { getKitProducts, isKitComponent } from '@/utils/order';
 import QRCodeModal from '@/components/QRCodeModal.vue'
 import { useAuthStore } from '@hotwax/dxp-components'
 
@@ -455,7 +455,7 @@ export default defineComponent({
     getInProgressOrders() {
       // processing kit products and normal order items
       const inProgressOrders = JSON.parse(JSON.stringify(this.inProgressOrders.list)).map((order: any) => {
-        const items = order.items.filter((item: any) => !item.kitProduct)
+        const items = order.items.filter((item: any) => !isKitComponent(item))
         const kitProducts = getKitProducts(order)
         return {
           ...order,

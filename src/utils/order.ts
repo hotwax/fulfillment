@@ -79,10 +79,13 @@ const getOrderCategory = (order: any) => {
   return result;
 }
 
+const isKitComponent = (item: any) => {
+  return item.toOrderItemAssocs?.some((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
+}
+
 const getKitProducts = (order: any) => {
-  // TODO make it generic to search kit association when multiple associations are there
   return order.items.reduce((kitProducts: any, item: any) => {
-    if (item.toOrderItemAssocs && item.toOrderItemAssocs[0].split("/")[0] === 'KIT_COMPONENT') {
+    if (item.toOrderItemAssocs && isKitComponent(item)) {
       // getting second and third values i.e kit product's orderItemSeqId and parentProductId
       const [, orderItemSeqId, parentProductId] = item.toOrderItemAssocs[0].split('/')
       if (!kitProducts[orderItemSeqId]) {
@@ -101,5 +104,6 @@ const getKitProducts = (order: any) => {
 
 export {
   getKitProducts,
-  getOrderCategory
+  getOrderCategory,
+  isKitComponent
 }

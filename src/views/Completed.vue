@@ -218,7 +218,7 @@ import logger from '@/logger';
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
-import { getKitProducts } from '@/utils/order';
+import { getKitProducts, isKitComponent } from '@/utils/order';
 
 export default defineComponent({
   name: 'Completed',
@@ -293,7 +293,7 @@ export default defineComponent({
     getCompletedOrders() {
       // processing kit products and normal order items
       const completedOrders = JSON.parse(JSON.stringify(this.completedOrders.list)).map((order: any) => {
-        const items = order.items.filter((item: any) => !item.kitProduct)
+        const items = order.items.filter((item: any) => !isKitComponent(item))
         const kitProducts = getKitProducts(order)
         return {
           ...order,

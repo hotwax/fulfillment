@@ -185,7 +185,7 @@ import { translate } from '@hotwax/dxp-components';
 import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
-import { getKitProducts } from '@/utils/order';
+import { getKitProducts, isKitComponent } from '@/utils/order';
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -238,7 +238,7 @@ export default defineComponent({
     getOpenOrders() {
       // processing kit products and normal order items
       const openOrders = JSON.parse(JSON.stringify(this.openOrders.list)).map((order: any) => {
-        const items = order.items.filter((item: any) => !item.kitProduct)
+        const items = order.items.filter((item: any) => !isKitComponent(item))
         const kitProducts = getKitProducts(order)
         return {
           ...order,
