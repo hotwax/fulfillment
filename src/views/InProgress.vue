@@ -45,7 +45,6 @@
 
         <div class="results">
           <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="packOrders()">{{ translate("Pack orders") }}</ion-button>
-
           <ion-card class="order" v-for="(order, index) in getInProgressOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
@@ -85,118 +84,118 @@
               </ion-row>
             </div>
 
-            <ion-list>
-              <ion-item-group>
-                <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
-                  <ion-item lines="none" class="product-info">
-                    <ion-thumbnail slot="start">
-                      <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
-                    </ion-thumbnail>
-                    <ion-label>
-                      <p class="overline">{{ item.productSku }}</p>
-                      {{ item.productName }}
-                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
-                    </ion-label>
+            <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
+              <div class="product-info">
+                <ion-item lines="none">
+                  <ion-thumbnail slot="start">
+                    <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                  </ion-thumbnail>
+                  <ion-label>
+                    <p class="overline">{{ item.productSku }}</p>
+                    {{ item.productName }}
+                    <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  </ion-label>
+                </ion-item>
+              </div>
+
+              <div class="desktop-only" v-if="!order.shipmentPackages && !order.hasMissingInfo">
+                <ion-segment>
+                  <ion-segment-button><ion-skeleton-text animated /></ion-segment-button>
+                  <ion-segment-button><ion-skeleton-text animated /></ion-segment-button>
+                </ion-segment>
+                <div class="segments">
+                  <ion-item lines="none">
+                    <ion-skeleton-text animated />
                   </ion-item>
-                  <div class="desktop-only" v-if="!order.shipmentPackages && !order.hasMissingInfo">
-                    <ion-segment>
-                      <ion-segment-button><ion-skeleton-text animated /></ion-segment-button>
-                      <ion-segment-button><ion-skeleton-text animated /></ion-segment-button>
-                    </ion-segment>
-                    <div class="segments">
-                      <ion-item lines="none">
-                        <ion-skeleton-text animated />
-                      </ion-item>
-                    </div>
+                </div>
+              </div>
+
+              <div class="desktop-only" v-else-if="order.shipmentPackages">
+                <ion-segment @ionChange="changeSegment($event, item, order)" :value="isIssueSegmentSelectedForItem(item) ? 'issue' : 'pack'">
+                  <ion-segment-button value="pack">
+                    <ion-label>{{ translate("Ready to pack") }}</ion-label>
+                  </ion-segment-button>
+                  <ion-segment-button value="issue">
+                    <ion-label>{{ translate("Report an issue") }}</ion-label>
+                  </ion-segment-button>
+                </ion-segment>
+                <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
+                <div class="segments" v-if="order.shipmentPackages && order.shipmentPackages.length">
+                  <!-- TODO: add functionality to update box type -->
+                  <div v-if="!isIssueSegmentSelectedForItem(item)">
+                    <ion-item lines="none">
+                      <ion-label>{{ translate("Select box") }}</ion-label>
+                      <ion-select interface="popover" @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
+                        <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName">{{ shipmentPackage.packageName }}</ion-select-option>
+                      </ion-select>
+                    </ion-item>
                   </div>
-                  <div class="desktop-only" v-else-if="order.shipmentPackages">
-                    <ion-segment @ionChange="changeSegment($event, item, order)" :value="isIssueSegmentSelectedForItem(item) ? 'issue' : 'pack'">
-                      <ion-segment-button value="pack">
-                        <ion-label>{{ translate("Ready to pack") }}</ion-label>
-                      </ion-segment-button>
-                      <ion-segment-button value="issue">
-                        <ion-label>{{ translate("Report an issue") }}</ion-label>
-                      </ion-segment-button>
-                    </ion-segment>
-                    <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
-                    <div class="segments" v-if="order.shipmentPackages && order.shipmentPackages.length">
-                      <!-- TODO: add functionality to update box type -->
-                      <div v-if="!isIssueSegmentSelectedForItem(item)">
-                        <ion-item lines="none">
-                          <ion-label>{{ translate("Select box") }}</ion-label>
-                          <ion-select interface="popover" @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
-                            <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName">{{ shipmentPackage.packageName }}</ion-select-option>
-                          </ion-select>
-                        </ion-item>
-                      </div>
-                      <div v-else>
-                        <ion-item lines="none">
-                          <ion-label>{{ translate("Select issue") }}</ion-label>
-                          <ion-select interface="popover" @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
-                            <ion-select-option v-for="reason in rejectReasons" :key="reason.enumId" :value="reason.enumId">{{ reason.description ? translate(reason.description) : reason.enumId }}</ion-select-option>
-                          </ion-select>
-                        </ion-item>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="product-metadata">
-                    <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                    <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
-                      <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
-                    </ion-button>
+                  <div v-else>
+                    <ion-item lines="none">
+                      <ion-label>{{ translate("Select issue") }}</ion-label>
+                      <ion-select interface="popover" @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
+                        <ion-select-option v-for="reason in rejectReasons" :key="reason.enumId" :value="reason.enumId">{{ reason.description ? translate(reason.description) : reason.enumId }}</ion-select-option>
+                      </ion-select>
+                    </ion-item>
                   </div>
                 </div>
-              </ion-item-group>
+              </div>
+              <div class="product-metadata">
+                <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                </ion-button>
+              </div>
+            </div>
 
-              <ion-item-group>
-                <ion-item-divider color="light">
-                  <ion-label>
-                    <p>Primary identifier</p>
-                    <p>Secondary identifier</p>
-                  </ion-label>
-                  <ion-button id="reject-reason-popover" slot="end" fill="outline" color="danger">
-                    {{ translate("Report an issue") }}
-                  </ion-button>
-                  <ion-popover trigger="reject-reason-popover" translucent dismissOnSelect showBackdrop="false" side="top">
-                    <ion-content>
-                      <ion-item button v-for="reason in rejectReasons" :key="reason.enumId" :value="reason.enumId" lines="none">
-                        {{ reason.description ? translate(reason.description) : reason.enumId }}  
-                      </ion-item>
-                    </ion-content>
-                  </ion-popover>
+            <div v-if="order.kitProducts">
+              <div v-for="(kitProducts, orderItemSeqId) in order.kitProducts" :key="orderItemSeqId">
+                <ion-item-divider class="order-item" color="light">
+                  <div class="product-info">
+                    <ion-label>
+                      <p>{{ getProduct(kitProducts[0].parentProductId).productName }}</p>
+                      <p>{{ getProduct(kitProducts[0].parentProductId).sku }}</p>
+                    </ion-label>
+                  </div>
+
+                  <div v-if="order.shipmentPackages && order.shipmentPackages.length">
+                    <ion-chip outline @click="openShipmentBoxPopover($event, kitProducts, order)">
+                      <ion-icon :icon="fileTrayOutline" />
+                      {{ `Box ${kitProducts[0].selectedBox}` }} 
+                      <ion-icon :icon="caretDownOutline" />
+                    </ion-chip>
+                  </div>
+                      
+                  <div class="product-metadata" v-if="order.shipmentPackages && order.shipmentPackages.length">
+                    <ion-button @click="openRejectReasonPopover($event, kitProducts, order)" color="danger" fill="outline">
+                      {{ translate('Report an issue') }}
+                    </ion-button>
+                  </div>
                 </ion-item-divider>
 
-                <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
-                  <ion-item lines="none" class="product-info">
-                    <ion-thumbnail slot="start">
-                      <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
-                    </ion-thumbnail>
-                    <ion-label>
-                      <p class="overline">{{ item.productSku }}</p>
-                      {{ item.productName }}
-                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
-                    </ion-label>
-                  </ion-item>
-
-                  <div class="desktop-only" v-if="order.shipmentPackages && order.shipmentPackages.length">
-                    <div v-if="!isIssueSegmentSelectedForItem(item)">
-                      <ion-item lines="none">
-                        <ion-label>{{ translate("Select box") }}</ion-label>
-                        <ion-select interface="popover" @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
-                          <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName">{{ shipmentPackage.packageName }}</ion-select-option>
-                        </ion-select>
-                      </ion-item>
-                    </div>
+                <div v-for="items in kitProducts" :key="items.orderItemSeqId" class="order-item">
+                  <div class="product-info">
+                    <ion-item lines="none">
+                      <ion-thumbnail slot="start">
+                        <ShopifyImg :src="getProduct(items.productId).mainImageUrl" size="small"/>
+                      </ion-thumbnail>
+                      <ion-label>
+                        <p class="overline">{{ items.productSku }}</p>
+                        {{ items.productName }}
+                        <p>{{ getFeature(getProduct(items.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(items.productId).featureHierarchy, '1/SIZE/')}}</p>
+                      </ion-label>
+                    </ion-item>
                   </div>
+
                   <div class="product-metadata">
-                    <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                    <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                    <ion-note v-if="getProductStock(items.productId).quantityOnHandTotal">{{ getProductStock(items.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                    <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(items.productId)">
                       <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                     </ion-button>
                   </div>
                 </div>
-              </ion-item-group>
-            </ion-list>
+              </div>
+            </div>
 
             <div class="mobile-only">
               <ion-item>
@@ -264,16 +263,13 @@ import {
   IonHeader,
   IonItem,
   IonItemDivider,
-  IonItemGroup,
   IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonLabel,
-  IonList,
   IonMenuButton,
   IonNote,
   IonPage,
-  IonPopover,
   IonRow,
   IonRadio,
   IonRadioGroup,
@@ -298,6 +294,7 @@ import {
   checkmarkDoneOutline,
   cubeOutline,
   ellipsisVerticalOutline,
+  fileTrayOutline,
   pencilOutline,
   pricetagOutline,
   printOutline,
@@ -322,6 +319,9 @@ import EditPickersModal from '@/components/EditPickersModal.vue';
 import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue'
+import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
+import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
+import { getKitProducts } from '@/utils/order';
 
 export default defineComponent({
   name: 'InProgress',
@@ -338,16 +338,13 @@ export default defineComponent({
     IonHeader,
     IonItem,
     IonItemDivider,
-    IonItemGroup,
     IonIcon,
     IonInfiniteScroll,
     IonInfiniteScrollContent,
     IonLabel,
-    IonList,
     IonMenuButton,
     IonNote,
     IonPage,
-    IonPopover,
     IonRow,
     IonRadio,
     IonRadioGroup,
@@ -387,11 +384,77 @@ export default defineComponent({
     }
   },
   methods: {
+    async openRejectReasonPopover(ev: Event, items: any, order: any) {
+      const reportIssuePopover = await popoverController.create({
+        component: ReportIssuePopover,
+        event: ev,
+        translucent: true,
+        showBackdrop: false,
+      });
+
+      reportIssuePopover.present();
+
+      const result = await reportIssuePopover.onDidDismiss();
+
+      if (result.data) {
+        // reject kit products in bulk
+        const itemsToReject = items.map((item: any) => ({ ...item, rejectReason: result.data }))
+        this.reportIssue(order, itemsToReject)
+      }
+    },
+    async openShipmentBoxPopover(ev: Event, items: any, order: any) {
+      const popover = await popoverController.create({
+        component: ShipmentBoxPopover,
+        componentProps: { 
+          shipmentPackages: order.shipmentPackages
+        },
+        showBackdrop: false,
+        event: ev
+      });
+
+      popover.present();
+
+      const result = await popover.onDidDismiss();
+
+      if (result.data && items[0].selectedBox !== result.data) {
+        this.confirmUpdateBox(items, order, result.data)
+      }
+    },
+    async confirmUpdateBox(items: any, order: any, selectedBox: string) {
+      const alert = await alertController.create({
+        message: translate("Are you sure you want to update box selection?"),
+        header: translate("Update box selection?"),
+        buttons: [
+          {
+            text: translate("Cancel"),
+            role: 'cancel'
+          },
+          {
+            text: translate("Confirm"),
+            handler: async () => {
+              order.kitProducts = items.map((item: any) => ({ ...item, selectedBox }))
+              await this.updateOrder(order, 'box-selection')
+            }
+          }
+        ],
+      });
+      return alert.present();
+    },
     getErrorMessage() {
       return this.searchedQuery === '' ? translate("doesn't have any orders in progress right now.", { facilityName: this.currentFacility.facilityName }) : translate( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
     },
     getInProgressOrders() {
-      return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
+      // processing kit products and normal order items
+      const inProgressOrders = JSON.parse(JSON.stringify(this.inProgressOrders.list)).map((order: any) => {
+        const items = order.items.filter((item: any) => !item.kitProduct)
+        const kitProducts = getKitProducts(order)
+        return {
+          ...order,
+          items,
+          kitProducts
+        }
+      })
+      return inProgressOrders.splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
     },
     isIssueSegmentSelectedForItem(item: any) {
       return this.itemsIssueSegmentSelected.includes(`${item.orderId}-${item.orderItemSeqId}`)
@@ -656,7 +719,7 @@ export default defineComponent({
       this.itemsIssueSegmentSelected = []
       await this.store.dispatch('order/findInProgressOrders')
     },
-    async updateOrder(order: any) { 
+    async updateOrder(order: any, updateParameter?: string) { 
       const form = new FormData()
 
       form.append('facilityId', this.currentFacility.facilityId)
@@ -680,10 +743,10 @@ export default defineComponent({
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
         let prefix = 'rtp'
-        if(this.isIssueSegmentSelectedForItem(item)) {
+        if(this.isIssueSegmentSelectedForItem(item) || updateParameter === 'report') {
           prefix = 'rej'
           form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
-        } else {
+        } else if (!this.isIssueSegmentSelectedForItem(item) || updateParameter === 'box-selection') {
           form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
         }
 
@@ -1100,6 +1163,7 @@ export default defineComponent({
       printOutline,
       pencilOutline,
       ellipsisVerticalOutline,
+      fileTrayOutline,
       optionsOutline,
       formatUtcDate,
       getFeature,

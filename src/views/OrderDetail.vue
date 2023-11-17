@@ -72,42 +72,92 @@
             </div>  
           </div>
 
-          <div v-for="item in order.items" :key="item" class="order-item">
-            <div class="product-info">
-              <ion-item lines="none">
-                <ion-thumbnail slot="start">
-                  <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
-                </ion-thumbnail>
-                <ion-label>
-                  <p class="overline">{{ item.productSku }}</p>
-                  {{ item.virtualProductName }}
-                  <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
-                </ion-label>
-              </ion-item>
-            </div>
+          <ion-list>
+            <ion-item-group>
+              <div v-for="item in order.items" :key="item" class="order-item">
+                <div class="product-info">
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ item.productSku }}</p>
+                      {{ item.virtualProductName }}
+                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                    </ion-label>
+                  </ion-item>
+                </div>
 
-            <div v-if="category === 'in-progress'" class="desktop-only" >
-              <ion-chip outline @click="openShipmentBoxPopover($event, item, order)">
-                <ion-icon :icon="fileTrayOutline" />
-                {{ `Box ${item.selectedBox}` }} 
-                <ion-icon :icon="caretDownOutline" />
-              </ion-chip>
-            </div>
+                <div v-if="category === 'in-progress'" class="desktop-only" >
+                  <ion-chip outline @click="openShipmentBoxPopover($event, item, order)">
+                    <ion-icon :icon="fileTrayOutline" />
+                    {{ `Box ${item.selectedBox}` }} 
+                    <ion-icon :icon="caretDownOutline" />
+                  </ion-chip>
+                </div>
 
-            <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
-            <div class="product-metadata">
-              <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-              <ion-button color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
-                {{ translate('Check stock') }}
-                <ion-icon slot="end" :icon="cubeOutline"/>
-              </ion-button>
-              <!-- TODO make functional -->
-              <ion-button v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
-                {{ translate('Report an issue') }}
-                <ion-icon slot="end" :icon="trashBinOutline"/>
-              </ion-button>
-            </div>
-          </div>
+                <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+                <div class="product-metadata">
+                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                  <ion-button color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+                    {{ translate('Check stock') }}
+                    <ion-icon slot="end" :icon="cubeOutline"/>
+                  </ion-button>
+                  <!-- TODO make functional -->
+                  <ion-button v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
+                    {{ translate('Report an issue') }}
+                    <ion-icon slot="end" :icon="trashBinOutline"/>
+                  </ion-button>
+                </div>
+              </div>
+            </ion-item-group>
+
+            <ion-item-group>
+              <ion-item-divider class="order-item" color="light">
+                <div class="product-info">
+                  <ion-label>
+                    <p>Primary identifier</p>
+                    <p>Secondary identifier</p>
+                  </ion-label>
+                </div>
+
+                <div v-if="category === 'in-progress'" >
+                  <ion-chip outline>
+                    <ion-icon :icon="fileTrayOutline" />
+                    {{ `Box` }} 
+                    <ion-icon :icon="caretDownOutline" />
+                  </ion-chip>
+                </div>
+                    
+                <div v-if="category === 'in-progress'" class="product-metadata" >
+                  <ion-button color="danger" fill="outline">
+                    {{ translate('Report an issue') }}
+                  </ion-button>
+                </div>
+              </ion-item-divider>
+
+              <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
+                <ion-item lines="none" class="product-info">
+                  <ion-thumbnail slot="start">
+                    <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                  </ion-thumbnail>
+                  <ion-label>
+                    <p class="overline">{{ item.productSku }}</p>
+                    {{ item.productName }}
+                    <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  </ion-label>
+                </ion-item>
+
+                <div class="product-metadata">
+                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                    <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                  </ion-button>
+                </div>
+              </div>
+            </ion-item-group>
+          </ion-list>
+
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
               <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
@@ -229,7 +279,10 @@ import {
   IonHeader,
   IonIcon,
   IonItem,
+  IonItemDivider,
+  IonItemGroup,
   IonLabel,
+  IonList,
   IonNote,
   IonPage,
   IonRow,
@@ -295,7 +348,10 @@ export default defineComponent({
     IonHeader,
     IonIcon,
     IonItem,
+    IonItemDivider,
+    IonItemGroup,
     IonLabel,
+    IonList,
     IonNote,
     IonPage,
     IonRow,

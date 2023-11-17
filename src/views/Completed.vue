@@ -68,56 +68,61 @@
               </div>
             </div>
 
-            <ion-list>
-              <ion-item-group>
-                <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
-                  <ion-item lines="none" class="product-info">
-                    <ion-thumbnail slot="start">
-                      <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
-                    </ion-thumbnail>
-                    <ion-label>
-                      <p class="overline">{{ item.productSku }}</p>
-                      {{ item.virtualProductName }}
-                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
-                    </ion-label>
-                  </ion-item>
-                  <div class="product-metadata">
-                    <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                    <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
-                      <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
-                    </ion-button>
-                  </div>
-                </div>
-              </ion-item-group>
-
-              <ion-item-group>
-                <ion-item-divider color="light">
+            <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
+              <div class="product-info">
+                <ion-item lines="none">
+                  <ion-thumbnail slot="start">
+                    <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                  </ion-thumbnail>
                   <ion-label>
-                    <p>Primary identifier</p>
-                    <p>Secondary identifier</p>
+                    <p class="overline">{{ item.productSku }}</p>
+                    {{ item.virtualProductName }}
+                    <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
+                </ion-item>
+              </div>
+              <div class="product-metadata">
+                <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                </ion-button>
+              </div>
+            </div>
+
+            <div v-if="order.kitProducts">
+              <div v-for="(kitProducts, orderItemSeqId) in order.kitProducts" :key="orderItemSeqId">
+                <ion-item-divider class="order-item" color="light">
+                  <div class="product-info">
+                    <ion-label>
+                      <p>{{ getProduct(kitProducts[0].parentProductId).productName }}</p>
+                      <p>{{ getProduct(kitProducts[0].parentProductId).sku }}</p>
+                    </ion-label>
+                  </div>
                 </ion-item-divider>
 
-                <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
-                  <ion-item lines="none" class="product-info">
-                    <ion-thumbnail slot="start">
-                      <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
-                    </ion-thumbnail>
-                    <ion-label>
-                      <p class="overline">{{ item.productSku }}</p>
-                      {{ item.virtualProductName }}
-                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
-                    </ion-label>
-                  </ion-item>
+                <div v-for="items in kitProducts" :key="items.orderItemSeqId" class="order-item">
+                  <div class="product-info">
+                    <ion-item lines="none">
+                      <ion-thumbnail slot="start">
+                        <ShopifyImg :src="getProduct(items.productId).mainImageUrl" size="small"/>
+                      </ion-thumbnail>
+                      <ion-label>
+                        <p class="overline">{{ items.productSku }}</p>
+                        {{ items.productName }}
+                        <p>{{ getFeature(getProduct(items.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(items.productId).featureHierarchy, '1/SIZE/')}}</p>
+                      </ion-label>
+                    </ion-item>
+                  </div>
+
                   <div class="product-metadata">
-                    <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                    <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                    <ion-note v-if="getProductStock(items.productId).quantityOnHandTotal">{{ getProductStock(items.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                    <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(items.productId)">
                       <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                     </ion-button>
                   </div>
                 </div>
-              </ion-item-group>
-            </ion-list>
+              </div>
+            </div>
 
             <!-- TODO: implement functionality to mobile view -->
             <div class="mobile-only">
@@ -183,7 +188,6 @@ import {
   IonItem,
   IonItemDivider,
   IonLabel,
-  IonList,
   IonMenuButton,
   IonNote,
   IonPage,
@@ -214,6 +218,7 @@ import logger from '@/logger';
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
+import { getKitProducts } from '@/utils/order';
 
 export default defineComponent({
   name: 'Completed',
@@ -234,7 +239,6 @@ export default defineComponent({
     IonItem,
     IonItemDivider,
     IonLabel,
-    IonList,
     IonMenuButton,
     IonNote,
     IonPage,
@@ -287,7 +291,17 @@ export default defineComponent({
       })
     },
     getCompletedOrders() {
-      return this.completedOrders.list.slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
+      // processing kit products and normal order items
+      const completedOrders = JSON.parse(JSON.stringify(this.completedOrders.list)).map((order: any) => {
+        const items = order.items.filter((item: any) => !item.kitProduct)
+        const kitProducts = getKitProducts(order)
+        return {
+          ...order,
+          items,
+          kitProducts
+        }
+      })
+      return completedOrders.slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
     },
     async loadMoreCompletedOrders(event: any) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))

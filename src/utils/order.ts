@@ -79,7 +79,27 @@ const getOrderCategory = (order: any) => {
   return result;
 }
 
+const getKitProducts = (order: any) => {
+  // TODO make it generic to search kit association when multiple associations are there
+  return order.items.reduce((kitProducts: any, item: any) => {
+    if (item.toOrderItemAssocs && item.toOrderItemAssocs[0].split("/")[0] === 'KIT_COMPONENT') {
+      // getting second and third values i.e kit product's orderItemSeqId and parentProductId
+      const [, orderItemSeqId, parentProductId] = item.toOrderItemAssocs[0].split('/')
+      if (!kitProducts[orderItemSeqId]) {
+        kitProducts[orderItemSeqId] = []
+      }
+
+      kitProducts[orderItemSeqId].push({
+        parentProductId,
+        ...item
+      })
+    }
+
+    return kitProducts
+  }, {})
+}
 
 export {
+  getKitProducts,
   getOrderCategory
 }
