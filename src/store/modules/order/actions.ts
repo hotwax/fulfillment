@@ -303,7 +303,6 @@ const actions: ActionTree<OrderState, RootState> = {
     inProgressQuery.viewSize = orders.length
 
     commit(types.ORDER_INPROGRESS_QUERY_UPDATED, { ...inProgressQuery })
-    orders[0].items = [...orders[0].items, ...orders[0].items.map((item: any) => ({ ...item, toOrderItemAssocs: ["KIT_COMPONENT/00101/11470"] }))]
     commit(types.ORDER_INPROGRESS_UPDATED, {orders, total})
 
     // fetching the additional information like shipmentRoute, carrierParty information
@@ -398,7 +397,6 @@ const actions: ActionTree<OrderState, RootState> = {
     openOrderQuery.viewSize = orders.length
 
     commit(types.ORDER_OPEN_QUERY_UPDATED, { ...openOrderQuery })
-    orders[0].items = [...orders[0].items, ...orders[0].items.map((item: any) => ({ ...item, toOrderItemAssocs: ["KIT_COMPONENT/00101/11470"] }))]
     commit(types.ORDER_OPEN_UPDATED, {list: orders, total})
 
     emitter.emit('dismissLoader');
@@ -480,7 +478,6 @@ const actions: ActionTree<OrderState, RootState> = {
     })
 
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, { ...completedOrderQuery })
-    orders[0].items = [...orders[0].items, ...orders[0].items.map((item: any) => ({ ...item, toOrderItemAssocs: ["KIT_COMPONENT/00101/11470"] }))]
     commit(types.ORDER_COMPLETED_UPDATED, {list: orders, total})
     
     // fetching the additional information like shipmentRoute, carrierParty information
