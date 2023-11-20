@@ -652,9 +652,11 @@ const actions: ActionTree<OrderState, RootState> = {
       resp = await OrderService.findOpenOrders(orderQueryPayload);
       if (!hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
         const orderItem = resp.data.grouped.orderId.groups[0].doclist.docs[0];
-        // getting product IDs beforehand as items and kit products will be processed later
-        const productIds = resp.data.grouped.orderId.groups[0].doclist.docs.map((item: any) => item.productId)
-        const kitProducts = prepareKitProducts({ items: resp.data.grouped.orderId.groups[0].doclist.docs})
+        const kitProducts = prepareKitProducts({ items: resp.data.grouped.orderId.groups[0].doclist.docs })
+        let productIds = resp.data.grouped.orderId.groups[0].doclist.docs.map((item: any) => item.productId)
+        if (Object.keys(kitProducts).length) {
+          productIds = [...productIds, ...Object.values(kitProducts).map((item: any) => item.parentProductId)]
+        }
         order = {
           category: 'open',
           customerId: orderItem.customerId,
@@ -931,6 +933,11 @@ const actions: ActionTree<OrderState, RootState> = {
         missingLabelImage,
         shipmentPackages: currentShipmentPackages  // ShipmentPackages information is required when performing retryShippingLabel action
       }
+
+      if (Object.keys(kitProducts).length) {
+        const productIds = [...Object.values(kitProducts).map((item: any) => item.parentProductId)]
+        await this.dispatch('product/fetchProducts', { productIds })
+      }
     } catch(err) {
       current.hasMissingPackageInfo = true;
       logger.error('Something went wrong', err)
@@ -1049,6 +1056,10 @@ const actions: ActionTree<OrderState, RootState> = {
         missingLabelImage
       }
 
+      if (Object.keys(kitProducts).length) {
+        const productIds = [...Object.values(kitProducts).map((item: any) => item.parentProductId)]
+        await this.dispatch('product/fetchProducts', { productIds })
+      }
       this.dispatch('util/fetchShipmentBoxTypeDesc', [...new Set(Object.values(carrierShipmentBoxType).flat())])
     } catch (err) {
       current.hasMissingPackageInfo = true;

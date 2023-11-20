@@ -5,6 +5,7 @@ import ProductState from './ProductState'
 import * as types from './mutation-types'
 import { hasError } from '@/adapter'
 import logger from "@/logger";
+import { isKitComponent } from "@/utils/order";
 
 const actions: ActionTree<ProductState, RootState> = {
 
@@ -48,7 +49,10 @@ const actions: ActionTree<ProductState, RootState> = {
     let productIds: any = new Set();
     orders.forEach((list: any) => {
       list.doclist.docs.forEach((order: any) => {
-        if (order.productId) productIds.add(order.productId)
+        if (order.productId) {
+          productIds.add(order.productId)
+          !isKitComponent(order) && productIds.add(order.parentProductId)
+        }
       })
     })
 

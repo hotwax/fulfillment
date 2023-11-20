@@ -147,9 +147,12 @@
                 </ion-item>
 
                 <div class="product-metadata">
-                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
-                    <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">
+                    {{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}
+                  </ion-note>
+                  <ion-button color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+                    {{ translate('Check stock') }}
+                    <ion-icon slot="end" :icon="cubeOutline"/>
                   </ion-button>
                 </div>
               </div>
