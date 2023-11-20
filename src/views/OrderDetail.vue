@@ -72,65 +72,63 @@
             </div>  
           </div>
 
-          <ion-list>
-            <ion-item-group>
-              <div v-for="item in order.items" :key="item" class="order-item">
-                <div class="product-info">
-                  <ion-item lines="none">
-                    <ion-thumbnail slot="start">
-                      <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
-                    </ion-thumbnail>
-                    <ion-label>
-                      <p class="overline">{{ item.productSku }}</p>
-                      {{ item.virtualProductName }}
-                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
-                    </ion-label>
-                  </ion-item>
-                </div>
+          <div v-for="item in order.items" :key="item" class="order-item">
+            <div class="product-info">
+              <ion-item lines="none">
+                <ion-thumbnail slot="start">
+                  <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                </ion-thumbnail>
+                <ion-label>
+                  <p class="overline">{{ item.productSku }}</p>
+                  {{ item.virtualProductName }}
+                  <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                </ion-label>
+              </ion-item>
+            </div>
 
-                <div v-if="category === 'in-progress'" class="desktop-only" >
-                  <ion-chip outline @click="openShipmentBoxPopover($event, item, order)">
-                    <ion-icon :icon="fileTrayOutline" />
-                    {{ `Box ${item.selectedBox}` }} 
-                    <ion-icon :icon="caretDownOutline" />
-                  </ion-chip>
-                </div>
+            <div v-if="category === 'in-progress'" class="desktop-only" >
+              <ion-chip outline @click="openShipmentBoxPopover($event, item, order)">
+                <ion-icon :icon="fileTrayOutline" />
+                {{ `Box ${item.selectedBox}` }} 
+                <ion-icon :icon="caretDownOutline" />
+              </ion-chip>
+            </div>
 
-                <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
-                <div class="product-metadata">
-                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
-                    {{ translate('Check stock') }}
-                    <ion-icon slot="end" :icon="cubeOutline"/>
-                  </ion-button>
-                  <!-- TODO make functional -->
-                  <ion-button v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
-                    {{ translate('Report an issue') }}
-                    <ion-icon slot="end" :icon="trashBinOutline"/>
-                  </ion-button>
-                </div>
-              </div>
-            </ion-item-group>
+            <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+            <div class="product-metadata">
+              <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+              <ion-button color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+                {{ translate('Check stock') }}
+                <ion-icon slot="end" :icon="cubeOutline"/>
+              </ion-button>
+              <!-- TODO make functional -->
+              <ion-button v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
+                {{ translate('Report an issue') }}
+                <ion-icon slot="end" :icon="trashBinOutline"/>
+              </ion-button>
+            </div>
+          </div>
 
-            <ion-item-group>
+          <div v-if="order.kitProducts">
+            <div v-for="(kitProducts, orderItemSeqId) in order.kitProducts" :key="orderItemSeqId">
               <ion-item-divider class="order-item" color="light">
                 <div class="product-info">
                   <ion-label>
-                    <p>Primary identifier</p>
-                    <p>Secondary identifier</p>
+                    <p>{{ getProduct(kitProducts[0]?.parentProductId).productName }}</p>
+                    <p>{{ getProduct(kitProducts[0]?.parentProductId).sku }}</p>
                   </ion-label>
                 </div>
 
-                <div v-if="category === 'in-progress'" >
-                  <ion-chip outline>
+                <div v-if="category === 'in-progress' && order.shipmentPackages && order.shipmentPackages.length">
+                  <ion-chip outline @click="openShipmentBoxPopover($event, null, order, kitProducts, orderItemSeqId)">
                     <ion-icon :icon="fileTrayOutline" />
-                    {{ `Box` }} 
+                    {{ `Box ${kitProducts[0]?.selectedBox}` }} 
                     <ion-icon :icon="caretDownOutline" />
                   </ion-chip>
                 </div>
                     
-                <div v-if="category === 'in-progress'" class="product-metadata" >
-                  <ion-button color="danger" fill="outline">
+                <div class="product-metadata" v-if="category === 'in-progress' && order.shipmentPackages && order.shipmentPackages.length">
+                  <ion-button @click="openRejectReasonPopover($event, null, order, kitProducts)" color="danger" fill="outline">
                     {{ translate('Report an issue') }}
                   </ion-button>
                 </div>
@@ -155,8 +153,8 @@
                   </ion-button>
                 </div>
               </div>
-            </ion-item-group>
-          </ion-list>
+            </div>
+          </div>
 
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
@@ -280,9 +278,7 @@ import {
   IonIcon,
   IonItem,
   IonItemDivider,
-  IonItemGroup,
   IonLabel,
-  IonList,
   IonNote,
   IonPage,
   IonRow,
@@ -331,6 +327,7 @@ import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
 import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
 import ShippingDetails from '@/views/ShippingDetails.vue';
+import { prepareKitProducts, isKitComponent } from "@/utils/order";
 
 export default defineComponent({
   name: "OrderDetail",
@@ -349,9 +346,7 @@ export default defineComponent({
     IonIcon,
     IonItem,
     IonItemDivider,
-    IonItemGroup,
     IonLabel,
-    IonList,
     IonNote,
     IonPage,
     IonRow,
@@ -412,7 +407,7 @@ export default defineComponent({
     async printPicklist (order: any) {
       await OrderService.printPicklist(order.picklistId)
     },
-    async openShipmentBoxPopover(ev: Event, item: any, order: any) {
+    async openShipmentBoxPopover(ev: Event, item: any, order: any, kitProducts?: any, orderItemSeqId?: number) {
       const popover = await popoverController.create({
         component: ShipmentBoxPopover,
         componentProps: { 
@@ -426,11 +421,11 @@ export default defineComponent({
 
       const result = await popover.onDidDismiss();
 
-      if (result.data && item.selectedBox !== result.data) {
-        this.confirmUpdateBox(item, order, result.data)
+      if (result.data && (kitProducts ? kitProducts[0].selectedBox !== result.data : item.selectedBox !== result.data)) {
+        this.confirmUpdateBox(item, order, result.data, kitProducts, orderItemSeqId)
       }
     },
-    async confirmUpdateBox(item: any, order: any, selectedBox: string) {
+    async confirmUpdateBox(item: any, order: any, selectedBox: string, kitProducts?: any, orderItemSeqId?: number) {
       const alert = await alertController.create({
         message: translate("Are you sure you want to update box selection?"),
         header: translate("Update box selection?"),
@@ -442,7 +437,7 @@ export default defineComponent({
           {
             text: translate("Confirm"),
             handler: async () => {
-              item.selectedBox = selectedBox;
+              kitProducts ? order.kitProducts[orderItemSeqId as number] = kitProducts.map((item: any) => ({ ...item, selectedBox })) : item.selectedBox = selectedBox;
               await this.updateOrder(order, 'box-selection').then(async () => {
                 await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
               }).catch(err => err);
@@ -640,7 +635,7 @@ export default defineComponent({
       });
       return popover.present();
     },
-    async openRejectReasonPopover(ev: Event, item: any, order: any) {
+    async openRejectReasonPopover(ev: Event, item: any, order: any, kitProducts?: any) {
       const reportIssuePopover = await popoverController.create({
         component: ReportIssuePopover,
         event: ev,
@@ -653,8 +648,13 @@ export default defineComponent({
       const result = await reportIssuePopover.onDidDismiss();
 
       if (result.data) {
-        item.rejectReason = result.data;
-        const itemsToReject = order.items.filter((item: any) => item.rejectReason)
+        let itemsToReject
+        if (kitProducts) {
+          itemsToReject = kitProducts.map((item: any) => ({ ...item, rejectReason: result.data }))
+        } else {
+          item.rejectReason = result.data
+          itemsToReject = order.items.filter((item: any) => item.rejectReason)
+        }
         this.reportIssue(order, itemsToReject)
       }
     },

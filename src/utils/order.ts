@@ -83,7 +83,7 @@ const isKitComponent = (item: any) => {
   return item.toOrderItemAssocs?.some((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
 }
 
-const getKitProducts = (order: any) => {
+const prepareKitProducts = (order: any) => {
   return order.items.reduce((kitProducts: any, item: any) => {
     if (item.toOrderItemAssocs && isKitComponent(item)) {
       // getting second and third values i.e kit product's orderItemSeqId and parentProductId
@@ -103,7 +103,7 @@ const getKitProducts = (order: any) => {
 }
 
 export {
-  getKitProducts,
+  prepareKitProducts,
   getOrderCategory,
   isKitComponent
 }

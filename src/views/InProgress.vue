@@ -159,7 +159,7 @@
                   </div>
 
                   <div v-if="order.shipmentPackages && order.shipmentPackages.length">
-                    <ion-chip outline @click="openShipmentBoxPopover($event, kitProducts, order)">
+                    <ion-chip outline @click="openShipmentBoxPopover($event, kitProducts, orderItemSeqId, order)">
                       <ion-icon :icon="fileTrayOutline" />
                       {{ `Box ${kitProducts[0].selectedBox}` }} 
                       <ion-icon :icon="caretDownOutline" />
@@ -328,7 +328,6 @@ import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue'
 import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
 import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
-import { getKitProducts, isKitComponent } from '@/utils/order';
 import QRCodeModal from '@/components/QRCodeModal.vue'
 import { useAuthStore } from '@hotwax/dxp-components'
 
@@ -393,7 +392,7 @@ export default defineComponent({
     }
   },
   methods: {
-    async openRejectReasonPopover(ev: Event, items: any, order: any) {
+    async openRejectReasonPopover(ev: Event, kitProducts: any, order: any) {
       const reportIssuePopover = await popoverController.create({
         component: ReportIssuePopover,
         event: ev,
@@ -407,11 +406,11 @@ export default defineComponent({
 
       if (result.data) {
         // reject kit products in bulk
-        const itemsToReject = items.map((item: any) => ({ ...item, rejectReason: result.data }))
+        const itemsToReject = kitProducts.map((item: any) => ({ ...item, rejectReason: result.data }))
         this.reportIssue(order, itemsToReject)
       }
     },
-    async openShipmentBoxPopover(ev: Event, items: any, order: any) {
+    async openShipmentBoxPopover(ev: Event, kitProducts: any, orderItemSeqId: number, order: any) {
       const popover = await popoverController.create({
         component: ShipmentBoxPopover,
         componentProps: { 
@@ -425,11 +424,11 @@ export default defineComponent({
 
       const result = await popover.onDidDismiss();
 
-      if (result.data && items[0].selectedBox !== result.data) {
-        this.confirmUpdateBox(items, order, result.data)
+      if (result.data && kitProducts[0].selectedBox !== result.data) {
+        this.confirmUpdateBox(kitProducts, orderItemSeqId, order, result.data)
       }
     },
-    async confirmUpdateBox(items: any, order: any, selectedBox: string) {
+    async confirmUpdateBox(kitProducts: any, orderItemSeqId: number, order: any, selectedBox: string) {
       const alert = await alertController.create({
         message: translate("Are you sure you want to update box selection?"),
         header: translate("Update box selection?"),
@@ -441,7 +440,7 @@ export default defineComponent({
           {
             text: translate("Confirm"),
             handler: async () => {
-              order.kitProducts = items.map((item: any) => ({ ...item, selectedBox }))
+              order.kitProducts[orderItemSeqId] = kitProducts.map((item: any) => ({ ...item, selectedBox }))
               await this.updateOrder(order, 'box-selection')
             }
           }
@@ -453,17 +452,7 @@ export default defineComponent({
       return this.searchedQuery === '' ? translate("doesn't have any orders in progress right now.", { facilityName: this.currentFacility.facilityName }) : translate( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
     },
     getInProgressOrders() {
-      // processing kit products and normal order items
-      const inProgressOrders = JSON.parse(JSON.stringify(this.inProgressOrders.list)).map((order: any) => {
-        const items = order.items.filter((item: any) => !isKitComponent(item))
-        const kitProducts = getKitProducts(order)
-        return {
-          ...order,
-          items,
-          kitProducts
-        }
-      })
-      return inProgressOrders.splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
+      return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
     },
     isIssueSegmentSelectedForItem(item: any) {
       return this.itemsIssueSegmentSelected.includes(`${item.orderId}-${item.orderItemSeqId}`)

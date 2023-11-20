@@ -185,7 +185,6 @@ import { translate } from '@hotwax/dxp-components';
 import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
-import { getKitProducts, isKitComponent } from '@/utils/order';
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -236,17 +235,7 @@ export default defineComponent({
       return this.searchedQuery === '' ? translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility.facilityName }) : translate( "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
     },
     getOpenOrders() {
-      // processing kit products and normal order items
-      const openOrders = JSON.parse(JSON.stringify(this.openOrders.list)).map((order: any) => {
-        const items = order.items.filter((item: any) => !isKitComponent(item))
-        const kitProducts = getKitProducts(order)
-        return {
-          ...order,
-          items,
-          kitProducts
-        }
-      })
-      return openOrders.slice(0, (this.openOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
+      return JSON.parse(JSON.stringify(this.openOrders.list)).slice(0, (this.openOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
     },
     async loadMoreOpenOrders(event: any) {
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
