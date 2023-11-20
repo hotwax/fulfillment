@@ -111,7 +111,7 @@
               </div>
 
               <div class="desktop-only" v-else-if="order.shipmentPackages">
-                <ion-segment @ionChange="changeSegment($event, item, order)" :value="isIssueSegmentSelectedForItem(item) ? 'issue' : 'pack'">
+                <ion-segment @ionChange.prevent.stop="changeSegment($event, item, order)" :value="isIssueSegmentSelectedForItem(item) ? 'issue' : 'pack'">
                   <ion-segment-button value="pack">
                     <ion-label>{{ translate("Ready to pack") }}</ion-label>
                   </ion-segment-button>
@@ -140,6 +140,7 @@
                   </div>
                 </div>
               </div>
+
               <div class="product-metadata">
                 <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
                 <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">

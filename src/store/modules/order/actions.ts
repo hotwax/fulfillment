@@ -8,7 +8,7 @@ import * as types from './mutation-types'
 import { prepareOrderQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
-import { prepareKitProducts, getOrderCategory, isKitComponent } from '@/utils/order'
+import { getOrderCategory, isKitComponent, prepareKitProducts } from '@/utils/order'
 
 const actions: ActionTree<OrderState, RootState> = {
   async fetchInProgressOrdersAdditionalInformation({ commit, state }, payload = { viewIndex: 0 }) {
