@@ -348,7 +348,7 @@ const actions: ActionTree<OrderState, RootState> = {
         '-fulfillmentStatus': { value: 'Cancelled' },
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
-        facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
+        facilityId: { value: this.state.user.currentFacility.facilityId },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
       }
     }
