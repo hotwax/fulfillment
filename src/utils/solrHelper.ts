@@ -33,9 +33,10 @@ const prepareOrderQuery = (params: any) => {
 
       if (Array.isArray(filterValue)) {
         const filterOperator = params.filters[key].op ? params.filters[key].op : 'OR' ;
-        payload.json.filter += ` AND ${key}: (${filterValue.join(' ' + filterOperator + ' ')})`
+        const escapedFilterValues = filterValue.map(value => escapeSolrSpecialChars(value));
+        payload.json.filter += ` AND ${key}: (${escapedFilterValues.join(' ' + filterOperator + ' ')})`
       } else {
-        payload.json.filter += ` AND ${key}: ${filterValue}`
+        payload.json.filter += ` AND ${key}: ${escapeSolrSpecialChars(filterValue)}`
       }
     })
   }
@@ -47,4 +48,12 @@ const prepareOrderQuery = (params: any) => {
   return payload
 }
 
-export { prepareOrderQuery }
+const escapeSolrSpecialChars = (input: any) => {
+  const specialChars = ['\\', '+', '-', '&&', '||', '!', '(', ')', '{', '}', '[', ']', '^', '"', '~', '*', '?', ':'];
+
+  // Escape each special character in the input
+  const escapedInput = String(input).replace(new RegExp(`[${specialChars.join('\\')}]`, 'g'), '\\$&');
+  return escapedInput;
+}
+
+export { escapeSolrSpecialChars, prepareOrderQuery }
