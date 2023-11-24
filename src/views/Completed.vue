@@ -94,7 +94,7 @@
             <!-- TODO: implement functionality to mobile view -->
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
