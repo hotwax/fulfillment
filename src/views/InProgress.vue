@@ -150,47 +150,47 @@
             </div>
 
             <div v-if="order.kitProducts">
-              <div v-for="(kitProducts, orderItemSeqId) in order.kitProducts" :key="orderItemSeqId">
+              <div v-for="(kitProduct, orderItemSeqId) in order.kitProducts" :key="orderItemSeqId">
                 <ion-item-divider class="order-item" color="light">
                   <div class="product-info">
                     <ion-label>
-                      <p>{{ getProduct(kitProducts[0].parentProductId).productName }}</p>
-                      <p>{{ getProduct(kitProducts[0].parentProductId).sku }}</p>
+                      <p>{{ getProduct(kitProduct[0].parentProductId).productName }}</p>
+                      <p>{{ getProduct(kitProduct[0].parentProductId).sku }}</p>
                     </ion-label>
                   </div>
 
                   <div v-if="order.shipmentPackages && order.shipmentPackages.length">
-                    <ion-chip outline @click="openShipmentBoxPopover($event, kitProducts, orderItemSeqId, order)">
+                    <ion-chip outline @click="openShipmentBoxPopover($event, kitProduct, orderItemSeqId, order)">
                       <ion-icon :icon="fileTrayOutline" />
-                      {{ `Box ${kitProducts[0].selectedBox}` }} 
+                      {{ `Box ${kitProduct[0].selectedBox}` }}
                       <ion-icon :icon="caretDownOutline" />
                     </ion-chip>
                   </div>
                       
                   <div class="product-metadata" v-if="order.shipmentPackages && order.shipmentPackages.length">
-                    <ion-button @click="openRejectReasonPopover($event, kitProducts, order)" color="danger" fill="outline">
+                    <ion-button @click="openRejectReasonPopover($event, kitProduct, order)" color="danger" fill="outline">
                       {{ translate('Report an issue') }}
                     </ion-button>
                   </div>
                 </ion-item-divider>
 
-                <div v-for="items in kitProducts" :key="items.orderItemSeqId" class="order-item">
+                <div v-for="item in kitProduct" :key="item.orderItemSeqId" class="order-item">
                   <div class="product-info">
                     <ion-item lines="none">
                       <ion-thumbnail slot="start">
-                        <ShopifyImg :src="getProduct(items.productId).mainImageUrl" size="small"/>
+                        <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                       </ion-thumbnail>
                       <ion-label>
-                        <p class="overline">{{ items.productSku }}</p>
-                        {{ items.productName }}
-                        <p>{{ getFeature(getProduct(items.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(items.productId).featureHierarchy, '1/SIZE/')}}</p>
+                        <p class="overline">{{ item.productSku }}</p>
+                        {{ item.productName }}
+                        <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                       </ion-label>
                     </ion-item>
                   </div>
 
                   <div class="product-metadata">
-                    <ion-note v-if="getProductStock(items.productId).quantityOnHandTotal">{{ getProductStock(items.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                    <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(items.productId)">
+                    <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                    <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                       <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                     </ion-button>
                   </div>
