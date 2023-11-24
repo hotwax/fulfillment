@@ -33,10 +33,9 @@ const prepareOrderQuery = (params: any) => {
 
       if (Array.isArray(filterValue)) {
         const filterOperator = params.filters[key].op ? params.filters[key].op : 'OR' ;
-        const escapedFilterValues = filterValue.map(value => escapeSolrSpecialChars(value));
-        payload.json.filter += ` AND ${key}: (${escapedFilterValues.join(' ' + filterOperator + ' ')})`
+        payload.json.filter += ` AND ${key}: (${filterValue.join(' ' + filterOperator + ' ')})`
       } else {
-        payload.json.filter += ` AND ${key}: ${escapeSolrSpecialChars(filterValue)}`
+        payload.json.filter += ` AND ${key}: ${filterValue}`
       }
     })
   }
