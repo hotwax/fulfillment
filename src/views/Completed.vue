@@ -94,7 +94,7 @@
             <!-- TODO: implement functionality to mobile view -->
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && order.missingLabelImage && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && order.trackingCode && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -105,7 +105,7 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
-                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && order.missingLabelImage && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && order.trackingCode && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
                 <ion-button v-if="productStoreShipmentMethCount > 0" :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate("Regenerate Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
@@ -335,12 +335,12 @@ export default defineComponent({
               let orderList = JSON.parse(JSON.stringify(this.completedOrders.list))
               // orders with tracking required and missing label must be excluded
               const trackingRequiredOrders = orderList.filter((order: any) => this.isTrackingRequiredForAnyShipmentPackage(order))
-              let trackingRequiredAndMissingLabelOrders: any
+              let trackingRequiredAndMissingCodeOrders: any
               if (trackingRequiredOrders.length) {
                 // filtering and excluding orders having missing label image with tracking required
-                trackingRequiredAndMissingLabelOrders = trackingRequiredOrders.filter((order: any) => order.missingLabelImage).map((order: any) => order.orderId)
-                if (trackingRequiredAndMissingLabelOrders.length) {
-                  orderList = orderList.filter((order: any) => !trackingRequiredAndMissingLabelOrders.includes(order.orderId))
+                trackingRequiredAndMissingCodeOrders = trackingRequiredOrders.filter((order: any) => !order.trackingCode).map((order: any) => order.orderId)
+                if (trackingRequiredAndMissingCodeOrders.length) {
+                  orderList = orderList.filter((order: any) => !trackingRequiredAndMissingCodeOrders.includes(order.orderId))
                 }
               }
 
@@ -377,9 +377,9 @@ export default defineComponent({
                 const resp = await OrderService.bulkShipOrders(payload)
 
                 if (resp.status == 200 && !hasError(resp)) {
-                  !trackingRequiredAndMissingLabelOrders.length
+                  !trackingRequiredAndMissingCodeOrders.length
                     ? showToast(translate('Orders shipped successfully'))
-                    : showToast(translate('out of cannot be shipped due to missing tracking codes.', { remainingOrders: trackingRequiredAndMissingLabelOrders.length, totalOrders: packedOrdersCount }))
+                    : showToast(translate('out of cannot be shipped due to missing tracking codes.', { remainingOrders: trackingRequiredAndMissingCodeOrders.length, totalOrders: packedOrdersCount }))
                   // TODO: handle the case of data not updated correctly
                   await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
@@ -633,7 +633,7 @@ export default defineComponent({
       return order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
     },
     hasAnyShipmentTrackingInfoMissing() {
-      return this.completedOrders.list.some((order: any) => (order.shipmentPackages && this.isTrackingRequiredForAnyShipmentPackage(order)) && order.missingLabelImage)
+      return this.completedOrders.list.some((order: any) => (order.shipmentPackages && (this.isTrackingRequiredForAnyShipmentPackage(order) && order.trackingCode)))
     },
     async orderActionsPopover(order: any, ev: Event) {
       const popover = await popoverController.create({
