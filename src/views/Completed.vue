@@ -601,7 +601,7 @@ export default defineComponent({
     async regenerateShippingLabel(order: any) {
       // If there are no product store shipment method configured, then not generating the label and displaying an error toast
       if(this.productStoreShipmentMethCount <= 0) {
-        showToast(translate('Unable to generate shipping label due to missing product store shipment configuration'))
+        showToast(translate('Unable to generate shipping label due to missing product store shipping method configuration'))
         return;
       }
 

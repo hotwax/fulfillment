@@ -304,7 +304,7 @@
   "Unlimited Capacity": "Unlimited Capacity",
   "Unlimited capacity removes the fulfillment capacity limit entirely. To add a fulfillment capacity to this facility, use the custom option.": "Unlimited capacity removes the fulfillment capacity limit entirely. To add a fulfillment capacity to this facility, use the custom option.",
   "Unlimited fulfillment capacity": "Unlimited fulfillment capacity",
-  "Unable to generate shipping label due to missing product store shipment configuration": "Unable to generate shipping label due to missing product store shipment configuration",
+  "Unable to generate shipping label due to missing product store shipping method configuration": "Unable to generate shipping label due to missing product store shipping method configuration",
   "Unable to open as browser is blocking pop-ups.": "Unable to open { documentName } as browser is blocking pop-ups.",
   "Unpack": "Unpack",
   "Unpacking this order will send it back to 'In progress' and it will have to be repacked.": "Unpacking this order will send it back to 'In progress' and it will have to be repacked.",
