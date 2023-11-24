@@ -106,7 +106,7 @@
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
                 <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
-                <ion-button v-if="productStoreShipmentMethCount > 0" :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate("Regenerate Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
@@ -599,6 +599,12 @@ export default defineComponent({
       await OrderService.printShippingLabel(shipmentIds)
     },
     async regenerateShippingLabel(order: any) {
+      // If there are no product store shipment method configured, then not generating the label and displaying an error toast
+      if(this.productStoreShipmentMethCount <= 0) {
+        showToast(translate('Unable to generate shipping label due to missing product store shipment configuration'))
+        return;
+      }
+
       // if the request to print shipping label is not yet completed, then clicking multiple times on the button
       // should not do anything
       if(order.isGeneratingShippingLabel) {

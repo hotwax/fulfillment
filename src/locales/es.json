@@ -304,6 +304,7 @@
   "Unlimited Capacity": "Capacidad Ilimitada",
   "Unlimited fulfillment capacity": "Capacidad de cumplimiento ilimitada",
   "Unlimited capacity removes the fulfillment capacity limit entirely. To add a fulfillment capacity to this facility, use the custom option.": "La capacidad ilimitada elimina por completo el límite de capacidad de cumplimiento. Para agregar una capacidad de cumplimiento a esta instalación, use la opción personalizada.",
+  "Unable to generate shipping label due to missing product store shipment configuration": "Unable to generate shipping label due to missing product store shipment configuration",
   "Unable to open as browser is blocking pop-ups.": "No se puede abrir { documentName } porque el navegador bloquea las ventanas emergentes.",
   "Unpack": "Desempacar",
   "Unpacking this order will send it back to 'In progress' and it will have to be repacked.": "Desempacar este pedido lo enviará de vuelta a 'En curso' y tendrá que ser vuelto a empacar.",
