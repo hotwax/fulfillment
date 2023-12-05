@@ -106,7 +106,7 @@
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
                 <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
-                <ion-button v-if="productStoreShipmentMethCount > 0" :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate("Regenerate Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
@@ -571,7 +571,14 @@ export default defineComponent({
     async retryShippingLabel(order: any) {
       // Getting all the shipmentIds from shipmentPackages, as we only need to pass those shipmentIds for which label is missing
       // In shipmentPackages only those shipmentInformation is available for which shippingLabel is missing
-      const shipmentIds = order.shipmentPackages.map((shipmentPackage: any) => shipmentPackage.shipmentId);
+      const shipmentIds = order.shipmentPackages?.map((shipmentPackage: any) => shipmentPackage.shipmentId);
+
+      // Don't make any api call when we does not have any shipmentIds for order
+      if(!shipmentIds?.length) {
+        showToast(translate("Failed to generate shipping label"))
+        return;
+      }
+
       // TODO Handle error case
       const resp = await OrderService.retryShippingLabel(shipmentIds)
       if (!hasError(resp)) {
@@ -590,16 +597,28 @@ export default defineComponent({
         return;
       }
 
-      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
+      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId)
       order.isGeneratingPackingSlip = true;
       await OrderService.printPackingSlip(shipmentIds);
       order.isGeneratingPackingSlip = false;
     },
     async printShippingLabel(order: any) {
-      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
+      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId)
+
+      if(!shipmentIds?.length) {
+        showToast(translate('Failed to generate shipping label'))
+        return
+      }
+
       await OrderService.printShippingLabel(shipmentIds)
     },
     async regenerateShippingLabel(order: any) {
+      // If there are no product store shipment method configured, then not generating the label and displaying an error toast
+      if(this.productStoreShipmentMethCount <= 0) {
+        showToast(translate('Unable to generate shipping label due to missing product store shipping method configuration'))
+        return;
+      }
+
       // if the request to print shipping label is not yet completed, then clicking multiple times on the button
       // should not do anything
       if(order.isGeneratingShippingLabel) {
@@ -618,7 +637,7 @@ export default defineComponent({
     },
     async showShippingLabelErrorModal(order: any){
       // Getting all the shipment ids
-      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId);
+      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId);
       const shippingLabelErrorModal = await modalController.create({
         component: ShippingLabelErrorModal,
         componentProps: {

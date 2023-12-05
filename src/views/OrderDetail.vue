@@ -322,7 +322,8 @@ export default defineComponent({
       getPartyName: 'util/getPartyName',
       getfacilityTypeDesc: 'util/getFacilityTypeDesc',
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
-      getStatusDesc: 'util/getStatusDesc'
+      getStatusDesc: 'util/getStatusDesc',
+      productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount'
     })
   },
   data() {
@@ -628,6 +629,13 @@ export default defineComponent({
       return packageType;
     },
     async regenerateShippingLabel(order: any) {
+      // If there are no product store shipment method configured, then not generating the label and displaying an error toast
+      if(this.productStoreShipmentMethCount <= 0) {
+        showToast(translate('Unable to generate shipping label due to missing product store shipping method configuration'))
+        return;
+      }
+
+
       // if the request to print shipping label is not yet completed, then clicking multiple times on the button
       // should not do anything
       if(order.isGeneratingShippingLabel) {
@@ -653,7 +661,13 @@ export default defineComponent({
     async retryShippingLabel(order: any) {
       // Getting all the shipmentIds from shipmentPackages, as we only need to pass those shipmentIds for which label is missing
       // In shipmentPackages only those shipmentInformation is available for which shippingLabel is missing
-      const shipmentIds = order.shipmentPackages.map((shipmentPackage: any) => shipmentPackage.shipmentId);
+      const shipmentIds = order.shipmentPackages?.map((shipmentPackage: any) => shipmentPackage.shipmentId);
+
+      if(!shipmentIds?.length) {
+        showToast(translate("Failed to generate shipping label"))
+        return;
+      }
+
       // TODO Handle error case
       const resp = await OrderService.retryShippingLabel(shipmentIds)
       if (!hasError(resp)) {
@@ -675,7 +689,13 @@ export default defineComponent({
       return popover.present();
     },
     async printShippingLabel(order: any) {
-      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
+      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId)
+
+      if(!shipmentIds?.length) {
+        showToast(translate('Failed to generate shipping label'))
+        return;
+      }
+
       await OrderService.printShippingLabel(shipmentIds)
     },
     async addShipmentBox(order: any) {
@@ -795,14 +815,14 @@ export default defineComponent({
       form.append('facilityId', this.currentFacility.facilityId)
       form.append('orderId', order.orderId)
 
-      order.shipmentIds.map((shipmentId: string) => {
+      order.shipmentIds?.map((shipmentId: string) => {
         form.append('shipmentIds', shipmentId)
       })
 
       const items = JSON.parse(JSON.stringify(order.items));
 
       // creating updated data for shipment packages
-      order.shipmentPackages.map((shipmentPackage: any, index: number) => {
+      order.shipmentPackages?.map((shipmentPackage: any, index: number) => {
         form.append(`box_shipmentId_${index}`, shipmentPackage.shipmentId)
         form.append(`${index}_box_rowSubmit_`, ''+index)
         form.append(`box_shipmentBoxTypeId_${index}`, shipmentPackage.shipmentBoxTypeId)
@@ -952,7 +972,7 @@ export default defineComponent({
           showToast(translate('Order shipped successfully'))
 
           // updating order locally after ship action is success, as solr takes some time to update
-          order.shipments.map((shipment: any) => {
+          order.shipments?.map((shipment: any) => {
             if(shipment.shipmentId === order.shipmentId) shipment.statusId = 'SHIPMENT_SHIPPED'
           })
           this.store.dispatch('order/updateCurrent', order)
@@ -1053,7 +1073,7 @@ export default defineComponent({
         return;
       }
 
-      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
+      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId)
       order.isGeneratingPackingSlip = true;
       await OrderService.printPackingSlip(shipmentIds);
       order.isGeneratingPackingSlip = false;
