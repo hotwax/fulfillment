@@ -1041,10 +1041,10 @@ export default defineComponent({
     },
     async openImgModal(item: any){
       const imgModal = await modalController.create({
-        component:ImageModal,
-        componentProps:{
-          imageUrl:this.getProduct(item.productId).mainImageUrl,
-          virtualProductName:item.productName
+        component: ImageModal,
+        componentProps: {
+          imageUrl: this.getProduct(item.productId).mainImageUrl,
+          virtualProductName: item.productName
         },
       });
       return imgModal.present();
