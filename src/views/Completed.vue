@@ -570,7 +570,14 @@ export default defineComponent({
     async retryShippingLabel(order: any) {
       // Getting all the shipmentIds from shipmentPackages, as we only need to pass those shipmentIds for which label is missing
       // In shipmentPackages only those shipmentInformation is available for which shippingLabel is missing
-      const shipmentIds = order.shipmentPackages.map((shipmentPackage: any) => shipmentPackage.shipmentId);
+      const shipmentIds = order.shipmentPackages?.map((shipmentPackage: any) => shipmentPackage.shipmentId);
+
+      // Don't make any api call when we does not have any shipmentIds for order
+      if(!shipmentIds?.length) {
+        showToast(translate("Failed to generate shipping label"))
+        return;
+      }
+
       // TODO Handle error case
       const resp = await OrderService.retryShippingLabel(shipmentIds)
       if (!hasError(resp)) {
@@ -589,13 +596,19 @@ export default defineComponent({
         return;
       }
 
-      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
+      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId)
       order.isGeneratingPackingSlip = true;
       await OrderService.printPackingSlip(shipmentIds);
       order.isGeneratingPackingSlip = false;
     },
     async printShippingLabel(order: any) {
-      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
+      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId)
+
+      if(!shipmentIds?.length) {
+        showToast(translate('Failed to generate shipping label'))
+        return
+      }
+
       await OrderService.printShippingLabel(shipmentIds)
     },
     async regenerateShippingLabel(order: any) {
@@ -623,7 +636,7 @@ export default defineComponent({
     },
     async showShippingLabelErrorModal(order: any){
       // Getting all the shipment ids
-      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId);
+      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId);
       const shippingLabelErrorModal = await modalController.create({
         component: ShippingLabelErrorModal,
         componentProps: {
