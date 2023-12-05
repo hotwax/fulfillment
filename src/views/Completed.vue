@@ -71,7 +71,7 @@
             <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
               <div class="product-info">
                 <ion-item lines="none">
-                  <ion-thumbnail slot="start">
+                  <ion-thumbnail slot="start" @click="openImgModal(item)">
                     <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
@@ -184,6 +184,7 @@ import logger from '@/logger';
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
+import ImageModal from '@/components/ImageModal.vue'
 
 export default defineComponent({
   name: 'Completed',
@@ -646,6 +647,16 @@ export default defineComponent({
         event: ev
       });
       return popover.present();
+    },
+    async openImgModal(item: any){
+      const imgModal = await modalController.create({
+        component:ImageModal,
+        componentProps:{
+          imageUrl:this.getProduct(item.productId).mainImageUrl,
+          virtualProductName:item.virtualProductName
+        },
+      });
+      return imgModal.present();
     },
   },
   setup() {

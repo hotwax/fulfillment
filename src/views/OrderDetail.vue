@@ -75,7 +75,7 @@
           <div v-for="item in order.items" :key="item" class="order-item">
             <div class="product-info">
               <ion-item lines="none">
-                <ion-thumbnail slot="start">
+                <ion-thumbnail slot="start" @click="openImgModal(item)">
                   <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                 </ion-thumbnail>
                 <ion-label>
@@ -191,7 +191,7 @@
             </ion-item>
     
             <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
-              <ion-thumbnail slot="start">
+              <ion-thumbnail slot="start" @click="openImgModal(item)">
                 <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
               </ion-thumbnail>
               <ion-label>
@@ -278,6 +278,7 @@ import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
 import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
 import ShippingDetails from '@/views/ShippingDetails.vue';
+import ImageModal from '@/components/ImageModal.vue';
 
 export default defineComponent({
   name: "OrderDetail",
@@ -1093,7 +1094,17 @@ export default defineComponent({
     },
     isTrackingRequiredForAnyShipmentPackage(order: any) {
       return order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
-    }
+    },
+    async openImgModal(item: any){
+      const imgModal = await modalController.create({
+        component:ImageModal,
+        componentProps:{
+          imageUrl:this.getProduct(item.productId).mainImageUrl,
+          virtualProductName:item.virtualProductName
+        },
+      });
+      return imgModal.present();
+    },
   },
   setup() {
     const store = useStore();
