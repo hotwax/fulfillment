@@ -832,6 +832,7 @@ const actions: ActionTree<OrderState, RootState> = {
     const params = {
       groupBy: 'shipGroupSeqId',
       filters: {
+        'shipGroupSeqId': { value: '[* TO *]' },  // check to ignore all those records for which shipGroupSeqId is not present, as in case of kit comp we does not get shipGroupSeqId on some items
         '-shipGroupSeqId': { value: order.shipGroupSeqId },
         orderId: { value: order.orderId }
       },
@@ -870,7 +871,9 @@ const actions: ActionTree<OrderState, RootState> = {
         return;
       }
 
-      facilityTypeIds.push(shipItem.facilityTypeId)
+      // In some case we are not having facilityTypeId in resp, resulting in undefined being pushed in the array
+      // so checking for facilityTypeId before updating the array
+      shipItem.facilityTypeId && facilityTypeIds.push(shipItem.facilityTypeId)
 
       return {
         items: shipGroup.doclist.docs,
