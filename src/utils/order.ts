@@ -86,8 +86,9 @@ const isKitComponent = (item: any) => {
 const prepareKitProducts = (order: any) => {
   return order.items.reduce((kitProducts: any, item: any) => {
     if (item.toOrderItemAssocs && isKitComponent(item)) {
+      const kitItemAssocs = item.toOrderItemAssocs.find((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
       // getting second and third values i.e kit product's orderItemSeqId and parentProductId
-      const [, orderItemSeqId, parentProductId] = item.toOrderItemAssocs[0].split('/')
+      const [, orderItemSeqId, parentProductId] = kitItemAssocs.split('/')
       if (!kitProducts[orderItemSeqId]) {
         kitProducts[orderItemSeqId] = []
       }

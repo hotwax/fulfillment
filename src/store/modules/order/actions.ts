@@ -832,7 +832,7 @@ const actions: ActionTree<OrderState, RootState> = {
     const params = {
       groupBy: 'shipGroupSeqId',
       filters: {
-        '-shipGroupSeqId': { value: order.items[0].shipGroupSeqId },
+        '-shipGroupSeqId': { value: order.shipGroupSeqId },
         orderId: { value: order.orderId }
       },
       docType: 'ORDER'
