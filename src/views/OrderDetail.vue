@@ -330,7 +330,6 @@ import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
 import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
 import ShippingDetails from '@/views/ShippingDetails.vue';
-import { prepareKitProducts, isKitComponent } from "@/utils/order";
 
 export default defineComponent({
   name: "OrderDetail",
@@ -440,7 +439,19 @@ export default defineComponent({
           {
             text: translate("Confirm"),
             handler: async () => {
-              kitProducts ? order.kitProducts[orderItemSeqId as number] = kitProducts.map((item: any) => ({ ...item, selectedBox })) : item.selectedBox = selectedBox;
+              // For the case of kit products updating the order.items property as all the operations are handled on items
+              if(kitProducts) {
+                const kitItemAssocs = kitProducts[0].toOrderItemAssocs.find((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
+                order.items.map((orderItem: any) => {
+                  if(orderItem.toOrderItemAssocs.includes(kitItemAssocs)) {
+                    orderItem.selectedBox = selectedBox
+                  }
+                  return orderItem
+                })
+              } else {
+                item.selectedBox = selectedBox
+              }
+
               await this.updateOrder(order, 'box-selection').then(async () => {
                 await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
               }).catch(err => err);
@@ -651,13 +662,19 @@ export default defineComponent({
       const result = await reportIssuePopover.onDidDismiss();
 
       if (result.data) {
-        let itemsToReject
-        if (kitProducts) {
-          itemsToReject = kitProducts.map((item: any) => ({ ...item, rejectReason: result.data }))
+        if(kitProducts) {
+          const kitItemAssocs = kitProducts[0].toOrderItemAssocs.find((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
+          order.items.map((orderItem: any) => {
+            if(orderItem.toOrderItemAssocs.includes(kitItemAssocs)) {
+              orderItem.rejectReason = result.data
+            }
+            return orderItem
+          })
         } else {
           item.rejectReason = result.data
-          itemsToReject = order.items.filter((item: any) => item.rejectReason)
         }
+
+        const itemsToReject = order.items.filter((item: any) => item.rejectReason)
         this.reportIssue(order, itemsToReject)
       }
     },

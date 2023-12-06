@@ -406,6 +406,15 @@ export default defineComponent({
       const result = await reportIssuePopover.onDidDismiss();
 
       if (result.data) {
+        // updating order.items as rejection operation is performed on items
+        const kitItemAssocs = kitProducts[0].toOrderItemAssocs.find((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
+        order.items.map((orderItem: any) => {
+          if(orderItem.toOrderItemAssocs.includes(kitItemAssocs)) {
+            orderItem.rejectReason = result.data
+          }
+          return orderItem
+        })
+
         // reject kit products in bulk
         const itemsToReject = kitProducts.map((item: any) => ({ ...item, rejectReason: result.data }))
         this.reportIssue(order, itemsToReject)
@@ -441,6 +450,14 @@ export default defineComponent({
           {
             text: translate("Confirm"),
             handler: async () => {
+              const kitItemAssocs = kitProducts[0].toOrderItemAssocs.find((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
+              order.items.map((orderItem: any) => {
+                if(orderItem.toOrderItemAssocs.includes(kitItemAssocs)) {
+                  orderItem.selectedBox = selectedBox
+                }
+                return orderItem
+              })
+
               order.kitProducts[orderItemSeqId] = kitProducts.map((item: any) => ({ ...item, selectedBox }))
               await this.updateOrder(order, 'box-selection')
             }
@@ -718,7 +735,7 @@ export default defineComponent({
       this.itemsIssueSegmentSelected = []
       await this.store.dispatch('order/findInProgressOrders')
     },
-    async updateOrder(order: any, updateParameter?: string) { 
+    async updateOrder(order: any, updateParameter?: string) {
       const form = new FormData()
 
       form.append('facilityId', this.currentFacility.facilityId)
