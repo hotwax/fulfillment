@@ -122,7 +122,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
         return {
           ...order,
-          items: order.items.filter((item: any) => !isKitComponent(item)),
+          orderItems: order.items.filter((item: any) => !isKitComponent(item)),
           ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
           shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
           shipmentPackages: shipmentPackages,
@@ -219,7 +219,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
         return {
           ...order,
-          items: order.items.filter((item: any) => !isKitComponent(item)),
+          orderItems: order.items.filter((item: any) => !isKitComponent(item)),
           ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
           shipments: orderShipments,
           missingLabelImage,
@@ -387,8 +387,9 @@ const actions: ActionTree<OrderState, RootState> = {
             orderDate: orderItem.orderDate,
             orderName: orderItem.orderName,
             groupValue: order.groupValue,
-            items: order.doclist.docs.filter((item: any) => !isKitComponent(item)),
-            ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
+            items: order.doclist.docs,  // all order items
+            orderItems: order.doclist.docs.filter((item: any) => !isKitComponent(item)),  // order items other than kit
+            ...(!!(Object.keys(kitProducts)).length && { kitProducts }),  // kit products in order
             shipGroupSeqId: orderItem.shipGroupSeqId,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
             shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
@@ -666,7 +667,8 @@ const actions: ActionTree<OrderState, RootState> = {
           orderName: orderItem.orderName,
           groupValue: resp.data.grouped.orderId.groups[0].groupValue,
           ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
-          items: resp.data.grouped.orderId.groups[0].doclist.docs.filter((item: any) => !isKitComponent(item)),
+          items: resp.data.grouped.orderId.groups[0].doclist.docs,
+          orderItems: resp.data.grouped.orderId.groups[0].doclist.docs.filter((item: any) => !isKitComponent(item)),
           shipGroupSeqId: orderItem.shipGroupSeqId,
           shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
           shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
@@ -930,7 +932,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
       current = {
         ...current,
-        items: current.items.filter((item: any) => !isKitComponent(item)),
+        orderItems: current.items.filter((item: any) => !isKitComponent(item)),
         ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
         shipments: orderShipments,
         missingLabelImage,
@@ -1050,7 +1052,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
       current = {
         ...current,
-        items: current.items.filter((item: any) => !isKitComponent(item)),
+        orderItems: current.items.filter((item: any) => !isKitComponent(item)),
         ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
         shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
         shipmentPackages: shipmentPackages,

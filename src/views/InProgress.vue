@@ -84,7 +84,7 @@
               </ion-row>
             </div>
 
-            <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
+            <div v-for="item in order.orderItems" :key="item.orderItemSeqId" class="order-item">
               <div class="product-info">
                 <ion-item lines="none">
                   <ion-thumbnail slot="start">

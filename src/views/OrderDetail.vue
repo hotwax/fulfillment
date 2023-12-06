@@ -72,7 +72,7 @@
             </div>  
           </div>
 
-          <div v-for="item in order.items" :key="item" class="order-item">
+          <div v-for="item in order.orderItems" :key="item" class="order-item">
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
