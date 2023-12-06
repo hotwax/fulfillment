@@ -134,7 +134,7 @@
                 </div>
               </ion-item-divider>
 
-              <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
+              <div v-for="item in kitProducts" :key="item.orderItemSeqId" class="order-item">
                 <ion-item lines="none" class="product-info">
                   <ion-thumbnail slot="start">
                     <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
