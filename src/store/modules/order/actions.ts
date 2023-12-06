@@ -1062,7 +1062,9 @@ const actions: ActionTree<OrderState, RootState> = {
       }
 
       if (Object.keys(kitProducts).length) {
-        const productIds = [...Object.values(kitProducts).map((item: any) => item.parentProductId)]
+        // used flat as the Object.values returns array, that results in an array of array structure [[], []]
+        // used Set a=to only have unique product Ids
+        const productIds = [...new Set(Object.values(kitProducts).flat().map((item: any) => item.parentProductId))]
         await this.dispatch('product/fetchProducts', { productIds })
       }
       this.dispatch('util/fetchShipmentBoxTypeDesc', [...new Set(Object.values(carrierShipmentBoxType).flat())])
