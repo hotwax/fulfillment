@@ -5,7 +5,7 @@ import emitter from '@/event-bus'
 import { OrderService } from '@/services/OrderService'
 import { hasError } from '@/adapter'
 import * as types from './mutation-types'
-import { prepareOrderQuery } from '@/utils/solrHelper'
+import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
 import { getOrderCategory, isKitComponent, prepareKitProducts } from '@/utils/order'
@@ -260,7 +260,7 @@ const actions: ActionTree<OrderState, RootState> = {
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           '-fulfillmentStatus': { value: 'Rejected' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.state.user.currentFacility.facilityId },
+          facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
           productStoreId: { value: this.state.user.currentEComStore.productStoreId }
         }
       }
@@ -354,7 +354,7 @@ const actions: ActionTree<OrderState, RootState> = {
         '-fulfillmentStatus': { value: 'Cancelled' },
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
-        facilityId: { value: this.state.user.currentFacility.facilityId },
+        facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
       }
     }
@@ -428,7 +428,7 @@ const actions: ActionTree<OrderState, RootState> = {
       filters: {
         picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        facilityId: { value: this.state.user.currentFacility.facilityId },
+        facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
       }
     }
@@ -644,7 +644,7 @@ const actions: ActionTree<OrderState, RootState> = {
         '-fulfillmentStatus': { value: 'Cancelled' },
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
-        facilityId: { value: this.state.user.currentFacility.facilityId },
+        facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
       }
     }
@@ -718,7 +718,7 @@ const actions: ActionTree<OrderState, RootState> = {
           shipGroupSeqId: { value: payload.shipGroupSeqId },
           '-fulfillmentStatus': { value: 'Rejected' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.state.user.currentFacility.facilityId },
+          facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
           productStoreId: { value: this.state.user.currentEComStore.productStoreId }
         }
       }
@@ -782,7 +782,7 @@ const actions: ActionTree<OrderState, RootState> = {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           shipGroupSeqId: { value: payload.shipGroupSeqId },
-          facilityId: { value: this.state.user.currentFacility.facilityId },
+          facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
           productStoreId: { value: this.state.user.currentEComStore.productStoreId }
         }
       }
