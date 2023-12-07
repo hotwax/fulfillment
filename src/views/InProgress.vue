@@ -722,7 +722,7 @@ export default defineComponent({
             text: translate("Report"),
             role: 'confirm',
             handler: async() => {
-              await this.updateOrder(order);
+              await this.updateOrder(order, "report");
             }
           }]
         });
@@ -759,10 +759,11 @@ export default defineComponent({
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
         let prefix = 'rtp'
-        if(this.isIssueSegmentSelectedForItem(item) || updateParameter === 'report') {
+        // check for item.rejectReason is added to handle the case for rejecting kitProducts
+        if(this.isIssueSegmentSelectedForItem(item) || (updateParameter === 'report' && item.rejectReason)) {
           prefix = 'rej'
           form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
-        } else if (!this.isIssueSegmentSelectedForItem(item) || updateParameter === 'box-selection') {
+        } else {
           form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
         }
 

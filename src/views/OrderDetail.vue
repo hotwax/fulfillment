@@ -908,7 +908,8 @@ export default defineComponent({
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
         let prefix = 'rtp'
-        if(updateParameter === 'report') {
+        // reject the item only when item is having a rejection reason
+        if(updateParameter === 'report' && item.rejectReason) {
           prefix = 'rej'
           form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
         } else {
