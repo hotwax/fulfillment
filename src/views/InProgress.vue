@@ -481,9 +481,19 @@ export default defineComponent({
       if(ev.detail.value === 'issue') {
         item.rejectReason = this.rejectReasons[0].enumId // setting the first reason as default
         order.hasRejectedItem = true
+        order.items.map((orderItem: any) => {
+          if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+            orderItem.rejectReason = this.rejectReasons[0].enumId;
+          }
+        })
         this.itemsIssueSegmentSelected.push(`${item.orderId}-${item.orderItemSeqId}`)
       } else {
         delete item.rejectReason
+        order.items.map((orderItem: any) => {
+          if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+            delete orderItem.rejectReason
+          }
+        })
         order.hasRejectedItem = order.items.some((item: any) => item.rejectReason)
         const itemIndex = this.itemsIssueSegmentSelected.indexOf(`${item.orderId}-${item.orderItemSeqId}`)
         this.itemsIssueSegmentSelected.splice(itemIndex, 1)
@@ -813,7 +823,7 @@ export default defineComponent({
     },
     save(order: any) {
       if(order.hasRejectedItem) {
-      const itemsToReject = order.items.filter((item: any) => item.rejectReason)
+        const itemsToReject = order.items.filter((item: any) => item.rejectReason)
         this.reportIssue(order, itemsToReject);
         return;
       }
@@ -821,10 +831,20 @@ export default defineComponent({
     },
     updateRejectReason(ev: CustomEvent, item: any, order: any) {
       item.rejectReason = ev.detail.value;
+      order.items.map((orderItem: any) => {
+        if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+          orderItem.rejectReason = ev.detail.value;
+        }
+      })
       this.store.dispatch('order/updateInProgressOrder', order)
     },
     updateBox(ev: CustomEvent, item: any, order: any) {
       item.selectedBox = ev.detail.value;
+      order.items.map((orderItem: any) => {
+        if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+          orderItem.selectedBox = ev.detail.value;
+        }
+      })
       order.isModified = true;
       this.store.dispatch('order/updateInProgressOrder', order)
     },

@@ -450,7 +450,11 @@ export default defineComponent({
                   return orderItem
                 })
               } else {
-                item.selectedBox = selectedBox
+                order.items.map((orderItem: any) => {
+                  if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+                    orderItem.selectedBox = selectedBox
+                  }
+                })
               }
 
               await this.updateOrder(order, 'box-selection').then(async () => {
@@ -662,7 +666,7 @@ export default defineComponent({
 
       const result = await reportIssuePopover.onDidDismiss();
 
-      if (result.data) {
+      if(result.data) {
         if(kitProducts) {
           const kitItemAssocs = kitProducts[0].toOrderItemAssocs.find((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
           order.items.map((orderItem: any) => {
@@ -672,7 +676,11 @@ export default defineComponent({
             return orderItem
           })
         } else {
-          item.rejectReason = result.data
+          order.items.map((orderItem: any) => {
+            if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+              orderItem.rejectReason = result.data
+            }
+          })
         }
 
         const itemsToReject = order.items.filter((item: any) => item.rejectReason)
