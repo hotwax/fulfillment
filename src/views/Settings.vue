@@ -519,7 +519,7 @@ export default defineComponent({
     async setEComStore(event: any) {
       // not updating the ecomstore when the current value in vuex state and selected value are same
       // or when an empty value is given (on logout)
-      if (this.currentEComStore.productStoreId === event.detail.value || !event.detail.value) {
+      if (this.currentEComStore.productStoreId === event.detail.value) {
         return;
       }
 
