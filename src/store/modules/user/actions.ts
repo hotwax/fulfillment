@@ -165,6 +165,8 @@ const actions: ActionTree<UserState, RootState> = {
    * update current facility information
    */
   async setFacility ({ commit, state }, payload) {
+    emitter.emit('presentLoader', {message: 'Updating facility', backdropDismiss: false})
+
     const userProfile = JSON.parse(JSON.stringify(state.current as any));
     userProfile.stores = await UserService.getEComStores(undefined, payload.facility.facilityId);
 
@@ -179,6 +181,8 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
     commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
     this.dispatch('order/clearOrders')
+
+    emitter.emit('dismissLoader')
   },
   
   /**
