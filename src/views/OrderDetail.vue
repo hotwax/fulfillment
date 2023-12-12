@@ -75,7 +75,7 @@
           <div v-for="item in order.items" :key="item" class="order-item">
             <div class="product-info">
               <ion-item lines="none">
-                <ion-thumbnail slot="start" @click="openImgModal(item)">
+                <ion-thumbnail slot="start" @click="openImageModal(item)">
                   <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                 </ion-thumbnail>
                 <ion-label>
@@ -191,7 +191,7 @@
             </ion-item>
     
             <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
-              <ion-thumbnail slot="start" @click="openImgModal(item)">
+              <ion-thumbnail slot="start" @click="openImageModal(item)">
                 <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
               </ion-thumbnail>
               <ion-label>
@@ -1115,15 +1115,15 @@ export default defineComponent({
     isTrackingRequiredForAnyShipmentPackage(order: any) {
       return order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
     },
-    async openImgModal(item: any){
-      const imgModal = await modalController.create({
+    async openImageModal(item: any){
+      const imageModal = await modalController.create({
         component: ImageModal,
         componentProps: {
           imageUrl: this.getProduct(item.productId).mainImageUrl,
           virtualProductName: item.virtualProductName
         },
       });
-      return imgModal.present();
+      return imageModal.present();
     },
   },
   setup() {

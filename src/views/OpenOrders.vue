@@ -64,7 +64,7 @@
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start" @click="openImgModal(item)">
+                    <ion-thumbnail slot="start" @click="openImageModal(item)">
                       <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
@@ -349,15 +349,15 @@ export default defineComponent({
     fetchProductStock(productId: string) {
       this.store.dispatch('stock/fetchStock', { productId })
     },
-    async openImgModal(item: any){
-      const imgModal = await modalController.create({
+    async openImageModal(item: any){
+      const imageModal = await modalController.create({
         component: ImageModal,
         componentProps: {
           imageUrl: this.getProduct(item.productId).mainImageUrl,
           virtualProductName: item.virtualProductName
         },
       });
-      return imgModal.present();
+      return imageModal.present();
     },
   },
   async mounted () {
