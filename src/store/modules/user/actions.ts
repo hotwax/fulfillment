@@ -165,6 +165,8 @@ const actions: ActionTree<UserState, RootState> = {
    * update current facility information
    */
   async setFacility ({ commit, state }, payload) {
+    // On slow api response, setFacility takes long to update facility in state.
+    // Hence displaying loader to not allowing user to navigate to orders page to avoid wrong results.
     emitter.emit('presentLoader', {message: 'Updating facility', backdropDismiss: false})
 
     const userProfile = JSON.parse(JSON.stringify(state.current as any));
