@@ -400,7 +400,7 @@ const fetchOrderItemShipGroup = async (order: any): Promise<any> => {
     "entityName": "OrderItemShipGroup",
     "inputFields": {
       "orderId": order.orderId,
-      "shipGroupSeqId": order.items[0].shipGroupSeqId,
+      "shipGroupSeqId": order.shipGroupSeqId,
     },
     "fieldList": ["orderId", "shipGroupSeqId", "facilityId", "shipmentMethodTypeId", "contactMechId"],
     "distinct": "Y"
