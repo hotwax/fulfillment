@@ -8,7 +8,7 @@ import * as types from './mutation-types'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
-import { getOrderCategory } from '@/utils/order'
+import { getOrderCategory, isKitComponent, prepareKitProducts } from '@/utils/order'
 
 const actions: ActionTree<OrderState, RootState> = {
   async fetchInProgressOrdersAdditionalInformation({ commit, state }, payload = { viewIndex: 0 }) {
@@ -29,46 +29,46 @@ const actions: ActionTree<OrderState, RootState> = {
 
     try {
       // maintaining an object containing information of shipmentIds for each order
-    const shipmentIdsForOrderAndPicklistBin = await UtilService.findShipmentIdsForOrders(picklistBinIds, orderIds);
+      const shipmentIdsForOrderAndPicklistBin = await UtilService.findShipmentIdsForOrders(picklistBinIds, orderIds);
 
-    let shipmentPackagesByOrderAndPicklistBin = {} as any, itemInformationByOrder = {} as any, carrierPartyIdsByShipment = {} as any, carrierShipmentBoxType = {} as any
+      let shipmentPackagesByOrderAndPicklistBin = {} as any, itemInformationByOrder = {} as any, carrierPartyIdsByShipment = {} as any, carrierShipmentBoxType = {} as any
 
-    // storing all the shipmentIds for all the orders in an array to use furthur
-    const orderShipmentIds = [...(new Set(Object.values(shipmentIdsForOrderAndPicklistBin).flat()))] as Array<string>
+      // storing all the shipmentIds for all the orders in an array to use furthur
+      const orderShipmentIds = [...(new Set(Object.values(shipmentIdsForOrderAndPicklistBin).flat()))] as Array<string>
 
-    // TODO: handle case when shipmentIds is empty
-    // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
-    const [shipmentPackagesByOrderInformationAndPicklistBin, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
+      // TODO: handle case when shipmentIds is empty
+      // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
+      const [shipmentPackagesByOrderInformationAndPicklistBin, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
 
-    // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
-    const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
+      // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
+      const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
 
-    shipmentPackagesByOrderAndPicklistBin = {
-      ...shipmentPackagesByOrderAndPicklistBin,
-      ...shipmentPackagesByOrderInformationAndPicklistBin
-    }
+      shipmentPackagesByOrderAndPicklistBin = {
+        ...shipmentPackagesByOrderAndPicklistBin,
+        ...shipmentPackagesByOrderInformationAndPicklistBin
+      }
 
-    itemInformationByOrder = {
-      ...itemInformationByOrder,
-      ...itemInformationByOrderInformation
-    }
+      itemInformationByOrder = {
+        ...itemInformationByOrder,
+        ...itemInformationByOrderInformation
+      }
 
-    carrierPartyIdsByShipment = {
-      ...carrierPartyIdsByShipment,
-      ...carrierPartyIdsByShipmentInformation
-    }
+      carrierPartyIdsByShipment = {
+        ...carrierPartyIdsByShipment,
+        ...carrierPartyIdsByShipmentInformation
+      }
 
-    carrierShipmentBoxType = {
-      ...carrierShipmentBoxType,
-      ...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
-    }
+      carrierShipmentBoxType = {
+        ...carrierShipmentBoxType,
+        ...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
+      }
 
-    const orderShipmentPackages = this.state.util.productStoreShipmentMethCount > 0 ? await OrderService.fetchShipmentPackages(orderShipmentIds) : [];
+      const orderShipmentPackages = this.state.util.productStoreShipmentMethCount > 0 ? await OrderService.fetchShipmentPackages(orderShipmentIds) : [];
 
-    inProgressOrders = inProgressOrders.map((order: any) => {
+      inProgressOrders = inProgressOrders.map((order: any) => {
 
-      // if for an order shipment information is not available then returning the same order information again
-      if(!shipmentIdsForOrderAndPicklistBin[`${order.orderId}_${order.picklistBinId}`]) {
+        // if for an order shipment information is not available then returning the same order information again
+        if (!shipmentIdsForOrderAndPicklistBin[`${order.orderId}_${order.picklistBinId}`]) {
           // if there are no shipment for the order, there is some issue with the order
           if (picklistBinIds.includes(order.picklistBinId) && orderIds.includes(order.orderId)) {
             return {
@@ -77,60 +77,63 @@ const actions: ActionTree<OrderState, RootState> = {
             }
           }
           return order
-      }
-
-      order.items.map((item: any) => {
-        // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
-        const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)
-
-        if(shipment) {
-          item.shipmentId = shipment.shipmentId
-          item.shipmentItemSeqId = shipment.shipmentItemSeqId
         }
 
-        item.selectedBox = shipmentPackagesByOrderAndPicklistBin[`${item.orderId}_${item.picklistBinId}`]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+        order.items.map((item: any) => {
+          // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
+          const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)
+
+          if (shipment) {
+            item.shipmentId = shipment.shipmentId
+            item.shipmentItemSeqId = shipment.shipmentItemSeqId
+          }
+
+          item.selectedBox = shipmentPackagesByOrderAndPicklistBin[`${item.orderId}_${item.picklistBinId}`]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+        })
+
+        const orderItem = order.items[0];
+        const carrierPartyIds = [...new Set(orderShipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())];
+
+        const shipmentBoxTypeByCarrierParty = carrierPartyIds.reduce((shipmentBoxType: any, carrierPartyId: any) => {
+          if (shipmentBoxType[carrierPartyId]) {
+            shipmentBoxType[carrierPartyId].push(carrierShipmentBoxType[carrierPartyId])
+          } else {
+            shipmentBoxType[carrierPartyId] = carrierShipmentBoxType[carrierPartyId]
+          }
+
+          return shipmentBoxType
+        }, {});
+
+        const shipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].map((shipmentPackage: any) => {
+          return {
+            ...shipmentPackage,
+            shipmentBoxTypes: shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] : []
+          }
+        });
+
+        const currentShipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].reduce((currentShipmentPackages: any, shipment: any) => {
+          currentShipmentPackages.push(...orderShipmentPackages.filter((shipmentPackage: any) => shipmentPackage.shipmentId === shipment.shipmentId));
+          return currentShipmentPackages;
+        }, []);
+
+        // When the shipment method for product store is configured then only check for shipmentPackages otherwise we won't show missing label error button
+        const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
+        const kitProducts = prepareKitProducts(order)
+
+        return {
+          ...order,
+          orderItems: order.items.filter((item: any) => !isKitComponent(item)),
+          ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
+          shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
+          shipmentPackages: shipmentPackages,
+          carrierPartyIds,
+          shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty,
+          missingLabelImage
+        }
       })
 
-      const orderItem = order.items[0];
-      const carrierPartyIds = [...new Set(orderShipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())];
-
-      const shipmentBoxTypeByCarrierParty = carrierPartyIds.reduce((shipmentBoxType: any, carrierPartyId: any) => {
-        if(shipmentBoxType[carrierPartyId]) {
-          shipmentBoxType[carrierPartyId].push(carrierShipmentBoxType[carrierPartyId])
-        } else {
-          shipmentBoxType[carrierPartyId] = carrierShipmentBoxType[carrierPartyId]
-        }
-
-        return shipmentBoxType
-      }, {});
-
-      const shipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].map((shipmentPackage: any) => {
-        return {
-          ...shipmentPackage,
-          shipmentBoxTypes: shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] : []
-        }
-      });
-
-      const currentShipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].reduce((currentShipmentPackages: any, shipment: any) => {
-        currentShipmentPackages.push(...orderShipmentPackages.filter((shipmentPackage: any) => shipmentPackage.shipmentId === shipment.shipmentId ));
-        return currentShipmentPackages;
-      }, []);
-
-      // When the shipment method for product store is configured then only check for shipmentPackages otherwise we won't show missing label error button
-      const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
-
-      return {
-        ...order,
-        shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
-        shipmentPackages: shipmentPackages,
-        carrierPartyIds,
-        shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty,
-        missingLabelImage
-      }
-    })
-
-    this.dispatch('util/fetchShipmentBoxTypeDesc', [...new Set(Object.values(carrierShipmentBoxType).flat())])
-    } catch(err) {
+      this.dispatch('util/fetchShipmentBoxTypeDesc', [...new Set(Object.values(carrierShipmentBoxType).flat())])
+    } catch (err) {
       inProgressOrders = inProgressOrders.map((order: any) => {
         orderIds.includes(order.orderId) && (order.hasMissingInfo = true);
         return order;
@@ -139,7 +142,7 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     // updating the state with the updated orders information
-    commit(types.ORDER_INPROGRESS_UPDATED, {orders: inProgressOrders, total: state.inProgress.total})
+    commit(types.ORDER_INPROGRESS_UPDATED, { orders: inProgressOrders, total: state.inProgress.total })
   },
 
   async fetchCompletedOrdersAdditionalInformation({ commit, state }) {
@@ -212,9 +215,12 @@ const actions: ActionTree<OrderState, RootState> = {
 
         // If there is any shipment package with missing tracking code, retry shipping label
         const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
+        const kitProducts = prepareKitProducts(order)
 
         return {
           ...order,
+          orderItems: order.items.filter((item: any) => !isKitComponent(item)),
+          ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
           shipments: orderShipments,
           missingLabelImage,
           trackingCode,
@@ -371,6 +377,8 @@ const actions: ActionTree<OrderState, RootState> = {
 
         orders = orders.map((order: any) => {
           const orderItem = order.doclist.docs[0];
+          const kitProducts = prepareKitProducts({ items: order.doclist.docs })
+
           return {
             category: 'open',
             customerId: orderItem.customerId,
@@ -379,7 +387,9 @@ const actions: ActionTree<OrderState, RootState> = {
             orderDate: orderItem.orderDate,
             orderName: orderItem.orderName,
             groupValue: order.groupValue,
-            items: order.doclist.docs,
+            items: order.doclist.docs,  // all order items
+            orderItems: order.doclist.docs.filter((item: any) => !isKitComponent(item)),  // order items other than kit
+            ...(!!(Object.keys(kitProducts)).length && { kitProducts }),  // kit products in order
             shipGroupSeqId: orderItem.shipGroupSeqId,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
             shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
@@ -643,6 +653,11 @@ const actions: ActionTree<OrderState, RootState> = {
       resp = await OrderService.findOpenOrders(orderQueryPayload);
       if (!hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
         const orderItem = resp.data.grouped.orderId.groups[0].doclist.docs[0];
+        const kitProducts = prepareKitProducts({ items: resp.data.grouped.orderId.groups[0].doclist.docs })
+        let productIds = resp.data.grouped.orderId.groups[0].doclist.docs.map((item: any) => item.productId)
+        if (Object.keys(kitProducts).length) {
+          productIds = [...productIds, ...Object.values(kitProducts).map((item: any) => item.parentProductId)]
+        }
         order = {
           category: 'open',
           customerId: orderItem.customerId,
@@ -651,13 +666,16 @@ const actions: ActionTree<OrderState, RootState> = {
           orderDate: orderItem.orderDate,
           orderName: orderItem.orderName,
           groupValue: resp.data.grouped.orderId.groups[0].groupValue,
+          ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
           items: resp.data.grouped.orderId.groups[0].doclist.docs,
+          orderItems: resp.data.grouped.orderId.groups[0].doclist.docs.filter((item: any) => !isKitComponent(item)),
           shipGroupSeqId: orderItem.shipGroupSeqId,
           shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
           shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
           reservedDatetime: orderItem.reservedDatetime
         }
-        await this.dispatch('product/fetchProducts', { productIds: order.items.map((item: any) => item.productId) })
+
+        await this.dispatch('product/fetchProducts', { productIds })
       } else {
         throw resp.data
       }
@@ -816,7 +834,8 @@ const actions: ActionTree<OrderState, RootState> = {
     const params = {
       groupBy: 'shipGroupSeqId',
       filters: {
-        '-shipGroupSeqId': { value: order.items[0].shipGroupSeqId },
+        'shipGroupSeqId': { value: '[* TO *]' },  // check to ignore all those records for which shipGroupSeqId is not present, as in case of kit comp we does not get shipGroupSeqId on some items
+        '-shipGroupSeqId': { value: order.shipGroupSeqId },
         orderId: { value: order.orderId }
       },
       docType: 'ORDER'
@@ -854,7 +873,9 @@ const actions: ActionTree<OrderState, RootState> = {
         return;
       }
 
-      facilityTypeIds.push(shipItem.facilityTypeId)
+      // In some case we are not having facilityTypeId in resp, resulting in undefined being pushed in the array
+      // so checking for facilityTypeId before updating the array
+      shipItem.facilityTypeId && facilityTypeIds.push(shipItem.facilityTypeId)
 
       return {
         items: shipGroup.doclist.docs,
@@ -907,11 +928,20 @@ const actions: ActionTree<OrderState, RootState> = {
 
       // If there is any shipment package with missing tracking code, retry shipping label
       const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
+      const kitProducts = prepareKitProducts(current)
+
       current = {
         ...current,
+        orderItems: current.items.filter((item: any) => !isKitComponent(item)),
+        ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
         shipments: orderShipments,
         missingLabelImage,
         shipmentPackages: currentShipmentPackages  // ShipmentPackages information is required when performing retryShippingLabel action
+      }
+
+      if (Object.keys(kitProducts).length) {
+        const productIds = [...Object.values(kitProducts).map((item: any) => item.parentProductId)]
+        await this.dispatch('product/fetchProducts', { productIds })
       }
     } catch(err) {
       current.hasMissingPackageInfo = true;
@@ -965,69 +995,78 @@ const actions: ActionTree<OrderState, RootState> = {
 
       const orderShipmentPackages = this.state.util.productStoreShipmentMethCount > 0 ? await OrderService.fetchShipmentPackages(orderShipmentIds) : [];
 
-        // if for an order shipment information is not available then returning the same order information again
-        if (!shipmentIdsForOrderAndPicklistBin[`${current.orderId}_${current.picklistBinId}`]) {
-          // if there are no shipment for the order, there is some issue with the order
-          if (picklistBinIds.includes(current.picklistBinId) && orderIds.includes(current.orderId)) {
-            current = {
-              ...current,
-              hasMissingInfo: true,
-            }
-            return
+      // if for an order shipment information is not available then returning the same order information again
+      if (!shipmentIdsForOrderAndPicklistBin[`${current.orderId}_${current.picklistBinId}`]) {
+        // if there are no shipment for the order, there is some issue with the order
+        if (picklistBinIds.includes(current.picklistBinId) && orderIds.includes(current.orderId)) {
+          current = {
+            ...current,
+            hasMissingInfo: true,
           }
           return
         }
+        return
+      }
 
-        current.items.map((item: any) => {
-          // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
-          const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)
+      current.items.map((item: any) => {
+        // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
+        const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)
 
-          if (shipment) {
-            item.shipmentId = shipment.shipmentId
-            item.shipmentItemSeqId = shipment.shipmentItemSeqId
-          }
-
-          item.selectedBox = shipmentPackagesByOrderAndPicklistBin[`${item.orderId}_${item.picklistBinId}`]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
-        })
-
-        const orderItem = current.items[0];
-        const carrierPartyIdsOnOrderShipment = [...new Set(orderShipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())];
-
-        const shipmentBoxTypeByCarrierParty = carrierPartyIdsOnOrderShipment.reduce((shipmentBoxType: any, carrierPartyId: any) => {
-          if (shipmentBoxType[carrierPartyId]) {
-            shipmentBoxType[carrierPartyId].push(carrierShipmentBoxType[carrierPartyId])
-          } else {
-            shipmentBoxType[carrierPartyId] = carrierShipmentBoxType[carrierPartyId]
-          }
-
-          return shipmentBoxType
-        }, {});
-
-        const shipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].map((shipmentPackage: any) => {
-          return {
-            ...shipmentPackage,
-            shipmentBoxTypes: shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] : []
-          }
-        });
-
-
-        const currentShipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].reduce((currentShipmentPackages: any, shipment: any) => {
-          currentShipmentPackages.push(...orderShipmentPackages.filter((shipmentPackage: any) => shipmentPackage.shipmentId === shipment.shipmentId ));
-          return currentShipmentPackages;
-        }, []);
-
-        // When the shipment method for product store is configured then only check for shipmentPackages otherwise we won't show missing label error button
-        const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
-
-        current = {
-          ...current,
-          shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
-          shipmentPackages: shipmentPackages,
-          carrierPartyIdsOnOrderShipment,
-          shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty,
-          missingLabelImage
+        if (shipment) {
+          item.shipmentId = shipment.shipmentId
+          item.shipmentItemSeqId = shipment.shipmentItemSeqId
         }
 
+        item.selectedBox = shipmentPackagesByOrderAndPicklistBin[`${item.orderId}_${item.picklistBinId}`]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+      })
+
+      const orderItem = current.items[0];
+      const carrierPartyIdsOnOrderShipment = [...new Set(orderShipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())];
+
+      const shipmentBoxTypeByCarrierParty = carrierPartyIdsOnOrderShipment.reduce((shipmentBoxType: any, carrierPartyId: any) => {
+        if (shipmentBoxType[carrierPartyId]) {
+          shipmentBoxType[carrierPartyId].push(carrierShipmentBoxType[carrierPartyId])
+        } else {
+          shipmentBoxType[carrierPartyId] = carrierShipmentBoxType[carrierPartyId]
+        }
+
+        return shipmentBoxType
+      }, {});
+
+      const shipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].map((shipmentPackage: any) => {
+        return {
+          ...shipmentPackage,
+          shipmentBoxTypes: shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] : []
+        }
+      });
+
+
+      const currentShipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].reduce((currentShipmentPackages: any, shipment: any) => {
+        currentShipmentPackages.push(...orderShipmentPackages.filter((shipmentPackage: any) => shipmentPackage.shipmentId === shipment.shipmentId));
+        return currentShipmentPackages;
+      }, []);
+
+      // When the shipment method for product store is configured then only check for shipmentPackages otherwise we won't show missing label error button
+      const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
+      const kitProducts = prepareKitProducts(current)
+
+      current = {
+        ...current,
+        orderItems: current.items.filter((item: any) => !isKitComponent(item)),
+        ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
+        shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
+        shipmentPackages: shipmentPackages,
+        carrierPartyIdsOnOrderShipment,
+        shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty,
+        missingLabelImage
+      }
+
+      if (Object.keys(kitProducts).length) {
+        // used flat as the Object.values returns array, that results in an array of array structure [[], []]
+        // used Set a=to only have unique product Ids
+        const productIds = [...new Set(Object.values(kitProducts).flat().map((item: any) => item.parentProductId))]
+        await this.dispatch('product/fetchProducts', { productIds })
+      }
       this.dispatch('util/fetchShipmentBoxTypeDesc', [...new Set(Object.values(carrierShipmentBoxType).flat())])
     } catch (err) {
       current.hasMissingPackageInfo = true;
