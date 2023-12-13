@@ -31,7 +31,7 @@ import {
   modalController
 } from '@ionic/vue';
 export default defineComponent({
-  name: 'DisplayImg',
+  name: 'ImageModal',
   components: {
     IonButton,
     IonButtons,
