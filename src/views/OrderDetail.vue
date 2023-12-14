@@ -79,8 +79,8 @@
                   <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                 </ion-thumbnail>
                 <ion-label>
-                  <p class="overline">{{ item.productSku }}</p>
-                  {{ item.virtualProductName }}
+                  <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, item) }}</p>
+                  {{ getProductIdentificationValue(productIdentificationPref.primaryId, item) ? getProductIdentificationValue(productIdentificationPref.primaryId, item) : item.virtualProductName }}
                   <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                 </ion-label>
               </ion-item>
@@ -114,8 +114,8 @@
               <ion-item-divider class="order-item" color="light">
                 <div class="product-info">
                   <ion-label>
-                    <p>{{ getProduct(kitProducts[0]?.parentProductId).productName }}</p>
-                    <p>{{ getProduct(kitProducts[0]?.parentProductId).sku }}</p>
+                    <p>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(kitProducts[0]?.parentProductId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(kitProducts[0]?.parentProductId)) : getProduct(kitProducts[0]?.parentProductId).productName }}</p>
+                    <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(kitProducts[0]?.parentProductId)) }}</p>
                   </ion-label>
                 </div>
 
@@ -140,8 +140,8 @@
                     <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
-                    <p class="overline">{{ item.productSku }}</p>
-                    {{ item.productName }}
+                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, item) }}</p>
+                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, item) ? getProductIdentificationValue(productIdentificationPref.primaryId, item) : item.productName }}
                     <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                 </ion-item>
@@ -246,8 +246,8 @@
                 <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
               </ion-thumbnail>
               <ion-label>
-                <p class="overline">{{ getProduct(item.productId).sku }}</p>
-                {{ getProduct(item.productId).parentProductName }}
+                <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
               </ion-label>
               <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
               <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
@@ -293,7 +293,7 @@ import {
   modalController,
   popoverController
 } from "@ionic/vue";
-import { defineComponent } from "vue";
+import { computed, defineComponent } from "vue";
 import { mapGetters, useStore } from "vuex";
 import { useRouter } from 'vue-router'
 import {
@@ -312,7 +312,7 @@ import {
   trashBinOutline,
   ribbonOutline
 } from 'ionicons/icons';
-import { translate, ShopifyImg } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, translate, ShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
@@ -1203,6 +1203,8 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const router = useRouter();
+    const productIdentificationStore = useProductIdentificationStore();
+    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
 
     return {
       addOutline,
@@ -1218,10 +1220,12 @@ export default defineComponent({
       fileTrayOutline,
       formatUtcDate,
       getFeature,
+      getProductIdentificationValue,
       hasPermission,
       locateOutline,
       personAddOutline,
       pricetagOutline,
+      productIdentificationPref,
       router,
       store,
       trashBinOutline,

@@ -154,8 +154,8 @@
                 <ion-item-divider class="order-item" color="light">
                   <div class="product-info">
                     <ion-label>
-                      <p>{{ getProduct(kitProduct[0].parentProductId).productName }}</p>
-                      <p>{{ getProduct(kitProduct[0].parentProductId).sku }}</p>
+                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(kitProduct[0].parentProductId)) }}</p>
+                      <p>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(kitProduct[0].parentProductId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(kitProduct[0].parentProductId)) : getProduct(kitProduct[0].parentProductId).productName }}</p>
                     </ion-label>
                   </div>
 
@@ -181,8 +181,8 @@
                         <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                       </ion-thumbnail>
                       <ion-label>
-                        <p class="overline">{{ item.productSku }}</p>
-                        {{ item.productName }}
+                        <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, item) }}</p>
+                        {{ getProductIdentificationValue(productIdentificationPref.primaryId, item) ? getProductIdentificationValue(productIdentificationPref.primaryId, item) : item.productName }}
                         <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                       </ion-label>
                     </ion-item>
