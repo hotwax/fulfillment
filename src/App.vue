@@ -18,6 +18,7 @@ import { initialise, resetConfig } from '@/adapter'
 import { useRouter } from 'vue-router';
 import { Settings } from 'luxon'
 import { translate, useProductIdentificationStore } from '@hotwax/dxp-components';
+import logger from '@/logger'
 
 export default defineComponent({
   name: 'App',
