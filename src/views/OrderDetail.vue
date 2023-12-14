@@ -79,8 +79,8 @@
                   <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                 </ion-thumbnail>
                 <ion-label>
-                  <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, item) }}</p>
-                  {{ getProductIdentificationValue(productIdentificationPref.primaryId, item) ? getProductIdentificationValue(productIdentificationPref.primaryId, item) : item.virtualProductName }}
+                  <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                  {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
                   <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                 </ion-label>
               </ion-item>
@@ -140,8 +140,8 @@
                     <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
-                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, item) }}</p>
-                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, item) ? getProductIdentificationValue(productIdentificationPref.primaryId, item) : item.productName }}
+                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
                     <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                 </ion-item>
