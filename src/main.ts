@@ -29,9 +29,9 @@ import store from './store'
 import permissionPlugin from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
-import { dxpComponents } from '@hotwax/dxp-components'; 
+import { dxpComponents } from '@hotwax/dxp-components';
 import { login, logout, loader } from '@/utils/user';
-import { getConfig, initialise, setUserLocale } from './adapter';
+import { getConfig, getProductIdentificationPref, initialise, setProductIdentificationPref, setUserLocale } from './adapter';
 import localeMessages from '@/locales';
 
 const app = createApp(App)
@@ -54,7 +54,9 @@ const app = createApp(App)
     loader,
     appLoginUrl: process.env.VUE_APP_LOGIN_URL as string,
     getConfig,
+    getProductIdentificationPref,
     initialise,
+    setProductIdentificationPref,
     localeMessages,
     setUserLocale,
   });

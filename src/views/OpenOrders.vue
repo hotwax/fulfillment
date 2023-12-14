@@ -67,8 +67,8 @@
                     <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
-                    <p class="overline">{{ item.productSku }}</p>
-                    {{ item.virtualProductName }}
+                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
                     <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                 </ion-item>
@@ -85,8 +85,8 @@
               <ion-item-divider class="order-item" color="light">
                 <div class="product-info">
                   <ion-label>
-                    <p>{{ getProduct(kitProduct[0].parentProductId).productName }}</p>
-                    <p>{{ getProduct(kitProduct[0].parentProductId).sku }}</p>
+                    <p>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(kitProduct[0].parentProductId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(kitProduct[0].parentProductId)) : getProduct(kitProduct[0].parentProductId).productName }}</p>
+                    <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(kitProduct[0].parentProductId)) }}</p>
                   </ion-label>
                 </div>
               </ion-item-divider>
@@ -98,8 +98,8 @@
                       <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ item.productSku }}</p>
-                      {{ item.productName }}
+                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
                       <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                     </ion-label>
                   </ion-item>
@@ -167,11 +167,11 @@ import {
   alertController,
   popoverController
 } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { caretDownOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
-import { ShopifyImg } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, ShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
@@ -389,6 +389,8 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const productIdentificationStore = useProductIdentificationStore();
+    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
 
     return{
       Actions,
@@ -396,10 +398,12 @@ export default defineComponent({
       cubeOutline,
       formatUtcDate,
       getFeature,
+      getProductIdentificationValue,
       hasPermission,
       optionsOutline,
       pricetagOutline,
       printOutline,
+      productIdentificationPref,
       store,
       translate
     }
