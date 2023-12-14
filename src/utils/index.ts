@@ -117,4 +117,24 @@ const copyToClipboard = async (value: string, text?: string) => {
   });
 }
 
-export { copyToClipboard, formatDate, formatUtcDate, getFeature, handleDateTimeInput, showToast, hasError, parseCsv, jsonToCsv}
+const getIdentificationId = (identifications: any, id: string) => {
+  let  externalId = ''
+  if (identifications) {
+    const externalIdentification = identifications.find((identification: any) => identification.startsWith(id))
+    const externalIdentificationSplit = externalIdentification ? externalIdentification.split('/') : [];
+    externalId = externalIdentificationSplit[1] ? externalIdentificationSplit[1] : '';
+  }
+  return externalId;
+}
+
+const formatPhoneNumber = (countryCode: string | null, areaCode: string | null, contactNumber: string | null)  => {
+  if (countryCode && areaCode) {
+    return `+${countryCode}-${areaCode}-${contactNumber}`;
+  } else if (countryCode) {
+    return `+${countryCode}-${contactNumber}`;
+  } else {
+    return contactNumber;
+  }
+}
+
+export { copyToClipboard, formatDate, formatPhoneNumber, formatUtcDate, getFeature, getIdentificationId, handleDateTimeInput, showToast, hasError, parseCsv, jsonToCsv}

@@ -39,6 +39,7 @@ const orderModule: Module<OrderState, RootState> = {
         queryString: ''
       }
     },
+    current: {}
   },
   getters,
   actions,

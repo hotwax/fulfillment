@@ -29,5 +29,6 @@ export default interface OrderState {
       selectedPicklist: string,
       queryString: string
     }
-  }
+  },
+  current: any,
 }

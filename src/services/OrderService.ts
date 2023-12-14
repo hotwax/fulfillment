@@ -1,7 +1,7 @@
 import { api, client, hasError } from '@/adapter';
 import { translate } from '@hotwax/dxp-components'
 import logger from '@/logger';
-import { showToast } from '@/utils';
+import { showToast, formatPhoneNumber } from '@/utils';
 import store from '@/store';
 import { cogOutline } from 'ionicons/icons';
 
@@ -149,7 +149,7 @@ const fetchShipmentPackages = async (shipmentIds: Array<string>): Promise<any> =
       "trackingCode_op": "empty",
       "shipmentItemSeqId_op": "not-empty"
     },
-    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId"],
+    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "isTrackingRequired"],
     "viewSize": 250,  // maximum records we could have
     "distinct": "Y"
   }
@@ -171,6 +171,39 @@ const fetchShipmentPackages = async (shipmentIds: Array<string>): Promise<any> =
   }
 
   return shipmentPackages;
+}
+
+const fetchTrackingCodes = async (shipmentIds: Array<string>): Promise<any> => {
+  let shipmentTrackingCodes = [];
+  const params = {
+    "entityName": "ShipmentPackageRouteSeg",
+    "inputFields": {
+      "shipmentId": shipmentIds,
+      "shipmentId_op": "in",
+      "shipmentItemSeqId_op": "not-empty"
+    },
+    "fieldList": ["shipmentId", "shipmentPackageSeqId", "trackingCode"],
+    "viewSize": 250,  // maximum records we could have
+    "distinct": "Y"
+  }
+
+  try {
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    })
+
+    if (!hasError(resp)) {
+      shipmentTrackingCodes = resp?.data.docs;
+    } else if (!resp?.data.error || (resp.data.error && resp.data.error !== "No record found")) {
+      return Promise.reject(resp?.data.error);
+    }
+  } catch (err) {
+    logger.error('Failed to fetch tracking codes for shipments', err)
+  }
+
+  return shipmentTrackingCodes;
 }
 
 const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
@@ -343,14 +376,158 @@ const fetchShipmentLabelError = async (shipmentIds: Array<string>): Promise<any>
   return shipmentLabelError;
 }
 
+const findOrderShipGroup = async (query: any): Promise<any> => {
+  return api({
+    // TODO: We can replace this with any API
+    url: "solr-query",
+    method: "post",
+    data: query
+  });
+}
+
+const fetchAdditionalShipGroupForOrder = async (params: any): Promise<any> => {
+  return await api({
+    url: "performFind",
+    method: "get",
+    params
+  })
+}
+
+const fetchOrderItemShipGroup = async (order: any): Promise<any> => {
+  let shipGroup = {};
+
+  const params = {
+    "entityName": "OrderItemShipGroup",
+    "inputFields": {
+      "orderId": order.orderId,
+      "shipGroupSeqId": order.shipGroupSeqId,
+    },
+    "fieldList": ["orderId", "shipGroupSeqId", "facilityId", "shipmentMethodTypeId", "contactMechId"],
+    "distinct": "Y"
+  }
+
+  try {
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    })
+
+    if (!hasError(resp)) {
+      shipGroup = resp?.data.docs[0];
+    } else if (!resp?.data.error || (resp.data.error && resp.data.error !== "No record found")) {
+      return Promise.reject(resp?.data.error);
+    }
+  } catch (err) {
+    logger.error('Failed to fetch shipments for orders', err)
+  }
+
+  return shipGroup;
+}
+
+const fetchOrderPaymentPreferences = async (orderId: any): Promise<any> => {
+  const params = {
+    "entityName": "OrderPaymentPreference",
+    "inputFields": {
+      "orderId": orderId,
+    },
+    "fieldList": ["orderId", "paymentMethodTypeId", "statusId"],
+    "distinct": "Y"
+  }
+
+  return await api({
+    url: "performFind",
+    method: "get",
+    params
+  });
+}
+
+const fetchShippingAddress = async (contactMechId: string): Promise<any> => {
+  let shippingAddress = {};
+
+  const params = {
+    "entityName": "PostalAddressAndGeo",
+    "inputFields": {
+      "contactMechId": contactMechId,
+    },
+  }
+
+  try {
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    })
+
+    if (!hasError(resp)) {
+      shippingAddress = resp?.data.docs[0];
+    } else if (!resp?.data.error || (resp.data.error && resp.data.error !== "No record found")) {
+      return Promise.reject(resp?.data.error);
+    }
+  } catch (err) {
+    logger.error('Failed to fetch shipments for orders', err)
+  }
+  return shippingAddress;
+}
+
+const getShippingPhoneNumber = async (orderId: string): Promise<any> => {
+  let phoneNumber = '' as any
+  try {
+    let resp: any = await api({
+      url: "performFind",
+      method: "get",
+      params: {
+        "entityName": "OrderContactMech",
+        "inputFields": {
+          orderId,
+          "contactMechPurposeTypeId": "PHONE_SHIPPING"
+        },
+        "fieldList": ["orderId", "contactMechPurposeTypeId", "contactMechId"],
+        "viewSize": 1
+      }
+    })
+
+    if (!hasError(resp)) {
+      const contactMechId = resp.data.docs[0].contactMechId
+      resp = await api({
+        url: "performFind",
+        method: "get",
+        params: {
+          "entityName": "TelecomNumber",
+          "inputFields": {
+            contactMechId,
+          },
+          "fieldList": ["contactNumber", "countryCode", "areaCode", "contactMechId"],
+          "viewSize": 1
+        }
+      })
+      
+      if (!hasError(resp)) {
+        const { contactNumber, countryCode, areaCode } =  resp.data.docs[0]
+        phoneNumber = formatPhoneNumber(countryCode, areaCode, contactNumber)
+      } else {
+        throw resp.data
+      }
+    } else {
+      throw resp.data
+    }
+  } catch (err) {
+    logger.error('Failed to fetch customer phone number', err)
+  }
+  return phoneNumber
+}
+
 export const OrderService = {
   addShipmentBox,
   bulkShipOrders,
+  fetchAdditionalShipGroupForOrder,
   fetchShipments,
   fetchShipmentPackages,
+  fetchTrackingCodes,
   findCompletedOrders,
   findInProgressOrders,
   findOpenOrders,
+  findOrderShipGroup,
   packOrder,
   packOrders,
   printPackingSlip,
@@ -362,5 +539,9 @@ export const OrderService = {
   shipOrder,
   unpackOrder,
   updateOrder,
-  fetchShipmentLabelError
+  fetchShipmentLabelError,
+  fetchOrderItemShipGroup,
+  fetchShippingAddress,
+  fetchOrderPaymentPreferences,
+  getShippingPhoneNumber
 }

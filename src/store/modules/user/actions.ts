@@ -105,7 +105,7 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       commit(types.USER_TOKEN_CHANGED, { newToken: token })
       updateToken(token)
-
+      this.dispatch('util/findProductStoreShipmentMethCount')
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
       // TODO Check if handling of specific status codes is required.
@@ -145,7 +145,7 @@ const actions: ActionTree<UserState, RootState> = {
     }
 
     const authStore = useAuthStore()
-    const userStore = useAuthStore()
+    const userStore = useUserStore()
     // TODO add any other tasks if need
     commit(types.USER_END_SESSION)
     this.dispatch('order/clearOrders')
@@ -217,6 +217,8 @@ const actions: ActionTree<UserState, RootState> = {
     // Get product identification from api using dxp-component
     await useProductIdentificationStore().getIdentificationPref(payload.eComStore.productStoreId)
       .catch((error) => console.error(error));
+
+    this.dispatch('util/findProductStoreShipmentMethCount')
   },
 
   setUserPreference({ commit }, payload){

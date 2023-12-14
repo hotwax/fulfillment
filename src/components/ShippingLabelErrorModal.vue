@@ -10,14 +10,14 @@
     </ion-toolbar>
   </ion-header>
   <ion-content>
-    <div class="box-type">
-      <ion-list lines="none">
-        <ion-item v-for="message, index in shipmentLabelErrorMessages" :key="index">
-          <ion-label>{{ message }}</ion-label>
-        </ion-item>
-        <div v-if="!shipmentLabelErrorMessages.length">{{ translate("No data Found.") }}</div>
-      </ion-list>
-    </div>
+    <ion-list lines="none">
+      <ion-item v-for="message, index in shipmentLabelErrorMessages" :key="index">
+        <ion-label>{{ message }}</ion-label>
+      </ion-item>
+      <ion-item v-if="!shipmentLabelErrorMessages.length">
+        {{ translate("No data Found.") }}
+      </ion-item>
+    </ion-list>
   </ion-content>
 </template>
 

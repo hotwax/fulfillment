@@ -6,9 +6,13 @@
         <ion-icon slot="end" :icon="copyOutline" />
         {{ translate("Copy ID") }}
       </ion-item>
-      <ion-item button lines="none" @click="assignPickers">
+      <ion-item v-if="category === 'open'" button @click="assignPickers">
         <ion-icon slot="end" :icon="bagCheckOutline" />
         {{ translate("Pick order") }}
+      </ion-item>
+      <ion-item button lines="none" @click="viewOrder()">
+        <ion-icon slot="end" :icon="arrowForwardOutline" />
+        {{ translate("View details") }}
       </ion-item>
     </ion-list>
   </ion-content>
@@ -25,10 +29,12 @@ import {
   popoverController,
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { bagCheckOutline, copyOutline } from 'ionicons/icons'
+import { arrowForwardOutline, bagCheckOutline, copyOutline } from 'ionicons/icons'
 import { copyToClipboard } from "@/utils";
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { translate } from "@hotwax/dxp-components";
+import { useStore } from 'vuex';
+import emitter from "@/event-bus";
 
 export default defineComponent({
   name: "OrderActionsPopover",
@@ -39,13 +45,13 @@ export default defineComponent({
     IonList,
     IonListHeader
   },
-  props: ["order"],
+  props: ["order", "category"],
   methods: {
     closePopover() {
       popoverController.dismiss();
     },
     copyInfo() {
-      this.copyToClipboard(this.order.doclist.docs[0].orderName, 'Copied to clipboard')
+      this.copyToClipboard(this.order.orderName, 'Copied to clipboard')
       // closing the popover after copy action
       this.closePopover();
     },
@@ -62,12 +68,24 @@ export default defineComponent({
 
       return assignPickerModal.present();
     },
+    async viewOrder() {
+      emitter.emit("presentLoader")
+      this.store.dispatch('order/updateCurrent', this.order).then(() => {
+        this.closePopover();
+        emitter.emit("dismissLoader")
+        this.$router.push({ path: `${this.category}/order-detail/${this.order.orderId}/${this.order.shipGroupSeqId}` })
+      })
+    },
   },
   setup() {
+    const store = useStore();
+
     return {
+      arrowForwardOutline,
       bagCheckOutline,
       copyOutline,
       copyToClipboard,
+      store,
       translate
     }
   }

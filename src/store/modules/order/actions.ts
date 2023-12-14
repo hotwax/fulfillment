@@ -5,10 +5,10 @@ import emitter from '@/event-bus'
 import { OrderService } from '@/services/OrderService'
 import { hasError } from '@/adapter'
 import * as types from './mutation-types'
-import { prepareOrderQuery } from '@/utils/solrHelper'
+import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
-
+import { getOrderCategory, isKitComponent, prepareKitProducts } from '@/utils/order'
 
 const actions: ActionTree<OrderState, RootState> = {
   async fetchInProgressOrdersAdditionalInformation({ commit, state }, payload = { viewIndex: 0 }) {
@@ -29,44 +29,46 @@ const actions: ActionTree<OrderState, RootState> = {
 
     try {
       // maintaining an object containing information of shipmentIds for each order
-    const shipmentIdsForOrderAndPicklistBin = await UtilService.findShipmentIdsForOrders(picklistBinIds, orderIds);
+      const shipmentIdsForOrderAndPicklistBin = await UtilService.findShipmentIdsForOrders(picklistBinIds, orderIds);
 
-    let shipmentPackagesByOrderAndPicklistBin = {} as any, itemInformationByOrder = {} as any, carrierPartyIdsByShipment = {} as any, carrierShipmentBoxType = {} as any
+      let shipmentPackagesByOrderAndPicklistBin = {} as any, itemInformationByOrder = {} as any, carrierPartyIdsByShipment = {} as any, carrierShipmentBoxType = {} as any
 
-    // storing all the shipmentIds for all the orders in an array to use furthur
-    const orderShipmentIds = [...(new Set(Object.values(shipmentIdsForOrderAndPicklistBin).flat()))] as Array<string>
+      // storing all the shipmentIds for all the orders in an array to use furthur
+      const orderShipmentIds = [...(new Set(Object.values(shipmentIdsForOrderAndPicklistBin).flat()))] as Array<string>
 
-    // TODO: handle case when shipmentIds is empty
-    // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
-    const [shipmentPackagesByOrderInformationAndPicklistBin, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
+      // TODO: handle case when shipmentIds is empty
+      // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
+      const [shipmentPackagesByOrderInformationAndPicklistBin, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
 
-    // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
-    const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
+      // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
+      const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
 
-    shipmentPackagesByOrderAndPicklistBin = {
-      ...shipmentPackagesByOrderAndPicklistBin,
-      ...shipmentPackagesByOrderInformationAndPicklistBin
-    }
+      shipmentPackagesByOrderAndPicklistBin = {
+        ...shipmentPackagesByOrderAndPicklistBin,
+        ...shipmentPackagesByOrderInformationAndPicklistBin
+      }
 
-    itemInformationByOrder = {
-      ...itemInformationByOrder,
-      ...itemInformationByOrderInformation
-    }
+      itemInformationByOrder = {
+        ...itemInformationByOrder,
+        ...itemInformationByOrderInformation
+      }
 
-    carrierPartyIdsByShipment = {
-      ...carrierPartyIdsByShipment,
-      ...carrierPartyIdsByShipmentInformation
-    }
+      carrierPartyIdsByShipment = {
+        ...carrierPartyIdsByShipment,
+        ...carrierPartyIdsByShipmentInformation
+      }
 
-    carrierShipmentBoxType = {
-      ...carrierShipmentBoxType,
-      ...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
-    }
+      carrierShipmentBoxType = {
+        ...carrierShipmentBoxType,
+        ...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
+      }
 
-    inProgressOrders = inProgressOrders.map((order: any) => {
+      const orderShipmentPackages = this.state.util.productStoreShipmentMethCount > 0 ? await OrderService.fetchShipmentPackages(orderShipmentIds) : [];
 
-      // if for an order shipment information is not available then returning the same order information again
-      if(!shipmentIdsForOrderAndPicklistBin[`${order.orderId}_${order.picklistBinId}`]) {
+      inProgressOrders = inProgressOrders.map((order: any) => {
+
+        // if for an order shipment information is not available then returning the same order information again
+        if (!shipmentIdsForOrderAndPicklistBin[`${order.orderId}_${order.picklistBinId}`]) {
           // if there are no shipment for the order, there is some issue with the order
           if (picklistBinIds.includes(order.picklistBinId) && orderIds.includes(order.orderId)) {
             return {
@@ -75,51 +77,63 @@ const actions: ActionTree<OrderState, RootState> = {
             }
           }
           return order
-      }
-
-      order.items.map((item: any) => {
-        // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
-        const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)
-
-        if(shipment) {
-          item.shipmentId = shipment.shipmentId
-          item.shipmentItemSeqId = shipment.shipmentItemSeqId
         }
 
-        item.selectedBox = shipmentPackagesByOrderAndPicklistBin[`${item.orderId}_${item.picklistBinId}`]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+        order.items.map((item: any) => {
+          // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
+          const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)
+
+          if (shipment) {
+            item.shipmentId = shipment.shipmentId
+            item.shipmentItemSeqId = shipment.shipmentItemSeqId
+          }
+
+          item.selectedBox = shipmentPackagesByOrderAndPicklistBin[`${item.orderId}_${item.picklistBinId}`]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+        })
+
+        const orderItem = order.items[0];
+        const carrierPartyIds = [...new Set(orderShipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())];
+
+        const shipmentBoxTypeByCarrierParty = carrierPartyIds.reduce((shipmentBoxType: any, carrierPartyId: any) => {
+          if (shipmentBoxType[carrierPartyId]) {
+            shipmentBoxType[carrierPartyId].push(carrierShipmentBoxType[carrierPartyId])
+          } else {
+            shipmentBoxType[carrierPartyId] = carrierShipmentBoxType[carrierPartyId]
+          }
+
+          return shipmentBoxType
+        }, {});
+
+        const shipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].map((shipmentPackage: any) => {
+          return {
+            ...shipmentPackage,
+            shipmentBoxTypes: shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] : []
+          }
+        });
+
+        const currentShipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].reduce((currentShipmentPackages: any, shipment: any) => {
+          currentShipmentPackages.push(...orderShipmentPackages.filter((shipmentPackage: any) => shipmentPackage.shipmentId === shipment.shipmentId));
+          return currentShipmentPackages;
+        }, []);
+
+        // When the shipment method for product store is configured then only check for shipmentPackages otherwise we won't show missing label error button
+        const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
+        const kitProducts = prepareKitProducts(order)
+
+        return {
+          ...order,
+          orderItems: order.items.filter((item: any) => !isKitComponent(item)),
+          ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
+          shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
+          shipmentPackages: shipmentPackages,
+          carrierPartyIds,
+          shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty,
+          missingLabelImage
+        }
       })
 
-      const orderItem = order.items[0];
-      const carrierPartyIds = [...new Set(orderShipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())];
-
-      const shipmentBoxTypeByCarrierParty = carrierPartyIds.reduce((shipmentBoxType: any, carrierPartyId: any) => {
-        if(shipmentBoxType[carrierPartyId]) {
-          shipmentBoxType[carrierPartyId].push(carrierShipmentBoxType[carrierPartyId])
-        } else {
-          shipmentBoxType[carrierPartyId] = carrierShipmentBoxType[carrierPartyId]
-        }
-
-        return shipmentBoxType
-      }, {});
-
-      const shipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].map((shipmentPackage: any) => {
-        return {
-          ...shipmentPackage,
-          shipmentBoxTypes: shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] : []
-        }
-      });
-
-      return {
-        ...order,
-        shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
-        shipmentPackages: shipmentPackages,
-        carrierPartyIds,
-        shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty
-      }
-    })
-
-    this.dispatch('util/fetchShipmentBoxTypeDesc', [...new Set(Object.values(carrierShipmentBoxType).flat())])
-    } catch(err) {
+      this.dispatch('util/fetchShipmentBoxTypeDesc', [...new Set(Object.values(carrierShipmentBoxType).flat())])
+    } catch (err) {
       inProgressOrders = inProgressOrders.map((order: any) => {
         orderIds.includes(order.orderId) && (order.hasMissingInfo = true);
         return order;
@@ -128,7 +142,7 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     // updating the state with the updated orders information
-    commit(types.ORDER_INPROGRESS_UPDATED, {orders: inProgressOrders, total: state.inProgress.total})
+    commit(types.ORDER_INPROGRESS_UPDATED, { orders: inProgressOrders, total: state.inProgress.total })
   },
 
   async fetchCompletedOrdersAdditionalInformation({ commit, state }) {
@@ -162,6 +176,7 @@ const actions: ActionTree<OrderState, RootState> = {
       const shipmentIds = [...new Set(shipments.map((shipment: any) => shipment.shipmentId))]
       // Get packed shipmentIds
       let shipmentPackages = [] as any;
+      let shipmentTrackingCodes = [] as any;
       if (shipmentIds.length > 0) {
         try {
             const shipmentIdBatches = [];
@@ -169,7 +184,9 @@ const actions: ActionTree<OrderState, RootState> = {
               shipmentIdBatches.push(shipmentIds.splice(0, batchSize))
             }
             const shipmentPackagesBatches = await Promise.all(shipmentIdBatches.map((shipmentIds) => OrderService.fetchShipmentPackages(shipmentIds)))
+            const trackingCodes = await Promise.all(shipmentIdBatches.map((shipmentIds) => OrderService.fetchTrackingCodes(shipmentIds)))
             shipmentPackages = shipmentPackagesBatches.flat();
+            shipmentTrackingCodes = trackingCodes.flat();
           } catch(err) {
             completedOrders = completedOrders.map((order: any) => {
               order.hasMissingPackageInfo = true;
@@ -194,13 +211,19 @@ const actions: ActionTree<OrderState, RootState> = {
           return currentShipmentPackages;
         }, []);
 
+        const trackingCode = shipmentTrackingCodes.find((shipmentTrackingCode: any) => shipmentTrackingCode.shipmentId == order.shipmentId)?.trackingCode
+
         // If there is any shipment package with missing tracking code, retry shipping label
-        const missingLabelImage = currentShipmentPackages.length > 0;
+        const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
+        const kitProducts = prepareKitProducts(order)
 
         return {
           ...order,
+          orderItems: order.items.filter((item: any) => !isKitComponent(item)),
+          ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
           shipments: orderShipments,
           missingLabelImage,
+          trackingCode,
           shipmentPackages: currentShipmentPackages  // ShipmentPackages information is required when performing retryShippingLabel action
         }
       })
@@ -237,7 +260,7 @@ const actions: ActionTree<OrderState, RootState> = {
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           '-fulfillmentStatus': { value: 'Rejected' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.state.user.currentFacility.facilityId },
+          facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
           productStoreId: { value: this.state.user.currentEComStore.productStoreId }
         }
       }
@@ -260,6 +283,7 @@ const actions: ActionTree<OrderState, RootState> = {
         orders = orders.map((order: any) => {
           const orderItem = order.doclist.docs[0];
           return {
+            category: 'in-progress',
             customerId: orderItem.customerId,
             customerName: orderItem.customerName,
             orderId: orderItem.orderId,
@@ -267,9 +291,12 @@ const actions: ActionTree<OrderState, RootState> = {
             orderName: orderItem.orderName,
             groupValue: order.groupValue,
             picklistBinId: orderItem.picklistBinId,
+            picklistId: orderItem.picklistId,
             items: order.doclist.docs,
+            shipGroupSeqId: orderItem.shipGroupSeqId,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
-            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc
+            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+            shippingInstructions: orderItem.shippingInstructions
           }
         })
       } else {
@@ -327,7 +354,7 @@ const actions: ActionTree<OrderState, RootState> = {
         '-fulfillmentStatus': { value: 'Cancelled' },
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
-        facilityId: { value: this.state.user.currentFacility.facilityId },
+        facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
       }
     }
@@ -347,6 +374,29 @@ const actions: ActionTree<OrderState, RootState> = {
         total = resp.data.grouped.orderId.ngroups
         orders = resp.data.grouped.orderId.groups
         this.dispatch('product/getProductInformation', { orders })
+
+        orders = orders.map((order: any) => {
+          const orderItem = order.doclist.docs[0];
+          const kitProducts = prepareKitProducts({ items: order.doclist.docs })
+
+          return {
+            category: 'open',
+            customerId: orderItem.customerId,
+            customerName: orderItem.customerName,
+            orderId: orderItem.orderId,
+            orderDate: orderItem.orderDate,
+            orderName: orderItem.orderName,
+            groupValue: order.groupValue,
+            items: order.doclist.docs,  // all order items
+            orderItems: order.doclist.docs.filter((item: any) => !isKitComponent(item)),  // order items other than kit
+            ...(!!(Object.keys(kitProducts)).length && { kitProducts }),  // kit products in order
+            shipGroupSeqId: orderItem.shipGroupSeqId,
+            shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
+            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+            shippingInstructions: orderItem.shippingInstructions,
+            reservedDatetime: orderItem.reservedDatetime
+          }
+        })
       } else {
         throw resp.data
       }
@@ -378,7 +428,7 @@ const actions: ActionTree<OrderState, RootState> = {
       filters: {
         picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        facilityId: { value: this.state.user.currentFacility.facilityId },
+        facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
       }
     }
@@ -402,7 +452,6 @@ const actions: ActionTree<OrderState, RootState> = {
         total = resp.data.grouped.picklistBinId.ngroups
         orders = resp.data.grouped.picklistBinId.groups
         this.dispatch('product/getProductInformation', { orders })
-        
       } else {
         throw resp.data
       }
@@ -417,6 +466,7 @@ const actions: ActionTree<OrderState, RootState> = {
       const orderItem = order.doclist.docs[0]; // basic information for the order
 
       return {
+        category: 'completed',
         customerId: orderItem.customerId,
         customerName: orderItem.customerName,
         orderId: orderItem.orderId,
@@ -425,10 +475,13 @@ const actions: ActionTree<OrderState, RootState> = {
         reservedDatetime: orderItem.reservedDatetime,
         groupValue: order.groupValue,
         picklistBinId: orderItem.picklistBinId,
+        picklistId: orderItem.picklistId,
         items: order.doclist.docs,
+        shipGroupSeqId: orderItem.shipGroupSeqId,
         shipmentId: orderItem.shipmentId,
         shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
         shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+        shippingInstructions: orderItem.shippingInstructions,
         isGeneratingShippingLabel: false,
         isGeneratingPackingSlip: false
       }
@@ -448,10 +501,77 @@ const actions: ActionTree<OrderState, RootState> = {
     return resp;
   },
 
+  async fetchPaymentDetail({ commit, state }) {
+    try {
+      const order = JSON.parse(JSON.stringify(state.current));
+      const resp = await OrderService.fetchOrderPaymentPreferences(order.orderId);
+  
+      if (!hasError(resp)) {
+        const orderPaymentPreferences = resp?.data?.docs;
+  
+        if (orderPaymentPreferences.length > 0) {
+          const paymentMethodTypeIds = orderPaymentPreferences.map((orderPaymentPreference: any) => orderPaymentPreference.paymentMethodTypeId);
+          if (paymentMethodTypeIds.length > 0) {
+            this.dispatch('util/fetchPaymentMethodTypeDesc', paymentMethodTypeIds);
+          }
+  
+          const statusIds = orderPaymentPreferences.map((orderPaymentPreference: any) => orderPaymentPreference.statusId);
+          if (statusIds.length > 0) {
+            this.dispatch('util/fetchStatusDesc', statusIds);
+          }
+  
+          order.orderPaymentPreferences = orderPaymentPreferences;
+          commit(types.ORDER_CURRENT_UPDATED, order);
+        }
+      }
+    } catch (err) {
+      logger.error("Error in fetching payment detail.", err);
+    }
+  },
+
+  async fetchShippingAddress ({ commit, state }) {
+    let resp;
+    let order = JSON.parse(JSON.stringify(state.current))
+
+    try {
+      resp = await OrderService.fetchOrderItemShipGroup(order);
+      if (resp) {
+        const contactMechId = resp.contactMechId;
+        resp = await OrderService.fetchShippingAddress(contactMechId);
+
+        if (resp) {
+          order = {
+            ...order,
+            shippingAddress: resp
+          }
+        }
+      }
+    } catch (err: any) {
+      logger.error("Error in fetching shipping address information for current order", err);
+    }
+    commit(types.ORDER_CURRENT_UPDATED,  order)
+  },
+
+  async getShippingPhoneNumber({ commit, state }) {
+    let order = JSON.parse(JSON.stringify(state.current))
+
+    try {
+      const contactNumber = await OrderService.getShippingPhoneNumber(order.orderId);
+      order = {
+        ...order,
+        contactNumber
+      }
+    } catch (err: any) {
+      logger.error("Error in fetching customer phone number for current order", err);
+    }
+    commit(types.ORDER_CURRENT_UPDATED, order)
+  },
+
   async clearOrders ({ commit }) {
     commit(types.ORDER_INPROGRESS_CLEARED)
     commit(types.ORDER_OPEN_CLEARED)
     commit(types.ORDER_COMPLETED_CLEARED)
+    commit(types.ORDER_CURRENT_UPDATED, {})
   },
 
   async clearOpenOrders({ commit }) {
@@ -486,12 +606,568 @@ const actions: ActionTree<OrderState, RootState> = {
     await dispatch('fetchInProgressOrdersAdditionalInformation', { viewIndex: payload.viewIndex});
     commit(types.ORDER_INPROGRESS_QUERY_UPDATED, payload)
   },
+
   async updateCompletedOrderIndex({ commit }, payload) {
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, payload)
   },
+
   async updateOpenOrderIndex({ commit }, payload) {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
-  }
+  },
+
+  async getOpenOrder({ dispatch, state }, payload) {
+    const current = state.current as any
+    if (current.orderId === payload.orderId && current.category === 'open' && current.shipGroupSeqId === payload.shipGroupSeqId) {
+      return
+    }
+
+    const orders = JSON.parse(JSON.stringify(state.open.list)) as Array<any>
+    if (orders.length) {
+      const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'open' && payload.shipGroupSeqId === order.shipGroupSeqId)
+      if (order) {
+        dispatch('updateCurrent', order)
+        return
+      }
+    }
+
+    let resp, order = {} as any;
+    emitter.emit('presentLoader');
+
+    const params = {
+      viewSize: 1,
+      filters: {
+        orderId: { value: payload.orderId },
+        quantityNotAvailable: { value: 0 },
+        isPicked: { value: 'N' },
+        shipGroupSeqId: { value: payload.shipGroupSeqId },
+        '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+        '-fulfillmentStatus': { value: 'Cancelled' },
+        orderStatusId: { value: 'ORDER_APPROVED' },
+        orderTypeId: { value: 'SALES_ORDER' },
+        facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
+        productStoreId: { value: this.state.user.currentEComStore.productStoreId }
+      }
+    }
+    const orderQueryPayload = prepareOrderQuery(params)
+    try {
+      resp = await OrderService.findOpenOrders(orderQueryPayload);
+      if (!hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
+        const orderItem = resp.data.grouped.orderId.groups[0].doclist.docs[0];
+        const kitProducts = prepareKitProducts({ items: resp.data.grouped.orderId.groups[0].doclist.docs })
+        let productIds = resp.data.grouped.orderId.groups[0].doclist.docs.map((item: any) => item.productId)
+        if (Object.keys(kitProducts).length) {
+          productIds = [...productIds, ...Object.values(kitProducts).map((item: any) => item.parentProductId)]
+        }
+        order = {
+          category: 'open',
+          customerId: orderItem.customerId,
+          customerName: orderItem.customerName,
+          orderId: orderItem.orderId,
+          orderDate: orderItem.orderDate,
+          orderName: orderItem.orderName,
+          groupValue: resp.data.grouped.orderId.groups[0].groupValue,
+          ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
+          items: resp.data.grouped.orderId.groups[0].doclist.docs,
+          orderItems: resp.data.grouped.orderId.groups[0].doclist.docs.filter((item: any) => !isKitComponent(item)),
+          shipGroupSeqId: orderItem.shipGroupSeqId,
+          shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
+          shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+          reservedDatetime: orderItem.reservedDatetime
+        }
+
+        await this.dispatch('product/fetchProducts', { productIds })
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Something went wrong, could not fetch order details.', err)
+    }
+    dispatch('updateCurrent', order)
+    emitter.emit('dismissLoader');
+    return resp;
+  },
+
+  async getInProgressOrder ({ dispatch, state }, payload) {
+    // if order is modified, we refetch it instead of returning from the state
+    if (!payload.isModified) {
+      const current = state.current as any
+      if (current.orderId === payload.orderId && current.category === 'in-progress' && current.shipGroupSeqId === payload.shipGroupSeqId) {
+        return
+      }
+
+      const orders = JSON.parse(JSON.stringify(state.inProgress.list)) as Array<any>
+      if (orders.length) {
+        const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'in-progress' && payload.shipGroupSeqId === order.shipGroupSeqId)
+        if (order) {
+          dispatch('updateCurrent', order)
+          return
+        }
+      }
+    }
+    emitter.emit('presentLoader');
+    let resp, order = {} as any;
+
+    try {
+      const params = {
+        viewSize: 1,
+        sort: 'orderDate asc',
+        groupBy: 'picklistBinId',
+        filters: {
+          orderId: { value: payload.orderId },
+          picklistItemStatusId: { value: 'PICKITEM_PENDING' },
+          shipGroupSeqId: { value: payload.shipGroupSeqId },
+          '-fulfillmentStatus': { value: 'Rejected' },
+          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+          facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
+          productStoreId: { value: this.state.user.currentEComStore.productStoreId }
+        }
+      }
+
+      const orderQueryPayload = prepareOrderQuery(params)
+
+      resp = await OrderService.findInProgressOrders(orderQueryPayload);
+      if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
+        const orderItem = resp.data.grouped.picklistBinId.groups[0].doclist.docs[0];
+        order = {
+          category: 'in-progress',
+          customerId: orderItem.customerId,
+          customerName: orderItem.customerName,
+          orderId: orderItem.orderId,
+          orderDate: orderItem.orderDate,
+          orderName: orderItem.orderName,
+          groupValue: resp.data.grouped.picklistBinId.groups[0].groupValue,
+          picklistBinId: orderItem.picklistBinId,
+          items: resp.data.grouped.picklistBinId.groups[0].doclist.docs,
+          shipGroupSeqId: orderItem.shipGroupSeqId,
+          shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
+          shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+        }
+        await this.dispatch('product/fetchProducts', { productIds: order.items.map((item: any) => item.productId) })
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Something went wrong', err)
+    }
+
+    await dispatch('fetchInProgressOrderAdditionalInformation', order);
+
+    emitter.emit('dismissLoader');
+  },
+
+  async getCompletedOrder({ dispatch, state }, payload) {
+    const current = state.current as any
+    if (current.orderId === payload.orderId && current.category === 'completed' && current.shipGroupSeqId === payload.shipGroupSeqId) {
+      return
+    }
+
+    const orders = JSON.parse(JSON.stringify(state.completed.list)) as Array<any>
+    if (orders.length) {
+      const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'completed' && payload.shipGroupSeqId === order.shipGroupSeqId)
+      if (order) {
+        dispatch('updateCurrent', order)
+        return
+      }
+    }
+    emitter.emit('presentLoader');
+    let resp, order = {} as  any;
+
+    try {
+      const params = {
+        viewSize: 1,
+        groupBy: 'picklistBinId',
+        sort: 'orderDate asc',
+        filters: {
+          orderId: { value: payload.orderId },
+          picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
+          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+          shipGroupSeqId: { value: payload.shipGroupSeqId },
+          facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
+          productStoreId: { value: this.state.user.currentEComStore.productStoreId }
+        }
+      }
+
+      const orderQueryPayload = prepareOrderQuery(params)
+
+      resp = await OrderService.findCompletedOrders(orderQueryPayload);
+      if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
+        const orderItem = resp.data.grouped.picklistBinId.groups[0].doclist.docs[0];
+        order = {
+          category: 'completed',
+          customerId: orderItem.customerId,
+          customerName: orderItem.customerName,
+          orderId: orderItem.orderId,
+          orderDate: orderItem.orderDate,
+          orderName: orderItem.orderName,
+          reservedDatetime: orderItem.reservedDatetime,
+          groupValue: resp.data.grouped.picklistBinId.groups[0].groupValue,
+          picklistBinId: orderItem.picklistBinId,
+          items: resp.data.grouped.picklistBinId.groups[0].doclist.docs,
+          shipmentId: orderItem.shipmentId,
+          shipGroupSeqId: orderItem.shipGroupSeqId,
+          shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
+          shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
+          isGeneratingShippingLabel: false,
+          isGeneratingPackingSlip: false
+        }
+
+        await this.dispatch('product/fetchProducts', { productIds: order.items.map((item: any) => item.productId) })
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('No completed orders found', err)
+    }
+
+    await dispatch('fetchCompletedOrderAdditionalInformation', order);
+    emitter.emit('dismissLoader');
+  },
+
+  async fetchShipGroupForOrder({ dispatch, state }) {
+    const order = JSON.parse(JSON.stringify(state.current))
+
+    // return if orderId is not found on order
+    if(!order?.orderId) {
+      return;
+    }
+
+    const params = {
+      groupBy: 'shipGroupSeqId',
+      filters: {
+        'shipGroupSeqId': { value: '[* TO *]' },  // check to ignore all those records for which shipGroupSeqId is not present, as in case of kit comp we does not get shipGroupSeqId on some items
+        '-shipGroupSeqId': { value: order.shipGroupSeqId },
+        orderId: { value: order.orderId }
+      },
+      docType: 'ORDER'
+    }
+
+    const orderQueryPayload = prepareOrderQuery(params)
+
+    let resp, total, shipGroups = [];
+    const facilityTypeIds: Array<string> = [];
+
+    try {
+      resp = await OrderService.findOrderShipGroup(orderQueryPayload);
+      if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.shipGroupSeqId.matches > 0) {
+        total = resp.data.grouped.shipGroupSeqId.ngroups
+        shipGroups = resp.data.grouped.shipGroupSeqId.groups
+
+        // creating the key as orders as the product information action accept only the orders as a param
+        this.dispatch('product/getProductInformation', { orders: shipGroups })
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Failed to fetch ship group information for order', err)
+    }
+
+    // return if shipGroups are not found for order
+    if (!shipGroups.length) {
+      return;
+    }
+
+    shipGroups = shipGroups.map((shipGroup: any) => {
+      const shipItem = shipGroup?.doclist?.docs[0]
+
+      if(!shipItem) {
+        return;
+      }
+
+      // In some case we are not having facilityTypeId in resp, resulting in undefined being pushed in the array
+      // so checking for facilityTypeId before updating the array
+      shipItem.facilityTypeId && facilityTypeIds.push(shipItem.facilityTypeId)
+
+      return {
+        items: shipGroup.doclist.docs,
+        facilityId: shipItem.facilityId,
+        facilityTypeId: shipItem.facilityTypeId,
+        facilityName: shipItem.facilityName,
+        shippingMethod: shipItem.shippingMethod,
+        orderId: shipItem.orderId,
+        shipGroupSeqId: shipItem.shipGroupSeqId
+      }
+    })
+
+    this.dispatch('util/fetchFacilityTypeInformation', facilityTypeIds)
+
+    // fetching reservation information for shipGroup from OISGIR doc
+    await dispatch('fetchAdditionalShipGroupForOrder', { shipGroups });
+  },
+
+  async fetchCompletedOrderAdditionalInformation({ dispatch }, order) {
+    let current = JSON.parse(JSON.stringify(order))
+
+    try {
+      // fetchShipments accepts Array parameters for picklistBinId and orderId
+      const shipmentBatches = await OrderService.fetchShipments([current.picklistBinId], [current.orderId], this.state.user.currentFacility.facilityId)
+      const shipments = shipmentBatches.flat();
+      const shipmentIds = [...new Set(shipments.map((shipment: any) => shipment.shipmentId))] as Array<string>
+      let shipmentPackages = [] as any;
+      
+      // Get packed shipmentIds
+      if (shipmentIds.length) {
+        try {
+          const shipmentPackagesBatches = await OrderService.fetchShipmentPackages(shipmentIds)
+          shipmentPackages = shipmentPackagesBatches.flat();
+        } catch (err) {
+          current.hasMissingPackageInfo = true;
+          logger.error('Failed to fetch shipment packages for orders', err)
+        }
+      }
+
+      const orderShipments = shipments.filter((shipment: any) => current.orderId === shipment.primaryOrderId && shipment.picklistBinId === current.picklistBinId);
+      if (!orderShipments || !orderShipments.length) {
+        dispatch('updateCurrent', current)
+        return
+      }
+
+      const currentShipmentPackages = orderShipments.reduce((currentShipmentPackages: any, shipment: any) => {
+        currentShipmentPackages.push(...shipmentPackages.filter((shipmentPackage: any) => shipmentPackage.shipmentId === shipment.shipmentId));
+        return currentShipmentPackages;
+      }, []);
+
+      // If there is any shipment package with missing tracking code, retry shipping label
+      const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
+      const kitProducts = prepareKitProducts(current)
+
+      current = {
+        ...current,
+        orderItems: current.items.filter((item: any) => !isKitComponent(item)),
+        ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
+        shipments: orderShipments,
+        missingLabelImage,
+        shipmentPackages: currentShipmentPackages  // ShipmentPackages information is required when performing retryShippingLabel action
+      }
+
+      if (Object.keys(kitProducts).length) {
+        const productIds = [...Object.values(kitProducts).map((item: any) => item.parentProductId)]
+        await this.dispatch('product/fetchProducts', { productIds })
+      }
+    } catch(err) {
+      current.hasMissingPackageInfo = true;
+      logger.error('Something went wrong', err)
+    }
+
+    dispatch('updateCurrent', current)
+  },
+
+  async fetchInProgressOrderAdditionalInformation({ dispatch }, order) {
+    let current = JSON.parse(JSON.stringify(order))
+
+    const picklistBinIds: Array<string> = [current.picklistBinId];
+    const orderIds: Array<string> = [current.orderId];
+
+    try {
+      // maintaining an object containing information of shipmentIds for each order
+      const shipmentIdsForOrderAndPicklistBin = await UtilService.findShipmentIdsForOrders(picklistBinIds, orderIds);
+
+      let shipmentPackagesByOrderAndPicklistBin = {} as any, itemInformationByOrder = {} as any, carrierPartyIdsByShipment = {} as any, carrierShipmentBoxType = {} as any
+
+      // storing all the shipmentIds for all the orders in an array to use furthur
+      const orderShipmentIds = [...(new Set(Object.values(shipmentIdsForOrderAndPicklistBin).flat()))] as Array<string>
+
+      // TODO: handle case when shipmentIds is empty
+      // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
+      const [shipmentPackagesByOrderInformationAndPicklistBin, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
+
+      // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
+      const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
+
+      shipmentPackagesByOrderAndPicklistBin = {
+        ...shipmentPackagesByOrderAndPicklistBin,
+        ...shipmentPackagesByOrderInformationAndPicklistBin
+      }
+
+      itemInformationByOrder = {
+        ...itemInformationByOrder,
+        ...itemInformationByOrderInformation
+      }
+
+      carrierPartyIdsByShipment = {
+        ...carrierPartyIdsByShipment,
+        ...carrierPartyIdsByShipmentInformation
+      }
+
+      carrierShipmentBoxType = {
+        ...carrierShipmentBoxType,
+        ...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
+      }
+
+      const orderShipmentPackages = this.state.util.productStoreShipmentMethCount > 0 ? await OrderService.fetchShipmentPackages(orderShipmentIds) : [];
+
+      // if for an order shipment information is not available then returning the same order information again
+      if (!shipmentIdsForOrderAndPicklistBin[`${current.orderId}_${current.picklistBinId}`]) {
+        // if there are no shipment for the order, there is some issue with the order
+        if (picklistBinIds.includes(current.picklistBinId) && orderIds.includes(current.orderId)) {
+          current = {
+            ...current,
+            hasMissingInfo: true,
+          }
+          return
+        }
+        return
+      }
+
+      current.items.map((item: any) => {
+        // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
+        const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)
+
+        if (shipment) {
+          item.shipmentId = shipment.shipmentId
+          item.shipmentItemSeqId = shipment.shipmentItemSeqId
+        }
+
+        item.selectedBox = shipmentPackagesByOrderAndPicklistBin[`${item.orderId}_${item.picklistBinId}`]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+      })
+
+      const orderItem = current.items[0];
+      const carrierPartyIdsOnOrderShipment = [...new Set(orderShipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())];
+
+      const shipmentBoxTypeByCarrierParty = carrierPartyIdsOnOrderShipment.reduce((shipmentBoxType: any, carrierPartyId: any) => {
+        if (shipmentBoxType[carrierPartyId]) {
+          shipmentBoxType[carrierPartyId].push(carrierShipmentBoxType[carrierPartyId])
+        } else {
+          shipmentBoxType[carrierPartyId] = carrierShipmentBoxType[carrierPartyId]
+        }
+
+        return shipmentBoxType
+      }, {});
+
+      const shipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].map((shipmentPackage: any) => {
+        return {
+          ...shipmentPackage,
+          shipmentBoxTypes: shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] : []
+        }
+      });
+
+
+      const currentShipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].reduce((currentShipmentPackages: any, shipment: any) => {
+        currentShipmentPackages.push(...orderShipmentPackages.filter((shipmentPackage: any) => shipmentPackage.shipmentId === shipment.shipmentId));
+        return currentShipmentPackages;
+      }, []);
+
+      // When the shipment method for product store is configured then only check for shipmentPackages otherwise we won't show missing label error button
+      const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
+      const kitProducts = prepareKitProducts(current)
+
+      current = {
+        ...current,
+        orderItems: current.items.filter((item: any) => !isKitComponent(item)),
+        ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
+        shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
+        shipmentPackages: shipmentPackages,
+        carrierPartyIdsOnOrderShipment,
+        shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty,
+        missingLabelImage
+      }
+
+      if (Object.keys(kitProducts).length) {
+        // used flat as the Object.values returns array, that results in an array of array structure [[], []]
+        // used Set a=to only have unique product Ids
+        const productIds = [...new Set(Object.values(kitProducts).flat().map((item: any) => item.parentProductId))]
+        await this.dispatch('product/fetchProducts', { productIds })
+      }
+      this.dispatch('util/fetchShipmentBoxTypeDesc', [...new Set(Object.values(carrierShipmentBoxType).flat())])
+    } catch (err) {
+      current.hasMissingPackageInfo = true;
+      logger.error('Something went wrong', err)
+    }
+
+    // updating the state with the updated orders information
+    await dispatch('updateCurrent', current)
+  },
+
+  async fetchAdditionalShipGroupForOrder({ commit, state }, payload) {
+    const order = JSON.parse(JSON.stringify(state.current))
+
+    // return if orderId is not found on order
+    if(!order?.orderId) {
+      return;
+    }
+
+    const shipGroupSeqIds = payload.shipGroups.map((shipGroup: any) => shipGroup.shipGroupSeqId)
+    const orderId = order.orderId
+
+    const params = {
+      groupBy: 'shipGroupSeqId',
+      filters: {
+        'shipGroupSeqId': { value: shipGroupSeqIds },
+        '-fulfillmentStatus': { value: ['Rejected', 'Cancelled'] },
+        orderId: { value: orderId }
+      }
+    }
+
+    const orderQueryPayload = prepareOrderQuery(params)
+
+    let resp, total, shipGroups: any = [];
+
+    try {
+      resp = await OrderService.findOrderShipGroup(orderQueryPayload);
+      if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.shipGroupSeqId.matches > 0) {
+        total = resp.data.grouped.shipGroupSeqId.ngroups
+        shipGroups = resp.data.grouped.shipGroupSeqId.groups
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Failed to fetch ship group information for order', err)
+    }
+
+    shipGroups = payload.shipGroups.map((shipGroup: any) => {
+      const reservedShipGroupForOrder = shipGroups.find((group: any) => shipGroup.shipGroupSeqId === group.doclist?.docs[0]?.shipGroupSeqId)
+
+      const reservedShipGroup = reservedShipGroupForOrder?.groupValue ? reservedShipGroupForOrder.doclist.docs[0] : ''
+
+      return reservedShipGroup ? {
+        ...shipGroup,
+        items: reservedShipGroupForOrder.doclist.docs,
+        carrierPartyId: reservedShipGroup.carrierPartyId,
+        shipmentId: reservedShipGroup.shipmentId,
+        category: getOrderCategory(reservedShipGroupForOrder.doclist.docs[0])
+      } : {
+        ...shipGroup,
+        category: getOrderCategory(shipGroup.items[0])
+      }
+    })
+
+    const carrierPartyIds: Array<string> = [];
+    const shipmentIds: Array<string> = [];
+
+    if (total) {
+      shipGroups.map((shipGroup: any) => {
+        if (shipGroup.shipmentId) shipmentIds.push(shipGroup.shipmentId)
+        if (shipGroup.carrierPartyId) carrierPartyIds.push(shipGroup.carrierPartyId)
+      })
+    }
+
+    try {
+      this.dispatch('util/fetchPartyInformation', carrierPartyIds)
+      const shipmentTrackingCodes = await OrderService.fetchTrackingCodes(shipmentIds)
+
+      shipGroups.find((shipGroup: any) => {
+        const trackingCode = shipmentTrackingCodes.find((shipmentTrackingCode: any) => shipGroup.shipmentId === shipmentTrackingCode.shipmentId)?.trackingCode
+
+        shipGroup.trackingCode = trackingCode;
+      })
+    } catch (err) {
+      logger.error('Failed to fetch information for ship groups', err)
+    }
+
+    order['shipGroups'] = shipGroups
+
+    commit(types.ORDER_CURRENT_UPDATED, order)
+
+    return shipGroups;
+  },
+
+  // TODO clear current on logout
+  async updateCurrent({ commit, dispatch }, order) {
+    commit(types.ORDER_CURRENT_UPDATED, order)
+    await dispatch('fetchShippingAddress');
+    await dispatch('fetchShipGroupForOrder');
+    await dispatch('fetchPaymentDetail');
+    await dispatch('getShippingPhoneNumber');
+  },
 }
 
 export default actions;

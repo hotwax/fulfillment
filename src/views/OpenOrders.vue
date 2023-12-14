@@ -35,55 +35,84 @@
         <div class="results">
           <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picksheet") }}</ion-button>
 
-          <ion-card class="order" v-for="(orders, index) in getOpenOrders()" :key="index">
+          <ion-card class="order" v-for="(order, index) in getOpenOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
-                  <strong>{{ orders.doclist.docs[0].customerName }}</strong>
-                  <p>{{ translate("Ordered") }} {{ formatUtcDate(orders.doclist.docs[0].orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                  <strong>{{ order.customerName }}</strong>
+                  <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
                 </ion-label>
               </div>
 
               <div class="order-tags">
-                <ion-chip @click="orderActionsPopover(orders, $event)" outline>
+                <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
-                  <ion-label>{{ orders.doclist.docs[0].orderName }}</ion-label>
+                  <ion-label>{{ order.orderName }}</ion-label>
+                  <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </div>
 
               <div class="order-metadata">
                 <ion-label>
-                  {{ orders.doclist.docs[0].shipmentMethodTypeDesc }}
-                  <p v-if="orders.doclist.docs[0].reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(orders.doclist.docs[0].reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                  {{ order.shipmentMethodTypeDesc }}
+                  <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
                 </ion-label>
               </div>
             </div>
 
-            <div v-for="order in orders.doclist.docs" :key="order">
-              <div class="order-item">
+            <div v-for="item in order.orderItems" :key="item.orderItemSeqId" class="order-item">
+              <div class="product-info">
+                <ion-item lines="none">
+                  <ion-thumbnail slot="start">
+                    <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                  </ion-thumbnail>
+                  <ion-label>
+                    <p class="overline">{{ item.productSku }}</p>
+                    {{ item.virtualProductName }}
+                    <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  </ion-label>
+                </ion-item>
+              </div>
+              <div class="product-metadata">
+                <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                </ion-button>
+              </div>
+            </div>
+
+            <div v-for="(kitProduct, orderItemSeqId) in order.kitProducts" :key="orderItemSeqId">
+              <ion-item-divider class="order-item" color="light">
+                <div class="product-info">
+                  <ion-label>
+                    <p>{{ getProduct(kitProduct[0].parentProductId).productName }}</p>
+                    <p>{{ getProduct(kitProduct[0].parentProductId).sku }}</p>
+                  </ion-label>
+                </div>
+              </ion-item-divider>
+
+              <div v-for="item in kitProduct" :key="item.orderItemSeqId" class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <ShopifyImg :src="getProduct(order.productId).mainImageUrl" size="small"/>
+                      <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(order.productId)) }}</p>
-                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(order.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(order.productId)) : order.productName }}
-                      <p>{{ getFeature(getProduct(order.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(order.productId).featureHierarchy, '1/SIZE/')}}</p>
+                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
+                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                     </ion-label>
                   </ion-item>
                 </div>
 
-                <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
                 <div class="product-metadata">
-                  <ion-note v-if="getProductStock(order.productId).quantityOnHandTotal">{{ getProductStock(order.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button fill="clear" v-else size="small" @click="fetchProductStock(order.productId)">
+                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
                 </div>
               </div>
             </div>
-
             <!-- TODO: add functionality to the buttons-->
             <!-- <div class="actions">
               <div class="positive-action"></div>
@@ -92,6 +121,7 @@
               </div>
             </div> -->
           </ion-card>
+
           <ion-infinite-scroll @ionInfinite="loadMoreOpenOrders($event)" threshold="100px" :disabled="!isOpenOrdersScrollable()">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
           </ion-infinite-scroll>
@@ -120,11 +150,12 @@ import {
   IonFab, 
   IonFabButton, 
   IonHeader, 
-  IonLabel, 
   IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonItem, 
+  IonItemDivider,
+  IonLabel, 
   IonMenuButton,
   IonNote,
   IonPage, 
@@ -137,7 +168,7 @@ import {
   popoverController
 } from '@ionic/vue';
 import { computed, defineComponent } from 'vue';
-import { cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
+import { caretDownOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { getProductIdentificationValue, ShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
@@ -166,11 +197,12 @@ export default defineComponent({
     IonFab,
     IonFabButton,
     IonHeader,
-    IonLabel,
     IonIcon,
     IonInfiniteScroll,
     IonInfiniteScrollContent,
     IonItem,
+    IonItemDivider,
+    IonLabel,
     IonMenuButton,
     IonNote,
     IonPage,
@@ -201,7 +233,7 @@ export default defineComponent({
       return this.searchedQuery === '' ? translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility.facilityName }) : translate( "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
     },
     getOpenOrders() {
-      return this.openOrders.list.slice(0, (this.openOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
+      return JSON.parse(JSON.stringify(this.openOrders.list)).slice(0, (this.openOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
     },
     async loadMoreOpenOrders(event: any) {
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
@@ -334,7 +366,10 @@ export default defineComponent({
     async orderActionsPopover(order: any, ev: Event) {
       const popover = await popoverController.create({
         component: OrderActionsPopover,
-        componentProps: { order },
+        componentProps: { 
+          order,
+          category: 'open'
+        },
         showBackdrop: false,
         event: ev
       });
@@ -359,6 +394,7 @@ export default defineComponent({
 
     return{
       Actions,
+      caretDownOutline,
       cubeOutline,
       formatUtcDate,
       getFeature,
