@@ -87,7 +87,7 @@ const actions: ActionTree<UserState, RootState> = {
 
       // Get product identification from api using dxp-component
       await useProductIdentificationStore().getIdentificationPref(preferredStoreId ? preferredStoreId : preferredStore.productStoreId)
-        .catch((error) => console.error(error));
+        .catch((error) => logger.error(error));
 
       /*  ---- Guard clauses ends here --- */
 
@@ -216,7 +216,7 @@ const actions: ActionTree<UserState, RootState> = {
 
     // Get product identification from api using dxp-component
     await useProductIdentificationStore().getIdentificationPref(payload.eComStore.productStoreId)
-      .catch((error) => console.error(error));
+      .catch((error) => logger.error(error));
 
     this.dispatch('util/findProductStoreShipmentMethCount')
   },
