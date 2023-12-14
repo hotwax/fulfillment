@@ -47,4 +47,12 @@ const prepareOrderQuery = (params: any) => {
   return payload
 }
 
-export { prepareOrderQuery }
+const escapeSolrSpecialChars = (input: any) => {
+  const specialChars = ['\\', '+', '-', '&&', '||', '!', '(', ')', '{', '}', '[', ']', '^', '"', '~', '*', '?', ':'];
+
+  // Escape each special character in the input
+  const escapedInput = String(input).replace(new RegExp(`[${specialChars.join('\\')}]`, 'g'), '\\$&');
+  return escapedInput;
+}
+
+export { escapeSolrSpecialChars, prepareOrderQuery }

@@ -72,7 +72,7 @@
             </div>  
           </div>
 
-          <div v-for="item in order.items" :key="item" class="order-item">
+          <div v-for="item in order.orderItems" :key="item" class="order-item">
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
@@ -108,6 +108,57 @@
               </ion-button>
             </div>
           </div>
+
+          <div v-if="order.kitProducts">
+            <div v-for="(kitProducts, orderItemSeqId) in order.kitProducts" :key="orderItemSeqId">
+              <ion-item-divider class="order-item" color="light">
+                <div class="product-info">
+                  <ion-label>
+                    <p>{{ getProduct(kitProducts[0]?.parentProductId).productName }}</p>
+                    <p>{{ getProduct(kitProducts[0]?.parentProductId).sku }}</p>
+                  </ion-label>
+                </div>
+
+                <div v-if="category === 'in-progress' && order.shipmentPackages && order.shipmentPackages.length">
+                  <ion-chip outline @click="openShipmentBoxPopover($event, null, order, kitProducts, orderItemSeqId)">
+                    <ion-icon :icon="fileTrayOutline" />
+                    {{ `Box ${kitProducts[0]?.selectedBox}` }} 
+                    <ion-icon :icon="caretDownOutline" />
+                  </ion-chip>
+                </div>
+                    
+                <div class="product-metadata" v-if="category === 'in-progress' && order.shipmentPackages && order.shipmentPackages.length">
+                  <ion-button @click="openRejectReasonPopover($event, null, order, kitProducts)" color="danger" fill="outline">
+                    {{ translate('Report an issue') }}
+                  </ion-button>
+                </div>
+              </ion-item-divider>
+
+              <div v-for="item in kitProducts" :key="item.orderItemSeqId" class="order-item">
+                <ion-item lines="none" class="product-info">
+                  <ion-thumbnail slot="start">
+                    <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                  </ion-thumbnail>
+                  <ion-label>
+                    <p class="overline">{{ item.productSku }}</p>
+                    {{ item.productName }}
+                    <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  </ion-label>
+                </ion-item>
+
+                <div class="product-metadata">
+                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">
+                    {{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}
+                  </ion-note>
+                  <ion-button color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+                    {{ translate('Check stock') }}
+                    <ion-icon slot="end" :icon="cubeOutline"/>
+                  </ion-button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
               <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
@@ -119,7 +170,7 @@
 
           <div v-else-if="category === 'completed'" class="mobile-only">
             <ion-item>
-              <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && order.missingLabelImage && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
+              <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -142,7 +193,7 @@
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Shipped") }}
                 </ion-button>
-                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || (isTrackingRequiredForAnyShipmentPackage(order) && order.missingLabelImage && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
+                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Ship order") }}
                 </ion-button>
@@ -229,6 +280,7 @@ import {
   IonHeader,
   IonIcon,
   IonItem,
+  IonItemDivider,
   IonLabel,
   IonNote,
   IonPage,
@@ -295,6 +347,7 @@ export default defineComponent({
     IonHeader,
     IonIcon,
     IonItem,
+    IonItemDivider,
     IonLabel,
     IonNote,
     IonPage,
@@ -321,7 +374,8 @@ export default defineComponent({
       getPartyName: 'util/getPartyName',
       getfacilityTypeDesc: 'util/getFacilityTypeDesc',
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
-      getStatusDesc: 'util/getStatusDesc'
+      getStatusDesc: 'util/getStatusDesc',
+      productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount'
     })
   },
   data() {
@@ -356,7 +410,7 @@ export default defineComponent({
     async printPicklist (order: any) {
       await OrderService.printPicklist(order.picklistId)
     },
-    async openShipmentBoxPopover(ev: Event, item: any, order: any) {
+    async openShipmentBoxPopover(ev: Event, item: any, order: any, kitProducts?: any, orderItemSeqId?: number) {
       const popover = await popoverController.create({
         component: ShipmentBoxPopover,
         componentProps: { 
@@ -370,11 +424,11 @@ export default defineComponent({
 
       const result = await popover.onDidDismiss();
 
-      if (result.data && item.selectedBox !== result.data) {
-        this.confirmUpdateBox(item, order, result.data)
+      if (result.data && (kitProducts ? kitProducts[0].selectedBox !== result.data : item.selectedBox !== result.data)) {
+        this.confirmUpdateBox(item, order, result.data, kitProducts, orderItemSeqId)
       }
     },
-    async confirmUpdateBox(item: any, order: any, selectedBox: string) {
+    async confirmUpdateBox(item: any, order: any, selectedBox: string, kitProducts?: any, orderItemSeqId?: number) {
       const alert = await alertController.create({
         message: translate("Are you sure you want to update box selection?"),
         header: translate("Update box selection?"),
@@ -386,7 +440,23 @@ export default defineComponent({
           {
             text: translate("Confirm"),
             handler: async () => {
-              item.selectedBox = selectedBox;
+              // For the case of kit products updating the order.items property as all the operations are handled on items
+              if(kitProducts) {
+                const kitItemAssocs = kitProducts[0].toOrderItemAssocs.find((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
+                order.items.map((orderItem: any) => {
+                  if(orderItem.toOrderItemAssocs.includes(kitItemAssocs)) {
+                    orderItem.selectedBox = selectedBox
+                  }
+                  return orderItem
+                })
+              } else {
+                order.items.map((orderItem: any) => {
+                  if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+                    orderItem.selectedBox = selectedBox
+                  }
+                })
+              }
+
               await this.updateOrder(order, 'box-selection').then(async () => {
                 await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
               }).catch(err => err);
@@ -584,7 +654,7 @@ export default defineComponent({
       });
       return popover.present();
     },
-    async openRejectReasonPopover(ev: Event, item: any, order: any) {
+    async openRejectReasonPopover(ev: Event, item: any, order: any, kitProducts?: any) {
       const reportIssuePopover = await popoverController.create({
         component: ReportIssuePopover,
         event: ev,
@@ -596,8 +666,23 @@ export default defineComponent({
 
       const result = await reportIssuePopover.onDidDismiss();
 
-      if (result.data) {
-        item.rejectReason = result.data;
+      if(result.data) {
+        if(kitProducts) {
+          const kitItemAssocs = kitProducts[0].toOrderItemAssocs.find((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
+          order.items.map((orderItem: any) => {
+            if(orderItem.toOrderItemAssocs.includes(kitItemAssocs)) {
+              orderItem.rejectReason = result.data
+            }
+            return orderItem
+          })
+        } else {
+          order.items.map((orderItem: any) => {
+            if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+              orderItem.rejectReason = result.data
+            }
+          })
+        }
+
         const itemsToReject = order.items.filter((item: any) => item.rejectReason)
         this.reportIssue(order, itemsToReject)
       }
@@ -627,6 +712,13 @@ export default defineComponent({
       return packageType;
     },
     async regenerateShippingLabel(order: any) {
+      // If there are no product store shipment method configured, then not generating the label and displaying an error toast
+      if(this.productStoreShipmentMethCount <= 0) {
+        showToast(translate('Unable to generate shipping label due to missing product store shipping method configuration'))
+        return;
+      }
+
+
       // if the request to print shipping label is not yet completed, then clicking multiple times on the button
       // should not do anything
       if(order.isGeneratingShippingLabel) {
@@ -652,7 +744,13 @@ export default defineComponent({
     async retryShippingLabel(order: any) {
       // Getting all the shipmentIds from shipmentPackages, as we only need to pass those shipmentIds for which label is missing
       // In shipmentPackages only those shipmentInformation is available for which shippingLabel is missing
-      const shipmentIds = order.shipmentPackages.map((shipmentPackage: any) => shipmentPackage.shipmentId);
+      const shipmentIds = order.shipmentPackages?.map((shipmentPackage: any) => shipmentPackage.shipmentId);
+
+      if(!shipmentIds?.length) {
+        showToast(translate("Failed to generate shipping label"))
+        return;
+      }
+
       // TODO Handle error case
       const resp = await OrderService.retryShippingLabel(shipmentIds)
       if (!hasError(resp)) {
@@ -674,7 +772,13 @@ export default defineComponent({
       return popover.present();
     },
     async printShippingLabel(order: any) {
-      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
+      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId)
+
+      if(!shipmentIds?.length) {
+        showToast(translate('Failed to generate shipping label'))
+        return;
+      }
+
       await OrderService.printShippingLabel(shipmentIds)
     },
     async addShipmentBox(order: any) {
@@ -794,14 +898,14 @@ export default defineComponent({
       form.append('facilityId', this.currentFacility.facilityId)
       form.append('orderId', order.orderId)
 
-      order.shipmentIds.map((shipmentId: string) => {
+      order.shipmentIds?.map((shipmentId: string) => {
         form.append('shipmentIds', shipmentId)
       })
 
       const items = JSON.parse(JSON.stringify(order.items));
 
       // creating updated data for shipment packages
-      order.shipmentPackages.map((shipmentPackage: any, index: number) => {
+      order.shipmentPackages?.map((shipmentPackage: any, index: number) => {
         form.append(`box_shipmentId_${index}`, shipmentPackage.shipmentId)
         form.append(`${index}_box_rowSubmit_`, ''+index)
         form.append(`box_shipmentBoxTypeId_${index}`, shipmentPackage.shipmentBoxTypeId)
@@ -812,7 +916,8 @@ export default defineComponent({
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
         let prefix = 'rtp'
-        if(updateParameter === 'report') {
+        // reject the item only when item is having a rejection reason
+        if(updateParameter === 'report' && item.rejectReason) {
           prefix = 'rej'
           form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
         } else {
@@ -951,7 +1056,7 @@ export default defineComponent({
           showToast(translate('Order shipped successfully'))
 
           // updating order locally after ship action is success, as solr takes some time to update
-          order.shipments.map((shipment: any) => {
+          order.shipments?.map((shipment: any) => {
             if(shipment.shipmentId === order.shipmentId) shipment.statusId = 'SHIPMENT_SHIPPED'
           })
           this.store.dispatch('order/updateCurrent', order)
@@ -1052,7 +1157,7 @@ export default defineComponent({
         return;
       }
 
-      const shipmentIds = order.shipments.map((shipment: any) => shipment.shipmentId)
+      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId)
       order.isGeneratingPackingSlip = true;
       await OrderService.printPackingSlip(shipmentIds);
       order.isGeneratingPackingSlip = false;
