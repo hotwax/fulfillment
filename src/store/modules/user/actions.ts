@@ -168,7 +168,7 @@ const actions: ActionTree<UserState, RootState> = {
     const userProfile = JSON.parse(JSON.stringify(state.current as any));
     userProfile.stores = await UserService.getEComStores(undefined, payload.facility.facilityId);
 
-    let preferredStore = userProfile.stores[0];
+    let preferredStore = userProfile.stores;
     const preferredStoreId =  await UserService.getPreferredStore(undefined);
 
     if (preferredStoreId) {
