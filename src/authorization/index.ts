@@ -38,14 +38,14 @@ const getServerPermissionsFromRules = () => {
             permissions = permissionTokens.reduce((permissions: any, permissionToken: any) => {
                 // Token object with name as identifier has permissionId 
                 if (Tokens.IDENTIFIER === permissionToken.name) {
-                    permissions.push(permissionToken.value);
+                    permissions.add(permissionToken.value);
                 }
                 return permissions;
             }, permissions)
         }
         return permissions;
-    }, [])
-    return permissions;
+    }, new Set())
+    return [...permissions];
 }
 
 /**
