@@ -27,7 +27,7 @@ const actions: ActionTree<StockState, RootState> = {
       }
     } catch(err) {
       logger.error(err)
-      showToast(translate('No data available!'))
+      showToast(translate('No data available'))
     }
   }
 }

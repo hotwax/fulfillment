@@ -15,7 +15,7 @@
         <ion-label>{{ message }}</ion-label>
       </ion-item>
       <ion-item v-if="!shipmentLabelErrorMessages.length">
-        {{ translate("No data Found.") }}
+        {{ translate("No shipping label error received from carrier") }}
       </ion-item>
     </ion-list>
   </ion-content>
