@@ -8,8 +8,7 @@
     </ion-header>
 
     <ion-content>
-      <main>
-       <div v-if="content.length>0">
+      <main v-if="content.length > 0">
         <ion-list>
           <ion-list-header>{{ translate("Saved mappings") }}</ion-list-header>
           <div>
@@ -60,13 +59,12 @@
             <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
           </ion-item>
         </ion-list>
-      </div>
-      <div class="empty-state" v-else>
+      </main> 
+      <main class="empty-state" v-else>
         <img src="../assets/images/emptyState.png" />
-        <p v-html="getErrorMessage()"></p>
-      </div>
-      </main>    
-
+        <p>{{ translate("There are no packed orders at this facility") }}</p>
+      </main>   
+      
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="download" :disabled="!content.length">
           <ion-icon :icon="cloudDownloadOutline" />
@@ -120,7 +118,6 @@ export default defineComponent({
       fields: process.env["VUE_APP_MAPPING_EXPORD"] ? JSON.parse(process.env["VUE_APP_MAPPING_EXPORD"]) : {},
       customFields: {} as any,
       selectedFieldMappings: {} as any,
-      searchedContent: []
     }
   },
   computed: {
@@ -377,9 +374,6 @@ export default defineComponent({
 
         return updatedData
       }, {})
-    },
-    getErrorMessage(){
-    return this.content === 0 ? {facilityName:this.currentFacility.facilityName}: translate('There are no packed orders at this facility', { searchedContent: this.searchedContent })
     },
   },
   setup() {
