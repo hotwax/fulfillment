@@ -228,7 +228,7 @@ export default defineComponent({
 
       this.content.map((order: any) => {
         downloadData.push(Object.keys(this.selectedFieldMappings).reduce((orderInfo: any, property: string) => {
-          const isCustomField = !order[property]
+          const isCustomField = !Object.prototype.hasOwnProperty.call(order, property)
 
           if(isCustomField) {
             orderInfo[property] = this.selectedFieldMappings[property]
