@@ -9,7 +9,7 @@
 
     <ion-content>
       <main>
-       <div v-if="content.length">
+       <div v-if="content.length>0">
         <ion-list>
           <ion-list-header>{{ translate("Saved mappings") }}</ion-list-header>
           <div>
@@ -62,6 +62,7 @@
         </ion-list>
       </div>
       <div class="empty-state" v-else>
+        <img src="../assets/images/emptyState.png" />
         <p v-html="getErrorMessage()"></p>
       </div>
       </main>    
