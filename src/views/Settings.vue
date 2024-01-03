@@ -110,8 +110,7 @@
             {{ translate("Control whether the store's inventory should be made available for online sales or not.") }}
           </ion-card-content>
           <ion-item lines="none">
-            <ion-label>{{ translate("Sell online") }}</ion-label>
-            <ion-toggle :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG) || !facilityGroupDetails?.facilityGroupId" v-model="isEComInvEnabled" @click="updateEComInvStatus($event)" slot="end" />
+            <ion-toggle label-placement="start" :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG) || !facilityGroupDetails?.facilityGroupId" v-model="isEComInvEnabled" @click.prevent="updateEComInvStatus($event)">{{ translate("Sell online") }}</ion-toggle>
           </ion-item>
         </ion-card>
       </section>
@@ -158,12 +157,10 @@
             {{ translate('Print supplementary documents with the shipment for package identification.') }}
           </ion-card-content>
           <ion-item lines="none">
-            <ion-label>{{ translate("Generate shipping label") }}</ion-label>
-            <ion-toggle :checked="userPreference.printShippingLabel" @ionChange="setPrintShippingLabelPreference($event)" slot="end" />
+            <ion-toggle label-placement="start" :checked="userPreference.printShippingLabel" @ionChange="setPrintShippingLabelPreference($event)">{{ translate("Generate shipping label") }}</ion-toggle>
           </ion-item>
           <ion-item lines="none">
-            <ion-label>{{ translate("Generate packing slip") }}</ion-label>
-            <ion-toggle :checked="userPreference.printPackingSlip" @ionChange="setPrintPackingSlipPreference($event)" slot="end" />
+            <ion-toggle label-placement="start" :checked="userPreference.printPackingSlip" @ionChange="setPrintPackingSlipPreference($event)">{{ translate("Generate packing slip") }}</ion-toggle>
           </ion-item>
         </ion-card>
       </section>
