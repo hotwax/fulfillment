@@ -13,12 +13,10 @@
   <ion-content>
     <ion-list>
       <ion-item lines="full">
-        <ion-label position="fixed">{{ translate("Key") }}</ion-label>
-        <ion-input :placeholder="translate('Enter key')" name="key" v-model="key" id="key" type="text" required />
+        <ion-input :label="translate('Key')" label-placement="fixed" :placeholder="translate('Enter key')" name="key" v-model="key" id="key" type="text" required />
       </ion-item>
       <ion-item>
-        <ion-label position="fixed">{{ translate("Value") }}</ion-label>
-        <ion-input :placeholder="translate('Enter value')" name="value" v-model="value" id="value" type="text" required />
+        <ion-input :label="translate('Value')" label-placement="fixed" :placeholder="translate('Enter value')" name="value" v-model="value" id="value" type="text" required />
       </ion-item>
     </ion-list>
 
@@ -41,7 +39,6 @@ import {
   IonIcon,
   IonInput,
   IonItem,
-  IonLabel,
   IonList,
   IonTitle,
   IonToolbar,
@@ -65,7 +62,6 @@ export default defineComponent({
     IonIcon,
     IonInput,
     IonItem,
-    IonLabel,
     IonList,
     IonTitle,
     IonToolbar,
