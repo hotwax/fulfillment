@@ -24,8 +24,7 @@
       <ion-list>
         <ion-radio-group value="rd" v-model="timeZoneId">
           <ion-item  v-bind:key="timeZone.id" v-for="timeZone in filteredTimeZones">
-            <ion-label>{{ timeZone.label }} ({{ timeZone.id }})</ion-label>
-            <ion-radio :value="timeZone.id" slot="start"></ion-radio>
+            <ion-radio label-placement="end" justify="start" :value="timeZone.id">{{ timeZone.label }} ({{ timeZone.id }})</ion-radio>
           </ion-item>
         </ion-radio-group>
       </ion-list>
@@ -49,7 +48,6 @@ import {
   IonHeader,
   IonItem,
   IonIcon,
-  IonLabel,
   IonRadioGroup,
   IonRadio,
   IonList,
@@ -68,6 +66,22 @@ import { translate } from "@hotwax/dxp-components";
 
 export default defineComponent({
   name: "TimeZoneModal",
+  components: {
+    IonButtons,
+    IonButton,
+    IonContent,
+    IonFab,
+    IonFabButton,
+    IonHeader,
+    IonIcon,
+    IonItem,
+    IonList,
+    IonRadioGroup,
+    IonRadio,
+    IonSearchbar,
+    IonTitle,
+    IonToolbar
+  },
   data() {
     return {
       queryString: '',
@@ -75,8 +89,6 @@ export default defineComponent({
       timeZones: [],
       timeZoneId: ''
     }
-  },
-  computed: {
   },
   methods: {
     closeModal() {
@@ -144,23 +156,6 @@ export default defineComponent({
       store,
       translate
     };
-  },
-  components: { 
-    IonButtons,
-    IonButton,
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonRadioGroup,
-    IonRadio,
-    IonSearchbar,
-    IonTitle,
-    IonToolbar 
-    },
+  }
 });
 </script>

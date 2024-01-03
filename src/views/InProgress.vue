@@ -27,18 +27,20 @@
           <ion-row class="filters">
             <ion-item lines="none">
               <!-- empty value '' for 'All orders' radio -->
-              <ion-radio value="" slot="start" /> 
-              <ion-label class="ion-text-wrap">
-                {{ translate('All') }}
-                <p>{{ translate('picklists', { count: picklists.length }) }}</p>
-              </ion-label>
+              <ion-radio label-placement="end" value="">
+                <ion-label class="ion-text-wrap">
+                  {{ translate('All') }}
+                  <p>{{ translate('picklists', { count: picklists.length }) }}</p>
+                </ion-label>
+              </ion-radio>
             </ion-item>
             <ion-item lines="none" v-for="picklist in picklists" :key="picklist.id">
-              <ion-radio :value="picklist.id" slot="start" />
-              <ion-label class="ion-text-wrap">
-                {{ picklist.pickersName }}
-                <p>{{ picklist.date }}</p>
-              </ion-label>
+              <ion-radio label-placement="end" :value="picklist.id">
+                <ion-label class="ion-text-wrap">
+                  {{ picklist.pickersName }}
+                  <p>{{ picklist.date }}</p>
+                </ion-label>
+              </ion-radio>
             </ion-item>
           </ion-row>
         </ion-radio-group>
