@@ -53,9 +53,8 @@
         </div>
 
         <div class="product-metadata">
-          <ion-item lines="none">   
-            <ion-label>{{ translate("Select box") }}</ion-label>
-            <ion-select>
+          <ion-item lines="none">
+            <ion-select :label="translate('Select box')">
               <ion-select-option>Box A Type 3</ion-select-option>
               <ion-select-option>Box B Type 2</ion-select-option>
             </ion-select>
@@ -73,8 +72,7 @@
         </ion-button>
       </ion-item>
       <ion-item>
-        <ion-label>Box A</ion-label>
-        <ion-select value="3">
+        <ion-select label="Box A" value="3">
           <ion-select-option value="1">Type 1</ion-select-option>
           <ion-select-option value="2">Type 2</ion-select-option>
           <ion-select-option value="3">Type 3</ion-select-option>  

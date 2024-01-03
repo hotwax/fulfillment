@@ -124,16 +124,14 @@
                   <!-- TODO: add functionality to update box type -->
                   <div v-if="!isIssueSegmentSelectedForItem(item)">
                     <ion-item lines="none">
-                      <ion-label>{{ translate("Select box") }}</ion-label>
-                      <ion-select interface="popover" @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
+                      <ion-select :label="translate('Select box')" interface="popover" @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
                         <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName">{{ shipmentPackage.packageName }}</ion-select-option>
                       </ion-select>
                     </ion-item>
                   </div>
                   <div v-else>
                     <ion-item lines="none">
-                      <ion-label>{{ translate("Select issue") }}</ion-label>
-                      <ion-select interface="popover" @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
+                      <ion-select :label="translate('Select issue')" interface="popover" @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
                         <ion-select-option v-for="reason in rejectReasons" :key="reason.enumId" :value="reason.enumId">{{ reason.description ? translate(reason.description) : reason.enumId }}</ion-select-option>
                       </ion-select>
                     </ion-item>

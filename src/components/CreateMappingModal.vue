@@ -19,9 +19,8 @@
     <div>
       <ion-list>
         <ion-item :key="field" v-for="(fieldValues, field) in fieldMapping">
-          <ion-label>{{ translate(fieldValues.label) }}</ion-label>
-          <ion-input v-if="mappingType === 'EXPORD'" slot="end" v-model="fieldValues.value"></ion-input>
-          <ion-select v-else interface="popover" :placeholder = "translate('Select')" v-model="fieldValues.value">
+          <ion-input :label="translate(fieldValues.label)" v-if="mappingType === 'EXPORD'" slot="end" v-model="fieldValues.value"></ion-input>
+          <ion-select :label="translate(fieldValues.label)" v-else interface="popover" :placeholder="translate('Select')" v-model="fieldValues.value">
             <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
           </ion-select>
         </ion-item>
