@@ -24,11 +24,12 @@
       <div v-if="openOrders.total">
         <div class="filters">
           <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
-            <ion-checkbox slot="start" @ionChange="updateSelectedShipmentMethods(method.val)"/>
-            <ion-label>
-              {{ getShipmentMethodDesc(method.val) }}
-              <p>{{ method.ordersCount }} {{ translate("orders") }}, {{ method.count }} {{ translate("items") }}</p>
-            </ion-label>
+            <ion-checkbox label-placement="end" @ionChange="updateSelectedShipmentMethods(method.val)">
+              <ion-label>
+                {{ getShipmentMethodDesc(method.val) }}
+                <p>{{ method.ordersCount }} {{ translate("orders") }}, {{ method.count }} {{ translate("items") }}</p>
+              </ion-label>
+            </ion-checkbox>
           </ion-item>
         </div>
 

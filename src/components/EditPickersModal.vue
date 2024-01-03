@@ -26,11 +26,12 @@
       </div>
       <div v-else>
         <ion-item v-for="(picker, index) in pickers" :key="index" @click="updateSelectedPickers(picker.id)">
-          <ion-label>
-            {{ picker.name }}
-            <p>{{ picker.externalId ? picker.externalId : picker.id }}</p>
-          </ion-label>
-          <ion-checkbox :checked="isPickerSelected(picker.id)"/>
+          <ion-checkbox :checked="isPickerSelected(picker.id)">
+            <ion-label>
+              {{ picker.name }}
+              <p>{{ picker.externalId ? picker.externalId : picker.id }}</p>
+            </ion-label>
+          </ion-checkbox>
         </ion-item>
       </div>
     </ion-list>
