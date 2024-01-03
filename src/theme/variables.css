@@ -323,8 +323,8 @@ img {
 }
 
 .order-item {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   align-items: center;
   padding: var(--spacer-xs) 0;
   border-bottom: var(--border-medium);
@@ -335,6 +335,7 @@ img {
 }
 
 .product-metadata {
+  margin-inline-start: auto;
   padding-inline-end: var(--spacer-sm);
 }
 
