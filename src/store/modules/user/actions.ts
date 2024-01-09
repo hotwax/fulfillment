@@ -11,7 +11,7 @@ import { Settings } from 'luxon'
 import { logout, updateInstanceUrl, updateToken, resetConfig, getUserFacilities } from '@/adapter'
 import logger from '@/logger'
 import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from '@/authorization'
-import { useAuthStore, useUserStore } from '@hotwax/dxp-components'
+import { useAuthStore, useUserStore, useProductIdentificationStore } from '@hotwax/dxp-components'
 import emitter from '@/event-bus'
 
 const actions: ActionTree<UserState, RootState> = {
@@ -84,6 +84,10 @@ const actions: ActionTree<UserState, RootState> = {
         const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
         store && (preferredStore = store)
       }
+
+      // Get product identification from api using dxp-component
+      await useProductIdentificationStore().getIdentificationPref(preferredStoreId ? preferredStoreId : preferredStore.productStoreId)
+        .catch((error) => logger.error(error));
 
       /*  ---- Guard clauses ends here --- */
 
@@ -209,6 +213,11 @@ const actions: ActionTree<UserState, RootState> = {
       'userPrefTypeId': 'SELECTED_BRAND',
       'userPrefValue': payload.eComStore.productStoreId
     });
+
+    // Get product identification from api using dxp-component
+    await useProductIdentificationStore().getIdentificationPref(payload.eComStore.productStoreId)
+      .catch((error) => logger.error(error));
+
     this.dispatch('util/findProductStoreShipmentMethCount')
   },
 

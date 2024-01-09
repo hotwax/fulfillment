@@ -26,8 +26,8 @@
         <ion-label>
           {{ currentOrder.trackingCode }}
         </ion-label>        
-        <ion-button fill="clear" @click="printShippingLabel(currentOrder)">
-          <ion-icon :icon="openOutline" slot="end" />
+        <ion-button slot="end" fill="clear" @click="printShippingLabel(currentOrder)">
+          <ion-icon :icon="openOutline" slot="icon-only" />
         </ion-button>
       </ion-item>
       <ion-item lines="none" v-if="currentOrder.missingLabelImage || (!currentOrder.trackingCode && currentOrder.shipmentPackages && ['PICKITEM_PICKED', 'PICKITEM_COMPLETED'].includes(currentOrder?.items[0]?.picklistItemStatusId))">
@@ -37,8 +37,8 @@
         <ion-label v-else>
           {{ translate('Missing shipping label') }}
         </ion-label>
-        <ion-button fill="clear" @click="retryShippingLabel(currentOrder)">
-          <ion-icon :icon="refreshSharp" slot="end" />
+        <ion-button fill="clear" slot="end" @click="retryShippingLabel(currentOrder)">
+          <ion-icon :icon="refreshSharp" slot="icon-only" />
         </ion-button>
       </ion-item>
     </ion-card>
@@ -125,5 +125,6 @@ export default defineComponent({
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(343px, 1fr));
   gap: 10px;
+  align-items: start;
 }
 </style>

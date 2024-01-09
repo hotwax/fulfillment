@@ -60,22 +60,51 @@
               </div>
             </div>
 
-            <div v-for="item in order.items" :key="item">
-              <div class="order-item">
+            <div v-for="item in order.orderItems" :key="item.orderItemSeqId" class="order-item">
+              <div class="product-info">
+                <ion-item lines="none">
+                  <ion-thumbnail slot="start">
+                    <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                  </ion-thumbnail>
+                  <ion-label>
+                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                    <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  </ion-label>
+                </ion-item>
+              </div>
+              <div class="product-metadata">
+                <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                </ion-button>
+              </div>
+            </div>
+
+            <div v-for="(kitProduct, orderItemSeqId) in order.kitProducts" :key="orderItemSeqId">
+              <ion-item-divider class="order-item" color="light">
+                <div class="product-info">
+                  <ion-label>
+                    <p>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(kitProduct[0].parentProductId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(kitProduct[0].parentProductId)) : getProduct(kitProduct[0].parentProductId).productName }}</p>
+                    <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(kitProduct[0].parentProductId)) }}</p>
+                  </ion-label>
+                </div>
+              </ion-item-divider>
+
+              <div v-for="item in kitProduct" :key="item.orderItemSeqId" class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
                       <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ item.productSku }}</p>
-                      {{ item.virtualProductName }}
+                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
                       <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                     </ion-label>
                   </ion-item>
                 </div>
 
-                <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
                 <div class="product-metadata">
                   <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
                   <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
@@ -84,7 +113,6 @@
                 </div>
               </div>
             </div>
-
             <!-- TODO: add functionality to the buttons-->
             <!-- <div class="actions">
               <div class="positive-action"></div>
@@ -122,11 +150,12 @@ import {
   IonFab, 
   IonFabButton, 
   IonHeader, 
-  IonLabel, 
   IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonItem, 
+  IonItemDivider,
+  IonLabel, 
   IonMenuButton,
   IonNote,
   IonPage, 
@@ -138,11 +167,11 @@ import {
   alertController,
   popoverController
 } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { caretDownOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
-import { ShopifyImg } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, ShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
@@ -168,11 +197,12 @@ export default defineComponent({
     IonFab,
     IonFabButton,
     IonHeader,
-    IonLabel,
     IonIcon,
     IonInfiniteScroll,
     IonInfiniteScrollContent,
     IonItem,
+    IonItemDivider,
+    IonLabel,
     IonMenuButton,
     IonNote,
     IonPage,
@@ -203,7 +233,7 @@ export default defineComponent({
       return this.searchedQuery === '' ? translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility.facilityName }) : translate( "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
     },
     getOpenOrders() {
-      return this.openOrders.list.slice(0, (this.openOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any) );
+      return JSON.parse(JSON.stringify(this.openOrders.list)).slice(0, (this.openOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
     },
     async loadMoreOpenOrders(event: any) {
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
@@ -359,6 +389,8 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const productIdentificationStore = useProductIdentificationStore();
+    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
 
     return{
       Actions,
@@ -366,10 +398,12 @@ export default defineComponent({
       cubeOutline,
       formatUtcDate,
       getFeature,
+      getProductIdentificationValue,
       hasPermission,
       optionsOutline,
       pricetagOutline,
       printOutline,
+      productIdentificationPref,
       store,
       translate
     }

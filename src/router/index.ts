@@ -23,7 +23,7 @@ declare module 'vue-router' {
   }
 }
 import SavedMappings from "@/views/SavedMappings.vue"
-import { useAuthStore, Login } from '@hotwax/dxp-components'
+import { useAuthStore, DxpLogin } from '@hotwax/dxp-components'
 import { loader } from '@/utils/user';
 
 const authGuard = async (to: any, from: any, next: any) => {
@@ -137,7 +137,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/login',
     name: 'Login',
-    component: Login,
+    component: DxpLogin,
     beforeEnter: loginGuard
   },
   {

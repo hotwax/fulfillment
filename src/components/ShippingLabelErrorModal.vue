@@ -7,15 +7,21 @@
         </ion-button>
       </ion-buttons>
       <ion-title>{{ translate("Shipping label error") }}</ion-title>
+      <ion-buttons slot="end">
+        <!-- Copying first message, assuming only one message will be received -->
+        <ion-button @click="copyToClipboard(shipmentLabelErrorMessages[0], 'Copied to clipboard')"> 
+          <ion-icon slot="icon-only" :icon="copyOutline" />
+        </ion-button>
+      </ion-buttons>
     </ion-toolbar>
   </ion-header>
   <ion-content>
     <ion-list lines="none">
       <ion-item v-for="message, index in shipmentLabelErrorMessages" :key="index">
-        <ion-label>{{ message }}</ion-label>
+        <ion-label class="ion-text-wrap">{{ message }}</ion-label>
       </ion-item>
       <ion-item v-if="!shipmentLabelErrorMessages.length">
-        {{ translate("No data Found.") }}
+        {{ translate("No shipping label error received from carrier") }}
       </ion-item>
     </ion-list>
   </ion-content>
@@ -36,9 +42,10 @@ import {
   IonList
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { closeOutline } from "ionicons/icons";
+import { closeOutline, copyOutline } from "ionicons/icons";
 import { OrderService } from "@/services/OrderService";
 import { translate } from "@hotwax/dxp-components";
+import { copyToClipboard } from "@/utils";
 
 export default defineComponent({
   name: "ShippingLabelErrorModal",
@@ -72,6 +79,8 @@ export default defineComponent({
   setup() {
     return {
       closeOutline,
+      copyOutline,
+      copyToClipboard,
       translate
     };
   },
