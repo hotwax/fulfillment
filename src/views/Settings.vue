@@ -113,8 +113,20 @@
           </ion-card-content>
           <ion-item lines="none">
             <ion-label>{{ translate("Sell online") }}</ion-label>
-            <ion-toggle :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG) || !facilityGroupDetails?.facilityGroupId" v-model="isEComInvEnabled" @click="updateEComInvStatus($event)" slot="end" />
+            <ion-toggle :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG) || !isEComInvEnabled" v-model="isEComInvEnabled" @click="updateEComInvStatus($event)" slot="end" />
           </ion-item>
+          <ion-list v-if="isEComInvEnabled">
+            <ion-item-divider color="light">
+              <ion-label>{{ translate("Channels") }}</ion-label>
+            </ion-item-divider>
+            <ion-item lines="none">
+              <ion-row>
+                <ion-chip v-for="group in facilityInventoryGroups" :key="group.facilityId">
+                  {{ group.facilityGroupName }}
+                </ion-chip>
+              </ion-row>
+            </ion-item>
+          </ion-list>
         </ion-card>
       </section>
 
@@ -252,7 +264,7 @@ export default defineComponent({
       currentFacilityDetails: {} as any,
       orderLimitType: 'unlimited',
       fulfillmentOrderLimit: "" as number | string,
-      facilityGroupDetails: {} as any,
+      facilityInventoryGroups: [] as any,
       isEComInvEnabled: false
     };
   },
@@ -336,39 +348,23 @@ export default defineComponent({
       let resp: any;
       try {
         this.isEComInvEnabled = false
-        this.facilityGroupDetails = {}
+        this.facilityInventoryGroups = []
 
-        resp = await UserService.getFacilityGroupDetails({
-          "entityName": "FacilityGroup",
+        resp = await UserService.getFacilityGroupAndMemberDetails({
+          "entityName": "FacilityGroupAndMember",
           "inputFields": {
-            "facilityGroupTypeId": 'SHOPIFY_GROUP_FAC'
+            "facilityId": this.currentFacility.facilityId,
+            "facilityGroupTypeId": 'CHANNEL_FAC_GROUP'
           },
-          "fieldList": ["facilityGroupId", "facilityGroupTypeId"],
-          "viewSize": 1,
+          "filterByDate": 'Y',
+          "fieldList": ["facilityGroupId", "facilityGroupName", "fromDate"]
         })
 
-        if (!hasError(resp)) {
-          // using facilityGroupId as a flag for getting data from getFacilityGroupDetails
-          this.facilityGroupDetails.facilityGroupId = resp.data.docs[0].facilityGroupId
-          resp = await UserService.getFacilityGroupAndMemberDetails({
-            "entityName": "FacilityGroupAndMember",
-            "inputFields": {
-              "facilityId": this.currentFacility.facilityId,
-              "facilityGroupId": this.facilityGroupDetails.facilityGroupId
-            },
-            "fieldList": ["facilityId", "fromDate"],
-            "viewSize": 1,
-            "filterByDate": 'Y'
-          })
+        if (!hasError(resp) && resp.data.docs.length) {
+          this.facilityInventoryGroups = resp.data.docs
 
-          if (!hasError(resp)) {
-            this.facilityGroupDetails = { ...this.facilityGroupDetails, ...resp.data.docs[0] }
-
-            // When getting data from group member enabling the eCom inventory
-            this.isEComInvEnabled = true
-          } else {
-            throw resp.data
-          }
+          // When getting data from group member enabling the eCom inventory
+          this.isEComInvEnabled = true
         } else {
           throw resp.data
         }
@@ -449,44 +445,37 @@ export default defineComponent({
         logger.error('Failed to update facility', err)
       }
     },
-    async updateFacilityToGroup() {
-      let resp;
-      try {
-        resp = await UserService.updateFacilityToGroup({
+    async removeFacilityInvGroups() {
+      const updateResponses = await Promise.allSettled(this.facilityInventoryGroups
+        .map(async (payload: any) => await UserService.updateFacilityToGroup({
           "facilityId": this.currentFacility.facilityId,
-          "facilityGroupId": this.facilityGroupDetails.facilityGroupId,
-          "fromDate": this.facilityGroupDetails.fromDate,
+          "facilityGroupId": payload.facilityGroupId,
+          "fromDate": payload.fromDate,
           "thruDate": DateTime.now().toMillis()
-        })
+        }))
+      )
 
-        if (!hasError(resp)) {
-          this.isEComInvEnabled = false
-          showToast(translate('ECom inventory status updated successfully'))
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        showToast(translate('Failed to update eCom inventory status'))
-        logger.error('Failed to update eCom inventory status', err)
+      const hasFailedResponse = updateResponses.some((response: any) => response.status === 'rejected')
+      if (hasFailedResponse) {
+        showToast(translate('Failed to update some eCom inventory status'))
+      } else {
+        showToast(translate('ECom inventory status updated successfully'))
       }
+      await this.getEcomInvStatus()
     },
-    async addFacilityToGroup() {
-      let resp;
-      try {
-        resp = await UserService.addFacilityToGroup({
+    async addFacilityInvGroups() {
+      const addResponses = await Promise.allSettled(this.facilityInventoryGroups
+        .map(async (payload: any) => await UserService.addFacilityToGroup({
           "facilityId": this.currentFacility.facilityId,
-          "facilityGroupId": this.facilityGroupDetails.facilityGroupId
-        })
+          "facilityGroupId": payload.facilityGroupId
+        }))
+      )
 
-        if (!hasError(resp)) {
-          this.isEComInvEnabled = true
-          showToast(translate('ECom inventory status updated successfully'))
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        showToast(translate('Failed to update eCom inventory status'))
-        logger.error('Failed to update eCom inventory status', err)
+      const hasFailedResponse = addResponses.some((response: any) => response.status === 'rejected')
+      if (hasFailedResponse) {
+        showToast(translate('Failed to update some eCom inventory status'))
+      } else {
+        showToast(translate('ECom inventory status updated successfully'))
       }
     },
     async updateEComInvStatus(event: any) {
@@ -514,7 +503,7 @@ export default defineComponent({
       const { role } = await alert.onDidDismiss();
 
       if(role) {
-        isChecked ? await this.addFacilityToGroup() : await this.updateFacilityToGroup()
+        isChecked ? await this.addFacilityInvGroups() : await this.removeFacilityInvGroups()
       }
 
     },
