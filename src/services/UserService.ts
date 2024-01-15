@@ -309,6 +309,14 @@ const getFieldMappings = async (payload: any): Promise <any> => {
   });
 }
 
+const fetchFacilityPreferredInvGroups = async (payload: any): Promise <any> => {
+  return api({
+    url: "/service/fetchFacilityPreferredInvGroups",
+    method: "POST",
+    data: payload
+  });
+}
+
 export const UserService = {
     addFacilityToGroup,
     createFieldMapping,
@@ -330,5 +338,6 @@ export const UserService = {
     getUserPermissions,
     updateFacility,
     updateFacilityToGroup,
-    updateFieldMapping
+    updateFieldMapping,
+    fetchFacilityPreferredInvGroups
 }

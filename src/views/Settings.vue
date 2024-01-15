@@ -113,15 +113,15 @@
           </ion-card-content>
           <ion-item lines="none">
             <ion-label>{{ translate("Sell online") }}</ion-label>
-            <ion-toggle :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG) || !isEComInvEnabled" v-model="isEComInvEnabled" @click="updateEComInvStatus($event)" slot="end" />
+            <ion-toggle :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG) || (!isEComInvEnabled && !facilityPreferredInvGroups)" v-model="isEComInvEnabled" @click="updateEComInvStatus($event)" slot="end" />
           </ion-item>
-          <ion-list v-if="isEComInvEnabled">
+          <ion-list v-if="isEComInvEnabled || facilityPreferredInvGroups.length">
             <ion-item-divider color="light">
               <ion-label>{{ translate("Channels") }}</ion-label>
             </ion-item-divider>
             <ion-item lines="none">
               <ion-row>
-                <ion-chip v-for="group in facilityInventoryGroups" :key="group.facilityId">
+                <ion-chip v-for="group in facilityInventoryGroups.length ? facilityInventoryGroups : facilityPreferredInvGroups" :key="group.facilityId">
                   {{ group.facilityGroupName }}
                 </ion-chip>
               </ion-row>
@@ -271,7 +271,8 @@ export default defineComponent({
       orderLimitType: 'unlimited',
       fulfillmentOrderLimit: "" as number | string,
       facilityInventoryGroups: [] as any,
-      isEComInvEnabled: false
+      isEComInvEnabled: false,
+      facilityPreferredInvGroups: [] as any
     };
   },
   computed: {
@@ -377,6 +378,24 @@ export default defineComponent({
       } catch (err) {
         logger.error('Failed to fetch eCom inventory config', err)
       }
+
+      try {
+        if(!this.isEComInvEnabled) {
+          resp = await UserService.fetchFacilityPreferredInvGroups({
+            facilityId: this.currentFacility.facilityId,
+            oms: this.instanceUrl,
+            collection: 'FACILITY_PREFERENCE'
+          })
+
+          if(!hasError(resp)) {
+            this.facilityPreferredInvGroups = resp.data.docs
+          } else {
+            throw resp.data
+          }
+        }
+      } catch(err) {
+        logger.error(err)
+      }
     },
     logout () {
       this.store.dispatch('user/logout', { isUserUnauthorised: false }).then((redirectionUrl) => {
@@ -470,7 +489,7 @@ export default defineComponent({
       await this.getEcomInvStatus()
     },
     async addFacilityInvGroups() {
-      const addResponses = await Promise.allSettled(this.facilityInventoryGroups
+      const addResponses = await Promise.allSettled(this.facilityPreferredInvGroups
         .map(async (payload: any) => await UserService.addFacilityToGroup({
           "facilityId": this.currentFacility.facilityId,
           "facilityGroupId": payload.facilityGroupId
