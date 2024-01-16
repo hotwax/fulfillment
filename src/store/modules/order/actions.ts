@@ -424,7 +424,7 @@ const actions: ActionTree<OrderState, RootState> = {
       queryString: completedOrderQuery.queryString,
       viewSize: completedOrderQuery.viewSize,
       groupBy: 'picklistBinId',
-      sort: 'orderDate asc',
+      sort: 'picklistItemStatusId desc, orderDate asc',
       filters: {
         picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
