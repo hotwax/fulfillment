@@ -343,7 +343,8 @@ export default defineComponent({
         if(!hasError(resp)) {
           showToast(translate('Order shipped successfully'))
           // TODO: handle the case of data not updated correctly
-          await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+          const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
+          await Promise.all([this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery }), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
         } else {
           throw resp.data
         }
@@ -351,7 +352,6 @@ export default defineComponent({
         logger.error('Failed to ship order', err)
         showToast(translate('Failed to ship order'))
       }
-
     },
     async bulkShipOrders() {
       const packedOrdersCount = this.completedOrders.list.filter((order: any) => {
@@ -416,7 +416,8 @@ export default defineComponent({
                     ? showToast(translate('Orders shipped successfully'))
                     : showToast(translate('out of cannot be shipped due to missing tracking codes.', { remainingOrders: trackingRequiredAndMissingCodeOrders.length, totalOrders: packedOrdersCount }))
                   // TODO: handle the case of data not updated correctly
-                  await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+                  const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
+                  await Promise.all([this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery }), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
                   throw resp.data
                 }
