@@ -41,6 +41,26 @@
 
         <ion-card>
           <ion-card-header>
+            <ion-card-subtitle>
+              {{ translate("Product Store") }}
+            </ion-card-subtitle>
+            <ion-card-title>
+              {{ translate("Store") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate('A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.') }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-label> {{ translate("Select store") }} </ion-label>
+            <ion-select interface="popover" :value="currentEComStore.productStoreId" @ionChange="setEComStore($event)">
+              <ion-select-option v-for="store in (userProfile ? userProfile.stores : [])" :key="store.productStoreId" :value="store.productStoreId" >{{ store.storeName }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-card>
+
+        <ion-card>
+          <ion-card-header>
             <ion-card-title>
               {{ translate("Facility") }}
             </ion-card-title>
@@ -497,6 +517,18 @@ export default defineComponent({
         isChecked ? await this.addFacilityToGroup() : await this.updateFacilityToGroup()
       }
 
+    },
+    async setEComStore(event: any) {
+      // not updating the ecomstore when the current value in vuex state and selected value are same
+      // or when an empty value is given (on logout)
+      if (this.currentEComStore.productStoreId === event.detail.value || !event.detail.value) {
+        return;
+      }
+      if(this.userProfile) {
+        await this.store.dispatch('user/setEComStore', {
+          'eComStore': this.userProfile.stores.find((str: any) => str.productStoreId == event.detail.value)
+        })
+      }
     },
     setPrintShippingLabelPreference (ev: any) {
       this.store.dispatch('user/setUserPreference', { printShippingLabel: ev.detail.checked })

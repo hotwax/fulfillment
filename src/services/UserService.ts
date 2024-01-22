@@ -102,9 +102,6 @@ const recycleOutstandingOrders = async(payload: any): Promise<any> => {
 }
 
 const getEComStores = async (token: any, facilityId: any): Promise<any> => {
-  if(!facilityId){
-    return Promise.resolve({});
-  }
   try {
     const params = {
       "inputFields": {
@@ -116,7 +113,6 @@ const getEComStores = async (token: any, facilityId: any): Promise<any> => {
       "distinct": "Y",
       "noConditionFind": "Y",
       "filterByDate": 'Y',
-      "viewSize": 1
     }
     const baseURL = store.getters['user/getBaseUrl'];
     const resp = await client({
@@ -130,12 +126,12 @@ const getEComStores = async (token: any, facilityId: any): Promise<any> => {
       }
     });
     if (hasError(resp)) {
-      throw resp.data;
+      return Promise.reject(resp.data);
     } else {
       return Promise.resolve(resp.data.docs);
     }
   } catch(error: any) {
-    return Promise.reject({})
+    return Promise.reject(error)
   }
 }
 
@@ -266,7 +262,7 @@ const getUserProfile = async (token: any): Promise<any> => {
         'Content-Type': 'application/json'
       }
     });
-    if(hasError(resp)) return Promise.reject("Error getting user profile: ");
+    if(hasError(resp)) return Promise.reject("Error getting user profile: " + JSON.stringify(resp.data));
     return Promise.resolve(resp.data)
   } catch(error: any) {
     return Promise.reject(error)
