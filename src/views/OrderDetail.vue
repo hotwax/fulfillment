@@ -107,7 +107,14 @@
                 <ion-icon slot="end" :icon="trashBinOutline"/>
               </ion-button>
             </div>
+
+            <div v-if="category === 'open' && order.orderTypeId === 'TRANSFER_ORDER'">
+              <ion-item slot="start" lines="none">
+                <ion-checkbox :key="item.orderItemSeqId" @ionChange="selectTransferOrderItem(item, $event)"/>
+              </ion-item>
+            </div>
           </div>
+          
 
           <div v-if="order.kitProducts">
             <div v-for="(kitProducts, orderItemSeqId) in order.kitProducts" :key="orderItemSeqId">
@@ -275,6 +282,7 @@ import {
   IonCardHeader,
   IonCardSubtitle,
   IonCardTitle,
+  IonCheckbox,
   IonChip,
   IonContent,
   IonHeader,
@@ -339,6 +347,7 @@ export default defineComponent({
     IonBadge,
     IonButton,
     IonCard,
+    IonCheckbox,
     IonChip,
     IonCardHeader,
     IonCardSubtitle,
@@ -703,6 +712,19 @@ export default defineComponent({
       });
 
       return assignPickerModal.present();
+    },
+    async selectTransferOrderItem(item: any, event: any) {
+      const orderItem = this.order.items.find((orderItem: any) => {
+        return (
+          item.orderItemSeqId === orderItem.orderItemSeqId &&
+          item.shipGroupSeqId === orderItem.shipGroupSeqId &&
+          item.inventoryItemId === orderItem.inventoryItemId
+        );
+      });
+      if (orderItem) {
+        orderItem.isSelected = event.detail.checked;
+        this.store.dispatch('order/updateCurrentOrderDetail', this.order);
+      }
     },
     getShipmentPackageType(shipmentPackage: any) {
       let packageType = '';

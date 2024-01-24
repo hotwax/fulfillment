@@ -168,6 +168,20 @@
             <ion-toggle :checked="userPreference.printPackingSlip" @ionChange="setPrintPackingSlipPreference($event)" slot="end" />
           </ion-item>
         </ion-card>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Transfer orders") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate('View transfer orders along with sales orders.') }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-label>{{ translate("Show transfer orders") }}</ion-label>
+            <ion-toggle :checked="userPreference.showTransferOrders" @ionChange="setShowTransferOrdersPreference($event)" slot="end" />
+          </ion-item>
+        </ion-card>
       </section>
     </ion-content>
   </ion-page>
@@ -530,6 +544,9 @@ export default defineComponent({
           'eComStore': this.userProfile.stores.find((str: any) => str.productStoreId == event.detail.value)
         })
       }
+    },
+    setShowTransferOrdersPreference (ev: any) {
+      this.store.dispatch('user/setUserPreference', { showTransferOrders: ev.detail.checked })
     },
     setPrintShippingLabelPreference (ev: any) {
       this.store.dispatch('user/setUserPreference', { printShippingLabel: ev.detail.checked })

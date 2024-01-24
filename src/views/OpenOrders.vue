@@ -73,11 +73,17 @@
                   </ion-label>
                 </ion-item>
               </div>
+              
               <div class="product-metadata">
                 <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
                 <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
+              </div>
+              <div class="product-actions" v-if="order.orderTypeId === 'TRANSFER_ORDER'">
+               <ion-item slot="start" lines="none">
+                 <ion-checkbox :key="item.orderItemSeqId" @ionChange="selectTransferOrderItem(item, $event)"/>
+               </ion-item>
               </div>
             </div>
 
@@ -110,6 +116,11 @@
                   <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
+                </div>
+                <div class="product-actions" v-if="order.orderTypeId === 'TRANSFER_ORDER'">
+                  <ion-item slot="start" lines="none">
+                    <ion-checkbox :key="item.orderItemSeqId" @ionChange="selectTransferOrderItem(item, $event)"/>
+                  </ion-item>
                 </div>
               </div>
             </div>
@@ -219,7 +230,8 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       currentEComStore: 'user/getCurrentEComStore',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
-      getProductStock: 'stock/getProductStock'
+      getProductStock: 'stock/getProductStock',
+      userPreference: 'user/getUserPreference'
     })
   },
   data () {
@@ -243,6 +255,24 @@ export default defineComponent({
     },
     isOpenOrdersScrollable() {
       return ((this.openOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any)) <  this.openOrders.query.viewSize;
+    },
+    selectTransferOrderItem(item: any, event: any) {
+      const updateOpenOrders = this.openOrders.list.map((order: any) => {
+        if (order.orderId === item.orderId) {
+          order.items = order.items.map((orderItem: any) => {
+            if (
+              item.orderItemSeqId === orderItem.orderItemSeqId &&
+              item.shipGroupSeqId === orderItem.shipGroupSeqId &&
+              item.inventoryItemId === orderItem.inventoryItemId
+            ) {
+              orderItem.isSelected = event.detail.checked;
+            }
+            return orderItem;
+          });
+        }
+        return order;
+      });
+      this.store.dispatch('order/updateOpenOrders', {list: updateOpenOrders, total: this.openOrders.total})
     },
     async updateSelectedShipmentMethods (method: string) {
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
@@ -279,7 +309,7 @@ export default defineComponent({
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           '-fulfillmentStatus': { value: 'Cancelled' },
           orderStatusId: { value: 'ORDER_APPROVED' },
-          orderTypeId: { value: 'SALES_ORDER' },
+          orderTypeId: { value: !this.userPreference.showTransferOrders ? "SALES_ORDER" : ['SALES_ORDER', 'TRANSFER_ORDER']},
           facilityId: { value: this.currentFacility.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId }
         },

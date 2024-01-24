@@ -132,16 +132,38 @@ export default defineComponent({
       // creating picklist for orders that are currently in the list, means those are currently in the selected viewSize
       const orderItems = []
 
-      if(this.order) {
-        this.order.items.map((item) => orderItems.push(item))
+      if (this.order) {
+        //In case of TO, processing only selected order items
+        if (this.order.orderTypeId === 'TRANSFER_ORDER') {
+          this.order.items.map((item) => {
+            if (item.isSelected) orderItems.push(item);
+          });
+        } else {
+          this.order.items.map((item) => orderItems.push(item));
+        }
       } else {
         this.openOrders.list.map((order) => {
-          order.items.map((item) => orderItems.push(item))
+          //In case of TO, processing only selected order items
+          if (order.orderTypeId === 'TRANSFER_ORDER') {
+            order.items.map((item) => {
+              if (item.isSelected) orderItems.push(item);
+            });
+          } else {
+            order.items.map((item) => orderItems.push(item));
+          }
         });
       }
 
+
       const formData = new FormData();
       formData.append("facilityId", this.currentFacility.facilityId);
+      if (orderItems.length === 0) {
+        logger.error('Failed to create picklist for orders. No items selected.')
+        showToast(translate('Failed to create picklist for orders. No items selected.'))
+        this.closeModal();
+        return;
+      }
+
       orderItems.map((item, index) => {
         formData.append("facilityId_o_"+index, this.currentFacility.facilityId)
         formData.append("shipmentMethodTypeId_o_"+index, item.shipmentMethodTypeId)

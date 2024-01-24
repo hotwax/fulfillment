@@ -16,7 +16,8 @@ const userModule: Module<UserState, RootState> = {
       currentEComStore: {},
       preference: {
         printShippingLabel: false,
-        printPackingSlip: false
+        printPackingSlip: false,
+        showTransferOrders: false
       },
       fieldMappings: {},
       currentMapping: {

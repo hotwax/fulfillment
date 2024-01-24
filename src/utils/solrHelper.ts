@@ -21,7 +21,7 @@ const prepareOrderQuery = (params: any) => {
 
   if (params.queryString) {
     payload.json.query = `(*${params.queryString}*) OR "${params.queryString}"^100`
-    payload.json.params['qf'] = params.queryFields ? params.queryFields : "productId productName virtualProductName orderId productSku customerId customerName search_orderIdentifications goodIdentifications"
+    payload.json.params['qf'] = params.queryFields ? params.queryFields : "productId productName virtualProductName orderId orderTypeId productSku customerId customerName search_orderIdentifications goodIdentifications"
     payload.json.params['defType'] = "edismax"
   }
 

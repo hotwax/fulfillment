@@ -7,7 +7,8 @@ export default interface UserState {
     currentEComStore: object;
     preference: {
         printShippingLabel: boolean,
-        printPackingSlip: boolean
+        printPackingSlip: boolean,
+        showTransferOrders: boolean
     };
     fieldMappings: object | null;
     currentMapping: {

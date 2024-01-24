@@ -8,6 +8,7 @@ import * as types from './mutation-types'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
+import store from "@/store";
 import { getOrderCategory, isKitComponent, prepareKitProducts } from '@/utils/order'
 
 const actions: ActionTree<OrderState, RootState> = {
@@ -257,6 +258,7 @@ const actions: ActionTree<OrderState, RootState> = {
         sort: 'orderDate asc',
         groupBy: 'picklistBinId',
         filters: {
+          orderTypeId: { value: !store.state.user.preference.showTransferOrders ? "SALES_ORDER" : ['SALES_ORDER', 'TRANSFER_ORDER']},
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           '-fulfillmentStatus': { value: 'Rejected' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
@@ -348,12 +350,12 @@ const actions: ActionTree<OrderState, RootState> = {
       viewSize: openOrderQuery.viewSize,
       sort: payload.sort ? payload.sort : "orderDate asc",
       filters: {
-        quantityNotAvailable: { value: 0 },
+        // quantityNotAvailable: { value: 0 },
         isPicked: { value: 'N' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
         '-fulfillmentStatus': { value: 'Cancelled' },
         orderStatusId: { value: 'ORDER_APPROVED' },
-        orderTypeId: { value: 'SALES_ORDER' },
+        orderTypeId: { value: !store.state.user.preference.showTransferOrders ? "SALES_ORDER" : ['SALES_ORDER', 'TRANSFER_ORDER']},
         facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
       }
@@ -384,6 +386,7 @@ const actions: ActionTree<OrderState, RootState> = {
             customerId: orderItem.customerId,
             customerName: orderItem.customerName,
             orderId: orderItem.orderId,
+            orderTypeId: orderItem.orderTypeId,
             orderDate: orderItem.orderDate,
             orderName: orderItem.orderName,
             groupValue: order.groupValue,
@@ -426,6 +429,7 @@ const actions: ActionTree<OrderState, RootState> = {
       groupBy: 'picklistBinId',
       sort: 'picklistItemStatusId desc, orderDate asc',
       filters: {
+        orderTypeId: { value: !store.state.user.preference.showTransferOrders ? "SALES_ORDER" : ['SALES_ORDER', 'TRANSFER_ORDER']},
         picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
         facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
@@ -643,7 +647,7 @@ const actions: ActionTree<OrderState, RootState> = {
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
         '-fulfillmentStatus': { value: 'Cancelled' },
         orderStatusId: { value: 'ORDER_APPROVED' },
-        orderTypeId: { value: 'SALES_ORDER' },
+        orderTypeId: { value: !store.state.user.preference.showTransferOrders ? "SALES_ORDER" : ['SALES_ORDER', 'TRANSFER_ORDER']},
         facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
       }
@@ -713,6 +717,7 @@ const actions: ActionTree<OrderState, RootState> = {
         sort: 'orderDate asc',
         groupBy: 'picklistBinId',
         filters: {
+          orderTypeId: { value: !store.state.user.preference.showTransferOrders ? "SALES_ORDER" : ['SALES_ORDER', 'TRANSFER_ORDER']},
           orderId: { value: payload.orderId },
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           shipGroupSeqId: { value: payload.shipGroupSeqId },
@@ -778,6 +783,7 @@ const actions: ActionTree<OrderState, RootState> = {
         groupBy: 'picklistBinId',
         sort: 'orderDate asc',
         filters: {
+          orderTypeId: { value: !store.state.user.preference.showTransferOrders ? "SALES_ORDER" : ['SALES_ORDER', 'TRANSFER_ORDER']},
           orderId: { value: payload.orderId },
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
@@ -1168,6 +1174,13 @@ const actions: ActionTree<OrderState, RootState> = {
     await dispatch('fetchPaymentDetail');
     await dispatch('getShippingPhoneNumber');
   },
+
+  updateOpenOrders({ commit }, openOrders) {
+    commit(types.ORDER_OPEN_UPDATED, openOrders)
+  },
+  updateCurrentOrderDetail({ commit }, order) {
+    commit(types.ORDER_CURRENT_UPDATED, order)
+  }  
 }
 
 export default actions;
