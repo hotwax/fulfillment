@@ -128,7 +128,6 @@ export default defineComponent({
           this.findTimeZone();
         }
         this.isLoading = false;
-
       })
     },
     selectSearchBarText(event: any) {
