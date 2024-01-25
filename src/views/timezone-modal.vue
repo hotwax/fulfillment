@@ -14,17 +14,16 @@
   </ion-header>
 
   <ion-content class="ion-padding">
+    <!-- Empty state -->
     <div class="empty-state" v-if="isLoading">
-        <ion-item lines="none">
+      <ion-item lines="none">
         <ion-spinner color="secondary" name="crescent" slot="start" />
-        {{ $t("Fetching time zones") }}
+          {{ translate("Fetching time zones") }}
       </ion-item>
-      </div>
-
-      <!-- Empty state -->
-      <div class="empty-state" v-else-if="filteredTimeZones.length === 0">
-        <p>{{ translate("No time zone found")}}</p>
-      </div>
+    </div>
+    <div class="empty-state" v-else-if="filteredTimeZones.length === 0">
+      <p>{{ translate("No time zone found") }}</p>
+    </div>
 
     <!-- Timezones -->
     <div v-else>
@@ -61,6 +60,7 @@ import {
   IonRadio,
   IonList,
   IonSearchbar,
+  IonSpinner,
   IonTitle,
   IonToolbar,
   modalController,
@@ -169,6 +169,7 @@ export default defineComponent({
     IonRadioGroup,
     IonRadio,
     IonSearchbar,
+    IonSpinner,
     IonTitle,
     IonToolbar 
     },
