@@ -102,13 +102,13 @@
                 <ion-icon slot="end" :icon="cubeOutline"/>
               </ion-button>
               <!-- TODO make functional -->
-              <ion-button v-if="category === 'in-progress' && order.orderTypeId !== 'TRANSFER_ORDER'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
+              <ion-button v-if="category === 'in-progress' && isTransferOrder(order)" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
                 {{ translate('Report an issue') }}
                 <ion-icon slot="end" :icon="trashBinOutline"/>
               </ion-button>
             </div>
 
-            <div v-if="category === 'open' && order.orderTypeId === 'TRANSFER_ORDER'">
+            <div v-if="category === 'open' && isTransferOrder(order)">
               <ion-item slot="start" lines="none">
                 <ion-checkbox :key="item.orderItemSeqId" @ionChange="selectTransferOrderItem(item, $event)"/>
               </ion-item>
@@ -331,6 +331,7 @@ import logger from '@/logger';
 import { UtilService } from "@/services/UtilService";
 import { DateTime } from 'luxon';
 import { prepareOrderQuery } from '@/utils/solrHelper';
+import { isTransferOrder } from '@/utils/order'
 import Popover from '@/views/ShippingPopover.vue'
 import PackagingPopover from "@/views/PackagingPopover.vue";
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
@@ -1244,6 +1245,7 @@ export default defineComponent({
       getFeature,
       getProductIdentificationValue,
       hasPermission,
+      isTransferOrder,
       locateOutline,
       personAddOutline,
       pricetagOutline,

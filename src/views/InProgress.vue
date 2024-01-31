@@ -115,7 +115,7 @@
                   <ion-segment-button value="pack">
                     <ion-label>{{ translate("Ready to pack") }}</ion-label>
                   </ion-segment-button>
-                  <ion-segment-button v-if="order.orderTypeId !== 'TRANSFER_ORDER'" value="issue">
+                  <ion-segment-button v-if="!isTransferOrder(order)" value="issue">
                     <ion-label>{{ translate("Report an issue") }}</ion-label>
                   </ion-segment-button>
                 </ion-segment>
@@ -318,6 +318,7 @@ import { OrderService } from '@/services/OrderService';
 import emitter from '@/event-bus';
 import { translate } from '@hotwax/dxp-components';
 import { prepareOrderQuery } from '@/utils/solrHelper';
+import { isTransferOrder } from '@/utils/order'
 import { UtilService } from '@/services/UtilService';
 import { DateTime } from 'luxon';
 import logger from '@/logger';
@@ -1217,6 +1218,7 @@ export default defineComponent({
       getFeature,
       getProductIdentificationValue,
       hasPermission,
+      isTransferOrder,
       optionsOutline,
       pencilOutline,
       pricetagOutline,

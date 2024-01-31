@@ -107,12 +107,16 @@ const prepareKitProducts = (order: any) => {
 
 const getOrderTypeId = () => {
   return !store.state.user.preference.showTransferOrders ? "SALES_ORDER" : ['SALES_ORDER', 'TRANSFER_ORDER'];
-};
+}
+const isTransferOrder = (order: any) => {
+  return order.orderTypeId === 'TRANSFER_ORDER';
+}
 
 
 export {
   prepareKitProducts,
   getOrderCategory,
   getOrderTypeId,
-  isKitComponent
+  isKitComponent,
+  isTransferOrder
 }

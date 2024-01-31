@@ -67,6 +67,7 @@ import { defineComponent } from "vue";
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { showToast } from "@/utils";
+import { isTransferOrder } from '@/utils/order'
 import { hasError } from "@/adapter";
 import { translate } from '@hotwax/dxp-components'
 import { UtilService } from "@/services/UtilService";
@@ -134,7 +135,7 @@ export default defineComponent({
 
       if (this.order) {
         //In case of TO, processing only selected order items
-        if (this.order.orderTypeId === 'TRANSFER_ORDER') {
+        if (isTransferOrder(this.order)) {
           this.order.items.map((item) => {
             if (item.isSelected) orderItems.push(item);
           });
@@ -144,7 +145,7 @@ export default defineComponent({
       } else {
         this.openOrders.list.map((order) => {
           //In case of TO, processing only selected order items
-          if (order.orderTypeId === 'TRANSFER_ORDER') {
+          if (isTransferOrder(order)) {
             order.items.map((item) => {
               if (item.isSelected) orderItems.push(item);
             });

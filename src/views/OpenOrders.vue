@@ -80,7 +80,7 @@
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
               </div>
-              <div class="product-actions" v-if="order.orderTypeId === 'TRANSFER_ORDER'">
+              <div class="product-actions" v-if="isTransferOrder(order)">
                <ion-item slot="start" lines="none">
                  <ion-checkbox :key="item.orderItemSeqId" @ionChange="selectTransferOrderItem(item, $event)"/>
                </ion-item>
@@ -117,7 +117,7 @@
                     <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
                 </div>
-                <div class="product-actions" v-if="order.orderTypeId === 'TRANSFER_ORDER'">
+                <div class="product-actions" v-if="isTransferOrder(order)">
                   <ion-item slot="start" lines="none">
                     <ion-checkbox :key="item.orderItemSeqId" @ionChange="selectTransferOrderItem(item, $event)"/>
                   </ion-item>
@@ -187,6 +187,7 @@ import { formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
+import { getOrderTypeId, isTransferOrder } from '@/utils/order'
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import emitter from '@/event-bus';
 import logger from '@/logger';
@@ -309,7 +310,7 @@ export default defineComponent({
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           '-fulfillmentStatus': { value: 'Cancelled' },
           orderStatusId: { value: 'ORDER_APPROVED' },
-          orderTypeId: { value: !this.userPreference.showTransferOrders ? "SALES_ORDER" : ['SALES_ORDER', 'TRANSFER_ORDER']},
+          orderTypeId: { value: getOrderTypeId()},
           facilityId: { value: this.currentFacility.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId }
         },
@@ -430,6 +431,7 @@ export default defineComponent({
       getFeature,
       getProductIdentificationValue,
       hasPermission,
+      isTransferOrder,
       optionsOutline,
       pricetagOutline,
       printOutline,
