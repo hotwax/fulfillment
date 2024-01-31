@@ -1,3 +1,5 @@
+import store from '@/store'
+
 const orderCategoryParameters = {
   'Open': {
     'quantityNotAvailable': {
@@ -103,8 +105,14 @@ const prepareKitProducts = (order: any) => {
   }, {})
 }
 
+const getOrderTypeId = () => {
+  return !store.state.user.preference.showTransferOrders ? "SALES_ORDER" : ['SALES_ORDER', 'TRANSFER_ORDER'];
+};
+
+
 export {
   prepareKitProducts,
   getOrderCategory,
+  getOrderTypeId,
   isKitComponent
 }
