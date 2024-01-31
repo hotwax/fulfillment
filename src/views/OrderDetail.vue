@@ -102,7 +102,7 @@
                 <ion-icon slot="end" :icon="cubeOutline"/>
               </ion-button>
               <!-- TODO make functional -->
-              <ion-button v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
+              <ion-button v-if="category === 'in-progress' && order.orderTypeId !== 'TRANSFER_ORDER'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
                 {{ translate('Report an issue') }}
                 <ion-icon slot="end" :icon="trashBinOutline"/>
               </ion-button>

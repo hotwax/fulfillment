@@ -289,6 +289,7 @@ const actions: ActionTree<OrderState, RootState> = {
             customerId: orderItem.customerId,
             customerName: orderItem.customerName,
             orderId: orderItem.orderId,
+            orderTypeId: orderItem.orderTypeId,
             orderDate: orderItem.orderDate,
             orderName: orderItem.orderName,
             groupValue: order.groupValue,
@@ -350,7 +351,6 @@ const actions: ActionTree<OrderState, RootState> = {
       viewSize: openOrderQuery.viewSize,
       sort: payload.sort ? payload.sort : "orderDate asc",
       filters: {
-        // quantityNotAvailable: { value: 0 },
         isPicked: { value: 'N' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
         '-fulfillmentStatus': { value: 'Cancelled' },
@@ -358,7 +358,8 @@ const actions: ActionTree<OrderState, RootState> = {
         orderTypeId: { value: !store.state.user.preference.showTransferOrders ? "SALES_ORDER" : ['SALES_ORDER', 'TRANSFER_ORDER']},
         facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
-      }
+      },
+      initialFilters:["(orderTypeId:SALES_ORDER AND quantityNotAvailable:0) OR orderTypeId:TRANSFER_ORDER"]
     }
 
     // only adding shipmentMethods when a method is selected
@@ -650,7 +651,8 @@ const actions: ActionTree<OrderState, RootState> = {
         orderTypeId: { value: !store.state.user.preference.showTransferOrders ? "SALES_ORDER" : ['SALES_ORDER', 'TRANSFER_ORDER']},
         facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
-      }
+      },
+      initialFilters:["(orderTypeId:SALES_ORDER AND quantityNotAvailable:0) OR orderTypeId:TRANSFER_ORDER"]
     }
     const orderQueryPayload = prepareOrderQuery(params)
     try {
@@ -738,6 +740,7 @@ const actions: ActionTree<OrderState, RootState> = {
           customerId: orderItem.customerId,
           customerName: orderItem.customerName,
           orderId: orderItem.orderId,
+          orderTypeId: orderItem.orderTypeId,
           orderDate: orderItem.orderDate,
           orderName: orderItem.orderName,
           groupValue: resp.data.grouped.picklistBinId.groups[0].groupValue,

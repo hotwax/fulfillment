@@ -33,11 +33,14 @@ const prepareOrderQuery = (params: any) => {
 
       if (Array.isArray(filterValue)) {
         const filterOperator = params.filters[key].op ? params.filters[key].op : 'OR' ;
-        payload.json.filter += ` AND ${key}: (${filterValue.join(' ' + filterOperator + ' ')})`
+        payload.json.filter.push(`${key}: (${filterValue.join(' ' + filterOperator + ' ')})`)
       } else {
-        payload.json.filter += ` AND ${key}: ${filterValue}`
+        payload.json.filter.push(`${key}: ${filterValue}`)
       }
     })
+  }
+  if (params.initialFilters) {
+    payload.json.filter.push(...params.initialFilters)
   }
 
   if(params.facet) {

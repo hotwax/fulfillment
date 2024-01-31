@@ -115,7 +115,7 @@
                   <ion-segment-button value="pack">
                     <ion-label>{{ translate("Ready to pack") }}</ion-label>
                   </ion-segment-button>
-                  <ion-segment-button value="issue">
+                  <ion-segment-button v-if="order.orderTypeId !== 'TRANSFER_ORDER'" value="issue">
                     <ion-label>{{ translate("Report an issue") }}</ion-label>
                   </ion-segment-button>
                 </ion-segment>
