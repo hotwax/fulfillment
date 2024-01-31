@@ -12,11 +12,11 @@
         <ion-list>
           <ion-list-header>{{ translate("Saved mappings") }}</ion-list-header>
           <div>
-            <ion-chip :disabled="!content.length" :outline=true @click="addFieldMapping()">
+            <ion-chip :outline=true @click="addFieldMapping()">
               <ion-icon :icon="addOutline" />
               <ion-label>{{ translate("New mapping") }}</ion-label>
             </ion-chip>
-            <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('EXPORD') ?? []" :key="index" @click="mapFields(mapping)" :outline=true>
+            <ion-chip v-for="(mapping, index) in fieldMappings('EXPORD') ?? []" :key="index" @click="mapFields(mapping)" :outline=true>
               {{ mapping.name }}
             </ion-chip>
           </div>
@@ -61,7 +61,7 @@
         </ion-list>
       </main> 
       <main class="empty-state" v-else>
-        <img src="../assets/images/emptyState.png" />
+        <img src="../assets/images/PackedOrderEmptyState.png" />
         <p>{{ translate("There are no packed orders at this facility") }}</p>
       </main>   
       
