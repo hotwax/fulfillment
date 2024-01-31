@@ -5,5 +5,5 @@ export default interface RootState {
     user: any;
     product: any;
     util: UtilState;
-    order: OrderState;
+    order: OrderState
 }
