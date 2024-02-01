@@ -296,6 +296,7 @@
   "The import orders has been uploaded successfully": "Los pedidos de importación se han cargado exitosamente",
   "The timezone you select is used to ensure automations you schedule are always accurate to the time you select.": "La zona horaria que seleccione se utiliza para garantizar que las automatizaciones que programe siempre sean precisas para la hora que seleccione.",
   "There are no packed shipments. Failed to ship order.": "No hay envíos empacados. No se pudo enviar el pedido.",
+  "There are no packed orders at this facility": "There are no packed orders at this facility",
   "There are no saved CSV mappings to show. Create a new mapping from a file upload screen": "No hay asignaciones CSV guardadas para mostrar. Crear una nueva asignación desde una pantalla de carga de archivos",
   "This CSV mapping has been deleted.": "Esta asignación CSV ha sido eliminada.",
   "This CSV mapping has been saved.": "Esta asignación CSV se ha guardado.",

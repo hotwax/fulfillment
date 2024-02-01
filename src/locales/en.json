@@ -296,6 +296,7 @@
   "The import orders has been uploaded successfully": "The import orders has been uploaded successfully",
   "The timezone you select is used to ensure automations you schedule are always accurate to the time you select.": "The timezone you select is used to ensure automations you schedule are always accurate to the time you select.",
   "There are no packed shipments. Failed to ship order.": "There are no packed shipments. Failed to ship order.",
+  "There are no packed orders at this facility": "There are no packed orders at this facility",
   "There are no saved CSV mappings to show. Create a new mapping from a file upload screen": "There are no saved CSV mappings to show. Create a new mapping from a file upload screen",
   "This CSV mapping has been deleted.": "This CSV mapping has been deleted.",
   "This CSV mapping has been saved.": "This CSV mapping has been saved.",

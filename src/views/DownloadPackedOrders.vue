@@ -8,15 +8,15 @@
     </ion-header>
 
     <ion-content>
-      <main>
+      <main v-if="content.length > 0">
         <ion-list>
           <ion-list-header>{{ translate("Saved mappings") }}</ion-list-header>
           <div>
-            <ion-chip :disabled="!content.length" :outline=true @click="addFieldMapping()">
+            <ion-chip :outline=true @click="addFieldMapping()">
               <ion-icon :icon="addOutline" />
               <ion-label>{{ translate("New mapping") }}</ion-label>
             </ion-chip>
-            <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('EXPORD') ?? []" :key="index" @click="mapFields(mapping)" :outline=true>
+            <ion-chip v-for="(mapping, index) in fieldMappings('EXPORD') ?? []" :key="index" @click="mapFields(mapping)" :outline=true>
               {{ mapping.name }}
             </ion-chip>
           </div>
@@ -59,8 +59,12 @@
             <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
           </ion-item>
         </ion-list>
-      </main>
-
+      </main> 
+      <main class="empty-state" v-else>
+        <img src="../assets/images/PackedOrderEmptyState.png" />
+        <p>{{ translate("There are no packed orders at this facility") }}</p>
+      </main>   
+      
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="download" :disabled="!content.length">
           <ion-icon :icon="cloudDownloadOutline" />
@@ -113,7 +117,7 @@ export default defineComponent({
       selectedData: {} as any,
       fields: process.env["VUE_APP_MAPPING_EXPORD"] ? JSON.parse(process.env["VUE_APP_MAPPING_EXPORD"]) : {},
       customFields: {} as any,
-      selectedFieldMappings: {} as any
+      selectedFieldMappings: {} as any,
     }
   },
   computed: {
