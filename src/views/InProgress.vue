@@ -520,12 +520,14 @@ export default defineComponent({
             label: translate('Shipping labels'),
             value: 'printShippingLabel',
             checked: this.userPreference.printShippingLabel,
+            cssClass: 'checkbox'
           }, {
             name: 'printPackingSlip',
             type: 'checkbox',
             label: translate('Packing slip'),
             value: 'printPackingSlip',
-            checked: this.userPreference.printPackingSlip
+            checked: this.userPreference.printPackingSlip,
+            cssClass: 'checkbox'
           }],
           buttons: [{
             text: translate("Cancel"),
@@ -1237,6 +1239,9 @@ export default defineComponent({
   border-bottom: var(--border-medium);
   padding: var(--ion-item-like-padding);
   align-items: center;
+}
+.checkbox{
+  float: right;
 }
 
 .box-type > ion-skeleton-text {
