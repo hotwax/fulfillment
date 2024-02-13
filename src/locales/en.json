@@ -109,6 +109,7 @@
   "Failed to update eCom inventory status": "Failed to update eCom inventory status",
   "Failed to update facility": "Failed to update facility",
   "Failed to update order": "Failed to update order",
+  "Fetching time zones": "Fetching time zones",
   "Field mapping name": "Field mapping name",
   "File downloaded successfully": "File downloaded successfully",
   "File uploaded successfully": "File uploaded successfully",
