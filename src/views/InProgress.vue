@@ -587,20 +587,16 @@ export default defineComponent({
       const alert = await alertController
         .create({
           header: translate("Pack orders"),
-          message: translate("You are packing orders. Select additional documents that you would like to print.", {count: this.inProgressOrders.list.length, space: '<br /><br />'}),
-          inputs: [{
-            name: 'printShippingLabel',
-            type: 'checkbox',
-            label: translate('Shipping labels'),
-            value: 'printShippingLabel',
-            checked: this.userPreference.printShippingLabel,
-          }, {
-            name: 'printPackingSlip',
-            type: 'checkbox',
-            label: translate('Packing slip'),
-            value: 'printPackingSlip',
-            checked: this.userPreference.printPackingSlip
-          }],
+          message: `${translate("Your packing orders.<br/><br/> Select additional documents that you would like to print.",{count:this.inProgressOrders.list.length})}
+          <ion-item>
+            <ion-label>${translate("Shipping Labels")}</ion-label>
+            <ion-checkbox name="printShippingLabel" value="printShippinglabel" checked="${this.userPreference.printShippingLabel}"></ion-checkbox>
+          </ion-item>
+          <ion-item>
+            <ion-label>${translate("Packing Slips")}</ion-label>
+            <ion-checkbox name="printPackingSlip" value="printpackingSlip" checked="${this.userPreference.printPackingSlip}"></ion-checkbox>
+          </ion-item>`,
+
           buttons: [{
             text: translate("Cancel"),
             role: 'cancel'
