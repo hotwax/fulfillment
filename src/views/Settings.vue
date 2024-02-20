@@ -524,7 +524,6 @@ export default defineComponent({
       if (this.currentEComStore.productStoreId === event.detail.value || !event.detail.value) {
         return;
       }
-
       if(this.userProfile) {
         await this.store.dispatch('user/setEComStore', {
           'eComStore': this.userProfile.stores.find((str: any) => str.productStoreId == event.detail.value)

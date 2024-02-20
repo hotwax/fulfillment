@@ -15,8 +15,14 @@
 
   <ion-content class="ion-padding">
     <!-- Empty state -->
-    <div class="empty-state" v-if="filteredTimeZones.length === 0">
-      <p>{{ translate("No time zone found")}}</p>
+    <div class="empty-state" v-if="isLoading">
+      <ion-item lines="none">
+        <ion-spinner color="secondary" name="crescent" slot="start" />
+          {{ translate("Fetching time zones") }}
+      </ion-item>
+    </div>
+    <div class="empty-state" v-else-if="filteredTimeZones.length === 0">
+      <p>{{ translate("No time zone found") }}</p>
     </div>
 
     <!-- Timezones -->
@@ -54,6 +60,7 @@ import {
   IonRadio,
   IonList,
   IonSearchbar,
+  IonSpinner,
   IonTitle,
   IonToolbar,
   modalController,
@@ -73,7 +80,8 @@ export default defineComponent({
       queryString: '',
       filteredTimeZones: [],
       timeZones: [],
-      timeZoneId: ''
+      timeZoneId: '',
+      isLoading: false
     }
   },
   computed: {
@@ -111,6 +119,7 @@ export default defineComponent({
       });
     },
     async getAvailableTimeZones() {
+      this.isLoading = true;
       UserService.getAvailableTimeZones().then((resp: any) => {
         if (resp.status === 200 && !hasError(resp) && resp.data?.length > 0) {
           this.timeZones = resp.data.filter((timeZone: any) => {
@@ -118,6 +127,7 @@ export default defineComponent({
           });
           this.findTimeZone();
         }
+        this.isLoading = false;
       })
     },
     selectSearchBarText(event: any) {
@@ -159,6 +169,7 @@ export default defineComponent({
     IonRadioGroup,
     IonRadio,
     IonSearchbar,
+    IonSpinner,
     IonTitle,
     IonToolbar 
     },
