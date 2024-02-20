@@ -89,8 +89,9 @@ const actions: ActionTree<UtilState, RootState> = {
     let shipmentMethodTypeDesc = JSON.parse(JSON.stringify(state.shipmentMethodTypeDesc))
     const cachedShipmentMethodIds = Object.keys(shipmentMethodTypeDesc);
     const ids = shipmentIds.filter((shipmentId: string) => !cachedShipmentMethodIds.includes(shipmentId))
+
     if(!ids.length) return shipmentMethodTypeDesc;
-     
+
     try {
       const payload = {
         "inputFields": {
