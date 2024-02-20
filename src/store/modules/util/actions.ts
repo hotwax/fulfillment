@@ -90,7 +90,7 @@ const actions: ActionTree<UtilState, RootState> = {
     const ids = shipmentIds.filter((shipmentId: string) => !cachedShipmentMethodIds.includes(shipmentId))
 
     if(!ids.length) return shipmentMethodTypeDesc;
-
+     
     try {
       const payload = {
         "inputFields": {
@@ -247,6 +247,7 @@ const actions: ActionTree<UtilState, RootState> = {
     return paymentMethodTypeDesc;
   },
   async fetchStatusDesc({ commit, state }, statusIds) {
+
     let statusDesc = JSON.parse(JSON.stringify(state.statusDesc))
     const cachedStatusIds = Object.keys(statusDesc);
     const ids = statusIds.filter((statusId: string) => !cachedStatusIds.includes(statusId))

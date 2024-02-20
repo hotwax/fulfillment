@@ -5,6 +5,123 @@ import { showToast, formatPhoneNumber } from '@/utils';
 import store from '@/store';
 import { cogOutline } from 'ionicons/icons';
 
+const fetchOrderHeader = async (params: any): Promise<any> => {
+  return await api({
+    url: "performFind",
+    method: "get",
+    params
+  })
+}
+const fetchOrderItems = async (orderId: string): Promise<any> => {
+  const params = {
+    "entityName": "OrderItemAndProduct",
+    "inputFields": {
+      "orderId": orderId,
+    },
+    "fieldList": ["orderId", "orderItemSeqId", "statusId", "shipGroupSeqId", "productId", "productName", "internalName", "quantity"],
+    "viewSize": 250,  // maximum records we could have
+    "distinct": "Y"
+  } as any;
+
+  return await api({
+    url: "performFind",
+    method: "get",
+    params
+  })
+}
+
+const fetchShippedQuantity = async (orderId: string): Promise<any> => {
+  const params = {
+    "entityName": "ShippedItemQuantitySum",
+    "inputFields": {
+      "orderId": orderId,
+    },
+    "fieldList": ["orderId", "orderItemSeqId", "productId", "shippedQuantity"],
+    "viewSize": 250,  // maximum records we could have
+    "distinct": "Y"
+  } as any;
+
+  return await api({
+    url: "performFind",
+    method: "get",
+    params
+  })
+}
+
+const fetchShipmentItemDetail = async (params: any): Promise<any> => {
+  return await api({
+    url: "performFind",
+    method: "get",
+    params
+  })
+}
+
+const createOutboundTransferShipment = async (query: any): Promise<any> => {
+  return api({
+    url: "createSalesShipment",
+    method: "post",
+    data: query
+  });
+}
+
+const updateShipment = async (payload: any): Promise<any> => {
+  return api({
+    url: "updateShipment",
+    method: "POST",
+    data: payload
+  })
+}
+
+const updateShipmentRouteSegment = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateShipmentRouteSegment",
+    method: "POST",
+    data: payload
+  })
+}
+const updateShipmentPackageRouteSeg = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateShipmentPackageRouteSeg",
+    method: "POST",
+    data: payload
+  })
+}
+
+const addTrackingCode = async (payload: any): Promise<any> => {
+  try {
+    let resp = await updateShipmentRouteSegment({
+      "shipmentId": payload.shipmentId,
+      "shipmentRouteSegmentId": payload.shipmentRouteSegmentId,
+      "carrierServiceStatusId": "SHRSCS_CONFIRMED"
+    }) as any;
+    if (!hasError(resp)) {
+      resp = await updateShipmentPackageRouteSeg({
+        "shipmentId": payload.shipmentId,
+        "shipmentRouteSegmentId": payload.shipmentRouteSegmentId,
+        "shipmentPackageSeqId": payload.shipmentPackageSeqId,
+        "trackingCode": payload.trackingCode
+      });
+      if (!hasError(resp)) {
+        resp = await updateShipmentRouteSegment({
+          "shipmentId": payload.shipmentId, 
+          "shipmentRouteSegmentId": payload.shipmentRouteSegmentId,
+          "trackingIdNumber": payload.trackingCode,
+          "carrierServiceStatusId": "SHRSCS_ACCEPTED"
+        });
+        if (hasError(resp)) {
+          throw resp.data;
+        }
+      } else {
+        throw resp.data;
+      }
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    logger.error('Failed to add tracking code', err)
+  }
+}
+
 const findOpenOrders = async (query: any): Promise<any> => {
   return api({
     // TODO: We can replace this with any API
@@ -24,6 +141,15 @@ const findCompletedOrders = async (query: any): Promise<any> => {
 }
 
 const findInProgressOrders = async (query: any): Promise<any> => {
+  return api({
+    // TODO: We can replace this with any API
+    url: "solr-query",
+    method: "post",
+    data: query
+  });
+}
+
+const findTransferOrders = async (query: any): Promise<any> => {
   return api({
     // TODO: We can replace this with any API
     url: "solr-query",
@@ -149,7 +275,7 @@ const fetchShipmentPackages = async (shipmentIds: Array<string>): Promise<any> =
       "trackingCode_op": "empty",
       "shipmentItemSeqId_op": "not-empty"
     },
-    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "isTrackingRequired"],
+    "fieldList": ["shipmentId", "shipmentRouteSegmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "isTrackingRequired"],
     "viewSize": 250,  // maximum records we could have
     "distinct": "Y"
   }
@@ -204,6 +330,70 @@ const fetchTrackingCodes = async (shipmentIds: Array<string>): Promise<any> => {
   }
 
   return shipmentTrackingCodes;
+}
+const fetchShipmentCarrierDetail = async (shipmentIds: Array<string>): Promise<any> => {
+  let shipmentCarriers = [];
+  const params = {
+    "entityName": "ShipmentRouteSegment",
+    "inputFields": {
+      "shipmentId": shipmentIds,
+      "shipmentId_op": "in",
+    },
+    "fieldList": ["shipmentId", "carrierPartyId", "carrierServiceStatusId", "shipmentMethodTypeId", "trackingIdNumber"],
+    "viewSize": 250,  // maximum records we could have
+    "distinct": "Y"
+  }
+
+  try {
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    })
+
+    if (!hasError(resp)) {
+      shipmentCarriers = resp?.data.docs;
+    } else if (!resp?.data.error || (resp.data.error && resp.data.error !== "No record found")) {
+      return Promise.reject(resp?.data.error);
+    }
+  } catch (err) {
+    logger.error('Failed to fetch carrier details for shipments', err)
+  }
+
+  return shipmentCarriers;
+}
+
+const fetchShipmentShippedStatusHistory = async (shipmentIds: Array<string>): Promise<any> => {
+  let shipmentStatuses = [];
+  const params = {
+    "entityName": "ShipmentStatus",
+    "inputFields": {
+      "shipmentId": shipmentIds,
+      "shipmentId_op": "in",
+      "statusId": "SHIPMENT_SHIPPED"
+    },
+    "fieldList": ["shipmentId", "statusId", "statusDate", "changeByUserLoginId"],
+    "viewSize": 250,
+    "distinct": "Y"
+  }
+
+  try {
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    })
+
+    if (!hasError(resp)) {
+      shipmentStatuses = resp?.data.docs;
+    } else if (!resp?.data.error || (resp.data.error && resp.data.error !== "No record found")) {
+      return Promise.reject(resp?.data.error);
+    }
+  } catch (err) {
+    logger.error('Failed to fetch shipment status history for shipments', err)
+  }
+
+  return shipmentStatuses;
 }
 
 const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
@@ -519,13 +709,22 @@ const getShippingPhoneNumber = async (orderId: string): Promise<any> => {
 
 export const OrderService = {
   addShipmentBox,
+  addTrackingCode,
   bulkShipOrders,
+  createOutboundTransferShipment,
   fetchAdditionalShipGroupForOrder,
+  fetchOrderHeader,
+  fetchOrderItems,
+  fetchShipmentCarrierDetail,
+  fetchShipmentItemDetail,
   fetchShipments,
   fetchShipmentPackages,
+  fetchShipmentShippedStatusHistory,
+  fetchShippedQuantity,
   fetchTrackingCodes,
   findCompletedOrders,
   findInProgressOrders,
+  findTransferOrders,
   findOpenOrders,
   findOrderShipGroup,
   packOrder,
@@ -539,6 +738,7 @@ export const OrderService = {
   shipOrder,
   unpackOrder,
   updateOrder,
+  updateShipment,
   fetchShipmentLabelError,
   fetchOrderItemShipGroup,
   fetchShippingAddress,
