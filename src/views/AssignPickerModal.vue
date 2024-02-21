@@ -216,14 +216,14 @@ export default defineComponent({
         orderBy: "firstName ASC",
         filterByDate: "Y",
         distinct: "Y",
-        fieldList: ["firstName", "lastName", "partyId", "externalId"]
+        fieldList: ["firstName", "groupName", "lastName", "partyId", "externalId"]
       }
 
       try {
         const resp = await UtilService.getAvailablePickers(payload);
         if (resp.status === 200 && !hasError(resp)) {
           this.pickers = resp.data.docs.map((picker) => ({
-            name: picker.firstName+ ' ' +picker.lastName,
+            name: picker.groupName ? picker.groupName : picker.firstName + ' ' + picker.lastName,
             id: picker.partyId,
             externalId: picker.externalId
           }))
