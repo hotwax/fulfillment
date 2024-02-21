@@ -102,7 +102,8 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         if (!hasError(resp)) {
           orderDetail.items = resp.data.docs;
           orderDetail.items.forEach((item: any) => {
-            item.quantityPicked = 0;
+            item.pickedQuantity = 0;
+            item.orderedQuantity = item.quantity;
           })
 
           //fetch shipped quantity
@@ -133,11 +134,11 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     let shipmentId;
     
     try {
-      let eligibleItems = payload.items.filter((item: any) => item.quantityPicked > 0)
+      let eligibleItems = payload.items.filter((item: any) => item.pickedQuantity > 0)
       eligibleItems = eligibleItems.map((item:any) => ({
         productId: item.productId,
         sku: item.internalName,
-        quantity: parseInt(item.quantityPicked) // Using parseInt to convert to an integer
+        quantity: parseInt(item.pickedQuantity) // Using parseInt to convert to an integer
       }));  
 
       const params = {
@@ -192,7 +193,10 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           shipmentMethodTypeId: shipmentCarriers?.[0].shipmentMethodTypeId,
           shipmentPackagesWithMissingLabel: shipmentPackagesWithMissingLabel,
           isTrackingRequired: shipmentPackagesWithMissingLabel?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y'),
-          items: shipmentItems,
+          items: shipmentItems.map((item: any) => ({
+            ...item,
+            pickedQuantity: item.quantity
+          })),
           totalQuantityPicked: shipmentItems.reduce((accumulator:any, currentItem:any) => accumulator + currentItem.quantity, 0)
         }
 
@@ -272,7 +276,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   async updateOrderProductCount({ commit, state }, payload ) {
     state.current.items.find((item: any) => {
       if (item.internalName === payload) {
-        item.quantityPicked = item.quantityPicked + 1;
+        item.pickedQuantity = item.pickedQuantity + 1;
       }
     });
     commit(types.ORDER_CURRENT_UPDATED, state.current )

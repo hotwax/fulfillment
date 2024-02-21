@@ -89,8 +89,8 @@
                     </div>
                     <div class="product-metadata">
                       <ion-item lines="none">
-                        <ion-badge color="medium" slot="end">{{ item.quantity }} {{ translate("ordered") }}</ion-badge>
-                        <ion-badge color="success" class="ion-margin-start" slot="end">{{ getShippedQuantity(item) }} {{ translate("shipped") }}</ion-badge>
+                        <ion-badge color="medium" slot="end">{{ item.orderedQuantity }} {{ translate("ordered") }}</ion-badge>
+                        <ion-badge color="success" class="ion-margin-start" slot="end">{{ item.quantity }} {{ translate("shipped") }}</ion-badge>
                       </ion-item>
                     </div>
                   </div>
@@ -99,7 +99,7 @@
                     <div class="desktop-only">
                       <ion-button fill="outline" @click.stop="regenerateShippingLabel(shipment)">
                         {{ translate("Regenerate Shipping Label") }}
-                        <ion-spinner color="primary" slot="end" v-if="shipment.isGeneratingShippingLabel" name="crescent" />
+                        <ion-spinner color="primary" slot="start" v-if="shipment.isGeneratingShippingLabel" name="crescent" />
                       </ion-button>
                       <ion-button fill="outline" @click.stop="showShippingLabelErrorModal(shipment)">{{ translate("Shipping label error") }}</ion-button>
                     </div>
@@ -218,7 +218,7 @@
     },
     methods: {
       getItemCount() {
-        return this.currentOrder?.items?.reduce((totalItems:any, item:any) => totalItems + (item.quantity || 0), 0);
+        return this.currentOrder?.items?.reduce((totalItems:any, item:any) => totalItems + (item.orderedQuantity || 0), 0);
 
       },
       getTime(time: any) {
@@ -239,7 +239,7 @@
         }
       },
       getPickedToOrderedFraction(item: any) {
-        return item.quantityPicked / item.quantity;
+        return item.pickedQuantity / item.orderedQuantity;
       },
       async createShipment() {
         this.isCreatingShipment = true;
@@ -251,9 +251,9 @@
         }
       },
       isEligibleForCreatingShipment() {
-        let isEligible = this.currentOrder && this.currentOrder.items?.some((item: any) => item.quantityPicked > 0);
+        let isEligible = this.currentOrder && this.currentOrder.items?.some((item: any) => item.pickedQuantity > 0);
         if (isEligible) {
-          isEligible = !this.currentOrder.items?.some((item: any) =>  item.quantityPicked > 0 && (this.getShippedQuantity(item) + item.quantityPicked) > item.quantity);
+          isEligible = !this.currentOrder.items?.some((item: any) =>  item.pickedQuantity > 0 && (this.getShippedQuantity(item) + item.pickedQuantity) > item.orderedQuantity);
         }
         return isEligible;
       },
@@ -299,13 +299,13 @@
 
         currentShipment.isGeneratingShippingLabel = true;
 
-        if (!currentShipment.trackingCode) {
+        if (!currentShipment.trackingIdNumber) {
           //regenerate shipping label if missing tracking code
           const resp = await OrderService.retryShippingLabel([currentShipment.shipmentId])
           if (!hasError(resp)) {
             showToast(translate("Shipping Label generated successfully"))
             await OrderService.printShippingLabel([currentShipment.shipmentId])
-            await this.store.dispatch('transferorder/fetchOrderShipments', { shipmentId: currentShipment.shipmentId })
+            await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.currentOrder.orderId })
           } else {
             showToast(translate("Failed to generate shipping label"))
           }

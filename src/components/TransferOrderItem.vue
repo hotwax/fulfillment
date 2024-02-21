@@ -16,16 +16,16 @@
       <div class="product-count">
         <ion-item v-if="!item.shipmentId" ref="pickedQuantity">
           <ion-label position="floating">{{ translate("Qty") }}</ion-label>
-          <ion-input type="number" min="0" v-model="quantityPicked" @ionChange="updatePickedQuantity($event, item)" @ionInput="validatePickedQuantity($event, item)" @ionBlur="markPickedQuantityTouched"/>
+          <ion-input type="number" min="0" v-model="pickedQuantity" @ionChange="updatePickedQuantity($event, item)" @ionInput="validatePickedQuantity($event, item)" @ionBlur="markPickedQuantityTouched"/>
           <ion-note slot="error">{{ translate('The picked quantity cannot exceed the ordered quantity.') }} {{ getShippedQuantity(item) > 0 ? translate("already shipped.", {shippedQuantity: getShippedQuantity(item)}): '' }}</ion-note>
         </ion-item>
         <ion-item v-else lines="none">
-          <ion-label slot="end">{{ item.quantity }} {{ translate('packed') }}</ion-label>
+          <ion-label slot="end">{{ item.pickedQuantity }} {{ translate('packed') }}</ion-label>
         </ion-item>
       </div>
     </div>
 
-    <div class="action border-top" v-if="item.quantity > 0">
+    <div class="action border-top" v-if="item.orderedQuantity > 0">
       <div class="pick-all-qty" v-if="!item.shipmentId">
         <ion-button @click="pickAll(item)" slot="start" size="small" fill="outline">
           {{ translate("Pick All") }}
@@ -44,7 +44,7 @@
       </div>
 
       <div class="qty-ordered">
-        <ion-label>{{ item.quantity }} {{ translate("ordered") }}</ion-label>   
+        <ion-label>{{ item.orderedQuantity }} {{ translate("ordered") }}</ion-label>   
       </div>         
     </div>
   </ion-card>
@@ -93,7 +93,7 @@ export default defineComponent({
   props: ["item"],
   data() {
     return {
-      quantityPicked: this.item.quantityPicked
+      pickedQuantity: this.item.pickedQuantity
     }
   },
   computed: {
@@ -104,7 +104,7 @@ export default defineComponent({
   },
   methods: {
     getPickedToOrderedFraction(item: any) {
-      return (item.quantityPicked + this.getShippedQuantity(item)) / item.quantity;
+      return (item.pickedQuantity + this.getShippedQuantity(item)) / item.orderedQuantity;
     },
     getShippedQuantity(item: any) {
       return this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] ? this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] : 0;
@@ -112,17 +112,17 @@ export default defineComponent({
     async pickAll(item: any) {
       const selectedItem = this.currentOrder.items.find((ele: any) => ele.orderItemSeqId === item.orderItemSeqId);
       if (selectedItem) {
-        this.quantityPicked = this.getShippedQuantity(item) ? selectedItem.quantity - this.getShippedQuantity(item) : selectedItem.quantity;
-        selectedItem.quantityPicked = this.quantityPicked
-        selectedItem.progress = selectedItem.quantityPicked / selectedItem.quantity
+        this.pickedQuantity = this.getShippedQuantity(item) ? selectedItem.quantity - this.getShippedQuantity(item) : selectedItem.quantity;
+        selectedItem.pickedQuantity = this.pickedQuantity
+        selectedItem.progress = selectedItem.pickedQuantity / selectedItem.quantity
       }
       await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
     },
     async updatePickedQuantity(event: any, item: any) {
       const selectedItem = this.currentOrder.items.find((ele: any) => ele.orderItemSeqId === item.orderItemSeqId);
       if (selectedItem) {
-        selectedItem.quantityPicked = event.detail.value ? parseInt(event.detail.value) : 0;
-        selectedItem.progress = parseInt(selectedItem.quantityPicked);
+        selectedItem.pickedQuantity = event.detail.value ? parseInt(event.detail.value) : 0;
+        selectedItem.progress = parseInt(selectedItem.pickedQuantity);
       }
       await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
     },
@@ -141,7 +141,7 @@ export default defineComponent({
 
       if (value === '') return;
 
-      value > (item.quantity - this.getShippedQuantity(item))
+      value > (item.orderedQuantity - this.getShippedQuantity(item))
         ? (this as any).$refs.pickedQuantity.$el.classList.add('ion-invalid')
         : (this as any).$refs.pickedQuantity.$el.classList.add('ion-valid');
     },
