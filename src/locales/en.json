@@ -87,6 +87,7 @@
   "Export Orders": "Export Orders",
   "Export orders that are packed and haven't been shipped yet. Use the exported file to send the packed order details to a carrier where shipping labels and tracking codes will be generated.": "Export orders that are packed and haven't been shipped yet. Use the exported file to send the packed order details to a carrier where shipping labels and tracking codes will be generated.",
   "Export packed orders": "Export packed orders",
+  "Ext Other Gateways": "Ext Other Gateways",
   "Facility": "Facility",
   "Facility Address 1": "Facility Address 1",
   "Facility Address 2": "Facility Address 2",
