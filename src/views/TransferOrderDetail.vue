@@ -191,7 +191,8 @@
       IonThumbnail,
       IonTitle,
       IonToolbar,
-      TransferOrderItem
+      ShopifyImg,
+      TransferOrderItem,
     },
     data() {
       return {
