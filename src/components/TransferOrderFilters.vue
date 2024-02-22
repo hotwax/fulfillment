@@ -45,7 +45,7 @@ import {
   IonToolbar
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { albumsOutline, banOutline, barChartOutline, calendarNumberOutline, checkmarkDoneOutline, closeOutline, filterOutline, iceCreamOutline, libraryOutline, pulseOutline, sendOutline, settings, shirtOutline, ticketOutline } from "ionicons/icons";
+import { albumsOutline, banOutline, barChartOutline, calendarNumberOutline, checkmarkDoneOutline, closeOutline, filterOutline, iceCreamOutline, libraryOutline, pulseOutline, settings, shirtOutline, ticketOutline } from "ionicons/icons";
 import { mapGetters, useStore } from 'vuex'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper';
 import { UtilService } from '@/services/UtilService';
