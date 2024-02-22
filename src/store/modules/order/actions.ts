@@ -903,6 +903,8 @@ const actions: ActionTree<OrderState, RootState> = {
       const shipments = shipmentBatches.flat();
       const shipmentIds = [...new Set(shipments.map((shipment: any) => shipment.shipmentId))] as Array<string>
       let shipmentPackages = [] as any;
+
+      const shipmentTrackingCodes = await OrderService.fetchTrackingCodes(shipmentIds)
       
       // Get packed shipmentIds
       if (shipmentIds.length) {
@@ -935,6 +937,7 @@ const actions: ActionTree<OrderState, RootState> = {
         orderItems: current.items.filter((item: any) => !isKitComponent(item)),
         ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
         shipments: orderShipments,
+        trackingCode: shipmentTrackingCodes?.[0].trackingCode,
         missingLabelImage,
         shipmentPackages: currentShipmentPackages  // ShipmentPackages information is required when performing retryShippingLabel action
       }
