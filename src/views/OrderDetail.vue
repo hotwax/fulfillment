@@ -23,7 +23,7 @@
             </ion-chip>
             <ion-chip outline v-if="order?.orderPaymentPreferences?.length > 0" :color="statusColor[order?.orderPaymentPreferences[0]?.statusId]">
               <ion-icon :icon="cashOutline" />
-              <ion-label>{{ getPaymentMethodDesc(order?.orderPaymentPreferences[0]?.paymentMethodTypeId)}} : {{ getStatusDesc(order?.orderPaymentPreferences[0]?.statusId) }}</ion-label>
+              <ion-label>{{ translate(getPaymentMethodDesc(order?.orderPaymentPreferences[0]?.paymentMethodTypeId)) }} : {{ translate(getStatusDesc(order?.orderPaymentPreferences[0]?.statusId)) }}</ion-label>
             </ion-chip>
           </div>
           <div class="order-metadata">
