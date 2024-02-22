@@ -523,12 +523,13 @@ const printPicklist = async (picklistId: string): Promise<any> => {
   }
 }
 
-const retryShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
+const retryShippingLabel = async (shipmentIds: Array<string>, forceRateShop = false): Promise<any> => {
   return api({
     method: 'POST',
     url: 'retryShippingLabel',  // TODO: update the api
     data: {
-      shipmentIds
+      shipmentIds,
+      forceRateShop
     }
   })
 }
