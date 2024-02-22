@@ -129,7 +129,10 @@
           {
             text: translate("Discard"),
             handler: async () => {
-              await OrderService.updateShipment({"shipmentId": this.currentShipment.shipmentId, "statusId": "SHIPMENT_CANCELLED"})
+              const resp = await OrderService.updateShipment({"shipmentId": this.currentShipment.shipmentId, "statusId": "SHIPMENT_CANCELLED"})
+              if (!hasError(resp)) {
+                showToast(translate('Shipment is discarded.'));
+              }
               canLeave = true;
             }
           }
@@ -247,6 +250,7 @@
             throw resp.data;
           }
           this.isShipped = true;
+          showToast(translate('Shipment shipped successfully.'));
           this.router.push({ path: `/transfer-order-details/${this.currentShipment.primaryOrderId}` })
         } catch (err) {
           logger.error('Failed to ship the shipment.', err);

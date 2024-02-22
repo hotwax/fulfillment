@@ -118,7 +118,7 @@
       <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED'">
         <ion-toolbar>
           <ion-buttons slot="end">
-            <ion-button  color="primary" fill="solid" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment()" @click="createShipment">
+            <ion-button  color="primary" fill="solid" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment()" @click="confirmCreateShipment">
               <ion-spinner v-if="isCreatingShipment" slot="start" name="crescent" />
               {{ translate('Create Shipment') }}   
             </ion-button>
@@ -150,6 +150,7 @@
     IonThumbnail,
     IonTitle,
     IonToolbar,
+    alertController,
     modalController,
   } from '@ionic/vue';
   import { computed, defineComponent } from 'vue';
@@ -250,6 +251,25 @@
           await OrderService.updateShipment({"shipmentId": shipmentId, "statusId": "SHIPMENT_APPROVED"})
           this.router.push({ path: `/transfer-shipment-review/${shipmentId}` })
         }
+      },
+      async confirmCreateShipment() {
+        const message = translate("Make sure you have entered the correct item quantities to create the shipment.");
+        const alert = await alertController.create({
+          header: translate("Create shipment"),
+          message,
+          buttons: [
+            {
+              text: translate("Cancel"),
+            },
+            {
+              text: translate("Create"),
+              handler: async () => {
+                this.createShipment();
+              }
+            }
+          ],
+        });
+        return alert.present();
       },
       isEligibleForCreatingShipment() {
         let isEligible = this.currentOrder && this.currentOrder.items?.some((item: any) => item.pickedQuantity > 0);
