@@ -13,7 +13,7 @@
             <ion-label>
               <p class="overline">{{ currentOrder.orderId }}</p>
               {{ currentOrder.orderName }}
-              <p>{{ currentOrder.orderId }}</p>
+              <p>{{ currentOrder.externalId }}</p>
               <p>{{ translate('Item count') }}: {{ getItemCount()}}</p>
             </ion-label>
             <ion-badge slot="end">{{ getStatusDesc(currentOrder.statusId) }}</ion-badge>
