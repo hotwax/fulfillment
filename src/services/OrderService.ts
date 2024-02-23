@@ -13,21 +13,39 @@ const fetchOrderHeader = async (params: any): Promise<any> => {
   })
 }
 const fetchOrderItems = async (orderId: string): Promise<any> => {
-  const params = {
-    "entityName": "OrderItemAndProduct",
-    "inputFields": {
-      "orderId": orderId,
-    },
-    "fieldList": ["orderId", "orderItemSeqId", "statusId", "shipGroupSeqId", "productId", "productName", "internalName", "quantity"],
-    "viewSize": 250,  // maximum records we could have
-    "distinct": "Y"
-  } as any;
+  let viewIndex = 0;
+  let orderItems = [] as any, resp;
 
-  return await api({
-    url: "performFind",
-    method: "get",
-    params
-  })
+  try {
+    do {
+      resp = await api({
+        url: "performFind",
+        method: "get",
+        params : {
+          "entityName": "OrderItemAndProduct",
+          "inputFields": {
+            "orderId": orderId,
+          },
+          "fieldList": ["orderId", "orderItemSeqId", "statusId", "shipGroupSeqId", "productId", "productName", "internalName", "quantity"],
+          "viewIndex": viewIndex,
+          "viewSize": 250,  // maximum records we could have
+          "distinct": "Y",
+          "noConditionFind": "Y"
+        }
+      }) as any;
+
+      if (!hasError(resp) && resp.data.count) {
+        orderItems = orderItems.concat(resp.data.docs)
+        viewIndex++;
+      } else {
+        throw resp.data;
+      }
+    }
+    while (resp.data.docs.length >= 250);
+  } catch (error) {
+    console.error(error);
+  }
+  return orderItems
 }
 
 const fetchShippedQuantity = async (orderId: string): Promise<any> => {
@@ -48,12 +66,45 @@ const fetchShippedQuantity = async (orderId: string): Promise<any> => {
   })
 }
 
-const fetchShipmentItemDetail = async (params: any): Promise<any> => {
-  return await api({
-    url: "performFind",
-    method: "get",
-    params
-  })
+const fetchShipmentItems = async (orderId: string, shipmentId: string): Promise<any> => {
+  let viewIndex = 0;
+  let shipmentItems = [] as any, resp;
+
+  try {
+    const inputFields = {} as any;
+    if (orderId) {
+      inputFields['orderId'] = orderId;
+    }
+    if (shipmentId) {
+      inputFields['shipmentId'] = shipmentId;
+    }
+
+    do {
+      resp = await api({
+        url: "performFind",
+        method: "get",
+        params: {
+          "entityName": "ShipmentItemDetail",
+          inputFields,
+          "fieldList": ["shipmentId", "shipmentStatusId", "shipmentItemSeqId", "orderId", "orderItemSeqId", "productId", "quantity", "orderedQuantity"],
+          "viewIndex": viewIndex,
+          "viewSize": 250,
+          "distinct": "Y"
+        }
+      }) as any;
+
+      if (!hasError(resp) && resp.data.count) {
+        shipmentItems = shipmentItems.concat(resp.data.docs)
+        viewIndex++;
+      } else {
+        throw resp.data;
+      }
+    }
+    while (resp.data.docs.length >= 250);
+  } catch (error) {
+    console.error(error);
+  }
+  return shipmentItems
 }
 
 const createOutboundTransferShipment = async (query: any): Promise<any> => {
@@ -717,7 +768,7 @@ export const OrderService = {
   fetchOrderHeader,
   fetchOrderItems,
   fetchShipmentCarrierDetail,
-  fetchShipmentItemDetail,
+  fetchShipmentItems,
   fetchShipments,
   fetchShipmentPackages,
   fetchShipmentShippedStatusHistory,

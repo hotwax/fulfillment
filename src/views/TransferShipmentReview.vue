@@ -251,7 +251,7 @@
           }
           this.isShipped = true;
           showToast(translate('Shipment shipped successfully.'));
-          this.router.push({ path: `/transfer-order-details/${this.currentShipment.primaryOrderId}` })
+          this.router.replace({ path: `/transfer-order-details/${this.currentShipment.primaryOrderId}` })
         } catch (err) {
           logger.error('Failed to ship the shipment.', err);
           showToast(translate('Something went wrong, could not ship the shipment'))

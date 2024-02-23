@@ -98,14 +98,13 @@ const actions: ActionTree<TransferOrderState, RootState> = {
          orderDetail = resp.data.docs?.[0];
          
         //fetch order items
-        resp = await OrderService.fetchOrderItems(payload.orderId);
-        if (!hasError(resp)) {
-          orderDetail.items = resp.data.docs;
+        orderDetail.items = await OrderService.fetchOrderItems(payload.orderId);
+        if (orderDetail?.items?.length > 0) {
           orderDetail.items.forEach((item: any) => {
             item.pickedQuantity = 0;
             item.orderedQuantity = item.quantity;
           })
-
+  
           //fetch shipped quantity
           const shippedQuantityInfo = {} as any;
           resp = await OrderService.fetchShippedQuantity(payload.orderId);
@@ -115,10 +114,16 @@ const actions: ActionTree<TransferOrderState, RootState> = {
             });
             orderDetail.shippedQuantityInfo = shippedQuantityInfo;
           }
-
+  
           //fetch product details
           const productIds = [...new Set(orderDetail.items.map((item:any) => item.productId))];
-          await Promise.all([this.dispatch('product/fetchProducts', { productIds }), this.dispatch('util/fetchStatusDesc', [orderDetail.statusId])]);
+  
+          const batchSize = 250;
+          const productIdBatches = [];
+          while(productIds.length) {
+            productIdBatches.push(productIds.splice(0, batchSize))
+          }
+          await Promise.all([productIdBatches.map((productIds) => this.dispatch('product/fetchProducts', { productIds })), this.dispatch('util/fetchStatusDesc', [orderDetail.statusId])])
         }
         commit(types.ORDER_CURRENT_UPDATED, orderDetail)
       } else {
@@ -178,10 +183,9 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         "distinct": "Y"
       }
     
-      resp = await OrderService.fetchShipmentItemDetail(params);
+      const shipmentItems = await OrderService.fetchShipmentItems('', payload.shipmentId);
         
-      if (!hasError(resp)) {
-        const shipmentItems = resp.data.docs;
+      if (shipmentItems?.length > 0) {
         const [shipmentPackagesWithMissingLabel, shipmentCarriers] = await Promise.all([OrderService.fetchShipmentPackages([payload.shipmentId]), OrderService.fetchShipmentCarrierDetail([payload.shipmentId])]);
 
         const shipment = {
@@ -203,9 +207,14 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         commit(types.ORDER_CURRENT_SHIPMENT_UPDATED, shipment)
 
         const productIds = [...new Set(shipmentItems.map((item:any) => item.productId))];
-        await Promise.all([this.dispatch('product/fetchProducts', { productIds }), this.dispatch('util/fetchPartyInformation', [shipmentCarriers?.[0].carrierPartyId,]), this.dispatch('util/fetchShipmentMethodTypeDesc', [shipmentCarriers?.[0].shipmentMethodTypeId])]);
-      } else {
-        throw resp.data;
+
+
+        const batchSize = 250;
+        const productIdBatches = [];
+        while(productIds.length) {
+          productIdBatches.push(productIds.splice(0, batchSize))
+        }
+        await Promise.all([productIdBatches.map((productIds) => this.dispatch('product/fetchProducts', { productIds })), this.dispatch('util/fetchPartyInformation', [shipmentCarriers?.[0].carrierPartyId,]), this.dispatch('util/fetchShipmentMethodTypeDesc', [shipmentCarriers?.[0].shipmentMethodTypeId])])
       }
 
     } catch (err: any) {
@@ -226,10 +235,8 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         "distinct": "Y"
       } as any;
     
-      resp = await OrderService.fetchShipmentItemDetail(params);
-        
-      if (!hasError(resp)) {
-        const shipmentItems = resp.data.docs;
+      const shipmentItems  = await OrderService.fetchShipmentItems(payload.orderId, '');
+      if (shipmentItems?.length > 0) {
         shipments = Object.values(shipmentItems.reduce((shipmentInfo:any, currentItem:any) => {
           const { shipmentId, shipmentStatusId, orderId } = currentItem;
           if (!shipmentInfo[shipmentId]) {
@@ -264,8 +271,6 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         });
 
         await this.dispatch('util/fetchShipmentMethodTypeDesc', shipmentCarriers.map((carrier:any) => carrier.shipmentMethodTypeId))
-      } else {
-        throw resp.data;
       }
     } catch (err: any) {
       logger.error("error", err);
