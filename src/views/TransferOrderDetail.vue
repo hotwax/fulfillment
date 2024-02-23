@@ -281,7 +281,7 @@
       getShippedQuantity(item: any) {
         return this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] ? this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] : 0;
       },
-      updateProductCount(payload: any){
+      updateProductCount(payload: any) {
         if (this.queryString) payload = this.queryString
         this.store.dispatch('transferorder/updateOrderProductCount', payload)
       },

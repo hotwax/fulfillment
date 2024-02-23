@@ -164,7 +164,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         throw resp.data;
       }
     } catch(error){
-      console.error(error);
+      logger.error(error);
       showToast(translate('Failed to create shipment'));
     }
     return shipmentId;

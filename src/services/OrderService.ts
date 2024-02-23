@@ -43,7 +43,7 @@ const fetchOrderItems = async (orderId: string): Promise<any> => {
     }
     while (resp.data.docs.length >= 250);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
   }
   return orderItems
 }
@@ -102,7 +102,7 @@ const fetchShipmentItems = async (orderId: string, shipmentId: string): Promise<
     }
     while (resp.data.docs.length >= 250);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
   }
   return shipmentItems
 }
