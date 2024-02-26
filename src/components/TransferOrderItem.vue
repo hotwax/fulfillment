@@ -90,11 +90,11 @@ export default defineComponent({
     IonThumbnail,
     ShopifyImg,
   },
-  props: ["orderItem"],
+  props: ["itemDetail"],
   data() {
     return {
-      pickedQuantity: this.orderItem.pickedQuantity,
-      item: this.orderItem
+      pickedQuantity: this.itemDetail.pickedQuantity,
+      item: this.itemDetail
     }
   },
   computed: {

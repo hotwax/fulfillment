@@ -39,7 +39,7 @@
             </div>
           </div>
 
-          <TransferOrderItem v-for="item in currentShipment.items" :key="item.orderItemSeqId" :item="item" />
+          <TransferOrderItem v-for="item in currentShipment.items" :key="item.orderItemSeqId" :itemDetail="item" />
         </main>
   
         <ion-fab vertical="bottom" horizontal="end" slot="fixed">
@@ -66,6 +66,7 @@
     IonLabel,
     IonPage,
     IonSearchbar,
+    IonSpinner,
     IonTitle,
     IonToolbar,
     alertController,
@@ -104,6 +105,7 @@
       IonLabel,
       IonPage,
       IonSearchbar,
+      IonSpinner,
       IonTitle,
       IonToolbar,
       TransferOrderItem
