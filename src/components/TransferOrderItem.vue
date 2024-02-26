@@ -16,7 +16,7 @@
       <div class="product-count">
         <ion-item v-if="!item.shipmentId" ref="pickedQuantity">
           <ion-label position="floating">{{ translate("Qty") }}</ion-label>
-          <ion-input type="number" min="0" v-model="pickedQuantity" @ionChange="updatePickedQuantity($event, item)" @ionInput="validatePickedQuantity($event, item)" @ionBlur="markPickedQuantityTouched"/>
+          <ion-input type="number" min="0" v-model="item.pickedQuantity" @ionChange="updatePickedQuantity($event, item)" @ionInput="validatePickedQuantity($event, item)" @ionBlur="markPickedQuantityTouched"/>
           <ion-note slot="error">{{ translate('The picked quantity cannot exceed the ordered quantity.') }} {{ getShippedQuantity(item) > 0 ? translate("already shipped.", {shippedQuantity: getShippedQuantity(item)}): '' }}</ion-note>
         </ion-item>
         <ion-item v-else lines="none">
@@ -90,10 +90,11 @@ export default defineComponent({
     IonThumbnail,
     ShopifyImg,
   },
-  props: ["item"],
+  props: ["orderItem"],
   data() {
     return {
-      pickedQuantity: this.item.pickedQuantity
+      pickedQuantity: this.orderItem.pickedQuantity,
+      item: this.orderItem
     }
   },
   computed: {
@@ -116,6 +117,10 @@ export default defineComponent({
         selectedItem.pickedQuantity = this.pickedQuantity
         selectedItem.progress = selectedItem.pickedQuantity / selectedItem.quantity
       }
+      //Removing validation erros if any
+      (this as any).$refs.pickedQuantity.$el.classList.remove('ion-valid');
+      (this as any).$refs.pickedQuantity.$el.classList.remove('ion-invalid');
+
       await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
     },
     async updatePickedQuantity(event: any, item: any) {

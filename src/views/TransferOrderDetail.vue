@@ -41,7 +41,7 @@
           <div class="segments" v-if="currentOrder">
             <template v-if="selectedSegment === 'open'">
               <template v-if="getTOItems('open')?.length > 0">
-                <TransferOrderItem v-for="item in getTOItems('open')" :key="item.orderItemSeqId" :item="item" />
+                <TransferOrderItem v-for="item in getTOItems('open')" :key="item.orderItemSeqId" :orderItem="item" />
               </template>
               <template v-else>
                 <div class="empty-state">
