@@ -7,7 +7,7 @@
     </ion-header>
 
     <ion-content>
-      <ion-searchbar :placeholder="translate('Search rejection reasons')" />
+      <ion-searchbar class="searchbar" :placeholder="translate('Search rejection reasons')" />
 
       <main>
         <ion-reorder-group :disabled="false">
