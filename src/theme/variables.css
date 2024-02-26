@@ -370,6 +370,37 @@ img {
   text-align: center;
 }
 
+.list-item {
+  --columns-mobile: 2;
+  --columns-tablet: 4;
+  --columns-desktop: 7;
+  --col-calc: var(--columns-mobile);
+  --implicit-columns: calc(var(--col-calc) - 1);
+  display: grid;
+  grid-template-columns: repeat(var(--implicit-columns), 1fr) max-content;
+  justify-items: center;
+  align-items: center;
+}
+
+.list-item>* {
+  display: none;
+}
+
+.list-item>*:last-child {
+  display: unset;
+  justify-self: end;
+  border-bottom: none;
+}
+
+.list-item>ion-label {
+  text-align: center;
+}
+
+.list-item>*:first-child {
+  display: unset;
+  justify-self: start
+}
+
 @media (min-width: 991px) {
   /* shipment card desktop layout start */
   ion-searchbar.better-name-here {
@@ -416,6 +447,18 @@ img {
   .mobile-only {
     display: none;
   }  
+
+  .list-item {
+    --col-calc: var(--columns-desktop);
+  }
+
+  .list-item>* {
+    display: unset;
+  }
+
+  .tablet {
+    display: unset;
+  }
 } 
 
 @media (prefers-color-scheme: dark) {

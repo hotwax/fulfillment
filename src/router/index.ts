@@ -4,6 +4,7 @@ import Completed from '@/views/Completed.vue'
 import InProgress from '@/views/InProgress.vue'
 import OpenOrders from "@/views/OpenOrders.vue"
 import Settings from "@/views/Settings.vue"
+import RejectionReasons from '@/views/RejectionReasons.vue';
 import store from '@/store'
 import Exim from "@/views/Exim.vue"
 import UploadImportOrders from "@/views/UploadImportOrders.vue"
@@ -129,6 +130,12 @@ const routes: Array<RouteRecordRaw> = [
     path: "/settings",
     name: "Settings",
     component: Settings,
+    beforeEnter: authGuard
+  },
+  {
+    path: "/rejection-reasons",
+    name: "RejectionReasons",
+    component: RejectionReasons,
     beforeEnter: authGuard
   }
 ]

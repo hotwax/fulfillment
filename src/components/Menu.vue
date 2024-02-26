@@ -9,13 +9,19 @@
     <ion-content>
       <ion-list>
         <ion-menu-toggle auto-hide="false" v-for="(page, index) in getValidMenuItems(appPages)" :key="index">
+          <ion-item-divider color="light" v-if="!page.url">
+            <ion-label>
+              {{ translate(page.title) }}
+            </ion-label>
+          </ion-item-divider>
           <ion-item
+            v-else
             button
             router-direction="root"
             :router-link="page.url"
             class="hydrated"
             :class="{ selected: selectedIndex === index }">
-            <ion-icon slot="start" :ios="page.iosIcon" :md="page.mdIcon" />
+            <ion-icon v-if="page.mdIcon || page.iosIcon" slot="start" :ios="page.iosIcon" :md="page.mdIcon" />
             <ion-label>{{ translate(page.title) }}</ion-label>
           </ion-item>
         </ion-menu-toggle>
@@ -30,6 +36,7 @@ import {
   IonHeader,
   IonIcon,
   IonItem,
+  IonItemDivider,
   IonLabel,
   IonList,
   IonMenu,
@@ -52,6 +59,7 @@ export default defineComponent({
     IonHeader,
     IonIcon,
     IonItem,
+    IonItemDivider,
     IonLabel,
     IonList,
     IonMenu,
@@ -120,6 +128,14 @@ export default defineComponent({
         url: "/settings",
         iosIcon: settingsOutline,
         mdIcon: settingsOutline,
+      },
+      {
+        title: "Organization",
+        url: ""
+      }, {
+        title: "Rejection reasons",
+        url: "/rejection-reasons",
+        childRoutes: ["/rejection-reasons/"],
       }
     ];
 
