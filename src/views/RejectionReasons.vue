@@ -27,11 +27,6 @@
               </ion-chip>
             </div>
 
-            <ion-button fill="outline">
-              <ion-icon :icon="idCardOutline" slot="start" />
-              {{ translate("Create permission") }}
-            </ion-button>
-
             <ion-reorder />
 
             <ion-button fill="clear" color="medium">
@@ -52,12 +47,6 @@
               <ion-chip outline @click="openVarianceTypeActionsPopover">
                 <ion-label>{{ "<enumType>" }}</ion-label>
                 <ion-icon :icon="caretDownOutline" />
-              </ion-chip>
-            </div>
-
-            <div class="tablet">
-              <ion-chip outline>
-                <ion-label>{{ "0 Security groups" }}</ion-label>
               </ion-chip>
             </div>
 
@@ -100,7 +89,7 @@ import {
   popoverController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { addOutline, caretDownOutline, ellipsisVerticalOutline, idCardOutline } from 'ionicons/icons';
+import { addOutline, caretDownOutline, ellipsisVerticalOutline } from 'ionicons/icons';
 import { translate } from '@hotwax/dxp-components';
 import CreateRejectionReasonModal from '@/components/CreateRejectionReasonModal.vue';
 import RejectReasonActionsPopver from '@/components/RejectReasonActionsPopver.vue';
@@ -155,7 +144,6 @@ export default defineComponent({
       addOutline,
       caretDownOutline,
       ellipsisVerticalOutline,
-      idCardOutline,
       translate,
     }
   }
@@ -164,6 +152,6 @@ export default defineComponent({
 
 <style scoped>
 .list-item {
-  --columns-desktop: 5;
+  --columns-desktop: 4;
 }
 </style>
