@@ -167,6 +167,7 @@
   import { OrderService } from '@/services/OrderService'
   import TransferOrderItem from '@/components/TransferOrderItem.vue'
   import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
+  import emitter from "@/event-bus";
 
   
   export default defineComponent({
@@ -203,8 +204,10 @@
       }
     },
     async ionViewWillEnter() {
+      emitter.emit('presentLoader');
       await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
       await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.$route.params.orderId });
+      emitter.emit('dismissLoader');
     },
     computed: {
       ...mapGetters({
