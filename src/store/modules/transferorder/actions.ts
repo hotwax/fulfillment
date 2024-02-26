@@ -55,7 +55,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
 
           return {
             orderId: orderItem.orderId,
-            externalOrderId: orderItem.externalOrderId,
+            externalId: orderItem.externalOrderId,
             orderDate: orderItem.orderDate,
             orderName: orderItem.orderName,
             shipGroupSeqId: orderItem.shipGroupSeqId,
@@ -299,6 +299,9 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   },
   async clearTransferOrders({ commit }) {
     commit(types.ORDER_TRANSFER_CLEARED)
+  },
+  async clearCurrentTransferShipment({ commit }) {
+    commit(types.ORDER_CURRENT_SHIPMENT_CLEARED)
   }
 }
 

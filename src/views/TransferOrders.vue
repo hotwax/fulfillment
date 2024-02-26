@@ -20,11 +20,11 @@
       <div v-if="transferOrders.total">
         <div class="results">
           <ion-list>
-            <ion-item v-for="(order, index) in transferOrders.list" :key="index" @click="viewTransferOrderDetail(order.orderId)" button>
+            <ion-item v-for="(order, index) in transferOrders.list" :key="index" @click="viewTransferOrderDetail(order)" button>
               <ion-label>
                 <p class="overline">{{ order.orderId }}</p>
                 {{ order.orderName }}
-                <p>{{ order.externalOrderId }}</p>
+                <p>{{ order.externalId }}</p>
               </ion-label>
               <ion-badge slot="end">{{ order.orderStatusDesc }}</ion-badge>
             </ion-item>
@@ -130,8 +130,9 @@ export default defineComponent({
       transferOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
     },
-    async viewTransferOrderDetail(orderId: any) {
-      this.router.push({ path: `/transfer-order-details/${orderId}` })
+    async viewTransferOrderDetail(order: any) {
+      await this.store.dispatch('transferorder/updateCurrentTransferOrder', order)
+      this.router.push({ path: `/transfer-order-details/${order.orderId}` })
     },
   },
   async mounted () {

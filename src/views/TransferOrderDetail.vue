@@ -16,7 +16,7 @@
               <p>{{ currentOrder.externalId }}</p>
               <p>{{ translate('Item count') }}: {{ getItemCount()}}</p>
             </ion-label>
-            <ion-badge slot="end">{{ getStatusDesc(currentOrder.statusId) }}</ion-badge>
+            <ion-badge slot="end">{{ currentOrder.orderStatusDesc ? currentOrder.orderStatusDesc : getStatusDesc(currentOrder.statusId) }}</ion-badge>
           </ion-item>
   
           <div class="scanner">
@@ -248,6 +248,7 @@
         const shipmentId = await this.store.dispatch('transferorder/createOutboundTransferShipment', this.currentOrder)
         this.isCreatingShipment = false;
         if (shipmentId) {
+          await this.store.dispatch('transferorder/clearCurrentTransferShipment');
           await OrderService.updateShipment({"shipmentId": shipmentId, "statusId": "SHIPMENT_APPROVED"})
           this.router.push({ path: `/transfer-shipment-review/${shipmentId}` })
         }
