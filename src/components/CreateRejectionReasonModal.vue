@@ -72,10 +72,9 @@ import {
 import { defineComponent } from "vue";
 import { checkmarkDoneOutline, closeOutline } from "ionicons/icons";
 import { translate } from '@hotwax/dxp-components'
-import { mapGetters, useStore } from 'vuex'
 
 export default defineComponent({
-  name: "CreateRejectReasonModal",
+  name: "CreateRejectionReasonModal",
   components: {
     IonButton,
     IonButtons,
@@ -93,23 +92,15 @@ export default defineComponent({
     IonTitle,
     IonToolbar
   },
-  computed: {
-    ...mapGetters({
-      currentFacility: 'facility/getCurrent'
-    })
-  },
   methods: {
     closeModal() {
       modalController.dismiss()
     }
   },
   setup() {
-    const store = useStore();
-
     return {
       checkmarkDoneOutline,
       closeOutline,
-      store,
       translate
     };
   },

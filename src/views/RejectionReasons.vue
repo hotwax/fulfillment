@@ -163,12 +163,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-@media (max-width: 991px) {
-  .order-item {
-    border-bottom: none;
-  }
-}
-
 .list-item {
   --columns-desktop: 5;
 }
