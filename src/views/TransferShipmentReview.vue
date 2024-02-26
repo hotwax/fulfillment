@@ -6,7 +6,7 @@
           <ion-title>{{ translate("Review Shipment") }}</ion-title>
           
           <ion-buttons slot="end">
-            <ion-button  fill="clear" v-if="currentShipment.trackingCode" @click="transferShipmentActionsPopover($event)">
+            <ion-button  fill="clear"  @click="transferShipmentActionsPopover($event)">
               <ion-icon :icon="documentTextOutline" />
             </ion-button>
           </ion-buttons>
@@ -20,7 +20,7 @@
             <div>
               <ion-item>
                 <ion-label>{{ currentShipment.totalQuantityPicked }} {{ translate("items picked") }}</ion-label>
-                <ion-button expand="block" fill="outline" v-if="!currentShipment.trackingCode" @click="generateShippingLabel(currentShipment)">
+                <ion-button expand="block" fill="outline" @click="generateShippingLabel(currentShipment)">
                   <ion-icon slot="start" :icon="documentTextOutline" />{{ translate("Generate shipping label") }}
                   <ion-spinner color="primary" slot="start" v-if="currentShipment.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
@@ -204,7 +204,7 @@
         const popover = await popoverController.create({
           component: TransferShipmentActionsPopover,
           componentProps: {
-            shipmentId: this.currentShipment.shipmentId,
+            currentShipment: this.currentShipment,
           },
           showBackdrop: false,
           event: ev
