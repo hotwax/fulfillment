@@ -144,10 +144,10 @@
       if (!this.isShipped) {
         alert.present();
         await alert.onDidDismiss();
-        await this.store.dispatch('transferorder/updateCurrentTransferOrder', {});
+        await this.store.dispatch('transferorder/clearCurrentTransferOrder');
         return canLeave;
       } else {
-        await this.store.dispatch('transferorder/updateCurrentTransferOrder', {});
+        await this.store.dispatch('transferorder/clearCurrentTransferOrder');
       }
     },
     data() {

@@ -214,7 +214,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   async fetchOrderShipments ({ commit, state }, payload) {
     let resp;
     let shipments = [];
-    
+
     try {
       const shipmentItems  = await OrderService.fetchShipmentItems(payload.orderId, '');
       if (shipmentItems?.length > 0) {
@@ -281,6 +281,9 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   },
   async clearTransferOrders({ commit }) {
     commit(types.ORDER_TRANSFER_CLEARED)
+  },
+  async clearCurrentTransferOrder({ commit }) {
+    commit(types.ORDER_CURRENT_CLEARED)
   },
   async clearCurrentTransferShipment({ commit }) {
     commit(types.ORDER_CURRENT_SHIPMENT_CLEARED)
