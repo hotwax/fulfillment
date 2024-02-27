@@ -5,7 +5,7 @@
         {{ translate("Variance type") }}
       </ion-list-header>
       <ion-item lines="none" button @click="updateVarianceType(type)" v-for="type in rejectReasonEnumTypes" :key="type.enumTypeId">
-        {{ type.description }}
+        {{ type.enumTypeId }}
       </ion-item>
     </ion-list>
   </ion-content>

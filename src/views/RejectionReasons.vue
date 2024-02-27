@@ -23,7 +23,7 @@
 
               <div class="tablet">
                 <ion-chip outline @click="openVarianceTypeActionsPopover($event, reason)">
-                  <ion-label>{{ getReasonEnumType(reason.enumTypeId) }}</ion-label>
+                  <ion-label>{{ reason.enumTypeId }}</ion-label>
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </div>
@@ -151,10 +151,6 @@ export default defineComponent({
       })
 
       return varianceTypeActionsPopover.present();
-    },
-    getReasonEnumType(enumTypeId: any) {
-      const enumType = this.rejectReasonEnumTypes.find((enumType: any) => enumType.enumTypeId === enumTypeId)
-      return enumType?.description
     },
     findFilteredReasons() {
       this.filteredReasons = this.rejectReasons.filter((reason: any) => reason.description.toLowerCase().includes(this.queryString.toLowerCase()))
