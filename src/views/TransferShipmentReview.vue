@@ -6,7 +6,7 @@
           <ion-title>{{ translate("Review Shipment") }}</ion-title>
           
           <ion-buttons slot="end">
-            <ion-button  fill="clear"  @click="transferShipmentActionsPopover($event)">
+            <ion-button  fill="clear" v-if="!currentShipment.trackingCode && showLabelError" @click="transferShipmentActionsPopover($event)">
               <ion-icon :icon="documentTextOutline" />
             </ion-button>
           </ion-buttons>
@@ -156,7 +156,8 @@
         selectedSegment: 'open',
         isShipped: false,
         trackingCode: '',
-        shipmentItems: [] as any
+        shipmentItems: [] as any,
+        showLabelError: false
       }
     },
     computed: {
@@ -205,13 +206,16 @@
           //TODO: Currently doing force rate shop. Need to add support on easypost integration if we don't want it
           const resp = await OrderService.retryShippingLabel([currentShipment.shipmentId], true)
           if (!hasError(resp)) {
+            this.showLabelError = false;
             showToast(translate("Shipping Label generated successfully"))
             await OrderService.printShippingLabel([currentShipment.shipmentId])
             await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
           } else {
+            this.showLabelError = true;
             showToast(translate("Failed to generate shipping label"))
           }
         } else {
+          this.showLabelError = false;
           //print shipping label if label already exists
           await OrderService.printShippingLabel([currentShipment.shipmentId])
         }
