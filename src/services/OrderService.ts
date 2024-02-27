@@ -86,7 +86,7 @@ const fetchShipmentItems = async (orderId: string, shipmentId: string): Promise<
         params: {
           "entityName": "ShipmentItemDetail",
           inputFields,
-          "fieldList": ["shipmentId", "shipmentStatusId", "shipmentItemSeqId", "orderId", "orderItemSeqId", "productId", "productName", "internalName", "quantity", "orderedQuantity"],
+          "fieldList": ["shipmentId", "shipmentStatusId", "shipmentItemSeqId", "orderId", "orderItemSeqId", "productId", "quantity", "orderedQuantity"],
           "viewIndex": viewIndex,
           "viewSize": 250,
           "distinct": "Y"
