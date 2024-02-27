@@ -10,6 +10,9 @@ import Exim from "@/views/Exim.vue"
 import UploadImportOrders from "@/views/UploadImportOrders.vue"
 import DownloadPackedOrders from "@/views/DownloadPackedOrders.vue"
 import OrderDetail from "@/views/OrderDetail.vue"
+import TransferOrders from "@/views/TransferOrders.vue"
+import TransferOrderDetail from "@/views/TransferOrderDetail.vue"
+import TransferShipmentReview from "@/views/TransferShipmentReview.vue"
 import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
 import { translate } from '@hotwax/dxp-components'
@@ -75,6 +78,35 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     meta: {
       permissionId: "APP_COMPLETED_ORDERS_VIEW"
+    }
+  },
+  {
+    path: '/transfer-orders',
+    name: 'Transfer Orders',
+    component: TransferOrders,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_TRANSFER_ORDERS_VIEW"
+    }
+  },
+  {
+    path: '/transfer-order-details/:orderId',
+    name: 'TransferOrderDetail',
+    component: TransferOrderDetail,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_TRANSFER_ORDER_DETAIL_VIEW"
+    }
+  },
+  {
+    path: '/transfer-shipment-review/:shipmentId',
+    name: 'TransferShipmentReview',
+    component: TransferShipmentReview,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_TRANSFER_ORDER_DETAIL_VIEW"
     }
   },
   {
