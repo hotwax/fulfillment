@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>{{ translate("Rejection reasons") }}</ion-title>
+        <ion-title @click="saveReasonRouting()">{{ translate("Rejection reasons") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -77,6 +77,9 @@ import CreateRejectionReasonModal from '@/components/CreateRejectionReasonModal.
 import RejectReasonActionsPopver from '@/components/RejectReasonActionsPopver.vue';
 import VarianceTypeActionsPopover from '@/components/VarianceTypeActionsPopover.vue';
 import { mapGetters, useStore } from 'vuex';
+import { UtilService } from '@/services/UtilService';
+import logger from '@/logger';
+import { showToast } from '@/utils';
 
 export default defineComponent({
   name: 'RejectionReasons',
@@ -100,7 +103,8 @@ export default defineComponent({
   data() {
     return {
       queryString: '',
-      filteredReasons: []
+      filteredReasons: [],
+      hasUnsavedChanges: false
     }
   },
   computed: {
@@ -155,20 +159,14 @@ export default defineComponent({
     findFilteredReasons() {
       this.filteredReasons = this.rejectReasons.filter((reason: any) => reason.description.toLowerCase().includes(this.queryString.toLowerCase()))
     },
-    doReorder(event: CustomEvent) {
+    async doReorder(event: CustomEvent) {
       const previousSeq = JSON.parse(JSON.stringify(this.filteredReasons))
 
       // returns the updated sequence after reordering
       const updatedSeq = event.detail.complete(JSON.parse(JSON.stringify(this.filteredReasons)));
-      console.log('previousSeq', previousSeq);
-      console.log('previousSeq', updatedSeq);
-      
 
       let diffSeq = this.findRoutingsDiff(previousSeq, updatedSeq)
 
-      console.log("diff", diffSeq);
-      
-      
       const updatedSeqenceNum = previousSeq.map((routing: any) => routing.sequenceNum)
       Object.keys(diffSeq).map((key: any) => {
         diffSeq[key].sequenceNum = updatedSeqenceNum[key]
@@ -176,10 +174,22 @@ export default defineComponent({
 
       diffSeq = Object.keys(diffSeq).map((key) => diffSeq[key])
       this.filteredReasons = updatedSeq
-      
-      // this.filteredReasons = sortSequence(updatedSeq.concat(getArchivedOrderRoutings()))
-      // considering that when reordering there are some changes in the order of routes
-      // hasUnsavedChanges.value = true
+
+      this.hasUnsavedChanges = true
+
+      const toast = await showToast("Show Toast", 
+      { buttons: 
+        [
+          {
+            text: translate('Save'),
+            handler: () => {
+              this.saveReasonRouting()
+            }
+          },
+        ],
+        manualDismiss: true
+      }) as any
+      toast.present()
     },
     findRoutingsDiff(previousSeq: any, updatedSeq: any) {
       const diffSeq: any = Object.keys(previousSeq).reduce((diff, key) => {
@@ -190,6 +200,20 @@ export default defineComponent({
         }
       }, {})
       return diffSeq;
+    },
+    async saveReasonRouting() {
+      const diffReasons = this.filteredReasons.filter((reason: any) => this.rejectReasons.some((rejectReason: any) => rejectReason.enumId === reason.enumId && rejectReason.sequenceNum !== reason.sequenceNum))
+
+      const responses = await Promise.allSettled(diffReasons.map(async (reason: any) => {
+        await UtilService.updateEnumeration(reason)
+      }))
+
+      const failedResponsesCount = responses.filter((response) => response.status === 'rejected').length
+      if(failedResponsesCount) {
+        showToast(translate("Failed to update sequence for some rejection reasons."))
+      } else {
+        showToast(translate("Sequence for rejection reasons updated successfully."))
+      }
     }
   },
   setup() {
