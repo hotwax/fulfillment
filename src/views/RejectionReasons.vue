@@ -7,33 +7,38 @@
     </ion-header>
 
     <ion-content>
-      <ion-searchbar class="searchbar" :placeholder="translate('Search rejection reasons')" />
+      <ion-searchbar class="searchbar" v-model="queryString" @keyup.enter="findFilteredReasons()" :placeholder="translate('Search rejection reasons')" />
 
       <main>
-        <ion-reorder-group :disabled="false">
-          <div class="list-item" v-for="reason in rejectReasons" :key="reason.enumId">
-            <ion-item lines="none">
-              <ion-label class="ion-text-wrap">
-                <p class="overline">{{ reason.enumId }}</p>
-                {{ reason.enumName }}
-                <p>{{ reason.description }}</p>
-              </ion-label>
-            </ion-item>
-
-            <div class="tablet">
-              <ion-chip outline @click="openVarianceTypeActionsPopover($event, reason)">
-                <ion-label>{{ getReasonEnumType(reason.enumTypeId) }}</ion-label>
-                <ion-icon :icon="caretDownOutline" />
-              </ion-chip>
+        <div v-if="filteredReasons.length">
+          <ion-reorder-group :disabled="false">
+            <div class="list-item" v-for="reason in filteredReasons" :key="reason.enumId">
+              <ion-item lines="none">
+                <ion-label class="ion-text-wrap">
+                  <p class="overline">{{ reason.enumId }}</p>
+                  {{ reason.enumName }}
+                  <p>{{ reason.description }}</p>
+                </ion-label>
+              </ion-item>
+  
+              <div class="tablet">
+                <ion-chip outline @click="openVarianceTypeActionsPopover($event, reason)">
+                  <ion-label>{{ getReasonEnumType(reason.enumTypeId) }}</ion-label>
+                  <ion-icon :icon="caretDownOutline" />
+                </ion-chip>
+              </div>
+  
+              <ion-reorder />
+  
+              <ion-button fill="clear" color="medium" @click="openRejectionReasonActionsPopover($event, reason)">
+                <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+              </ion-button>
             </div>
-
-            <ion-reorder />
-
-            <ion-button fill="clear" color="medium" @click="openRejectionReasonActionsPopover($event, reason)">
-              <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-            </ion-button>
-          </div>
-        </ion-reorder-group>
+          </ion-reorder-group>
+        </div>
+        <div class="empty-state" v-else>
+          <p>{{ translate("No rejection reasons found.") }}</p>
+        </div>
       </main>
 
       <ion-fab @click="openCreateRejectionReasonModal()" vertical="bottom" horizontal="end" slot="fixed">
@@ -92,6 +97,12 @@ export default defineComponent({
     IonTitle,
     IonToolbar,
   },
+  data() {
+    return {
+      queryString: '',
+      filteredReasons: []
+    }
+  },
   computed: {
     ...mapGetters({
       rejectReasons: 'util/getRejectReasons',
@@ -101,6 +112,7 @@ export default defineComponent({
   async ionViewWillEnter() {
     await this.store.dispatch('util/fetchRejectReasons')
     await this.store.dispatch('util/fetchRejectReasonEnumTypes')
+    this.filteredReasons = this.rejectReasons ? JSON.parse(JSON.stringify(this.rejectReasons)) : []
   },
   methods: {
     async openCreateRejectionReasonModal() {
@@ -131,6 +143,9 @@ export default defineComponent({
     getReasonEnumType(enumTypeId: any) {
       const enumType = this.rejectReasonEnumTypes.find((enumType: any) => enumType.enumTypeId === enumTypeId)
       return enumType?.description
+    },
+    findFilteredReasons() {
+      this.filteredReasons = this.rejectReasons.filter((reason: any) => reason.description.toLowerCase().includes(this.queryString.toLowerCase()))
     }
   },
   setup() {
