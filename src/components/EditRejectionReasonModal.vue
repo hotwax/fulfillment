@@ -73,10 +73,7 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      postalAddress: 'facility/getPostalAddress',
-      countries: 'util/getCountries',
-      states: 'util/getStates',
-      telecomNumber: 'facility/getTelecomNumber'
+      rejectReasons: 'util/getRejectReasons',
     })
   },
   data() {
@@ -101,6 +98,13 @@ export default defineComponent({
 
         if(!hasError(resp)) {
           showToast("Rejection reason updated successfully.")
+          this.rejectReasons.map((reason: any) => {
+            if(reason.enumId === this.rejectionReason.enumId) {
+              reason.enumName = this.rejectionReason.enumName
+              reason.description = this.rejectionReason.description
+            }
+          })
+          await this.store.dispatch('util/updateRejectReasons', this.rejectReasons)
           modalController.dismiss()
         } else {
           throw resp.data;

@@ -30,6 +30,7 @@ import { UtilService } from "@/services/UtilService";
 import { hasError } from "@/adapter";
 import { showToast } from "@/utils";
 import logger from "@/logger";
+import { mapGetters, useStore } from "vuex";
 
 export default defineComponent({
   name: "RejectReasonActionsPopover",
@@ -40,6 +41,12 @@ export default defineComponent({
     IonListHeader
   },
   props: ["reason"],
+  computed: {
+    ...mapGetters({
+      rejectReasons: 'util/getRejectReasons',
+      rejectReasonEnumTypes: 'util/getRejectReasonEnumTypes',
+    })
+  },
   methods: {
     async openEditRejectionReasonModal() {
       const editRejectionReasonModal = await modalController.create({
@@ -61,6 +68,8 @@ export default defineComponent({
 
         if(!hasError(resp)) {
           showToast(translate("Rejection reason removed successfully."))
+          const updatedRejectReasons = this.rejectReasons.filter((rejectReason: any) => rejectReason.enumId !== this.reason.enumId)
+          await this.store.dispatch('util/updateRejectReasons', updatedRejectReasons)
         } else {
           throw resp.data
         }
@@ -72,7 +81,10 @@ export default defineComponent({
     }
   },
   setup() {
+    const store = useStore()
+
     return {
+      store,
       translate
     }
   },

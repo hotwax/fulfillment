@@ -66,6 +66,7 @@ import {
   IonItem,
   IonLabel,
   IonList,
+  IonNote,
   IonSelect,
   IonSelectOption,
   IonTitle,
@@ -76,7 +77,7 @@ import { defineComponent } from "vue";
 import { checkmarkDoneOutline, closeOutline } from "ionicons/icons";
 import { translate } from '@hotwax/dxp-components'
 import { generateInternalId, showToast } from "@/utils";
-import { mapGetters } from "vuex";
+import { mapGetters, useStore } from "vuex";
 import { UtilService } from "@/services/UtilService";
 import { hasError } from "@hotwax/oms-api";
 import logger from "@/logger";
@@ -95,6 +96,7 @@ export default defineComponent({
     IonItem,
     IonLabel,
     IonList,
+    IonNote,
     IonSelect,
     IonSelectOption,
     IonTitle,
@@ -107,11 +109,12 @@ export default defineComponent({
         enumId: "",
         enumName: "",
         enumTypeId: ""
-      }
+      } as any
     }
   },
   computed: {
     ...mapGetters({
+      rejectReasons: 'util/getRejectReasons',
       rejectReasonEnumTypes: 'util/getRejectReasonEnumTypes',
     })
   },
@@ -144,11 +147,16 @@ export default defineComponent({
         this.formData.enumId = generateInternalId(this.formData.enumName)
       }
 
+      const sequenceNum = this.rejectReasons[this.rejectReasons.length - 1].sequenceNum
+      this.formData['sequenceNum'] = sequenceNum ? sequenceNum + 5 : 5;
+
       try {
         const resp = await UtilService.createEnumeration(this.formData)
 
         if(!hasError(resp)) {
           showToast("Rejection reason created successfully.")
+          this.rejectReasons.push(this.formData)
+          await this.store.dispatch('util/updateRejectReasons', this.rejectReasons)
           modalController.dismiss()
         } else {
           throw resp.data
@@ -177,9 +185,12 @@ export default defineComponent({
     }
   },
   setup() {
+    const store = useStore();
+
     return {
       checkmarkDoneOutline,
       closeOutline,
+      store,
       translate
     };
   },

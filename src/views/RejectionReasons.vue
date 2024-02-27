@@ -11,7 +11,7 @@
 
       <main>
         <div v-if="filteredReasons.length">
-          <ion-reorder-group :disabled="false">
+          <ion-reorder-group @ionItemReorder="doReorder($event)" :disabled="false">
             <div class="list-item" v-for="reason in filteredReasons" :key="reason.enumId">
               <ion-item lines="none">
                 <ion-label class="ion-text-wrap">
@@ -20,7 +20,7 @@
                   <p>{{ reason.description }}</p>
                 </ion-label>
               </ion-item>
-  
+
               <div class="tablet">
                 <ion-chip outline @click="openVarianceTypeActionsPopover($event, reason)">
                   <ion-label>{{ getReasonEnumType(reason.enumTypeId) }}</ion-label>
@@ -120,6 +120,10 @@ export default defineComponent({
         component: CreateRejectionReasonModal
       });
 
+      createRejectionReasonModal.onDidDismiss().then(() => {
+        this.findFilteredReasons()
+      })
+
       createRejectionReasonModal.present()
     },
     async openRejectionReasonActionsPopover(event: Event, reason: any) {
@@ -128,6 +132,10 @@ export default defineComponent({
         componentProps: { reason },
         event
       });
+
+      popover.onDidDismiss().then(() => {
+        this.findFilteredReasons()
+      })
 
       return popover.present();
     },
@@ -138,6 +146,10 @@ export default defineComponent({
         event
       });
 
+      varianceTypeActionsPopover.onDidDismiss().then(() => {
+        this.findFilteredReasons()
+      })
+
       return varianceTypeActionsPopover.present();
     },
     getReasonEnumType(enumTypeId: any) {
@@ -146,6 +158,42 @@ export default defineComponent({
     },
     findFilteredReasons() {
       this.filteredReasons = this.rejectReasons.filter((reason: any) => reason.description.toLowerCase().includes(this.queryString.toLowerCase()))
+    },
+    doReorder(event: CustomEvent) {
+      const previousSeq = JSON.parse(JSON.stringify(this.filteredReasons))
+
+      // returns the updated sequence after reordering
+      const updatedSeq = event.detail.complete(JSON.parse(JSON.stringify(this.filteredReasons)));
+      console.log('previousSeq', previousSeq);
+      console.log('previousSeq', updatedSeq);
+      
+
+      let diffSeq = this.findRoutingsDiff(previousSeq, updatedSeq)
+
+      console.log("diff", diffSeq);
+      
+      
+      const updatedSeqenceNum = previousSeq.map((routing: any) => routing.sequenceNum)
+      Object.keys(diffSeq).map((key: any) => {
+        diffSeq[key].sequenceNum = updatedSeqenceNum[key]
+      })
+
+      diffSeq = Object.keys(diffSeq).map((key) => diffSeq[key])
+      this.filteredReasons = updatedSeq
+      
+      // this.filteredReasons = sortSequence(updatedSeq.concat(getArchivedOrderRoutings()))
+      // considering that when reordering there are some changes in the order of routes
+      // hasUnsavedChanges.value = true
+    },
+    findRoutingsDiff(previousSeq: any, updatedSeq: any) {
+      const diffSeq: any = Object.keys(previousSeq).reduce((diff, key) => {
+        if (updatedSeq[key].orderRoutingId === previousSeq[key].orderRoutingId && updatedSeq[key].statusId === previousSeq[key].statusId && updatedSeq[key].sequenceNum === previousSeq[key].sequenceNum) return diff
+        return {
+          ...diff,
+          [key]: updatedSeq[key]
+        }
+      }, {})
+      return diffSeq;
     }
   },
   setup() {

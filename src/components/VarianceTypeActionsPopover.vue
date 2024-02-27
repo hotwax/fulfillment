@@ -21,7 +21,7 @@ import {
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { translate } from '@hotwax/dxp-components'
-import { mapGetters } from "vuex";
+import { mapGetters, useStore } from "vuex";
 import { UtilService } from "@/services/UtilService";
 import logger from "@/logger";
 import { hasError } from "@/adapter";
@@ -37,6 +37,7 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
+      rejectReasons: 'util/getRejectReasons',
       rejectReasonEnumTypes: 'util/getRejectReasonEnumTypes'
     })
   },
@@ -52,6 +53,12 @@ export default defineComponent({
 
         if(!hasError(resp)) {
           showToast(translate("Variance type updated successfully."))
+          this.rejectReasons.map((reason: any) => {
+            if(reason.enumId === this.reason.enumId) {
+              reason.enumTypeId = selectedType.enumTypeId
+            }
+          })
+          await this.store.dispatch('util/updateRejectReasons', this.rejectReasons)
         } else {
           throw resp.data;
         }
@@ -63,7 +70,10 @@ export default defineComponent({
     } 
   },
   setup() {
+    const store = useStore()
+
     return {
+      store,
       translate
     }
   },

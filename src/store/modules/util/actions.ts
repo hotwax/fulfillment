@@ -18,7 +18,8 @@ const actions: ActionTree<UtilState, RootState> = {
         // "fieldList": ["enumId", "description"],
         "distinct": "Y",
         "entityName": "EnumTypeChildAndEnum",
-        "viewSize": 20 // keeping view size 20 as considering that we will have max 20 reasons
+        "viewSize": 20, // keeping view size 20 as considering that we will have max 20 reasons
+        "orderBy": "sequenceNum"
       }
 
       const resp = await UtilService.fetchRejectReasons(payload)
@@ -343,6 +344,10 @@ const actions: ActionTree<UtilState, RootState> = {
     }
     commit(types.UTIL_REJECT_REASON_ENUM_TYPES_UPDATED, rejectReasonEnumTypes)
   },
+
+  async updateRejectReasons({ commit }, payload) {
+    commit(types.UTIL_REJECT_REASONS_UPDATED, payload)
+  }
 
 }
 
