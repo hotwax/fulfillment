@@ -120,7 +120,7 @@
           <ion-buttons slot="end">
             <ion-button  color="primary" fill="solid" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment()" @click="confirmCreateShipment">
               <ion-spinner v-if="isCreatingShipment" slot="start" name="crescent" />
-              {{ translate('Create Shipment') }}   
+              {{ translate('Create shipment') }}   
             </ion-button>
           </ion-buttons>
         </ion-toolbar>

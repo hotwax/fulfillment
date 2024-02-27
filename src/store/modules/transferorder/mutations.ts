@@ -31,6 +31,9 @@ const mutations: MutationTree <TransferOrderState> = {
   },
   [types.ORDER_CURRENT_SHIPMENT_CLEARED](state) {
     state.shipment.current = {}
+  },
+  [types.ORDER_CURRENT_CLEARED](state) {
+    state.current = {}
   }
 }
 export default mutations;
