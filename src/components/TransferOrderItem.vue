@@ -105,7 +105,7 @@ export default defineComponent({
   },
   methods: {
     getPickedToOrderedFraction(item: any) {
-      return (item.pickedQuantity + this.getShippedQuantity(item)) / item.orderedQuantity;
+      return (parseInt(item.pickedQuantity) + this.getShippedQuantity(item)) / item.orderedQuantity;
     },
     getShippedQuantity(item: any) {
       return this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] ? this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] : 0;

@@ -16,12 +16,12 @@
       <ion-content>
         <main>
           <div class="scanner">
-            <ion-searchbar class="better-name-here"/>
+            <ion-searchbar class="better-name-here" :value="queryString" @keyup.enter="searchItems($event.target.value)"/>
             <div>
               <ion-item>
                 <ion-label>{{ currentShipment.totalQuantityPicked }} {{ translate("items picked") }}</ion-label>
                 <ion-button expand="block" fill="outline" @click="generateShippingLabel(currentShipment)">
-                  <ion-icon slot="start" :icon="documentTextOutline" />{{ translate("Generate shipping label") }}
+                  <ion-icon slot="start" :icon="documentTextOutline" />{{ currentShipment.trackingCode ? translate("Regenerate Shipping Label") : translate("Generate shipping label") }}
                   <ion-spinner color="primary" slot="start" v-if="currentShipment.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
               </ion-item>
@@ -39,7 +39,7 @@
             </div>
           </div>
 
-          <TransferOrderItem v-for="item in currentShipment.items" :key="item.orderItemSeqId" :itemDetail="item" />
+          <TransferOrderItem v-for="item in shipmentItems" :key="item.shipmentItemSeqId" :itemDetail="item" />
         </main>
   
         <ion-fab vertical="bottom" horizontal="end" slot="fixed">
@@ -113,6 +113,7 @@
     async ionViewWillEnter() {
       await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
       this.trackingCode = this.currentShipment?.trackingCode;
+      this.shipmentItems = this.currentShipment.items;
     },
     async beforeRouteLeave(to) {
       if (to.path !== `/transfer-order-details/${this.currentShipment.primaryOrderId}`) return;
@@ -143,16 +144,19 @@
       if (!this.isShipped) {
         alert.present();
         await alert.onDidDismiss();
+        await this.store.dispatch('transferorder/updateCurrentTransferOrder', {});
         return canLeave;
+      } else {
+        await this.store.dispatch('transferorder/updateCurrentTransferOrder', {});
       }
-      
     },
     data() {
       return {
         queryString: '',
         selectedSegment: 'open',
         isShipped: false,
-        trackingCode: ''
+        trackingCode: '',
+        shipmentItems: [] as any
       }
     },
     computed: {
@@ -166,6 +170,20 @@
       }),
     },
     methods: {
+      searchItems(queryString: string) {
+        if (queryString) {
+          const lowerCaseQueryString = queryString.trim().toLowerCase();
+          this.shipmentItems = this.currentShipment.items.filter((item: any) =>
+                Object.values(item).some((value: any) =>
+                    typeof value === 'string' && value.toLowerCase().includes(queryString)
+                ) || (item.productId && item.productId.toLowerCase().includes(lowerCaseQueryString)) ||
+                (item.productName && item.productName.toLowerCase().includes(lowerCaseQueryString)) ||
+                (item.internalName && item.internalName.toLowerCase().includes(lowerCaseQueryString))
+            );
+        } else {
+          this.shipmentItems = this.currentShipment.items;
+        }
+      },
       async generateShippingLabel(currentShipment: any) {
         
         // If there are no product store shipment method configured, then not generating the label and displaying an error toast

@@ -173,16 +173,6 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   async fetchTransferShipmentDetail ({ commit }, payload) {
     let resp;
     try {
-      const params = {
-        "entityName": "ShipmentItemDetail",
-        "inputFields": {
-          "shipmentId": payload.shipmentId,
-        },
-        "fieldList": ["shipmentId", "shipmentStatusId", "shipmentItemSeqId", "orderId", "orderItemSeqId", "productId", "quantity", "orderedQuantity"],
-        "viewSize": 250,
-        "distinct": "Y"
-      }
-    
       const shipmentItems = await OrderService.fetchShipmentItems('', payload.shipmentId);
         
       if (shipmentItems?.length > 0) {
@@ -224,17 +214,8 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   async fetchOrderShipments ({ commit, state }, payload) {
     let resp;
     let shipments = [];
-    try {
-      const params = {
-        "entityName": "ShipmentItemDetail",
-        "inputFields": {
-          "orderId": payload.orderId,
-        },
-        "fieldList": ["shipmentId", "shipmentStatusId", "shipmentItemSeqId", "orderId", "orderItemSeqId", "productId", "quantity", "orderedQuantity"],
-        "viewSize": 250,
-        "distinct": "Y"
-      } as any;
     
+    try {
       const shipmentItems  = await OrderService.fetchShipmentItems(payload.orderId, '');
       if (shipmentItems?.length > 0) {
         shipments = Object.values(shipmentItems.reduce((shipmentInfo:any, currentItem:any) => {
@@ -279,9 +260,10 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   },
 
   async updateOrderProductCount({ commit, state }, payload ) {
+    
     state.current.items.find((item: any) => {
       if (item.internalName === payload) {
-        item.pickedQuantity = item.pickedQuantity + 1;
+        item.pickedQuantity = parseInt(item.pickedQuantity) + 1;
       }
     });
     commit(types.ORDER_CURRENT_UPDATED, state.current )
