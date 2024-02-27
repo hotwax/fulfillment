@@ -4,7 +4,7 @@
       <ion-list-header>
         {{ translate("Variance type") }}
       </ion-list-header>
-      <ion-item lines="none" button v-for="type in rejectReasonEnumTypes" :key="type.enumTypeId">
+      <ion-item lines="none" button @click="updateVarianceType(type)" v-for="type in rejectReasonEnumTypes" :key="type.enumTypeId">
         {{ type.description }}
       </ion-item>
     </ion-list>
@@ -17,13 +17,18 @@ import {
   IonItem,
   IonList,
   IonListHeader,
+  popoverController
 } from "@ionic/vue";
-import { computed, defineComponent } from "vue";
+import { defineComponent } from "vue";
 import { translate } from '@hotwax/dxp-components'
 import { mapGetters } from "vuex";
+import { UtilService } from "@/services/UtilService";
+import logger from "@/logger";
+import { hasError } from "@/adapter";
+import { showToast } from "@/utils";
 
 export default defineComponent({
-  name: "RejectReasonActionsPopover",
+  name: "VarianceTypeActionsPopover",
   components: {
     IonContent,
     IonItem,
@@ -34,6 +39,28 @@ export default defineComponent({
     ...mapGetters({
       rejectReasonEnumTypes: 'util/getRejectReasonEnumTypes'
     })
+  },
+  props: ["reason"],
+  methods: {
+    async updateVarianceType(selectedType: any) {
+      try {
+        const resp = await UtilService.updateEnumeration({
+          description: this.reason.description,
+          enumId: this.reason.enumId,
+          enumTypeId: selectedType.enumTypeId
+        })
+
+        if(!hasError(resp)) {
+          showToast(translate("Variance type updated successfully."))
+        } else {
+          throw resp.data;
+        }
+      } catch(err) {
+        showToast(translate("Failed to update variance type."))
+        logger.error(err)
+      }
+      popoverController.dismiss()
+    } 
   },
   setup() {
     return {

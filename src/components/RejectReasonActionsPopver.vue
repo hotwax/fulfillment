@@ -2,12 +2,12 @@
   <ion-content>
     <ion-list>
       <ion-list-header>
-        {{ "<enumName>" }}
+        {{ reason.description }}
       </ion-list-header>
-      <ion-item button>
+      <ion-item button @click="openEditRejectionReasonModal()">
         {{ translate("Edit name and description") }}
       </ion-item>
-      <ion-item button lines="none">
+      <ion-item button lines="none" @click="removeRejectionReason()">
         {{ translate("Remove reason") }}
       </ion-item>
     </ion-list>
@@ -20,9 +20,17 @@ import {
   IonItem,
   IonList,
   IonListHeader,
+  modalController,
+  popoverController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { translate } from '@hotwax/dxp-components'
+import EditRejectionReasonModal from "@/components/EditRejectionReasonModal.vue";
+import { UtilService } from "@/services/UtilService";
+import { hasError } from "@/adapter";
+import { showToast } from "@/utils";
+import logger from "@/logger";
+
 export default defineComponent({
   name: "RejectReasonActionsPopover",
   components: {
@@ -30,6 +38,38 @@ export default defineComponent({
     IonItem,
     IonList,
     IonListHeader
+  },
+  props: ["reason"],
+  methods: {
+    async openEditRejectionReasonModal() {
+      const editRejectionReasonModal = await modalController.create({
+        component: EditRejectionReasonModal,
+        componentProps: { reason: this.reason }
+      })
+
+      editRejectionReasonModal.onDidDismiss().then(() => {
+        popoverController.dismiss()
+      })
+
+      editRejectionReasonModal.present()
+    },
+    async removeRejectionReason() {
+      try{
+        const resp = await UtilService.deleteEnumeration({
+          enumId: this.reason.enumId
+        })
+
+        if(!hasError(resp)) {
+          showToast(translate("Rejection reason removed successfully."))
+        } else {
+          throw resp.data
+        }
+      } catch(err) {
+        showToast(translate("Failed to remove rejection reason."))
+        logger.error(err)
+      }
+      popoverController.dismiss()
+    }
   },
   setup() {
     return {

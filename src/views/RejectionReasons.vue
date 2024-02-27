@@ -29,7 +29,7 @@
 
             <ion-reorder />
 
-            <ion-button fill="clear" color="medium" @click="openRejectionReasonActionsPopover">
+            <ion-button fill="clear" color="medium" @click="openRejectionReasonActionsPopover($event, reason)">
               <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
             </ion-button>
           </div>
@@ -110,9 +110,10 @@ export default defineComponent({
 
       createRejectionReasonModal.present()
     },
-    async openRejectionReasonActionsPopover(event: Event) {
+    async openRejectionReasonActionsPopover(event: Event, reason: any) {
       const popover = await popoverController.create({
         component: RejectReasonActionsPopver,
+        componentProps: { reason },
         event
       });
 
@@ -121,7 +122,7 @@ export default defineComponent({
     async openVarianceTypeActionsPopover(event: Event, reason: any) {
       const varianceTypeActionsPopover = await popoverController.create({
         component: VarianceTypeActionsPopover,
-        componentProps: { selectedReason:  reason },
+        componentProps: { reason },
         event
       });
 

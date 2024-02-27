@@ -355,7 +355,23 @@ const fetchRejectReasonEnumTypes = async (query: any): Promise<any> => {
 
 const createEnumeration = async (payload: any): Promise<any> => {
   return api({
-    url: "/service/resetPicker",
+    url: "/service/createEnumeration",
+    method: "post",
+    data: payload
+  })
+}
+
+const updateEnumeration = async (payload: any): Promise<any> => {
+  return api({
+    url: "/service/updateEnumeration",
+    method: "post",
+    data: payload
+  })
+}
+
+const deleteEnumeration = async (payload: any): Promise<any> => {
+  return api({
+    url: "/service/deleteEnumeration",
     method: "post",
     data: payload
   })
@@ -384,5 +400,7 @@ export const UtilService = {
   findShipmentItemInformation,
   findShipmentPackages,
   getAvailablePickers,
-  resetPicker
+  resetPicker,
+  deleteEnumeration,
+  updateEnumeration
 }
