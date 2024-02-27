@@ -136,7 +136,10 @@ const routes: Array<RouteRecordRaw> = [
     path: "/rejection-reasons",
     name: "RejectionReasons",
     component: RejectionReasons,
-    beforeEnter: authGuard
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_REJECTION_REASONS_VIEW"
+    }
   }
 ]
 
