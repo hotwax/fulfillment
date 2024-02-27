@@ -15,7 +15,7 @@ const actions: ActionTree<UtilState, RootState> = {
           "parentEnumTypeId": ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
           "parentEnumTypeId_op": "in"
         },
-        "fieldList": ["enumId", "description"],
+        // "fieldList": ["enumId", "description"],
         "distinct": "Y",
         "entityName": "EnumTypeChildAndEnum",
         "viewSize": 20 // keeping view size 20 as considering that we will have max 20 reasons
@@ -317,6 +317,33 @@ const actions: ActionTree<UtilState, RootState> = {
 
     commit(types.UTIL_PRODUCT_STORE_SHIPMENT_METH_COUNT_UPDATED, productStoreShipmentMethCount)
   },
+  
+  async fetchRejectReasonEnumTypes({ commit }) {
+    let rejectReasonEnumTypes = [] as any;
+
+    try {
+      const payload = {
+        "inputFields": {
+          "parentTypeId": ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
+          "parentTypeId_op": "in"
+        },
+        "fieldList": ["description", "enumTypeId"],
+        "entityName": "EnumerationType",
+        "noConditionFind": "Y"
+      }
+
+      const resp = await UtilService.fetchRejectReasonEnumTypes(payload)
+      if (!hasError(resp) && resp.data.count > 0) {
+        rejectReasonEnumTypes = resp.data.docs
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error(err)
+    }
+    commit(types.UTIL_REJECT_REASON_ENUM_TYPES_UPDATED, rejectReasonEnumTypes)
+  },
+
 }
 
 export default actions;

@@ -137,4 +137,9 @@ const formatPhoneNumber = (countryCode: string | null, areaCode: string | null, 
   }
 }
 
-export { copyToClipboard, formatDate, formatPhoneNumber, formatUtcDate, getFeature, getIdentificationId, handleDateTimeInput, showToast, hasError, parseCsv, jsonToCsv}
+
+const generateInternalId = (name: string) => {
+  return name.trim().toUpperCase().split(' ').join('_');
+}
+
+export { copyToClipboard, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getFeature, getIdentificationId, handleDateTimeInput, showToast, hasError, parseCsv, jsonToCsv}

@@ -344,13 +344,32 @@ const findProductStoreShipmentMethCount = async (query: any): Promise<any> => {
   });
 }
 
+const fetchRejectReasonEnumTypes = async (query: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query,
+    cache: true
+  })
+}
+
+const createEnumeration = async (payload: any): Promise<any> => {
+  return api({
+    url: "/service/resetPicker",
+    method: "post",
+    data: payload
+  })
+}
+
 export const UtilService = {
   createPicklist,
+  createEnumeration,
   fetchCarrierPartyIds,
   fetchDefaultShipmentBox,
   fetchFacilityTypeInformation,
   fetchPartyInformation,
   fetchPicklistInformation,
+  fetchRejectReasonEnumTypes,
   fetchRejectReasons,
   fetchShipmentBoxTypeDesc,
   fetchShipmentMethods,

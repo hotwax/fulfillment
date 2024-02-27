@@ -26,6 +26,9 @@ const mutations: MutationTree <UtilState> = {
   },
   [types.UTIL_PRODUCT_STORE_SHIPMENT_METH_COUNT_UPDATED] (state, payload) {
     state.productStoreShipmentMethCount = payload
-  }
+  }, 
+  [types.UTIL_REJECT_REASON_ENUM_TYPES_UPDATED](state, payload) {
+    state.rejectReasonEnumTypes = payload
+  },
 }
 export default mutations;

@@ -11,48 +11,25 @@
 
       <main>
         <ion-reorder-group :disabled="false">
-          <div class="list-item">
+          <div class="list-item" v-for="reason in rejectReasons" :key="reason.enumId">
             <ion-item lines="none">
               <ion-label class="ion-text-wrap">
-                <p class="overline">{{ "REJ ENUM ID" }}</p>
-                {{ "Rejection enum name" }}
-                <p>{{ "Rejection enum desc" }}</p>
+                <p class="overline">{{ reason.enumId }}</p>
+                {{ reason.enumName }}
+                <p>{{ reason.description }}</p>
               </ion-label>
             </ion-item>
 
             <div class="tablet">
-              <ion-chip outline @click="openVarianceTypeActionsPopover">
-                <ion-label>{{ "<enumType>" }}</ion-label>
+              <ion-chip outline @click="openVarianceTypeActionsPopover($event, reason)">
+                <ion-label>{{ getReasonEnumType(reason.enumTypeId) }}</ion-label>
                 <ion-icon :icon="caretDownOutline" />
               </ion-chip>
             </div>
 
             <ion-reorder />
 
-            <ion-button fill="clear" color="medium">
-              <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-            </ion-button>
-          </div>
-
-          <div class="list-item">
-            <ion-item lines="none">
-              <ion-label class="ion-text-wrap">
-                <p class="overline">{{ "REJ ENUM ID" }}</p>
-                {{ "Rejection enum name" }}
-                <p>{{ "Rejection enum desc" }}</p>
-              </ion-label>
-            </ion-item>
-
-            <div class="tablet">
-              <ion-chip outline @click="openVarianceTypeActionsPopover">
-                <ion-label>{{ "<enumType>" }}</ion-label>
-                <ion-icon :icon="caretDownOutline" />
-              </ion-chip>
-            </div>
-
-            <ion-reorder />
-
-            <ion-button @click="openRejectionReasonActionsPopover" fill="clear" color="medium">
+            <ion-button fill="clear" color="medium" @click="openRejectionReasonActionsPopover">
               <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
             </ion-button>
           </div>
@@ -94,6 +71,7 @@ import { translate } from '@hotwax/dxp-components';
 import CreateRejectionReasonModal from '@/components/CreateRejectionReasonModal.vue';
 import RejectReasonActionsPopver from '@/components/RejectReasonActionsPopver.vue';
 import VarianceTypeActionsPopover from '@/components/VarianceTypeActionsPopover.vue';
+import { mapGetters, useStore } from 'vuex';
 
 export default defineComponent({
   name: 'RejectionReasons',
@@ -114,6 +92,16 @@ export default defineComponent({
     IonTitle,
     IonToolbar,
   },
+  computed: {
+    ...mapGetters({
+      rejectReasons: 'util/getRejectReasons',
+      rejectReasonEnumTypes: 'util/getRejectReasonEnumTypes',
+    })
+  },
+  async ionViewWillEnter() {
+    await this.store.dispatch('util/fetchRejectReasons')
+    await this.store.dispatch('util/fetchRejectReasonEnumTypes')
+  },
   methods: {
     async openCreateRejectionReasonModal() {
       const createRejectionReasonModal = await modalController.create({
@@ -130,20 +118,28 @@ export default defineComponent({
 
       return popover.present();
     },
-    async openVarianceTypeActionsPopover(event: Event) {
+    async openVarianceTypeActionsPopover(event: Event, reason: any) {
       const varianceTypeActionsPopover = await popoverController.create({
         component: VarianceTypeActionsPopover,
+        componentProps: { selectedReason:  reason },
         event
       });
 
       return varianceTypeActionsPopover.present();
     },
+    getReasonEnumType(enumTypeId: any) {
+      const enumType = this.rejectReasonEnumTypes.find((enumType: any) => enumType.enumTypeId === enumTypeId)
+      return enumType?.description
+    }
   },
   setup() {
+    const store = useStore()
+
     return {
       addOutline,
       caretDownOutline,
       ellipsisVerticalOutline,
+      store,
       translate,
     }
   }

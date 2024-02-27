@@ -15,7 +15,8 @@ const utilModule: Module<UtilState, RootState> = {
     facilityTypeDesc: {},
     paymentMethodTypeDesc: {},
     statusDesc: {},
-    productStoreShipmentMethCount: 0
+    productStoreShipmentMethCount: 0,
+    rejectReasonEnumTypes: []
   },
   getters,
   actions,

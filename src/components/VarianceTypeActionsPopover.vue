@@ -4,14 +4,8 @@
       <ion-list-header>
         {{ translate("Variance type") }}
       </ion-list-header>
-      <ion-item button>
-        {{ translate("No variance") }}
-      </ion-item>
-      <ion-item button>
-        {{ translate("Single variance") }}
-      </ion-item>
-      <ion-item button lines="none">
-        {{ translate("All variance") }}
+      <ion-item lines="none" button v-for="type in rejectReasonEnumTypes" :key="type.enumTypeId">
+        {{ type.description }}
       </ion-item>
     </ion-list>
   </ion-content>
@@ -24,8 +18,10 @@ import {
   IonList,
   IonListHeader,
 } from "@ionic/vue";
-import { defineComponent } from "vue";
+import { computed, defineComponent } from "vue";
 import { translate } from '@hotwax/dxp-components'
+import { mapGetters } from "vuex";
+
 export default defineComponent({
   name: "RejectReasonActionsPopover",
   components: {
@@ -33,6 +29,11 @@ export default defineComponent({
     IonItem,
     IonList,
     IonListHeader
+  },
+  computed: {
+    ...mapGetters({
+      rejectReasonEnumTypes: 'util/getRejectReasonEnumTypes'
+    })
   },
   setup() {
     return {
