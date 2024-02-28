@@ -46,7 +46,7 @@ import {
 } from "@ionic/vue";
 import { computed, defineComponent } from "vue";
 import { mapGetters } from "vuex";
-import { mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline } from "ionicons/icons";
+import { arrowBackOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline } from "ionicons/icons";
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 import { hasPermission } from "@/authorization";
@@ -114,6 +114,16 @@ export default defineComponent({
         }
       },
       {
+        title: "Transfer Orders",
+        url: "/transfer-orders",
+        iosIcon: arrowBackOutline,
+        mdIcon: arrowBackOutline,
+        childRoutes: ["/transfer-order-details", "/transfer-shipment-review"],
+        meta: {
+          permissionId: "APP_TRANSFER_ORDERS_VIEW"
+        }
+      },
+      {
         title: "EXIM",
         url: "/exim",
         iosIcon: swapVerticalOutline,
@@ -148,6 +158,7 @@ export default defineComponent({
       appPages,
       checkmarkDoneOutline,
       hasPermission,
+      arrowBackOutline,
       mailUnreadOutline,
       mailOpenOutline,
       selectedIndex,

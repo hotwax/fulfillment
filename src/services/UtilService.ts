@@ -10,6 +10,14 @@ const fetchShipmentMethods = async (query: any): Promise <any>  => {
   });
 }
 
+const fetchTransferOrderFacets = async (query: any): Promise <any>  => {
+  return api({
+    url: "solr-query", 
+    method: "post",
+    data: query
+  });
+}
+
 const fetchPicklistInformation = async (query: any): Promise <any>  => {
   return api({
     url: "performFind",
@@ -399,6 +407,7 @@ export const UtilService = {
   findShipmentIdsForOrders,
   findShipmentItemInformation,
   findShipmentPackages,
+  fetchTransferOrderFacets,
   getAvailablePickers,
   resetPicker,
   deleteEnumeration,
