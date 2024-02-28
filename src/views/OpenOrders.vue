@@ -20,7 +20,7 @@
     </ion-header>
     
     <ion-content id="view-size-selector">
-      <ion-searchbar class="better-name-here" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)"/>
+      <ion-searchbar class="searchbar" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="openOrders.total">
         <div class="filters">
           <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">

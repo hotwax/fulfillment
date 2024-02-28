@@ -402,7 +402,7 @@ img {
 
 @media (min-width: 991px) {
   /* shipment card desktop layout start */
-  ion-searchbar.better-name-here {
+  ion-searchbar.searchbar {
     padding-top: var(--spacer-base);
     padding-inline: var(--spacer-sm)
   }
