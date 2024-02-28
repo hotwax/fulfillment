@@ -18,7 +18,7 @@
       </ion-item>
       <ion-item>
         <ion-label>{{ translate("Description") }}</ion-label>
-        <ion-input v-model="rejectionReason.description" />
+        <ion-textarea v-model="rejectionReason.description" />
       </ion-item>
     </form>
   </ion-content>

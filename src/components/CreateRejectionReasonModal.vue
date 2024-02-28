@@ -79,7 +79,7 @@ import { translate } from '@hotwax/dxp-components'
 import { generateInternalId, showToast } from "@/utils";
 import { mapGetters, useStore } from "vuex";
 import { UtilService } from "@/services/UtilService";
-import { hasError } from "@hotwax/oms-api";
+import { hasError } from "@/adapter";
 import logger from "@/logger";
 
 export default defineComponent({

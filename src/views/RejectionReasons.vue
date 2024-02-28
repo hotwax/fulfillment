@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title @click="saveReasonRouting()">{{ translate("Rejection reasons") }}</ion-title>
+        <ion-title @click="saveReasonsOrder()">{{ translate("Rejection reasons") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -103,8 +103,7 @@ export default defineComponent({
   data() {
     return {
       queryString: '',
-      filteredReasons: [],
-      hasUnsavedChanges: false
+      filteredReasons: []
     }
   },
   computed: {
@@ -165,7 +164,7 @@ export default defineComponent({
       // returns the updated sequence after reordering
       const updatedSeq = event.detail.complete(JSON.parse(JSON.stringify(this.filteredReasons)));
 
-      let diffSeq = this.findRoutingsDiff(previousSeq, updatedSeq)
+      let diffSeq = this.findReasonsDiff(previousSeq, updatedSeq)
 
       const updatedSeqenceNum = previousSeq.map((routing: any) => routing.sequenceNum)
       Object.keys(diffSeq).map((key: any) => {
@@ -175,23 +174,25 @@ export default defineComponent({
       diffSeq = Object.keys(diffSeq).map((key) => diffSeq[key])
       this.filteredReasons = updatedSeq
 
-      this.hasUnsavedChanges = true
+      if(diffSeq.length) {
+        const toast = await showToast("Rejection reasons order has been change. Click save button to update them.", 
+        { buttons:
+          [
+            {
+              text: translate('Save'),
+              handler: () => {
+                this.saveReasonsOrder()
+              }
+            },
+          ],
+          manualDismiss: true
+        }) as any
 
-      const toast = await showToast("Show Toast", 
-      { buttons: 
-        [
-          {
-            text: translate('Save'),
-            handler: () => {
-              this.saveReasonRouting()
-            }
-          },
-        ],
-        manualDismiss: true
-      }) as any
-      toast.present()
+        toast.present()
+      }
+
     },
-    findRoutingsDiff(previousSeq: any, updatedSeq: any) {
+    findReasonsDiff(previousSeq: any, updatedSeq: any) {
       const diffSeq: any = Object.keys(previousSeq).reduce((diff, key) => {
         if (updatedSeq[key].orderRoutingId === previousSeq[key].orderRoutingId && updatedSeq[key].statusId === previousSeq[key].statusId && updatedSeq[key].sequenceNum === previousSeq[key].sequenceNum) return diff
         return {
@@ -201,7 +202,7 @@ export default defineComponent({
       }, {})
       return diffSeq;
     },
-    async saveReasonRouting() {
+    async saveReasonsOrder() {
       const diffReasons = this.filteredReasons.filter((reason: any) => this.rejectReasons.some((rejectReason: any) => rejectReason.enumId === reason.enumId && rejectReason.sequenceNum !== reason.sequenceNum))
 
       const responses = await Promise.allSettled(diffReasons.map(async (reason: any) => {

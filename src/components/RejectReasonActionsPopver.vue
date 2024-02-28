@@ -61,7 +61,7 @@ export default defineComponent({
       editRejectionReasonModal.present()
     },
     async removeRejectionReason() {
-      try{
+      try {
         const resp = await UtilService.deleteEnumeration({
           enumId: this.reason.enumId
         })
