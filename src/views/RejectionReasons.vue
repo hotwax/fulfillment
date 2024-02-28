@@ -133,6 +133,7 @@ export default defineComponent({
       const popover = await popoverController.create({
         component: RejectReasonActionsPopver,
         componentProps: { reason },
+        showBackdrop: false,
         event
       });
 
@@ -146,6 +147,7 @@ export default defineComponent({
       const varianceTypeActionsPopover = await popoverController.create({
         component: VarianceTypeActionsPopover,
         componentProps: { reason },
+        showBackdrop: false,
         event
       });
 
