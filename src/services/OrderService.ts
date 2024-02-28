@@ -511,6 +511,20 @@ const printShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
   }
 }
 
+const printCustomDocuments = async (internationalInvoiceUrls: Array<string>): Promise<any> => {
+  try {
+    internationalInvoiceUrls.forEach((url: string) => {
+      try {
+        (window as any).open(url, "_blank").focus();
+      } catch {
+        showToast(translate('Unable to open as the browser is blocking pop-ups.', { documentName: 'custom document' }), { icon: cogOutline });
+      }
+    });
+  } catch (err) {
+    showToast(translate('Failed to print custom document'));
+    logger.error("Failed to load custom document", err);
+  }
+}
 
 const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
   try {
@@ -781,6 +795,7 @@ export const OrderService = {
   findOrderShipGroup,
   packOrder,
   packOrders,
+  printCustomDocuments,
   printPackingSlip,
   printPicklist,
   printShippingLabel,
