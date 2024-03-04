@@ -57,7 +57,7 @@ import { hasError } from "@/adapter";
 import { showToast } from "@/utils";
 
 export default defineComponent({
-  name: "FacilityAddressModal",
+  name: "EditRejectionReasonModal",
   components: {
     IonButton,
     IonButtons,

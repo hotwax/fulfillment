@@ -168,7 +168,7 @@ export default defineComponent({
 
       let diffSeq = this.findReasonsDiff(previousSeq, updatedSeq)
 
-      const updatedSeqenceNum = previousSeq.map((routing: any) => routing.sequenceNum)
+      const updatedSeqenceNum = previousSeq.map((rejectionReason: any) => rejectionReason.sequenceNum)
       Object.keys(diffSeq).map((key: any) => {
         diffSeq[key].sequenceNum = updatedSeqenceNum[key]
       })
@@ -192,11 +192,10 @@ export default defineComponent({
 
         toast.present()
       }
-
     },
     findReasonsDiff(previousSeq: any, updatedSeq: any) {
       const diffSeq: any = Object.keys(previousSeq).reduce((diff, key) => {
-        if (updatedSeq[key].orderRoutingId === previousSeq[key].orderRoutingId && updatedSeq[key].statusId === previousSeq[key].statusId && updatedSeq[key].sequenceNum === previousSeq[key].sequenceNum) return diff
+        if (updatedSeq[key].enumId === previousSeq[key].enumId && updatedSeq[key].sequenceNum === previousSeq[key].sequenceNum) return diff
         return {
           ...diff,
           [key]: updatedSeq[key]
