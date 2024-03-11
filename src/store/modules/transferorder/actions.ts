@@ -23,6 +23,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       queryString: transferOrderQuery.queryString,
       viewIndex: transferOrderQuery.viewIndex ? transferOrderQuery.viewIndex : 0,
       viewSize: transferOrderQuery.viewSize,
+      queryFields: "orderId orderName externalOrderId productId productName internalName",
       sort: payload.sort ? payload.sort : "orderDate asc",
       filters: {
         orderTypeId: { value: 'TRANSFER_ORDER' },
