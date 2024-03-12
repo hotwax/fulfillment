@@ -103,7 +103,8 @@ export default defineComponent({
   data() {
     return {
       queryString: '',
-      filteredReasons: []
+      filteredReasons: [],
+      toast: null as any
     }
   },
   computed: {
@@ -176,19 +177,18 @@ export default defineComponent({
       diffSeq = Object.keys(diffSeq).map((key) => diffSeq[key])
       this.filteredReasons = updatedSeq
 
-      if(diffSeq.length) {
-        const toast = await showToast("Rejection reasons order has been change. Click save button to update them.", {
+      if(diffSeq.length && !this.toast) {
+        this.toast = await showToast("Rejection reasons order has been change. Click save button to update them.", {
           buttons: [{
-              text: translate('Save'),
-              handler: () => {
-                this.saveReasonsOrder()
-              }
-            },
-          ],
+            text: translate('Save'),
+            handler: () => {
+              this.saveReasonsOrder()
+            }
+          }],
           manualDismiss: true
         }) as any
 
-        toast.present()
+        this.toast.present()
       }
     },
     findReasonsDiff(previousSeq: any, updatedSeq: any) {
