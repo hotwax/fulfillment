@@ -154,7 +154,7 @@ export default defineComponent({
         const resp = await UtilService.createEnumeration(this.formData)
 
         if(!hasError(resp)) {
-          showToast("Rejection reason created successfully.")
+          showToast(translate("Rejection reason created successfully."))
           this.rejectReasons.push(this.formData)
           await this.store.dispatch('util/updateRejectReasons', this.rejectReasons)
           modalController.dismiss()
@@ -162,7 +162,7 @@ export default defineComponent({
           throw resp.data
         }
       } catch(err) {
-        showToast("Failed to create rejection reason.")
+        showToast(translate("Failed to create rejection reason."))
         logger.error(err)
       }
     },

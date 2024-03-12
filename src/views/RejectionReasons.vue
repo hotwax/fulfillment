@@ -16,7 +16,7 @@
               <ion-item lines="none">
                 <ion-label class="ion-text-wrap">
                   <p class="overline">{{ reason.enumId }}</p>
-                  {{ reason.enumName }}
+                  {{ reason.enumName ? reason.enumName : reason.enumId }}
                   <p>{{ reason.description }}</p>
                 </ion-label>
               </ion-item>
@@ -177,10 +177,8 @@ export default defineComponent({
       this.filteredReasons = updatedSeq
 
       if(diffSeq.length) {
-        const toast = await showToast("Rejection reasons order has been change. Click save button to update them.", 
-        { buttons:
-          [
-            {
+        const toast = await showToast("Rejection reasons order has been change. Click save button to update them.", {
+          buttons: [{
               text: translate('Save'),
               handler: () => {
                 this.saveReasonsOrder()
