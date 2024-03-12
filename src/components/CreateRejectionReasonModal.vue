@@ -157,7 +157,7 @@ export default defineComponent({
           showToast(translate("Rejection reason created successfully."))
           this.rejectReasons.push(this.formData)
           await this.store.dispatch('util/updateRejectReasons', this.rejectReasons)
-          modalController.dismiss()
+          modalController.dismiss({ isUpdated: true })
         } else {
           throw resp.data
         }

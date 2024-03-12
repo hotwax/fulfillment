@@ -7,7 +7,7 @@
     </ion-header>
 
     <ion-content>
-      <ion-searchbar class="searchbar" v-model="queryString" @keyup.enter="findFilteredReasons()" :placeholder="translate('Search rejection reasons')" />
+      <ion-searchbar class="searchbar" v-model="queryString" @keyup.enter="updateRejectionReasons()" :placeholder="translate('Search rejection reasons')" />
 
       <main>
         <div v-if="filteredReasons.length">
@@ -78,7 +78,6 @@ import RejectReasonActionsPopver from '@/components/RejectReasonActionsPopver.vu
 import VarianceTypeActionsPopover from '@/components/VarianceTypeActionsPopover.vue';
 import { mapGetters, useStore } from 'vuex';
 import { UtilService } from '@/services/UtilService';
-import logger from '@/logger';
 import { showToast } from '@/utils';
 
 export default defineComponent({
@@ -114,8 +113,7 @@ export default defineComponent({
     })
   },
   async ionViewWillEnter() {
-    await this.store.dispatch('util/fetchRejectReasons')
-    await this.store.dispatch('util/fetchRejectReasonEnumTypes')
+    await Promise.all([this.store.dispatch('util/fetchRejectReasons'), this.store.dispatch('util/fetchRejectReasonEnumTypes')])
     this.filteredReasons = this.rejectReasons ? JSON.parse(JSON.stringify(this.rejectReasons)) : []
   },
   methods: {
@@ -124,8 +122,11 @@ export default defineComponent({
         component: CreateRejectionReasonModal
       });
 
-      createRejectionReasonModal.onDidDismiss().then(() => {
-        this.findFilteredReasons()
+      createRejectionReasonModal.onDidDismiss().then((result) => {
+        if(result.data?.isUpdated) {
+          // This method is called to update filtered reasons with the updated reasons in state.
+          this.updateRejectionReasons()
+        }
       })
 
       createRejectionReasonModal.present()
@@ -139,7 +140,7 @@ export default defineComponent({
       });
 
       popover.onDidDismiss().then(() => {
-        this.findFilteredReasons()
+        this.updateRejectionReasons()
       })
 
       return popover.present();
@@ -152,14 +153,21 @@ export default defineComponent({
         event
       });
 
-      varianceTypeActionsPopover.onDidDismiss().then(() => {
-        this.findFilteredReasons()
+      varianceTypeActionsPopover.onDidDismiss().then((result) => {
+        if(result.data?.isUpdated) {
+          // This method is called to update filtered reasons with the updated reasons in state.
+          this.updateRejectionReasons()
+        }
       })
 
       return varianceTypeActionsPopover.present();
     },
-    findFilteredReasons() {
-      this.filteredReasons = this.rejectReasons.filter((reason: any) => reason.description?.toLowerCase().includes(this.queryString.toLowerCase()))
+    updateRejectionReasons() {
+      if(this.queryString) {
+        this.filteredReasons = this.rejectReasons.filter((reason: any) => reason.description?.toLowerCase().includes(this.queryString.toLowerCase()))
+      } else {
+        this.filteredReasons = JSON.parse(JSON.stringify(this.rejectReasons))
+      }
     },
     async doReorder(event: CustomEvent) {
       const previousSeq = JSON.parse(JSON.stringify(this.filteredReasons))

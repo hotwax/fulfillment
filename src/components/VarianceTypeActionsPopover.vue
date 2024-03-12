@@ -44,6 +44,11 @@ export default defineComponent({
   props: ["reason"],
   methods: {
     async updateVarianceType(selectedType: any) {
+      if(this.reason.enumTypeId === selectedType.enumTypeId) {
+        popoverController.dismiss()
+        return;
+      }
+
       try {
         const resp = await UtilService.updateEnumeration({
           description: this.reason.description,
@@ -65,7 +70,7 @@ export default defineComponent({
         showToast(translate("Failed to update variance type."))
         logger.error(err)
       }
-      popoverController.dismiss()
+      popoverController.dismiss({ isUpdated: true })
     } 
   },
   setup() {
