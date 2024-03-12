@@ -76,7 +76,7 @@
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
-                  <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                  <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                 </ion-thumbnail>
                 <ion-label>
                   <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -137,7 +137,7 @@
               <div v-for="item in kitProducts" :key="item.orderItemSeqId" class="order-item">
                 <ion-item lines="none" class="product-info">
                   <ion-thumbnail slot="start">
-                    <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                    <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
                     <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -243,7 +243,7 @@
     
             <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
               <ion-thumbnail slot="start">
-                <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
               </ion-thumbnail>
               <ion-label>
                 <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -312,7 +312,7 @@ import {
   trashBinOutline,
   ribbonOutline
 } from 'ionicons/icons';
-import { getProductIdentificationValue, translate, ShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, translate, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'

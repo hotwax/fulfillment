@@ -88,7 +88,7 @@
               <div class="product-info">
                 <ion-item lines="none">
                   <ion-thumbnail slot="start">
-                    <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                    <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
                     <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -178,7 +178,7 @@
                   <div class="product-info">
                     <ion-item lines="none">
                       <ion-thumbnail slot="start">
-                        <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                        <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                       </ion-thumbnail>
                       <ion-label>
                         <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -312,7 +312,7 @@ import PackagingPopover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils';
 import { hasError } from '@/adapter';
-import { getProductIdentificationValue, ShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue';
 import { OrderService } from '@/services/OrderService';
 import emitter from '@/event-bus';
@@ -366,7 +366,7 @@ export default defineComponent({
     IonThumbnail,   
     IonTitle,
     IonToolbar,
-    ShopifyImg,
+    DxpShopifyImg,
     ViewSizeSelector
   },
   computed: {

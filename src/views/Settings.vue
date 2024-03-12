@@ -37,7 +37,7 @@
       </div>
 
       <section>
-        <OmsInstanceNavigator />
+        <DxpOmsInstanceNavigator />
 
         <ion-card>
           <ion-card-header>
@@ -120,16 +120,10 @@
 
       <hr />
 
-      <div class="section-header">
-        <h1>
-          {{ translate('App') }}
-          <p class="overline">{{ "Version: " + appVersion }}</p>
-        </h1>
-        <p class="overline">{{ "Built: " + getDateTime(appInfo.builtTime) }}</p>
-      </div>
+      <DxpAppVersionInfo />
 
       <section>
-        <ProductIdentifier />
+        <DxpProductIdentifier />
 
         <ion-card>
           <ion-card-header>
@@ -148,7 +142,7 @@
           </ion-item>
         </ion-card>
 
-        <LanguageSwitcher />
+        <DxpLanguageSwitcher />
 
         <ion-card>
           <ion-card-header>
@@ -209,12 +203,13 @@ import TimeZoneModal from '@/views/timezone-modal.vue'
 import { UserService } from '@/services/UserService';
 import { showToast } from '@/utils';
 import { hasError } from '@/adapter';
-import { translate } from '@hotwax/dxp-components';
+import { DxpOmsInstanceNavigator, translate } from '@hotwax/dxp-components';
 import logger from '@/logger';
 import { Actions, hasPermission } from '@/authorization'
 import { DateTime } from 'luxon';
 import Image from '@/components/Image.vue';
 import OrderLimitPopover from '@/components/OrderLimitPopover.vue'
+import { DxpAppVersionInfo, DxpProductIdentifier } from '@hotwax/dxp-components/lib/components';
 
 export default defineComponent({
   name: 'Settings',
