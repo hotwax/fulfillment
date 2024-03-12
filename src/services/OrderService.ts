@@ -512,6 +512,9 @@ const printShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
 }
 
 const printCustomDocuments = async (internationalInvoiceUrls: Array<string>): Promise<any> => {
+  if (!internationalInvoiceUrls || internationalInvoiceUrls.length === 0) {
+    return;
+  }
   try {
     internationalInvoiceUrls.forEach((url: string) => {
       try {
