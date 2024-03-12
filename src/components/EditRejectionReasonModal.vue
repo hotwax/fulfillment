@@ -100,9 +100,11 @@ export default defineComponent({
 
         if(!hasError(resp)) {
           showToast(translate("Rejection reason updated successfully."))
-          const rejectReason = this.rejectReasons.map((reason: any) => reason.enumId === this.rejectionReason.enumId)
-          rejectReason.enumName = this.rejectionReason.enumName
-          rejectReason.description = this.rejectionReason.description
+          const rejectReason = this.rejectReasons.find((reason: any) => reason.enumId === this.rejectionReason.enumId)
+          if(rejectReason) {
+            rejectReason.enumName = this.rejectionReason.enumName
+            rejectReason.description = this.rejectionReason.description
+          }
           await this.store.dispatch('util/updateRejectReasons', this.rejectReasons)
           modalController.dismiss()
         } else {

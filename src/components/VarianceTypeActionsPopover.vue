@@ -53,11 +53,10 @@ export default defineComponent({
 
         if(!hasError(resp)) {
           showToast(translate("Variance type updated successfully."))
-          this.rejectReasons.map((reason: any) => {
-            if(reason.enumId === this.reason.enumId) {
-              reason.enumTypeId = selectedType.enumTypeId
-            }
-          })
+          const rejectReason = this.rejectReasons.find((reason: any) => reason.enumId === this.reason.enumId)
+          if(rejectReason) {
+            rejectReason.enumTypeId = selectedType.enumTypeId
+          }
           await this.store.dispatch('util/updateRejectReasons', this.rejectReasons)
         } else {
           throw resp.data;
