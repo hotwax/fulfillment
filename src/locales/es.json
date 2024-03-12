@@ -405,4 +405,4 @@
   ", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.": "{ productName }, y { products } otros productos están identificados como no cumplimentables. { space } Estos artículos del pedido serán desasignados de esta tienda y enviados para ser corregidos nuevamente.",
   ", and other products are identified as unfulfillable. other containing these products will be unassigned from this store and sent to be rebrokered.": "{ productName }, y { products } otros productos están identificados como no cumplimentables. { space } { orders } other { orderText } Los productos que contengan estos productos serán desasignados de esta tienda y enviados para su nueva intermediación.",
   ", and other products were identified as unfulfillable. These items will be unassigned from this store and sent to be rebrokered.": "{ productName }, y { products } otros productos fueron identificados como no aptos para el suministro. { space } Estos artículos serán desasignados de esta tienda y enviados para ser corregidos nuevamente."
-}}
+}
