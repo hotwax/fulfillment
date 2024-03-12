@@ -158,7 +158,7 @@ export default defineComponent({
       return varianceTypeActionsPopover.present();
     },
     findFilteredReasons() {
-      this.filteredReasons = this.rejectReasons.filter((reason: any) => reason.description.toLowerCase().includes(this.queryString.toLowerCase()))
+      this.filteredReasons = this.rejectReasons.filter((reason: any) => reason.description?.toLowerCase().includes(this.queryString.toLowerCase()))
     },
     async doReorder(event: CustomEvent) {
       const previousSeq = JSON.parse(JSON.stringify(this.filteredReasons))

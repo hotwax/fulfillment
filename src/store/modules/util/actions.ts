@@ -319,7 +319,11 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_PRODUCT_STORE_SHIPMENT_METH_COUNT_UPDATED, productStoreShipmentMethCount)
   },
   
-  async fetchRejectReasonEnumTypes({ commit }) {
+  async fetchRejectReasonEnumTypes({ commit, state }) {
+    if(state.rejectReasonEnumTypes.length) {
+      return;
+    }
+
     let rejectReasonEnumTypes = [] as any;
 
     try {
