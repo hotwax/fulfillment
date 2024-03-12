@@ -178,7 +178,7 @@ export default defineComponent({
       this.filteredReasons = updatedSeq
 
       if(diffSeq.length && !this.toast) {
-        this.toast = await showToast("Rejection reasons order has been change. Click save button to update them.", {
+        this.toast = await showToast(translate("Rejection reasons order has been change. Click save button to update them."), {
           buttons: [{
             text: translate('Save'),
             handler: () => {

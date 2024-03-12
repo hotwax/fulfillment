@@ -99,7 +99,7 @@ export default defineComponent({
         const resp = await UtilService.updateEnumeration(this.rejectionReason)
 
         if(!hasError(resp)) {
-          showToast("Rejection reason updated successfully.")
+          showToast(translate("Rejection reason updated successfully."))
           const rejectReason = this.rejectReasons.map((reason: any) => reason.enumId === this.rejectionReason.enumId)
           rejectReason.enumName = this.rejectionReason.enumName
           rejectReason.description = this.rejectionReason.description
@@ -110,7 +110,7 @@ export default defineComponent({
         }
       } catch(err) {
         logger.error(err)
-        showToast("Failed to update rejection reason.")
+        showToast(translate("Failed to update rejection reason."))
       }
     }
   },
