@@ -530,6 +530,9 @@ export default defineComponent({
                   } else if (data.includes('printShippingLabel')) {
                     await OrderService.printShippingLabel(shipmentIds)
                   }
+                  if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
+                    await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
+                  }
 
                   toast.dismiss()
                 } else {
@@ -780,6 +783,9 @@ export default defineComponent({
       }
 
       await OrderService.printShippingLabel(shipmentIds)
+      if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
+        await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
+      }
     },
     async addShipmentBox(order: any) {
       this.addingBoxForOrderIds.push(order.orderId)
