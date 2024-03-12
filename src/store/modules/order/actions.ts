@@ -906,7 +906,7 @@ const actions: ActionTree<OrderState, RootState> = {
       if (shipmentIds.length) {
         try {
           const shipmentPackagesBatches = await UtilService.findShipmentPackages(shipmentIds)
-          shipmentPackages = shipmentPackagesBatches.flat();
+          shipmentPackages = Object.values(shipmentPackagesBatches).flat();
         } catch (err) {
           current.hasMissingPackageInfo = true;
           logger.error('Failed to fetch shipment packages for orders', err)

@@ -562,7 +562,9 @@ export default defineComponent({
                     await OrderService.printShippingLabel(shipmentIds)
                   }
 
-                  await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
+                  if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
+                    await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
+                  }
 
                   toast.dismiss()
                 } else {
@@ -627,7 +629,14 @@ export default defineComponent({
               // Considering only unique shipment IDs
               // TODO check reason for redundant shipment IDs
               const shipmentIds = orderList.map((order: any) => [...new Set(order.items.map((item: any) => item.shipmentId).flat())]).flat() as Array<string>
-              const internationalInvoiceUrls = orderList.map((order: any) => [...new Set(order.shipmentPackages.map((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl).flat())]).flat() as Array<string>
+              const internationalInvoiceUrls = orderList
+              .map((order: any) =>
+                [...new Set(order.shipmentPackages
+                  .map((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl)
+                  .filter((url: string | null) => url !== null)
+                )]
+              )
+              .flat() as Array<string>;
 
               try {
                 const resp = await OrderService.packOrders({
