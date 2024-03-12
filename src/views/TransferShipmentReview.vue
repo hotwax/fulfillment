@@ -329,12 +329,12 @@
   
   <style scoped>
   ion-content{
-  --padding-bottom: 80px;
-  > main {
+    --padding-bottom: 80px;
+  } 
+    ion-content > main {
     max-width: 1110px;
     margin-right: auto;
     margin-left: auto;
   }
-}
   </style>
   
