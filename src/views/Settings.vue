@@ -241,8 +241,6 @@ export default defineComponent({
   data() {
     return {
       baseURL: process.env.VUE_APP_BASE_URL,
-      appInfo: (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any,
-      appVersion: "",
       locales: process.env.VUE_APP_LOCALES ? JSON.parse(process.env.VUE_APP_LOCALES) : {"en": "English"},
       currentFacilityDetails: {} as any,
       orderLimitType: 'unlimited',
@@ -260,9 +258,6 @@ export default defineComponent({
       userPreference: 'user/getUserPreference',
       locale: 'user/getLocale'
     })
-  },
-  mounted() {
-    this.appVersion = this.appInfo.branch ? (this.appInfo.branch + "-" + this.appInfo.revision) : this.appInfo.tag;
   },
   async ionViewWillEnter() {
     Promise.all([this.getCurrentFacilityDetails(), this.getFacilityOrderCount(), this.getEcomInvStatus()]);
@@ -530,9 +525,6 @@ export default defineComponent({
     },
     setPrintPackingSlipPreference (ev: any){
       this.store.dispatch('user/setUserPreference', { printPackingSlip: ev.detail.checked })
-    },
-    getDateTime(time: any) {
-      return DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED);
     },
     setLocale(locale: string) {
       this.store.dispatch('user/setLocale',locale)
