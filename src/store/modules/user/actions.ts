@@ -392,6 +392,10 @@ const actions: ActionTree<UserState, RootState> = {
       name: '',
       value: {}
     })
+  },
+  
+  updatePwaState({ commit }, payload) {
+    commit(types.USER_PWA_STATE_UPDATED, payload);
   }
 }
 
