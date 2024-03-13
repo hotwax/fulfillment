@@ -216,8 +216,8 @@ export default defineComponent({
         await UtilService.updateEnumeration(reason)
       }))
 
-      const failedResponsesCount = responses.filter((response) => response.status === 'rejected').length
-      if(failedResponsesCount) {
+      const isFailedToUpdateSomeReason = responses.some((response) => response.status === 'rejected')
+      if(isFailedToUpdateSomeReason) {
         showToast(translate("Failed to update sequence for some rejection reasons."))
       } else {
         showToast(translate("Sequence for rejection reasons updated successfully."))
