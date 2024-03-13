@@ -203,13 +203,12 @@ import TimeZoneModal from '@/views/timezone-modal.vue'
 import { UserService } from '@/services/UserService';
 import { showToast } from '@/utils';
 import { hasError } from '@/adapter';
-import { DxpOmsInstanceNavigator, translate } from '@hotwax/dxp-components';
+import { translate } from '@hotwax/dxp-components';
 import logger from '@/logger';
 import { Actions, hasPermission } from '@/authorization'
 import { DateTime } from 'luxon';
 import Image from '@/components/Image.vue';
 import OrderLimitPopover from '@/components/OrderLimitPopover.vue'
-import { DxpAppVersionInfo, DxpProductIdentifier } from '@hotwax/dxp-components/lib/components';
 
 export default defineComponent({
   name: 'Settings',
