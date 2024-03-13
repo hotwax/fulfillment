@@ -335,6 +335,7 @@ export default defineComponent({
   name: "OrderDetail",
   props: ['category', 'orderId', 'shipGroupSeqId'],
   components: {
+    DxpShopifyImg,
     IonBackButton,
     IonBadge,
     IonButton,
