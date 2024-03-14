@@ -9,13 +9,19 @@
     <ion-content>
       <ion-list>
         <ion-menu-toggle auto-hide="false" v-for="(page, index) in getValidMenuItems(appPages)" :key="index">
+          <ion-item-divider color="light" v-if="!page.url">
+            <ion-label>
+              {{ translate(page.title) }}
+            </ion-label>
+          </ion-item-divider>
           <ion-item
+            v-else
             button
             router-direction="root"
             :router-link="page.url"
             class="hydrated"
             :class="{ selected: selectedIndex === index }">
-            <ion-icon slot="start" :ios="page.iosIcon" :md="page.mdIcon" />
+            <ion-icon v-if="page.mdIcon || page.iosIcon" slot="start" :ios="page.iosIcon" :md="page.mdIcon" />
             <ion-label>{{ translate(page.title) }}</ion-label>
           </ion-item>
         </ion-menu-toggle>
@@ -30,6 +36,7 @@ import {
   IonHeader,
   IonIcon,
   IonItem,
+  IonItemDivider,
   IonLabel,
   IonList,
   IonMenu,
@@ -39,7 +46,7 @@ import {
 } from "@ionic/vue";
 import { computed, defineComponent } from "vue";
 import { mapGetters } from "vuex";
-import { mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline } from "ionicons/icons";
+import { arrowBackOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline } from "ionicons/icons";
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 import { hasPermission } from "@/authorization";
@@ -52,6 +59,7 @@ export default defineComponent({
     IonHeader,
     IonIcon,
     IonItem,
+    IonItemDivider,
     IonLabel,
     IonList,
     IonMenu,
@@ -106,6 +114,16 @@ export default defineComponent({
         }
       },
       {
+        title: "Transfer Orders",
+        url: "/transfer-orders",
+        iosIcon: arrowBackOutline,
+        mdIcon: arrowBackOutline,
+        childRoutes: ["/transfer-order-details", "/transfer-shipment-review"],
+        meta: {
+          permissionId: "APP_TRANSFER_ORDERS_VIEW"
+        }
+      },
+      {
         title: "EXIM",
         url: "/exim",
         iosIcon: swapVerticalOutline,
@@ -120,6 +138,14 @@ export default defineComponent({
         url: "/settings",
         iosIcon: settingsOutline,
         mdIcon: settingsOutline,
+      },
+      {
+        title: "Organization",
+        url: ""
+      }, {
+        title: "Rejection reasons",
+        url: "/rejection-reasons",
+        childRoutes: ["/rejection-reasons/"],
       }
     ];
 
@@ -132,6 +158,7 @@ export default defineComponent({
       appPages,
       checkmarkDoneOutline,
       hasPermission,
+      arrowBackOutline,
       mailUnreadOutline,
       mailOpenOutline,
       selectedIndex,

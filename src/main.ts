@@ -1,7 +1,6 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router';
-import './registerServiceWorker'
 import logger from './logger';
 
 import { IonicVue } from '@ionic/vue';
@@ -24,6 +23,7 @@ import '@ionic/vue/css/display.css';
 
 /* Theme variables */
 import './theme/variables.css';
+import "@hotwax/apps-theme";
 
 import store from './store'
 import permissionPlugin from '@/authorization';

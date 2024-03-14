@@ -371,9 +371,39 @@ img {
   text-align: center;
 }
 
+.scanner {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(343px, 1fr));
+  gap: var(--spacer-xs);
+  align-items: center;
+  margin-bottom: var(--spacer-lg);
+}
+
+.product {
+  display: grid;
+  grid: "info    count" 
+        "location location" 
+        / 1fr .35fr;
+  align-items: center;
+  padding: var(--spacer-xs) var(--spacer-xs) var(--spacer-xs) 0; 
+}
+
+.product-info {
+  grid-area: info;
+  grid-template-columns: 1fr 1fr .30fr;
+  align-items: center;
+  padding: var(--spacer-sm);
+  padding-left: 0;
+}
+
+.product-count {
+  grid-area: count;
+  min-width: 9ch;
+}
+
 @media (min-width: 991px) {
   /* shipment card desktop layout start */
-  ion-searchbar.better-name-here {
+  ion-searchbar.searchbar {
     padding-top: var(--spacer-base);
     padding-inline: var(--spacer-sm)
   }

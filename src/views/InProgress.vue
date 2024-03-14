@@ -21,7 +21,7 @@
     </ion-header>
     
     <ion-content id="view-size-selector">
-      <ion-searchbar class="better-name-here" v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
+      <ion-searchbar class="searchbar" :placeholder="translate('Search orders')" v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="inProgressOrders.total">
         <ion-radio-group v-model="selectedPicklistId" @ionChange="updateSelectedPicklist($event.detail.value)">
           <ion-row class="filters">
@@ -90,7 +90,7 @@
               <div class="product-info">
                 <ion-item lines="none">
                   <ion-thumbnail slot="start">
-                    <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                    <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
                     <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -178,7 +178,7 @@
                   <div class="product-info">
                     <ion-item lines="none">
                       <ion-thumbnail slot="start">
-                        <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                        <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                       </ion-thumbnail>
                       <ion-label>
                         <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -312,7 +312,7 @@ import PackagingPopover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils';
 import { hasError } from '@/adapter';
-import { getProductIdentificationValue, ShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue';
 import { OrderService } from '@/services/OrderService';
 import emitter from '@/event-bus';
@@ -366,7 +366,7 @@ export default defineComponent({
     IonThumbnail,   
     IonTitle,
     IonToolbar,
-    ShopifyImg,
+    DxpShopifyImg,
     ViewSizeSelector
   },
   computed: {
@@ -562,6 +562,10 @@ export default defineComponent({
                     await OrderService.printShippingLabel(shipmentIds)
                   }
 
+                  if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
+                    await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
+                  }
+
                   toast.dismiss()
                 } else {
                   showToast(translate('Order packed successfully'));
@@ -625,6 +629,14 @@ export default defineComponent({
               // Considering only unique shipment IDs
               // TODO check reason for redundant shipment IDs
               const shipmentIds = orderList.map((order: any) => [...new Set(order.items.map((item: any) => item.shipmentId).flat())]).flat() as Array<string>
+              const internationalInvoiceUrls = orderList
+              .map((order: any) =>
+                [...new Set(order.shipmentPackages
+                  .map((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl)
+                  .filter((url: string | null) => url !== null)
+                )]
+              )
+              .flat() as Array<string>;
 
               try {
                 const resp = await OrderService.packOrders({
@@ -648,6 +660,8 @@ export default defineComponent({
                   } else if (data.includes('printShippingLabel')) {
                     await OrderService.printShippingLabel(shipmentIds)
                   }
+                  //print custom documents like international invoice 
+                  await OrderService.printCustomDocuments(internationalInvoiceUrls);
 
                   toast.dismiss()
                 } else {
@@ -913,12 +927,13 @@ export default defineComponent({
 
               const pickerIds = [] as Array<string> 
               // if firstName is not found then adding default name `System Generated`
-              const pickersName = pickersInformation.pickerFacet.buckets.length ? pickersInformation.pickerFacet.buckets.reduce((pickers: Array<string>, picker: any) => {
+              const pickersName = pickersInformation.pickerFacet.buckets.length ? (pickersInformation.pickerFacet.buckets.length === 1 ? [pickersInformation.pickerFacet.buckets[0].val.split('/')[1]]:
+                pickersInformation.pickerFacet.buckets.reduce((pickers: Array<string>, picker: any) => {
                 const val = picker.val.split('/') // having picker val in format 10001/FirstName LastName, split will change it into [pickerId, FirstName LastName]
                 pickerIds.push(val[0]) // storing pickerIds for usage in edit pickers modal
                 pickers.push(val[1].split(' ')[0]) // having val[0] as 'firstname lastname', we only need to display firstName
                 return pickers
-              }, []) : ['System Generated']
+              }, [])) : ['System Generated']
 
               picklists.push({
                 id: picklist.picklistId,

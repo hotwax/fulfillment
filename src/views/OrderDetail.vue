@@ -23,7 +23,7 @@
             </ion-chip>
             <ion-chip outline v-if="order?.orderPaymentPreferences?.length > 0" :color="statusColor[order?.orderPaymentPreferences[0]?.statusId]">
               <ion-icon :icon="cashOutline" />
-              <ion-label>{{ getPaymentMethodDesc(order?.orderPaymentPreferences[0]?.paymentMethodTypeId)}} : {{ getStatusDesc(order?.orderPaymentPreferences[0]?.statusId) }}</ion-label>
+              <ion-label>{{ translate(getPaymentMethodDesc(order?.orderPaymentPreferences[0]?.paymentMethodTypeId)) }} : {{ translate(getStatusDesc(order?.orderPaymentPreferences[0]?.statusId)) }}</ion-label>
             </ion-chip>
           </div>
           <div class="order-metadata">
@@ -76,7 +76,7 @@
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
-                  <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                  <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                 </ion-thumbnail>
                 <ion-label>
                   <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -137,7 +137,7 @@
               <div v-for="item in kitProducts" :key="item.orderItemSeqId" class="order-item">
                 <ion-item lines="none" class="product-info">
                   <ion-thumbnail slot="start">
-                    <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                    <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
                     <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -243,7 +243,7 @@
     
             <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
               <ion-thumbnail slot="start">
-                <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
               </ion-thumbnail>
               <ion-label>
                 <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -312,7 +312,7 @@ import {
   trashBinOutline,
   ribbonOutline
 } from 'ionicons/icons';
-import { getProductIdentificationValue, translate, ShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, translate, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
@@ -335,6 +335,7 @@ export default defineComponent({
   name: "OrderDetail",
   props: ['category', 'orderId', 'shipGroupSeqId'],
   components: {
+    DxpShopifyImg,
     IonBackButton,
     IonBadge,
     IonButton,
@@ -529,6 +530,9 @@ export default defineComponent({
                     await OrderService.printPackingSlip(shipmentIds)
                   } else if (data.includes('printShippingLabel')) {
                     await OrderService.printShippingLabel(shipmentIds)
+                  }
+                  if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
+                    await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
                   }
 
                   toast.dismiss()
@@ -780,6 +784,9 @@ export default defineComponent({
       }
 
       await OrderService.printShippingLabel(shipmentIds)
+      if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
+        await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
+      }
     },
     async addShipmentBox(order: any) {
       this.addingBoxForOrderIds.push(order.orderId)

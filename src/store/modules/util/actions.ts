@@ -12,7 +12,8 @@ const actions: ActionTree<UtilState, RootState> = {
     try {
       const payload = {
         "inputFields": {
-          "parentEnumTypeId": "REPORT_AN_ISSUE"
+          "parentEnumTypeId": ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
+          "parentEnumTypeId_op": "in"
         },
         "fieldList": ["enumId", "description"],
         "distinct": "Y",

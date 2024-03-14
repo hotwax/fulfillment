@@ -37,7 +37,7 @@
       </div>
 
       <section>
-        <OmsInstanceNavigator />
+        <DxpOmsInstanceNavigator />
 
         <ion-card>
           <ion-card-header>
@@ -117,16 +117,10 @@
 
       <hr />
 
-      <div class="section-header">
-        <h1>
-          {{ translate('App') }}
-          <p class="overline">{{ "Version: " + appVersion }}</p>
-        </h1>
-        <p class="overline">{{ "Built: " + getDateTime(appInfo.builtTime) }}</p>
-      </div>
+      <DxpAppVersionInfo />
 
       <section>
-        <ProductIdentifier />
+        <DxpProductIdentifier />
 
         <ion-card>
           <ion-card-header>
@@ -145,7 +139,7 @@
           </ion-item>
         </ion-card>
 
-        <LanguageSwitcher />
+        <DxpLanguageSwitcher />
 
         <ion-card>
           <ion-card-header>
@@ -241,8 +235,6 @@ export default defineComponent({
   data() {
     return {
       baseURL: process.env.VUE_APP_BASE_URL,
-      appInfo: (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any,
-      appVersion: "",
       locales: process.env.VUE_APP_LOCALES ? JSON.parse(process.env.VUE_APP_LOCALES) : {"en": "English"},
       currentFacilityDetails: {} as any,
       orderLimitType: 'unlimited',
@@ -260,9 +252,6 @@ export default defineComponent({
       userPreference: 'user/getUserPreference',
       locale: 'user/getLocale'
     })
-  },
-  mounted() {
-    this.appVersion = this.appInfo.branch ? (this.appInfo.branch + "-" + this.appInfo.revision) : this.appInfo.tag;
   },
   async ionViewWillEnter() {
     Promise.all([this.getCurrentFacilityDetails(), this.getFacilityOrderCount(), this.getEcomInvStatus()]);
@@ -517,7 +506,6 @@ export default defineComponent({
       if (!event.detail.value) {
         return;
       }
-
       if(this.userProfile) {
         await this.store.dispatch('user/setEComStore', {
           'eComStore': this.userProfile.stores.find((str: any) => str.productStoreId == event.detail.value)
@@ -529,9 +517,6 @@ export default defineComponent({
     },
     setPrintPackingSlipPreference (ev: any){
       this.store.dispatch('user/setUserPreference', { printPackingSlip: ev.detail.checked })
-    },
-    getDateTime(time: any) {
-      return DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED);
     },
     setLocale(locale: string) {
       this.store.dispatch('user/setLocale',locale)

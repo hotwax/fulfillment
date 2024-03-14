@@ -20,7 +20,7 @@
     </ion-header>
     
     <ion-content id="view-size-selector">
-      <ion-searchbar class="better-name-here" :value="openOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
+      <ion-searchbar class="searchbar" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="openOrders.total">
         <div class="filters">
           <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
@@ -65,7 +65,7 @@
               <div class="product-info">
                 <ion-item lines="none">
                   <ion-thumbnail slot="start">
-                    <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                    <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
                     <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -96,7 +96,7 @@
                 <div class="product-info">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -172,7 +172,7 @@ import { computed, defineComponent } from 'vue';
 import { caretDownOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
-import { getProductIdentificationValue, ShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
@@ -188,7 +188,7 @@ import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 export default defineComponent({
   name: 'OpenOrders',
   components: {
-    ShopifyImg,
+    DxpShopifyImg,
     IonButton,
     IonButtons,  
     IonCard,

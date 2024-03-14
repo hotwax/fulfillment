@@ -17,7 +17,7 @@
     </ion-header>
     
     <ion-content id="view-size-selector">
-      <ion-searchbar class="better-name-here" :value="completedOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)" />
+      <ion-searchbar class="searchbar" :value="completedOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)" />
 
       <div v-if="completedOrders.total">
 
@@ -74,7 +74,7 @@
               <div class="product-info">
                 <ion-item lines="none">
                   <ion-thumbnail slot="start">
-                    <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                    <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
                     <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -106,7 +106,7 @@
                   <div class="product-info">
                     <ion-item lines="none">
                       <ion-thumbnail slot="start">
-                        <ShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                        <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                       </ion-thumbnail>
                       <ion-label>
                         <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -209,7 +209,7 @@ import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter'
-import { getProductIdentificationValue, ShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import emitter from '@/event-bus';
@@ -224,7 +224,7 @@ import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 export default defineComponent({
   name: 'Completed',
   components: {
-    ShopifyImg,
+    DxpShopifyImg,
     IonButton,
     IonButtons,
     IonCard,
@@ -345,7 +345,8 @@ export default defineComponent({
         if(!hasError(resp)) {
           showToast(translate('Order shipped successfully'))
           // TODO: handle the case of data not updated correctly
-          await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+          const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
+          await Promise.all([this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery }), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
         } else {
           throw resp.data
         }
@@ -353,7 +354,6 @@ export default defineComponent({
         logger.error('Failed to ship order', err)
         showToast(translate('Failed to ship order'))
       }
-
     },
     async bulkShipOrders() {
       const packedOrdersCount = this.completedOrders.list.filter((order: any) => {
@@ -418,7 +418,8 @@ export default defineComponent({
                     ? showToast(translate('Orders shipped successfully'))
                     : showToast(translate('out of cannot be shipped due to missing tracking codes.', { remainingOrders: trackingRequiredAndMissingCodeOrders.length, totalOrders: packedOrdersCount }))
                   // TODO: handle the case of data not updated correctly
-                  await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+                  const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
+                  await Promise.all([this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery }), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
                   throw resp.data
                 }
@@ -647,6 +648,9 @@ export default defineComponent({
       }
 
       await OrderService.printShippingLabel(shipmentIds)
+      if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
+        await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
+      }
     },
     async regenerateShippingLabel(order: any) {
       // If there are no product store shipment method configured, then not generating the label and displaying an error toast

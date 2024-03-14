@@ -176,17 +176,17 @@ const actions: ActionTree<OrderState, RootState> = {
       const shipmentIds = [...new Set(shipments.map((shipment: any) => shipment.shipmentId))]
       // Get packed shipmentIds
       let shipmentPackages = [] as any;
-      let shipmentTrackingCodes = [] as any;
       if (shipmentIds.length > 0) {
         try {
             const shipmentIdBatches = [];
             while(shipmentIds.length) {
               shipmentIdBatches.push(shipmentIds.splice(0, batchSize))
             }
-            const shipmentPackagesBatches = await Promise.all(shipmentIdBatches.map((shipmentIds) => OrderService.fetchShipmentPackages(shipmentIds)))
-            const trackingCodes = await Promise.all(shipmentIdBatches.map((shipmentIds) => OrderService.fetchTrackingCodes(shipmentIds)))
-            shipmentPackages = shipmentPackagesBatches.flat();
-            shipmentTrackingCodes = trackingCodes.flat();
+            const shipmentPackagesBatches = await Promise.all(shipmentIdBatches.map((shipmentIds) => UtilService.findShipmentPackages(shipmentIds)))
+            shipmentPackages = shipmentPackagesBatches.reduce((packages, data) => {
+              return packages.concat(...Object.values(data));
+            }, []);
+
           } catch(err) {
             completedOrders = completedOrders.map((order: any) => {
               order.hasMissingPackageInfo = true;
@@ -211,10 +211,8 @@ const actions: ActionTree<OrderState, RootState> = {
           return currentShipmentPackages;
         }, []);
 
-        const trackingCode = shipmentTrackingCodes.find((shipmentTrackingCode: any) => shipmentTrackingCode.shipmentId == order.shipmentId)?.trackingCode
-
         // If there is any shipment package with missing tracking code, retry shipping label
-        const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
+        const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.some((shipmentPackage:any) => shipmentPackage.trackingCode === null) : false;
         const kitProducts = prepareKitProducts(order)
 
         return {
@@ -223,7 +221,7 @@ const actions: ActionTree<OrderState, RootState> = {
           ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
           shipments: orderShipments,
           missingLabelImage,
-          trackingCode,
+          trackingCode: currentShipmentPackages?.[0].trackingCode,
           shipmentPackages: currentShipmentPackages  // ShipmentPackages information is required when performing retryShippingLabel action
         }
       })
@@ -424,7 +422,7 @@ const actions: ActionTree<OrderState, RootState> = {
       queryString: completedOrderQuery.queryString,
       viewSize: completedOrderQuery.viewSize,
       groupBy: 'picklistBinId',
-      sort: 'orderDate asc',
+      sort: 'picklistItemStatusId desc, orderDate asc',
       filters: {
         picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
@@ -903,12 +901,12 @@ const actions: ActionTree<OrderState, RootState> = {
       const shipments = shipmentBatches.flat();
       const shipmentIds = [...new Set(shipments.map((shipment: any) => shipment.shipmentId))] as Array<string>
       let shipmentPackages = [] as any;
-      
+
       // Get packed shipmentIds
       if (shipmentIds.length) {
         try {
-          const shipmentPackagesBatches = await OrderService.fetchShipmentPackages(shipmentIds)
-          shipmentPackages = shipmentPackagesBatches.flat();
+          const shipmentPackagesBatches = await UtilService.findShipmentPackages(shipmentIds)
+          shipmentPackages = Object.values(shipmentPackagesBatches).flat();
         } catch (err) {
           current.hasMissingPackageInfo = true;
           logger.error('Failed to fetch shipment packages for orders', err)
@@ -927,7 +925,7 @@ const actions: ActionTree<OrderState, RootState> = {
       }, []);
 
       // If there is any shipment package with missing tracking code, retry shipping label
-      const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
+      const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.some((shipmentPackage:any) => shipmentPackage.trackingCode === null || shipmentPackage.trackingCode === '') : false;
       const kitProducts = prepareKitProducts(current)
 
       current = {
@@ -935,6 +933,7 @@ const actions: ActionTree<OrderState, RootState> = {
         orderItems: current.items.filter((item: any) => !isKitComponent(item)),
         ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
         shipments: orderShipments,
+        trackingCode: currentShipmentPackages?.[0].trackingCode,
         missingLabelImage,
         shipmentPackages: currentShipmentPackages  // ShipmentPackages information is required when performing retryShippingLabel action
       }
