@@ -21,8 +21,7 @@
   
           <div class="scanner">
             <ion-item>
-              <ion-label>{{ translate("Scan items") }}</ion-label>
-              <ion-input autofocus :placeholder="translate('Scan barcodes to pick them')" v-model="queryString" @keyup.enter="updateProductCount()"></ion-input>
+              <ion-input :label="translate('Scan items')" autofocus :placeholder="translate('Scan barcodes to pick them')" v-model="queryString" @keyup.enter="updateProductCount()" />
             </ion-item>
   
             <ion-button expand="block" fill="outline" @click="scanCode()">
