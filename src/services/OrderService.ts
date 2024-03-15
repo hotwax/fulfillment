@@ -257,8 +257,7 @@ const addShipmentBox = async (payload: any): Promise<any> => {
   });
 }
 const shipOrder = async (payload: any): Promise<any> => {
-  let baseURL = store.getters['user/getInstanceUrl'];
-  baseURL = baseURL && baseURL.startsWith('http') ? baseURL : `https://${baseURL}.hotwax.io/api/`;
+  const baseURL = store.getters['user/getBaseUrl'];
   return client({
     url: 'shipOrder',
     method: 'POST',
