@@ -7,4 +7,5 @@ export default interface UtilState {
   paymentMethodTypeDesc: any;
   statusDesc: any;
   productStoreShipmentMethCount: number;
+  rejectReasonEnumTypes: [];
 }

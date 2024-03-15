@@ -352,13 +352,48 @@ const findProductStoreShipmentMethCount = async (query: any): Promise<any> => {
   });
 }
 
+const fetchRejectReasonEnumTypes = async (query: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query,
+    cache: true
+  })
+}
+
+const createEnumeration = async (payload: any): Promise<any> => {
+  return api({
+    url: "/service/createEnumeration",
+    method: "post",
+    data: payload
+  })
+}
+
+const updateEnumeration = async (payload: any): Promise<any> => {
+  return api({
+    url: "/service/updateEnumeration",
+    method: "post",
+    data: payload
+  })
+}
+
+const deleteEnumeration = async (payload: any): Promise<any> => {
+  return api({
+    url: "/service/deleteEnumeration",
+    method: "post",
+    data: payload
+  })
+}
+
 export const UtilService = {
   createPicklist,
+  createEnumeration,
   fetchCarrierPartyIds,
   fetchDefaultShipmentBox,
   fetchFacilityTypeInformation,
   fetchPartyInformation,
   fetchPicklistInformation,
+  fetchRejectReasonEnumTypes,
   fetchRejectReasons,
   fetchShipmentBoxTypeDesc,
   fetchShipmentMethods,
@@ -374,5 +409,7 @@ export const UtilService = {
   findShipmentPackages,
   fetchTransferOrderFacets,
   getAvailablePickers,
-  resetPicker
+  resetPicker,
+  deleteEnumeration,
+  updateEnumeration
 }
