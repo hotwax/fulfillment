@@ -1269,4 +1269,8 @@ ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-te
   width: 100%;
   height: 30px;
 }
+
+.order-item {
+  grid-template-columns: repeat(3, 1fr);
+}
 </style>
