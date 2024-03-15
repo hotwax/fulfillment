@@ -17,7 +17,7 @@
           <ion-input :label="translate('Name')" @ionBlur="setEnumId($event)" v-model="formData.enumName" />
         </ion-item>
         <ion-item ref="enumId">
-          <ion-input :label="translate('ID')" v-model="formData.enumId" @ionChange="validateEnumId" @ionBlur="markEnumIdTouched" :errorText="translate('ID cannot be more than 20 characters.')"/>
+          <ion-input :label="translate('ID')" v-model="formData.enumId" @ionChange="validateEnumId" @ionBlur="markEnumIdTouched" :errorText="translate('ID cannot be more than 20 characters.')" />
         </ion-item>
         <ion-item>
           <ion-input :label="translate('Description')" v-model="formData.description" />
