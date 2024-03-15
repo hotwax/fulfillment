@@ -1243,14 +1243,15 @@ export default defineComponent({
 });
 </script>
 
+<style scoped>
 ion-card-header {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
   align-items: center;
   padding-bottom: 0px;
 }
 
-<style scoped>
 .box-type {
   display: flex;
   gap: var(--spacer-sm);
