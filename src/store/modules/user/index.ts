@@ -18,6 +18,10 @@ const userModule: Module<UserState, RootState> = {
         printShippingLabel: false,
         printPackingSlip: false
       },
+      pwaState: {
+        updateExists: false,
+        registration: null,
+      },
       fieldMappings: {},
       currentMapping: {
         id: '',

@@ -4,7 +4,7 @@
       <div class="product-info">
         <ion-item lines="none">
           <ion-thumbnail slot="start">
-            <ShopifyImg :src="getProduct(item.productId).mainImageUrl" />
+            <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" />
           </ion-thumbnail>
           <ion-label class="ion-text-wrap">
             <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -67,7 +67,7 @@ import {
 import { computed, defineComponent } from 'vue';
 import { add, checkmarkDone, barcodeOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
-import { getProductIdentificationValue, ShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 
 import { useRouter } from 'vue-router';
 import { Actions } from '@/authorization'
@@ -88,7 +88,7 @@ export default defineComponent({
     IonNote,
     IonProgressBar,
     IonThumbnail,
-    ShopifyImg,
+    DxpShopifyImg,
   },
   props: ["itemDetail"],
   data() {

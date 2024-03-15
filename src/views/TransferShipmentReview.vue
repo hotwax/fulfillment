@@ -76,7 +76,7 @@
   import { computed, defineComponent } from 'vue';
   import { add, checkmarkDone, barcodeOutline, documentTextOutline, sendOutline } from 'ionicons/icons';
   import { mapGetters, useStore } from "vuex";
-  import { getProductIdentificationValue, ShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
+  import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 
   import { useRouter } from 'vue-router';
   import Scanner from "@/components/Scanner.vue";
@@ -328,6 +328,9 @@
   </script>
   
   <style scoped>
+  ion-content{
+    --padding-bottom: 80px;
+  } 
   ion-content > main {
     max-width: 1110px;
     margin-right: auto;

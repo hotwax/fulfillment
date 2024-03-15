@@ -111,7 +111,7 @@ const actions: ActionTree<UserState, RootState> = {
       // TODO Check if handling of specific status codes is required.
       showToast(translate('Something went wrong while login. Please contact administrator.'));
       logger.error("error: ", err.toString());
-      return Promise.reject(new Error(err))
+      return Promise.reject(err instanceof Object ? err : new Error(err));
     }
   },
 
@@ -392,6 +392,10 @@ const actions: ActionTree<UserState, RootState> = {
       name: '',
       value: {}
     })
+  },
+  
+  updatePwaState({ commit }, payload) {
+    commit(types.USER_PWA_STATE_UPDATED, payload);
   }
 }
 
