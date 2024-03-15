@@ -26,6 +26,10 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   getProductStoreShipmentMethCount(state) {
     return state.productStoreShipmentMethCount
-  }
+  },
+  getRejectReasonEnumTypes(state) {
+    return state.rejectReasonEnumTypes
+  },
+
 }
 export default getters;
