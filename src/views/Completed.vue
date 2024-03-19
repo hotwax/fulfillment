@@ -23,21 +23,23 @@
 
         <div class="filters">
           <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId.val">
-            <ion-checkbox slot="start" :checked="completedOrders.query.selectedCarrierPartyIds.includes(carrierPartyId.val)" @ionChange="updateSelectedCarrierPartyIds(carrierPartyId.val)"/>
-            <ion-label>
-              {{ getPartyName(carrierPartyId.val.split('/')[0]) }}
-              <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? translate('package') : translate("packages") }}</p>
-            </ion-label>
+            <ion-checkbox label-placement="end" :checked="completedOrders.query.selectedCarrierPartyIds.includes(carrierPartyId.val)" @ionChange="updateSelectedCarrierPartyIds(carrierPartyId.val)">
+              <ion-label>
+                {{ getPartyName(carrierPartyId.val.split('/')[0]) }}
+                <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? translate('package') : translate("packages") }}</p>
+              </ion-label>
+            </ion-checkbox>
             <!-- TODO: make the print icon functional -->
             <!-- <ion-icon :icon="printOutline" /> -->
           </ion-item>
 
           <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod.val">
-            <ion-checkbox slot="start" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)" @ionChange="updateSelectedShipmentMethods(shipmentMethod.val)"/>
-            <ion-label>
-              {{ getShipmentMethodDesc(shipmentMethod.val) }}
-              <p>{{ shipmentMethod.groups }} {{ shipmentMethod.groups > 1 ? translate('orders') : translate('order') }}, {{ shipmentMethod.itemCount }} {{ shipmentMethod.itemCount > 1 ? translate('items') : translate('item') }}</p>
-            </ion-label>
+            <ion-checkbox label-placement="end" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)" @ionChange="updateSelectedShipmentMethods(shipmentMethod.val)">
+              <ion-label>
+                {{ getShipmentMethodDesc(shipmentMethod.val) }}
+                <p>{{ shipmentMethod.groups }} {{ shipmentMethod.groups > 1 ? translate('orders') : translate('order') }}, {{ shipmentMethod.itemCount }} {{ shipmentMethod.itemCount > 1 ? translate('items') : translate('item') }}</p>
+              </ion-label>
+            </ion-checkbox>
           </ion-item>
         </div>
         <div class="results">

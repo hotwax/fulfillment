@@ -1,14 +1,12 @@
 <template>
   <section>
     <ion-item>
-      <ion-label>{{ translate("Mapping name") }}</ion-label>
-      <ion-input v-model="currentMapping.name" />
+      <ion-input :label="translate('Mapping name')" v-model="currentMapping.name" />
     </ion-item>
 
     <ion-list>
       <ion-item :key="field" v-for="(fieldValues, field) in currentMapping.value">
-        <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
-        <ion-input v-model="fieldValues.value" />
+        <ion-input :label="fields[field] ? fields[field].label : field" v-model="fieldValues.value" />
       </ion-item>
     </ion-list>
 
@@ -44,7 +42,6 @@ import {
   IonButton,
   IonIcon,
   IonInput,
-  IonLabel,
   IonItem,
   IonList
 } from "@ionic/vue";
@@ -60,7 +57,6 @@ export default defineComponent({
     IonButton,
     IonIcon,
     IonInput,
-    IonLabel,
     IonItem,
     IonList
   },

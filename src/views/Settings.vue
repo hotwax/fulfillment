@@ -52,8 +52,7 @@
             {{ translate('A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.') }}
           </ion-card-content>
           <ion-item lines="none">
-            <ion-label> {{ translate("Select store") }} </ion-label>
-            <ion-select interface="popover" :value="currentEComStore.productStoreId" @ionChange="setEComStore($event)">
+            <ion-select :label="translate('Select store')" interface="popover" :value="currentEComStore.productStoreId" @ionChange="setEComStore($event)">
               <ion-select-option v-for="store in (userProfile ? userProfile.stores : [])" :key="store.productStoreId" :value="store.productStoreId" >{{ store.storeName }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -69,8 +68,7 @@
             {{ translate('Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.') }}
           </ion-card-content>
           <ion-item lines="none">
-            <ion-label>{{ translate("Select facility") }}</ion-label>
-            <ion-select interface="popover" :value="currentFacility?.facilityId" @ionChange="setFacility($event)">
+            <ion-select :label="translate('Select facility')" interface="popover" :value="currentFacility?.facilityId" @ionChange="setFacility($event)">
               <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.facilityName }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -112,8 +110,7 @@
             {{ translate("Control whether the store's inventory should be made available for online sales or not.") }}
           </ion-card-content>
           <ion-item lines="none">
-            <ion-label>{{ translate("Sell online") }}</ion-label>
-            <ion-toggle :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG) || !facilityGroupDetails?.facilityGroupId" v-model="isEComInvEnabled" @click="updateEComInvStatus($event)" slot="end" />
+            <ion-toggle label-placement="start" :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG) || !facilityGroupDetails?.facilityGroupId" v-model="isEComInvEnabled" @click.prevent="updateEComInvStatus($event)">{{ translate("Sell online") }}</ion-toggle>
           </ion-item>
         </ion-card>
       </section>
@@ -154,12 +151,10 @@
             {{ translate('Print supplementary documents with the shipment for package identification.') }}
           </ion-card-content>
           <ion-item lines="none">
-            <ion-label>{{ translate("Generate shipping label") }}</ion-label>
-            <ion-toggle :checked="userPreference.printShippingLabel" @ionChange="setPrintShippingLabelPreference($event)" slot="end" />
+            <ion-toggle label-placement="start" :checked="userPreference.printShippingLabel" @ionChange="setPrintShippingLabelPreference($event)">{{ translate("Generate shipping label") }}</ion-toggle>
           </ion-item>
           <ion-item lines="none">
-            <ion-label>{{ translate("Generate packing slip") }}</ion-label>
-            <ion-toggle :checked="userPreference.printPackingSlip" @ionChange="setPrintPackingSlipPreference($event)" slot="end" />
+            <ion-toggle label-placement="start" :checked="userPreference.printPackingSlip" @ionChange="setPrintPackingSlipPreference($event)">{{ translate("Generate packing slip") }}</ion-toggle>
           </ion-item>
         </ion-card>
       </section>
@@ -396,9 +391,8 @@ export default defineComponent({
       }
     },
     async setFacility (event: any) {
-      // not updating the facility when the current facility in vuex state and the selected facility are same
-      // or when an empty value is given (on logout)
-      if (this.currentFacility.facilityId === event.detail.value || !event.detail.value) {
+      // not updating the facility when an empty value is given (on logout)
+      if (!event.detail.value) {
         return;
       }
 
@@ -508,9 +502,8 @@ export default defineComponent({
 
     },
     async setEComStore(event: any) {
-      // not updating the ecomstore when the current value in vuex state and selected value are same
-      // or when an empty value is given (on logout)
-      if (this.currentEComStore.productStoreId === event.detail.value || !event.detail.value) {
+      // not updating the ecomstore when an empty value is given (on logout)
+      if (!event.detail.value) {
         return;
       }
       if(this.userProfile) {

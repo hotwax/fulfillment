@@ -14,26 +14,19 @@
     <form>
       <ion-list>
         <ion-item>
-          <ion-label>{{ translate("Name") }}</ion-label>
-          <ion-input @ionBlur="setEnumId($event)" v-model="formData.enumName" />
+          <ion-input :label="translate('Name')" @ionBlur="setEnumId($event)" v-model="formData.enumName" />
         </ion-item>
         <ion-item ref="enumId">
-          <ion-label>{{ translate("ID") }}</ion-label>
-          <ion-input v-model="formData.enumId" @ionChange="validateEnumId" @ionBlur="markEnumIdTouched" />
-          <ion-note slot="error">
-            {{ translate("ID cannot be more than 20 characters.") }}
-          </ion-note>
+          <ion-input :label="translate('ID')" v-model="formData.enumId" @ionChange="validateEnumId" @ionBlur="markEnumIdTouched" :errorText="translate('ID cannot be more than 20 characters.')" />
         </ion-item>
         <ion-item>
-          <ion-label>{{ translate("Description") }}</ion-label>
-          <ion-input v-model="formData.description" />
+          <ion-input :label="translate('Description')" v-model="formData.description" />
         </ion-item>
       </ion-list>
 
       <ion-list>
         <ion-item>
-          <ion-label>{{ translate("Variance type") }}</ion-label>
-          <ion-select interface="popover" v-model="formData.enumTypeId">
+          <ion-select :label="translate('Variance type')" interface="popover" v-model="formData.enumTypeId">
             <ion-select-option v-for="type in rejectReasonEnumTypes" :key="type.enumTypeId" :value="type.enumTypeId">{{ type.enumTypeId }}</ion-select-option>
           </ion-select>
         </ion-item>
@@ -66,7 +59,6 @@ import {
   IonItem,
   IonLabel,
   IonList,
-  IonNote,
   IonSelect,
   IonSelectOption,
   IonTitle,
@@ -96,7 +88,6 @@ export default defineComponent({
     IonItem,
     IonLabel,
     IonList,
-    IonNote,
     IonSelect,
     IonSelectOption,
     IonTitle,

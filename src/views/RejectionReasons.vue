@@ -14,7 +14,7 @@
           <ion-reorder-group @ionItemReorder="doReorder($event)" :disabled="false">
             <div class="list-item" v-for="reason in filteredReasons" :key="reason.enumId">
               <ion-item lines="none">
-                <ion-label class="ion-text-wrap">
+                <ion-label>
                   <p class="overline">{{ reason.enumId }}</p>
                   {{ reason.enumName ? reason.enumName : reason.enumId }}
                   <p>{{ reason.description }}</p>
@@ -241,5 +241,9 @@ export default defineComponent({
 <style scoped>
 .list-item {
   --columns-desktop: 4;
+}
+
+.list-item ion-item {
+  width: 100%;
 }
 </style>

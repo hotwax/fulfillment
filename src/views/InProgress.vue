@@ -27,18 +27,20 @@
           <ion-row class="filters">
             <ion-item lines="none">
               <!-- empty value '' for 'All orders' radio -->
-              <ion-radio value="" slot="start" /> 
-              <ion-label class="ion-text-wrap">
-                {{ translate('All') }}
-                <p>{{ translate('picklists', { count: picklists.length }) }}</p>
-              </ion-label>
+              <ion-radio label-placement="end" value="">
+                <ion-label class="ion-text-wrap">
+                  {{ translate('All') }}
+                  <p>{{ translate('picklists', { count: picklists.length }) }}</p>
+                </ion-label>
+              </ion-radio>
             </ion-item>
             <ion-item lines="none" v-for="picklist in picklists" :key="picklist.id">
-              <ion-radio :value="picklist.id" slot="start" />
-              <ion-label class="ion-text-wrap">
-                {{ picklist.pickersName }}
-                <p>{{ picklist.date }}</p>
-              </ion-label>
+              <ion-radio label-placement="end" :value="picklist.id">
+                <ion-label class="ion-text-wrap">
+                  {{ picklist.pickersName }}
+                  <p>{{ picklist.date }}</p>
+                </ion-label>
+              </ion-radio>
             </ion-item>
           </ion-row>
         </ion-radio-group>
@@ -124,16 +126,14 @@
                   <!-- TODO: add functionality to update box type -->
                   <div v-if="!isIssueSegmentSelectedForItem(item)">
                     <ion-item lines="none">
-                      <ion-label>{{ translate("Select box") }}</ion-label>
-                      <ion-select interface="popover" @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
+                      <ion-select :label="translate('Select box')" interface="popover" @ionChange="updateBox($event, item, order)" :value="item.selectedBox">
                         <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName">{{ shipmentPackage.packageName }}</ion-select-option>
                       </ion-select>
                     </ion-item>
                   </div>
                   <div v-else>
                     <ion-item lines="none">
-                      <ion-label>{{ translate("Select issue") }}</ion-label>
-                      <ion-select interface="popover" @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
+                      <ion-select :label="translate('Select issue')" interface="popover" @ionChange="updateRejectReason($event, item, order)" :value="item.rejectReason" >
                         <ion-select-option v-for="reason in rejectReasons" :key="reason.enumId" :value="reason.enumId">{{ reason.description ? translate(reason.description) : reason.enumId }}</ion-select-option>
                       </ion-select>
                     </ion-item>
@@ -1261,5 +1261,9 @@ export default defineComponent({
 ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-text {
   width: 100%;
   height: 30px;
+}
+
+.order-item {
+  grid-template-columns: repeat(3, 1fr);
 }
 </style>

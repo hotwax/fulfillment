@@ -1243,14 +1243,15 @@ export default defineComponent({
 });
 </script>
 
+<style scoped>
 ion-card-header {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
   align-items: center;
   padding-bottom: 0px;
 }
 
-<style scoped>
 .box-type {
   display: flex;
   gap: var(--spacer-sm);
@@ -1267,5 +1268,9 @@ ion-card-header {
 ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-text {
   width: 100%;
   height: 30px;
+}
+
+.order-item {
+  grid-template-columns: repeat(3, 1fr);
 }
 </style>

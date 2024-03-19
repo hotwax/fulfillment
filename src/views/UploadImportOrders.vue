@@ -33,8 +33,7 @@
           <ion-list-header>{{ translate("Select the column for the following information in the uploaded CSV.") }}</ion-list-header>
 
           <ion-item :key="field" v-for="(fieldValues, field) in fields">
-            <ion-label>{{ translate(fieldValues.label) }}</ion-label>
-            <ion-select interface="popover" v-if="content.length" :placeholder="translate('Select')" v-model="fieldMapping[field].value">
+            <ion-select :label="translate(fieldValues.label)" interface="popover" :disabled="!content.length || !fieldMapping[field]" :placeholder="translate('Select')" v-model="fieldMapping[field].value">
               <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -85,7 +84,11 @@ export default defineComponent({
     return {
       file: {} as any,
       content: [] as any,
-      fieldMapping: {} as any,
+      fieldMapping: {
+        'orderId': {},
+        'facilityId': {},
+        'trackingCode': {}
+      } as any,
       fileColumns: [] as Array<string>,
       fields: process.env["VUE_APP_MAPPING_IMPORD"] ? JSON.parse(process.env["VUE_APP_MAPPING_IMPORD"]) : {}
     }

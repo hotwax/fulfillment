@@ -10,18 +10,16 @@
     </ion-toolbar>
   </ion-header>
 
-  <ion-item>
-    <ion-label>{{ translate("Mapping name") }}</ion-label>
-    <ion-input :placeholder="translate('Field mapping name')" v-model="mappingName" />
+  <ion-item lines="full">
+    <ion-input :label="translate('Mapping name')" :placeholder="translate('Field mapping name')" v-model="mappingName" />
   </ion-item>
 
   <ion-content class="ion-padding">
     <div>
       <ion-list>
         <ion-item :key="field" v-for="(fieldValues, field) in fieldMapping">
-          <ion-label>{{ translate(fieldValues.label) }}</ion-label>
-          <ion-input v-if="mappingType === 'EXPORD'" slot="end" v-model="fieldValues.value"></ion-input>
-          <ion-select v-else interface="popover" :placeholder = "translate('Select')" v-model="fieldValues.value">
+          <ion-input label-placement="fixed" :label="translate(fieldValues.label)" v-if="mappingType === 'EXPORD'" v-model="fieldValues.value" />
+          <ion-select :label="translate(fieldValues.label)" v-else interface="popover" :placeholder="translate('Select')" v-model="fieldValues.value">
             <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
           </ion-select>
         </ion-item>
@@ -47,7 +45,6 @@ import {
   IonInput,
   IonTitle,
   IonToolbar,
-  IonLabel,
   IonItem,
   IonList,
   IonSelect,
@@ -71,13 +68,12 @@ export default defineComponent({
     IonHeader,
     IonIcon,
     IonInput,
+    IonItem,
+    IonList,
     IonSelect,
     IonSelectOption,
     IonTitle,
-    IonToolbar,
-    IonLabel,
-    IonItem,
-    IonList
+    IonToolbar
   },
   data() {
     return {

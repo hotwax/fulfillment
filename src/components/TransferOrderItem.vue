@@ -14,10 +14,8 @@
         </ion-item>
       </div>
       <div class="product-count">
-        <ion-item v-if="!item.shipmentId" ref="pickedQuantity">
-          <ion-label position="floating">{{ translate("Qty") }}</ion-label>
-          <ion-input type="number" min="0" v-model="item.pickedQuantity" @ionChange="updatePickedQuantity($event, item)" @ionInput="validatePickedQuantity($event, item)" @ionBlur="markPickedQuantityTouched"/>
-          <ion-note slot="error">{{ translate('The picked quantity cannot exceed the ordered quantity.') }} {{ getShippedQuantity(item) > 0 ? translate("already shipped.", {shippedQuantity: getShippedQuantity(item)}): '' }}</ion-note>
+        <ion-item v-if="!item.shipmentId" ref="pickedQuantity" lines="none">
+          <ion-input :label="translate('Qty')" label-placement="floating" type="number" min="0" v-model="item.pickedQuantity" @ionChange="updatePickedQuantity($event, item)" @ionInput="validatePickedQuantity($event, item)" @ionBlur="markPickedQuantityTouched" :errorText="getErrorText(item)" />
         </ion-item>
         <ion-item v-else lines="none">
           <ion-label slot="end">{{ item.pickedQuantity }} {{ translate('packed') }}</ion-label>
@@ -60,7 +58,6 @@ import {
   IonInput,
   IonLabel,
   IonProgressBar,
-  IonNote,
   IonThumbnail,
   modalController,
 } from '@ionic/vue';
@@ -85,7 +82,6 @@ export default defineComponent({
     IonItem,
     IonInput,
     IonLabel,
-    IonNote,
     IonProgressBar,
     IonThumbnail,
     DxpShopifyImg,
@@ -152,7 +148,10 @@ export default defineComponent({
     },
     markPickedQuantityTouched() {
       (this as any).$refs.pickedQuantity.$el.classList.add('ion-touched');
-     },
+    },
+    getErrorText(item: any) {
+      return translate('The picked quantity cannot exceed the ordered quantity.') + " " + (this.getShippedQuantity(item) > 0 ? translate("already shipped.", {shippedQuantity: this.getShippedQuantity(item)}): '')
+    }
   }, 
   setup() {
     const store = useStore(); 
