@@ -7,8 +7,6 @@
     </ion-header>
 
     <ion-content>
-      <ion-searchbar class="searchbar" v-model="queryString" @keyup.enter="updateRejectionReasons()" :placeholder="translate('Search rejection reasons')" />
-
       <main>
         <div v-if="filteredReasons.length">
           <ion-reorder-group @ionItemReorder="doReorder($event)" :disabled="false">
@@ -64,7 +62,6 @@ import {
   IonPage,
   IonReorder,
   IonReorderGroup,
-  IonSearchbar,
   IonTitle,
   IonToolbar,
   alertController,
@@ -96,13 +93,11 @@ export default defineComponent({
     IonPage,
     IonReorder,
     IonReorderGroup,
-    IonSearchbar,
     IonTitle,
     IonToolbar,
   },
   data() {
     return {
-      queryString: '',
       filteredReasons: [],
       toast: null as any
     }
@@ -153,8 +148,8 @@ export default defineComponent({
 
       createRejectionReasonModal.onDidDismiss().then((result) => {
         if(result.data?.isUpdated) {
-          // This method is called to update filtered reasons with the updated reasons in state.
-          this.updateRejectionReasons()
+          // Updating filtered reasons with the updated reasons in state.
+          this.filteredReasons = JSON.parse(JSON.stringify(this.rejectReasons))
         }
       })
 
@@ -169,7 +164,7 @@ export default defineComponent({
       });
 
       popover.onDidDismiss().then(() => {
-        this.updateRejectionReasons()
+        this.filteredReasons = JSON.parse(JSON.stringify(this.rejectReasons))
       })
 
       return popover.present();
@@ -184,19 +179,12 @@ export default defineComponent({
 
       varianceTypeActionsPopover.onDidDismiss().then((result) => {
         if(result.data?.isUpdated) {
-          // This method is called to update filtered reasons with the updated reasons in state.
-          this.updateRejectionReasons()
+          // Updating filtered reasons with the updated reasons in state.
+          this.filteredReasons = JSON.parse(JSON.stringify(this.rejectReasons))
         }
       })
 
       return varianceTypeActionsPopover.present();
-    },
-    updateRejectionReasons() {
-      if(this.queryString) {
-        this.filteredReasons = this.rejectReasons.filter((reason: any) => reason.description?.toLowerCase().includes(this.queryString.toLowerCase()))
-      } else {
-        this.filteredReasons = JSON.parse(JSON.stringify(this.rejectReasons))
-      }
     },
     async doReorder(event: CustomEvent) {
       const previousSeq = JSON.parse(JSON.stringify(this.filteredReasons))
