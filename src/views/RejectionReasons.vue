@@ -67,6 +67,7 @@ import {
   IonSearchbar,
   IonTitle,
   IonToolbar,
+  alertController,
   modalController,
   popoverController
 } from '@ionic/vue';
@@ -115,6 +116,34 @@ export default defineComponent({
   async ionViewWillEnter() {
     await Promise.all([this.store.dispatch('util/fetchRejectReasons'), this.store.dispatch('util/fetchRejectReasonEnumTypes')])
     this.filteredReasons = this.rejectReasons ? JSON.parse(JSON.stringify(this.rejectReasons)) : []
+  },
+  async beforeRouteLeave() {
+    if(!this.toast) return
+
+    let canLeave = false;
+    const alert = await alertController.create({
+      header: translate("Leave page"),
+      message: translate("Any edits made on this page will be lost."),
+      buttons: [
+        {
+          text: translate("STAY"),
+          handler: () => {
+            canLeave = false;
+          },
+        },
+        {
+          text: translate("LEAVE"),
+          handler: () => {
+            canLeave = true;
+            this.toast.dismiss()
+          },
+        },
+      ],
+    });
+
+    alert.present()
+    await alert.onDidDismiss()
+    return canLeave
   },
   methods: {
     async openCreateRejectionReasonModal() {
