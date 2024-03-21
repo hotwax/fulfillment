@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <TransferOrderFilters content-id="transfer-order-filters" :queryString="transferOrders.query.queryString" />
+    <TransferOrderFilters menu-id="transfer-order-filters" content-id="transfer-order-filters" :queryString="transferOrders.query.queryString" />
     
     <ion-header :translucent="true">
       <ion-toolbar>
@@ -8,7 +8,7 @@
         <ion-title v-if="!transferOrders.total">{{ transferOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-title v-else>{{ transferOrders.list.length }} {{ translate('of') }} {{ transferOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="end">
+          <ion-menu-button menu="transfer-order-filters">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
         </ion-buttons>
