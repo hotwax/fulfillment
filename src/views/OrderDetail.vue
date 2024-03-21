@@ -95,7 +95,7 @@
             </div>
 
             <!-- In completed and inprogress category we only have two items in product item while css needs 3 hence adding an empty div. -->
-            <div v-if="category !== 'in-progress'"></div>
+            <div v-else></div>
 
             <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
             <div class="product-metadata">
@@ -131,7 +131,7 @@
                 </div>
 
                 <!-- In completed and inprogress category we only have two items in product item while css needs 3 hence adding an empty div. -->
-                <div v-if="category !== 'in-progress'"></div>
+                <div v-else></div>
 
                 <div class="product-metadata" v-if="category === 'in-progress' && order.shipmentPackages && order.shipmentPackages.length">
                   <ion-button @click="openRejectReasonPopover($event, null, order, kitProducts)" color="danger" fill="outline">
