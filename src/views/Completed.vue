@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <ViewSizeSelector content-id="view-size-selector" />
+    <ViewSizeSelector menu-id="view-size-selector-completed" content-id="view-size-selector" />
 
     <ion-header :translucent="true">
       <ion-toolbar>
@@ -9,7 +9,7 @@
         <ion-title v-else>{{ completedOrders.query.viewSize }} {{ translate('of') }} {{ completedOrders.total }} {{ completedOrders.total ? translate('order') : translate('orders') }}</ion-title>
 
         <ion-buttons slot="end">
-          <ion-menu-button menu="end" :disabled="!completedOrders.total">
+          <ion-menu-button menu="view-size-selector-completed" :disabled="!completedOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
         </ion-buttons>

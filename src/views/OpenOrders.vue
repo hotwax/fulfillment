@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <ViewSizeSelector content-id="view-size-selector" />
+    <ViewSizeSelector menu-id="view-size-selector-open" content-id="view-size-selector" />
     
     <ion-header :translucent="true">
       <ion-toolbar>
@@ -12,7 +12,7 @@
           <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !openOrders.total" fill="clear" color="danger" @click="recycleOutstandingOrders()">
             {{ translate("Reject all") }}
           </ion-button>
-          <ion-menu-button menu="end" :disabled="!openOrders.total">
+          <ion-menu-button menu="view-size-selector-open" :disabled="!openOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
         </ion-buttons>
