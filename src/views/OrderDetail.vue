@@ -94,6 +94,9 @@
               </ion-chip>
             </div>
 
+            <!-- In completed and inprogress category we only have two items in product item while css needs 3 hence adding an empty div. -->
+            <div v-else></div>
+
             <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
             <div class="product-metadata">
               <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
@@ -126,7 +129,10 @@
                     <ion-icon :icon="caretDownOutline" />
                   </ion-chip>
                 </div>
-                    
+
+                <!-- In completed and inprogress category we only have two items in product item while css needs 3 hence adding an empty div. -->
+                <div v-else></div>
+
                 <div class="product-metadata" v-if="category === 'in-progress' && order.shipmentPackages && order.shipmentPackages.length">
                   <ion-button @click="openRejectReasonPopover($event, null, order, kitProducts)" color="danger" fill="outline">
                     {{ translate('Report an issue') }}
@@ -145,6 +151,9 @@
                     <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                 </ion-item>
+
+                <!-- Order item css needs 3 child items. Hence adding an empty div. -->
+                <div></div>
 
                 <div class="product-metadata">
                   <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">
