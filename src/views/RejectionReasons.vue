@@ -263,4 +263,8 @@ export default defineComponent({
 .list-item ion-item {
   width: 100%;
 }
+
+ion-content {
+  --padding-bottom: 80px;
+}
 </style>
