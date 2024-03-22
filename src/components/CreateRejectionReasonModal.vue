@@ -19,7 +19,8 @@
           </ion-input>
         </ion-item>
         <ion-item ref="enumId" lines="none">
-          <ion-input :label="translate('ID')" v-model="formData.enumId" @ionChange="validateEnumId" @ionBlur="markEnumIdTouched" :errorText="translate('ID cannot be more than 20 characters.')" />
+          <ion-input :label="translate('ID')" v-model="formData.enumId" @ionChange="validateEnumId"
+            @ionBlur="markEnumIdTouched" :errorText="translate('ID cannot be more than 20 characters.')" />
         </ion-item>
         <ion-item>
           <ion-input :label="translate('Description')" v-model="formData.description" />
@@ -29,8 +30,7 @@
       <ion-list>
         <ion-item>
           <ion-select :label="translate('Variance type')" interface="popover" v-model="formData.enumTypeId">
-            <ion-select-option v-for="type in rejectReasonEnumTypes" :key="type.enumTypeId" :value="type.enumTypeId">{{
-              type.enumTypeId }}</ion-select-option>
+            <ion-select-option v-for="type in rejectReasonEnumTypes" :key="type.enumTypeId" :value="type.enumTypeId">{{ type.enumTypeId }}</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item lines="none">
