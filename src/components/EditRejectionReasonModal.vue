@@ -13,7 +13,9 @@
   <ion-content>
     <form @keyup.enter="updateRejectionReason()">
       <ion-item>
-        <ion-input :label="translate('Name')" v-model="rejectionReason.enumName" />
+        <ion-input v-model="rejectionReason.enumName">
+          <div slot="label">{{ translate('Name') }} <ion-text color="danger">*</ion-text></div>
+        </ion-input>
       </ion-item>
       <ion-item>
         <ion-textarea :label="translate('Description')" v-model="rejectionReason.description" />
@@ -39,6 +41,7 @@ import {
   IonIcon,
   IonInput,
   IonItem,
+  IonText,
   IonTextarea,
   IonTitle,
   IonToolbar,
@@ -65,6 +68,7 @@ export default defineComponent({
     IonIcon,
     IonInput,
     IonItem,
+    IonText,
     IonTextarea,
     IonTitle,
     IonToolbar
@@ -91,6 +95,11 @@ export default defineComponent({
       return JSON.stringify(this.reason) !== JSON.stringify(this.rejectionReason)
     },
     async updateRejectionReason() {
+      if (!this.rejectionReason.enumName?.trim()) {
+        showToast(translate("Rejection reason name is required."))
+        return
+      }
+
       try {
         const resp = await UtilService.updateEnumeration(this.rejectionReason)
 

@@ -14,7 +14,9 @@
     <form>
       <ion-list>
         <ion-item>
-          <ion-input :label="translate('Name')" @ionBlur="setEnumId($event)" v-model="formData.enumName" />
+          <ion-input @ionBlur="formData.enumId ? null : setEnumId(formData.enumName)" v-model="formData.enumName">
+            <div slot="label">{{ translate('Name') }} <ion-text color="danger">*</ion-text></div>
+          </ion-input>
         </ion-item>
         <ion-item ref="enumId" lines="none">
           <ion-input :label="translate('ID')" v-model="formData.enumId" @ionChange="validateEnumId" @ionBlur="markEnumIdTouched" :errorText="translate('ID cannot be more than 20 characters.')" />
@@ -27,7 +29,8 @@
       <ion-list>
         <ion-item>
           <ion-select :label="translate('Variance type')" interface="popover" v-model="formData.enumTypeId">
-            <ion-select-option v-for="type in rejectReasonEnumTypes" :key="type.enumTypeId" :value="type.enumTypeId">{{ type.enumTypeId }}</ion-select-option>
+            <ion-select-option v-for="type in rejectReasonEnumTypes" :key="type.enumTypeId" :value="type.enumTypeId">{{
+              type.enumTypeId }}</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item lines="none">
@@ -61,6 +64,7 @@ import {
   IonList,
   IonSelect,
   IonSelectOption,
+  IonText,
   IonTitle,
   IonToolbar,
   modalController
@@ -90,6 +94,7 @@ export default defineComponent({
     IonList,
     IonSelect,
     IonSelectOption,
+    IonText,
     IonTitle,
     IonToolbar
   },
@@ -113,12 +118,12 @@ export default defineComponent({
     closeModal() {
       modalController.dismiss()
     },
-    setEnumId(event: any) {
-      this.formData.enumId = generateInternalId(event.target.value)
+    setEnumId(enumName: any) {
+      this.formData.enumId = generateInternalId(enumName)
     },
     async createReason() {
-      if(!this.formData.description?.trim()) {
-        showToast(translate("Rejection reason description is required."))
+      if(!this.formData.enumName?.trim()) {
+        showToast(translate("Rejection reason name is required."))
         return
       }
 
