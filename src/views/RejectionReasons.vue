@@ -207,6 +207,7 @@ export default defineComponent({
           buttons: [{
             text: translate('Save'),
             handler: () => {
+              this.toast = null
               this.saveReasonsOrder()
             }
           }],
