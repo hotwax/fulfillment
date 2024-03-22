@@ -20,6 +20,7 @@ import {
   IonItem,
   IonList,
   IonListHeader,
+  alertController,
   modalController,
   popoverController
 } from "@ionic/vue";
@@ -61,23 +62,39 @@ export default defineComponent({
       editRejectionReasonModal.present()
     },
     async removeRejectionReason() {
-      try {
-        const resp = await UtilService.deleteEnumeration({
-          enumId: this.reason.enumId
-        })
+      const alert = await alertController
+        .create({
+          header: translate("Remove rejection reason"),
+          message: translate("Are you sure you want to remove this rejection reason?"),
+          buttons: [{
+            text: translate("Cancel"),
+            role: 'cancel'
+          }, {
+            text: translate("Confirm"),
+            handler: async () => {
+              try {
+                const resp = await UtilService.deleteEnumeration({
+                  enumId: this.reason.enumId
+                })
 
-        if(!hasError(resp)) {
-          showToast(translate("Rejection reason removed successfully."))
-          const updatedRejectReasons = this.rejectReasons.filter((rejectReason: any) => rejectReason.enumId !== this.reason.enumId)
-          await this.store.dispatch('util/updateRejectReasons', updatedRejectReasons)
-        } else {
-          throw resp.data
-        }
-      } catch(err) {
-        showToast(translate("Failed to remove rejection reason."))
-        logger.error(err)
-      }
-      popoverController.dismiss()
+                if(!hasError(resp)) {
+                  showToast(translate("Rejection reason removed successfully."))
+                  const updatedRejectReasons = this.rejectReasons.filter((rejectReason: any) => rejectReason.enumId !== this.reason.enumId)
+                  await this.store.dispatch('util/updateRejectReasons', updatedRejectReasons)
+                } else {
+                  throw resp.data
+                }
+              } catch(err) {
+                showToast(translate("Failed to remove rejection reason."))
+                logger.error(err)
+              }
+
+              popoverController.dismiss()
+            }
+          }]
+        });
+
+      return alert.present();
     }
   },
   setup() {
