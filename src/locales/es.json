@@ -294,7 +294,7 @@
   "Rejection reason updated successfully.": "Rejection reason updated successfully.",
   "Rejection reasons": "Rejection reasons",
   "Rejection reasons order has been change. Click save button to update them.": "Rejection reasons order has been change. Click save button to update them.",
-  "Rejection reason description is required.": "Rejection reason description is required.",
+  "Rejection reason name is required.": "Rejection reason name is required.",
   "Regenerate Shipping Label": "Volver a generar etiqueta de envío",
   "Remove reason": "Remove reason",
   "Replace": "Reemplazar",
