@@ -2,7 +2,7 @@
   <ion-content>
     <ion-list>
       <ion-list-header>
-        {{ reason.description }}
+        {{ reason.enumName ? reason.enumName : reason.description }}
       </ion-list-header>
       <ion-item button @click="openEditRejectionReasonModal()">
         {{ translate("Edit name and description") }}
