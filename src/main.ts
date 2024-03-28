@@ -31,7 +31,8 @@ import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
 import { dxpComponents } from '@hotwax/dxp-components';
 import { login, logout, loader } from '@/utils/user';
-import { getConfig, getProductIdentificationPref, initialise, setProductIdentificationPref, setUserLocale } from './adapter';
+import { getConfig, getProductIdentificationPref, initialise, setProductIdentificationPref, setUserLocale, setUserTimeZone,
+  getAvailableTimeZones } from './adapter';
 import localeMessages from '@/locales';
 
 const app = createApp(App)
@@ -60,6 +61,8 @@ const app = createApp(App)
     setProductIdentificationPref,
     localeMessages,
     setUserLocale,
+    setUserTimeZone,
+    getAvailableTimeZones
   });
 
 router.isReady().then(() => {
