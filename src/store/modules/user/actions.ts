@@ -192,7 +192,6 @@ const actions: ActionTree<UserState, RootState> = {
     const current: any = state.current;
     current.userTimeZone = timeZoneId;
     commit(types.USER_INFO_UPDATED, current);
-    Settings.defaultZone = current.userTimeZone;
   },
 
   // Set User Instance Url
