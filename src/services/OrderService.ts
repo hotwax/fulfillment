@@ -596,7 +596,7 @@ const retryShippingLabel = async (shipmentIds: Array<string>, forceRateShop = fa
     url: 'retryShippingLabel',  // TODO: update the api
     data: {
       shipmentIds,
-      forceRateShop
+      forceRateShop: forceRateShop ? 'Y' : 'N'
     }
   })
 }
