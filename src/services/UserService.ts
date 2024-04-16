@@ -12,22 +12,6 @@ const login = async (username: string, password: string): Promise <any> => {
   });
 }
 
-const getAvailableTimeZones = async (): Promise <any>  => {
-  return api({
-    url: "getAvailableTimeZones",
-    method: "get",
-    cache: true
-  });
-}
-
-const setUserTimeZone = async (payload: any): Promise <any>  => {
-  return api({
-    url: "setUserTimeZone",
-    method: "post",
-    data: payload
-  });
-}
-
 const getFacilityDetails = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
@@ -314,7 +298,6 @@ export const UserService = {
     createFieldMapping,
     deleteFieldMapping,
     login,
-    getAvailableTimeZones,
     getEComStores,
     getFacilityDetails,
     getFacilityOrderCount,
@@ -326,7 +309,6 @@ export const UserService = {
     recycleInProgressOrders,
     recycleOutstandingOrders,
     setUserPreference,
-    setUserTimeZone,
     getUserPermissions,
     updateFacility,
     updateFacilityToGroup,
