@@ -288,13 +288,16 @@
         if (this.queryString) {
           payload = this.queryString;
         }
-          const result = await this.store.dispatch('transferorder/updateOrderProductCount', payload);
-          if (result.isProductFound) {
-              showToast(translate("Scanned successfully.", { itemName: payload }));
-          } else {
-            showToast(translate("Scanned item is not present within the order:", { itemName: payload }));
-          }
+        
+        const result = await this.store.dispatch('transferorder/updateOrderProductCount', payload);
+        
+        if (result.isProductFound) {
+          showToast(translate("Scanned successfully.", { itemName: payload }));
+        } else {
+          showToast(translate("Scanned item is not present within the order:", { itemName: payload }));
+        }
       },
+      
       async scanCode () {
         const modal = await modalController
           .create({
