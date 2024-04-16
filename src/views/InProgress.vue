@@ -218,7 +218,7 @@
               </div>
             </div>
           </ion-card>
-          <ion-infinite-scroll @ionInfinite="loadMoreInProgressOrders($event)" threshold="100px" :disabled="!isInProgressOrderScrollable()">
+          <ion-infinite-scroll @ionInfinite="loadMoreInProgressOrders($event)" threshold="100px" :disabled="!isInProgressOrderScrollable()" :key="inProgressOrders.query.queryString">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
           </ion-infinite-scroll>
         </div>
