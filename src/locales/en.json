@@ -342,6 +342,8 @@
   "Setting fulfillment capacity to 0 disables new order from being allocated to this facility. Leave this empty if this facility's fulfillment capacity is unrestricted.": "Setting fulfillment capacity to 0 disables new order from being allocated to this facility. Leave this empty if this facility's fulfillment capacity is unrestricted.",
   "Settings": "Settings",
   "Set Limit": "Set Limit",
+  "Scanned item is not present within the order:": "Scanned item is not present within the order: {itemName}",
+  "Scanned successfully.": "Scanned {itemName} successfully.",
   "Selected TimeZone": "Selected TimeZone",
   "Select a different time zone": "Select a different time zone",
   "Ship": "Ship",
