@@ -341,7 +341,7 @@
   "Settings": "Settings",
   "Set Limit": "Set Limit",
   "Scanned item is not present within the order:": "Scanned item is not present within the order: {itemName}",
-  "Scanned successfully:": "Scanned {itemName} successfully.",
+  "Scanned successfully.": "Scanned {itemName} successfully.",
   "Ship": "Ship",
   "shipments ready to ship": "shipments ready to ship",
   "Ship Now": "Ship Now",
