@@ -30,7 +30,7 @@
             </ion-item>
           </ion-list>
 
-          <ion-infinite-scroll @ionInfinite="loadMoreTransferOrders($event)" threshold="100px" :disabled="!isTransferOrdersScrollable()">
+          <ion-infinite-scroll @ionInfinite="loadMoreTransferOrders($event)" threshold="100px" :disabled="!isTransferOrdersScrollable()" :key="transferOrders.query.queryString">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
           </ion-infinite-scroll>
         </div>
