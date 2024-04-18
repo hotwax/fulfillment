@@ -16,7 +16,7 @@
       </ion-toolbar>
     </ion-header>
     
-    <ion-content id="view-size-selector">
+    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
       <ion-searchbar class="searchbar" :value="completedOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)" />
 
       <div v-if="completedOrders.total">
@@ -156,7 +156,7 @@
               </div>
             </div>
           </ion-card>
-          <ion-infinite-scroll @ionInfinite="loadMoreCompletedOrders($event)" threshold="100px" :disabled="!isCompletedOrderScrollable()" :key="completedOrders.query.queryString">
+          <ion-infinite-scroll @ionInfinite="loadMoreCompletedOrders($event)" threshold="100px" v-show="isScrollingEnabled && isCompletedOrderScrollable()" ref="infiniteScrollRef">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
           </ion-infinite-scroll>
         </div>
@@ -254,7 +254,8 @@ export default defineComponent({
     return {
       shipmentMethods: [] as Array<any>,
       carrierPartyIds: [] as Array<any>,
-      searchedQuery: ''
+      searchedQuery: '',
+      isScrollingEnabled: false
     }
   },
   computed: {
@@ -277,6 +278,9 @@ export default defineComponent({
     this.store.dispatch('order/clearCompletedOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
+  async ionViewWillEnter() {
+    this.isScrollingEnabled = false;
+  },
   methods: {
     getErrorMessage() {
       return this.searchedQuery === '' ? translate("doesn't have any completed orders right now.", { facilityName: this.currentFacility.facilityName }) : translate( "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
@@ -293,6 +297,17 @@ export default defineComponent({
     },
     getCompletedOrders() {
       return JSON.parse(JSON.stringify(this.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
+    },
+    enableScrolling() {
+      const parentElement = (this as any).$refs.contentRef.$el
+      const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
+      let scrollHeight = scrollEl.scrollHeight, infiniteHeight = (this as any).$refs.infiniteScrollRef.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
+      const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
+      if(distanceFromInfinite < 0) {
+        this.isScrollingEnabled = false;
+      } else {
+        this.isScrollingEnabled = true;
+      }
     },
     async loadMoreCompletedOrders(event: any) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))

@@ -15,7 +15,7 @@
       </ion-toolbar>
     </ion-header>
     
-    <ion-content id="transfer-order-filters">
+    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="transfer-order-filters">
       <ion-searchbar class="better-name-here" :value="transferOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="transferOrders.total">
         <div class="results">
@@ -29,14 +29,16 @@
               <ion-badge slot="end">{{ order.orderStatusDesc }}</ion-badge>
             </ion-item>
           </ion-list>
-            <!--
-              When searching for a keyword, and if the user moves to the last item, then the didFire value inside infinite scroll becomes true and thus the infinite scroll does not trigger again on the same page(https://github.com/hotwax/users/issues/84).
-              In ionic v7.6.0, an issue related to infinite scroll has been fixed that when more items can be added to the DOM, but infinite scroll does not fire as the window is not completely filled with the content(https://github.com/ionic-team/ionic-framework/issues/18071).
-              The above fix in ionic 7.6.0 is resulting in the issue of infinite scroll not being called again.
-              To fix this, we have added a key with value as queryString(searched keyword), so that the infinite scroll component can be re-rendered
-              whenever the searched string is changed resulting in the correct behaviour for infinite scroll
-            -->
-          <ion-infinite-scroll @ionInfinite="loadMoreTransferOrders($event)" threshold="100px" :disabled="!isTransferOrdersScrollable()" :key="transferOrders.query.queryString">
+             <!--
+                When searching for a keyword, and if the user moves to the last item, then the didFire value inside infinite scroll becomes true and thus the infinite scroll does not trigger again on the same page(https://github.com/hotwax/users/issues/84).
+                Also if we are at the section that has been loaded by infinite-scroll and then move to the details page then the list infinite scroll does not work after coming back to the page
+                In ionic v7.6.0, an issue related to infinite scroll has been fixed that when more items can be added to the DOM, but infinite scroll does not fire as the window is not completely filled with the content(https://github.com/ionic-team/ionic-framework/issues/18071).
+                The above fix in ionic 7.6.0 is resulting in the issue of infinite scroll not being called again.
+                To fix this we have maintained another variable `isScrollingEnabled` to check whether the scrolling can be performed or not.
+                If we do not define an extra variable and just use v-show to check for `isScrollable` then when coming back to the page infinite-scroll is called programatically.
+                We have added an ionScroll event on ionContent to check whether the infiniteScroll can be enabled or not by toggling the value of isScrollingEnabled whenever the height < 0.
+              -->
+          <ion-infinite-scroll @ionInfinite="loadMoreTransferOrders($event)" threshold="100px" v-show="isScrollingEnabled && isTransferOrdersScrollable()" ref="infiniteScrollRef">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
           </ion-infinite-scroll>
         </div>
@@ -105,12 +107,27 @@ export default defineComponent({
   data () {
     return {
       shipmentMethods: [] as Array<any>,
-      searchedQuery: ''
+      searchedQuery: '',
+      isScrollingEnabled: false
     }
+  },
+  async ionViewWillEnter() {
+    this.isScrollingEnabled = false;
   },
   methods: {
     getErrorMessage() {
       return this.searchedQuery === '' ? translate("doesn't have any transfer orders right now.", { facilityName: this.currentFacility.facilityName }) : translate( "No results found for .", { searchedQuery: this.searchedQuery })
+    },
+    enableScrolling() {
+      const parentElement = (this as any).$refs.contentRef.$el
+      const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
+      let scrollHeight = scrollEl.scrollHeight, infiniteHeight = (this as any).$refs.infiniteScrollRef.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
+      const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
+      if(distanceFromInfinite < 0) {
+        this.isScrollingEnabled = false;
+      } else {
+        this.isScrollingEnabled = true;
+      }
     },
     async loadMoreTransferOrders(event: any) {
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
