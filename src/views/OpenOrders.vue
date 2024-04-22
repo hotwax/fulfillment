@@ -123,7 +123,7 @@
             </div> -->
           </ion-card>
 
-          <ion-infinite-scroll @ionInfinite="loadMoreOpenOrders($event)" threshold="100px" v-show="isScrollingEnabled && isOpenOrdersScrollable()" ref="infiniteScrollRef">
+          <ion-infinite-scroll @ionInfinite="loadMoreOpenOrders($event)" threshold="100px" v-show="isOpenOrdersScrollable()" ref="infiniteScrollRef">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
           </ion-infinite-scroll>
         </div>
@@ -252,6 +252,10 @@ export default defineComponent({
       }
     },
     async loadMoreOpenOrders(event: any) {
+      // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
+      if (!(this.isScrollingEnabled && this.isOpenOrdersScrollable())) {
+        await event.target.complete();
+      }
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
       openOrdersQuery.viewIndex++;
       await this.store.dispatch('order/updateOpenOrderIndex', { ...openOrdersQuery })

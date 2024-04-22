@@ -38,7 +38,7 @@
                 If we do not define an extra variable and just use v-show to check for `isScrollable` then when coming back to the page infinite-scroll is called programatically.
                 We have added an ionScroll event on ionContent to check whether the infiniteScroll can be enabled or not by toggling the value of isScrollingEnabled whenever the height < 0.
               -->
-          <ion-infinite-scroll @ionInfinite="loadMoreTransferOrders($event)" threshold="100px" v-show="isScrollingEnabled && isTransferOrdersScrollable()" ref="infiniteScrollRef">
+          <ion-infinite-scroll @ionInfinite="loadMoreTransferOrders($event)" threshold="100px" v-show="isTransferOrdersScrollable()" ref="infiniteScrollRef">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
           </ion-infinite-scroll>
         </div>
@@ -130,6 +130,10 @@ export default defineComponent({
       }
     },
     async loadMoreTransferOrders(event: any) {
+       // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
+       if (!(this.isScrollingEnabled && this.isTransferOrdersScrollable())) {
+        await event.target.complete();
+      }
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
       transferOrdersQuery.viewIndex = this.transferOrders.list?.length / (process.env.VUE_APP_VIEW_SIZE as any);
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
