@@ -19,7 +19,7 @@
       </ion-toolbar>
     </ion-header>
     
-    <ion-content id="view-size-selector">
+    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
       <ion-searchbar class="searchbar" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="openOrders.total">
         <div class="filters">
@@ -123,7 +123,7 @@
             </div> -->
           </ion-card>
 
-          <ion-infinite-scroll @ionInfinite="loadMoreOpenOrders($event)" threshold="100px" :disabled="!isOpenOrdersScrollable()" :key="openOrders.query.queryString">
+          <ion-infinite-scroll @ionInfinite="loadMoreOpenOrders($event)" threshold="100px" v-show="isOpenOrdersScrollable()" ref="infiniteScrollRef">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
           </ion-infinite-scroll>
         </div>
@@ -226,8 +226,12 @@ export default defineComponent({
   data () {
     return {
       shipmentMethods: [] as Array<any>,
-      searchedQuery: ''
+      searchedQuery: '',
+      isScrollingEnabled: false
     }
+  },
+  async ionViewWillEnter() {
+    this.isScrollingEnabled = false;
   },
   methods: {
     getErrorMessage() {
@@ -236,7 +240,22 @@ export default defineComponent({
     getOpenOrders() {
       return JSON.parse(JSON.stringify(this.openOrders.list)).slice(0, (this.openOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
     },
+    enableScrolling() {
+      const parentElement = (this as any).$refs.contentRef.$el
+      const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
+      let scrollHeight = scrollEl.scrollHeight, infiniteHeight = (this as any).$refs.infiniteScrollRef.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
+      const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
+      if(distanceFromInfinite < 0) {
+        this.isScrollingEnabled = false;
+      } else {
+        this.isScrollingEnabled = true;
+      }
+    },
     async loadMoreOpenOrders(event: any) {
+      // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
+      if (!(this.isScrollingEnabled && this.isOpenOrdersScrollable())) {
+        await event.target.complete();
+      }
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
       openOrdersQuery.viewIndex++;
       await this.store.dispatch('order/updateOpenOrderIndex', { ...openOrdersQuery })
