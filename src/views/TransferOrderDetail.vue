@@ -40,7 +40,7 @@
           <div class="segments" v-if="currentOrder">
             <template v-if="selectedSegment === 'open'">
               <template v-if="getTOItems('open')?.length > 0">
-                <TransferOrderItem v-for="item in getTOItems('open')" :key="item.orderItemSeqId" :itemDetail="item" />
+                <TransferOrderItem v-for="item in getTOItems('open')" :key="item.orderItemSeqId" :itemDetail="item" :class="item.internalName === lastScannedId ? 'scanned-item' : '' " :id="item.internalName"/>
               </template>
               <template v-else>
                 <div class="empty-state">
@@ -199,7 +199,8 @@
       return {
         queryString: '',
         selectedSegment: 'open',
-        isCreatingShipment: false
+        isCreatingShipment: false,
+        lastScannedId: ''
       }
     },
     async ionViewWillEnter() {
@@ -290,12 +291,23 @@
         }
         
         const result = await this.store.dispatch('transferorder/updateOrderProductCount', payload);
-        
-        if (result.isProductFound) {
-          showToast(translate("Scanned successfully.", { itemName: payload }));
+        if (result.isCompleted) {
+          showToast(translate("Scanned item is not present within the order:", { itemName: payload }))
+        }
+        else if (result.isProductFound) {
+          showToast(translate("Scanned successfully.", { itemName: payload }))
+          this.lastScannedId = payload
+          // Highlight specific element
+          const scannedElement = document.getElementById(payload);
+          scannedElement && (scannedElement.scrollIntoView());
+          // Scanned product should get un-highlighted after 3s for better experience hence adding setTimeOut
+          setTimeout(() => {
+            this.lastScannedId = ''
+          }, 3000)
         } else {
           showToast(translate("Scanned item is not present within the order:", { itemName: payload }));
         }
+        this.queryString = ''
       },
       
       async scanCode () {
@@ -382,6 +394,13 @@
     max-width: 1110px;
     margin-right: auto;
     margin-left: auto;
+  }
+  .scanned-item {
+    /*
+      Todo: used outline for highliting items for now, need to use border
+      Done this because currently ion-item inside ion-card is not inheriting highlighted background property.
+    */
+    outline: 2px solid var( --ion-color-medium-tint);
   }
   </style>
   

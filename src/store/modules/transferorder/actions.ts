@@ -263,6 +263,8 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   async updateOrderProductCount({ commit, state }, payload ) {
     const item = state.current.items.find((item: any) => item.internalName === payload);
     if(item){
+      if(item.statusId === 'ITEM_COMPLETED') 
+      return { isCompleted: true }
       item.pickedQuantity = parseInt(item.pickedQuantity) + 1;
       commit(types.ORDER_CURRENT_UPDATED, state.current )
       return { isProductFound: true }
