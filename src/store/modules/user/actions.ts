@@ -84,17 +84,13 @@ const actions: ActionTree<UserState, RootState> = {
         const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
         store && (preferredStore = store)
       }
-
-      // Get product identification from api using dxp-component
-      await useProductIdentificationStore().getIdentificationPref(preferredStoreId ? preferredStoreId : preferredStore.productStoreId)
-        .catch((error) => logger.error(error));
-
       /*  ---- Guard clauses ends here --- */
 
       setPermissions(appPermissions);
       if (userProfile.userTimeZone) {
         Settings.defaultZone = userProfile.userTimeZone;
       }
+      updateToken(token)
 
       dispatch('getFieldMappings')
 
@@ -104,7 +100,11 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_INFO_UPDATED, userProfile);
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       commit(types.USER_TOKEN_CHANGED, { newToken: token })
-      updateToken(token)
+
+      // Get product identification from api using dxp-component
+      await useProductIdentificationStore().getIdentificationPref(preferredStoreId ? preferredStoreId : preferredStore.productStoreId)
+        .catch((error) => logger.error(error));
+
       this.dispatch('util/findProductStoreShipmentMethCount')
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
