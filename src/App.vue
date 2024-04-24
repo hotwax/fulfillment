@@ -127,9 +127,13 @@ export default defineComponent({
       Settings.defaultZone = this.userProfile.userTimeZone;
     }
 
-    // Get product identification from api using dxp-component
-    await useProductIdentificationStore().getIdentificationPref(this.currentEComStore?.productStoreId)
-      .catch((error) => logger.error(error));
+    // If fetching identifier without checking token then on login the app stucks in a loop, as the mounted hook runs before
+    // token is available which results in api failure as unauthenticated, thus making logout call and then login call again and so on.
+    if(this.userToken) {
+      // Get product identification from api using dxp-component
+      await useProductIdentificationStore().getIdentificationPref(this.currentEComStore?.productStoreId)
+        .catch((error) => logger.error(error));
+    }
   },
   unmounted() {
     emitter.off('presentLoader', this.presentLoader);
