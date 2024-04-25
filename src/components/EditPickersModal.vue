@@ -147,6 +147,11 @@ export default defineComponent({
           partyId_op: 'contains',
           partyId_ic: 'Y',
           partyId_grp: '4',
+          groupName_value: this.queryString,
+          groupName_op: 'contains',
+          groupName_ic: 'Y',
+          groupName_grp: '5',
+          
         }
       }
 
