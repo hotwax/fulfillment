@@ -384,7 +384,58 @@ const deleteEnumeration = async (payload: any): Promise<any> => {
   })
 }
 
+const getSecurityGroups = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "POST",
+    data: payload,
+    cache: true
+  })
+}
+
+const getPermissionsByGroup = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "POST",
+    data: payload,
+    cache: true
+  })
+}
+
+const generatePermission = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createSecurityPermission",
+    method: "POST",
+    data: payload,
+  })
+}
+
+const getPermissions = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "POST",
+    data: payload
+  })
+}
+
+const addSecurityPermissionToSecurityGroup = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/addSecurityPermissionToSecurityGroup",
+    method: "post",
+    data: payload
+  });
+}
+
+const removeSecurityPermissionFromSecurityGroup = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateSecurityPermissionToSecurityGroup",
+    method: "post",
+    data: payload
+  });
+}
+
 export const UtilService = {
+  addSecurityPermissionToSecurityGroup,
   createPicklist,
   createEnumeration,
   fetchCarrierPartyIds,
@@ -407,7 +458,12 @@ export const UtilService = {
   findShipmentItemInformation,
   findShipmentPackages,
   fetchTransferOrderFacets,
+  generatePermission,
   getAvailablePickers,
+  getPermissions,
+  getPermissionsByGroup,
+  getSecurityGroups,
+  removeSecurityPermissionFromSecurityGroup,
   resetPicker,
   deleteEnumeration,
   updateEnumeration

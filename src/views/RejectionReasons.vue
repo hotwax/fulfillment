@@ -25,6 +25,16 @@
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </div>
+
+              <div class="tablet">
+                <ion-chip outline v-if="securityGroupsByPermission[reason.enumId]" @click="createPermission(reason)">
+                  {{ translate("security groups", { count: securityGroupsByPermission[reason.enumId]?.length || 0 }) }}
+                </ion-chip>
+                <ion-button v-else fill="outline" size="small" @click="createPermission(reason)">
+                  <ion-icon slot="start" :icon="idCardOutline" />
+                  {{ translate("Create permission") }}
+                </ion-button>
+              </div>
   
               <ion-reorder />
   
@@ -69,7 +79,7 @@ import {
   popoverController
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { addOutline, caretDownOutline, ellipsisVerticalOutline } from 'ionicons/icons';
+import { addOutline, caretDownOutline, ellipsisVerticalOutline, idCardOutline } from 'ionicons/icons';
 import { translate } from '@hotwax/dxp-components';
 import CreateRejectionReasonModal from '@/components/CreateRejectionReasonModal.vue';
 import RejectReasonActionsPopver from '@/components/RejectReasonActionsPopver.vue';
@@ -77,6 +87,7 @@ import VarianceTypeActionsPopover from '@/components/VarianceTypeActionsPopover.
 import { mapGetters, useStore } from 'vuex';
 import { UtilService } from '@/services/UtilService';
 import { showToast } from '@/utils';
+import CreatePermission from '@/components/CreatePermission.vue';
 
 export default defineComponent({
   name: 'RejectionReasons',
@@ -106,11 +117,18 @@ export default defineComponent({
     ...mapGetters({
       rejectReasons: 'util/getRejectReasons',
       rejectReasonEnumTypes: 'util/getRejectReasonEnumTypes',
+      securityGroupsByPermission: "util/getSecurityGroupsByPermissionId"
     })
   },
   async ionViewWillEnter() {
     await Promise.all([this.store.dispatch('util/fetchRejectReasons'), this.store.dispatch('util/fetchRejectReasonEnumTypes')])
     this.filteredReasons = this.rejectReasons ? JSON.parse(JSON.stringify(this.rejectReasons)) : []
+
+    const rejectionReasonIds = this.filteredReasons.map((reason: any) => reason.enumId)
+
+    // TODO: check by failing one api
+    await this.store.dispatch("util/getPermissions", rejectionReasonIds)
+    await this.store.dispatch("util/getPermissionsByGroup", rejectionReasonIds)
   },
   async beforeRouteLeave() {
     if(!this.toast) return
@@ -240,6 +258,16 @@ export default defineComponent({
       } else {
         showToast(translate("Sequence for rejection reasons updated successfully."))
       }
+    },
+    async createPermission(reason: any) {
+      await this.store.dispatch("util/getSecurityGroups")
+      const createPermissionModal = await modalController.create({
+        component: CreatePermission,
+        componentProps: {
+          reason
+        }
+      });
+      return createPermissionModal.present();
     }
   },
   setup() {
@@ -249,6 +277,7 @@ export default defineComponent({
       addOutline,
       caretDownOutline,
       ellipsisVerticalOutline,
+      idCardOutline,
       store,
       translate,
     }
@@ -258,7 +287,7 @@ export default defineComponent({
 
 <style scoped>
 .list-item {
-  --columns-desktop: 4;
+  --columns-desktop: 5;
 }
 
 .list-item ion-item {

@@ -351,8 +351,110 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async updateRejectReasons({ commit }, payload) {
     commit(types.UTIL_REJECT_REASONS_UPDATED, payload)
-  }
+  },
 
+  async getSecurityGroups({ commit, state }) {
+    // Do not fetch security groups information if already available
+    if(state.securityGroups.length) {
+      return;
+    }
+
+    const payload = {
+      entityName: "SecurityGroup",
+      viewSize: 200,
+      distinct: "Y",
+      noConditionFind: "Y",
+      fieldList: ["description", "groupId", "groupName"],
+      inputFields: {
+        groupTypeEnumId: "PRM_CLASS_TYPE",
+        groupTypeEnumId_op: "notEqual"
+      }
+    }
+    let securityGroups = []
+
+    try {
+      const resp = await UtilService.getSecurityGroups(payload)
+
+      if(!hasError(resp)) {
+        securityGroups = resp.data.docs
+      } else {
+        throw resp.data
+      }
+    } catch(error) {
+      logger.error(error);
+    }
+    commit(types.UTIL_SECURITY_GROUPS_UPDATED, securityGroups);
+  },
+
+  async getPermissionsByGroup({ commit, state }, permissionIds) {
+    let securityGroupsByPermission = state.securityGroupsByPermission
+
+    try {
+      const resp = await UtilService.getPermissionsByGroup({
+        entityName: "SecurityGroupAndPermission",
+        distinct: "Y",
+        noConditionFind: "Y",
+        filterByDate: "Y",
+        viewSize: 250,  // TODO: need to check on viewSize as we are fetching groups for multiple permissions at once
+        inputFields: {
+          permissionId: permissionIds,
+          permissionId_op: "in"
+        }
+      })
+
+      if (!hasError(resp) && resp.data.docs.length) {
+        securityGroupsByPermission = resp.data.docs.reduce((groups: any, group: any) => {
+          if(group.permissionId) {
+            groups[group.permissionId].push(group)
+          }
+          return groups;
+        }, securityGroupsByPermission)
+      } else {
+        throw resp.data
+      }
+    } catch(error) {
+      logger.error(error);
+    }
+
+    commit(types.UTIL_SECURITY_GROUPS_BY_PERMISSION_UPDATED, securityGroupsByPermission)
+  },
+
+  async getPermissions({ commit }, reasonIds) {
+    const permissions = {} as any;
+
+    try {
+      const resp = await UtilService.getPermissions({
+        entityName: "SecurityPermission",
+        distinct: "Y",
+        noConditionFind: "Y",
+        fieldList: ["description", "permissionId"],
+        viewSize: 250,
+        inputFields: {
+          permissionId: reasonIds,
+          permissionId_op: "in"
+        }
+      })
+
+      if (!hasError(resp) && resp.data.count) {
+        resp.data.docs.map((permission: any) => {
+          permissions[permission.permissionId] = []
+        })
+      } else {
+        throw resp.data
+      }
+    } catch (error) {
+      logger.error(error);
+    }
+
+    commit(types.UTIL_SECURITY_GROUPS_BY_PERMISSION_UPDATED, permissions)
+  },
+
+  async updatePermissionForRejectionReason({ commit, state }, { id, value }) {
+    commit(types.UTIL_SECURITY_GROUPS_BY_PERMISSION_UPDATED, {
+      ...state.securityGroupsByPermission,
+      [id]: value
+    })
+  }
 }
 
 export default actions;

@@ -8,4 +8,6 @@ export default interface UtilState {
   statusDesc: any;
   productStoreShipmentMethCount: number;
   rejectReasonEnumTypes: [];
+  securityGroups: Array<any>;
+  securityGroupsByPermission: any;
 }

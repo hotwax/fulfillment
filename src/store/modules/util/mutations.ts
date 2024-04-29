@@ -30,5 +30,12 @@ const mutations: MutationTree <UtilState> = {
   [types.UTIL_REJECT_REASON_ENUM_TYPES_UPDATED](state, payload) {
     state.rejectReasonEnumTypes = payload
   },
+  [types.UTIL_SECURITY_GROUPS_UPDATED](state, payload) {
+    state.securityGroups = payload
+  },
+  [types.UTIL_SECURITY_GROUPS_BY_PERMISSION_UPDATED](state, payload) {
+    console.log('securityGroupsByPermission', payload)
+    state.securityGroupsByPermission = payload
+  }
 }
 export default mutations;

@@ -16,7 +16,9 @@ const utilModule: Module<UtilState, RootState> = {
     paymentMethodTypeDesc: {},
     statusDesc: {},
     productStoreShipmentMethCount: 0,
-    rejectReasonEnumTypes: []
+    rejectReasonEnumTypes: [],
+    securityGroups: [],
+    securityGroupsByPermission: {}
   },
   getters,
   actions,

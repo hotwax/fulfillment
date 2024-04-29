@@ -30,6 +30,11 @@ const getters: GetterTree <UtilState, RootState> = {
   getRejectReasonEnumTypes(state) {
     return state.rejectReasonEnumTypes
   },
-
+  getSecurityGroups(state) {
+    return state.securityGroups
+  },
+  getSecurityGroupsByPermissionId(state) {
+    return state.securityGroupsByPermission
+  }
 }
 export default getters;
