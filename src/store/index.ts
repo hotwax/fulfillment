@@ -11,6 +11,7 @@ import transferOrderModule from "./modules/transferorder"
 import utilModule from "./modules/util"
 import stockModule from "./modules/stock"
 import { setPermissions } from '@/authorization'
+import orderLookupModule from "./modules/orderLookup"
 
 
 // TODO check how to register it from the components only
@@ -38,6 +39,7 @@ const store = createStore<RootState>({
         'user': userModule,
         'product': productModule,
         'order': orderModule,
+        'orderLookup': orderLookupModule,
         'util': utilModule,
         'stock': stockModule,
         'transferorder': transferOrderModule
