@@ -1143,6 +1143,9 @@ export default defineComponent({
         }, {
           text: translate('Reject'),
           handler: async () => {
+            await alert.dismiss()
+            emitter.emit("presentLoader")
+
             let resp;
 
             try {
@@ -1161,6 +1164,7 @@ export default defineComponent({
               showToast(translate('Failed to reject in progress orders'))
               logger.error('Failed to reject in progress orders', err)
             }
+            emitter.emit("dismissLoader")
           }
         }]
       });
