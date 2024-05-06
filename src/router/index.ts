@@ -5,6 +5,8 @@ import InProgress from '@/views/InProgress.vue'
 import OpenOrders from "@/views/OpenOrders.vue"
 import Settings from "@/views/Settings.vue"
 import RejectionReasons from '@/views/RejectionReasons.vue';
+import Carriers from '@/views/Carriers.vue'
+import CarrierDetail from '@/views/CarrierDetail.vue'
 import store from '@/store'
 import Exim from "@/views/Exim.vue"
 import UploadImportOrders from "@/views/UploadImportOrders.vue"
@@ -171,6 +173,25 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     meta: {
       permissionId: "APP_REJECTION_REASONS_VIEW"
+    }
+  },
+  {
+    path: "/carriers",
+    name: "Carriers",
+    component: Carriers,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_CARRIERS_VIEW"
+    }
+  },
+  {
+    path: '/carrier-details/:partyId',
+    name: 'CarrierDetail',
+    component: CarrierDetail,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_CARRIERS_VIEW"
     }
   }
 ]

@@ -10,6 +10,7 @@ import orderModule from "./modules/order"
 import transferOrderModule from "./modules/transferorder"
 import utilModule from "./modules/util"
 import stockModule from "./modules/stock"
+import carrierModule from "./modules/carrier"
 import { setPermissions } from '@/authorization'
 
 
@@ -40,7 +41,8 @@ const store = createStore<RootState>({
         'order': orderModule,
         'util': utilModule,
         'stock': stockModule,
-        'transferorder': transferOrderModule
+        'transferorder': transferOrderModule,
+        'carrier': carrierModule
     },
 })
 

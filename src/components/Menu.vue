@@ -146,6 +146,14 @@ export default defineComponent({
         title: "Rejection reasons",
         url: "/rejection-reasons",
         childRoutes: ["/rejection-reasons/"],
+      },
+      {
+        title: "Carriers & Shipment Methods",
+        url: "/carriers",
+        childRoutes: ["/carrier-details"],
+        meta: {
+          permissionId: "APP_CARRIERS_VIEW"
+        }
       }
     ];
 
