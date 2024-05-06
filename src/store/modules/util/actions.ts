@@ -402,7 +402,7 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   async fetchShipmentGatewayConfigs({ commit }) {
-    let configs  = [];
+    let configs  = {};
     try {
       const payload = {
         "entityName": "ShipmentGatewayConfig",
@@ -412,7 +412,10 @@ const actions: ActionTree<UtilState, RootState> = {
 
       const resp = await UtilService.fetchShipmentGatewayConfigs(payload)
       if (!hasError(resp) && resp.data.count > 0) {
-        configs = resp.data.docs
+        configs = resp.data.docs.reduce((updatedConfigDetail:any, config:any) => {
+          updatedConfigDetail[config.shipmentGatewayConfigId] = config;
+          return updatedConfigDetail;
+        }, {})
       } else {
         throw resp.data
       }

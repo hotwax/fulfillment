@@ -103,7 +103,7 @@
                   </ion-item>
                   <div class="tablet">
                     <ion-chip v-if="shipmentMethod.shipmentGatewayConfigId" outline @click.stop="updateShipmentGatewayConfigId(shipmentMethod)">
-                      <ion-label>{{ shipmentMethod?.shipmentGatewayConfigId }}</ion-label>
+                      <ion-label>{{ getGatewayConfigDescription(shipmentMethod?.shipmentGatewayConfigId)}}</ion-label>
                     </ion-chip>
                     <ion-chip v-else :disabled="!shipmentMethod.isChecked" outline @click.stop="updateShipmentGatewayConfigId(shipmentMethod)">
                       <ion-icon :icon="addCircleOutline" />
@@ -239,6 +239,10 @@
     methods: {
       getTime(time: any) {
         return DateTime.fromMillis(time).toFormat("dd MMMM yyyy t a")
+      },
+      getGatewayConfigDescription(shipmentGatewayConfigId: string) {
+        const config = this.shipmentGatewayConfigs[shipmentGatewayConfigId];
+        return config.description ? config.description : shipmentGatewayConfigId
       },
       async updateShipmentMethodQuery() {
         await this.store.dispatch('carrier/updateShipmentMethodQuery', this.shipmentMethodQuery)
@@ -377,7 +381,7 @@
       },
       async updateShipmentGatewayConfigId(shipmentMethod: any) {
         let configOptions = [] as any;
-        this.shipmentGatewayConfigs.forEach((config: any) => {
+        Object.values(this.shipmentGatewayConfigs).forEach((config: any) => {
           configOptions.push({
             name: "shipmentGatewayConfigId",
             label: config.description,
