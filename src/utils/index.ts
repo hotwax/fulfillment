@@ -142,4 +142,18 @@ const generateInternalId = (name: string) => {
   return name.trim().toUpperCase().split(' ').join('_');
 }
 
-export { copyToClipboard, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getFeature, getIdentificationId, handleDateTimeInput, showToast, hasError, parseCsv, jsonToCsv}
+const sortItems = (items: any, sortByField: any) => {
+  items.sort((firstMethod:any, secondMethod:any) => {
+    if (firstMethod[sortByField] === null && secondMethod[sortByField] !== null) {
+        return 1;
+    } else if (firstMethod[sortByField] !== null && secondMethod[sortByField] === null) {
+        return -1;
+    } else {
+        return firstMethod[sortByField] - secondMethod[sortByField];
+    }
+  });
+
+}
+
+
+export { copyToClipboard, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getFeature, getIdentificationId, handleDateTimeInput, showToast, sortItems, hasError, parseCsv, jsonToCsv}

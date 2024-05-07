@@ -1,6 +1,7 @@
 import { GetterTree } from "vuex";
 import CarrierState from "./CarrierState";
 import RootState from "../../RootState";
+import { sortItems } from '@/utils';
 
 const getters: GetterTree<CarrierState, RootState> = {
   getCarriers (state) {
@@ -16,7 +17,8 @@ const getters: GetterTree<CarrierState, RootState> = {
     return state.shipmentMethods;
   },
   getFilteredShipmentMethods(state) {
-    let shipmentMethods = JSON.parse(JSON.stringify(state.shipmentMethods))
+    let shipmentMethods = Object.values(JSON.parse(JSON.stringify(state.shipmentMethods)))
+
     const query = state.shipmentMethodQuery
     
     if (query.showSelected) {

@@ -58,7 +58,7 @@
   import { defineComponent } from "vue";
   import { close, closeCircle, saveOutline } from "ionicons/icons";
   import { mapGetters, useStore } from 'vuex';
-  import { showToast } from '@/utils';
+  import { showToast, sortItems } from '@/utils';
   import { CarrierService } from '@/services/CarrierService';
   import { translate } from '@hotwax/dxp-components'
   
@@ -91,7 +91,9 @@
       })
     },
     async mounted() {
-      this.filteredShipmentMethods = this.shipmentMethods
+      const methods = this.shipmentMethods.filter((shipmentMethod: any) => shipmentMethod.isChecked)
+      sortItems(methods, "sequenceNumber")
+      this.filteredShipmentMethods = methods;
     },
     methods: {
       closeModal() {
@@ -142,6 +144,7 @@
         } else {
           showToast(translate("Sequence for shipment methods updated successfully."))
         }
+        modalController.dismiss()
       }
     },
     setup() {

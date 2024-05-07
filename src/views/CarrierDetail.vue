@@ -44,7 +44,7 @@
           </ion-segment>
           <div class="segments" v-if="currentCarrier">
             <template v-if="selectedSegment === 'shipping-methods'">
-              <div class="list-item ion-padding" v-for="(shipmentMethod, index) in filteredShipmentMethods" :key="index">
+              <div class="list-item  ion-padding" v-for="(shipmentMethod, index) in filteredShipmentMethods" :key="index">
                 <ion-item lines="none">
                   <ion-label>
                     {{ shipmentMethod.description }}
@@ -97,7 +97,7 @@
                 <div class="list-item ion-padding" v-for="(shipmentMethod, index) in carrierShipmentMethodsByProductStore[productStore.productStoreId]" :key="index">
                   <ion-item lines="none">
                     <ion-label>
-                      {{ shipmentMethod.description }}
+                      {{ getShipmentMethodDescription(shipmentMethod.shipmentMethodTypeId) }}
                       <p>{{ shipmentMethod.shipmentMethodTypeId }}</p>
                     </ion-label>
                   </ion-item>
@@ -243,6 +243,10 @@
       getGatewayConfigDescription(shipmentGatewayConfigId: string) {
         const config = this.shipmentGatewayConfigs[shipmentGatewayConfigId];
         return config.description ? config.description : shipmentGatewayConfigId
+      },
+      getShipmentMethodDescription(shipmentMethodTypeId: string) {
+        const method = this.shipmentMethods[shipmentMethodTypeId];
+        return method.description ? method.description : shipmentMethodTypeId
       },
       async updateShipmentMethodQuery() {
         await this.store.dispatch('carrier/updateShipmentMethodQuery', this.shipmentMethodQuery)
@@ -593,7 +597,7 @@
 
           if (!hasError(resp)) {
             showToast(translate('Shipment method renamed.'))
-            const updatedShipmentMethods = JSON.parse(JSON.stringify(this.shipmentMethods))
+            const updatedShipmentMethods = Object.values(JSON.parse(JSON.stringify(this.shipmentMethods)))
               .map((shipmentMethodData: any) => {
                 if (shipmentMethod.shipmentMethodTypeId === shipmentMethodData.shipmentMethodTypeId) {
                   shipmentMethodData.description = updatedShipmentMethodName
@@ -622,7 +626,7 @@
           if (!hasError(resp)) {
             showToast(translate(messages["successMessage"]))
             //updating shipment methods in state
-            const updatedShipmentMethods = JSON.parse(JSON.stringify(this.shipmentMethods))
+            const updatedShipmentMethods = Object.values(JSON.parse(JSON.stringify(this.shipmentMethods)))
               .map((shipmentMethodData: any) => {
                 if (shipmentMethod.shipmentMethodTypeId === shipmentMethodData.shipmentMethodTypeId) {
                   shipmentMethodData[updatedData.fieldName] = updatedData.fieldValue

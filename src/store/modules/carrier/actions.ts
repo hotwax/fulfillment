@@ -160,7 +160,7 @@ const actions: ActionTree<CarrierState, RootState> = {
     const carrierShipmentMethods = state.current.shipmentMethods;
     const carrierShipmentMethodFields = ["partyId", "roleTypeId", "deliveryDays", "carrierServiceCode", "fromDate", "sequenceNumber"]
 
-    shipmentMethods.map((shipmentMethod: any) => {
+    Object.values(shipmentMethods).map((shipmentMethod: any) => {
       if (carrierShipmentMethods[shipmentMethod.shipmentMethodTypeId]) {
         const currentShipmentMethod = carrierShipmentMethods[shipmentMethod.shipmentMethodTypeId];
         shipmentMethod.isChecked = true
@@ -238,7 +238,11 @@ const actions: ActionTree<CarrierState, RootState> = {
     } catch(error) {
       logger.error(error);
     }
-    commit(types.SHIPMENT_METHODS_UPDATED, shipmentMethodTypes)
+    const shipmentMethods = shipmentMethodTypes.reduce((updatedShipmentMethod:any, shipmentMethodType:any) => {
+      updatedShipmentMethod[shipmentMethodType.shipmentMethodTypeId] = shipmentMethodType;
+      return updatedShipmentMethod;
+    }, {})
+    commit(types.SHIPMENT_METHODS_UPDATED, shipmentMethods)
   },
 
   async fetchCarrierFacilities({ state, commit }, payload) {
