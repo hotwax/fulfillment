@@ -16,5 +16,6 @@ export default {
     "APP_TRANSFER_ORDERS_VIEW": "",
     "APP_TRANSFER_ORDER_DETAIL_VIEW": "",
     "APP_TRANSFER_ORDER_UPDATE": "",
-    "APP_CARRIERS_VIEW": ""
+    "APP_CARRIERS_VIEW": "",
+    "APP_CARRIERS_CREATE": ""
 } as any

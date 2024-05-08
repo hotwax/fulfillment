@@ -101,7 +101,6 @@ const actions: ActionTree<CarrierState, RootState> = {
       }
     } catch (err: any) {
       logger.error("error", err);
-      return Promise.reject(new Error(err))
     }
     commit(types.CARRIER_CURRENT_UPDATED, currentCarrier)
   },
@@ -161,7 +160,7 @@ const actions: ActionTree<CarrierState, RootState> = {
     const carrierShipmentMethodFields = ["partyId", "roleTypeId", "deliveryDays", "carrierServiceCode", "fromDate", "sequenceNumber"]
 
     Object.values(shipmentMethods).map((shipmentMethod: any) => {
-      if (carrierShipmentMethods[shipmentMethod.shipmentMethodTypeId]) {
+      if (carrierShipmentMethods && carrierShipmentMethods[shipmentMethod.shipmentMethodTypeId]) {
         const currentShipmentMethod = carrierShipmentMethods[shipmentMethod.shipmentMethodTypeId];
         shipmentMethod.isChecked = true
         carrierShipmentMethodFields.forEach((field) => {

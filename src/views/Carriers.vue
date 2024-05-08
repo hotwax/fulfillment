@@ -29,13 +29,21 @@
           </p>
         </div>
       </ion-content>
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button @click="createCarrier()">
+          <ion-icon :icon="addOutline" />
+        </ion-fab-button>
+      </ion-fab>
     </ion-page>
   </template>
   
   <script lang="ts">
   import { 
-    IonContent, 
-    IonHeader, 
+    IonContent,
+    IonFab,
+    IonFabButton,
+    IonHeader,
+    IonIcon, 
     IonItem, 
     IonLabel, 
     IonList,
@@ -52,10 +60,13 @@
   import { addOutline } from 'ionicons/icons';
   
   export default defineComponent({
-    name: 'TransferOrders',
+    name: 'Carriers',
     components: {
       IonContent, 
-      IonHeader, 
+      IonFab,
+      IonFabButton,
+      IonHeader,
+      IonIcon, 
       IonItem, 
       IonLabel, 
       IonList,
@@ -74,6 +85,9 @@
         await this.store.dispatch('carrier/updateCurrentCarrier', carrier)
         this.router.push({ path: `/carrier-details/${carrier.partyId}` })
       },
+      createCarrier () {
+        this.router.push({ path: '/create-carrier' })
+      }
     },
     async mounted () {
       await this.store.dispatch('carrier/fetchCarriers')

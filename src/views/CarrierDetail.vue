@@ -40,44 +40,11 @@
             <ion-segment-button v-for="(productStore, index) in productStores" :key="index" :value="productStore.productStoreId">
               <ion-label>{{ productStore.storeName ? productStore.storeName : productStore.productStoreId }}</ion-label>
             </ion-segment-button>
-            
           </ion-segment>
+
           <div class="segments" v-if="currentCarrier">
             <template v-if="selectedSegment === 'shipping-methods'">
-              <div class="list-item  ion-padding" v-for="(shipmentMethod, index) in filteredShipmentMethods" :key="index">
-                <ion-item lines="none">
-                  <ion-label>
-                    {{ shipmentMethod.description }}
-                    <p>{{ shipmentMethod.shipmentMethodTypeId }}</p>
-                  </ion-label>
-                </ion-item>
-                <div class="tablet">
-                  <ion-chip v-if="shipmentMethod.deliveryDays" outline @click.stop="editDeliveryDays(shipmentMethod)">
-                    <ion-label>{{ shipmentMethod?.deliveryDays }}</ion-label>
-                  </ion-chip>
-                  <ion-chip v-else :disabled="!shipmentMethod.isChecked" outline @click.stop="editDeliveryDays(shipmentMethod)">
-                    <ion-icon :icon="addCircleOutline" />
-                    <ion-label>{{ translate('delivery days') }}</ion-label>
-                  </ion-chip>
-                  <ion-note class="config-label">{{ translate('delivery days') }}</ion-note>
-                </div>
-                <div class="tablet">
-                  <ion-chip v-if="shipmentMethod?.carrierServiceCode" outline @click.stop="editCarrierCode(shipmentMethod)">
-                    <ion-label>{{ shipmentMethod?.carrierServiceCode }}</ion-label>
-                  </ion-chip>
-                  <ion-chip v-else :disabled="!shipmentMethod.isChecked" outline @click.stop="editCarrierCode(shipmentMethod)">
-                    <ion-icon :icon="addCircleOutline" />
-                    <ion-label>{{ translate('carrier code') }}</ion-label>
-                  </ion-chip>
-                  <ion-note class="config-label">{{ translate('carrier code') }}</ion-note>
-                </div>
-                <div class="tablet">
-                  <ion-checkbox :checked="shipmentMethod.isChecked" @click="updateCarrierShipmentMethodAssociation($event, shipmentMethod)" />
-                </div>
-                <ion-button fill="clear" color="medium" @click="openShipmentMethodActionsPopover($event, shipmentMethod)">
-                  <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-                </ion-button>
-              </div>
+              <ShipmentMethods />
             </template>
             <template v-else-if="selectedSegment === 'facilities'">
               <section>
@@ -159,7 +126,6 @@
     IonToolbar,
     alertController,
     modalController,
-    popoverController
   } from '@ionic/vue';
   import { defineComponent } from 'vue';
   import { add, checkmarkDone, barcodeOutline, pricetagOutline, addCircleOutline, addOutline, ellipsisVerticalOutline, peopleOutline, shieldCheckmarkOutline } from 'ionicons/icons';
@@ -174,8 +140,8 @@
   import { hasError } from '@/adapter';
   import logger from '@/logger';
   import { CarrierService } from '@/services/CarrierService';
-  import ShipmentMethodActionsPopover from '@/components/ShipmentMethodActionsPopover.vue'
   import CreateShipmentMethodModal from '@/components/CreateShipmentMethodModal.vue';
+  import ShipmentMethods from '@/components/ShipmentMethods.vue'
 
   
   export default defineComponent({
@@ -203,7 +169,8 @@
       IonSegmentButton,
       IonTitle,
       IonToggle,
-      IonToolbar
+      IonToolbar,
+      ShipmentMethods
     },
     data() {
       return {
@@ -211,7 +178,7 @@
         selectedSegment: 'shipping-methods',
       }
     },
-    async ionViewWillEnter() {
+    async mounted() {
       emitter.emit('presentLoader');
       await this.store.dispatch('carrier/fetchCarrierDetail', { partyId: this.$route.params.partyId });
       await Promise.all([this.store.dispatch('carrier/fetchShipmentMethodTypes'), this.store.dispatch('util/fetchProductStores'),
@@ -230,16 +197,12 @@
         shipmentMethodQuery: 'carrier/getShipmentMethodQuery',
         currentCarrier: 'carrier/getCurrent',
         productStores : 'util/getProductStores',
-        filteredShipmentMethods: "carrier/getFilteredShipmentMethods",
         shipmentMethods: "carrier/getShipmentMethods",
         carrierShipmentMethodsByProductStore: "carrier/getCarrierShipmentMethodsByProductStore",
         shipmentGatewayConfigs : "util/getShipmentGatewayConfigs"
       }),
     },
     methods: {
-      getTime(time: any) {
-        return DateTime.fromMillis(time).toFormat("dd MMMM yyyy t a")
-      },
       getGatewayConfigDescription(shipmentGatewayConfigId: string) {
         const config = this.shipmentGatewayConfigs[shipmentGatewayConfigId];
         return config.description ? config.description : shipmentGatewayConfigId
@@ -251,50 +214,7 @@
       async updateShipmentMethodQuery() {
         await this.store.dispatch('carrier/updateShipmentMethodQuery', this.shipmentMethodQuery)
       },
-      async editDeliveryDays(shipmentMethod: any) {
-        const alert = await alertController.create({
-          header: translate('Edit delivery days'),
-          inputs: [{
-            name: "deliveryDays",
-            value: shipmentMethod.deliveryDays
-          }],
-          buttons: [{
-            text: translate('Cancel'),
-            role: "cancel"
-          },
-          {
-            text: translate('Apply'),
-            handler: async (data) => {
-              const modifiedData = {"fieldName": "deliveryDays", "fieldValue": data.deliveryDays}
-              const messages = {"successMessage": "Delivery days updated.", "errorMessage": "Failed to update delivery days."}
-              await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
-            }
-          }]
-        })
-        await alert.present()
-      },
-      async editCarrierCode(shipmentMethod: any) {
-        const alert = await alertController.create({
-          header: translate('Edit carrier code'),
-          inputs: [{
-            name: "carrierServiceCode",
-            value: shipmentMethod.carrierServiceCode
-          }],
-          buttons: [{
-            text: translate('Cancel'),
-            role: "cancel"
-          },
-          {
-            text: translate('Apply'),
-            handler: async (data) => {
-              const modifiedData = {"fieldName": "carrierServiceCode", "fieldValue": data.carrierServiceCode}
-              const messages = {"successMessage": "Carrier code updated.", "errorMessage": "Failed to update carrier code."}
-              await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
-            }
-          }]
-        })
-        await alert.present()
-      },
+      
       async updateCarrierName() {
         const alert = await alertController.create({
           header: translate('Edit carrier detail'),
@@ -341,8 +261,6 @@
       },
       async updateCarrierFacility(event: any, facility: any) {
         event.stopPropagation();
-        let facilities = JSON.parse(JSON.stringify(this.currentCarrier.facilities))
-        let updatedFacility = facilities[facility.facilityId];
 
         try {
           const payload = {
@@ -361,20 +279,20 @@
             resp = await CarrierService.removeCarrierFromFacility(params)
             if (hasError(resp)) {
               throw resp.data
-            } 
-            updatedFacility.isChekced = false;
-            updatedFacility.fromDate = ""
+            }
+            facility.isChecked = false 
+            facility.fromDate = ""
           } else {
             resp = await CarrierService.addCarrierToFacility(payload)
             if (hasError(resp)) {
               throw resp.data;
             }
-            updatedFacility = {...updatedFacility, ...payload}
+            facility = {...facility, ...payload, isChecked: true}
           }
 
           if (!hasError(resp)) {
             showToast(translate("Facility carrier association updated successfully."))
-            this.store.dispatch('carrier/updateCarrierFacility', updatedFacility)
+            this.store.dispatch('carrier/updateCarrierFacility', facility)
           } else {
             throw resp.data;
           }
@@ -507,146 +425,6 @@
         } catch(err) {
           showToast(translate("Failed to update product store and shipment method association."))
           logger.error(err)
-        }
-      },
-      async updateCarrierShipmentMethodAssociation(event: any, shipmentMethod: any) {
-        event.stopPropagation();
-
-        let resp = {} as any;
-        const payload = {
-          shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
-          partyId: this.currentCarrier.partyId,
-          roleTypeId: "CARRIER"
-        }
-
-        let currentCarrierShipmentMethods = JSON.parse(JSON.stringify(this.currentCarrier.shipmentMethods))
-
-        try {
-          if (shipmentMethod.isChecked) {
-            resp = await CarrierService.removeCarrierShipmentMethod(payload)
-
-            if (hasError(resp)) {
-              throw resp.data;
-            }
-
-            delete currentCarrierShipmentMethods[shipmentMethod.shipmentMethodTypeId]
-          } else {
-            const time = DateTime.now().toMillis()
-            const params = {
-              ...payload,
-              fromDate: time
-            }
-
-            resp = await CarrierService.addCarrierShipmentMethod(payload)
-
-            if (hasError(resp)) {
-              throw resp.data;
-            }
-
-            currentCarrierShipmentMethods[shipmentMethod.shipmentMethodTypeId] = payload
-          }
-
-          if (!hasError(resp)) {
-            showToast(translate("Carrier and shipment method association updated successfully."))
-            await this.store.dispatch('carrier/updateCurrentCarrierShipmentMethods', currentCarrierShipmentMethods)
-            await this.store.dispatch('carrier/checkAssociatedShipmentMethods')
-            event.target.checked = !shipmentMethod.isChecked
-          } else {
-            throw resp.data
-          }
-        } catch(err) {
-          showToast(translate("Failed to update product store and shipment method association."))
-          logger.error(err)
-        }
-      },
-      
-      async openShipmentMethodActionsPopover(event: Event, shipmentMethod: any) {
-        const popover = await popoverController.create({
-          component: ShipmentMethodActionsPopover,
-          componentProps: {
-            shipmentMethod
-          },
-          showBackdrop: false,
-          event: event
-        });
-        popover.present();
-        const result = await popover.onDidDismiss();
-        if (result.data) {
-          const modifiedData = result.data;
-          const modifiedFieldName = modifiedData?.fieldName;
-          const modifiedFieldValue = modifiedData?.fieldValue;
-
-
-          if (modifiedFieldName == 'shipmentMethodName' && modifiedFieldValue !== shipmentMethod.description) {
-            await this.updateShipmentMethodName(shipmentMethod, modifiedFieldValue)
-          } else if (modifiedFieldName == 'deliveryDays' && modifiedFieldValue !== shipmentMethod.deliveryDays) {
-            const messages = {"successMessage": "Delivery days updated.", "errorMessage": "Failed to update delivery days."}
-            await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
-          } else if (modifiedFieldName == 'carrierServiceCode' && modifiedFieldValue !== shipmentMethod.carrierServiceCode) {
-            const messages = {"successMessage": "Carrier code updated.", "errorMessage": "Failed to update carrier code."}
-            await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
-          }
-        }
-      },
-      async updateShipmentMethodName(shipmentMethod: any, updatedShipmentMethodName: any) {
-        try {
-          const resp = await CarrierService.updateShipmentMethodType({
-            shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
-            description: updatedShipmentMethodName
-          })
-
-          if (!hasError(resp)) {
-            showToast(translate('Shipment method renamed.'))
-            const updatedShipmentMethods = Object.values(JSON.parse(JSON.stringify(this.shipmentMethods)))
-              .map((shipmentMethodData: any) => {
-                if (shipmentMethod.shipmentMethodTypeId === shipmentMethodData.shipmentMethodTypeId) {
-                  shipmentMethodData.description = updatedShipmentMethodName
-                }
-
-                return shipmentMethodData
-              })
-            this.store.dispatch('carrier/updateShipmentMethods', updatedShipmentMethods)
-          } else {
-            throw resp.data
-          }
-        } catch (error) {
-          showToast(translate('Failed to rename facility group.'))
-          logger.error('Failed to rename facility group.', error)
-        }
-      },
-      async updateCarrierShipmentMethod(shipmentMethod: any, updatedData: any, messages: any) {
-        try {
-          const resp = await CarrierService.updateCarrierShipmentMethod({
-            shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
-            partyId: shipmentMethod.partyId,
-            roleTypeId: shipmentMethod.roleTypeId,
-            [updatedData["fieldName"]]: updatedData["fieldValue"]
-          })
-
-          if (!hasError(resp)) {
-            showToast(translate(messages["successMessage"]))
-            //updating shipment methods in state
-            const updatedShipmentMethods = Object.values(JSON.parse(JSON.stringify(this.shipmentMethods)))
-              .map((shipmentMethodData: any) => {
-                if (shipmentMethod.shipmentMethodTypeId === shipmentMethodData.shipmentMethodTypeId) {
-                  shipmentMethodData[updatedData.fieldName] = updatedData.fieldValue
-                }
-
-                return shipmentMethodData
-              })
-            this.store.dispatch('carrier/updateShipmentMethods', updatedShipmentMethods)
-
-            //updating current carrier shipment methods in state
-            let updatedCarrierShipmentMethods = JSON.parse(JSON.stringify(this.currentCarrier.shipmentMethods))
-            const updatedShipmentMethod = updatedCarrierShipmentMethods[shipmentMethod.shipmentMethodTypeId];
-            updatedShipmentMethod[updatedData.fieldName] = updatedData.fieldValue;
-            this.store.dispatch('carrier/updateCurrentCarrierShipmentMethods', updatedCarrierShipmentMethods)
-          } else {
-            throw resp.data
-          }
-        } catch (error) {
-          showToast(translate(messages["errorMessage"]))
-          logger.error(messages["errorMessage"], error)
         }
       }
     }, 

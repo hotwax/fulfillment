@@ -1,4 +1,9 @@
 import { api } from '@/adapter';
+import { translate } from "@hotwax/dxp-components";
+import { showToast } from "@/utils";
+import { hasError } from '@/adapter'
+import logger from '@/logger';
+  
 
 const fetchCarriers = async (params: any): Promise<any> => {
     return await api({
@@ -111,6 +116,42 @@ const createShipmentMethod = async (payload: any): Promise<any> => {
   })
 }
 
+const createCarrier = async (payload: any): Promise <any> => {
+  try {
+    let resp = await api({
+      url: "service/createPartyGroup", 
+      method: "post",
+      data: payload
+    }) as any;
+
+    if (!hasError(resp)) {
+      const partyId = resp.data.partyId;
+      if (partyId) {
+        resp = await api({
+          url: "service/ensurePartyRole", 
+          method: "post",
+          data: {partyId, "roleTypeId": "CARRIER"}
+        }) as any;
+        if (hasError(resp)) {
+          throw resp.data
+        }
+      }
+
+      showToast(translate("Carrier created successfully"));
+      return partyId;
+    } else {
+      throw resp.data
+    }
+  } catch (err:any) {
+    let errorMessage = translate('Failed to create carrier.');
+    if (err?.response?.data?.error?.message) {
+      errorMessage = err.response.data.error.message
+    }
+    logger.error('error', err)
+    showToast(errorMessage);
+  }
+}
+
 const updateCarrier = async (payload: any): Promise <any> => {
   return api({
     url: "service/updatePartyGroup", 
@@ -119,11 +160,21 @@ const updateCarrier = async (payload: any): Promise <any> => {
   });
 }
 
+const ensurePartyRole = async (payload: any): Promise <any> => {
+  return api({
+    url: "service/ensurePartyRole", 
+    method: "post",
+    data: payload
+  });
+}
+
 export const CarrierService = {
   addCarrierShipmentMethod,
   addCarrierToFacility,
+  createCarrier,
   createProductStoreShipmentMethod,
   createShipmentMethod,
+  ensurePartyRole,
   fetchCarriers,
   fetchCarrierFacilities,
   fetchCarrierShipmentMethods,

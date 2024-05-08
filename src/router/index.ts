@@ -15,6 +15,8 @@ import OrderDetail from "@/views/OrderDetail.vue"
 import TransferOrders from "@/views/TransferOrders.vue"
 import TransferOrderDetail from "@/views/TransferOrderDetail.vue"
 import TransferShipmentReview from "@/views/TransferShipmentReview.vue"
+import CreateCarrier from "@/views/CreateCarrier.vue"
+import CarrierShipmentMethods from "@/views/CarrierShipmentMethods.vue"
 import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
 import { translate } from '@hotwax/dxp-components'
@@ -185,6 +187,15 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
+    path: '/create-carrier',
+    name: 'CreateCarrier',
+    component: CreateCarrier,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_CARRIERS_CREATE"
+    }
+  },
+  {
     path: '/carrier-details/:partyId',
     name: 'CarrierDetail',
     component: CarrierDetail,
@@ -192,6 +203,16 @@ const routes: Array<RouteRecordRaw> = [
     props: true,
     meta: {
       permissionId: "APP_CARRIERS_VIEW"
+    }
+  },
+  {
+    path: '/shipment-methods-setup/:partyId',
+    name: 'CarrierShipmentMethods',
+    component: CarrierShipmentMethods,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_CARRIERS_CREATE"
     }
   }
 ]
