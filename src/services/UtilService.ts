@@ -384,11 +384,21 @@ const deleteEnumeration = async (payload: any): Promise<any> => {
   })
 }
 
+const fetchEnumeration = async (query: any): Promise <any> => {
+  return api({
+    url: 'performFind',
+    method: 'get',
+    params: query,
+    cache: true
+  })
+}
+
 export const UtilService = {
   createPicklist,
   createEnumeration,
   fetchCarrierPartyIds,
   fetchDefaultShipmentBox,
+  fetchEnumeration,
   fetchFacilityTypeInformation,
   fetchPartyInformation,
   fetchPicklistInformation,
