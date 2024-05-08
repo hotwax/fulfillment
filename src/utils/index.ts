@@ -142,4 +142,25 @@ const generateInternalId = (name: string) => {
   return name.trim().toUpperCase().split(' ').join('_');
 }
 
-export { copyToClipboard, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getFeature, getIdentificationId, handleDateTimeInput, showToast, hasError, parseCsv, jsonToCsv}
+const currentSymbol: any = {
+  "USD": "$",
+  "EUR": "€",
+  "JPY": "¥"
+}
+
+const formatCurrency = (amount: any, code: string) => {
+  return `${currentSymbol[code] || code} ${amount}`
+}
+
+const getColorByDesc = (desc: string) => ({
+  "Approved": "primary",
+  "Created": "medium",
+  "Held": "warning",
+  "Completed": "success",
+  "Cancelled": "danger",
+  "Settled": "success",
+  "Pending": "warning",
+  "default": "medium"
+} as any)[desc]
+
+export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getColorByDesc, getFeature, getIdentificationId, handleDateTimeInput, showToast, hasError, parseCsv, jsonToCsv}
