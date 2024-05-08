@@ -1143,8 +1143,8 @@ export default defineComponent({
         }, {
           text: translate('Reject'),
           handler: async () => {
-            await alert.dismiss()
-            emitter.emit("presentLoader")
+            emitter.emit("presentLoader")  
+            await alert.dismiss()  
 
             let resp;
 
