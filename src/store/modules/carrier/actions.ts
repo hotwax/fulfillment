@@ -83,7 +83,8 @@ const actions: ActionTree<CarrierState, RootState> = {
         "viewIndex": 0,
         "viewSize": 250,  // maximum records we could have
         "distinct": "Y",
-        "noConditionFind": "Y"
+        "noConditionFind": "Y",
+        "orderBy": "sequenceNumber"
       }
     
       resp = await CarrierService.fetchCarrierShipmentMethods(params);
@@ -183,8 +184,9 @@ const actions: ActionTree<CarrierState, RootState> = {
     const carrierShipmentMethodsByProductStore = {} as any;
     const productStoreShipmentMethodFields = ["description", "productStoreId", "isTrackingRequired", "shipmentGatewayConfigId", "productStoreShipMethId"]
 
-    productStores.forEach((productStore: any) => {
-      Object.values(carrierShipmentMethods).forEach((shipmentMethod: any) => {
+    if (carrierShipmentMethods) {
+      productStores.forEach((productStore: any) => {
+        Object.values(carrierShipmentMethods).forEach((shipmentMethod: any) => {
           if (carrierProductStoreShipmentMethods && carrierProductStoreShipmentMethods[productStore.productStoreId][shipmentMethod.shipmentMethodTypeId]) {
               const productStoreShipmentMethod = carrierProductStoreShipmentMethods[productStore.productStoreId][shipmentMethod.shipmentMethodTypeId];
               shipmentMethod.isChecked = true;
@@ -208,7 +210,8 @@ const actions: ActionTree<CarrierState, RootState> = {
               carrierShipmentMethodsByProductStore[productStore.productStoreId] = [shipmentMethod];
           }
         });
-    });
+      });
+    }
 
     dispatch('updateCarrierShipmentMethodsProductSore', carrierShipmentMethodsByProductStore);
 },

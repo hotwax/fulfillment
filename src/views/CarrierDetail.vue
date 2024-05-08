@@ -47,7 +47,7 @@
               <ShipmentMethods />
             </template>
             <template v-else-if="selectedSegment === 'facilities'">
-              <section>
+              <section v-if="currentCarrier.facilities">
                 <ion-card v-for="(facility, index) in currentCarrier.facilities" :key="index">
                   <ion-card-header>
                     <div>
@@ -58,33 +58,41 @@
                   </ion-card-header>
                 </ion-card>
               </section>
+              <div v-else class="empty-state">
+                <p>{{ translate('No data found') }}</p>
+              </div>
             </template>
             <template v-for="(productStore, index) in productStores" :key="index">
               <template v-if="selectedSegment === productStore.productStoreId">
-                <div class="list-item ion-padding" v-for="(shipmentMethod, index) in carrierShipmentMethodsByProductStore[productStore.productStoreId]" :key="index">
-                  <ion-item lines="none">
-                    <ion-label>
-                      {{ getShipmentMethodDescription(shipmentMethod.shipmentMethodTypeId) }}
-                      <p>{{ shipmentMethod.shipmentMethodTypeId }}</p>
-                    </ion-label>
-                  </ion-item>
-                  <div class="tablet">
-                    <ion-chip v-if="shipmentMethod.shipmentGatewayConfigId" outline @click.stop="updateShipmentGatewayConfigId(shipmentMethod)">
-                      <ion-label>{{ getGatewayConfigDescription(shipmentMethod?.shipmentGatewayConfigId)}}</ion-label>
-                    </ion-chip>
-                    <ion-chip v-else :disabled="!shipmentMethod.isChecked" outline @click.stop="updateShipmentGatewayConfigId(shipmentMethod)">
-                      <ion-icon :icon="addCircleOutline" />
-                      <ion-label>{{ translate('gateway') }}</ion-label>
-                    </ion-chip>
-                    <ion-note class="config-label">{{ translate('gateway') }}</ion-note>
+                <template v-if="Object.keys(carrierShipmentMethodsByProductStore).length != 0">
+                  <div class="list-item ion-padding" v-for="(shipmentMethod, index) in carrierShipmentMethodsByProductStore[productStore.productStoreId]" :key="index">
+                    <ion-item lines="none">
+                      <ion-label>
+                        {{ getShipmentMethodDescription(shipmentMethod.shipmentMethodTypeId) }}
+                        <p>{{ shipmentMethod.shipmentMethodTypeId }}</p>
+                      </ion-label>
+                    </ion-item>
+                    <div class="tablet">
+                      <ion-chip v-if="shipmentMethod.shipmentGatewayConfigId" outline @click.stop="updateShipmentGatewayConfigId(shipmentMethod)">
+                        <ion-label>{{ getGatewayConfigDescription(shipmentMethod?.shipmentGatewayConfigId)}}</ion-label>
+                      </ion-chip>
+                      <ion-chip v-else :disabled="!shipmentMethod.isChecked" outline @click.stop="updateShipmentGatewayConfigId(shipmentMethod)">
+                        <ion-icon :icon="addCircleOutline" />
+                        <ion-label>{{ translate('gateway') }}</ion-label>
+                      </ion-chip>
+                      <ion-note class="config-label">{{ translate('gateway') }}</ion-note>
+                    </div>
+                    <div class="tablet">
+                      <ion-toggle v-model="shipmentMethod.isTrackingRequired" :disabled="!shipmentMethod.isChecked" @ionChange="updateTrackingRequired($event, shipmentMethod)"/>
+                      <ion-note class="config-label">{{ translate("require tracking code") }}</ion-note>
+                    </div>
+                    <div class="tablet">
+                      <ion-checkbox :checked="shipmentMethod.isChecked" @click="updateProductStoreShipmentMethodAssociation($event, shipmentMethod, productStore)" />
+                    </div>
                   </div>
-                  <div class="tablet">
-                    <ion-toggle v-model="shipmentMethod.isTrackingRequired" :disabled="!shipmentMethod.isChecked" @ionChange="updateTrackingRequired($event, shipmentMethod)"/>
-                    <ion-note class="config-label">{{ translate("require tracking code") }}</ion-note>
-                  </div>
-                  <div class="tablet">
-                    <ion-checkbox :checked="shipmentMethod.isChecked" @click="updateProductStoreShipmentMethodAssociation($event, shipmentMethod, productStore)" />
-                  </div>
+                </template>
+                <div v-else class="empty-state">
+                  <p>{{ translate('No data found') }}</p>
                 </div>
               </template>
             </template>

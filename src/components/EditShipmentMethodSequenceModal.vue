@@ -87,6 +87,7 @@
     },
     computed: {
       ...mapGetters({
+        currentCarrier: "carrier/getCurrent",
         shipmentMethods: "carrier/getFilteredShipmentMethods"
       })
     },
@@ -133,9 +134,13 @@
       },
       async saveShipmentMethodsOrder() {
         const diffShipmentMethods = this.filteredShipmentMethods.filter((filteredShipmentMethod: any) => this.shipmentMethods.some((shipmentMethod: any) => shipmentMethod.shipmentMethodTypeId === filteredShipmentMethod.shipmentMethodTypeId && shipmentMethod.sequenceNumber !== filteredShipmentMethod.sequenceNumber))
+        let currentCarrierShipmentMethods = this.currentCarrier.shipmentMethods ? JSON.parse(JSON.stringify(this.currentCarrier.shipmentMethods)) : {}
 
         const responses = await Promise.allSettled(diffShipmentMethods.map(async (method: any) => {
           await CarrierService.updateCarrierShipmentMethod(method)
+          currentCarrierShipmentMethods[method.shipmentMethodTypeId] = method
+          await this.store.dispatch('carrier/updateCurrentCarrierShipmentMethods', currentCarrierShipmentMethods)
+          await this.store.dispatch('carrier/checkAssociatedShipmentMethods')
         }))
 
         const isFailedToUpdateSomeMethod = responses.some((response) => response.status === 'rejected')
@@ -144,6 +149,7 @@
         } else {
           showToast(translate("Sequence for shipment methods updated successfully."))
         }
+        
         modalController.dismiss()
       }
     },

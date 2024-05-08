@@ -53,7 +53,6 @@
   import { translate } from '@hotwax/dxp-components';
 
   import { useRouter } from 'vue-router';
-  import { DateTime } from 'luxon';
   import { showToast } from '@/utils';
   import emitter from "@/event-bus";
   import { hasError } from '@/adapter';
@@ -171,8 +170,9 @@
         const payload = {
           shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
           partyId: this.currentCarrier.partyId,
-          roleTypeId: "CARRIER"
-        }
+          roleTypeId: "CARRIER",
+          sequenceNumber: 1 //starting sequencing from 1
+        } as any
 
         let currentCarrierShipmentMethods = this.currentCarrier.shipmentMethods ? JSON.parse(JSON.stringify(this.currentCarrier.shipmentMethods)) : {}
 
@@ -186,10 +186,12 @@
 
             delete currentCarrierShipmentMethods[shipmentMethod.shipmentMethodTypeId]
           } else {
-            const time = DateTime.now().toMillis()
-            const params = {
-              ...payload,
-              fromDate: time
+            if (Object.keys(currentCarrierShipmentMethods).length !== 0) {
+              const values = Object.values(currentCarrierShipmentMethods) as any
+
+              //calculating next sequence number by adding one to sequence number of last shipment methods in the list
+              const sequenceNumber = values[values.length - 1].sequenceNumber
+              payload.sequenceNumber = sequenceNumber ? sequenceNumber + 1 : 1
             }
 
             resp = await CarrierService.addCarrierShipmentMethod(payload)
@@ -205,12 +207,13 @@
             showToast(translate("Carrier and shipment method association updated successfully."))
             await this.store.dispatch('carrier/updateCurrentCarrierShipmentMethods', currentCarrierShipmentMethods)
             await this.store.dispatch('carrier/checkAssociatedShipmentMethods')
+            await this.store.dispatch('carrier/checkAssociatedProductStoreShipmentMethods')
             event.target.checked = !shipmentMethod.isChecked
           } else {
             throw resp.data
           }
         } catch(err) {
-          showToast(translate("Failed to update product store and shipment method association."))
+          showToast(translate("Failed to update carrier and shipment method association."))
           logger.error(err)
         }
       },

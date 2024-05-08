@@ -152,7 +152,6 @@ const sortItems = (items: any, sortByField: any) => {
         return firstMethod[sortByField] - secondMethod[sortByField];
     }
   });
-
 }
 
 
