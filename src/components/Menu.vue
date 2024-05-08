@@ -146,6 +146,11 @@ export default defineComponent({
         title: "Rejection reasons",
         url: "/rejection-reasons",
         childRoutes: ["/rejection-reasons/"],
+      },
+      {
+        title: "Order Lookup",
+        url: "/order-lookup",
+        childRoutes: ["/order-lookup/"],
       }
     ];
 
