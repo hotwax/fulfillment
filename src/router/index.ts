@@ -176,7 +176,7 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: "/orderLookup",
+    path: "/order-lookup",
     name: "OrderLookup",
     component: OrderLookup,
     beforeEnter: authGuard
