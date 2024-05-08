@@ -55,4 +55,107 @@ const escapeSolrSpecialChars = (input: any) => {
   return escapedInput;
 }
 
-export { escapeSolrSpecialChars, prepareOrderQuery }
+const prepareOrderLookupQuery = (query: any) => {
+  const viewSize = query.viewSize ? query.viewSize : process.env.VUE_APP_VIEW_SIZE;
+  const viewIndex = query.viewIndex ? query.viewIndex : 0;
+
+  const payload = {
+    "json": {
+      "params": {
+        "sort": `${query.sort}`,
+        "rows": viewSize,
+        "start": viewSize * viewIndex,
+        "group": true,
+        "group.field": "orderId",
+        "group.limit": 10000,
+        "group.ngroups": true,
+        "q.op": "AND"
+      } as any,
+      "query": "*:*",
+      "filter": ["docType: ORDER", "orderTypeId: SALES_ORDER"]
+    }
+  } as any
+
+  payload.json["facet"] = {
+    "productStoreIdFacet":{
+      "excludeTags":"productStoreNameFilter",
+      "field":"productStoreName",
+      "mincount":1,
+      "limit":-1,
+      "type":"terms",
+      "facet":{
+        "groups":"unique(orderId)"
+      }
+    },
+    "facilityNameFacet":{
+      "excludeTags":"facilityNameFilter",
+      "field":"facilityName",
+      "mincount":1,
+      "limit":-1,
+      "type":"terms",
+      "facet":{
+        "groups":"unique(orderId)"
+      }
+    },
+    "salesChannelDescFacet": {
+      "excludeTags": "salesChannelDescFilter",
+      "field": "salesChannelDesc",
+      "mincount": 1,
+      "limit": -1,
+      "type": "terms",
+      "facet": {
+        "groups": "unique(orderId)"
+      }
+    },
+    "orderStatusDescFacet": {
+      "excludeTags": "orderStatusDescFilter",
+      "field": "orderStatusDesc",
+      "mincount": 1,
+      "limit": -1,
+      "sort": {
+        "statusSeqId": "asc"
+      },
+      "type": "terms",
+      "facet": {
+        "groups": "unique(orderId)",
+        "statusSeqId": "max(statusSeqId)"
+      }
+    },
+  }
+
+  if (query.queryString) {
+    payload.json.params.defType = "edismax"
+    payload.json.params.qf = "orderName orderId customerPartyName productId internalName parentProductName"
+    payload.json.query = `*${query.queryString}*`
+  }
+
+  // updating the filter value in json object as per the filters selected
+  // TODO: optimize this code
+  if (query.storePickup) {
+    payload.json.filter.push("shipmentMethodTypeId: STOREPICKUP")
+  }
+
+  if (query.shipFromStore) {
+    payload.json.filter.push("-shipmentMethodTypeId: STOREPICKUP AND facilityTypeId: RETAIL_STORE")
+  }
+
+  if (query.facility?.length) {
+    payload.json.filter.push(`{!tag=facilityNameFilter}facilityName: ${query.facility.join(" OR ")}`)
+  }
+
+  if (query.productStore?.length) {
+    payload.json.filter.push(`{!tag=productStoreNameFilter}productStoreName: (${query.productStore.join(" OR ")})`)
+  }
+
+  if (query.channel?.length) {
+    payload.json.filter.push(`{!tag=salesChannelDescFilter}salesChannelDesc: (${query.channel.join(" OR ")})`)
+  }
+
+  if (query.status?.length) {
+    payload.json.filter.push(`{!tag=orderStatusDescFilter}orderStatusDesc: (${query.status.join(" OR ")})`)
+  }
+
+  return payload
+}
+
+export { escapeSolrSpecialChars, prepareOrderQuery, prepareOrderLookupQuery }
