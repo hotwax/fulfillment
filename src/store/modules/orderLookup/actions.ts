@@ -13,6 +13,8 @@ const actions: ActionTree<OrderLookupState, RootState> = {
   async findOrders({ commit, state }, params) {
     let resp, orderCount, itemCount;
     let stateOrders = JSON.parse(JSON.stringify(state.list.orders))
+    const shipmentMethodTypeIds: Array<string> = []
+
     const query = prepareOrderLookupQuery({ ...(state.query), ...params })
     try {
       resp = await OrderLookupService.findOrder(query)
@@ -29,6 +31,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
           order.orderStatusId = order.doclist.docs[0].orderStatusId
           order.orderStatusDesc = order.doclist.docs[0].orderStatusDesc
 
+          shipmentMethodTypeIds.push(order.doclist.docs[0].shipmentMethodTypeId)
           return order
         })
 
@@ -62,6 +65,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         if (query.json.params.start && query.json.params.start > 0) stateOrders = stateOrders.concat(orders)
         else stateOrders = orders
         this.dispatch('product/getProductInformation', { orders });
+        this.dispatch("util/fetchShipmentMethodTypeDesc", shipmentMethodTypeIds)
       } else {
         showToast(translate("Failed to fetch orders"));
       }
@@ -257,7 +261,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
           }
         })
 
-        this.dispatch('util/fetchStatusDesc', statusIds)
+        this.dispatch("util/fetchStatusDesc", statusIds)
 
         if(paymentMethodTypeIds.length) {
           this.dispatch("util/fetchPaymentMethodTypeDesc", paymentMethodTypeIds)
