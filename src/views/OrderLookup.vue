@@ -9,7 +9,7 @@
         <ion-title>{{ translate("Orders") }}</ion-title>
         <ion-buttons slot="end">
           <ion-menu-button menu="orderLookup-filter">
-            <ion-icon :icon="optionsOutline" />
+            <ion-icon :icon="filterOutline" />
           </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
@@ -33,8 +33,8 @@
                 <ion-icon slot="start" :icon="swapVerticalOutline" />
                 <ion-label class="ion-text-wrap">{{ "Sort" }}</ion-label>
                 <ion-select :value="sort" @ionChange="sortOrders($event.detail.value)" interface="popover">
-                  <ion-select-option value="orderDate desc">{{ "Oldest to newest" }}</ion-select-option>
-                  <ion-select-option value="orderDate asc">{{ "Newest to oldest" }}</ion-select-option>
+                  <ion-select-option value="orderDate desc">{{ "Newest to oldest" }}</ion-select-option>
+                  <ion-select-option value="orderDate asc">{{ "Oldest to newest" }}</ion-select-option>
                 </ion-select>
               </ion-item>
             </div>
@@ -63,8 +63,8 @@
                 </div>
   
                 <div class="metadata">
-                  <ion-badge :color="getColorByDesc(order.orderStatusDesc) || getColorByDesc('default')">{{ order.orderStatusDesc }}</ion-badge>
                   <ion-note>{{ translate("Ordered on") }} {{ formatUtcDate(order.orderDate, "dd LLL yyyy") }}</ion-note>
+                  <ion-badge :color="getColorByDesc(order.orderStatusDesc) || getColorByDesc('default')">{{ order.orderStatusDesc }}</ion-badge>
                 </div>
               </section>
   
@@ -118,7 +118,6 @@ import {
   documentTextOutline,
   downloadOutline,
   filterOutline,
-  optionsOutline,
   pricetag,
   ribbon,
   swapVerticalOutline,
@@ -238,7 +237,6 @@ export default defineComponent ({
       itemStatus,
       pricetag,
       orderStatus,
-      optionsOutline,
       ribbon,
       swapVerticalOutline,
       syncOutline,
