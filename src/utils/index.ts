@@ -154,12 +154,18 @@ const formatCurrency = (amount: any, code: string) => {
 
 const getColorByDesc = (desc: string) => ({
   "Approved": "primary",
-  "Created": "medium",
-  "Held": "warning",
-  "Completed": "success",
+  "Authorized": "medium",
   "Cancelled": "danger",
-  "Settled": "success",
+  "Completed": "success",
+  "Created": "medium",
+  "Declined": "danger",
+  "Held": "warning",
+  "Not-Authorized": "warning",
+  "Not-Received": "warning",
   "Pending": "warning",
+  "Received": "success",
+  "Refunded": "success",
+  "Settled": "success",
   "default": "medium"
 } as any)[desc]
 
