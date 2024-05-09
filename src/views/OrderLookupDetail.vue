@@ -172,56 +172,61 @@
           </div>
         </section>
         <section>
-          <div v-for="(shipGroups, index) in Object.values(order.shipGroups) as Array<any>" :key="index" class="ship-group-info ion-margin-vertical">
-            <ion-item lines="none">
-              <ion-icon slot="start" :icon="shipGroups[0].facilityTypeId === 'RETAIL_STORE' ? storefrontOutline : golfOutline" />
-              <ion-label>
-                <p class="overline" v-if="shipGroups[0].facilityId !== '_NA_'">{{ shipGroups[0].facilityId }}</p>
-                <h1>{{ shipGroups[0].facilityName || shipGroups[0].facilityId }}</h1>
-                <p v-if="shipGroups[0].facilityId !== '_NA_'">{{ getShipmentMethodDesc(shipGroups[0].shipmentMethodTypeId) || shipGroups[0].shipmentMethodTypeId }}</p>
-              </ion-label>
-            </ion-item>
-  
-            <div class="product-card">
-              <ion-card v-for="shipGroup in shipGroups" :key="shipGroup.shipGroupSeqId">
-                <ion-item>
-                  <ion-thumbnail slot="start">
-                    <DxpShopifyImg :src="getProduct(shipGroup.productId).mainImageUrl" size="small" />
-                  </ion-thumbnail>
-                  <ion-label class="ion-text-wrap">
-                    <h1>{{ shipGroup.productId }}</h1>
-                    <p>{{ getProduct(shipGroup.productId).productName }}</p>
-                  </ion-label>
-                  <ion-badge slot="end" :color="getColorByDesc(itemStatuses[shipGroup.statusId].label) || getColorByDesc('default')">{{ itemStatuses[shipGroup.statusId].label }}</ion-badge>
-                </ion-item>
+          <div v-if="Object.values(order.shipGroups).length">
+            <div v-for="(shipGroups, index) in Object.values(order.shipGroups) as Array<any>" :key="index" class="ship-group-info ion-margin-vertical">
+              <ion-item lines="none">
+                <ion-icon slot="start" :icon="shipGroups[0].facilityTypeId === 'RETAIL_STORE' ? storefrontOutline : golfOutline" />
+                <ion-label>
+                  <p class="overline" v-if="shipGroups[0].facilityId !== '_NA_'">{{ shipGroups[0].facilityId }}</p>
+                  <h1>{{ shipGroups[0].facilityName || shipGroups[0].facilityId }}</h1>
+                  <p v-if="shipGroups[0].facilityId !== '_NA_'">{{ getShipmentMethodDesc(shipGroups[0].shipmentMethodTypeId) || shipGroups[0].shipmentMethodTypeId }}</p>
+                </ion-label>
+              </ion-item>
     
-                <ion-item>
-                  <ion-label class="ion-text-wrap">{{ "Price" }}</ion-label>
-                  <p slot="end">{{ formatCurrency(shipGroup.unitPrice, order.currencyUom) }}</p>
-                </ion-item>
+              <div class="product-card">
+                <ion-card v-for="shipGroup in shipGroups" :key="shipGroup.shipGroupSeqId">
+                  <ion-item>
+                    <ion-thumbnail slot="start">
+                      <DxpShopifyImg :src="getProduct(shipGroup.productId).mainImageUrl" size="small" />
+                    </ion-thumbnail>
+                    <ion-label class="ion-text-wrap">
+                      <h1>{{ shipGroup.productId }}</h1>
+                      <p>{{ getProduct(shipGroup.productId).productName }}</p>
+                    </ion-label>
+                    <ion-badge slot="end" :color="getColorByDesc(itemStatuses[shipGroup.statusId].label) || getColorByDesc('default')">{{ itemStatuses[shipGroup.statusId].label }}</ion-badge>
+                  </ion-item>
 
-                <ion-item v-if="shipGroup.facilityId !== '_NA_'">
-                  <ion-label class="ion-text-wrap">{{ "Allocation" }}</ion-label>
-                  <p slot="end">{{ order["shipGroupFacilityAllocationTime"][shipGroup.shipGroupSeqId] ? formatDateTime(order["shipGroupFacilityAllocationTime"][shipGroup.shipGroupSeqId]) : "-" }}</p>
-                </ion-item>
-    
-                <ion-item v-if="shipGroup.facilityId !== '_NA_'">
-                  <ion-label class="ion-text-wrap">{{ "Fulfillment Status" }}</ion-label>
-                  <p slot="end">{{ shipGroup.statusId === "ITEM_COMPLETED" ? shipGroup.shipmentMethodTypeId === "STOREPICKUP" ? "Picked up" : "Shipped" : order?.shipGroupFulfillmentStatus?.[shipGroup.shipGroupSeqId] || "Reserved" }}</p>
-                </ion-item>
+                  <ion-item>
+                    <ion-label class="ion-text-wrap">{{ "Price" }}</ion-label>
+                    <p slot="end">{{ formatCurrency(shipGroup.unitPrice, order.currencyUom) }}</p>
+                  </ion-item>
 
-                <ion-item v-if="shipGroup.statusId !== 'ITEM_CANCELLED' && shipGroup.statusId !== 'ITEM_COMPLETED'">
-                  <ion-label>{{ "QOH" }}</ion-label>
-                  <ion-note slot="end" v-if="getProductStock(shipGroup.productId, shipGroup.facilityId).quantityOnHandTotal >= 0">
-                    {{ getProductStock(shipGroup.productId, shipGroup.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}
-                  </ion-note>
-                  <ion-spinner slot="end" v-else-if="isFetchingStock" color="medium" name="crescent" />
-                  <ion-button v-else fill="clear" @click.stop="fetchProductStock(shipGroup.productId, shipGroup.facilityId)">
-                    <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
-                  </ion-button>
-                </ion-item>
-              </ion-card>
+                  <ion-item v-if="shipGroup.facilityId !== '_NA_'">
+                    <ion-label class="ion-text-wrap">{{ "Allocation" }}</ion-label>
+                    <p slot="end">{{ order["shipGroupFacilityAllocationTime"][shipGroup.shipGroupSeqId] ? formatDateTime(order["shipGroupFacilityAllocationTime"][shipGroup.shipGroupSeqId]) : "-" }}</p>
+                  </ion-item>
+
+                  <ion-item v-if="shipGroup.facilityId !== '_NA_'">
+                    <ion-label class="ion-text-wrap">{{ "Fulfillment Status" }}</ion-label>
+                    <p slot="end">{{ shipGroup.statusId === "ITEM_COMPLETED" ? shipGroup.shipmentMethodTypeId === "STOREPICKUP" ? "Picked up" : "Shipped" : order?.shipGroupFulfillmentStatus?.[shipGroup.shipGroupSeqId] || "Reserved" }}</p>
+                  </ion-item>
+
+                  <ion-item v-if="shipGroup.statusId !== 'ITEM_CANCELLED' && shipGroup.statusId !== 'ITEM_COMPLETED'">
+                    <ion-label>{{ "QOH" }}</ion-label>
+                    <ion-note slot="end" v-if="getProductStock(shipGroup.productId, shipGroup.facilityId).quantityOnHandTotal >= 0">
+                      {{ getProductStock(shipGroup.productId, shipGroup.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}
+                    </ion-note>
+                    <ion-spinner slot="end" v-else-if="isFetchingStock" color="medium" name="crescent" />
+                    <ion-button v-else fill="clear" @click.stop="fetchProductStock(shipGroup.productId, shipGroup.facilityId)">
+                      <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                    </ion-button>
+                  </ion-item>
+                </ion-card>
+              </div>
             </div>
+          </div>
+          <div v-else class="empty-state">
+            <p>{{ "No ship groups found" }}</p>
           </div>
         </section>
       </main>
