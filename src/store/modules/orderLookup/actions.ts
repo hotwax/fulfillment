@@ -1,13 +1,13 @@
-import { ActionTree } from 'vuex'
-import RootState from '@/store/RootState'
-import OrderLookupState from './OrderLookupState'
-import { OrderLookupService } from '@/services/OrderLookupService';
-import { prepareOrderLookupQuery } from '@/utils/solrHelper';
+import { ActionTree } from "vuex"
+import RootState from "@/store/RootState"
+import OrderLookupState from "./OrderLookupState"
+import { OrderLookupService } from "@/services/OrderLookupService";
+import { prepareOrderLookupQuery } from "@/utils/solrHelper";
 import { hasError } from "@/adapter";
-import * as types from './mutation-types'
-import { showToast } from '@/utils';
-import { translate } from '@hotwax/dxp-components';
-import logger from '@/logger';
+import * as types from "./mutation-types"
+import { showToast } from "@/utils";
+import { translate } from "@hotwax/dxp-components";
+import logger from "@/logger";
 
 const actions: ActionTree<OrderLookupState, RootState> = {
   async findOrders({ commit, state }, params) {
@@ -64,7 +64,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
 
         if (query.json.params.start && query.json.params.start > 0) stateOrders = stateOrders.concat(orders)
         else stateOrders = orders
-        this.dispatch('product/getProductInformation', { orders });
+        this.dispatch("product/getProductInformation", { orders });
         this.dispatch("util/fetchShipmentMethodTypeDesc", shipmentMethodTypeIds)
       } else {
         showToast(translate("Failed to fetch orders"));
@@ -168,10 +168,24 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       await this.dispatch("util/fetchEnumerations", [order.salesChannelEnumId])
       order.salesChannel = (this.state.util.enumerations as any)[order.salesChannelEnumId] || "-"
 
-      if(orderRole.status === 'fulfilled' && !hasError(orderRole.value) && orderRole.value.data.count > 0) {
+      if(orderRole.status === "fulfilled" && !hasError(orderRole.value) && orderRole.value.data.count > 0) {
         order["billToPartyId"] = orderRole.value.data.docs[0].partyId
+
+        const partyInfo = await OrderLookupService.performFind({
+          inputFields: {
+            partyId: order["billToPartyId"]
+          },
+          viewSize: 1,
+          fieldList: ["firstName", "lastName", "groupName"],
+          entityName: "PartyNameView"
+        })
+
+        if(!hasError(partyInfo) && partyInfo.data.count > 0) {
+          const party = partyInfo.data.docs[0]
+          order["partyName"] = party.groupName ? party.groupName : `${party.firstName} ${party.lastName}`
+        }
       }
-      if(orderContactMech.status === 'fulfilled' && !hasError(orderContactMech.value) && orderContactMech.value.data.count > 0) {
+      if(orderContactMech.status === "fulfilled" && !hasError(orderContactMech.value) && orderContactMech.value.data.count > 0) {
         const orderContactMechTypes: any = orderContactMech.value.data.docs.reduce((contactMechTypes: any, contactMech: any) => {
           contactMechTypes[contactMech.contactMechPurposeTypeId] = contactMech.contactMechId
 
@@ -218,13 +232,13 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       }
 
       // Fetching order identifications
-      if(orderIdentifications.status === 'fulfilled' && !hasError(orderIdentifications.value) && orderIdentifications.value.data.count > 0) {
+      if(orderIdentifications.status === "fulfilled" && !hasError(orderIdentifications.value) && orderIdentifications.value.data.count > 0) {
         order["shopifyOrderId"] = orderIdentifications.value.data.docs.find((identification: any) => identification.orderIdentificationTypeId === "SHOPIFY_ORD_ID")?.idValue
       }
 
       // Fetching order attributes
       order["orderAttributes"] = {}
-      if(orderAttributes.status === 'fulfilled' && !hasError(orderAttributes.value) && orderAttributes.value.data.count > 0) {
+      if(orderAttributes.status === "fulfilled" && !hasError(orderAttributes.value) && orderAttributes.value.data.count > 0) {
         orderAttributes.value.data.docs.map((attribute: any) => {
           // For some attbiutes we get casing difference, like customerId, CustomerId, so adding ic in performFind, but to display it correctly on UI, converting it into lowerCase
           order["orderAttributes"][attribute.attrName.toLowerCase()] = attribute.attrValue
@@ -233,7 +247,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
 
       // Fetching brokering information for order
       order["shipGroupFacilityAllocationTime"] = {}
-      if(orderBrokeringInfo.status === 'fulfilled' && !hasError(orderBrokeringInfo.value) && orderBrokeringInfo.value.data.count > 0) {
+      if(orderBrokeringInfo.status === "fulfilled" && !hasError(orderBrokeringInfo.value) && orderBrokeringInfo.value.data.count > 0) {
         order["firstBrokeredDate"] = orderBrokeringInfo.value.data.docs[0].changeDatetime
         order["lastBrokeredDate"] = orderBrokeringInfo.value.data.docs[orderBrokeringInfo.value.data.count - 1].changeDatetime
         orderBrokeringInfo.value.data.docs.map((brokeringInfo: any) => {
@@ -242,13 +256,13 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       }
 
       // Fetching brokering information for order
-      if(orderStatusInfo.status === 'fulfilled' && !hasError(orderStatusInfo.value) && orderStatusInfo.value.data.count > 0) {
+      if(orderStatusInfo.status === "fulfilled" && !hasError(orderStatusInfo.value) && orderStatusInfo.value.data.count > 0) {
         order["approvedDate"] = orderStatusInfo.value.data.docs.find((info: any) => info.statusId === "ORDER_APPROVED")?.statusDatetime
         order["completedDate"] = orderStatusInfo.value.data.docs.find((info: any) => info.statusId === "ORDER_COMPLETED")?.statusDatetime
       }
 
       // Fetching payment preference for order
-      if(orderPaymentPreference.status === 'fulfilled' && !hasError(orderPaymentPreference.value) && orderPaymentPreference.value.data.count > 0) {
+      if(orderPaymentPreference.status === "fulfilled" && !hasError(orderPaymentPreference.value) && orderPaymentPreference.value.data.count > 0) {
         const paymentMethodTypeIds: Array<string> = [];
         const statusIds: Array<string> = [];
         order["orderPayments"] = orderPaymentPreference.value.data.docs.map((paymentPreference: any) => {
@@ -270,7 +284,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
 
       // Fetching payment preference for order
       const shipGroupSeqIds: Array<string> = [];
-      if(orderShipGroupSeqIds.status === 'fulfilled' && !hasError(orderShipGroupSeqIds) && orderShipGroupSeqIds.value.data.count > 0) {
+      if(orderShipGroupSeqIds.status === "fulfilled" && !hasError(orderShipGroupSeqIds) && orderShipGroupSeqIds.value.data.count > 0) {
         orderShipGroupSeqIds.value.data.docs.map((shipGroup: any) => shipGroupSeqIds.includes(shipGroup.shipGroupSeqId) ? '' : shipGroupSeqIds.push(shipGroup.shipGroupSeqId))
       }
 
@@ -330,13 +344,13 @@ const actions: ActionTree<OrderLookupState, RootState> = {
 
   async updateAppliedFilters({ commit, dispatch }, payload) {
     commit(types.ORDERLOOKUP_FILTERS_UPDATED, payload)
-    const resp = await dispatch('findOrders')
+    const resp = await dispatch("findOrders")
     return resp;
   },
 
   async updateSort({ commit, dispatch }, payload) {
     commit(types.ORDERLOOKUP_SORT_UPDATED, payload)
-    await dispatch('findOrders')
+    await dispatch("findOrders")
   },
 }
 

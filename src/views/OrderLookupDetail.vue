@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button slot="start" :default-href="`/orderLookup`" />
+        <ion-back-button slot="start" :default-href="`/order-lookup`" />
         <ion-title>{{ "Order detail" }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -75,7 +75,7 @@
           <div class="info">
             <ion-card>
               <ion-card-header>
-                <ion-card-title>{{ order.billToPartyId }}</ion-card-title>
+                <ion-card-title>{{ order.partyName || order.billToPartyId }}</ion-card-title>
               </ion-card-header>
               <ion-list>
                 <ion-item>
