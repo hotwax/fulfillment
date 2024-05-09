@@ -18,7 +18,7 @@
                   <p>Online Label</p>
                 </ion-label>
                 <!--TODO: Need to make it functional.-->
-                <ion-note slot="end">10 methods</ion-note>
+                <ion-note slot="end"> {{carrier.shipmentMethodCount}} {{ translate('methods') }}</ion-note>
               </ion-item>
             </ion-list>
           </div>

@@ -15,12 +15,12 @@ const actions: ActionTree<CarrierState, RootState> = {
     try {
       const params = {
         ...payload,
-        "entityName": "PartyRoleAndPartyDetail",
+        "entityName": "CarrierAndShipmentMethod",
         "inputFields": {
           "roleTypeId": "CARRIER",
           "partyTypeId": "PARTY_GROUP"
         },
-        "fieldList": ["partyId", "roleTypeId", "groupName"],
+        "fieldList": ["partyId", "roleTypeId", "groupName", "shipmentMethodCount"],
         "viewIndex": 0,
         "viewSize": 250,  // maximum records we could have
         "distinct": "Y",
