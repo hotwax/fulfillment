@@ -8,6 +8,27 @@ import RootState from '../../RootState'
 const orderLookupModule: Module<OrderLookupState, RootState> = {
   namespaced: true,
   state: {
+    list: {
+      orders: [],
+      orderCount: 0,
+      itemCount: 0
+    },
+    query: {
+      'status': '',
+      'facility': '',
+      'storePickup': false,
+      'shipFromStore': false,
+      'unfillable': false,
+      'queryString': '',
+      'sort': 'orderDate desc',
+      'productStore': '',
+      'channel': '',
+    },
+    current: {},
+    channels: [],
+    productStores: [],
+    facilities: [],
+    orderStatuses: []
   },
   getters,
   actions,
