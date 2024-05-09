@@ -70,7 +70,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         showToast(translate("Failed to fetch orders"));
       }
     } catch(error) {
-      console.error(error)
+      logger.error(error)
       showToast(translate("Failed to fetch orders"));
     }
     commit(types.ORDERLOOKUP_LIST_UPDATED, { orders: stateOrders, orderCount, itemCount });
