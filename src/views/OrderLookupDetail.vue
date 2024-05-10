@@ -26,7 +26,7 @@
             <ion-item lines="none">
               <ion-icon slot="start" :icon="timeOutline" class="mobile-only" />
               <h2>{{ translate("Timeline") }}</h2>
-              <ion-badge slot="end" :color="getColorByDesc(orderStatuses[order.statusId].label) || getColorByDesc('default')">{{ orderStatuses[order.statusId].label }}</ion-badge>
+              <ion-badge slot="end" :color="getColorByDesc(orderStatuses[order.statusId].label) || getColorByDesc('default')">{{ translate(orderStatuses[order.statusId].label) }}</ion-badge>
             </ion-item>
 
             <ion-list class="desktop-only">
@@ -125,8 +125,8 @@
                   <ion-item lines="none">
                     <ion-label class="ion-text-wrap">
                       <p class="overline">{{ orderPayment.methodTypeId }}</p>
-                      {{ getPaymentMethodDesc(orderPayment.methodTypeId) || orderPayment.methodTypeId }}
-                      <ion-note :color="getColorByDesc(getStatusDesc(orderPayment.paymentStatus))">{{ getStatusDesc(orderPayment.paymentStatus) }}</ion-note>
+                      {{ translate(getPaymentMethodDesc(orderPayment.methodTypeId)) || orderPayment.methodTypeId }}
+                      <ion-note :color="getColorByDesc(getStatusDesc(orderPayment.paymentStatus))">{{ translate(getStatusDesc(orderPayment.paymentStatus)) }}</ion-note>
                     </ion-label>
                     <p slot="end">{{ formatCurrency(orderPayment.amount, order.currencyUom) }}</p>
                   </ion-item>
@@ -193,7 +193,7 @@
                       <h1>{{ shipGroup.productId }}</h1>
                       <p>{{ getProduct(shipGroup.productId).productName }}</p>
                     </ion-label>
-                    <ion-badge slot="end" :color="getColorByDesc(itemStatuses[shipGroup.statusId].label) || getColorByDesc('default')">{{ itemStatuses[shipGroup.statusId].label }}</ion-badge>
+                    <ion-badge slot="end" :color="getColorByDesc(itemStatuses[shipGroup.statusId].label) || getColorByDesc('default')">{{ translate(itemStatuses[shipGroup.statusId].label) }}</ion-badge>
                   </ion-item>
 
                   <ion-item>

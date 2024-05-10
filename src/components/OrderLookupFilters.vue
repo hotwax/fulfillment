@@ -40,7 +40,7 @@
         </ion-list-header>
         <ion-item>
           <ion-select :selected-text="!query.status.length ? translate('All') : query.status.length > 1 ? query.status.length + translate('items selected') : query.status" :label="translate('Status')" :disabled="!orderStatusOptions.length" :multiple="true" :value="query.status" @ionChange="updateAppliedFilters($event['detail'].value, 'status')" interface="popover">
-            <ion-select-option v-for="status in orderStatusOptions" :key="status" :value="status">{{ status }}</ion-select-option>
+            <ion-select-option v-for="status in orderStatusOptions" :key="status" :value="status">{{ translate(status) }}</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item>
@@ -53,7 +53,7 @@
         <ion-list-header><h3>{{ translate("Channel") }}</h3></ion-list-header>
         <ion-item v-for="channel in channelOptions" :key="channel">
           <ion-checkbox :checked="isChannelSelected(channel)" @ionChange="updateAppliedFilters($event['detail'].checked, 'channel', channel)">
-            <ion-label>{{ channel }}</ion-label>
+            <ion-label>{{ translate(channel) }}</ion-label>
           </ion-checkbox>
         </ion-item>
         <ion-label class="ion-margin" v-if="!channelOptions.length">{{ translate("No channels found") }}</ion-label>

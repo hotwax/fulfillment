@@ -9,7 +9,7 @@
         {{ item.parentProductName ? item.parentProductName : item.productName }}
       </ion-label>
       <div class="metadata">
-        <ion-badge slot="end" :color="getColorByDesc(item.orderItemStatusDesc) || getColorByDesc('default')">{{ item.orderItemStatusDesc }}</ion-badge>
+        <ion-badge slot="end" :color="getColorByDesc(item.orderItemStatusDesc) || getColorByDesc('default')">{{ translate(item.orderItemStatusDesc) }}</ion-badge>
       </div>
     </ion-item>
     <div>
@@ -29,7 +29,7 @@
       </ion-item>
       <ion-item>
         <ion-label>{{ translate("Method") }}</ion-label>
-        <p slot="end">{{ getShipmentMethodDesc(item.shipmentMethodTypeId) || item.shipmentMethodTypeId || "-" }}</p>
+        <p slot="end">{{ translate(getShipmentMethodDesc(item.shipmentMethodTypeId)) || item.shipmentMethodTypeId || "-" }}</p>
       </ion-item>
       <!-- Removed as we are not getting fulfillment status (as its derived) time for the item in the ORDER doc -->
       <!-- <ion-item>
