@@ -14,7 +14,7 @@
             <ion-label>{{ productStore }}</ion-label>
           </ion-checkbox>
         </ion-item>
-        <ion-label class="ion-margin" v-if="!productStoreOptions.length">{{ "No brands found" }}</ion-label>
+        <ion-label class="ion-margin" v-if="!productStoreOptions.length">{{ translate("No brands found") }}</ion-label>
       </ion-list>
       <ion-list>
         <ion-list-header><h3>{{ translate("Type") }}</h3></ion-list-header>
@@ -39,12 +39,12 @@
           <h3>{{ translate("Fulfillment") }}</h3>
         </ion-list-header>
         <ion-item>
-          <ion-select :selected-text="!query.status.length ? 'All' : query.status.length > 1 ? query.status.length + ' items selected' : query.status" :label="'Status'" :disabled="!orderStatusOptions.length" :multiple="true" :value="query.status" @ionChange="updateAppliedFilters($event['detail'].value, 'status')" interface="popover">
+          <ion-select :selected-text="!query.status.length ? translate('All') : query.status.length > 1 ? query.status.length + translate('items selected') : query.status" :label="translate('Status')" :disabled="!orderStatusOptions.length" :multiple="true" :value="query.status" @ionChange="updateAppliedFilters($event['detail'].value, 'status')" interface="popover">
             <ion-select-option v-for="status in orderStatusOptions" :key="status" :value="status">{{ status }}</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item>
-          <ion-select :selected-text="!query.facility.length ? 'All' : query.facility.length > 1 ? query.facility.length + ' items selected' : query.facility" :label="'Facility'" :disabled="!facilityOptions.length" :multiple="true" :value="query.facility" @ionChange="updateAppliedFilters($event['detail'].value, 'facility')" interface="popover">
+          <ion-select :selected-text="!query.facility.length ? translate('All') : query.facility.length > 1 ? query.facility.length + translate('items selected') : query.facility" :label="'Facility'" :disabled="!facilityOptions.length" :multiple="true" :value="query.facility" @ionChange="updateAppliedFilters($event['detail'].value, 'facility')" interface="popover">
             <ion-select-option v-for="facility in facilityOptions" :key="facility" :value="facility">{{ facility }}</ion-select-option>
           </ion-select>
         </ion-item>
@@ -56,7 +56,7 @@
             <ion-label>{{ channel }}</ion-label>
           </ion-checkbox>
         </ion-item>
-        <ion-label class="ion-margin" v-if="!channelOptions.length">{{ "No channels found" }}</ion-label>
+        <ion-label class="ion-margin" v-if="!channelOptions.length">{{ translate("No channels found") }}</ion-label>
       </ion-list>
     </ion-content>
   </ion-menu>

@@ -24,11 +24,11 @@
         <ion-label slot="end">{{ "-" }}</ion-label>
       </ion-item> -->
       <ion-item>
-        <ion-label>{{ "Facility" }}</ion-label>
+        <ion-label>{{ translate("Facility") }}</ion-label>
         <p slot="end">{{ item.facilityName || item.facilityId || "-" }}</p>
       </ion-item>
       <ion-item>
-        <ion-label>{{ "Method" }}</ion-label>
+        <ion-label>{{ translate("Method") }}</ion-label>
         <p slot="end">{{ getShipmentMethodDesc(item.shipmentMethodTypeId) || item.shipmentMethodTypeId || "-" }}</p>
       </ion-item>
       <!-- Removed as we are not getting fulfillment status (as its derived) time for the item in the ORDER doc -->
@@ -37,7 +37,7 @@
         <p slot="end">{{ "-" }}</p>
       </ion-item> -->
       <ion-item v-if="item.orderItemStatusId !== 'ITEM_CANCELLED' && item.orderItemStatusId !== 'ITEM_COMPLETED'">
-        <ion-label>{{ "QOH" }}</ion-label>
+        <ion-label>{{ translate("QOH") }}</ion-label>
         <p slot="end" v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal >= 0">
           {{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}
         </p>

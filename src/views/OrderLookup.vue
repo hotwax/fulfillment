@@ -31,10 +31,10 @@
 
               <ion-item lines="none">
                 <ion-icon slot="start" :icon="swapVerticalOutline" />
-                <ion-label class="ion-text-wrap">{{ "Sort" }}</ion-label>
+                <ion-label class="ion-text-wrap">{{ translate("Sort") }}</ion-label>
                 <ion-select :value="sort" @ionChange="sortOrders($event.detail.value)" interface="popover">
-                  <ion-select-option value="orderDate desc">{{ "Newest to oldest" }}</ion-select-option>
-                  <ion-select-option value="orderDate asc">{{ "Oldest to newest" }}</ion-select-option>
+                  <ion-select-option value="orderDate desc">{{ translate("Newest to oldest") }}</ion-select-option>
+                  <ion-select-option value="orderDate asc">{{ translate("Oldest to newest") }}</ion-select-option>
                 </ion-select>
               </ion-item>
             </div>
@@ -75,10 +75,10 @@
             </div>
           </div>
           <div v-else-if="isLoading" class="empty-state">
-            <p>{{ "Loading..." }}</p>
+            <p>{{ translate("Loading") }}</p>
           </div>
           <div v-else-if="query.queryString" class="empty-state">
-            <p>{{ "No keyword matches the search criteria." }}</p>
+            <p>{{ translate("No keyword matches the search criteria.") }}</p>
           </div>
           <ion-infinite-scroll @ionInfinite="loadMoreOrders($event)" threshold="100px" :disabled="!isScrollable">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>

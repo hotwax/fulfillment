@@ -3,7 +3,7 @@
     <ion-header>
       <ion-toolbar>
         <ion-back-button slot="start" :default-href="`/order-lookup`" />
-        <ion-title>{{ "Order detail" }}</ion-title>
+        <ion-title>{{ translate("Order detail") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content>
@@ -25,7 +25,7 @@
           <div class="timeline">
             <ion-item lines="none">
               <ion-icon slot="start" :icon="timeOutline" class="mobile-only" />
-              <h2>{{ "Timeline" }}</h2>
+              <h2>{{ translate("Timeline") }}</h2>
               <ion-badge slot="end" :color="getColorByDesc(orderStatuses[order.statusId].label) || getColorByDesc('default')">{{ orderStatuses[order.statusId].label }}</ion-badge>
             </ion-item>
 
@@ -33,7 +33,7 @@
               <ion-item v-if="order.orderDate">
                 <ion-icon :icon="sunnyOutline" slot="start" />
                 <ion-label>
-                  Created in Shopify
+                  {{ translate("Created in Shopify") }}
                 </ion-label>
                 <ion-note slot="end">{{ formatDateTime(order.orderDate) }}</ion-note>
               </ion-item>
@@ -41,7 +41,7 @@
                 <ion-icon :icon="downloadOutline" slot="start" />
                 <ion-label>
                   <p>{{ findTimeDiff(order.orderDate, order.entryDate) }}</p>
-                  Imported from Shopify
+                  {{ translate("Imported from Shopify") }}
                 </ion-label>
                 <ion-note slot="end">{{ formatDateTime(order.entryDate) }}</ion-note>
               </ion-item>
@@ -49,7 +49,7 @@
                 <ion-icon :icon="checkmarkDoneOutline" slot="start" />
                 <ion-label>
                   <p>{{ findTimeDiff(order.orderDate, order.approvedDate) }}</p>
-                  Approved for fulfillment
+                  {{ translate("Approved for fulfillment") }}
                 </ion-label>
                 <ion-note slot="end">{{ formatDateTime(order.approvedDate) }}</ion-note>
               </ion-item>
@@ -57,7 +57,7 @@
                 <ion-icon :icon="checkmarkDoneOutline" slot="start" />
                 <ion-label>
                   <p>{{ findTimeDiff(order.orderDate, order.firstBrokeredDate) }}</p>
-                  First Brokered
+                  {{ translate("First Brokered") }}
                 </ion-label>
                 <ion-note slot="end">{{ formatDateTime(order.firstBrokeredDate) }}</ion-note>
               </ion-item>
@@ -65,7 +65,7 @@
                 <ion-icon :icon="pulseOutline" slot="start" />
                 <ion-label>
                   <p>{{ findTimeDiff(order.orderDate, order.completedDate) }}</p>
-                  Order completed
+                  {{ translate("Order completed") }}
                 </ion-label>
                 <ion-note slot="end">{{ formatDateTime(order.completedDate) }}</ion-note>
               </ion-item>
@@ -89,11 +89,11 @@
                 <ion-item lines="none">
                   <ion-icon :icon="cashOutline" slot="start" />
                   <ion-label v-if="order.billingAddress" class="ion-text-wrap">
-                    {{ order.billingAddress?.toName }}
-                    <p>{{ order.billingAddress?.address1 }}</p>
-                    <p>{{ order.billingAddress?.address2 }}</p>
-                    <p>{{ order.billingAddress?.city }} {{ order.billingAddress?.city && order.billingAddress?.postalCode && ',' }} {{ order.billingAddress?.postalCode }}</p>
-                    <p>{{ order.billingAddress?.stateName }} {{ order.billingAddress?.stateName && order.billingAddress?.countryName && ',' }} {{ order.billingAddress?.countryName }}</p>
+                    {{ order.billingAddress.toName }}
+                    <p>{{ order.billingAddress.address1 }}</p>
+                    <p>{{ order.billingAddress.address2 }}</p>
+                    <p>{{ order.billingAddress.city }} {{ order.billingAddress.city && order.billingAddress.postalCode && ',' }} {{ order.billingAddress.postalCode }}</p>
+                    <p>{{ order.billingAddress.stateName }} {{ order.billingAddress.stateName && order.billingAddress.countryName && ',' }} {{ order.billingAddress.countryName }}</p>
                   </ion-label>
                   <ion-label v-else>{{ "-" }}</ion-label>
                 </ion-item>
@@ -103,15 +103,15 @@
             <div>
               <ion-card>
                 <ion-card-header>
-                  <ion-card-title>{{ "Source" }}</ion-card-title>
+                  <ion-card-title>{{ translate("Source") }}</ion-card-title>
                 </ion-card-header>
                 <ion-list>
                   <ion-item>
-                    <ion-label>{{ "Brand" }}</ion-label>
+                    <ion-label>{{ translate("Brand") }}</ion-label>
                     <p slot="end">{{ currentEcomStore.storeName }}</p>
                   </ion-item>
                   <ion-item lines="none">
-                    <ion-label>{{ "Channel" }}</ion-label>
+                    <ion-label>{{ translate("Channel") }}</ion-label>
                     <p slot="end">{{ order.salesChannel }}</p>
                   </ion-item>
                 </ion-list>
@@ -119,7 +119,7 @@
   
               <ion-card>
                 <ion-card-header>
-                  <ion-card-title>{{ "Payment" }}</ion-card-title>
+                  <ion-card-title>{{ translate("Payment") }}</ion-card-title>
                 </ion-card-header>
                 <ion-list v-for="orderPayment in order.orderPayments" :key="orderPayment">
                   <ion-item lines="none">
@@ -136,19 +136,19 @@
 
             <ion-card>
               <ion-card-header>
-                <ion-card-title>{{ "Order Identifications" }}</ion-card-title>
+                <ion-card-title>{{ translate("Order Identifications") }}</ion-card-title>
               </ion-card-header>
               <ion-list>
                 <ion-item>
-                  <ion-label class="ion-text-wrap"> {{ "Order Name" }} </ion-label>
+                  <ion-label class="ion-text-wrap"> {{ translate("Order Name") }} </ion-label>
                   <p slot="end">{{ order.orderName || "-" }}</p>
                 </ion-item>
                 <ion-item>
-                  <ion-label class="ion-text-wrap"> {{ "OMS ID" }} </ion-label>
+                  <ion-label class="ion-text-wrap"> {{ translate("OMS ID") }} </ion-label>
                   <p slot="end">{{ order.orderId || "-" }}</p>
                 </ion-item>
                 <ion-item lines="none">
-                  <ion-label class="ion-text-wrap"> {{ "Shopify ID" }} </ion-label>
+                  <ion-label class="ion-text-wrap"> {{ translate("Shopify ID") }} </ion-label>
                   <p slot="end">{{ order.shopifyOrderId || "-" }} </p>
                 </ion-item>
               </ion-list>
@@ -156,15 +156,15 @@
 
             <ion-card>
               <ion-card-header>
-                <ion-card-title>{{ "Additional data" }}</ion-card-title>
+                <ion-card-title>{{ translate("Additional data") }}</ion-card-title>
               </ion-card-header>
               <ion-list>
                 <ion-item>
-                  <ion-label class="ion-text-wrap">{{ "Customer ID" }}</ion-label>
+                  <ion-label class="ion-text-wrap">{{ translate("Customer ID") }}</ion-label>
                   <p slot="end">{{ order.orderAttributes.customerid || "-" }}</p>
                 </ion-item>
                 <ion-item lines="none">
-                  <ion-label class="ion-text-wrap">{{ "Muncipio" }}</ion-label>
+                  <ion-label class="ion-text-wrap">{{ translate("Muncipio") }}</ion-label>
                   <p slot="end">{{ order.orderAttributes.municipio || "-" }}</p>
                 </ion-item>
               </ion-list>
@@ -197,24 +197,24 @@
                   </ion-item>
 
                   <ion-item>
-                    <ion-label class="ion-text-wrap">{{ "Price" }}</ion-label>
+                    <ion-label class="ion-text-wrap">{{ translate("Price") }}</ion-label>
                     <p slot="end">{{ formatCurrency(shipGroup.unitPrice, order.currencyUom) }}</p>
                   </ion-item>
 
                   <ion-item v-if="shipGroup.facilityId !== '_NA_'">
-                    <ion-label class="ion-text-wrap">{{ "Allocation" }}</ion-label>
+                    <ion-label class="ion-text-wrap">{{ translate("Allocation") }}</ion-label>
                     <p slot="end">{{ order["shipGroupFacilityAllocationTime"][shipGroup.shipGroupSeqId] ? formatDateTime(order["shipGroupFacilityAllocationTime"][shipGroup.shipGroupSeqId]) : "-" }}</p>
                   </ion-item>
 
                   <ion-item v-if="shipGroup.facilityId !== '_NA_'">
-                    <ion-label class="ion-text-wrap">{{ "Fulfillment Status" }}</ion-label>
-                    <p slot="end">{{ shipGroup.statusId === "ITEM_COMPLETED" ? shipGroup.shipmentMethodTypeId === "STOREPICKUP" ? "Picked up" : "Shipped" : order?.shipGroupFulfillmentStatus?.[shipGroup.shipGroupSeqId] || "Reserved" }}</p>
+                    <ion-label class="ion-text-wrap">{{ translate("Fulfillment Status") }}</ion-label>
+                    <p slot="end">{{ translate(shipGroup.statusId === "ITEM_COMPLETED" ? shipGroup.shipmentMethodTypeId === "STOREPICKUP" ? "Picked up" : "Shipped" : order?.shipGroupFulfillmentStatus?.[shipGroup.shipGroupSeqId] || "Reserved") }}</p>
                   </ion-item>
 
                   <ion-item v-if="shipGroup.statusId !== 'ITEM_CANCELLED' && shipGroup.statusId !== 'ITEM_COMPLETED'">
-                    <ion-label>{{ "QOH" }}</ion-label>
+                    <ion-label>{{ translate("QOH") }}</ion-label>
                     <ion-note slot="end" v-if="getProductStock(shipGroup.productId, shipGroup.facilityId).quantityOnHandTotal >= 0">
-                      {{ getProductStock(shipGroup.productId, shipGroup.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}
+                      {{ getProductStock(shipGroup.productId, shipGroup.facilityId).quantityOnHandTotal }} {{ translate("pieces in stock") }}
                     </ion-note>
                     <ion-spinner slot="end" v-else-if="isFetchingStock" color="medium" name="crescent" />
                     <ion-button v-else fill="clear" @click.stop="fetchProductStock(shipGroup.productId, shipGroup.facilityId)">
@@ -226,16 +226,16 @@
             </div>
           </div>
           <div v-else class="empty-state">
-            <p>{{ "No ship groups found" }}</p>
+            <p>{{ translate("No ship groups found") }}</p>
           </div>
         </section>
       </main>
       <main v-else-if="isFetchingOrderInfo" class="empty-state">
         <ion-spinner name="crescent" />
-        <ion-label>{{ "Fetching order information..." }}</ion-label>
+        <ion-label>{{ translate("Fetching order information...") }}</ion-label>
       </main>
       <main v-else class="empty-state">
-        <p>{{ "Something went wrong while fetching order details, please check the orderId and try again." }}</p>
+        <p>{{ translate("Something went wrong while fetching order details, please check the orderId and try again.") }}</p>
       </main>
     </ion-content>
   </ion-page>
