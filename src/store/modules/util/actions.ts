@@ -388,8 +388,79 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async updateRejectReasons({ commit }, payload) {
     commit(types.UTIL_REJECT_REASONS_UPDATED, payload)
-  }
+  },
 
+  async fetchFacilities({ commit }) {
+    let facilities  = [];
+    try {
+      const payload = {
+        "inputFields": {
+          "parentTypeId": "VIRTUAL_FACILITY",
+          "parentTypeId_op": "notEqual",
+          "facilityTypeId": "VIRTUAL_FACILITY",
+          "facilityTypeId_op": "notEqual"
+        },
+        "entityName": "FacilityAndType",
+        "viewSize": 250 // keeping view size 100 as considering that we will have max 100 facilities
+      }
+
+      const resp = await UtilService.fetchFacilities(payload)
+
+      if (!hasError(resp) && resp.data.count > 0) {
+        facilities = resp.data.docs
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Failed to fetch facilities', err)
+    }
+    commit(types.UTIL_FACILITIES_UPDATED, facilities)
+  },
+
+  async fetchProductStores({ commit }) {
+    let stores  = [];
+    try {
+      const payload = {
+        "entityName": "ProductStore",
+        "noConditionFind": "Y",
+        "viewSize": 250 // keeping view size 100 as considering that we will have max 100 product stores
+      }
+
+      const resp = await UtilService.fetchProductStores(payload)
+      if (!hasError(resp) && resp.data.count > 0) {
+        stores = resp.data.docs
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Failed to fetch product stores', err)
+    }
+    commit(types.UTIL_PRODUCT_STORES_UPDATED, stores)
+  },
+
+  async fetchShipmentGatewayConfigs({ commit }) {
+    let configs  = {};
+    try {
+      const payload = {
+        "entityName": "ShipmentGatewayConfig",
+        "noConditionFind": "Y",
+        "viewSize": 50 // keeping view size 50 as considering there will not be more than 50 shipment gateway
+      }
+
+      const resp = await UtilService.fetchShipmentGatewayConfigs(payload)
+      if (!hasError(resp) && resp.data.count > 0) {
+        configs = resp.data.docs.reduce((updatedConfigDetail:any, config:any) => {
+          updatedConfigDetail[config.shipmentGatewayConfigId] = config;
+          return updatedConfigDetail;
+        }, {})
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Failed to fetch shipment gateway config', err)
+    }
+    commit(types.UTIL_SHIPMENT_GATEWAY_CONFIGS_UPDATED, configs)
+  }
 }
 
 export default actions;

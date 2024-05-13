@@ -148,6 +148,14 @@ export default defineComponent({
         childRoutes: ["/rejection-reasons/"],
       },
       {
+        title: "Carriers & Shipment Methods",
+        url: "/carriers",
+        childRoutes: ["/carrier-details"],
+        meta: {
+          permissionId: "APP_CARRIERS_VIEW"
+        }
+      },
+      {
         title: "Order Lookup",
         url: "/order-lookup",
         childRoutes: ["/order-lookup/"],

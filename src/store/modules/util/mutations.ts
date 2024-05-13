@@ -33,5 +33,14 @@ const mutations: MutationTree <UtilState> = {
   [types.UTIL_ENUMERATIONS_UPDATED](state, payload) {
     state.enumerations = payload
   },
+  [types.UTIL_FACILITIES_UPDATED](state, payload) {
+    state.facilities = payload
+  },
+  [types.UTIL_PRODUCT_STORES_UPDATED](state, payload) {
+    state.productStores = payload
+  },
+  [types.UTIL_SHIPMENT_GATEWAY_CONFIGS_UPDATED](state, payload) {
+    state.shipmentGatewayConfigs = payload
+  }
 }
 export default mutations;

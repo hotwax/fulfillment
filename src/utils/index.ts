@@ -142,6 +142,18 @@ const generateInternalId = (name: string) => {
   return name.trim().toUpperCase().split(' ').join('_');
 }
 
+const sortItems = (items: any, sortByField: any) => {
+  items.sort((firstMethod:any, secondMethod:any) => {
+    if (firstMethod[sortByField] === null && secondMethod[sortByField] !== null) {
+        return 1;
+    } else if (firstMethod[sortByField] !== null && secondMethod[sortByField] === null) {
+        return -1;
+    } else {
+        return firstMethod[sortByField] - secondMethod[sortByField];
+    }
+  });
+}
+
 const currentSymbol: any = {
   "USD": "$",
   "EUR": "€",
@@ -169,4 +181,5 @@ const getColorByDesc = (desc: string) => ({
   "default": "medium"
 } as any)[desc]
 
-export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getColorByDesc, getFeature, getIdentificationId, handleDateTimeInput, showToast, hasError, parseCsv, jsonToCsv}
+
+export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getColorByDesc, getFeature, getIdentificationId, handleDateTimeInput, showToast, sortItems, hasError, parseCsv, jsonToCsv }

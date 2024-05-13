@@ -17,7 +17,10 @@ const utilModule: Module<UtilState, RootState> = {
     statusDesc: {},
     productStoreShipmentMethCount: 0,
     rejectReasonEnumTypes: [],
-    enumerations: {}
+    enumerations: {},
+    productStores: [],
+    facilities: [],
+    shipmentGatewayConfigs: []
   },
   getters,
   actions,

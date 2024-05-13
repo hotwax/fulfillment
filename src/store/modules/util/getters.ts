@@ -33,5 +33,14 @@ const getters: GetterTree <UtilState, RootState> = {
   getEnumerations(state) {
     return state.enumerations
   },
+  getProductStores(state) {
+    return state.productStores;
+  },
+  getFacilities(state) {
+    return state.facilities
+  },
+  getShipmentGatewayConfigs(state) {
+    return state.shipmentGatewayConfigs
+  }
 }
 export default getters;
