@@ -81,27 +81,13 @@ const actions: ActionTree<OrderLookupState, RootState> = {
     let order = {} as any;
 
     try {
-      const orderHeader = await OrderLookupService.performFind({
+      const apiPayload = [{
         inputFields: {
           orderId
         },
-        viewSize: 1,
-        entityName: "OrderHeader"
-      })
-
-      if(hasError(orderHeader) && orderHeader.data.count <= 0) {
-        throw "Failed to fetch order information"
-      }
-
-      const apiPayload = [{
-        inputFields: {
-          orderId,
-          roleTypeId: "BILL_TO_CUSTOMER"
-        },
-        viewSize: 1,
+        viewSize: 20,
         filterByDate: "Y",
-        fieldList: ["partyId", "roleTypeId"],
-        entityName: "OrderRole"
+        entityName: "OrderHeaderAndRoles"
       }, {
         inputFields: {
           orderId,
@@ -155,14 +141,19 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         entityName: "OrderPaymentPreference"
       }]
 
-      const [orderRole, orderContactMech, orderIdentifications, orderAttributes, orderBrokeringInfo, orderStatusInfo, orderPaymentPreference] = await Promise.allSettled(apiPayload.map((payload: any) => OrderLookupService.performFind(payload)))
+      const [orderHeader, orderContactMech, orderIdentifications, orderAttributes, orderBrokeringInfo, orderStatusInfo, orderPaymentPreference] = await Promise.allSettled(apiPayload.map((payload: any) => OrderLookupService.performFind(payload)))
 
-      order = orderHeader.data.docs[0]
       await this.dispatch("util/fetchEnumerations", [order.salesChannelEnumId])
       order.salesChannel = (this.state.util.enumerations as any)[order.salesChannelEnumId] || "-"
 
-      if(orderRole.status === "fulfilled" && !hasError(orderRole.value) && orderRole.value.data.count > 0) {
-        order["billToPartyId"] = orderRole.value.data.docs[0].partyId
+      if(orderHeader.status === "fulfilled" && !hasError(orderHeader.value) && orderHeader.value.data.count > 0) {
+        order = orderHeader.value.data.docs[0]
+
+        if(!order.orderId) {
+          throw "Failed to fetch order information"
+        }
+
+        order["billToPartyId"] = orderHeader.value.data.docs.find((info: any) => info.roleTypeId === "BILL_TO_CUSTOMER")?.partyId
 
         const partyInfo = await OrderLookupService.performFind({
           inputFields: {
