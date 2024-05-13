@@ -30,6 +30,14 @@ const getters: GetterTree <UtilState, RootState> = {
   getRejectReasonEnumTypes(state) {
     return state.rejectReasonEnumTypes
   },
-
+  getProductStores(state) {
+    return state.productStores;
+  },
+  getFacilities(state) {
+    return state.facilities
+  },
+  getShipmentGatewayConfigs(state) {
+    return state.shipmentGatewayConfigs
+  }
 }
 export default getters;

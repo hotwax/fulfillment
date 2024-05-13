@@ -5,6 +5,8 @@ import InProgress from '@/views/InProgress.vue'
 import OpenOrders from "@/views/OpenOrders.vue"
 import Settings from "@/views/Settings.vue"
 import RejectionReasons from '@/views/RejectionReasons.vue';
+import Carriers from '@/views/Carriers.vue'
+import CarrierDetail from '@/views/CarrierDetail.vue'
 import store from '@/store'
 import Exim from "@/views/Exim.vue"
 import UploadImportOrders from "@/views/UploadImportOrders.vue"
@@ -13,6 +15,8 @@ import OrderDetail from "@/views/OrderDetail.vue"
 import TransferOrders from "@/views/TransferOrders.vue"
 import TransferOrderDetail from "@/views/TransferOrderDetail.vue"
 import TransferShipmentReview from "@/views/TransferShipmentReview.vue"
+import CreateCarrier from "@/views/CreateCarrier.vue"
+import CarrierShipmentMethods from "@/views/CarrierShipmentMethods.vue"
 import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
 import { translate } from '@hotwax/dxp-components'
@@ -171,6 +175,44 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     meta: {
       permissionId: "APP_REJECTION_REASONS_VIEW"
+    }
+  },
+  {
+    path: "/carriers",
+    name: "Carriers",
+    component: Carriers,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_CARRIERS_VIEW"
+    }
+  },
+  {
+    path: '/create-carrier',
+    name: 'CreateCarrier',
+    component: CreateCarrier,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_CARRIERS_CREATE"
+    }
+  },
+  {
+    path: '/carrier-details/:partyId',
+    name: 'CarrierDetail',
+    component: CarrierDetail,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_CARRIERS_VIEW"
+    }
+  },
+  {
+    path: '/shipment-methods-setup/:partyId',
+    name: 'CarrierShipmentMethods',
+    component: CarrierShipmentMethods,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_CARRIERS_CREATE"
     }
   }
 ]

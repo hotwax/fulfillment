@@ -384,16 +384,47 @@ const deleteEnumeration = async (payload: any): Promise<any> => {
   })
 }
 
+const fetchProductStores = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "POST",
+    data: payload,
+    cache: true
+  })
+}
+
+const fetchFacilities = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "POST",
+    data: payload,
+    cache: true
+  })
+}
+
+const fetchShipmentGatewayConfigs = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "POST",
+    data: payload,
+    cache: true
+  })
+}
+  
+
 export const UtilService = {
   createPicklist,
   createEnumeration,
   fetchCarrierPartyIds,
   fetchDefaultShipmentBox,
+  fetchFacilities,
   fetchFacilityTypeInformation,
   fetchPartyInformation,
   fetchPicklistInformation,
+  fetchProductStores,
   fetchRejectReasonEnumTypes,
   fetchRejectReasons,
+  fetchShipmentGatewayConfigs,
   fetchShipmentBoxTypeDesc,
   fetchShipmentMethods,
   fetchShipmentMethodTypeDesc,

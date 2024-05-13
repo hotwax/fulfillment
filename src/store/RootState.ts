@@ -1,6 +1,7 @@
 import OrderState from "./modules/order/OrderState";
 import UtilState from "./modules/util/UtilState";
 import TransferOrderState from "./modules/transferorder/TransferOrderState";
+import CarrierState from "./modules/carrier/CarrierState"
 
 
 export default interface RootState {
@@ -8,5 +9,6 @@ export default interface RootState {
     product: any;
     util: UtilState;
     order: OrderState;
-    transferOrder: TransferOrderState
+    transferOrder: TransferOrderState,
+    carrier: CarrierState
 }
