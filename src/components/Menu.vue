@@ -154,6 +154,11 @@ export default defineComponent({
         meta: {
           permissionId: "APP_CARRIERS_VIEW"
         }
+      },
+      {
+        title: "Order Lookup",
+        url: "/order-lookup",
+        childRoutes: ["/order-lookup/"],
       }
     ];
 

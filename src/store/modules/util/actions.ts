@@ -349,6 +349,43 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_REJECT_REASON_ENUM_TYPES_UPDATED, rejectReasonEnumTypes)
   },
 
+  async fetchEnumerations({ commit, state }, ids) {
+    let enumerations = JSON.parse(JSON.stringify(state.enumerations)) as any
+
+    const enumIds = ids.filter((enumId: string) => !enumerations[enumId])
+
+    if(!enumIds.length) {
+      return;
+    }
+
+    try {
+      const payload = {
+        inputFields: {
+          enumId: enumIds,
+          enumId_op: "in"
+        },
+        viewSize: enumIds.length,
+        fieldList: ["enumId", "description"],
+        entityName: "Enumeration",
+        distinct: "Y"
+      }
+
+      const resp = await UtilService.fetchEnumeration(payload)
+      if (!hasError(resp) && resp.data.count > 0) {
+        enumerations = resp.data.docs.reduce((enums: any, enumeration: any) => {
+          enums[enumeration.enumId] = enumeration.description
+          return enums;
+        }, enumerations)
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error(err)
+    }
+
+    commit(types.UTIL_ENUMERATIONS_UPDATED, enumerations)
+  },
+
   async updateRejectReasons({ commit }, payload) {
     commit(types.UTIL_REJECT_REASONS_UPDATED, payload)
   },

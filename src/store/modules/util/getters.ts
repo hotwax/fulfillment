@@ -30,6 +30,9 @@ const getters: GetterTree <UtilState, RootState> = {
   getRejectReasonEnumTypes(state) {
     return state.rejectReasonEnumTypes
   },
+  getEnumerations(state) {
+    return state.enumerations
+  },
   getProductStores(state) {
     return state.productStores;
   },

@@ -8,7 +8,8 @@ export default interface UtilState {
   statusDesc: any;
   productStoreShipmentMethCount: number;
   rejectReasonEnumTypes: [];
-  productStores: any,
-  facilities: any,
-  shipmentGatewayConfigs: any
+  enumerations: object;
+  productStores: any;
+  facilities: any;
+  shipmentGatewayConfigs: any;
 }

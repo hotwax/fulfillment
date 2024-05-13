@@ -31,6 +31,8 @@ declare module 'vue-router' {
 import SavedMappings from "@/views/SavedMappings.vue"
 import { useAuthStore, DxpLogin } from '@hotwax/dxp-components'
 import { loader } from '@/utils/user';
+import OrderLookup from '@/views/OrderLookup.vue';
+import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 
 const authGuard = async (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
@@ -176,6 +178,19 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       permissionId: "APP_REJECTION_REASONS_VIEW"
     }
+  },
+  {
+    path: "/order-lookup",
+    name: "OrderLookup",
+    component: OrderLookup,
+    beforeEnter: authGuard
+  },
+  {
+    path: "/order-lookup/:orderId",
+    name: "OrderLookupDetail",
+    component: OrderLookupDetail,
+    beforeEnter: authGuard,
+    props: true
   },
   {
     path: "/carriers",

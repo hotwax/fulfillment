@@ -154,5 +154,32 @@ const sortItems = (items: any, sortByField: any) => {
   });
 }
 
+const currentSymbol: any = {
+  "USD": "$",
+  "EUR": "€",
+  "JPY": "¥"
+}
 
-export { copyToClipboard, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getFeature, getIdentificationId, handleDateTimeInput, showToast, sortItems, hasError, parseCsv, jsonToCsv}
+const formatCurrency = (amount: any, code: string) => {
+  return `${currentSymbol[code] || code} ${amount}`
+}
+
+const getColorByDesc = (desc: string) => ({
+  "Approved": "primary",
+  "Authorized": "medium",
+  "Cancelled": "danger",
+  "Completed": "success",
+  "Created": "medium",
+  "Declined": "danger",
+  "Held": "warning",
+  "Not-Authorized": "warning",
+  "Not-Received": "warning",
+  "Pending": "warning",
+  "Received": "success",
+  "Refunded": "success",
+  "Settled": "success",
+  "default": "medium"
+} as any)[desc]
+
+
+export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getColorByDesc, getFeature, getIdentificationId, handleDateTimeInput, showToast, sortItems, hasError, parseCsv, jsonToCsv }
