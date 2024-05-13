@@ -139,9 +139,15 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         viewSize: 20,
         fieldList: ["paymentMethodTypeId", "maxAmount", "statusId"],
         entityName: "OrderPaymentPreference"
+      }, {
+        inputFields: {
+          orderId
+        },
+        viewSize: 20,
+        entityName: "OrderItemShipGroupAndFacility"
       }]
 
-      const [orderHeader, orderContactMech, orderIdentifications, orderAttributes, orderBrokeringInfo, orderStatusInfo, orderPaymentPreference] = await Promise.allSettled(apiPayload.map((payload: any) => OrderLookupService.performFind(payload)))
+      const [orderHeader, orderContactMech, orderIdentifications, orderAttributes, orderBrokeringInfo, orderStatusInfo, orderPaymentPreference, orderShipGroups] = await Promise.allSettled(apiPayload.map((payload: any) => OrderLookupService.performFind(payload)))
 
       await this.dispatch("util/fetchEnumerations", [order.salesChannelEnumId])
       order.salesChannel = (this.state.util.enumerations as any)[order.salesChannelEnumId] || "-"
@@ -271,18 +277,9 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       let shipGroups = [];
       const productIds: Array<string> = []
       const shipmentMethodIds: Array<string> = []
-      const orderShipGroups = await OrderLookupService.performFind({
-        inputFields: {
-          orderId,
-          shipGroupSeqId: shipGroupSeqIds,
-          shipGroupSeqId_op: "in"
-        },
-        viewSize: 20,
-        entityName: "OrderItemShipGroupAndFacility"
-      })
 
-      if(!hasError(orderShipGroups) && orderShipGroups.data.count > 0) {
-        shipGroups = orderShipGroups.data.docs.reduce((shipGroups: any, shipGroup: any) => {
+      if(orderShipGroups.status === "fulfilled" && !hasError(orderShipGroups.value) && orderShipGroups.value.data.count > 0) {
+        shipGroups = orderShipGroups.value.data.docs.reduce((shipGroups: any, shipGroup: any) => {
           productIds.push(shipGroup.productId)
           shipmentMethodIds.includes(shipGroup.shipmentMethodTypeId) ? '' : shipmentMethodIds.push(shipGroup.shipmentMethodTypeId)
           shipGroupSeqIds.includes(shipGroup.shipGroupSeqId) ? '' : shipGroupSeqIds.push(shipGroup.shipGroupSeqId)
