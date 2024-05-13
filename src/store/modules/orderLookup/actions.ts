@@ -153,16 +153,9 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         viewSize: 20,
         fieldList: ["paymentMethodTypeId", "maxAmount", "statusId"],
         entityName: "OrderPaymentPreference"
-      }, {
-        inputFields: {
-          orderId
-        },
-        viewSize: 20,
-        orderBy: "facilityId DESC",
-        entityName: "OrderItemShipGroupAndShipGroupAssoc"
       }]
 
-      const [orderRole, orderContactMech, orderIdentifications, orderAttributes, orderBrokeringInfo, orderStatusInfo, orderPaymentPreference, orderShipGroupSeqIds] = await Promise.allSettled(apiPayload.map((payload: any) => OrderLookupService.performFind(payload)))
+      const [orderRole, orderContactMech, orderIdentifications, orderAttributes, orderBrokeringInfo, orderStatusInfo, orderPaymentPreference] = await Promise.allSettled(apiPayload.map((payload: any) => OrderLookupService.performFind(payload)))
 
       order = orderHeader.data.docs[0]
       await this.dispatch("util/fetchEnumerations", [order.salesChannelEnumId])
@@ -215,7 +208,8 @@ const actions: ActionTree<OrderLookupState, RootState> = {
             contactMechId_op: "in"
           },
           viewSize: 20,
-          entityName: "ContactMech"
+          fieldList: ["infoString", "contactMechId", "tnContactNumber"],
+          entityName: "ContactMechDetail"
         })
 
         if(!hasError(customerInfo) && customerInfo.data.count > 0) {
@@ -225,7 +219,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
             }
 
             if(info.contactMechId === orderContactMechTypes["PHONE_BILLING"]) {
-              order["billingPhone"] = info.infoString
+              order["billingPhone"] = info.tnContactNumber
             }
           })
         }
@@ -282,12 +276,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         }
       }
 
-      // Fetching payment preference for order
       const shipGroupSeqIds: Array<string> = [];
-      if(orderShipGroupSeqIds.status === "fulfilled" && !hasError(orderShipGroupSeqIds) && orderShipGroupSeqIds.value.data.count > 0) {
-        orderShipGroupSeqIds.value.data.docs.map((shipGroup: any) => shipGroupSeqIds.includes(shipGroup.shipGroupSeqId) ? '' : shipGroupSeqIds.push(shipGroup.shipGroupSeqId))
-      }
-
       let shipGroups = [];
       const productIds: Array<string> = []
       const shipmentMethodIds: Array<string> = []
@@ -304,7 +293,9 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       if(!hasError(orderShipGroups) && orderShipGroups.data.count > 0) {
         shipGroups = orderShipGroups.data.docs.reduce((shipGroups: any, shipGroup: any) => {
           productIds.push(shipGroup.productId)
-          shipmentMethodIds.push(shipGroup.shipmentMethodTypeId)
+          shipmentMethodIds.includes(shipGroup.shipmentMethodTypeId) ? '' : shipmentMethodIds.push(shipGroup.shipmentMethodTypeId)
+          shipGroupSeqIds.includes(shipGroup.shipGroupSeqId) ? '' : shipGroupSeqIds.push(shipGroup.shipGroupSeqId)
+
           if(shipGroups[shipGroup.shipGroupSeqId]) {
             shipGroups[shipGroup.shipGroupSeqId].push(shipGroup)
           } else {
