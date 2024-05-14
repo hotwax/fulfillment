@@ -83,7 +83,7 @@
                       <ion-note class="config-label">{{ translate('gateway') }}</ion-note>
                     </div>
                     <div class="tablet">
-                      <ion-toggle v-model="shipmentMethod.isTrackingRequired" :disabled="!shipmentMethod.isChecked" @ionChange="updateTrackingRequired($event, shipmentMethod)"/>
+                      <ion-toggle :checked="shipmentMethod.isTrackingRequired" :disabled="!shipmentMethod.isChecked" @ionChange="updateTrackingRequired($event, shipmentMethod)"/>
                       <ion-note class="config-label">{{ translate("require tracking code") }}</ion-note>
                     </div>
                     <div class="tablet">
@@ -342,7 +342,7 @@
 
       async updateTrackingRequired(event: any, shipmentMethod: any) {
         event.stopPropagation();
-        const modifiedData = {"fieldName": "isTrackingRequired", "fieldValue": shipmentMethod.isTrackingRequired}
+        const modifiedData = {"fieldName": "isTrackingRequired", "fieldValue": shipmentMethod.isTrackingRequired ? false : true}
         const messages = {"successMessage": "Tracking code settings updated successfully.", "errorMessage": "Failed to update tracking code settings."}
         this.updateProductStoreShipmentMethod(shipmentMethod, modifiedData, messages)
       },
@@ -363,8 +363,8 @@
               if (!hasError(resp)) {
                 showToast(translate(messages.successMessage))
                 productStoreShipmentMethods[shipmentMethod.productStoreId][shipmentMethod.shipmentMethodTypeId] = {...shipmentMethod, [modifiedData.fieldName]: modifiedData.fieldValue}
-                this.store.dispatch('carrier/updateCurrentCarrierProductStoreShipmentMethods', productStoreShipmentMethods)
-                this.store.dispatch('carrier/checkAssociatedProductStoreShipmentMethods')
+                await this.store.dispatch('carrier/updateCurrentCarrierProductStoreShipmentMethods', productStoreShipmentMethods)
+                await this.store.dispatch('carrier/checkAssociatedProductStoreShipmentMethods')
               } else {
                 throw resp.data;
               }
