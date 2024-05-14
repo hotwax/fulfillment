@@ -178,16 +178,16 @@ const actions: ActionTree<CarrierState, RootState> = {
   },
   checkAssociatedProductStoreShipmentMethods({ state, dispatch }) {
     const currentCarrier = state.current;
-    const carrierShipmentMethods = currentCarrier.shipmentMethods;
-    const carrierProductStoreShipmentMethods = currentCarrier.productStoreShipmentMethods;
+    const carrierShipmentMethods = JSON.parse(JSON.stringify(currentCarrier.shipmentMethods));
+    const carrierProductStoreShipmentMethods = JSON.parse(JSON.stringify(currentCarrier.productStoreShipmentMethods));
     const productStores = store.getters['util/getProductStores'];
     const carrierShipmentMethodsByProductStore = {} as any;
     const productStoreShipmentMethodFields = ["description", "productStoreId", "isTrackingRequired", "shipmentGatewayConfigId", "productStoreShipMethId"]
 
     if (carrierShipmentMethods) {
       productStores.forEach((productStore: any) => {
-        Object.values(carrierShipmentMethods).forEach((shipmentMethod: any) => {
-          if (carrierProductStoreShipmentMethods && carrierProductStoreShipmentMethods[productStore.productStoreId][shipmentMethod.shipmentMethodTypeId]) {
+        JSON.parse(JSON.stringify(Object.values(carrierShipmentMethods))).forEach((shipmentMethod: any) => {
+          if (carrierProductStoreShipmentMethods && carrierProductStoreShipmentMethods?.[productStore.productStoreId]?.[shipmentMethod.shipmentMethodTypeId]) {
               const productStoreShipmentMethod = carrierProductStoreShipmentMethods[productStore.productStoreId][shipmentMethod.shipmentMethodTypeId];
               shipmentMethod.isChecked = true;
               productStoreShipmentMethodFields.forEach((field) => {
@@ -205,9 +205,9 @@ const actions: ActionTree<CarrierState, RootState> = {
           }
           
           if (carrierShipmentMethodsByProductStore[productStore.productStoreId]) {
-              carrierShipmentMethodsByProductStore[productStore.productStoreId].push(shipmentMethod);
+            carrierShipmentMethodsByProductStore[productStore.productStoreId].push(shipmentMethod);
           } else {
-              carrierShipmentMethodsByProductStore[productStore.productStoreId] = [shipmentMethod];
+            carrierShipmentMethodsByProductStore[productStore.productStoreId] = [shipmentMethod];
           }
         });
       });
