@@ -360,6 +360,9 @@ export default defineComponent({
         }, {
           text: translate('Reject'),
           handler: async () => {
+            emitter.emit("presentLoader")
+            await alert.dismiss()
+            
             let resp;
 
             try {
@@ -378,6 +381,7 @@ export default defineComponent({
               showToast(translate('Failed to reject outstanding orders'))
               logger.error('Failed to reject outstanding orders', err)
             }
+            emitter.emit("dismissLoader")
           }
         }]
       });
