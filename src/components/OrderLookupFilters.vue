@@ -65,7 +65,6 @@
             <ion-select-option v-for="range in dateRanges" :key="range.label" :value="range.value">{{ range.label }}</ion-select-option>
           </ion-select>
         </ion-item>
-        <ion-datetime presentation="date" v-if="!query.date"></ion-datetime>
       </ion-list>
     </ion-content>
   </ion-menu>
@@ -76,7 +75,6 @@ import { defineComponent } from 'vue'
 import {
   IonCheckbox,
   IonContent,
-  IonDatetime,
   IonHeader,
   IonItem,
   IonLabel,
@@ -97,7 +95,6 @@ export default defineComponent({
   components: {
     IonCheckbox,
     IonContent,
-    IonDatetime,
     IonHeader,
     IonItem,
     IonLabel,
