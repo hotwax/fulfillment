@@ -28,6 +28,29 @@ const mutations: MutationTree <OrderLookupState> = {
   },
   [types.ORDERLOOKUP_STATUS_OPTIONS_UPDATED] (state, payload) {
     state.orderStatuses = payload
+  },
+  [types.ORDERLOOKUP_CLEARED] (state) {
+    state.list = {
+      orders: [],
+      orderCount: 0,
+      itemCount: 0
+    }
+    state.query = {
+      'status': '',
+      'facility': '',
+      'storePickup': false,
+      'shipFromStore': false,
+      'unfillable': false,
+      'queryString': '',
+      'sort': 'orderDate desc',
+      'productStore': '',
+      'channel': '',
+    }
+    state.current = {}
+    state.channels = []
+    state.productStores = []
+    state.facilities = []
+    state.orderStatuses = []
   }
 }
 export default mutations;

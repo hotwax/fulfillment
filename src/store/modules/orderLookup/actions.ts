@@ -331,6 +331,10 @@ const actions: ActionTree<OrderLookupState, RootState> = {
     commit(types.ORDERLOOKUP_SORT_UPDATED, payload)
     await dispatch("findOrders")
   },
+
+  async clearOrderLookup({ commit }) {
+    commit(types.ORDERLOOKUP_CLEARED)
+  }
 }
 
 export default actions;
