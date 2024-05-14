@@ -31,8 +31,7 @@
 
               <ion-item lines="none">
                 <ion-icon slot="start" :icon="swapVerticalOutline" />
-                <ion-label class="ion-text-wrap">{{ translate("Sort") }}</ion-label>
-                <ion-select :value="sort" @ionChange="sortOrders($event.detail.value)" interface="popover">
+                <ion-select :label="translate('Sort')" :value="sort" @ionChange="sortOrders($event.detail.value)" interface="popover">
                   <ion-select-option value="orderDate desc">{{ translate("Newest to oldest") }}</ion-select-option>
                   <ion-select-option value="orderDate asc">{{ translate("Oldest to newest") }}</ion-select-option>
                 </ion-select>
