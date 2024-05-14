@@ -159,6 +159,9 @@ export default defineComponent({
         title: "Order Lookup",
         url: "/order-lookup",
         childRoutes: ["/order-lookup/"],
+        meta: {
+          permissionId: "APP_ORDER_LOOKUP_VIEW"
+        }
       }
     ];
 
