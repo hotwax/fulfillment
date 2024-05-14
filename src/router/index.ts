@@ -183,14 +183,20 @@ const routes: Array<RouteRecordRaw> = [
     path: "/order-lookup",
     name: "OrderLookup",
     component: OrderLookup,
-    beforeEnter: authGuard
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_ORDER_LOOKUP_VIEW"
+    }
   },
   {
     path: "/order-lookup/:orderId",
     name: "OrderLookupDetail",
     component: OrderLookupDetail,
     beforeEnter: authGuard,
-    props: true
+    props: true,
+    meta: {
+      permissionId: "APP_ORDER_LOOKUP_VIEW"
+    }
   },
   {
     path: "/carriers",
