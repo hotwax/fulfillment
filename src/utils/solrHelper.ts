@@ -155,6 +155,10 @@ const prepareOrderLookupQuery = (query: any) => {
     payload.json.filter.push(`{!tag=orderStatusDescFilter}orderStatusDesc: (${query.status.join(" OR ")})`)
   }
 
+  if (query.date?.length) {
+    payload.json.filter.push(`orderDate: [${query.date}]`)
+  }
+
   return payload
 }
 

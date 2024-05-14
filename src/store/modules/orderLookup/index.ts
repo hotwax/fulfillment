@@ -23,6 +23,7 @@ const orderLookupModule: Module<OrderLookupState, RootState> = {
       'sort': 'orderDate desc',
       'productStore': '',
       'channel': '',
+      'date': ''
     },
     current: {},
     channels: [],

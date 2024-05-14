@@ -44,7 +44,7 @@
           </ion-select>
         </ion-item>
         <ion-item>
-          <ion-select :selected-text="!query.facility.length ? translate('All') : query.facility.length > 1 ? query.facility.length + translate('items selected') : query.facility" :label="'Facility'" :disabled="!facilityOptions.length" :multiple="true" :value="query.facility" @ionChange="updateAppliedFilters($event['detail'].value, 'facility')" interface="popover">
+          <ion-select :selected-text="!query.facility.length ? translate('All') : query.facility.length > 1 ? query.facility.length + translate('items selected') : query.facility" :label="translate('Facility')" :disabled="!facilityOptions.length" :multiple="true" :value="query.facility" @ionChange="updateAppliedFilters($event['detail'].value, 'facility')" interface="popover">
             <ion-select-option v-for="facility in facilityOptions" :key="facility" :value="facility">{{ facility }}</ion-select-option>
           </ion-select>
         </ion-item>
@@ -58,6 +58,15 @@
         </ion-item>
         <ion-label class="ion-margin" v-if="!channelOptions.length">{{ translate("No channels found") }}</ion-label>
       </ion-list>
+      <ion-list>
+        <ion-list-header><h3>{{ translate("Date") }}</h3></ion-list-header>
+        <ion-item>
+          <ion-select :label="translate('Date range')" :disabled="!ordersList.orders.length" :value="query.date" @ionChange="updateAppliedFilters($event['detail'].value, 'date')" interface="popover">
+            <ion-select-option v-for="range in dateRanges" :key="range.label" :value="range.value">{{ range.label }}</ion-select-option>
+          </ion-select>
+        </ion-item>
+        <ion-datetime presentation="date" v-if="!query.date"></ion-datetime>
+      </ion-list>
     </ion-content>
   </ion-menu>
 </template>
@@ -67,6 +76,7 @@ import { defineComponent } from 'vue'
 import {
   IonCheckbox,
   IonContent,
+  IonDatetime,
   IonHeader,
   IonItem,
   IonLabel,
@@ -87,6 +97,7 @@ export default defineComponent({
   components: {
     IonCheckbox,
     IonContent,
+    IonDatetime,
     IonHeader,
     IonItem,
     IonLabel,
@@ -108,6 +119,17 @@ export default defineComponent({
       orderStatusOptions: "orderLookup/getOrderStatusOptions",
       ordersList: 'orderLookup/getOrders'
     })
+  },
+  data() {
+    return {
+      dateRanges: [{
+        label: "Last 7 days",
+        value: "NOW-7DAY TO NOW"
+      }, {
+        label: "Last 30 days",
+        value: "NOW-30DAY TO NOW"
+      }]
+    }
   },
   methods: {
     async updateAppliedFilters(value: string | boolean, filterName: string, filterLabel?: string) {

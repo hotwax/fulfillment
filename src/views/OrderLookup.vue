@@ -43,7 +43,7 @@
           <hr />
 
           <div v-if="ordersList.orders.length">
-            <div v-for="(order, index) in ordersList.orders" :key="index" :order="order" @click="() => router.push(`/order-lookup/${order.orderId}`)">
+            <div v-for="(order, index) in ordersList.orders" :key="index" @click="() => router.push(`/order-lookup/${order.orderId}`)">
               <section class="section-header">
                 <div class="primary-info">
                   <ion-item lines="none">
@@ -67,8 +67,33 @@
                 </div>
               </section>
   
-              <section class="section-grid" v-if="showOrderItems">
-                <OrderItemCard v-for="(item, index) in order.doclist.docs" :key="index" :item="item" />
+              <section v-if="showOrderItems">
+                <div class="list-item" v-for="(item, index) in order.doclist.docs" :key="index">
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <Image :src="getProduct(item.productId)?.mainImageUrl" />
+                    </ion-thumbnail>
+                    <ion-label class="ion-text-wrap">
+                      <p class="overline">{{ getProduct(item.productId)?.sku }}</p>
+                      {{ item.parentProductName ? item.parentProductName : item.productName }}
+                    </ion-label>
+                  </ion-item>
+                  <div class="tablet ion-text-center">
+                    <ion-label>
+                      {{ item.facilityName || item.facilityId || "-" }}
+                      <p>{{ item.facilityId }}</p>
+                    </ion-label>
+                  </div>
+                  <div class="tablet ion-text-center">
+                    <ion-label class="ion-text-center">
+                      {{ translate(getShipmentMethodDesc(item.shipmentMethodTypeId)) || item.shipmentMethodTypeId || "-" }}
+                      <p>{{ translate("method") }}</p>
+                    </ion-label>
+                  </div>
+                  <ion-item lines="none">
+                    <ion-badge slot="end" :color="getColorByDesc(item.orderItemStatusDesc) || getColorByDesc('default')">{{ translate(item.orderItemStatusDesc) }}</ion-badge>
+                  </ion-item>
+                </div>
               </section>
               <hr />
             </div>
@@ -107,6 +132,7 @@ import {
   IonSearchbar,
   IonSelect,
   IonSelectOption,
+  IonThumbnail,
   IonTitle,
   IonToggle,
   IonToolbar,
@@ -128,14 +154,16 @@ import { getColorByDesc, formatUtcDate, showToast } from '@/utils'
 import { Plugins } from '@capacitor/core';
 import { useRouter } from 'vue-router';
 import OrderLookupFilters from '@/components/OrderLookupFilters.vue'
-import OrderItemCard from '@/components/OrderItemCard.vue'
 import { translate } from '@hotwax/dxp-components';
+import Image from '@/components/Image.vue'
+
 
 const { Clipboard } = Plugins;
 
 export default defineComponent ({
   name: 'OrderLookup',
   components: {
+    Image,
     IonBackButton,
     IonBadge,
     IonButtons,
@@ -153,11 +181,11 @@ export default defineComponent ({
     IonSelect,
     IonSelectOption,
     IonSearchbar,
+    IonThumbnail,
     IonTitle,
     IonToggle,
     IonToolbar,
-    OrderLookupFilters,
-    OrderItemCard
+    OrderLookupFilters
   },
   computed: {
     ...mapGetters({
@@ -316,6 +344,17 @@ ion-modal {
 .section-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(343px, 1fr));
+}
+
+.list-item {
+  --columns-tablet: 4;
+  --columns-desktop: 5;
+}
+
+/* Added width property as after updating to ionic7 min-width is getting applied on ion-label inside ion-item
+which results in distorted label text and thus reduced ion-item width */
+.list-item > ion-item {
+  width: 100%;
 }
 
 @media (min-width: 991px) {
