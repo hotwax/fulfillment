@@ -1,5 +1,5 @@
 <template>
-  <ion-menu type="overlay" side="end">
+  <ion-menu type="overlay" side="end" content-id="orderLookup-filter">
     <ion-header>
       <ion-toolbar>
         <ion-title>{{ translate("Filters") }}</ion-title>
