@@ -149,6 +149,7 @@ const actions: ActionTree<UserState, RootState> = {
     // TODO add any other tasks if need
     commit(types.USER_END_SESSION)
     this.dispatch('order/clearOrders')
+    this.dispatch("orderLookup/clearOrderLookup")
     resetConfig();
     resetPermissions();
 
