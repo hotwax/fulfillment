@@ -149,15 +149,15 @@ const actions: ActionTree<OrderLookupState, RootState> = {
 
       const [orderHeader, orderContactMech, orderIdentifications, orderAttributes, orderBrokeringInfo, orderStatusInfo, orderPaymentPreference, orderShipGroups] = await Promise.allSettled(apiPayload.map((payload: any) => OrderLookupService.performFind(payload)))
 
-      await this.dispatch("util/fetchEnumerations", [order.salesChannelEnumId])
-      order.salesChannel = (this.state.util.enumerations as any)[order.salesChannelEnumId] || "-"
-
       if(orderHeader.status === "fulfilled" && !hasError(orderHeader.value) && orderHeader.value.data.count > 0) {
         order = orderHeader.value.data.docs[0]
 
         if(!order.orderId) {
           throw "Failed to fetch order information"
         }
+
+        await this.dispatch("util/fetchEnumerations", [order.salesChannelEnumId])
+        order.salesChannel = (this.state.util.enumerations as any)[order.salesChannelEnumId] || "-"
 
         order["billToPartyId"] = orderHeader.value.data.docs.find((info: any) => info.roleTypeId === "BILL_TO_CUSTOMER")?.partyId
 
@@ -323,6 +323,13 @@ const actions: ActionTree<OrderLookupState, RootState> = {
 
   async updateAppliedFilters({ commit, dispatch }, payload) {
     commit(types.ORDERLOOKUP_FILTERS_UPDATED, payload)
+
+    // Clearing the from and to date values when we are selecting a hardcoded date, so to not apply the from-to filter when again selecting the same
+    if(payload.filterName === "date") {
+      commit(types.ORDERLOOKUP_FILTERS_UPDATED, { filterName: "fromDate", value: "" })
+      commit(types.ORDERLOOKUP_FILTERS_UPDATED, { filterName: "toDate", value: "" })
+    }
+
     const resp = await dispatch("findOrders")
     return resp;
   },

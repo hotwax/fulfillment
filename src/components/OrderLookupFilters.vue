@@ -18,12 +18,12 @@
       </ion-list>
       <ion-list>
         <ion-list-header><h3>{{ translate("Type") }}</h3></ion-list-header>
-        <ion-item :disabled="!ordersList.orders.length">
+        <ion-item>
           <ion-checkbox :checked="query.storePickup" @ionChange="updateAppliedFilters($event['detail'].checked, 'storePickup')">
             <ion-label>{{ translate("Store pickup") }}</ion-label>
           </ion-checkbox>
         </ion-item>
-        <ion-item :disabled="!ordersList.orders.length">
+        <ion-item>
           <ion-checkbox :checked="query.shipFromStore" @ionChange="updateAppliedFilters($event['detail'].checked, 'shipFromStore')">
             <ion-label>{{ translate("Ship from store") }}</ion-label>
           </ion-checkbox>
@@ -61,11 +61,20 @@
       <ion-list>
         <ion-list-header><h3>{{ translate("Date") }}</h3></ion-list-header>
         <ion-item>
-          <ion-select :label="translate('Date range')" :disabled="!ordersList.orders.length" :value="query.date" @ionChange="updateAppliedFilters($event['detail'].value, 'date')" interface="popover">
+          <ion-select :label="translate('Date range')" :value="query.date" @ionChange="updateAppliedFilters($event['detail'].value, 'date')" interface="popover">
             <ion-select-option v-for="range in dateRanges" :key="range.label" :value="range.value">{{ range.label }}</ion-select-option>
           </ion-select>
         </ion-item>
-        <ion-datetime presentation="date" v-if="!query.date"></ion-datetime>
+        <ion-item v-if="query.date === 'custom'">
+          <ion-label>{{ translate("From") }}</ion-label>
+          <ion-datetime-button datetime="fromDate" @click="enableFromDateFilter()"></ion-datetime-button>
+        </ion-item>
+        <ion-datetime v-show="enableFromDate" @ionChange="updateAppliedFilters($event['detail'].value, 'fromDate')" id="fromDate" presentation="date" v-model="fromDate" :max="DateTime.now().toISO()"></ion-datetime>
+        <ion-item v-if="query.date === 'custom'">
+          <ion-label>{{ translate("To") }}</ion-label>
+          <ion-datetime-button datetime="toDate" @click="enableToDateFilter()"></ion-datetime-button>
+        </ion-item>
+        <ion-datetime v-show="enableToDate" @ionChange="updateAppliedFilters($event['detail'].value, 'toDate')" id="toDate" presentation="date" v-model="toDate" :max="DateTime.now().toISO()"></ion-datetime>
       </ion-list>
     </ion-content>
   </ion-menu>
@@ -77,6 +86,7 @@ import {
   IonCheckbox,
   IonContent,
   IonDatetime,
+  IonDatetimeButton,
   IonHeader,
   IonItem,
   IonLabel,
@@ -91,6 +101,7 @@ import {
 import { close, checkmarkOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { translate } from '@hotwax/dxp-components'; 
+import { DateTime } from 'luxon';
 
 export default defineComponent({
   name: 'OrderLookupFilters',
@@ -98,6 +109,7 @@ export default defineComponent({
     IonCheckbox,
     IonContent,
     IonDatetime,
+    IonDatetimeButton,
     IonHeader,
     IonItem,
     IonLabel,
@@ -128,7 +140,17 @@ export default defineComponent({
       }, {
         label: "Last 30 days",
         value: "NOW-30DAY TO NOW"
-      }]
+      }, {
+        label: "Custom",
+        value: "custom"
+      }, {
+        label: "All",
+        value: ""
+      }],
+      fromDate: DateTime.now().toISO(),
+      toDate: DateTime.now().toISO(),
+      enableFromDate: false,
+      enableToDate: false
     }
   },
   methods: {
@@ -148,15 +170,32 @@ export default defineComponent({
         value ? updatedValue.push(filterLabel) : updatedValue.splice(updatedValue.indexOf(filterLabel), 1)
       }
 
+      // Remove the fromDate and toDate selection when the user selects a hardcoded option, as not clearning from-to date
+      // will result in applying the previous from-to selection whenever user again selects the custom option
+      if(filterName === "date") {
+        this.fromDate = DateTime.now().toISO()
+        this.toDate = DateTime.now().toISO()
+        this.enableFromDate = false
+        this.enableToDate = false
+      }
+
       // TODO: handle the case when the applied filter type is date, as in that case the action is called
       // multiple times (two times when date is applied and three times when date filter is removed)
-      await this.store.dispatch('orderLookup/updateAppliedFilters', { value: updatedValue.length ? updatedValue : value, filterName })
+      await this.store.dispatch('orderLookup/updateAppliedFilters', { value: filterName === "channel" || filterName === "productStore" ? updatedValue : value, filterName })
     },
     isProductStoreSelected(value: string) {
       return this.query.productStore.includes(value)
     },
     isChannelSelected(value: string) {
       return this.query.channel.includes(value)
+    },
+    enableToDateFilter() {
+      this.enableFromDate = false
+      this.enableToDate = !this.enableToDate
+    },
+    enableFromDateFilter() {
+      this.enableToDate = false
+      this.enableFromDate = !this.enableFromDate
     }
   },
   setup() {
@@ -166,6 +205,7 @@ export default defineComponent({
     return {
       close,
       checkmarkOutline,
+      DateTime,
       orderStatus,
       store,
       translate

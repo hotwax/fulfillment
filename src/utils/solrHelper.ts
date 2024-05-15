@@ -78,7 +78,7 @@ const prepareOrderLookupQuery = (query: any) => {
 
   payload.json["facet"] = {
     "productStoreIdFacet":{
-      "excludeTags":"productStoreNameFilter",
+      "excludeTags":"orderLookupFilter",
       "field":"productStoreName",
       "mincount":1,
       "limit":-1,
@@ -88,7 +88,7 @@ const prepareOrderLookupQuery = (query: any) => {
       }
     },
     "facilityNameFacet":{
-      "excludeTags":"facilityNameFilter",
+      "excludeTags":"orderLookupFilter",
       "field":"facilityName",
       "mincount":1,
       "limit":-1,
@@ -98,7 +98,7 @@ const prepareOrderLookupQuery = (query: any) => {
       }
     },
     "salesChannelDescFacet": {
-      "excludeTags": "salesChannelDescFilter",
+      "excludeTags": "orderLookupFilter",
       "field": "salesChannelDesc",
       "mincount": 1,
       "limit": -1,
@@ -108,7 +108,7 @@ const prepareOrderLookupQuery = (query: any) => {
       }
     },
     "orderStatusDescFacet": {
-      "excludeTags": "orderStatusDescFilter",
+      "excludeTags": "orderLookupFilter",
       "field": "orderStatusDesc",
       "mincount": 1,
       "limit": -1,
@@ -131,33 +131,46 @@ const prepareOrderLookupQuery = (query: any) => {
 
   // updating the filter value in json object as per the filters selected
   // TODO: optimize this code
-  if (query.storePickup) {
-    payload.json.filter.push("shipmentMethodTypeId: STOREPICKUP")
-  }
+  const shipmentMethodTypeIdValues = []
+  if(query.storePickup) shipmentMethodTypeIdValues.push("STOREPICKUP")
+  if(query.shipFromStore) shipmentMethodTypeIdValues.push("STANDARD")
 
-  if (query.shipFromStore) {
-    payload.json.filter.push("-shipmentMethodTypeId: STOREPICKUP AND facilityTypeId: RETAIL_STORE")
+  if (shipmentMethodTypeIdValues.length) {
+    payload.json.filter.push(`{!tag=orderLookupFilter}shipmentMethodTypeId: (${shipmentMethodTypeIdValues.join(" OR ")})`)
   }
 
   if (query.facility?.length) {
-    payload.json.filter.push(`{!tag=facilityNameFilter}facilityName: ${query.facility.join(" OR ")}`)
+    payload.json.filter.push(`{!tag=orderLookupFilter}facilityName: (${query.facility.join(" OR ")})`)
   }
 
   if (query.productStore?.length) {
-    payload.json.filter.push(`{!tag=productStoreNameFilter}productStoreName: (${query.productStore.join(" OR ")})`)
+    payload.json.filter.push(`{!tag=orderLookupFilter}productStoreName: (${query.productStore.join(" OR ")})`)
   }
 
   if (query.channel?.length) {
-    payload.json.filter.push(`{!tag=salesChannelDescFilter}salesChannelDesc: (${query.channel.join(" OR ")})`)
+    payload.json.filter.push(`{!tag=orderLookupFilter}salesChannelDesc: (${query.channel.join(" OR ")})`)
   }
 
   if (query.status?.length) {
-    payload.json.filter.push(`{!tag=orderStatusDescFilter}orderStatusDesc: (${query.status.join(" OR ")})`)
+    payload.json.filter.push(`{!tag=orderLookupFilter}orderStatusDesc: (${query.status.join(" OR ")})`)
   }
 
-  if (query.date?.length) {
-    payload.json.filter.push(`orderDate: [${query.date}]`)
+  if (query.date && query.date !== "custom") {
+    payload.json.filter.push(`{!tag=orderLookupFilter}orderDate: [${query.date}]`)
+  } else {
+    let dateFilter = ""
+
+    if(query.fromDate) dateFilter += query.fromDate.split("T")[0] + "T00:00:00Z"
+
+    // Added T23:59:59, as we need to include the orders for to date as well
+    if(query.toDate) dateFilter += ` TO ${query.toDate.split("T")[0]}` + "T23:59:59Z"
+    else if(query.fromDate) dateFilter += " TO *"
+
+    if (dateFilter) {
+      payload.json.filter.push(`{!tag=orderLookupFilter}orderDate: [${dateFilter}]`)
+    }
   }
+
 
   return payload
 }
