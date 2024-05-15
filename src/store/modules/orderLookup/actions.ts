@@ -18,7 +18,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
     const query = prepareOrderLookupQuery({ ...(state.query), ...params })
     try {
       resp = await OrderLookupService.findOrder(query)
-      if (resp && resp.status === 200 && !hasError(resp)) {
+      if (!hasError(resp) && resp.data?.grouped?.orderId?.groups?.length) {
         const orders = resp.data.grouped.orderId.groups.map((order: any) => {
           order.orderId = order.doclist.docs[0].orderId
           order.customer = {
@@ -72,7 +72,12 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       }
     } catch(error) {
       logger.error(error)
-      showToast(translate("Failed to fetch orders"));
+      // If the filters are changed, we are on first index and if we got some error clear the orders
+      if(params?.isFilterUpdated && (!params?.viewIndex || params.viewIndex == 0)) {
+        stateOrders = []
+        orderCount = 0
+        itemCount = 0
+      }
     }
     commit(types.ORDERLOOKUP_LIST_UPDATED, { orders: stateOrders, orderCount, itemCount });
     return resp;
@@ -331,13 +336,13 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       commit(types.ORDERLOOKUP_FILTERS_UPDATED, { filterName: "toDate", value: "" })
     }
 
-    const resp = await dispatch("findOrders")
+    const resp = await dispatch("findOrders", { isFilterUpdated: true })
     return resp;
   },
 
   async updateSort({ commit, dispatch }, payload) {
     commit(types.ORDERLOOKUP_SORT_UPDATED, payload)
-    await dispatch("findOrders")
+    await dispatch("findOrders", { isFilterUpdated: true })
     return;
   },
 
