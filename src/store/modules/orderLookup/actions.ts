@@ -50,7 +50,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         })
 
         // Added check as we are fetching the facets only on first request call and do not fetch facets information on infinite scroll
-        if(!params?.viewIndex || params.viewIndex == 0) {
+        if(params.fetchFacets) {
           const facilities = resp.data.facets?.facilityNameFacet?.buckets.map((bucket: any) => bucket.val)
           const productStores = resp.data.facets?.productStoreIdFacet?.buckets.map((bucket: any) => bucket.val)
           const channels = resp.data.facets?.salesChannelDescFacet?.buckets.map((bucket: any) => bucket.val)
@@ -64,10 +64,11 @@ const actions: ActionTree<OrderLookupState, RootState> = {
 
         if (query.json.params.start && query.json.params.start > 0) stateOrders = stateOrders.concat(orders)
         else stateOrders = orders
-        this.dispatch("product/getProductInformation", { orders });
-        this.dispatch("util/fetchShipmentMethodTypeDesc", shipmentMethodTypeIds)
+        await this.dispatch("product/getProductInformation", { orders });
+        await this.dispatch("util/fetchShipmentMethodTypeDesc", shipmentMethodTypeIds)
       } else {
         showToast(translate("Failed to fetch orders"));
+        throw resp.data;
       }
     } catch(error) {
       logger.error(error)
@@ -337,6 +338,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
   async updateSort({ commit, dispatch }, payload) {
     commit(types.ORDERLOOKUP_SORT_UPDATED, payload)
     await dispatch("findOrders")
+    return;
   },
 
   async clearOrderLookup({ commit }) {

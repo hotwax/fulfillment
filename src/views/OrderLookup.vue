@@ -99,7 +99,8 @@
             </div>
           </div>
           <div v-else-if="isLoading" class="empty-state">
-            <p>{{ translate("Loading") }}</p>
+            <ion-spinner name="crescent" />
+            <ion-label>{{ translate("Loading") }}</ion-label>
           </div>
           <div v-else-if="query.queryString" class="empty-state">
             <p>{{ translate("No keyword matches the search criteria.") }}</p>
@@ -135,6 +136,7 @@ import {
   IonSearchbar,
   IonSelect,
   IonSelectOption,
+  IonSpinner,
   IonThumbnail,
   IonTitle,
   IonToggle,
@@ -180,6 +182,7 @@ export default defineComponent ({
     IonSelect,
     IonSelectOption,
     IonSearchbar,
+    IonSpinner,
     IonThumbnail,
     IonTitle,
     IonToggle,
@@ -210,12 +213,14 @@ export default defineComponent ({
       await menuController.close();
     },
     async sortOrders(value: string) {
+      this.isLoading = true
       this.sort = value
       await this.store.dispatch('orderLookup/updateSort', this.sort)
+      this.isLoading = false
     },
     async getOrders() {
       this.isLoading = true
-      await this.store.dispatch('orderLookup/findOrders')
+      await this.store.dispatch('orderLookup/findOrders', { fetchFacets: true })
       this.isLoading = false
     },
     async updateQueryString() {

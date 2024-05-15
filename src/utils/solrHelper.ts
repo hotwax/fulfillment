@@ -1,3 +1,4 @@
+/* eslint-disable */
 const prepareOrderQuery = (params: any) => {
   const viewSize = params.viewSize ? params.viewSize : process.env.VUE_APP_VIEW_SIZE;
   const viewIndex = params.viewIndex ? params.viewIndex : 0;
@@ -76,52 +77,55 @@ const prepareOrderLookupQuery = (query: any) => {
     }
   } as any
 
-  payload.json["facet"] = {
-    "productStoreIdFacet":{
-      "excludeTags":"orderLookupFilter",
-      "field":"productStoreName",
-      "mincount":1,
-      "limit":-1,
-      "type":"terms",
-      "facet":{
-        "groups":"unique(orderId)"
-      }
-    },
-    "facilityNameFacet":{
-      "excludeTags":"orderLookupFilter",
-      "field":"facilityName",
-      "mincount":1,
-      "limit":-1,
-      "type":"terms",
-      "facet":{
-        "groups":"unique(orderId)"
-      }
-    },
-    "salesChannelDescFacet": {
-      "excludeTags": "orderLookupFilter",
-      "field": "salesChannelDesc",
-      "mincount": 1,
-      "limit": -1,
-      "type": "terms",
-      "facet": {
-        "groups": "unique(orderId)"
-      }
-    },
-    "orderStatusDescFacet": {
-      "excludeTags": "orderLookupFilter",
-      "field": "orderStatusDesc",
-      "mincount": 1,
-      "limit": -1,
-      "sort": {
-        "statusSeqId": "asc"
+  if(query.fetchFacets) {
+    payload.json["facet"] = {
+      "productStoreIdFacet":{
+        "excludeTags":"orderLookupFilter",
+        "field":"productStoreName",
+        "mincount":1,
+        "limit":-1,
+        "type":"terms",
+        "facet":{
+          "groups":"unique(orderId)"
+        }
       },
-      "type": "terms",
-      "facet": {
-        "groups": "unique(orderId)",
-        "statusSeqId": "max(statusSeqId)"
-      }
-    },
+      "facilityNameFacet":{
+        "excludeTags":"orderLookupFilter",
+        "field":"facilityName",
+        "mincount":1,
+        "limit":-1,
+        "type":"terms",
+        "facet":{
+          "groups":"unique(orderId)"
+        }
+      },
+      "salesChannelDescFacet": {
+        "excludeTags": "orderLookupFilter",
+        "field": "salesChannelDesc",
+        "mincount": 1,
+        "limit": -1,
+        "type": "terms",
+        "facet": {
+          "groups": "unique(orderId)"
+        }
+      },
+      "orderStatusDescFacet": {
+        "excludeTags": "orderLookupFilter",
+        "field": "orderStatusDesc",
+        "mincount": 1,
+        "limit": -1,
+        "sort": {
+          "statusSeqId": "asc"
+        },
+        "type": "terms",
+        "facet": {
+          "groups": "unique(orderId)",
+          "statusSeqId": "max(statusSeqId)"
+        }
+      },
+    }
   }
+
 
   if (query.queryString) {
     payload.json.params.defType = "edismax"
@@ -140,19 +144,19 @@ const prepareOrderLookupQuery = (query: any) => {
   }
 
   if (query.facility?.length) {
-    payload.json.filter.push(`{!tag=orderLookupFilter}facilityName: (${query.facility.join(" OR ")})`)
+    payload.json.filter.push(`{!tag=orderLookupFilter}facilityName: (\"${query.facility.join('\" OR \"')}\")`)
   }
 
   if (query.productStore?.length) {
-    payload.json.filter.push(`{!tag=orderLookupFilter}productStoreName: (${query.productStore.join(" OR ")})`)
+    payload.json.filter.push(`{!tag=orderLookupFilter}productStoreName: (\"${query.productStore.join('\" OR \"')}\")`)
   }
 
   if (query.channel?.length) {
-    payload.json.filter.push(`{!tag=orderLookupFilter}salesChannelDesc: (${query.channel.join(" OR ")})`)
+    payload.json.filter.push(`{!tag=orderLookupFilter}salesChannelDesc: (\"${query.channel.join('\" OR \"')}\")`)
   }
 
   if (query.status?.length) {
-    payload.json.filter.push(`{!tag=orderLookupFilter}orderStatusDesc: (${query.status.join(" OR ")})`)
+    payload.json.filter.push(`{!tag=orderLookupFilter}orderStatusDesc: (\"${query.status.join('\" OR \"')}\")`)
   }
 
   if (query.date && query.date !== "custom") {
