@@ -86,7 +86,7 @@
                   </div>
                   <div class="tablet ion-text-center">
                     <ion-label class="ion-text-center">
-                      {{ translate(getShipmentMethodDesc(item.shipmentMethodTypeId)) || item.shipmentMethodTypeId || "-" }}
+                      {{ getShipmentMethodDesc(item.shipmentMethodTypeId) ? translate(getShipmentMethodDesc(item.shipmentMethodTypeId)) : item.shipmentMethodTypeId || "-" }}
                       <p>{{ translate("method") }}</p>
                     </ion-label>
                   </div>

@@ -31,7 +31,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
           order.orderStatusId = order.doclist.docs[0].orderStatusId
           order.orderStatusDesc = order.doclist.docs[0].orderStatusDesc
 
-          shipmentMethodTypeIds.push(order.doclist.docs[0].shipmentMethodTypeId)
+          order.doclist.docs[0].shipmentMethodTypeId && shipmentMethodTypeIds.push(order.doclist.docs[0].shipmentMethodTypeId)
           return order
         })
 
@@ -49,7 +49,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
           })
         })
 
-        // Added check as we only want to fetch the facets when we making first request call and do not need to fetch facets on infinite scroll
+        // Added check as we are fetching the facets only on first request call and do not fetch facets information on infinite scroll
         if(!params?.viewIndex || params.viewIndex == 0) {
           const facilities = resp.data.facets?.facilityNameFacet?.buckets.map((bucket: any) => bucket.val)
           const productStores = resp.data.facets?.productStoreIdFacet?.buckets.map((bucket: any) => bucket.val)
@@ -281,8 +281,8 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       if(orderShipGroups.status === "fulfilled" && !hasError(orderShipGroups.value) && orderShipGroups.value.data.count > 0) {
         shipGroups = orderShipGroups.value.data.docs.reduce((shipGroups: any, shipGroup: any) => {
           productIds.push(shipGroup.productId)
-          shipmentMethodIds.includes(shipGroup.shipmentMethodTypeId) ? '' : shipmentMethodIds.push(shipGroup.shipmentMethodTypeId)
-          shipGroupSeqIds.includes(shipGroup.shipGroupSeqId) ? '' : shipGroupSeqIds.push(shipGroup.shipGroupSeqId)
+          shipGroup.shipmentMethodTypeId && shipmentMethodIds.includes(shipGroup.shipmentMethodTypeId) ? '' : shipmentMethodIds.push(shipGroup.shipmentMethodTypeId)
+          shipGroup.shipGroupSeqId && shipGroupSeqIds.includes(shipGroup.shipGroupSeqId) ? '' : shipGroupSeqIds.push(shipGroup.shipGroupSeqId)
 
           if(shipGroups[shipGroup.shipGroupSeqId]) {
             shipGroups[shipGroup.shipGroupSeqId].push(shipGroup)
