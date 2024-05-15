@@ -178,8 +178,8 @@ const actions: ActionTree<CarrierState, RootState> = {
   },
   checkAssociatedProductStoreShipmentMethods({ state, dispatch }) {
     const currentCarrier = state.current;
-    const carrierShipmentMethods = JSON.parse(JSON.stringify(currentCarrier.shipmentMethods));
-    const carrierProductStoreShipmentMethods = JSON.parse(JSON.stringify(currentCarrier.productStoreShipmentMethods));
+    const carrierShipmentMethods = currentCarrier.shipmentMethods
+    const carrierProductStoreShipmentMethods = currentCarrier.productStoreShipmentMethods
     const productStores = store.getters['util/getProductStores'];
     const carrierShipmentMethodsByProductStore = {} as any;
     const productStoreShipmentMethodFields = ["description", "productStoreId", "isTrackingRequired", "shipmentGatewayConfigId", "productStoreShipMethId"]
