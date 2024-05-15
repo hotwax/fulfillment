@@ -155,10 +155,6 @@ export default defineComponent({
   },
   methods: {
     async updateAppliedFilters(value: string | boolean, filterName: string, filterLabel?: string) {
-      if (value === this.query[filterName]) {
-        return;
-      }
-
       let updatedValue = []
       if(filterName === "channel") {
         updatedValue = JSON.parse(JSON.stringify(this.query.channel))

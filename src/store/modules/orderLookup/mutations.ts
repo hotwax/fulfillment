@@ -5,7 +5,7 @@ import * as types from './mutation-types'
 const mutations: MutationTree <OrderLookupState> = {
   [types.ORDERLOOKUP_LIST_UPDATED] (state, payload) {
     state.list.orders = payload.orders
-    state.list.orderCount = payload.orderCount,
+    state.list.orderCount = payload.orderCount
     state.list.itemCount = payload.itemCount
   },
   [types.ORDERLOOKUP_FILTERS_UPDATED] (state, payload) {
