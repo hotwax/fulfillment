@@ -121,16 +121,21 @@
                 <ion-card-header>
                   <ion-card-title>{{ translate("Payment") }}</ion-card-title>
                 </ion-card-header>
-                <ion-list v-for="orderPayment in order.orderPayments" :key="orderPayment">
-                  <ion-item lines="none">
-                    <ion-label class="ion-text-wrap">
-                      <p class="overline">{{ orderPayment.methodTypeId }}</p>
-                      {{ translate(getPaymentMethodDesc(orderPayment.methodTypeId)) || orderPayment.methodTypeId }}
-                      <ion-note :color="getColorByDesc(getStatusDesc(orderPayment.paymentStatus))">{{ translate(getStatusDesc(orderPayment.paymentStatus)) }}</ion-note>
-                    </ion-label>
-                    <p slot="end">{{ formatCurrency(orderPayment.amount, order.currencyUom) }}</p>
-                  </ion-item>
-                </ion-list>
+                <div v-if="order.orderPayments?.length">
+                  <ion-list v-for="orderPayment in order.orderPayments" :key="orderPayment">
+                    <ion-item lines="none">
+                      <ion-label class="ion-text-wrap">
+                        <p class="overline">{{ orderPayment.methodTypeId }}</p>
+                        {{ translate(getPaymentMethodDesc(orderPayment.methodTypeId)) || orderPayment.methodTypeId }}
+                        <ion-note :color="getColorByDesc(getStatusDesc(orderPayment.paymentStatus))">{{ translate(getStatusDesc(orderPayment.paymentStatus)) }}</ion-note>
+                      </ion-label>
+                      <p slot="end">{{ formatCurrency(orderPayment.amount, order.currencyUom) }}</p>
+                    </ion-item>
+                  </ion-list>
+                </div>
+                <p v-else class="empty-state">
+                  {{ translate("No payments found") }}
+                </p>
               </ion-card>
             </div>
 
