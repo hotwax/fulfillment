@@ -14,16 +14,18 @@ const orderLookupModule: Module<OrderLookupState, RootState> = {
       itemCount: 0
     },
     query: {
-      'status': '',
-      'facility': '',
+      'status': [],
+      'facility': [],
       'storePickup': false,
       'shipFromStore': false,
       'unfillable': false,
       'queryString': '',
       'sort': 'orderDate desc',
-      'productStore': '',
-      'channel': '',
-      'date': ''
+      'productStore': [],
+      'channel': [],
+      'date': '',
+      'fromDate': '',
+      'toDate': ''
     },
     current: {},
     channels: [],

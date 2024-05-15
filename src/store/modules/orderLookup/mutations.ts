@@ -45,7 +45,9 @@ const mutations: MutationTree <OrderLookupState> = {
       'sort': 'orderDate desc',
       'productStore': '',
       'channel': '',
-      'date': ''
+      'date': '',
+      'fromDate': '',
+      'toDate': ''
     }
     state.current = {}
     state.channels = []

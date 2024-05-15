@@ -55,7 +55,7 @@
                 </div>
   
                 <div class="tags">
-                  <ion-chip @click.stop="copyToClipboard(order.orderName)" outline v-if="order.orderName">
+                  <ion-chip @click.stop="copyToClipboard(order.orderName, 'Copied to clipboard')" outline v-if="order.orderName">
                     <ion-icon :icon="pricetag" />
                     <ion-label>{{ order.orderName }}</ion-label>
                   </ion-chip>
@@ -104,6 +104,9 @@
           <div v-else-if="query.queryString" class="empty-state">
             <p>{{ translate("No keyword matches the search criteria.") }}</p>
           </div>
+          <div v-else class="empty-state">
+            <p>{{ translate("No orders found.") }}</p>
+          </div>
           <ion-infinite-scroll @ionInfinite="loadMoreOrders($event)" threshold="100px" :disabled="!isScrollable">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
           </ion-infinite-scroll>
@@ -150,15 +153,11 @@ import {
 } from 'ionicons/icons';
 import { defineComponent, ref } from "vue";
 import { mapGetters, useStore } from "vuex";
-import { getColorByDesc, formatUtcDate, showToast } from '@/utils'
-import { Plugins } from '@capacitor/core';
+import { copyToClipboard, getColorByDesc, formatUtcDate } from '@/utils'
 import { useRouter } from 'vue-router';
 import OrderLookupFilters from '@/components/OrderLookupFilters.vue'
 import { translate } from '@hotwax/dxp-components';
 import Image from '@/components/Image.vue'
-
-
-const { Clipboard } = Plugins;
 
 export default defineComponent ({
   name: 'OrderLookup',
@@ -224,13 +223,6 @@ export default defineComponent ({
       await this.store.dispatch('orderLookup/updateAppliedFilters', { value: this.queryString, filterName: 'queryString' })
       this.isLoading = false
     },
-    async copyToClipboard(text: any) {
-      await Clipboard.write({
-        string: text
-      }).then(() => {
-        showToast(translate('Copied', { text }));
-      })
-    },
     async loadMoreOrders(event: any) {
       this.isLoading = true
       await this.store.dispatch('orderLookup/findOrders', {
@@ -257,6 +249,7 @@ export default defineComponent ({
 
     return {
       closeOutline,
+      copyToClipboard,
       formatUtcDate,
       documentTextOutline,
       downloadOutline,
@@ -282,7 +275,7 @@ ion-menu {
   --width: 100%;
 }
 .section-header{
-  margin: 0 var(--spacer-xs);
+  margin: 0 var(--spacer-sm);
 }
 
 .metadata {
