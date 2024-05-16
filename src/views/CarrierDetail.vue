@@ -235,7 +235,7 @@
             role: "cancel"
           },
           {
-            text: translate('Confim'),
+            text: translate('Confirm'),
             handler: async (data: any) => {
               if (data.groupName) {
                 let resp;

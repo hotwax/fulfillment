@@ -89,7 +89,7 @@
         this.router.push({ path: '/create-carrier' })
       }
     },
-    async mounted () {
+    async ionViewWillEnter () {
       await this.store.dispatch('carrier/fetchCarriers')
     },
     unmounted() {
