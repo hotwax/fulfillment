@@ -1,36 +1,36 @@
 <template>
   <div class="list-item  ion-padding" v-for="(shipmentMethod, index) in filteredShipmentMethods" :key="index">
     <ion-item lines="none">
-        <ion-label>
+      <ion-label>
         {{ shipmentMethod.description }}
         <p>{{ shipmentMethod.shipmentMethodTypeId }}</p>
-        </ion-label>
+      </ion-label>
     </ion-item>
     <div class="tablet">
-        <ion-chip v-if="shipmentMethod.deliveryDays" outline @click.stop="editDeliveryDays(shipmentMethod)">
+      <ion-chip v-if="shipmentMethod.deliveryDays" outline @click.stop="editDeliveryDays(shipmentMethod)">
         <ion-label>{{ shipmentMethod?.deliveryDays }}</ion-label>
-        </ion-chip>
-        <ion-chip v-else :disabled="!shipmentMethod.isChecked" outline @click.stop="editDeliveryDays(shipmentMethod)">
+      </ion-chip>
+      <ion-chip v-else :disabled="!shipmentMethod.isChecked" outline @click.stop="editDeliveryDays(shipmentMethod)">
         <ion-icon :icon="addCircleOutline" />
         <ion-label>{{ translate('delivery days') }}</ion-label>
-        </ion-chip>
-        <ion-note class="config-label">{{ translate('delivery days') }}</ion-note>
+      </ion-chip>
+      <ion-note class="config-label">{{ translate('delivery days') }}</ion-note>
     </div>
     <div class="tablet">
-        <ion-chip v-if="shipmentMethod?.carrierServiceCode" outline @click.stop="editCarrierCode(shipmentMethod)">
+      <ion-chip v-if="shipmentMethod?.carrierServiceCode" outline @click.stop="editCarrierCode(shipmentMethod)">
         <ion-label>{{ shipmentMethod?.carrierServiceCode }}</ion-label>
-        </ion-chip>
-        <ion-chip v-else :disabled="!shipmentMethod.isChecked" outline @click.stop="editCarrierCode(shipmentMethod)">
+      </ion-chip>
+      <ion-chip v-else :disabled="!shipmentMethod.isChecked" outline @click.stop="editCarrierCode(shipmentMethod)">
         <ion-icon :icon="addCircleOutline" />
         <ion-label>{{ translate('carrier code') }}</ion-label>
-        </ion-chip>
-        <ion-note class="config-label">{{ translate('carrier code') }}</ion-note>
+      </ion-chip>
+      <ion-note class="config-label">{{ translate('carrier code') }}</ion-note>
     </div>
     <div class="tablet">
-        <ion-checkbox :checked="shipmentMethod.isChecked" @click="updateCarrierShipmentMethodAssociation($event, shipmentMethod)" />
+      <ion-checkbox :checked="shipmentMethod.isChecked" @click="updateCarrierShipmentMethodAssociation($event, shipmentMethod)" />
     </div>
     <ion-button fill="clear" color="medium" @click="openShipmentMethodActionsPopover($event, shipmentMethod)">
-        <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+      <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
     </ion-button>
   </div>
 </template>
