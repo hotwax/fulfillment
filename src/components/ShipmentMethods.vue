@@ -1,5 +1,5 @@
 <template>
-  <div class="list-item  ion-padding" v-for="(shipmentMethod, index) in filteredShipmentMethods" :key="index">
+  <div class="list-item  ion-padding" v-for="shipmentMethod in filteredShipmentMethods" :key="shipmentMethod.shipmentMethodTypeId">
     <ion-item lines="none">
       <ion-label>
         {{ shipmentMethod.description }}
