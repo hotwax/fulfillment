@@ -152,6 +152,7 @@
               showToast(translate("Carrier and shipment method association updated successfully."))
               await this.store.dispatch('carrier/updateCurrentCarrierShipmentMethods', currentCarrierShipmentMethods)
               await this.store.dispatch('carrier/checkAssociatedShipmentMethods')
+              this.closePopover();
             } else {
               throw resp.data
             }

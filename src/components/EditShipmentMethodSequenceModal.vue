@@ -119,7 +119,7 @@
         this.filteredShipmentMethods = updatedSeq
 
         if (diffSeq.length && !this.toast) {
-          showToast(translate("Shipment methods order has been change. Click save button to update them."));
+          showToast(translate("Shipment methods order has been changed. Click save button to update them."));
         }
       },
       findShipmentMethodsDiff(previousSeq: any, updatedSeq: any) {

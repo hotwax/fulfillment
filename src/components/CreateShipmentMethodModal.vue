@@ -17,7 +17,9 @@
         </ion-input>
       </ion-item>
       <ion-item>
-        <ion-input label-placement="floating" :label="translate('ID')" v-model="shipmentMethod.shipmentMethodTypeId"/>
+        <ion-input label-placement="floating" v-model="shipmentMethod.shipmentMethodTypeId">
+          <div slot="label">{{ translate("ID") }} <ion-text color="danger">*</ion-text></div>
+        </ion-input>
       </ion-item>
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="createShipmentMethod()">
@@ -94,7 +96,7 @@
         this.shipmentMethod.shipmentMethodTypeId = generateInternalId(event.target.value)
       },
       async createShipmentMethod() {
-        if (!this.shipmentMethod.description?.trim()) {
+        if (!this.shipmentMethod.description?.trim() || !this.shipmentMethod.shipmentMethodTypeId?.trim()) {
           showToast(translate('Please fill all the required fields'))
           return;
         }
