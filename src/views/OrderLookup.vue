@@ -21,7 +21,7 @@
           <section class="sort">
             <div>
               <div class="search">
-                <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; updateQueryString()"/>
+                <ion-searchbar :placeholder="translate('Search')" v-model="queryString" @keyup.enter="queryString = $event.target.value; updateQueryString()"/>
               </div>
 
               <ion-item lines="none">

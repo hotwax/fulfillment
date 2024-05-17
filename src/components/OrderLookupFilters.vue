@@ -62,7 +62,7 @@
         <ion-list-header><h3>{{ translate("Date") }}</h3></ion-list-header>
         <ion-item>
           <ion-select :label="translate('Date range')" :value="query.date" @ionChange="updateAppliedFilters($event['detail'].value, 'date')" interface="popover">
-            <ion-select-option v-for="range in dateRanges" :key="range.label" :value="range.value">{{ range.label }}</ion-select-option>
+            <ion-select-option v-for="range in dateRanges" :key="range.label" :value="range.value">{{ translate(range.label) }}</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item v-if="query.date === 'custom'">
