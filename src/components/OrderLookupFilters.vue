@@ -69,12 +69,12 @@
           <ion-label>{{ translate("From") }}</ion-label>
           <ion-datetime-button datetime="fromDate" @click="enableFromDateFilter()"></ion-datetime-button>
         </ion-item>
-        <ion-datetime v-show="enableFromDate" @ionChange="updateAppliedFilters($event['detail'].value, 'fromDate')" id="fromDate" presentation="date" v-model="fromDate" :max="DateTime.now().toISO()"></ion-datetime>
+        <ion-datetime v-show="enableFromDate" @ionChange="updateAppliedFilters($event['detail'].value, 'fromDate')" id="fromDate" presentation="date" v-model="fromDate" :max="toDate || DateTime.now().toISO()"></ion-datetime>
         <ion-item v-if="query.date === 'custom'">
           <ion-label>{{ translate("To") }}</ion-label>
           <ion-datetime-button datetime="toDate" @click="enableToDateFilter()"></ion-datetime-button>
         </ion-item>
-        <ion-datetime v-show="enableToDate" @ionChange="updateAppliedFilters($event['detail'].value, 'toDate')" id="toDate" presentation="date" v-model="toDate" :max="DateTime.now().toISO()"></ion-datetime>
+        <ion-datetime v-show="enableToDate" @ionChange="updateAppliedFilters($event['detail'].value, 'toDate')" id="toDate" presentation="date" v-model="toDate" :min="fromDate" :max="DateTime.now().toISO()"></ion-datetime>
       </ion-list>
     </ion-content>
   </ion-menu>

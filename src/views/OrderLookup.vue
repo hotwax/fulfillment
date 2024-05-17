@@ -15,7 +15,7 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content id="orderLookup-filter">
+    <ion-content id="orderLookup-filter" ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
       <div class="find">
         <main>
           <section class="sort">
@@ -108,7 +108,7 @@
           <div v-else class="empty-state">
             <p>{{ translate("No orders found.") }}</p>
           </div>
-          <ion-infinite-scroll @ionInfinite="loadMoreOrders($event)" threshold="100px" :disabled="!isScrollable">
+          <ion-infinite-scroll @ionInfinite="loadMoreOrders($event)" threshold="100px" v-show="isScrollable" ref="infiniteScrollRef">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
           </ion-infinite-scroll>
         </main>
@@ -205,8 +205,12 @@ export default defineComponent ({
     return {
       sort: 'orderDate desc',
       showOrderItems: true,
-      isLoading: false
+      isLoading: false,
+      isScrollingEnabled: false
     }
+  },
+  ionViewWillEnter() {
+    this.isScrollingEnabled = false;
   },
   methods: {
     async closeMenu() {
@@ -229,18 +233,33 @@ export default defineComponent ({
       this.isLoading = false
     },
     async loadMoreOrders(event: any) {
+      // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
+      if(!(this.isScrollingEnabled && this.isScrollable)) {
+        await event.target.complete();
+      }
       this.isLoading = true
       await this.store.dispatch('orderLookup/findOrders', {
         viewSize: undefined,
         viewIndex: Math.ceil(this.ordersList.orders.length / 10).toString()
-      }).then(() => {
-        event.target.complete();
+      }).then(async () => {
+        await event.target.complete();
       })
       this.isLoading = false
     },
     async openOrderFilter() {
       await menuController.open();
-    }
+    },
+    enableScrolling() {
+      const parentElement = (this as any).$refs.contentRef.$el
+      const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
+      let scrollHeight = scrollEl.scrollHeight, infiniteHeight = (this as any).$refs.infiniteScrollRef.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
+      const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
+      if(distanceFromInfinite < 0) {
+        this.isScrollingEnabled = false;
+      } else {
+        this.isScrollingEnabled = true;
+      }
+    },
   },
   async mounted() {
     await this.getOrders();
