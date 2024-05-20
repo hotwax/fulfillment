@@ -23,6 +23,7 @@ const getters: GetterTree<CarrierState, RootState> = {
     
     if (query.showSelected) {
       shipmentMethods = shipmentMethods.filter((shipmentMethod: any) => shipmentMethod.isChecked)
+      sortItems(shipmentMethods, "sequenceNumber")
     }
     return shipmentMethods;
   },
