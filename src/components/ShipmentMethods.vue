@@ -95,9 +95,11 @@
           {
             text: translate('Apply'),
             handler: async (data) => {
-              const modifiedData = {"fieldName": "deliveryDays", "fieldValue": data.deliveryDays}
-              const messages = {"successMessage": "Delivery days updated.", "errorMessage": "Failed to update delivery days."}
-              await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
+              if (data.deliveryDays != shipmentMethod.deliveryDays) {
+                const modifiedData = {"fieldName": "deliveryDays", "fieldValue": data.deliveryDays}
+                const messages = {"successMessage": "Delivery days updated.", "errorMessage": "Failed to update delivery days."}
+                await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
+              }
             }
           }]
         })
@@ -117,9 +119,11 @@
           {
             text: translate('Apply'),
             handler: async (data) => {
-              const modifiedData = {"fieldName": "carrierServiceCode", "fieldValue": data.carrierServiceCode}
-              const messages = {"successMessage": "Carrier code updated.", "errorMessage": "Failed to update carrier code."}
-              await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
+              if (data.carrierServiceCode != shipmentMethod.carrierServiceCode) {
+                const modifiedData = {"fieldName": "carrierServiceCode", "fieldValue": data.carrierServiceCode}
+                const messages = {"successMessage": "Carrier code updated.", "errorMessage": "Failed to update carrier code."}
+                await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
+              }
             }
           }]
         })
@@ -236,7 +240,11 @@
 
 
           if (modifiedFieldName == 'shipmentMethodName' && modifiedFieldValue !== shipmentMethod.description) {
-            await this.updateShipmentMethodName(shipmentMethod, modifiedFieldValue)
+            if (modifiedFieldValue) {
+              await this.updateShipmentMethodName(shipmentMethod, modifiedFieldValue)
+            } else {
+              showToast(translate("Shipment method name can not be empty."));
+            }
           } else if (modifiedFieldName == 'deliveryDays' && modifiedFieldValue !== shipmentMethod.deliveryDays) {
             const messages = {"successMessage": "Delivery days updated.", "errorMessage": "Failed to update delivery days."}
             await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
@@ -284,20 +292,15 @@
           if (!hasError(resp)) {
             showToast(translate(messages["successMessage"]))
             //updating shipment methods in state
-            const updatedShipmentMethods = Object.values(JSON.parse(JSON.stringify(this.shipmentMethods)))
-              .map((shipmentMethodData: any) => {
-                if (shipmentMethod.shipmentMethodTypeId === shipmentMethodData.shipmentMethodTypeId) {
-                  shipmentMethodData[updatedData.fieldName] = updatedData.fieldValue
-                }
-
-                return shipmentMethodData
-              })
+            const updatedShipmentMethods = JSON.parse(JSON.stringify(this.shipmentMethods));
+            const updatedShipmentMethod = updatedShipmentMethods[shipmentMethod.shipmentMethodTypeId];
+            updatedShipmentMethod[updatedData.fieldName] = updatedData.fieldValue;
             this.store.dispatch('carrier/updateShipmentMethods', updatedShipmentMethods)
 
             //updating current carrier shipment methods in state
             let updatedCarrierShipmentMethods = JSON.parse(JSON.stringify(this.currentCarrier.shipmentMethods))
-            const updatedShipmentMethod = updatedCarrierShipmentMethods[shipmentMethod.shipmentMethodTypeId];
-            updatedShipmentMethod[updatedData.fieldName] = updatedData.fieldValue;
+            const updatedCarrierShipmentMethod = updatedCarrierShipmentMethods[shipmentMethod.shipmentMethodTypeId];
+            updatedCarrierShipmentMethod[updatedData.fieldName] = updatedData.fieldValue;
             this.store.dispatch('carrier/updateCurrentCarrierShipmentMethods', updatedCarrierShipmentMethods)
           } else {
             throw resp.data

@@ -217,7 +217,7 @@
       },
       getShipmentMethodDescription(shipmentMethodTypeId: string) {
         const method = this.shipmentMethods[shipmentMethodTypeId];
-        return method.description ? method.description : shipmentMethodTypeId
+        return method?.description ? method.description : shipmentMethodTypeId
       },
       async updateShipmentMethodQuery() {
         await this.store.dispatch('carrier/updateShipmentMethodQuery', this.shipmentMethodQuery)

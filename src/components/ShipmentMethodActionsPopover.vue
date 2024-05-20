@@ -2,7 +2,7 @@
     <ion-content>
       <ion-list>
         <ion-list-header>{{ shipmentMethod.description ? shipmentMethod.description : shipmentMethod.shipmentMethodTypeId}}</ion-list-header>
-        <ion-item button @click="renameShipmentMethod()">
+        <ion-item lines="none" button @click="renameShipmentMethod()">
           <ion-icon slot="end" :icon="pencilOutline" />
           {{ translate("Edit name") }}
         </ion-item>
@@ -19,7 +19,7 @@
             <ion-icon slot="end" :icon="listOutline" />
             {{ translate("Edit sequence") }}
           </ion-item>
-          <ion-item button @click="removeCarrierShipmentMethod()">
+          <ion-item lines="none" button @click="removeCarrierShipmentMethod()">
             <ion-icon slot="end" :icon="unlinkOutline" />
             {{ translate("Remove from carrier") }}
           </ion-item>
