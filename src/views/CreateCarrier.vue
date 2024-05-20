@@ -88,6 +88,7 @@
       async createCarrier() {
         const partyId = await CarrierService.createCarrier({...this.carrier, partyTypeId: "PARTY_GROUP"});
         if (partyId) {
+          this.store.dispatch('carrier/clearShipmentMethodQuery')
           this.$router.replace({ path: `/shipment-methods-setup/${partyId}` })
         }
       }

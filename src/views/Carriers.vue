@@ -14,10 +14,7 @@
                 <ion-label>
                   <p class="overline">{{ carrier.partyId }}</p>
                   {{ carrier.groupName }}
-                  <!--TODO: Need to make it functional.-->
-                  <p>Online Label</p>
                 </ion-label>
-                <!--TODO: Need to make it functional.-->
                 <ion-note slot="end"> {{carrier.shipmentMethodCount}} {{ translate('methods') }}</ion-note>
               </ion-item>
             </ion-list>
@@ -91,6 +88,7 @@
     },
     async ionViewWillEnter () {
       await this.store.dispatch('carrier/fetchCarriers')
+      await this.store.dispatch('carrier/clearShipmentMethodQuery')
     },
     unmounted() {
       this.store.dispatch('carrier/clearCarriers');

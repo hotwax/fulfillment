@@ -332,6 +332,9 @@ const actions: ActionTree<CarrierState, RootState> = {
   updateShipmentMethodQuery({ commit }, query) {
     commit(types.CARRIER_SHIPMENT_METHOD_QUERY_UPDATED, { query })
   },
+  clearShipmentMethodQuery({ commit }, query) {
+    commit(types.CARRIER_SHIPMENT_METHOD_QUERY_UPDATED, {"query": {"showSelected": false}})
+  },
   async updateCarrierFacility({ state, commit }, payload) {
     const currentCarrier = state.current;
     currentCarrier.facilities[payload.facilityId] = payload
