@@ -282,6 +282,14 @@
       },
       async updateCarrierShipmentMethod(shipmentMethod: any, updatedData: any, messages: any) {
         try {
+          if (updatedData["fieldName"] === 'deliveryDays' && !this.isValidDeliveryDays(updatedData["fieldValue"])) {
+            showToast(translate("Only numeric values are allowed."));
+            return;
+          } 
+          if (updatedData["fieldName"] === 'carrierServiceCode' && !this.isValidDeliveryDays(updatedData["fieldValue"])) {
+            showToast(translate("Only alphanumeric characters are allowed."));
+            return;
+          }
           const resp = await CarrierService.updateCarrierShipmentMethod({
             shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
             partyId: shipmentMethod.partyId,
@@ -309,6 +317,16 @@
           showToast(translate(messages["errorMessage"]))
           logger.error(messages["errorMessage"], error)
         }
+      },
+      isValidDeliveryDays (deliveryDays : any) {
+        // Regular expression pattern for a valid delivery days
+        const delieveryDaysPattern = /^(\d*\.?\d+)?$/;
+        return delieveryDaysPattern.test(deliveryDays);
+      },
+      isValidTrackingCode (trackingCode : any) {
+        // Regular expression pattern for a valid tracking code
+        const trackingCodePattern = /^[a-zA-Z0-9]*$/;
+        return trackingCodePattern.test(trackingCode);
       }
     }, 
     setup() {
