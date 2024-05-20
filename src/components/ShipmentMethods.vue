@@ -356,6 +356,9 @@
   .list-item {
     --columns-desktop: 5;
   }
+  .list-item:hover {
+    cursor: default;
+  }
   .tablet {
     display: block;
     text-align: center;
