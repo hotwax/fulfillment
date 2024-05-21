@@ -482,6 +482,7 @@
   "Store name": "Nombre de la tienda",
   "Store": "Tienda",
   "Store pickup": "Recoger en tienda",
+  "Store Pickup": "Recoger en tienda",
   "The import orders has been uploaded successfully": "Los pedidos de importación se han cargado exitosamente",
   "The picked quantity cannot exceed the ordered quantity.": "La cantidad seleccionada no puede exceder la cantidad pedida.",
   "The timezone you select is used to ensure automations you schedule are always accurate to the time you select.": "La zona horaria que seleccione se utiliza para garantizar que las automatizaciones que programe siempre sean precisas para la hora que seleccione.",
