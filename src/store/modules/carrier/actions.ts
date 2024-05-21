@@ -24,7 +24,8 @@ const actions: ActionTree<CarrierState, RootState> = {
         "viewIndex": 0,
         "viewSize": 250,  // maximum records we could have
         "distinct": "Y",
-        "noConditionFind": "Y"
+        "noConditionFind": "Y",
+        "orderBy": "groupName"
       }
     
       resp = await CarrierService.fetchCarriers(params);

@@ -2,7 +2,6 @@
     <ion-page>
       <ion-header :translucent="true">
         <ion-toolbar>
-          <ion-back-button default-href="/carriers" slot="start" />
           <ion-title>{{ translate("Setup methods") }}</ion-title>
         </ion-toolbar>
       </ion-header>
@@ -49,7 +48,6 @@
   import {
     IonButton,
     IonButtons,
-    IonBackButton,
     IonContent,
     IonFooter,
     IonHeader,
@@ -80,7 +78,6 @@
     components: {
       IonButton,
       IonButtons,
-      IonBackButton,
       IonContent,
       IonHeader,
       IonFooter,
@@ -106,7 +103,8 @@
     },
     methods: {
       async viewCarrierDetail() {
-        showToast(translate('Carrier and shipment methods setup successfully.'))
+        await this.store.dispatch('carrier/clearShipmentMethodQuery')
+        showToast(translate('Carrier and shipment methods have been set up successfully.'))
         this.router.replace({ path: `/carrier-details/${this.currentCarrier.partyId}` })
       },
       async updateShipmentMethodQuery() {

@@ -112,9 +112,14 @@
           } else {
             throw resp.data
           }
-        } catch(err) {
+        } catch(err: any) {
           logger.log(err)
-          showToast(translate("Failed to create shipment method"))
+          let errorMessage = translate('Failed to create shipment method');
+          if (err?.response?.data?.error?.message) {
+            errorMessage = err.response.data.error.message
+          }
+          logger.error('error', err)
+          showToast(errorMessage);
         }
       }
     },
