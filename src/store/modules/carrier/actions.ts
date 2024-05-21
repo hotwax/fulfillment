@@ -15,7 +15,7 @@ const actions: ActionTree<CarrierState, RootState> = {
     try {
       const params = {
         ...payload,
-        "entityName": "CarrierAndShipmentMethod",
+        "entityName": "CarrierShipmentMethodCount",
         "inputFields": {
           "roleTypeId": "CARRIER",
           "partyTypeId": "PARTY_GROUP"
