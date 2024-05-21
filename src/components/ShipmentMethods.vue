@@ -1,4 +1,5 @@
 <template>
+  <template v-if="filteredShipmentMethods?.length > 0">
   <div class="list-item  ion-padding" v-for="shipmentMethod in filteredShipmentMethods" :key="shipmentMethod.shipmentMethodTypeId">
     <ion-item lines="none">
       <ion-label>
@@ -33,8 +34,12 @@
       <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
     </ion-button>
   </div>
-</template>
-  
+  </template>
+  <div v-else class="empty-state">
+    <p>{{ translate('No data found') }}</p>
+  </div>
+
+</template>  
   <script lang="ts">
   import {
     IonButton,
@@ -95,8 +100,9 @@
           {
             text: translate('Apply'),
             handler: async (data) => {
-              if (data.deliveryDays != shipmentMethod.deliveryDays) {
-                const modifiedData = {"fieldName": "deliveryDays", "fieldValue": data.deliveryDays}
+              const currentDeliveryDays = shipmentMethod.deliveryDays ? shipmentMethod.deliveryDays : "";
+              if (data.deliveryDays.trim() != currentDeliveryDays) {
+                const modifiedData = {"fieldName": "deliveryDays", "fieldValue": data.deliveryDays.trim()}
                 const messages = {"successMessage": "Delivery days updated.", "errorMessage": "Failed to update delivery days."}
                 await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
               }
@@ -119,8 +125,9 @@
           {
             text: translate('Apply'),
             handler: async (data) => {
-              if (data.carrierServiceCode != shipmentMethod.carrierServiceCode) {
-                const modifiedData = {"fieldName": "carrierServiceCode", "fieldValue": data.carrierServiceCode}
+              const currentCarrierServiceCode = shipmentMethod.carrierServiceCode ? shipmentMethod.carrierServiceCode : "";
+              if (data.carrierServiceCode.trim() != currentCarrierServiceCode) {
+                const modifiedData = {"fieldName": "carrierServiceCode", "fieldValue": data.carrierServiceCode.trim()}
                 const messages = {"successMessage": "Carrier code updated.", "errorMessage": "Failed to update carrier code."}
                 await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
               }
@@ -236,8 +243,9 @@
         if (result.data) {
           const modifiedData = result.data;
           const modifiedFieldName = modifiedData?.fieldName;
-          const modifiedFieldValue = modifiedData?.fieldValue;
-
+          const modifiedFieldValue = modifiedData?.fieldValue?.trim();
+          const currentDeliveryDays = shipmentMethod.deliveryDays ? shipmentMethod.deliveryDays : "";
+          const currentCarrierServiceCode = shipmentMethod.carrierServiceCode ? shipmentMethod.carrierServiceCode : "";
 
           if (modifiedFieldName == 'shipmentMethodName' && modifiedFieldValue !== shipmentMethod.description) {
             if (modifiedFieldValue) {
@@ -245,10 +253,10 @@
             } else {
               showToast(translate("Shipment method name can not be empty."));
             }
-          } else if (modifiedFieldName == 'deliveryDays' && modifiedFieldValue !== shipmentMethod.deliveryDays) {
+          } else if (modifiedFieldName == 'deliveryDays' && modifiedFieldValue !== currentDeliveryDays) {
             const messages = {"successMessage": "Delivery days updated.", "errorMessage": "Failed to update delivery days."}
             await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
-          } else if (modifiedFieldName == 'carrierServiceCode' && modifiedFieldValue !== shipmentMethod.carrierServiceCode) {
+          } else if (modifiedFieldName == 'carrierServiceCode' && modifiedFieldValue !== currentCarrierServiceCode) {
             const messages = {"successMessage": "Carrier code updated.", "errorMessage": "Failed to update carrier code."}
             await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
           }
@@ -283,7 +291,7 @@
       async updateCarrierShipmentMethod(shipmentMethod: any, updatedData: any, messages: any) {
         try {
           if (updatedData["fieldName"] === 'deliveryDays' && !this.isValidDeliveryDays(updatedData["fieldValue"])) {
-            showToast(translate("Only numeric values are allowed."));
+            showToast(translate("Only positive numbers are allowed."));
             return;
           } 
           if (updatedData["fieldName"] === 'carrierServiceCode' && !this.isValidDeliveryDays(updatedData["fieldValue"])) {
