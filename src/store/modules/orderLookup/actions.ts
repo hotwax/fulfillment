@@ -178,7 +178,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
 
         if(!hasError(partyInfo) && partyInfo.data.count > 0) {
           const party = partyInfo.data.docs[0]
-          order["partyName"] = party.groupName ? party.groupName : `${party.firstName} ${party.lastName}`
+          order["partyName"] = party.groupName ? party.groupName : `${party.firstName ? party.firstName : ''} ${party.lastName ? party.lastName : ''}`
         }
       }
       if(orderContactMech.status === "fulfilled" && !hasError(orderContactMech.value) && orderContactMech.value.data.count > 0) {

@@ -7,7 +7,11 @@
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <main v-if="order.orderId">
+      <main v-if="isFetchingOrderInfo" class="empty-state">
+        <ion-spinner name="crescent" />
+        <ion-label>{{ translate("Fetching order information...") }}</ion-label>
+      </main>
+      <main v-else-if="order.orderId">
         <section class="header">
           <div class="id">
             <ion-item lines="none">
@@ -192,11 +196,11 @@
                 <ion-card v-for="shipGroup in shipGroups" :key="shipGroup.shipGroupSeqId">
                   <ion-item>
                     <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(shipGroup.productId).mainImageUrl" size="small" />
+                      <DxpShopifyImg :src="getProduct(shipGroup.productId)?.mainImageUrl" size="small" />
                     </ion-thumbnail>
                     <ion-label class="ion-text-wrap">
                       <h1>{{ shipGroup.productId }}</h1>
-                      <p>{{ getProduct(shipGroup.productId).productName }}</p>
+                      <p>{{ getProduct(shipGroup.productId)?.productName }}</p>
                     </ion-label>
                     <ion-badge slot="end" :color="getColorByDesc(itemStatuses[shipGroup.statusId].label) || getColorByDesc('default')">{{ translate(itemStatuses[shipGroup.statusId].label) }}</ion-badge>
                   </ion-item>
@@ -234,10 +238,6 @@
             <p>{{ translate("No ship groups found") }}</p>
           </div>
         </section>
-      </main>
-      <main v-else-if="isFetchingOrderInfo" class="empty-state">
-        <ion-spinner name="crescent" />
-        <ion-label>{{ translate("Fetching order information...") }}</ion-label>
       </main>
       <main v-else class="empty-state">
         <p>{{ translate("Something went wrong while fetching order details, please check the orderId and try again.") }}</p>
