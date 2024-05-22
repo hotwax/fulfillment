@@ -102,9 +102,9 @@
             handler: async (data) => {
               const currentDeliveryDays = shipmentMethod.deliveryDays ? shipmentMethod.deliveryDays : "";
               if (data.deliveryDays.trim() != currentDeliveryDays) {
-                const modifiedData = {"fieldName": "deliveryDays", "fieldValue": data.deliveryDays.trim()}
+                const updatedData = {"fieldName": "deliveryDays", "fieldValue": data.deliveryDays.trim()}
                 const messages = {"successMessage": "Delivery days updated.", "errorMessage": "Failed to update delivery days."}
-                await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
+                await this.store.dispatch('carrier/updateCarrierShipmentMethod', {shipmentMethod, updatedData, messages});
               }
             }
           }]
@@ -127,9 +127,9 @@
             handler: async (data) => {
               const currentCarrierServiceCode = shipmentMethod.carrierServiceCode ? shipmentMethod.carrierServiceCode : "";
               if (data.carrierServiceCode.trim() != currentCarrierServiceCode) {
-                const modifiedData = {"fieldName": "carrierServiceCode", "fieldValue": data.carrierServiceCode.trim()}
+                const updatedData = {"fieldName": "carrierServiceCode", "fieldValue": data.carrierServiceCode.trim()}
                 const messages = {"successMessage": "Carrier code updated.", "errorMessage": "Failed to update carrier code."}
-                await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
+                await this.store.dispatch('carrier/updateCarrierShipmentMethod', {shipmentMethod, updatedData, messages});
               }
             }
           }]
@@ -239,102 +239,6 @@
           event: event
         });
         popover.present();
-        const result = await popover.onDidDismiss();
-        if (result.data) {
-          const modifiedData = result.data;
-          const modifiedFieldName = modifiedData?.fieldName;
-          const modifiedFieldValue = modifiedData?.fieldValue?.trim();
-          const currentDeliveryDays = shipmentMethod.deliveryDays ? shipmentMethod.deliveryDays : "";
-          const currentCarrierServiceCode = shipmentMethod.carrierServiceCode ? shipmentMethod.carrierServiceCode : "";
-
-          if (modifiedFieldName == 'shipmentMethodName' && modifiedFieldValue !== shipmentMethod.description) {
-            if (modifiedFieldValue) {
-              await this.updateShipmentMethodName(shipmentMethod, modifiedFieldValue)
-            } else {
-              showToast(translate("Shipment method name can not be empty."));
-            }
-          } else if (modifiedFieldName == 'deliveryDays' && modifiedFieldValue !== currentDeliveryDays) {
-            const messages = {"successMessage": "Delivery days updated.", "errorMessage": "Failed to update delivery days."}
-            await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
-          } else if (modifiedFieldName == 'carrierServiceCode' && modifiedFieldValue !== currentCarrierServiceCode) {
-            const messages = {"successMessage": "Carrier code updated.", "errorMessage": "Failed to update carrier code."}
-            await this.updateCarrierShipmentMethod(shipmentMethod, modifiedData, messages)
-          }
-        }
-      },
-      async updateShipmentMethodName(shipmentMethod: any, updatedShipmentMethodName: any) {
-        try {
-          const resp = await CarrierService.updateShipmentMethodType({
-            shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
-            description: updatedShipmentMethodName
-          })
-
-          if (!hasError(resp)) {
-            showToast(translate('Shipment method renamed.'))
-            const updatedShipmentMethods = Object.values(JSON.parse(JSON.stringify(this.shipmentMethods)))
-              .map((shipmentMethodData: any) => {
-                if (shipmentMethod.shipmentMethodTypeId === shipmentMethodData.shipmentMethodTypeId) {
-                  shipmentMethodData.description = updatedShipmentMethodName
-                }
-
-                return shipmentMethodData
-              })
-            this.store.dispatch('carrier/updateShipmentMethods', updatedShipmentMethods)
-          } else {
-            throw resp.data
-          }
-        } catch (error) {
-          showToast(translate('Failed to rename facility group.'))
-          logger.error('Failed to rename facility group.', error)
-        }
-      },
-      async updateCarrierShipmentMethod(shipmentMethod: any, updatedData: any, messages: any) {
-        try {
-          if (updatedData["fieldName"] === 'deliveryDays' && !this.isValidDeliveryDays(updatedData["fieldValue"])) {
-            showToast(translate("Only positive numbers are allowed."));
-            return;
-          } 
-          if (updatedData["fieldName"] === 'carrierServiceCode' && !this.isValidDeliveryDays(updatedData["fieldValue"])) {
-            showToast(translate("Only alphanumeric characters are allowed."));
-            return;
-          }
-          const resp = await CarrierService.updateCarrierShipmentMethod({
-            shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
-            partyId: shipmentMethod.partyId,
-            roleTypeId: shipmentMethod.roleTypeId,
-            [updatedData["fieldName"]]: updatedData["fieldValue"]
-          })
-
-          if (!hasError(resp)) {
-            showToast(translate(messages["successMessage"]))
-            //updating shipment methods in state
-            const updatedShipmentMethods = JSON.parse(JSON.stringify(this.shipmentMethods));
-            const updatedShipmentMethod = updatedShipmentMethods[shipmentMethod.shipmentMethodTypeId];
-            updatedShipmentMethod[updatedData.fieldName] = updatedData.fieldValue;
-            this.store.dispatch('carrier/updateShipmentMethods', updatedShipmentMethods)
-
-            //updating current carrier shipment methods in state
-            let updatedCarrierShipmentMethods = JSON.parse(JSON.stringify(this.currentCarrier.shipmentMethods))
-            const updatedCarrierShipmentMethod = updatedCarrierShipmentMethods[shipmentMethod.shipmentMethodTypeId];
-            updatedCarrierShipmentMethod[updatedData.fieldName] = updatedData.fieldValue;
-            this.store.dispatch('carrier/updateCurrentCarrierShipmentMethods', updatedCarrierShipmentMethods)
-          } else {
-            throw resp.data
-          }
-        } catch (error) {
-          showToast(translate(messages["errorMessage"]))
-          logger.error(messages["errorMessage"], error)
-        }
-      },
-      isValidDeliveryDays (deliveryDays : any) {
-        // Regular expression pattern for a valid delivery days
-        const delieveryDaysPattern = /^(\d*\.?\d+)?$/;
-        return delieveryDaysPattern.test(deliveryDays);
-      },
-      isValidTrackingCode (trackingCode : any) {
-        // Regular expression pattern for a valid tracking code
-        const trackingCodePattern = /^[a-zA-Z0-9]*$/;
-        return trackingCodePattern.test(trackingCode);
       }
     }, 
     setup() {

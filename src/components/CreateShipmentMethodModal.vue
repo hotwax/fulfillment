@@ -80,7 +80,8 @@
     props:['carrier'],
     computed: {
       ...mapGetters({
-        shipmentMethods: "carrier/getFilteredShipmentMethods"
+        shipmentMethods: "carrier/getFilteredShipmentMethods",
+        currentCarrier: "carrier/getCurrent"
       })
     },
     async ionViewWillEnter() {
@@ -102,10 +103,12 @@
         }
 
         try {
-          const resp = await CarrierService.createShipmentMethod(this.shipmentMethod);
+          let resp = await CarrierService.createShipmentMethod(this.shipmentMethod);
           if (!hasError(resp)) {
             showToast(translate("Shipment method created successfully."))
+            await this.updateCarrierShipmentMethodAssociation()
             await this.store.dispatch('carrier/fetchShipmentMethodTypes')
+            await this.store.dispatch('carrier/fetchCarrierShipmentMethods', {partyId: this.currentCarrier.partyId})
             await this.store.dispatch('carrier/checkAssociatedShipmentMethods')
             await this.store.dispatch('carrier/checkAssociatedProductStoreShipmentMethods')
             modalController.dismiss()
@@ -113,13 +116,36 @@
             throw resp.data
           }
         } catch(err: any) {
-          logger.log(err)
           let errorMessage = translate('Failed to create shipment method');
           if (err?.response?.data?.error?.message) {
             errorMessage = err.response.data.error.message
           }
           logger.error('error', err)
           showToast(errorMessage);
+        }
+      },
+      async updateCarrierShipmentMethodAssociation() {
+        try {
+          const payload = {
+            shipmentMethodTypeId: this.shipmentMethod.shipmentMethodTypeId,
+            partyId: this.currentCarrier.partyId,
+            roleTypeId: "CARRIER",
+            sequenceNumber: 1 //starting sequencing from 1
+          } as any
+
+          let currentCarrierShipmentMethods = this.currentCarrier.shipmentMethods ? JSON.parse(JSON.stringify(this.currentCarrier.shipmentMethods)) : {}
+          const values = Object.values(currentCarrierShipmentMethods) as any
+
+          //calculating next sequence number by adding one to sequence number of last shipment methods in the list
+          const sequenceNumber = values[values.length - 1].sequenceNumber
+          payload.sequenceNumber = sequenceNumber ? sequenceNumber + 1 : 1;
+
+          const resp = await CarrierService.addCarrierShipmentMethod(payload)
+          if (hasError(resp)) {
+            throw resp.data;
+          }
+        } catch (err: any) {
+          logger.log(err)
         }
       }
     },
