@@ -80,7 +80,7 @@
               <ion-list>
                 <ion-item>
                   <ion-icon :icon="mailOutline" slot="start" />
-                  <ion-label class="ion-text-wrap"> {{ order.billingEmail || "-" }} </ion-label>
+                  <ion-label class="ion-text-wrap">{{ order.billingEmail || "-" }}</ion-label>
                 </ion-item>
                 <ion-item>
                   <ion-icon :icon="callOutline" slot="start" />
@@ -107,12 +107,12 @@
                 </ion-card-header>
                 <ion-list>
                   <ion-item>
-                    <ion-label>{{ translate("Brand") }}</ion-label>
-                    <p slot="end">{{ currentEcomStore.storeName || "-" }}</p>
+                    <ion-label class="ion-text-wrap">{{ translate("Brand") }}</ion-label>
+                    <ion-label class="ion-text-wrap">{{ currentEcomStore.storeName || "-" }}</ion-label>
                   </ion-item>
                   <ion-item lines="none">
-                    <ion-label>{{ translate("Channel") }}</ion-label>
-                    <p slot="end">{{ order.salesChannel || "-" }}</p>
+                    <ion-label class="ion-text-wrap">{{ translate("Channel") }}</ion-label>
+                    <ion-label class="ion-text-wrap">{{ order.salesChanel || "-" }}</ion-label>
                   </ion-item>
                 </ion-list>
               </ion-card>
@@ -126,7 +126,7 @@
                     <ion-item lines="none">
                       <ion-label class="ion-text-wrap">
                         <p class="overline">{{ orderPayment.methodTypeId }}</p>
-                        {{ translate(getPaymentMethodDesc(orderPayment.methodTypeId)) || orderPayment.methodTypeId }}
+                        <ion-label>{{ translate(getPaymentMethodDesc(orderPayment.methodTypeId)) || orderPayment.methodTypeId }}</ion-label>
                         <ion-note :color="getColorByDesc(getStatusDesc(orderPayment.paymentStatus))">{{ translate(getStatusDesc(orderPayment.paymentStatus)) }}</ion-note>
                       </ion-label>
                       <p slot="end">{{ formatCurrency(orderPayment.amount, order.currencyUom) }}</p>
@@ -145,16 +145,16 @@
               </ion-card-header>
               <ion-list>
                 <ion-item>
-                  <ion-label class="ion-text-wrap"> {{ translate("Order Name") }} </ion-label>
-                  <p slot="end">{{ order.orderName || "-" }}</p>
+                  <ion-label class="ion-text-wrap">{{ translate("Order Name") }}</ion-label>
+                  <ion-label slot="end">{{ order.orderName || "-" }}</ion-label>
                 </ion-item>
                 <ion-item>
-                  <ion-label class="ion-text-wrap"> {{ translate("OMS ID") }} </ion-label>
-                  <p slot="end">{{ order.orderId || "-" }}</p>
+                  <ion-label class="ion-text-wrap">{{ translate("OMS ID") }}</ion-label>
+                  <ion-label slot="end">{{ order.orderId || "-" }}</ion-label>
                 </ion-item>
                 <ion-item lines="none">
-                  <ion-label class="ion-text-wrap"> {{ translate("Shopify ID") }} </ion-label>
-                  <p slot="end">{{ order.shopifyOrderId || "-" }} </p>
+                  <ion-label class="ion-text-wrap">{{ translate("Shopify ID") }}</ion-label>
+                  <ion-label slot="end">{{ order.shopifyOrderId || "-" }} </ion-label>
                 </ion-item>
               </ion-list>
             </ion-card>
@@ -166,11 +166,11 @@
               <ion-list>
                 <ion-item>
                   <ion-label class="ion-text-wrap">{{ translate("Customer ID") }}</ion-label>
-                  <p slot="end">{{ order.orderAttributes.customerid || "-" }}</p>
+                  <ion-label slot="end">{{ order.orderAttributes.customerid || "-" }}</ion-label>
                 </ion-item>
                 <ion-item lines="none">
                   <ion-label class="ion-text-wrap">{{ translate("Muncipio") }}</ion-label>
-                  <p slot="end">{{ order.orderAttributes.municipio || "-" }}</p>
+                  <ion-label slot="end">{{ order.orderAttributes.municipio || "-" }}</ion-label>
                 </ion-item>
               </ion-list>
             </ion-card>
@@ -203,17 +203,17 @@
 
                   <ion-item>
                     <ion-label class="ion-text-wrap">{{ translate("Price") }}</ion-label>
-                    <p slot="end">{{ formatCurrency(shipGroup.unitPrice, order.currencyUom) }}</p>
+                    <ion-label slot="end">{{ formatCurrency(shipGroup.unitPrice, order.currencyUom) }}</ion-label>
                   </ion-item>
 
                   <ion-item v-if="shipGroup.facilityId !== '_NA_'">
                     <ion-label class="ion-text-wrap">{{ translate("Allocation") }}</ion-label>
-                    <p slot="end">{{ order["shipGroupFacilityAllocationTime"][shipGroup.shipGroupSeqId] ? formatDateTime(order["shipGroupFacilityAllocationTime"][shipGroup.shipGroupSeqId]) : "-" }}</p>
+                    <ion-label slot="end">{{ order["shipGroupFacilityAllocationTime"][shipGroup.shipGroupSeqId] ? formatDateTime(order["shipGroupFacilityAllocationTime"][shipGroup.shipGroupSeqId]) : "-" }}</ion-label>
                   </ion-item>
 
                   <ion-item v-if="shipGroup.facilityId !== '_NA_'">
                     <ion-label class="ion-text-wrap">{{ translate("Fulfillment Status") }}</ion-label>
-                    <p slot="end">{{ translate(shipGroup.statusId === "ITEM_COMPLETED" ? shipGroup.shipmentMethodTypeId === "STOREPICKUP" ? "Picked up" : "Shipped" : order?.shipGroupFulfillmentStatus?.[shipGroup.shipGroupSeqId] || "Reserved") }}</p>
+                    <ion-label slot="end">{{ translate(shipGroup.statusId === "ITEM_COMPLETED" ? shipGroup.shipmentMethodTypeId === "STOREPICKUP" ? "Picked up" : "Shipped" : order?.shipGroupFulfillmentStatus?.[shipGroup.shipGroupSeqId] || "Reserved") }}</ion-label>
                   </ion-item>
 
                   <ion-item v-if="shipGroup.statusId !== 'ITEM_CANCELLED' && shipGroup.statusId !== 'ITEM_COMPLETED'">

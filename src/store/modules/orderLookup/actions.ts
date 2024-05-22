@@ -91,7 +91,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         inputFields: {
           orderId
         },
-        viewSize: 20,
+        viewSize: 50,
         filterByDate: "Y",
         entityName: "OrderHeaderAndRoles"
       }, {
@@ -100,14 +100,14 @@ const actions: ActionTree<OrderLookupState, RootState> = {
           contactMechPurposeTypeId: ["BILLING_LOCATION", "BILLING_EMAIL", "PHONE_BILLING"],
           contactMechPurposeTypeId_op: "in"
         },
-        viewSize: 20,
+        viewSize: 50,
         fieldList: ["contactMechPurposeTypeId", "contactMechId"],
         entityName: "OrderContactMech"
       }, {
         inputFields: {
           orderId
         },
-        viewSize: 20,
+        viewSize: 50,
         filterByDate: "Y",
         fieldList: ["orderIdentificationTypeId", "orderId", "idValue"],
         entityName: "OrderIdentification"
@@ -118,14 +118,14 @@ const actions: ActionTree<OrderLookupState, RootState> = {
           attrName_op: "in",
           attrName_ic: "Y"
         },
-        viewSize: 10,
+        viewSize: 50,
         fieldList: ["attrName", "attrValue"],
         entityName: "OrderAttribute"
       }, {
         inputFields: {
           orderId
         },
-        viewSize: 20,
+        viewSize: 250,
         orderBy: "changeDatetime",
         entityName: "OrderFacilityChange"
       }, {
@@ -142,14 +142,14 @@ const actions: ActionTree<OrderLookupState, RootState> = {
           statusId: "PAYMENT_CANCELLED",
           statusId_op: "notEqual"
         },
-        viewSize: 20,
+        viewSize: 50,
         fieldList: ["paymentMethodTypeId", "maxAmount", "statusId"],
         entityName: "OrderPaymentPreference"
       }, {
         inputFields: {
           orderId
         },
-        viewSize: 20,
+        viewSize: 50,
         entityName: "OrderItemShipGroupAndFacility"
       }]
 
@@ -246,7 +246,6 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       order["shipGroupFacilityAllocationTime"] = {}
       if(orderBrokeringInfo.status === "fulfilled" && !hasError(orderBrokeringInfo.value) && orderBrokeringInfo.value.data.count > 0) {
         order["firstBrokeredDate"] = orderBrokeringInfo.value.data.docs[0].changeDatetime
-        order["lastBrokeredDate"] = orderBrokeringInfo.value.data.docs[orderBrokeringInfo.value.data.count - 1].changeDatetime
         orderBrokeringInfo.value.data.docs.map((brokeringInfo: any) => {
           order["shipGroupFacilityAllocationTime"][brokeringInfo.shipGroupSeqId] = brokeringInfo.changeDatetime
         })
@@ -280,7 +279,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       }
 
       const shipGroupSeqIds: Array<string> = [];
-      let shipGroups = [];
+      let shipGroups = {};
       const productIds: Array<string> = []
       const shipmentMethodIds: Array<string> = []
 
