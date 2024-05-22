@@ -6,6 +6,9 @@ import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import logger from '@/logger'
 import store from '@/store';
+import { translate } from '@hotwax/dxp-components';
+import { showToast, isValidCarrierCode, isValidDeliveryDays } from '@/utils';
+  
 
 const actions: ActionTree<CarrierState, RootState> = {
 
@@ -24,7 +27,8 @@ const actions: ActionTree<CarrierState, RootState> = {
         "viewIndex": 0,
         "viewSize": 250,  // maximum records we could have
         "distinct": "Y",
-        "noConditionFind": "Y"
+        "noConditionFind": "Y",
+        "orderBy": "groupName"
       }
     
       resp = await CarrierService.fetchCarriers(params);
@@ -306,6 +310,49 @@ const actions: ActionTree<CarrierState, RootState> = {
       logger.error(error);
     }
     commit(types.CARRIER_CURRENT_UPDATED, currentCarrier)
+  },
+
+  async updateCarrierShipmentMethod({ state, dispatch }, payload) {
+    const {shipmentMethod, updatedData, messages} = payload;
+    const shipmentMethods = state.shipmentMethods;
+    const carrierShipmentMethods = state.current.shipmentMethods;
+    
+    try {
+      if (updatedData.fieldName === 'deliveryDays' && !isValidDeliveryDays(updatedData.fieldValue)) {
+        showToast(translate("Only positive numbers are allowed."));
+        return;
+      } 
+      if (updatedData.fieldName === 'carrierServiceCode' && !isValidCarrierCode(updatedData.fieldValue)) {
+        showToast(translate("Only alphanumeric characters are allowed."));
+        return;
+      }
+      const resp = await CarrierService.updateCarrierShipmentMethod({
+        shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
+        partyId: shipmentMethod.partyId,
+        roleTypeId: shipmentMethod.roleTypeId,
+        [updatedData["fieldName"]]: updatedData["fieldValue"]
+      })
+
+      if (!hasError(resp)) {
+        showToast(translate(messages["successMessage"]))
+        //updating shipment methods in state
+        const updatedShipmentMethods = JSON.parse(JSON.stringify(shipmentMethods));
+        const updatedShipmentMethod = updatedShipmentMethods[shipmentMethod.shipmentMethodTypeId];
+        updatedShipmentMethod[updatedData.fieldName] = updatedData.fieldValue;
+        dispatch('updateShipmentMethods', updatedShipmentMethods)
+
+        //updating current carrier shipment methods in state
+        const updatedCarrierShipmentMethods = JSON.parse(JSON.stringify(carrierShipmentMethods))
+        const updatedCarrierShipmentMethod = updatedCarrierShipmentMethods[shipmentMethod.shipmentMethodTypeId];
+        updatedCarrierShipmentMethod[updatedData.fieldName] = updatedData.fieldValue;
+        dispatch('updateCurrentCarrierShipmentMethods', updatedCarrierShipmentMethods)
+      } else {
+        throw resp.data
+      }
+    } catch (error) {
+      showToast(translate(messages["errorMessage"]))
+      logger.error(messages["errorMessage"], error)
+    }
   },
   
   async updateShipmentMethods({ commit }, payload) {
