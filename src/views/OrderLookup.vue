@@ -213,7 +213,7 @@ export default defineComponent ({
     this.isScrollingEnabled = false;
   },
   beforeRouteLeave(to) {
-    // Clearning the orderLookup information only when moving to a page other than detail page
+    // Clearing the orderLookup filters only when moving to a page other than detail page
     if(to.name !== "OrderLookupDetail") {
       this.store.dispatch("orderLookup/clearOrderLookup")
     }
