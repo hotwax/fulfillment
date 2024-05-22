@@ -19,6 +19,7 @@ npm-debug.log*
 .env
 .env.*
 .history
+.firebase
 
 /.idea
 /.ionic

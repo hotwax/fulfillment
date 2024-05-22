@@ -237,9 +237,13 @@
           {
             text: translate('Confirm'),
             handler: async (data: any) => {
-              if (data.groupName) {
+              if (!data.groupName.trim()) {
+                showToast(translate("Carrier name can not be empty."));
+                return;
+              }
+              if (data.groupName.trim() != this.currentCarrier.groupName) {
                 let resp;
-                const payload = { partyId: this.currentCarrier.partyId, ...data }
+                const payload = { partyId: this.currentCarrier.partyId, groupName: data.groupName.trim() }
                 emitter.emit('presentLoader')
 
                 try {

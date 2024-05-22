@@ -36,15 +36,15 @@ const mutations: MutationTree <OrderLookupState> = {
       itemCount: 0
     }
     state.query = {
-      'status': '',
-      'facility': '',
+      'status': [],
+      'facility': [],
       'storePickup': false,
       'shipFromStore': false,
       'unfillable': false,
       'queryString': '',
       'sort': 'orderDate desc',
-      'productStore': '',
-      'channel': '',
+      'productStore': [],
+      'channel': [],
       'date': '',
       'fromDate': '',
       'toDate': ''

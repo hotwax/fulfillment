@@ -47,7 +47,7 @@
     arrowForwardOutline
   } from 'ionicons/icons';
   import { translate } from "@hotwax/dxp-components";
-  import { generateInternalId } from "@/utils";
+  import { generateInternalId, showToast } from "@/utils";
   import { CarrierService } from '@/services/CarrierService';
 
   export default defineComponent({
@@ -86,7 +86,16 @@
         this.carrier.partyId = generateInternalId(event.target.value)
       },
       async createCarrier() {
-        const partyId = await CarrierService.createCarrier({...this.carrier, partyTypeId: "PARTY_GROUP"});
+        if (!this.carrier.groupName.trim()) {
+          showToast(translate("Carrier name can not be empty."));
+          return;
+        }
+        const payload = {
+          groupName: this.carrier.groupName.trim(),
+          partyId: this.carrier.partyId.trim(),
+          partyTypeId: "PARTY_GROUP"
+        }
+        const partyId = await CarrierService.createCarrier(payload);
         if (partyId) {
           this.store.dispatch('carrier/clearShipmentMethodQuery')
           this.$router.replace({ path: `/shipment-methods-setup/${partyId}` })
