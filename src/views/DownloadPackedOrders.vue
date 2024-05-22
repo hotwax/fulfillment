@@ -16,8 +16,7 @@
               <ion-icon :icon="addOutline" />
               <ion-label>{{ translate("New mapping") }}</ion-label>
             </ion-chip>
-            <ion-chip v-for="(mapping, index) in fieldMappings('EXPORD') ?? []" :key="index" @click="mapFields(mapping)"
-              :outline=true>
+            <ion-chip v-for="(mapping, index) in fieldMappings('EXPORD') ?? []" :key="index" @click="mapFields(mapping)" :outline=true>
               {{ mapping.name }}
             </ion-chip>
           </div>
@@ -26,8 +25,7 @@
         <ion-list>
           <ion-list-header>
             <ion-label>{{ translate('Selected Fields: ') }} {{ Object.keys(selectedFieldMappings).length }}</ion-label>
-            <ion-button fill="clear" @click="addCustomField()" :disabled="!Object.keys(fieldMapping).length">{{
-              translate('Add custom field') }}</ion-button>
+            <ion-button fill="clear" @click="addCustomField()" :disabled="!Object.keys(fieldMapping).length">{{translate('Add custom field') }}</ion-button>
           </ion-list-header>
           <ion-reorder-group @ionItemReorder="doReorder($event)" :disabled="false">
             <ion-item :key="field" v-for="(value, field) in selectedFieldMappings">
@@ -38,12 +36,10 @@
                 <ion-icon :icon="trashOutline" />
               </ion-button>
               <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
-              <ion-button v-if="!customFields[field] && value === field" fill="outline" @click="addCustomLabel(field)">{{
-                translate('Custom Label') }}</ion-button>
+              <ion-button v-if="!customFields[field] && value === field" fill="outline" @click="addCustomLabel(field)">{{translate('Custom Label') }}</ion-button>
               <!-- Using multiple if's instead of wrapping in a single parent div, to style the component properly without adding any extra css -->
               <ion-label v-if="!customFields[field] && value !== field" slot="end">{{ value }}</ion-label>
-              <ion-button v-if="!customFields[field] && value !== field" slot="end" fill="clear"
-                @click="addCustomLabel(field)">
+              <ion-button v-if="!customFields[field] && value !== field" slot="end" fill="clear" @click="addCustomLabel(field)">
                 <ion-icon :icon="pencilOutline" />
               </ion-button>
               <ion-label v-if="customFields[field]" slot="end">{{ value }}</ion-label>
@@ -127,8 +123,7 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       currentFacility: 'user/getCurrentFacility',
-      fieldMappings: 'user/getFieldMappings',
-      userProfile: 'user/getUserProfile'
+      fieldMappings: 'user/getFieldMappings'
     }),
     areAllFieldsSelected() {
       return Object.keys(this.fieldMapping).every((field: any) => this.selectedFieldMappings[field])
