@@ -271,14 +271,9 @@
 
           if (!hasError(resp)) {
             showToast(translate('Shipment method renamed.'))
-            const updatedShipmentMethods = Object.values(JSON.parse(JSON.stringify(this.shipmentMethods)))
-              .map((shipmentMethodData: any) => {
-                if (shipmentMethod.shipmentMethodTypeId === shipmentMethodData.shipmentMethodTypeId) {
-                  shipmentMethodData.description = updatedShipmentMethodName
-                }
-
-                return shipmentMethodData
-              })
+            const updatedShipmentMethods = JSON.parse(JSON.stringify(this.shipmentMethods));
+            const updatedShipmentMethod = updatedShipmentMethods[shipmentMethod.shipmentMethodTypeId];
+            updatedShipmentMethod.description = updatedShipmentMethodName;
             this.store.dispatch('carrier/updateShipmentMethods', updatedShipmentMethods)
           } else {
             throw resp.data

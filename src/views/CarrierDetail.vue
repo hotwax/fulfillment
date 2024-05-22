@@ -241,22 +241,24 @@
                 showToast(translate("Carrier name can not be empty."));
                 return;
               }
-              let resp;
-              const payload = { partyId: this.currentCarrier.partyId, groupName: data.groupName.trim() }
-              emitter.emit('presentLoader')
+              if (data.groupName.trim() != this.currentCarrier.groupName) {
+                let resp;
+                const payload = { partyId: this.currentCarrier.partyId, groupName: data.groupName.trim() }
+                emitter.emit('presentLoader')
 
-              try {
-                resp = await CarrierService.updateCarrier(payload)
-                if (!hasError(resp)) {
-                  showToast(translate("Carrier name updated successfully."))
-                  await this.store.dispatch("carrier/updateCurrentCarrier", { ...this.currentCarrier, ...payload });
-                } else {
-                  throw resp.data;
+                try {
+                  resp = await CarrierService.updateCarrier(payload)
+                  if (!hasError(resp)) {
+                    showToast(translate("Carrier name updated successfully."))
+                    await this.store.dispatch("carrier/updateCurrentCarrier", { ...this.currentCarrier, ...payload });
+                  } else {
+                    throw resp.data;
+                  }
+                } catch(err) {
+                  logger.error(err)
                 }
-              } catch(err) {
-                logger.error(err)
+                emitter.emit('dismissLoader')
               }
-              emitter.emit('dismissLoader')
             }
           }]
         })

@@ -88,7 +88,6 @@
           }]
         })
         await alert.present()
-        this.closePopover()
       },
       async editDeliveryDays() {
         const alert = await alertController.create({
@@ -110,7 +109,6 @@
           }]
         })
         await alert.present()
-        this.closePopover()
       },
       async editCarrierCode() {
         const alert = await alertController.create({
@@ -132,7 +130,6 @@
           }]
         })
         await alert.present()
-        this.closePopover()
       },
       async openEditSequenceModal() {
         const shipmentMethodSequenceModal = await modalController.create({
