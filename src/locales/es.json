@@ -180,7 +180,7 @@
   "Failed to update shipment gateway.": "Failed to update shipment gateway.",
   "Failed to update tracking code settings.": "Failed to update tracking code settings.",
   "Failed to update variance type.": "Failed to update variance type.",
-  "Fetching order information…": "Obteniendo información del pedido...",
+  "Fetching order information...": "Obteniendo información del pedido...",
   "Field mapping name": "Nombre del mapeo de campos",
   "File downloaded successfully": "Archivo descargado con éxito",
   "File uploaded successfully": "Archivo cargado con éxito",
