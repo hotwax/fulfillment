@@ -177,7 +177,7 @@
           </div>
         </section>
         <section>
-          <div v-if="Object.values(order.shipGroups).length">
+          <div v-if="order.shipGroups && Object.values(order.shipGroups).length">
             <div v-for="(shipGroups, index) in Object.values(order.shipGroups) as Array<any>" :key="index" class="ship-group-info ion-margin-vertical">
               <ion-item lines="none">
                 <ion-icon slot="start" :icon="shipGroups[0].facilityTypeId === 'RETAIL_STORE' ? storefrontOutline : golfOutline" />
