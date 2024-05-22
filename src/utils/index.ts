@@ -154,6 +154,18 @@ const sortItems = (items: any, sortByField: any) => {
   });
 }
 
+const isValidDeliveryDays = (deliveryDays : any) => {
+  // Regular expression pattern for a valid delivery days
+  const delieveryDaysPattern = /^(\d*\.?\d+)?$/;
+  return delieveryDaysPattern.test(deliveryDays);
+}
+
+const isValidCarrierCode = (trackingCode : any) => {
+  // Regular expression pattern for a valid tracking code
+  const trackingCodePattern = /^[a-zA-Z0-9]*$/;
+  return trackingCodePattern.test(trackingCode);
+}
+
 const currentSymbol: any = {
   "USD": "$",
   "EUR": "€",
@@ -182,4 +194,4 @@ const getColorByDesc = (desc: string) => ({
 } as any)[desc]
 
 
-export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getColorByDesc, getFeature, getIdentificationId, handleDateTimeInput, showToast, sortItems, hasError, parseCsv, jsonToCsv }
+export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getColorByDesc, getFeature, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, showToast, sortItems, hasError, parseCsv, jsonToCsv }
