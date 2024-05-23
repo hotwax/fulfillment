@@ -267,7 +267,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       return { isCompleted: true }
       item.pickedQuantity = parseInt(item.pickedQuantity) + 1;
       commit(types.ORDER_CURRENT_UPDATED, state.current )
-      return { isProductFound: true }
+      return { isProductFound: true, orderItem: item }
     }
     return { isProductFound: false }
   },
