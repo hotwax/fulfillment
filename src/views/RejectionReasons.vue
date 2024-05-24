@@ -261,6 +261,10 @@ export default defineComponent({
   --columns-desktop: 4;
 }
 
+.list-item:hover {
+  cursor: default;
+}
+
 .list-item ion-item {
   width: 100%;
 }

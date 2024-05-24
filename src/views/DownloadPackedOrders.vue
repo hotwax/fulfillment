@@ -80,7 +80,7 @@ import { mapGetters, useStore } from "vuex";
 import { alertController, IonBackButton, IonButton, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonReorder, IonReorderGroup, IonTitle, IonToolbar, modalController } from '@ionic/vue'
 import { addCircleOutline, addOutline, cloudDownloadOutline, pencilOutline, removeCircleOutline, trashOutline } from 'ionicons/icons'
 import { parseCsv, jsonToCsv, showToast } from '@/utils';
-import { translate } from "@hotwax/dxp-components"
+import { translate,useUserStore } from "@hotwax/dxp-components"
 import logger from '@/logger';
 import { DateTime } from 'luxon';
 import { useRouter } from 'vue-router';
@@ -253,7 +253,9 @@ export default defineComponent({
           text: translate("Download"),
           handler: async () => {
             const fileName = `HCPackedOrders-${this.currentFacility.facilityId}-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`
-            await jsonToCsv(downloadData, { download: true, name: fileName })
+            const userStore = useUserStore()
+            const locale = userStore.getLocale
+            await jsonToCsv(downloadData, { download: true, name: fileName, encode: locale === 'ja-JP' ? { default: 'shift-jis' } : {} })
             this.router.back();
           }
         }]

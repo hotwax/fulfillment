@@ -5,7 +5,8 @@ import { Plugins } from '@capacitor/core';
 import { toastController } from '@ionic/vue';
 import { saveAs } from 'file-saver';
 import { DateTime } from 'luxon';
-import Papa from 'papaparse'
+import Papa from 'papaparse';
+import Encoding from 'encoding-japanese';
 
 // TODO Use separate files for specific utilities
 
@@ -98,9 +99,17 @@ const jsonToCsv = (file: any, options: JsonToCsvOption = {}) => {
     default: "utf-8",
     ...options.encode
   };
-  const blob = new Blob([csv], {
-    type: "application/csvcharset=" + JSON.stringify(encoding)
-  });
+
+  let buffer: Uint8Array;
+  let blob: Blob;
+  if (encoding.default === 'shift-jis') {
+    buffer = new Uint8Array(Encoding.convert(Encoding.stringToCode(csv), 'SJIS'));
+    blob = new Blob([buffer], { type: `application/csv;charset=${encoding.default}` });
+    
+  } else {
+    blob = new Blob([csv], { type: `application/csv;charset=${encoding.default}` });
+  }
+
   if (options.download) {
     saveAs(blob, options.name ? options.name : "default.csv");
   }
