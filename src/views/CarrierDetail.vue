@@ -471,6 +471,9 @@
     margin-right: auto;
     margin-left: auto;
   }
+  ion-content {
+    --padding-bottom: 80px;
+  }
 
   .items-inline {
     display: grid;
