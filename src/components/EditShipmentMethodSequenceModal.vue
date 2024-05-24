@@ -169,4 +169,7 @@
   .list-item {
     --columns-desktop: 2;
   }
+  ion-content {
+    --padding-bottom: 80px;
+  }
   </style>
