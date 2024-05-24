@@ -125,7 +125,7 @@ export default defineComponent({
       this.closeModal();
     },
     areAllFieldsSelected() {
-      return Object.values(this.fieldMapping).every((field: any) => field.value !== "");
+      return Object.values(this.fieldMapping).every((field: any) => field.isCustomField || (field.value != "") );
     },
     //Todo: Generating unique identifiers as we are currently storing in local storage. Need to remove it as we will be storing data on server.
     generateUniqueMappingPrefId(): any {
