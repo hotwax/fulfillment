@@ -181,7 +181,6 @@
       async updateShipmentMethodName(shipmentMethod: any, updatedShipmentMethodName: any) {
         try {
           updatedShipmentMethodName = updatedShipmentMethodName.trim()
-          console.log("=======updatedShipmentMethodName==",updatedShipmentMethodName);
           if (!updatedShipmentMethodName) {
             showToast(translate("Shipment method name can not be empty."));
             return;
