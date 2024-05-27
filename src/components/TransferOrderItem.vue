@@ -31,7 +31,7 @@
       </div>
 
       <div class="qty-progress">
-        <ion-progress-bar :color="setProgressBarColor(item)" :value="getPickedToOrderedFraction(item)" />
+        <ion-progress-bar :color="getProgressBarColor(item)" :value="getPickedToOrderedFraction(item)" />
       </div>
 
       <div class="to-item-history">
@@ -100,12 +100,12 @@ export default defineComponent({
     }),
   },
   methods: {
-    setProgressBarColor(event:any, item: any) {
-         const fraction = this.getPickedToOrderedFraction(item);
-            if(fraction > 1) return 'danger'
-            else if(fraction == 1) return 'success'
-            else if(fraction < 1) return 'warning'
-      },
+    getProgressBarColor(item: any) {
+      const fraction = this.getPickedToOrderedFraction(item);
+      if(fraction > 1) return 'danger'
+      else if(fraction == 1) return 'success'
+      else if(fraction < 1) return 'warning'
+    },
     getPickedToOrderedFraction(item: any) {
       return (parseInt(item.pickedQuantity) + this.getShippedQuantity(item)) / item.orderedQuantity;
     },
