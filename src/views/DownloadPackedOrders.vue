@@ -169,7 +169,7 @@ export default defineComponent({
       try {
         this.content = await parseCsv(data).then(res => res);
 
-        // Creating a new field by combining the address1 and city field
+        // Creating a new field by combining the state and city field
         this.content = this.content.map((contentData: any) => {
           contentData["state+city"] = (contentData["state"] ? contentData["state"] : "") + (contentData["state"] && contentData["city"] ? " " : "") + (contentData["city"] ? contentData["city"] : "")
 
