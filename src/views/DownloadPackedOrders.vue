@@ -168,6 +168,13 @@ export default defineComponent({
     async parse(data: any) {
       try {
         this.content = await parseCsv(data).then(res => res);
+
+        // Creating a new field by combining the address1 and city field
+        this.content = this.content.map((contentData: any) => {
+          contentData["custom-address"] = (contentData["address1"] ? contentData["address1"] : "") + (contentData["address1"] && contentData["city"] ? " " : "") + (contentData["city"] ? contentData["city"] : "")
+
+          return contentData
+        })
         // get the column names from the data
         this.dataColumns = Object.keys(this.content[0]);
         // generating mapping only when we get the packed orders information and parsing of data is successfull
