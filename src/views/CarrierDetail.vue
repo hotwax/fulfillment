@@ -8,96 +8,94 @@
       </ion-header>
   
       <ion-content>
-        <main>
-          <ion-list class="items-inline">
-            <ion-item lines="none">
-              <ion-icon slot="start" :icon="peopleOutline"></ion-icon>
-              <ion-label>
-                <p class="overline">{{ currentCarrier.partyId }}</p>
-                {{ currentCarrier.groupName }}
-              </ion-label>
-              <ion-button slot="end" @click="updateCarrierName">{{ translate('Edit') }}</ion-button>
-            </ion-item>
-            <ion-item lines="none">
-              <ion-icon slot="start" :icon="shieldCheckmarkOutline"></ion-icon>
-              <ion-toggle v-if="selectedSegment != 'shipping-methods'" :checked="true" :disabled="selectedSegment != 'shipping-methods'">
-                {{ translate("Only methods for this carrier") }}
-              </ion-toggle>
-              <ion-toggle v-else  v-model="shipmentMethodQuery.showSelected" @ionChange="updateShipmentMethodQuery()">
-                {{ translate("Only methods for this carrier") }}
-              </ion-toggle>
-            </ion-item>
-          </ion-list>
-          <hr />
+        <ion-list class="items-inline">
+          <ion-item lines="none">
+            <ion-icon slot="start" :icon="peopleOutline"></ion-icon>
+            <ion-label>
+              <p class="overline">{{ currentCarrier.partyId }}</p>
+              {{ currentCarrier.groupName }}
+            </ion-label>
+            <ion-button slot="end" @click="updateCarrierName">{{ translate('Edit') }}</ion-button>
+          </ion-item>
+          <ion-item lines="none">
+            <ion-icon slot="start" :icon="shieldCheckmarkOutline"></ion-icon>
+            <ion-toggle v-if="selectedSegment != 'shipping-methods'" :checked="true" :disabled="selectedSegment != 'shipping-methods'">
+              {{ translate("Only methods for this carrier") }}
+            </ion-toggle>
+            <ion-toggle v-else  v-model="shipmentMethodQuery.showSelected" @ionChange="updateShipmentMethodQuery()">
+              {{ translate("Only methods for this carrier") }}
+            </ion-toggle>
+          </ion-item>
+        </ion-list>
+        <hr />
 
-          <ion-segment scrollable v-model="selectedSegment">
-            <ion-segment-button value="shipping-methods">
-              <ion-label>{{ translate("Methods") }}</ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="facilities">
-              <ion-label>{{ translate("Facilities") }}</ion-label>
-            </ion-segment-button>
-            <ion-segment-button v-for="(productStore, index) in productStores" :key="index" :value="productStore.productStoreId">
-              <ion-label>{{ productStore.storeName ? productStore.storeName : productStore.productStoreId }}</ion-label>
-            </ion-segment-button>
-          </ion-segment>
+        <ion-segment scrollable v-model="selectedSegment">
+          <ion-segment-button value="shipping-methods">
+            <ion-label>{{ translate("Methods") }}</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="facilities">
+            <ion-label>{{ translate("Facilities") }}</ion-label>
+          </ion-segment-button>
+          <ion-segment-button v-for="(productStore, index) in productStores" :key="index" :value="productStore.productStoreId">
+            <ion-label>{{ productStore.storeName ? productStore.storeName : productStore.productStoreId }}</ion-label>
+          </ion-segment-button>
+        </ion-segment>
 
-          <div class="segments" v-if="currentCarrier">
-            <template v-if="selectedSegment === 'shipping-methods'">
-              <ShipmentMethods />
-            </template>
-            <template v-else-if="selectedSegment === 'facilities'">
-              <section v-if="currentCarrier.facilities">
-                <ion-card v-for="(facility, index) in currentCarrier.facilities" :key="index">
-                  <ion-card-header>
-                    <div>
-                      <ion-card-title>{{ facility.facilityName }}</ion-card-title>
-                      <ion-card-subtitle>{{ facility.facilityId }}</ion-card-subtitle>
-                    </div>
-                    <ion-checkbox :checked="facility.isChecked" @click="updateCarrierFacility($event, facility)" />
-                  </ion-card-header>
-                </ion-card>
-              </section>
+        <div class="segments" v-if="currentCarrier">
+          <template v-if="selectedSegment === 'shipping-methods'">
+            <ShipmentMethods />
+          </template>
+          <template v-else-if="selectedSegment === 'facilities'">
+            <section v-if="currentCarrier.facilities">
+              <ion-card v-for="(facility, index) in currentCarrier.facilities" :key="index">
+                <ion-card-header>
+                  <div>
+                    <ion-card-title>{{ facility.facilityName }}</ion-card-title>
+                    <ion-card-subtitle>{{ facility.facilityId }}</ion-card-subtitle>
+                  </div>
+                  <ion-checkbox :checked="facility.isChecked" @click="updateCarrierFacility($event, facility)" />
+                </ion-card-header>
+              </ion-card>
+            </section>
+            <div v-else class="empty-state">
+              <p>{{ translate('No data found') }}</p>
+            </div>
+          </template>
+          <template v-for="(productStore, index) in productStores" :key="index">
+            <template v-if="selectedSegment === productStore.productStoreId">
+              <template v-if="Object.keys(carrierShipmentMethodsByProductStore).length != 0">
+                <div class="list-item ion-padding" v-for="(shipmentMethod, index) in carrierShipmentMethodsByProductStore[productStore.productStoreId]" :key="index">
+                  <ion-item lines="none">
+                    <ion-label>
+                      {{ getShipmentMethodDescription(shipmentMethod.shipmentMethodTypeId) }}
+                      <p>{{ shipmentMethod.shipmentMethodTypeId }}</p>
+                    </ion-label>
+                  </ion-item>
+                  <div class="tablet">
+                    <ion-chip v-if="shipmentMethod.shipmentGatewayConfigId" outline @click.stop="updateShipmentGatewayConfigId(shipmentMethod)">
+                      <ion-label>{{ getGatewayConfigDescription(shipmentMethod?.shipmentGatewayConfigId)}}</ion-label>
+                    </ion-chip>
+                    <ion-chip v-else :disabled="!shipmentMethod.isChecked" outline @click.stop="updateShipmentGatewayConfigId(shipmentMethod)">
+                      <ion-icon :icon="addCircleOutline" />
+                      <ion-label>{{ translate('gateway') }}</ion-label>
+                    </ion-chip>
+                    <ion-note class="config-label">{{ translate('gateway') }}</ion-note>
+                  </div>
+                  <div class="tablet">
+                    <ion-toggle :checked="shipmentMethod.isTrackingRequired" :disabled="!shipmentMethod.isChecked" @ionChange="updateTrackingRequired($event, shipmentMethod)"/>
+                    <ion-note class="config-label">{{ translate("require tracking code") }}</ion-note>
+                  </div>
+                  <div class="tablet">
+                    <ion-checkbox :checked="shipmentMethod.isChecked" @click="updateProductStoreShipmentMethodAssociation($event, shipmentMethod, productStore)" />
+                  </div>
+                </div>
+              </template>
               <div v-else class="empty-state">
                 <p>{{ translate('No data found') }}</p>
               </div>
             </template>
-            <template v-for="(productStore, index) in productStores" :key="index">
-              <template v-if="selectedSegment === productStore.productStoreId">
-                <template v-if="Object.keys(carrierShipmentMethodsByProductStore).length != 0">
-                  <div class="list-item ion-padding" v-for="(shipmentMethod, index) in carrierShipmentMethodsByProductStore[productStore.productStoreId]" :key="index">
-                    <ion-item lines="none">
-                      <ion-label>
-                        {{ getShipmentMethodDescription(shipmentMethod.shipmentMethodTypeId) }}
-                        <p>{{ shipmentMethod.shipmentMethodTypeId }}</p>
-                      </ion-label>
-                    </ion-item>
-                    <div class="tablet">
-                      <ion-chip v-if="shipmentMethod.shipmentGatewayConfigId" outline @click.stop="updateShipmentGatewayConfigId(shipmentMethod)">
-                        <ion-label>{{ getGatewayConfigDescription(shipmentMethod?.shipmentGatewayConfigId)}}</ion-label>
-                      </ion-chip>
-                      <ion-chip v-else :disabled="!shipmentMethod.isChecked" outline @click.stop="updateShipmentGatewayConfigId(shipmentMethod)">
-                        <ion-icon :icon="addCircleOutline" />
-                        <ion-label>{{ translate('gateway') }}</ion-label>
-                      </ion-chip>
-                      <ion-note class="config-label">{{ translate('gateway') }}</ion-note>
-                    </div>
-                    <div class="tablet">
-                      <ion-toggle :checked="shipmentMethod.isTrackingRequired" :disabled="!shipmentMethod.isChecked" @ionChange="updateTrackingRequired($event, shipmentMethod)"/>
-                      <ion-note class="config-label">{{ translate("require tracking code") }}</ion-note>
-                    </div>
-                    <div class="tablet">
-                      <ion-checkbox :checked="shipmentMethod.isChecked" @click="updateProductStoreShipmentMethodAssociation($event, shipmentMethod, productStore)" />
-                    </div>
-                  </div>
-                </template>
-                <div v-else class="empty-state">
-                  <p>{{ translate('No data found') }}</p>
-                </div>
-              </template>
-            </template>
-          </div>
-        </main>
+          </template>
+        </div>
       </ion-content>
       <ion-fab v-if="selectedSegment === 'shipping-methods'" vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="openCreateShipmentMethodModal()">
