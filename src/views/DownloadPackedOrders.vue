@@ -171,7 +171,7 @@ export default defineComponent({
 
         // Creating a new field by combining the address1 and city field
         this.content = this.content.map((contentData: any) => {
-          contentData["custom-address"] = (contentData["address1"] ? contentData["address1"] : "") + (contentData["address1"] && contentData["city"] ? " " : "") + (contentData["city"] ? contentData["city"] : "")
+          contentData["state+city"] = (contentData["state"] ? contentData["state"] : "") + (contentData["state"] && contentData["city"] ? " " : "") + (contentData["city"] ? contentData["city"] : "")
 
           return contentData
         })
