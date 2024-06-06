@@ -35,7 +35,7 @@
               <ion-button v-else slot="start" fill="clear" @click="removeCustomField(field)">
                 <ion-icon :icon="trashOutline" />
               </ion-button>
-              <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
+              <ion-label>{{ fields[field] ? translate(fields[field].label) : field }}</ion-label>
               <ion-button v-if="!customFields[field] && value === field" fill="outline" @click="addCustomLabel(field)">{{ translate('Custom Label') }}</ion-button>
               <!-- Using multiple if's instead of wrapping in a single parent div, to style the component properly without adding any extra css -->
               <ion-label v-if="!customFields[field] && value !== field" slot="end">{{ value }}</ion-label>
@@ -56,7 +56,7 @@
             <ion-button slot="start" fill="clear" @click="updateSelectedData(field)">
               <ion-icon color="success" :icon="addCircleOutline"/>
             </ion-button>
-            <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
+            <ion-label>{{ fields[field] ? translate(fields[field].label) : field }}</ion-label>
           </ion-item>
         </ion-list>
       </main> 
@@ -168,6 +168,13 @@ export default defineComponent({
     async parse(data: any) {
       try {
         this.content = await parseCsv(data).then(res => res);
+
+        // Creating a new field by combining the state and city field
+        this.content = this.content.map((contentData: any) => {
+          contentData["state+city"] = (contentData["state"] ? contentData["state"] : "") + (contentData["state"] && contentData["city"] ? " " : "") + (contentData["city"] ? contentData["city"] : "")
+
+          return contentData
+        })
         // get the column names from the data
         this.dataColumns = Object.keys(this.content[0]);
         // generating mapping only when we get the packed orders information and parsing of data is successfull
