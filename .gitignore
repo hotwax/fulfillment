@@ -36,3 +36,7 @@ npm-debug.log*
 
 
 !.env.example
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
