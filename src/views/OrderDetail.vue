@@ -521,6 +521,7 @@ export default defineComponent({
               emitter.emit('presentLoader');
               let toast: any;
               const shipmentIds: Array<any> = [...new Set(order.items.map((item: any) => item.shipmentId))]
+              const shippingLabelPdfUrls = order.shipmentPackages?.map((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
               try {
                 const resp = await OrderService.packOrder(params);
                 if (hasError(resp)) {
@@ -534,11 +535,16 @@ export default defineComponent({
                   toast.present()
 
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                    if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
+                      await OrderService.printPackingSlip(shipmentIds)
+                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                    } else {
+                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                    }
                   } else if (data.includes('printPackingSlip')) {
                     await OrderService.printPackingSlip(shipmentIds)
                   } else if (data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(shipmentIds)
+                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
                   }
                   if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
                     await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
@@ -786,13 +792,14 @@ export default defineComponent({
     },
     async printShippingLabel(order: any) {
       const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId)
+      const shippingLabelPdfUrls = order.shipmentPackages?.map((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
 
       if(!shipmentIds?.length) {
         showToast(translate('Failed to generate shipping label'))
         return;
       }
 
-      await OrderService.printShippingLabel(shipmentIds)
+      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
       if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
         await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
       }

@@ -199,6 +199,7 @@
         }
 
         currentShipment.isGeneratingShippingLabel = true;
+        const shippingLabelPdfUrls = currentShipment.shipmentPackages?.map((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
 
         if (!currentShipment.trackingCode) {
           //regenerate shipping label if missing tracking code
@@ -207,7 +208,7 @@
           if (!hasError(resp)) {
             this.showLabelError = false;
             showToast(translate("Shipping Label generated successfully"))
-            await OrderService.printShippingLabel([currentShipment.shipmentId])
+            await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
             await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
           } else {
             this.showLabelError = true;
@@ -216,7 +217,7 @@
         } else {
           this.showLabelError = false;
           //print shipping label if label already exists
-          await OrderService.printShippingLabel([currentShipment.shipmentId])
+          await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
         }
 
         currentShipment.isGeneratingShippingLabel = false;

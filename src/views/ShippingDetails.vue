@@ -95,7 +95,8 @@ export default defineComponent({
   methods: {
     async printShippingLabel(order: any) {
       const shipmentIds = order?.shipmentIds?.length > 0 ? order?.shipmentIds : order.shipments?.map((shipment: any) => shipment.shipmentId);
-      await OrderService.printShippingLabel(shipmentIds)
+      const shippingLabelPdfUrls = order.shipmentPackages?.map((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
     },
     async retryShippingLabel(order: any) {
       const shipmentIds = order.shipmentPackages.map((shipmentPackage: any) => shipmentPackage.shipmentId);

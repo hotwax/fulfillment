@@ -344,20 +344,21 @@
         }
 
         currentShipment.isGeneratingShippingLabel = true;
+        const shippingLabelPdfUrls = currentShipment.shipmentPackages?.map((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
 
         if (!currentShipment.trackingIdNumber) {
           //regenerate shipping label if missing tracking code
           const resp = await OrderService.retryShippingLabel([currentShipment.shipmentId])
           if (!hasError(resp)) {
             showToast(translate("Shipping Label generated successfully"))
-            await OrderService.printShippingLabel([currentShipment.shipmentId])
+            await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
             await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.currentOrder.orderId })
           } else {
             showToast(translate("Failed to generate shipping label"))
           }
         } else {
           //print shipping label if label already exists
-          await OrderService.printShippingLabel([currentShipment.shipmentId])
+          await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
         }
 
         currentShipment.isGeneratingShippingLabel = false;
