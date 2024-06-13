@@ -660,7 +660,9 @@ export default defineComponent({
     },
     async printShippingLabel(order: any) {
       const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId)
-      const shippingLabelPdfUrls = order.shipmentPackages?.map((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+      const shippingLabelPdfUrls = order.shipmentPackages
+          ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+          .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
       if(!shipmentIds?.length) {
         showToast(translate('Failed to generate shipping label'))
         return

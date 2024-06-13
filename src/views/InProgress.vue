@@ -558,7 +558,10 @@ export default defineComponent({
                   toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
                   toast.present()
 
-                  const shippingLabelPdfUrls = order.shipmentPackages?.map((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+                  const shippingLabelPdfUrls = order.shipmentPackages
+                      ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+                      .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
                     if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
                       await OrderService.printPackingSlip(shipmentIds)

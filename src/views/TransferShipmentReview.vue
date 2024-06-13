@@ -199,7 +199,10 @@
         }
 
         currentShipment.isGeneratingShippingLabel = true;
-        const shippingLabelPdfUrls = currentShipment.shipmentPackages?.map((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+        const shippingLabelPdfUrls = currentShipment.shipmentPackages
+          ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+          .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+        
 
         if (!currentShipment.trackingCode) {
           //regenerate shipping label if missing tracking code
