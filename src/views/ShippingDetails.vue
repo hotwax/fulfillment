@@ -104,6 +104,8 @@ export default defineComponent({
       const shipmentIds = order.shipmentPackages.map((shipmentPackage: any) => shipmentPackage.shipmentId);
       const resp = await OrderService.retryShippingLabel(shipmentIds)
       if (!hasError(resp)) {
+        await this.store.dispatch('order/updateShipmentPackageDetail', order) 
+        order = this.currentOrder;
         showToast(translate("Shipping Label generated successfully"))
         await this.printShippingLabel(order)
       } else {
