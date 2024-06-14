@@ -141,10 +141,13 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     
     try {
       let eligibleItems = payload.items.filter((item: any) => item.pickedQuantity > 0)
+      let seqIdCounter = 1;
       eligibleItems = eligibleItems.map((item:any) => ({
+        orderItemSeqId: item.orderItemSeqId, //This is needed to map shipment item with order item correctly if multiple order items for the same product are there in the TO.
         productId: item.productId,
         sku: item.internalName,
-        quantity: parseInt(item.pickedQuantity) // Using parseInt to convert to an integer
+        quantity: parseInt(item.pickedQuantity), // Using parseInt to convert to an integer
+        itemSeqId: String(seqIdCounter++).padStart(5, '0') // This is needed to correctly create the shipment package content if multiple order items for the same product are there in the TO.
       }));  
 
       const params = {
