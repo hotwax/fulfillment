@@ -104,8 +104,10 @@ export default defineComponent({
       const shipmentIds = order.shipmentPackages.map((shipmentPackage: any) => shipmentPackage.shipmentId);
       const resp = await OrderService.retryShippingLabel(shipmentIds)
       if (!hasError(resp)) {
+        //Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
         await this.store.dispatch('order/updateShipmentPackageDetail', order) 
         order = this.currentOrder;
+        
         showToast(translate("Shipping Label generated successfully"))
         await this.printShippingLabel(order)
       } else {

@@ -638,8 +638,10 @@ export default defineComponent({
       // TODO Handle error case
       const resp = await OrderService.retryShippingLabel(shipmentIds)
       if (!hasError(resp)) {
+        //Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
         await this.store.dispatch('order/updateShipmentPackageDetail', order)
         order = this.completedOrders.list.find((completedOrder:any) => completedOrder.orderId === order.orderId);
+
         showToast(translate("Shipping Label generated successfully"))
         await this.printShippingLabel(order)
         // TODO fetch specific order
