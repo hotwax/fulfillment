@@ -7,12 +7,14 @@ import * as types from './mutation-types'
 import { showToast } from '@/utils'
 import { hasError } from '@/adapter'
 import { translate } from '@hotwax/dxp-components'
-import { Settings } from 'luxon'
-import { logout, updateInstanceUrl, updateToken, resetConfig, getUserFacilities } from '@/adapter'
+import { DateTime, Settings } from 'luxon';
+import { logout, updateInstanceUrl, updateToken, resetConfig, getUserFacilities, getNotificationEnumIds,
+  getNotificationUserPrefTypeIds, storeClientRegistrationToken } from '@/adapter'
 import logger from '@/logger'
 import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from '@/authorization'
 import { useAuthStore, useUserStore, useProductIdentificationStore } from '@hotwax/dxp-components'
 import emitter from '@/event-bus'
+import { generateDeviceId, generateTopicName } from '@/utils/firebase'
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -150,6 +152,7 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_END_SESSION)
     this.dispatch('order/clearOrders')
     this.dispatch("orderLookup/clearOrderLookup")
+    this.dispatch('user/clearNotificationState')
     resetConfig();
     resetPermissions();
 
@@ -393,7 +396,65 @@ const actions: ActionTree<UserState, RootState> = {
   
   updatePwaState({ commit }, payload) {
     commit(types.USER_PWA_STATE_UPDATED, payload);
+  },
+
+  addNotification({ state, commit }, payload) {
+    const notifications = JSON.parse(JSON.stringify(state.notifications))
+    notifications.push({ ...payload.notification, time: DateTime.now().toMillis() })
+    commit(types.USER_UNREAD_NOTIFICATIONS_STATUS_UPDATED, true)
+    if (payload.isForeground) {
+      showToast(translate("New notification received."));
+    }
+    commit(types.USER_NOTIFICATIONS_UPDATED, notifications)
+  },
+
+  async fetchNotificationPreferences({ commit, state }) {
+    let resp = {} as any
+    const facilityId = (state.currentFacility as any).facilityId
+    let notificationPreferences = [], enumerationResp = [], userPrefIds = [] as any
+    try {
+      resp = await getNotificationEnumIds(process.env.VUE_APP_NOTIF_ENUM_TYPE_ID as any)
+      enumerationResp = resp.docs
+      resp = await getNotificationUserPrefTypeIds(process.env.VUE_APP_NOTIF_APP_ID as any, state.current.userLoginId)
+      userPrefIds = resp.docs.map((userPref: any) => userPref.userPrefTypeId)
+    } catch (error) {
+      logger.error(error)
+    } finally {
+      // checking enumerationResp as we want to show disbaled prefs if only getNotificationEnumIds returns
+      // data and getNotificationUserPrefTypeIds fails or returns empty response (all disbaled)
+      if (enumerationResp.length) {
+        notificationPreferences = enumerationResp.reduce((notifactionPref: any, pref: any) => {
+          const userPrefTypeIdToSearch = generateTopicName(facilityId, pref.enumId)
+          notifactionPref.push({ ...pref, isEnabled: userPrefIds.includes(userPrefTypeIdToSearch) })
+          return notifactionPref
+        }, [])
+      }
+      commit(types.USER_NOTIFICATIONS_PREFERENCES_UPDATED, notificationPreferences)
+    }
+  },
+
+  async storeClientRegistrationToken({ commit }, registrationToken) {
+    const firebaseDeviceId = generateDeviceId()
+    commit(types.USER_FIREBASE_DEVICEID_UPDATED, firebaseDeviceId)
+
+    try {
+      await storeClientRegistrationToken(registrationToken, firebaseDeviceId,  process.env.VUE_APP_NOTIF_APP_ID as any)
+    } catch (error) {
+      logger.error(error)
+    }
+  },
+
+  clearNotificationState({ commit }) {
+    commit(types.USER_NOTIFICATIONS_UPDATED, [])
+    commit(types.USER_NOTIFICATIONS_PREFERENCES_UPDATED, [])
+    commit(types.USER_FIREBASE_DEVICEID_UPDATED, '')
+    commit(types.USER_UNREAD_NOTIFICATIONS_STATUS_UPDATED, true)
+  },
+
+  setUnreadNotificationsStatus({ commit }, payload) {
+    commit(types.USER_UNREAD_NOTIFICATIONS_STATUS_UPDATED, payload)
   }
+
 }
 
 export default actions;

@@ -21,6 +21,7 @@ import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
 import { translate } from '@hotwax/dxp-components'
 import 'vue-router'
+import Notifications from '@/views/Notifications.vue'
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -235,6 +236,12 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       permissionId: "APP_CARRIERS_CREATE"
     }
+  },
+  {
+    path: '/notifications',
+    name: "Notifications",
+    component: Notifications,
+    beforeEnter: authGuard,
   }
 ]
 
