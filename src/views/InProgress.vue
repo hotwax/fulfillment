@@ -558,12 +558,21 @@ export default defineComponent({
                   toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
                   toast.present()
 
+                  const shippingLabelPdfUrls = order.shipmentPackages
+                      ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+                      .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
+                    if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
+                      await OrderService.printPackingSlip(shipmentIds)
+                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                    } else {
                     await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                    }
                   } else if (data.includes('printPackingSlip')) {
                     await OrderService.printPackingSlip(shipmentIds)
                   } else if (data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(shipmentIds)
+                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
                   }
 
                   if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
@@ -642,6 +651,15 @@ export default defineComponent({
               )
               .flat() as Array<string>;
 
+              const shippingLabelPdfUrls = orderList
+              .map((order: any) =>
+                [...new Set(order.shipmentPackages
+                  .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+                  .filter((url: string | null) => url !== null)
+                )]
+              )
+              .flat() as Array<string>;
+
               try {
                 const resp = await OrderService.packOrders({
                   shipmentIds
@@ -658,11 +676,16 @@ export default defineComponent({
                   toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
                   toast.present()
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                    if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
+                      await OrderService.printPackingSlip(shipmentIds)
+                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                    } else {
+                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                    }
                   } else if (data.includes('printPackingSlip')) {
                     await OrderService.printPackingSlip(shipmentIds)
                   } else if (data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(shipmentIds)
+                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
                   }
                   //print custom documents like international invoice 
                   await OrderService.printCustomDocuments(internationalInvoiceUrls);

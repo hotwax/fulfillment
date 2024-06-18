@@ -175,6 +175,10 @@ const isValidCarrierCode = (trackingCode : any) => {
   return trackingCodePattern.test(trackingCode);
 }
 
+const  isPdf = (url: any) => {
+  return url && url.toLowerCase().endsWith('.pdf');
+}
+
 const currentSymbol: any = {
   "USD": "$",
   "EUR": "€",
@@ -203,4 +207,4 @@ const getColorByDesc = (desc: string) => ({
 } as any)[desc]
 
 
-export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getColorByDesc, getFeature, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, showToast, sortItems, hasError, parseCsv, jsonToCsv }
+export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getColorByDesc, getFeature, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, parseCsv, jsonToCsv }

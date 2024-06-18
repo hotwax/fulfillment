@@ -565,6 +565,52 @@ const actions: ActionTree<OrderState, RootState> = {
     commit(types.ORDER_CURRENT_UPDATED, order)
   },
 
+  async updateShipmentPackageDetail ({ commit, state }, payload) {
+    const currentOrder = JSON.parse(JSON.stringify(state.current));
+    const completedOrders = JSON.parse(JSON.stringify(state.completed.list));
+
+    try {
+      const shipmentIds = payload?.shipments?.map((shipment: any) => shipment.shipmentId);
+      const shipmentPackages = await UtilService.findShipmentPackages([...shipmentIds])
+      const shipmentPackageValues = Object.values(shipmentPackages).flat() as any;
+
+      const shipmentPackagesMap = shipmentPackageValues?.reduce((shipmentPackageDetail:any, shipmentPackage:any) => {
+        const key = `${shipmentPackage.shipmentId}-${shipmentPackage.shipmentPackageSeqId}`;
+        shipmentPackageDetail[key] = shipmentPackage;
+        return shipmentPackageDetail;
+      }, {});
+
+      const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? shipmentPackageValues.some((shipmentPackage:any) => !shipmentPackage.trackingCode) : false;
+
+      const updateShipmentPackages = (order:any) => {
+        order.shipmentPackages.forEach((shipmentPackage:any) => {
+          const key = `${shipmentPackage.shipmentId}-${shipmentPackage.shipmentPackageSeqId}`;
+          const updatedShipmentPackage = shipmentPackagesMap[key];
+          if (updatedShipmentPackage) {
+            shipmentPackage.trackingCode = updatedShipmentPackage.trackingCode;
+            shipmentPackage.labelPdfUrl = updatedShipmentPackage.labelPdfUrl;
+            shipmentPackage.missingLabelImage = missingLabelImage;
+          }
+        });
+      };
+  
+      if (currentOrder && currentOrder.orderId === payload.orderId) {
+        updateShipmentPackages(currentOrder);
+        commit(types.ORDER_CURRENT_UPDATED, currentOrder);
+      }
+  
+      if (completedOrders && completedOrders.length > 0) {
+        const order = completedOrders.find((completedOrder:any) => completedOrder.orderId === payload.orderId);
+        if (order) {
+          updateShipmentPackages(order);
+          commit(types.ORDER_COMPLETED_UPDATED, { list: completedOrders, total: state.completed.total });
+        }
+      }
+    } catch(err) {
+      logger.error('Failed to fetch shipment packages.', err)
+    }
+  },
+
   async clearOrders ({ commit }) {
     commit(types.ORDER_INPROGRESS_CLEARED)
     commit(types.ORDER_OPEN_CLEARED)
