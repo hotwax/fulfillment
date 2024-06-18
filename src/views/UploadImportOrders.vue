@@ -95,7 +95,8 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      fieldMappings: 'user/getFieldMappings'
+      fieldMappings: 'user/getFieldMappings',
+      currentFacility: 'user/getCurrentFacility',
     })
   },
   ionViewDidEnter() {
@@ -141,7 +142,7 @@ export default defineComponent({
 
       const uploadData = this.content.map((order: any) => ({
         'orderIdValue': order[this.fieldMapping['orderId'].value],
-        'externalFacilityId': order[this.fieldMapping['facilityId'].value],
+        'externalFacilityId': order[this.fieldMapping['facilityId'].value] ? order[this.fieldMapping['facilityId'].value] : this.currentFacility?.facilityId,
         'trackingNumber': order[this.fieldMapping['trackingCode'].value]
       }))
 
