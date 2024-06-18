@@ -1,6 +1,7 @@
 import { api, client, hasError } from '@/adapter';
 import logger from '@/logger';
 import store from '@/store';
+import { isPdf } from '@/utils';
 
 const fetchShipmentMethods = async (query: any): Promise <any>  => {
   return api({
@@ -84,7 +85,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
       "shipmentId": shipmentIds,
       "shipmentId_op": "in"
     },
-    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "picklistBinId", "isTrackingRequired", "trackingCode", "internationalInvoiceUrl"],
+    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "picklistBinId", "isTrackingRequired", "trackingCode", "internationalInvoiceUrl", "labelImageUrl"],
     "viewSize": shipmentIds.length,
     "distinct": "Y"
   }
@@ -100,6 +101,9 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
       shipmentPackages = resp.data.docs.reduce((shipmentForOrders: any, shipmentPackage: any) => {
         // creating key in this pattern as the same order can have multiple picklist bin and in that we need to find to which picklist bin shipment is associated
         const key = `${shipmentPackage.primaryOrderId}_${shipmentPackage.picklistBinId}`
+        if (shipmentPackage.labelImageUrl && isPdf(shipmentPackage.labelImageUrl)) {
+          shipmentPackage.labelPdfUrl = shipmentPackage.labelImageUrl;
+        }
         if(shipmentForOrders[key]) {
           shipmentForOrders[key].push(shipmentPackage)
         } else {

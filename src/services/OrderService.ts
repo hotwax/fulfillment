@@ -478,8 +478,10 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
   }
 }
 
-const printShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
+const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>): Promise<any> => {
   try {
+    let pdfUrls = shippingLabelPdfUrls;
+    if (!pdfUrls || pdfUrls.length == 0) {
     // Get packing slip from the server
     const resp: any = await api({
       method: 'get',
@@ -496,13 +498,17 @@ const printShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
 
     // Generate local file URL for the blob received
     const pdfUrl = window.URL.createObjectURL(resp.data);
+    pdfUrls = [pdfUrl];
+    }
     // Open the file in new tab
+    pdfUrls.forEach((pdfUrl: string) => {
     try {
       (window as any).open(pdfUrl, "_blank").focus();
     }
     catch {
       showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'shipping label'}), { icon: cogOutline });
     }
+    })
 
   } catch (err) {
     showToast(translate('Failed to print shipping label'))

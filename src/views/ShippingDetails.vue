@@ -95,12 +95,19 @@ export default defineComponent({
   methods: {
     async printShippingLabel(order: any) {
       const shipmentIds = order?.shipmentIds?.length > 0 ? order?.shipmentIds : order.shipments?.map((shipment: any) => shipment.shipmentId);
-      await OrderService.printShippingLabel(shipmentIds)
+      const shippingLabelPdfUrls = order.shipmentPackages
+          ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+          .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
     },
     async retryShippingLabel(order: any) {
       const shipmentIds = order.shipmentPackages.map((shipmentPackage: any) => shipmentPackage.shipmentId);
       const resp = await OrderService.retryShippingLabel(shipmentIds)
       if (!hasError(resp)) {
+        //Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
+        await this.store.dispatch('order/updateShipmentPackageDetail', order) 
+        order = this.currentOrder;
+        
         showToast(translate("Shipping Label generated successfully"))
         await this.printShippingLabel(order)
       } else {
