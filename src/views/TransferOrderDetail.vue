@@ -344,7 +344,7 @@
         }
 
         currentShipment.isGeneratingShippingLabel = true;
-        const shippingLabelPdfUrls = currentShipment.shipmentPackages
+        let shippingLabelPdfUrls = currentShipment.shipmentPackages
           ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
           .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
 
@@ -354,8 +354,16 @@
           const resp = await OrderService.retryShippingLabel([currentShipment.shipmentId])
           if (!hasError(resp)) {
             showToast(translate("Shipping Label generated successfully"))
-            await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
+            
+            //retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
             await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.currentOrder.orderId })
+            currentShipment = this.currentOrder?.shipments?.find((shipment:any) => shipment.shipmentId === currentShipment.shipmentId);
+            shippingLabelPdfUrls = currentShipment?.shipmentPackages
+                ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+                .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+
+
+            await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
           } else {
             showToast(translate("Failed to generate shipping label"))
           }
