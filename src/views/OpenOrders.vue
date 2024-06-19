@@ -9,6 +9,9 @@
         <ion-title v-else>{{ openOrders.query.viewSize }} {{ translate('of') }} {{ openOrders.total }} {{ translate('orders') }}</ion-title>
      
         <ion-buttons slot="end">
+          <ion-button @click="viewNotifications()">
+            <ion-icon slot="icon-only" :icon="notificationsOutline" :color="(unreadNotificationsStatus && notifications.length) ? 'primary' : ''" />
+          </ion-button>
           <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !openOrders.total" fill="clear" color="danger" @click="recycleOutstandingOrders()">
             {{ translate("Reject all") }}
           </ion-button>
@@ -169,7 +172,7 @@ import {
   popoverController
 } from '@ionic/vue';
 import { computed, defineComponent } from 'vue';
-import { caretDownOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
+import { caretDownOutline, cubeOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
@@ -220,7 +223,9 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       currentEComStore: 'user/getCurrentEComStore',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
-      getProductStock: 'stock/getProductStock'
+      getProductStock: 'stock/getProductStock',
+      notifications: 'user/getNotifications',
+      unreadNotificationsStatus: 'user/getUnreadNotificationsStatus'
     })
   },
   data () {
@@ -236,6 +241,10 @@ export default defineComponent({
   methods: {
     getErrorMessage() {
       return this.searchedQuery === '' ? translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility.facilityName }) : translate( "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+    },
+    viewNotifications() {
+      this.store.dispatch('user/setUnreadNotificationsStatus', false)
+      this.$router.push({ path: '/notifications' })
     },
     getOpenOrders() {
       return JSON.parse(JSON.stringify(this.openOrders.list)).slice(0, (this.openOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
@@ -424,6 +433,7 @@ export default defineComponent({
       getFeature,
       getProductIdentificationValue,
       hasPermission,
+      notificationsOutline,
       optionsOutline,
       pricetagOutline,
       printOutline,

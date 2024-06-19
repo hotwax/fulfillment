@@ -140,6 +140,22 @@
             <ion-toggle label-placement="start" :checked="userPreference.printPackingSlip" @ionChange="setPrintPackingSlipPreference($event)">{{ translate("Generate packing slip") }}</ion-toggle>
           </ion-item>
         </ion-card>
+
+        <ion-card v-if="notificationPrefs.length">
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Notification Preference") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate('Select the notifications you want to receive.') }}
+          </ion-card-content>
+          <ion-list>
+            <ion-item :key="pref.enumId" v-for="pref in notificationPrefs" lines="none">
+              <ion-toggle label-placement="start" @click="confirmNotificationPrefUpdate(pref.enumId, $event)" :checked="pref.isEnabled">{{ pref.description }}</ion-toggle>
+            </ion-item>
+          </ion-list>
+        </ion-card>
       </section>
     </ion-content>
   </ion-page>
@@ -160,6 +176,7 @@ import {
   IonIcon, 
   IonItem, 
   IonLabel,
+  IonList,
   IonMenuButton,
   IonPage, 
   IonProgressBar,
@@ -178,13 +195,17 @@ import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { UserService } from '@/services/UserService';
 import { showToast } from '@/utils';
-import { hasError } from '@/adapter';
+import { hasError, removeClientRegistrationToken, subscribeTopic, unsubscribeTopic } from '@/adapter'
 import { translate } from '@hotwax/dxp-components';
 import logger from '@/logger';
 import { Actions, hasPermission } from '@/authorization'
 import { DateTime } from 'luxon';
 import Image from '@/components/Image.vue';
 import OrderLimitPopover from '@/components/OrderLimitPopover.vue'
+import emitter from "@/event-bus"
+import { generateTopicName } from "@/utils/firebase";
+
+
 
 export default defineComponent({
   name: 'Settings',
@@ -201,6 +222,7 @@ export default defineComponent({
     IonHeader, 
     IonIcon,
     IonItem, 
+    IonList,
     IonLabel,
     IonMenuButton,
     IonPage, 
@@ -231,11 +253,17 @@ export default defineComponent({
       instanceUrl: 'user/getInstanceUrl',
       currentEComStore: 'user/getCurrentEComStore',
       userPreference: 'user/getUserPreference',
-      locale: 'user/getLocale'
+      locale: 'user/getLocale',
+      notificationPrefs: 'user/getNotificationPrefs',
+      firebaseDeviceId: 'user/getFirebaseDeviceId',
     })
   },
   async ionViewWillEnter() {
     Promise.all([this.getCurrentFacilityDetails(), this.getFacilityOrderCount(), this.getEcomInvStatus()]);
+    
+    // as notification prefs can also be updated from the notification pref modal,
+    // latest state is fetched each time we open the settings page
+    await this.store.dispatch('user/fetchNotificationPreferences')
   },
   methods: {
     async getCurrentFacilityDetails() {
@@ -341,7 +369,16 @@ export default defineComponent({
         logger.error('Failed to fetch eCom inventory config', err)
       }
     },
-    logout () {
+    async logout () {
+
+      // remove firebase notification registration token -
+      // OMS and auth is required hence, removing it before logout (clearing state)
+      try {
+        await removeClientRegistrationToken(this.firebaseDeviceId, process.env.VUE_APP_NOTIF_APP_ID as any)
+      } catch (error) {
+        logger.error(error)
+      }
+
       this.store.dispatch('user/logout', { isUserUnauthorised: false }).then((redirectionUrl) => {
         this.store.dispatch('order/clearOrders')
 
@@ -381,6 +418,7 @@ export default defineComponent({
         await this.store.dispatch('user/setFacility', {
           'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == event.detail.value)
         });
+        await this.store.dispatch('user/fetchNotificationPreferences')
         this.store.dispatch('order/clearOrders')
         this.getCurrentFacilityDetails();
         this.getFacilityOrderCount();
@@ -498,6 +536,54 @@ export default defineComponent({
     },
     setLocale(locale: string) {
       this.store.dispatch('user/setLocale',locale)
+    },
+    async updateNotificationPref(enumId: string, event: any) {
+      try {
+        emitter.emit('presentLoader',  { backdropDismiss: false })
+        const facilityId = (this.currentFacility as any).facilityId
+        const topicName = generateTopicName(facilityId, enumId)
+        // event.target.checked returns the initial value (the value that was there before clicking
+        // and updating the toggle). But it returns the updated value on further references (if passed
+        // as a parameter in other function, here in our case, passed from confirmNotificationPrefUpdate)
+        // Hence, event.target.checked here holds the updated value (value after the toggle action)
+        event.target.checked
+          ? await subscribeTopic(topicName, process.env.VUE_APP_NOTIF_APP_ID as any)
+          : await unsubscribeTopic(topicName, process.env.VUE_APP_NOTIF_APP_ID as any)
+        showToast(translate('Notification preferences updated.'))
+      } catch (error) {
+        // reverting the value of toggle as event.target.checked is 
+        // updated on click event, and revert is needed on API fail
+        event.target.checked = !event.target.checked;
+        showToast(translate('Notification preferences not updated. Please try again.'))
+      } finally {
+        emitter.emit("dismissLoader")
+      }
+    },
+    async confirmNotificationPrefUpdate(enumId: string, event: any) {
+      const message = translate("Are you sure you want to update the notification preferences?");
+      const alert = await alertController.create({
+        header: translate("Update notification preferences"),
+        message,
+        buttons: [
+          {
+            text: translate("Cancel"),
+            handler: () => {
+              // reverting the value of toggle as event.target.checked is 
+              // updated on click event and revert is needed on "Cancel"
+              event.target.checked = !event.target.checked
+            }
+          },
+          {
+            text: translate("Confirm"),
+            handler: async () => {
+              // passing event reference for updation in case the API fails
+              alertController.dismiss()
+              await this.updateNotificationPref(enumId, event)
+            }
+          }
+        ],
+      });
+      return alert.present();
     }
   },
   setup() {

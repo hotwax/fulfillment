@@ -46,6 +46,18 @@ const mutations: MutationTree <UserState> = {
     [types.USER_PWA_STATE_UPDATED](state, payload) {
         state.pwaState.registration = payload.registration;
         state.pwaState.updateExists = payload.updateExists;
+    },
+    [types.USER_NOTIFICATIONS_UPDATED] (state, payload) {
+        state.notifications = payload
+    },
+    [types.USER_NOTIFICATIONS_PREFERENCES_UPDATED] (state, payload) {
+        state.notificationPrefs = payload
+    },
+    [types.USER_FIREBASE_DEVICEID_UPDATED] (state, payload) {
+        state.firebaseDeviceId = payload
+    },
+    [types.USER_UNREAD_NOTIFICATIONS_STATUS_UPDATED] (state, payload) {
+        state.hasUnreadNotifications = payload
     }
 }
 export default mutations;
