@@ -954,13 +954,13 @@ export default defineComponent({
 
               const pickerIds = [] as Array<string> 
               // if firstName is not found then adding default name `System Generated`
-              const pickersName = pickersInformation.pickerFacet.buckets.length ? (pickersInformation.pickerFacet.buckets.length === 1 ? [pickersInformation.pickerFacet.buckets[0].val.split('/')[1]]:
+              const pickersName = pickersInformation.pickerFacet.buckets.length ?
                 pickersInformation.pickerFacet.buckets.reduce((pickers: Array<string>, picker: any) => {
-                const val = picker.val.split('/') // having picker val in format 10001/FirstName LastName, split will change it into [pickerId, FirstName LastName]
-                pickerIds.push(val[0]) // storing pickerIds for usage in edit pickers modal
-                pickers.push(val[1].split(' ')[0]) // having val[0] as 'firstname lastname', we only need to display firstName
-                return pickers
-              }, [])) : ['System Generated']
+                  const val = picker.val.split('/') // having picker val in format 10001/FirstName LastName, split will change it into [pickerId, FirstName LastName]
+                  pickerIds.push(val[0]) // storing pickerIds for usage in edit pickers modal
+                  pickers.push(val[1].split(' ')[0]) // having val[0] as 'firstname lastname', we only need to display firstName
+                  return pickers
+                }, []) : ['System Generated']
 
               picklists.push({
                 id: picklist.picklistId,
