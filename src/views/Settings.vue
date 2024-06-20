@@ -535,7 +535,7 @@ export default defineComponent({
     async updateForceScanStatus(event: any) {
       event.stopImmediatePropagation();
 
-
+      this.store.dispatch("util/setForceScanSetting", !this.isForceScanEnabled)
     },
     async setEComStore(event: any) {
       // not updating the ecomstore when an empty value is given (on logout)

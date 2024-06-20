@@ -108,6 +108,7 @@ const actions: ActionTree<UserState, RootState> = {
         .catch((error) => logger.error(error));
 
       this.dispatch('util/findProductStoreShipmentMethCount')
+      this.dispatch('util/getForceScanSetting', preferredStore.productStoreId);
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
       // TODO Check if handling of specific status codes is required.
@@ -153,6 +154,7 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch('order/clearOrders')
     this.dispatch("orderLookup/clearOrderLookup")
     this.dispatch('user/clearNotificationState')
+    this.dispatch('user/updateForceScanStatus', false)
     resetConfig();
     resetPermissions();
 
@@ -219,6 +221,7 @@ const actions: ActionTree<UserState, RootState> = {
       .catch((error) => logger.error(error));
 
     this.dispatch('util/findProductStoreShipmentMethCount')
+    this.dispatch('util/getForceScanSetting', payload.ecomStore.productStoreId)
   },
 
   setUserPreference({ commit }, payload){
