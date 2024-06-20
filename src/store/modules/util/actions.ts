@@ -537,7 +537,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
     // when selecting none as ecom store, not updating the pref as it's not possible to save pref with empty productStoreId
     if(!eComStoreId || !setting.fromDate) {
-      showToast(translate('Unable to update force scan preference'))
+      showToast(translate("Unable to update force scan preference."))
       commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
       return;
     }
@@ -551,13 +551,13 @@ const actions: ActionTree<UtilState, RootState> = {
       const resp = await UtilService.updateForceScanSetting(params) as any
 
       if((!hasError(resp))) {
-        showToast(translate('Force scan preference updated'))
+        showToast(translate("Force scan preference updated successfully."))
         prefValue = payload
       } else {
         throw resp.data;
       }
     } catch(err) {
-      showToast(translate('Failed to update force scan preference'))
+      showToast(translate("Failed to update force scan preference."))
       console.error(err)
     }
     commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
