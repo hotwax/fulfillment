@@ -21,7 +21,7 @@
         </ion-button>
       </div>
 
-      <div class="list-item" v-for="(item, index) in orderItems" :key="index" :class="item.productSku === lastScannedId ? 'scanned-item' : '' " :id="item.productSku">
+      <div class="list-item" v-for="(item, index) in orderItems" :key="index" :class="item.orderItemSeqId === lastScannedId ? 'scanned-item' : '' " :id="item.productSku">
         <div class="product-info">
           <ion-item lines="none">
             <ion-thumbnail slot="start">
@@ -130,22 +130,27 @@ export default defineComponent({
     async updateProductCount(payload: any) {
       if(!payload) payload = this.queryString
 
-      const item = this.orderItems.find((orderItem: any) => orderItem.productSku === payload);
+      const item = this.orderItems.find((orderItem: any) => orderItem.productSku === payload && !orderItem.isChecked);
 
-      if(item.isChecked) {
-        showToast(translate("Product is already received:", { itemName: payload }))
-      } else {
+      if(item) {
         item.isChecked = true;
         showToast(translate("Scanned successfully.", { itemName: payload }))
-        this.lastScannedId = payload
+        this.lastScannedId = item.orderItemSeqId
         // Highlight specific element
-        const scannedElement = document.getElementById(payload);
+        const scannedElement = document.getElementById(item.orderItemSeqId);
         scannedElement && (scannedElement.scrollIntoView());
 
         // Scanned product should get un-highlighted after 3s for better experience hence adding setTimeOut
         setTimeout(() => {
           this.lastScannedId = ''
         }, 3000)
+      } else {
+        const item = this.orderItems.find((orderItem: any) => orderItem.productSku === payload);
+        if(item) {
+          showToast(translate("Product is already received:", { itemName: payload }))
+        } else {
+          showToast(translate("Scanned item is not present within the shipment:", { itemName: payload }))
+        }
       }
     },
     areAllItemSelected() {

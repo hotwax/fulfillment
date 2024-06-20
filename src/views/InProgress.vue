@@ -47,7 +47,7 @@
 
         <div class="results">
           <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" v-if="!isForceScanEnabled" @click="packOrders()">{{ translate("Pack orders") }}</ion-button>
-          <ion-card class="order" v-for="(order, index) in getInProgressOrders()" :key="index">
+          <ion-card class="order" v-for="(order, index) in getInProgressOrders()" :key="index" :class="isForceScanEnabled ? 'ion-margin-top' : ''">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
