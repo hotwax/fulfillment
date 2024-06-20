@@ -154,7 +154,7 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch('order/clearOrders')
     this.dispatch("orderLookup/clearOrderLookup")
     this.dispatch('user/clearNotificationState')
-    this.dispatch('user/updateForceScanStatus', false)
+    this.dispatch('util/updateForceScanStatus', false)
     resetConfig();
     resetPermissions();
 

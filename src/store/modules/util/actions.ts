@@ -490,7 +490,7 @@ const actions: ActionTree<UtilState, RootState> = {
     }
   },
 
-  async createProductIdentificationPref({ commit, state }) {
+  async createForceScanSetting({ commit, state }) {
     const ecomStore = store.getters['user/getCurrentEComStore'];
 
     const params = {
@@ -515,7 +515,7 @@ const actions: ActionTree<UtilState, RootState> = {
     let prefValue = JSON.parse(JSON.stringify(state.isForceScanEnabled))
     const eComStoreId = store.getters['user/getCurrentEComStore'].productStoreId;
 
-    let fromDate;
+    let setting;
 
     try {
       const resp = await UtilService.getProductStoreSetting({
@@ -525,27 +525,25 @@ const actions: ActionTree<UtilState, RootState> = {
         },
         "filterByDate": 'Y',
         "entityName": "ProductStoreSetting",
-        "fieldList": ["fromDate"],
+        // "fieldList": ["fromDate"],
         "viewSize": 1
       }) as any
       if(!hasError(resp)) {
-        fromDate = resp.data.docs[0].fromDate
+        setting = resp.data.docs[0]
       }
     } catch(err) {
       console.error(err)
     }
 
     // when selecting none as ecom store, not updating the pref as it's not possible to save pref with empty productStoreId
-    if(!eComStoreId || !fromDate) {
+    if(!eComStoreId || !setting.fromDate) {
       showToast(translate('Unable to update force scan preference'))
       commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
       return;
     }
 
     const params = {
-      "fromDate": fromDate,
-      "productStoreId": eComStoreId,
-      "settingTypeEnumId": "PRDT_IDEN_PREF",
+      ...setting,
       "settingValue": payload
     }
 
