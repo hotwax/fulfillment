@@ -525,7 +525,6 @@ const actions: ActionTree<UtilState, RootState> = {
         },
         "filterByDate": 'Y',
         "entityName": "ProductStoreSetting",
-        // "fieldList": ["fromDate"],
         "viewSize": 1
       }) as any
       if(!hasError(resp)) {

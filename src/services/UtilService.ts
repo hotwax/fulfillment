@@ -424,7 +424,6 @@ const fetchShipmentGatewayConfigs = async (payload: any): Promise<any> => {
   })
 }
 
-
 const updateForceScanSetting = async (payload: any): Promise<any> => {
   return api({
     url: "service/updateProductStoreSetting",

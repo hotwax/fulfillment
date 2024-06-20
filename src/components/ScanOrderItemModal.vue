@@ -115,17 +115,18 @@ export default defineComponent({
       modalController.dismiss({ dismissed: true });
     },
     async scan() {
-      const modal = await modalController
-      .create({
+      const modal = await modalController.create({
         component: Scanner,
       });
+
       modal.onDidDismiss()
       .then((result) => {
         if (result.role) {
           this.updateProductCount(result.role);
         }
       })
-      return modal.present();
+
+      modal.present();
     },
     async updateProductCount(payload: any) {
       if(!payload) payload = this.queryString
@@ -135,6 +136,7 @@ export default defineComponent({
       if(item) {
         item.isChecked = true;
         showToast(translate("Scanned successfully.", { itemName: payload }))
+
         this.lastScannedId = item.orderItemSeqId
         // Highlight specific element
         const scannedElement = document.getElementById(item.orderItemSeqId);
@@ -146,6 +148,7 @@ export default defineComponent({
         }, 3000)
       } else {
         const item = this.orderItems.find((orderItem: any) => orderItem.productSku === payload);
+
         if(item) {
           showToast(translate("Product is already received:", { itemName: payload }))
         } else {
