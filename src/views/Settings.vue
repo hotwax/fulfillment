@@ -113,6 +113,20 @@
             <ion-toggle label-placement="start" v-model="isEComInvEnabled" @click.prevent="updateEComInvStatus($event)">{{ translate("Sell online") }}</ion-toggle>
           </ion-item>
         </ion-card>
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Force scan") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate("Control whether the store allows the force scan during order packing or not.") }}
+          </ion-card-content>
+          <ion-item lines="none" >
+            <ion-toggle label-placement="start" :checked="isForceScanEnabled" @click.prevent="updateForceScanStatus($event)">{{ translate("Allow scan") }}</ion-toggle>
+          </ion-item>
+        </ion-card>
       </section>
 
       <hr />
@@ -256,6 +270,7 @@ export default defineComponent({
       locale: 'user/getLocale',
       notificationPrefs: 'user/getNotificationPrefs',
       firebaseDeviceId: 'user/getFirebaseDeviceId',
+      isForceScanEnabled: 'util/getIsForceScanEnabled'
     })
   },
   async ionViewWillEnter() {
@@ -515,6 +530,11 @@ export default defineComponent({
       if(role) {
         isChecked ? await this.addFacilityToGroup() : await this.updateFacilityToGroup()
       }
+
+    },
+    async updateForceScanStatus(event: any) {
+      event.stopImmediatePropagation();
+
 
     },
     async setEComStore(event: any) {

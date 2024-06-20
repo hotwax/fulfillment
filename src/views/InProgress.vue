@@ -46,7 +46,7 @@
         </ion-radio-group>
 
         <div class="results">
-          <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="packOrders()">{{ translate("Pack orders") }}</ion-button>
+          <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" v-if="!isForceScanEnabled" @click="packOrders()">{{ translate("Pack orders") }}</ion-button>
           <ion-card class="order" v-for="(order, index) in getInProgressOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
@@ -209,7 +209,7 @@
 
             <div class="actions">
               <div>
-                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click.stop="packOrder(order)">{{ translate("Pack") }}</ion-button>
+                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click.stop="isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack") }}</ion-button>
                 <ion-button :disabled="order.hasMissingInfo" fill="outline" @click.stop="save(order)">{{ translate("Save") }}</ion-button>
               </div>
 
@@ -331,6 +331,7 @@ import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
 import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
 import QRCodeModal from '@/components/QRCodeModal.vue'
 import { useAuthStore } from '@hotwax/dxp-components'
+import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 
 export default defineComponent({
   name: 'InProgress',
@@ -378,7 +379,8 @@ export default defineComponent({
       currentEComStore: 'user/getCurrentEComStore',
       userPreference: 'user/getUserPreference',
       boxTypeDesc: 'util/getShipmentBoxDesc',
-      getProductStock: 'stock/getProductStock'
+      getProductStock: 'stock/getProductStock',
+      isForceScanEnabled: 'util/getIsForceScanEnabled'
     }),
   },
   data() {
@@ -1247,6 +1249,20 @@ export default defineComponent({
       });
       return qrCodeModal.present();
     },
+    async scanOrder(order: any) {
+      const modal = await modalController.create({
+        component: ScanOrderItemModal,
+        componentProps: { order }
+      })
+
+      modal.onDidDismiss().then((result: any) => {
+        if(result.data?.packOrder) {
+          this.packOrder(order);
+        }
+      })
+
+      modal.present();
+    }
   },
   async mounted () {
     this.store.dispatch('util/fetchRejectReasons')
