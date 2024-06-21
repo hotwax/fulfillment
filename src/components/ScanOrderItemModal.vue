@@ -110,8 +110,8 @@ export default defineComponent({
     this.orderItems = this.order.orderItems.length ? JSON.parse(JSON.stringify(this.order.orderItems)) : []
   },
   methods: {
-    closeModal() {
-      modalController.dismiss({ dismissed: true });
+    closeModal(payload? : any) {
+      modalController.dismiss({ dismissed: true, ...payload });
     },
     async scan() {
       const modal = await modalController.create({
@@ -156,8 +156,8 @@ export default defineComponent({
       return !this.orderItems.some((item: any) => !item.isChecked)
     },
     packOrder() {
-      modalController.dismiss({ dismissed: true, packOrder: true})
-    }
+      this.closeModal({ packOrder: true })
+    },
   },
   setup() {
     const productIdentificationStore = useProductIdentificationStore();
