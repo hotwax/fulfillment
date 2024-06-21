@@ -260,7 +260,7 @@
   "No rejection reasons found.": "拒否理由が見つかりません。",
   "No shipments have been shipped yet": "まだ出荷された出荷はありません",
   "No shipping label error received from carrier.": "キャリアから配送ラベルエラーは受信されていません",
-  "No capacity sets the fulfillment capacity to 0, preventing any new orders from being allocated to this facility. Use the \"Reject all orders\" option in the fulfillment pages to clear your facilities fulfillment queue. To add a fulfillment capacity to this facility, use the custom option.": "容量なしの場合、フルフィルメント容量は0に設定され、新しい注文がこの施設に割り当てられるのを防ぎます。フルフィルメントページの「すべての注文を拒否」オプションを使用して、施設のフルフィルメントキューをクリアします。 {space}この施設にフルフィルメント容量を追加するには、カスタムオプションを使用してください。",
+  "No capacity sets the fulfillment capacity to 0, preventing any new orders from being allocated to this facility. Use the \"Reject all orders\" option in the fulfillment pages to clear your facilities fulfillment queue. To add a fulfillment capacity to this facility, use the custom option.": "容量なしの場合、フルフィルメント容量は0に設定され、新しい注文がこの施設に割り当てられるのを防ぎます。フルフィルメントページの「すべての注文を拒否」オプションを使用して、施設のフルフィルメントキューをクリアします。 この施設にフルフィルメント容量を追加するには、カスタムオプションを使用してください。",
   "No channels found": "チャネルが見つかりません",
   "No new file upload. Please try again": "新しいファイルのアップロードはありません。再試行してください",
   "No fulfillment capacity": "フルフィルメント容量なし",
