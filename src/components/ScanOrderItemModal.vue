@@ -43,7 +43,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="!areAllItemSelected()" @click="packOrder()">
+    <ion-fab-button :disabled="!areAllItemsSelected()" @click="packOrder()">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -69,9 +69,8 @@ import {
 } from "@ionic/vue";
 import { computed, defineComponent } from "vue";
 import { cameraOutline, closeOutline, copyOutline, saveOutline } from "ionicons/icons";
-import { translate } from "@hotwax/dxp-components";
+import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { mapGetters } from 'vuex';
-import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { getFeature, showToast } from "@/utils"
 import Scanner from "@/components/Scanner.vue"
 
@@ -119,8 +118,7 @@ export default defineComponent({
         component: Scanner,
       });
 
-      modal.onDidDismiss()
-      .then((result) => {
+      modal.onDidDismiss().then((result) => {
         if (result.role) {
           this.updateProductCount(result.role);
         }
@@ -131,7 +129,11 @@ export default defineComponent({
     async updateProductCount(payload: any) {
       if(!payload) payload = this.queryString
 
-      const item = this.orderItems.find((orderItem: any) => orderItem.productSku === payload && !orderItem.isChecked);
+      let currentItem = {} as any;
+      const item = this.orderItems.find((orderItem: any) => {
+        if(orderItem.productSku === payload) currentItem = orderItem
+        return orderItem.productSku === payload && !orderItem.isChecked;
+      });
 
       if(item) {
         item.isChecked = true;
@@ -147,16 +149,10 @@ export default defineComponent({
           this.lastScannedId = ''
         }, 3000)
       } else {
-        const item = this.orderItems.find((orderItem: any) => orderItem.productSku === payload);
-
-        if(item) {
-          showToast(translate("Product is already received:", { itemName: payload }))
-        } else {
-          showToast(translate("Scanned item is not present within the shipment:", { itemName: payload }))
-        }
+        showToast(translate((currentItem.productSku ? "Product is already received:" : "Scanned item is not present within the shipment:"), { itemName: payload }))
       }
     },
-    areAllItemSelected() {
+    areAllItemsSelected() {
       return !this.orderItems.some((item: any) => !item.isChecked)
     },
     packOrder() {

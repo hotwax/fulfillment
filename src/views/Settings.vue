@@ -270,7 +270,7 @@ export default defineComponent({
       locale: 'user/getLocale',
       notificationPrefs: 'user/getNotificationPrefs',
       firebaseDeviceId: 'user/getFirebaseDeviceId',
-      isForceScanEnabled: 'util/getIsForceScanEnabled'
+      isForceScanEnabled: 'util/isForceScanEnabled'
     })
   },
   async ionViewWillEnter() {

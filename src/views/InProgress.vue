@@ -380,7 +380,7 @@ export default defineComponent({
       userPreference: 'user/getUserPreference',
       boxTypeDesc: 'util/getShipmentBoxDesc',
       getProductStock: 'stock/getProductStock',
-      isForceScanEnabled: 'util/getIsForceScanEnabled'
+      isForceScanEnabled: 'util/isForceScanEnabled'
     }),
   },
   data() {

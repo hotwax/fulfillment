@@ -480,7 +480,7 @@ const actions: ActionTree<UtilState, RootState> = {
     try {
       const resp = await UtilService.getProductStoreSetting(payload) as any
       if(!hasError(resp)) {
-        const respValue = JSON.parse(resp.data.docs[0].settingValue)
+        const respValue = resp.data.docs[0].settingValue
         commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, respValue)
       } else {
         dispatch('createForceScanSetting');
@@ -511,11 +511,11 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, false)
   },
 
-  async setForceScanSetting({ commit, state }, payload) {
-    let prefValue = JSON.parse(JSON.stringify(state.isForceScanEnabled))
+  async setForceScanSetting({ commit, state }, value) {
+    let prefValue = state.isForceScanEnabled
     const eComStoreId = store.getters['user/getCurrentEComStore'].productStoreId;
 
-    let setting;
+    let setting = {} as any;
 
     try {
       const resp = await UtilService.getProductStoreSetting({
@@ -543,7 +543,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
     const params = {
       ...setting,
-      "settingValue": payload
+      "settingValue": value
     }
 
     try {
@@ -551,7 +551,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
       if((!hasError(resp))) {
         showToast(translate("Force scan preference updated successfully."))
-        prefValue = payload
+        prefValue = value
       } else {
         throw resp.data;
       }
