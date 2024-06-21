@@ -490,7 +490,7 @@ const actions: ActionTree<UtilState, RootState> = {
     }
   },
 
-  async createForceScanSetting({ commit, state }) {
+  async createForceScanSetting({ commit }) {
     const ecomStore = store.getters['user/getCurrentEComStore'];
     const fromDate = Date.now()
 
