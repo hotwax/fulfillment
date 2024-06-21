@@ -469,7 +469,7 @@ const actions: ActionTree<UtilState, RootState> = {
     const payload = {
       "inputFields": {
         "productStoreId": eComStoreId,
-        "settingTypeEnumId": "FULFILL_FRC_SCAN"
+        "settingTypeEnumId": "FULFILL_FORCE_SCAN"
       },
       "filterByDate": 'Y',
       "entityName": "ProductStoreSetting",
@@ -496,7 +496,7 @@ const actions: ActionTree<UtilState, RootState> = {
     const params = {
       "fromDate": Date.now(),
       "productStoreId": ecomStore.productStoreId,
-      "settingTypeEnumId": "FULFILL_FRC_SCAN",
+      "settingTypeEnumId": "FULFILL_FORCE_SCAN",
       "settingValue": false
     }
 
@@ -521,7 +521,7 @@ const actions: ActionTree<UtilState, RootState> = {
       const resp = await UtilService.getProductStoreSetting({
         "inputFields": {
           "productStoreId": eComStoreId,
-          "settingTypeEnumId": "FULFILL_FRC_SCAN"
+          "settingTypeEnumId": "FULFILL_FORCE_SCAN"
         },
         "filterByDate": 'Y',
         "entityName": "ProductStoreSetting",
