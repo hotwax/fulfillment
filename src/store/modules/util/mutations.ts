@@ -41,6 +41,9 @@ const mutations: MutationTree <UtilState> = {
   },
   [types.UTIL_SHIPMENT_GATEWAY_CONFIGS_UPDATED](state, payload) {
     state.shipmentGatewayConfigs = payload
+  },
+  [types.UTIL_FORCE_SCAN_STATUS_UPDATED](state, payload) {
+    state.isForceScanEnabled = payload
   }
 }
 export default mutations;

@@ -156,6 +156,20 @@
             </ion-item>
           </ion-list>
         </ion-card>
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Force scan") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate("Control whether the store requires the force scan during order packing or not.") }}
+          </ion-card-content>
+          <ion-item lines="none" >
+            <ion-toggle label-placement="start" :checked="isForceScanEnabled" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
+          </ion-item>
+        </ion-card>
       </section>
     </ion-content>
   </ion-page>
@@ -256,6 +270,7 @@ export default defineComponent({
       locale: 'user/getLocale',
       notificationPrefs: 'user/getNotificationPrefs',
       firebaseDeviceId: 'user/getFirebaseDeviceId',
+      isForceScanEnabled: 'util/isForceScanEnabled'
     })
   },
   async ionViewWillEnter() {
@@ -516,6 +531,11 @@ export default defineComponent({
         isChecked ? await this.addFacilityToGroup() : await this.updateFacilityToGroup()
       }
 
+    },
+    async updateForceScanStatus(event: any) {
+      event.stopImmediatePropagation();
+
+      this.store.dispatch("util/setForceScanSetting", !this.isForceScanEnabled)
     },
     async setEComStore(event: any) {
       // not updating the ecomstore when an empty value is given (on logout)

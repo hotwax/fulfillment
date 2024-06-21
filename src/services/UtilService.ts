@@ -423,9 +423,33 @@ const fetchShipmentGatewayConfigs = async (payload: any): Promise<any> => {
     cache: true
   })
 }
-  
+
+const updateForceScanSetting = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
+
+const createForceScanSetting = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
+
+const getProductStoreSetting = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "post",
+    data: payload
+  });
+}
 
 export const UtilService = {
+  createForceScanSetting,
   createPicklist,
   createEnumeration,
   fetchCarrierPartyIds,
@@ -453,7 +477,9 @@ export const UtilService = {
   findShipmentPackages,
   fetchTransferOrderFacets,
   getAvailablePickers,
+  getProductStoreSetting,
   resetPicker,
   deleteEnumeration,
-  updateEnumeration
+  updateEnumeration,
+  updateForceScanSetting
 }
