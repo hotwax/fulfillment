@@ -492,9 +492,10 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async createForceScanSetting({ commit, state }) {
     const ecomStore = store.getters['user/getCurrentEComStore'];
+    const fromDate = Date.now()
 
     const params = {
-      "fromDate": Date.now(),
+      fromDate,
       "productStoreId": ecomStore.productStoreId,
       "settingTypeEnumId": "FULFILL_FORCE_SCAN",
       "settingValue": false
@@ -509,9 +510,10 @@ const actions: ActionTree<UtilState, RootState> = {
     // not checking for resp success and fail case as every time we need to update the state with the
     // default value when creating a scan setting
     commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, false)
+    return fromDate;
   },
 
-  async setForceScanSetting({ commit, state }, value) {
+  async setForceScanSetting({ commit, dispatch, state }, value) {
     let prefValue = state.isForceScanEnabled
     const eComStoreId = store.getters['user/getCurrentEComStore'].productStoreId;
 
@@ -536,10 +538,14 @@ const actions: ActionTree<UtilState, RootState> = {
     }
 
     // when selecting none as ecom store, not updating the pref as it's not possible to save pref with empty productStoreId
-    if(!eComStoreId || !fromDate) {
+    if(!eComStoreId) {
       showToast(translate("Unable to update force scan preference."))
       commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
       return;
+    }
+
+    if(!fromDate) {
+      fromDate = await dispatch("createForceScanSetting");
     }
 
     const params = {

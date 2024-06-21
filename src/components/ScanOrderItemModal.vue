@@ -110,7 +110,7 @@ export default defineComponent({
     this.orderItems = this.order.orderItems.length ? JSON.parse(JSON.stringify(this.order.orderItems)) : []
   },
   methods: {
-    closeModal(payload? : any) {
+    closeModal(payload= {}) {
       modalController.dismiss({ dismissed: true, ...payload });
     },
     async scan() {
