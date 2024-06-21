@@ -340,7 +340,7 @@
   "Picked up": "受け取り済み",
   "Pickers successfully replaced in the picklist with the new selections.": "ピッカーがピックリストで新しい選択に正常に置き換えられました。",
   "Picking": "ピッキング",
-  "{count} picklists": "{count}ピックリスト",
+  "picklists": "{count}ピックリスト",
   "Picklist created successfully": "ピックリストが正常に作成されました",
   "Picklist Size": "ピックリストサイズ",
   "Pick All": "すべて選択",
