@@ -12,4 +12,5 @@ export default interface UtilState {
   productStores: any;
   facilities: any;
   shipmentGatewayConfigs: any;
+  isForceScanEnabled: boolean;
 }

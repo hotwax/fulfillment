@@ -25,7 +25,7 @@ const state: any = {
 }
 
 const persistState = createPersistedState({
-    paths: ['user', 'util.productStoreShipmentMethCount'],
+    paths: ['user', 'util.productStoreShipmentMethCount', 'util.isForceScanEnabled'],
     fetchBeforeUse: true
 })
 
