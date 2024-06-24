@@ -95,7 +95,8 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      fieldMappings: 'user/getFieldMappings'
+      fieldMappings: 'user/getFieldMappings',
+      currentFacility: 'user/getCurrentFacility',
     })
   },
   ionViewDidEnter() {
@@ -139,12 +140,20 @@ export default defineComponent({
         return;
       }
 
-      const uploadData = this.content.map((order: any) => ({
-        'orderIdValue': order[this.fieldMapping['orderId'].value],
-        'externalFacilityId': order[this.fieldMapping['facilityId'].value],
-        'trackingNumber': order[this.fieldMapping['trackingCode'].value]
-      }))
-
+      const uploadData = this.content.map((order: any) => {
+        const externalFacilityId = order[this.fieldMapping['facilityId'].value];
+        const data = {
+          'orderId': order[this.fieldMapping['orderId'].value],
+          'trackingNumber': order[this.fieldMapping['trackingCode'].value]
+        } as any;
+        if (externalFacilityId) {
+          data['externalFacilityId'] = externalFacilityId;
+        } else {
+          data['facilityId'] = this.currentFacility?.facilityId;
+        }
+        return data;
+      });
+      
       const fileName = this.file.name.replace(".csv", ".json");
       const params = {
         "configId": "IMP_TRACK_NUM"
