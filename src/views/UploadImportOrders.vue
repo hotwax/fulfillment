@@ -143,7 +143,7 @@ export default defineComponent({
       const uploadData = this.content.map((order: any) => {
         const externalFacilityId = order[this.fieldMapping['facilityId'].value];
         const data = {
-          'orderIdValue': order[this.fieldMapping['orderId'].value],
+          'orderId': order[this.fieldMapping['orderId'].value],
           'trackingNumber': order[this.fieldMapping['trackingCode'].value]
         } as any;
         if (externalFacilityId) {
