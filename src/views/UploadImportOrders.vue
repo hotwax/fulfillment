@@ -133,10 +133,11 @@ export default defineComponent({
       }
     },
     async save() {
-      const areAllFieldsSelected = Object.values(this.fieldMapping).every((field: any) => field.value !== "");
+      // Added check to allow uploading CSV even when user has not mapped the facilityID
+      const areAllFieldsSelected = Object.keys(this.fieldMapping).every((field: any) => field === "facilityId" || this.fieldMapping[field]?.value); 
       
       if (!areAllFieldsSelected) {
-        showToast(translate("Select all the fields to continue"));
+        showToast(translate("Select orderId and tracking code to continue"));
         return;
       }
 
