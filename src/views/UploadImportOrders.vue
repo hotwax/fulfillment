@@ -137,7 +137,7 @@ export default defineComponent({
       const areAllFieldsSelected = Object.keys(this.fieldMapping).every((field: any) => field === "facilityId" || this.fieldMapping[field]?.value); 
       
       if (!areAllFieldsSelected) {
-        showToast(translate("Select orderId and tracking number to continue"));
+        showToast(translate("Select orderId and tracking code to continue"));
         return;
       }
 
