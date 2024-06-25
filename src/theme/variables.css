@@ -327,10 +327,18 @@ img {
   grid-template-columns: repeat(2, 1fr);
   align-items: center;
   padding: var(--spacer-xs) 0;
+  /*border-bottom: var(--border-medium);*/
+}
+
+/*.order-item:last-child {
+  border-bottom: none;
+}*/
+
+.order-line-item {
   border-bottom: var(--border-medium);
 }
 
-.order-item:last-child {
+.order-line-item:last-child {
   border-bottom: none;
 }
 

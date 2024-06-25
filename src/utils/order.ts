@@ -1,3 +1,5 @@
+import store from '@/store';
+
 const orderCategoryParameters = {
   'Open': {
     'quantityNotAvailable': {
@@ -82,6 +84,30 @@ const getOrderCategory = (order: any) => {
 const isKitComponent = (item: any) => {
   return item.toOrderItemAssocs?.some((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
 }
+const isKit = (item: any) => {
+  const product = store.getters['product/getProduct'](item.productId);
+  return product && product.productTypeId === 'MARKETING_PKG_PICK';
+}
+
+const removeKitComponents = (order: any) => {
+  const processedKitItemSeqIds = new Set();
+  const itemsWithoutKitComponents = [] as any;
+
+  //In current implementation kit product and 
+  order.items.forEach((item:any) => {
+    const product = store.getters['product/getProduct'](item.productId);
+    if (product && product.productTypeId === "MARKETING_PKG_PICK") {
+      if (!processedKitItemSeqIds.has(item.orderItemSeqId)) {
+        processedKitItemSeqIds.add(item.orderItemSeqId);
+        itemsWithoutKitComponents.push(item);
+      }
+    } else {
+      itemsWithoutKitComponents.push(item);
+    }
+  });
+
+  return itemsWithoutKitComponents;
+}
 
 const prepareKitProducts = (order: any) => {
   return order.items.reduce((kitProducts: any, item: any) => {
@@ -106,5 +132,7 @@ const prepareKitProducts = (order: any) => {
 export {
   prepareKitProducts,
   getOrderCategory,
-  isKitComponent
+  isKit,
+  isKitComponent,
+  removeKitComponents
 }
