@@ -439,6 +439,11 @@ img {
     border-bottom: none
   }
 
+  .kit-components {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+
   .actions {
     display: flex;
     justify-content: space-between;

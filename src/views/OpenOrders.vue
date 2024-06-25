@@ -64,7 +64,8 @@
               </div>
             </div>
 
-            <div v-for="item in order.orderItems" :key="item.orderItemSeqId" class="order-item">
+            <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-line-item">
+              <div class="order-item">
               <div class="product-info">
                 <ion-item lines="none">
                   <ion-thumbnail slot="start">
@@ -73,50 +74,38 @@
                   <ion-label>
                     <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                     {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                    <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
                     <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                 </ion-item>
               </div>
               <div class="product-metadata">
+                <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponent(item)">
+                  <ion-icon v-if="!item.showKitComponents" color="medium" slot="icon-only" :icon="chevronDownOutline"/>
+                  <ion-icon v-else color="medium" slot="icon-only" :icon="chevronUpOutline"/>
+                </ion-button>
                 <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
                 <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
               </div>
-            </div>
-
-            <div v-for="(kitProduct, orderItemSeqId) in order.kitProducts" :key="orderItemSeqId">
-              <ion-item-divider class="order-item" color="light">
-                <div class="product-info">
-                  <ion-label>
-                    <p>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(kitProduct[0].parentProductId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(kitProduct[0].parentProductId)) : getProduct(kitProduct[0].parentProductId).productName }}</p>
-                    <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(kitProduct[0].parentProductId)) }}</p>
-                  </ion-label>
-                </div>
-              </ion-item-divider>
-
-              <div v-for="item in kitProduct" :key="item.orderItemSeqId" class="order-item">
-                <div class="product-info">
+              </div>
+              <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
+                <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
+                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                      <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
                     </ion-label>
                   </ion-item>
-                </div>
-
-                <div class="product-metadata">
-                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
-                    <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
-                  </ion-button>
-                </div>
+                </ion-card>
               </div>
             </div>
+            
             <!-- TODO: add functionality to the buttons-->
             <!-- <div class="actions">
               <div class="positive-action"></div>
@@ -145,6 +134,7 @@
 
 <script lang="ts">
 import { 
+  IonBadge,
   IonButton, 
   IonButtons, 
   IonCard, 
@@ -158,7 +148,6 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonItem, 
-  IonItemDivider,
   IonLabel, 
   IonMenuButton,
   IonNote,
@@ -172,7 +161,7 @@ import {
   popoverController
 } from '@ionic/vue';
 import { computed, defineComponent } from 'vue';
-import { caretDownOutline, cubeOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
+import { caretDownOutline, chevronDownOutline, chevronUpOutline, cubeOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
@@ -187,11 +176,13 @@ import { translate } from '@hotwax/dxp-components';
 import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
+import { isKit } from '@/utils/order'
 
 export default defineComponent({
   name: 'OpenOrders',
   components: {
     DxpShopifyImg,
+    IonBadge,
     IonButton,
     IonButtons,  
     IonCard,
@@ -205,7 +196,6 @@ export default defineComponent({
     IonInfiniteScroll,
     IonInfiniteScrollContent,
     IonItem,
-    IonItemDivider,
     IonLabel,
     IonMenuButton,
     IonNote,
@@ -289,6 +279,14 @@ export default defineComponent({
       openOrdersQuery.selectedShipmentMethods = selectedShipmentMethods
 
       this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
+    },
+    async fetchKitComponent(orderItem: any) {
+      await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
+      
+      //update the order in order to toggle kit components section
+      const updatedOrder = this.openOrders.list.find((order: any) => order.orderId === orderItem.orderId);
+      const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
+      updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
     },
     async assignPickers() {
       const assignPickerModal = await modalController.create({
@@ -428,11 +426,14 @@ export default defineComponent({
     return{
       Actions,
       caretDownOutline,
+      chevronDownOutline,
+      chevronUpOutline,
       cubeOutline,
       formatUtcDate,
       getFeature,
       getProductIdentificationValue,
       hasPermission,
+      isKit,
       notificationsOutline,
       optionsOutline,
       pricetagOutline,

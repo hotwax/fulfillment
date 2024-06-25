@@ -367,7 +367,7 @@ const actions: ActionTree<OrderState, RootState> = {
       if (!hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
         total = resp.data.grouped.orderId.ngroups
         orders = resp.data.grouped.orderId.groups
-        this.dispatch('product/getProductInformation', { orders })
+        await this.dispatch('product/getProductInformation', { orders })
 
         orders = orders.map((order: any) => {
           const orderItem = order.doclist.docs[0];
@@ -417,7 +417,7 @@ const actions: ActionTree<OrderState, RootState> = {
       groupBy: 'picklistBinId',
       sort: 'picklistItemStatusId desc, orderDate asc',
       filters: {
-        picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
+        //picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
         facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
@@ -442,7 +442,7 @@ const actions: ActionTree<OrderState, RootState> = {
       if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
         total = resp.data.grouped.picklistBinId.ngroups
         orders = resp.data.grouped.picklistBinId.groups
-        this.dispatch('product/getProductInformation', { orders })
+        await this.dispatch('product/getProductInformation', { orders })
       } else {
         throw resp.data
       }
@@ -467,7 +467,7 @@ const actions: ActionTree<OrderState, RootState> = {
         groupValue: order.groupValue,
         picklistBinId: orderItem.picklistBinId,
         picklistId: orderItem.picklistId,
-        items: order.doclist.docs,
+        items: removeKitComponents({items: order.doclist.docs}),
         shipGroupSeqId: orderItem.shipGroupSeqId,
         shipmentId: orderItem.shipmentId,
         shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
@@ -691,7 +691,8 @@ const actions: ActionTree<OrderState, RootState> = {
       if (!hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
         const orderItem = resp.data.grouped.orderId.groups[0].doclist.docs[0];
         const productIds = resp.data.grouped.orderId.groups[0].doclist.docs.map((item: any) => item.productId)
-        
+        await this.dispatch('product/fetchProducts', { productIds })
+
         order = {
           category: 'open',
           customerId: orderItem.customerId,
@@ -706,8 +707,7 @@ const actions: ActionTree<OrderState, RootState> = {
           shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
           reservedDatetime: orderItem.reservedDatetime
         }
-
-        await this.dispatch('product/fetchProducts', { productIds })
+        
       } else {
         throw resp.data
       }
@@ -759,6 +759,8 @@ const actions: ActionTree<OrderState, RootState> = {
 
       resp = await OrderService.findInProgressOrders(orderQueryPayload);
       if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
+        await this.dispatch('product/fetchProducts', { productIds: order.items.map((item: any) => item.productId) })
+        
         const orderItem = resp.data.grouped.picklistBinId.groups[0].doclist.docs[0];
         order = {
           category: 'in-progress',
@@ -769,12 +771,12 @@ const actions: ActionTree<OrderState, RootState> = {
           orderName: orderItem.orderName,
           groupValue: resp.data.grouped.picklistBinId.groups[0].groupValue,
           picklistBinId: orderItem.picklistBinId,
-          items: resp.data.grouped.picklistBinId.groups[0].doclist.docs,
+          items: removeKitComponents({items: resp.data.grouped.picklistBinId.groups[0].doclist.docs}) ,
           shipGroupSeqId: orderItem.shipGroupSeqId,
           shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
           shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
         }
-        await this.dispatch('product/fetchProducts', { productIds: order.items.map((item: any) => item.productId) })
+        
       } else {
         throw resp.data
       }
@@ -823,6 +825,8 @@ const actions: ActionTree<OrderState, RootState> = {
 
       resp = await OrderService.findCompletedOrders(orderQueryPayload);
       if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
+        await this.dispatch('product/fetchProducts', { productIds: order.items.map((item: any) => item.productId) })
+
         const orderItem = resp.data.grouped.picklistBinId.groups[0].doclist.docs[0];
         order = {
           category: 'completed',
@@ -834,7 +838,7 @@ const actions: ActionTree<OrderState, RootState> = {
           reservedDatetime: orderItem.reservedDatetime,
           groupValue: resp.data.grouped.picklistBinId.groups[0].groupValue,
           picklistBinId: orderItem.picklistBinId,
-          items: resp.data.grouped.picklistBinId.groups[0].doclist.docs,
+          items: removeKitComponents({items : resp.data.grouped.picklistBinId.groups[0].doclist.docs}),
           shipmentId: orderItem.shipmentId,
           shipGroupSeqId: orderItem.shipGroupSeqId,
           shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
@@ -842,8 +846,6 @@ const actions: ActionTree<OrderState, RootState> = {
           isGeneratingShippingLabel: false,
           isGeneratingPackingSlip: false
         }
-
-        await this.dispatch('product/fetchProducts', { productIds: order.items.map((item: any) => item.productId) })
       } else {
         throw resp.data
       }

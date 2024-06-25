@@ -373,13 +373,13 @@ export default defineComponent({
         this.updateRejectReason(result.data, item, order)
       }
     },
-    async fetchKitComponent(item: any) {
-      await this.store.dispatch('product/fetchProductComponents', { productId: item.productId })
+    async fetchKitComponent(orderItem: any) {
+      await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
       
       //update the order in order to toggle kit components section
-      const updatedOrder = this.inProgressOrders.list.find((order: any) => order.orderId === item.orderId);
-      const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === item.orderItemSeqId)
-      updatedItem.showKitComponents = item.showKitComponents ? false : true
+      const updatedOrder = this.inProgressOrders.list.find((order: any) => order.orderId === orderItem.orderId);
+      const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
+      updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
       this.store.dispatch('order/updateInProgressOrder', updatedOrder)
     },
     async removeRejectionReason(ev: Event, item: any, order: any) {
@@ -1234,11 +1234,6 @@ ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-te
 
 .order-item {
   grid-template-columns: repeat(3, 1fr);
-}
-
-.kit-components {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
 </style>
 
