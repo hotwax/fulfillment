@@ -564,10 +564,10 @@
   "Worn Display": "摩耗表示",
   "You are packing an order. Select additional documents that you would like to print.": "注文を梱包しています。印刷したい追加書類を選択してください。",
   "You are packing orders. Select additional documents that you would like to print.": "{count}件の注文を梱包しています。{ space }印刷したい追加書類を選択してください。",
-  "You are shipping order. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this order?": "{count}件の注文を出荷しています。{ space }出荷後は注文の梱包解除や編集はできません。この注文を出荷する準備ができていますか？ | {count}件の注文を出荷しています。出荷後は注文の梱包解除や編集はできません。これらの注文を出荷する準備ができていますか？",
+  "You are shipping order. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this order?": "{count}件の注文を出荷しています。{ space }出荷後は注文の梱包解除や編集はできません。この注文を出荷する準備ができていますか？ | {count}件の注文を出荷しています。{ space }出荷後は注文の梱包解除や編集はできません。これらの注文を出荷する準備ができていますか？",
   "You do not have permission to access this page": "このページにアクセスする権限がありません",
   "Zip Code": "郵便番号",
-  ", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.": "{productName}、および{products}の他の製品は出荷不可能と判定されました。これらの注文項目はこのストアから解除され、再仲介のために送られます。",
+  ", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.": "{ productName }、および{ products }の他の製品は出荷不可能と判定されました。{ space }これらの注文項目はこのストアから解除され、再仲介のために送られます。",
   ", and other products are identified as unfulfillable. other containing these products will be unassigned from this store and sent to be rebrokered.": "{productName}、および{products}の他の製品は出荷不可能と判定されました。{ space }これらの製品を含む{orders}件の他の{orderText}はこのストアから解除され、再仲介のために送られます。",
   ", and other products were identified as unfulfillable. These items will be unassigned from this store and sent to be rebrokered.": "{productName}、および{products}の他の製品は出荷不可能と判定されました。{ space }これらの項目はこのストアから解除され、再仲介のために送られます。"
 }
