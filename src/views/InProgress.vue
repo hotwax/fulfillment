@@ -345,7 +345,6 @@ export default defineComponent({
     return {
       picklists: [] as any,
       defaultShipmentBoxType: '',
-      itemsIssueSegmentSelected: [] as any,
       orderBoxes: [] as any,
       searchedQuery: '',
       addingBoxForOrderIds: [] as any,
@@ -417,9 +416,6 @@ export default defineComponent({
     },
     getInProgressOrders() {
       return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
-    },
-    isIssueSegmentSelectedForItem(item: any) {
-      return this.itemsIssueSegmentSelected.includes(`${item.orderId}-${item.orderItemSeqId}`)
     },
     async packagingPopover(ev: Event) {
       const popover = await popoverController.create({
@@ -698,9 +694,6 @@ export default defineComponent({
       return alert.present();
     },
     async findInProgressOrders () {
-      // assigning with empty array, as when we are updating(save) an order and if for one of the items issue segment
-      // was selected before update making pack button disabled, then after update pack button is still disabled for that order
-      this.itemsIssueSegmentSelected = []
       await this.store.dispatch('order/findInProgressOrders')
     },
     async updateOrder(order: any, updateParameter?: string) {
@@ -728,7 +721,7 @@ export default defineComponent({
 
         let prefix = 'rtp'
         // check for item.rejectReason is added to handle the case for rejecting kitProducts
-        if(this.isIssueSegmentSelectedForItem(item) || (updateParameter === 'report' && item.rejectReason)) {
+        if (updateParameter === 'report' && item.rejectReason) {
           prefix = 'rej'
           form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
         } else {
