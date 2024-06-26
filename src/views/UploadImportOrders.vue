@@ -95,7 +95,8 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      fieldMappings: 'user/getFieldMappings'
+      fieldMappings: 'user/getFieldMappings',
+      currentFacility: 'user/getCurrentFacility',
     })
   },
   ionViewDidEnter() {
@@ -132,19 +133,28 @@ export default defineComponent({
       }
     },
     async save() {
-      const areAllFieldsSelected = Object.values(this.fieldMapping).every((field: any) => field.value !== "");
+      // Added check to allow uploading CSV even when user has not mapped the facilityID
+      const areAllFieldsSelected = Object.keys(this.fieldMapping).every((field: any) => field === "facilityId" || this.fieldMapping[field]?.value); 
       
       if (!areAllFieldsSelected) {
-        showToast(translate("Select all the fields to continue"));
+        showToast(translate("Select orderId and tracking code to continue"));
         return;
       }
 
-      const uploadData = this.content.map((order: any) => ({
-        'orderIdValue': order[this.fieldMapping['orderId'].value],
-        'externalFacilityId': order[this.fieldMapping['facilityId'].value],
-        'trackingNumber': order[this.fieldMapping['trackingCode'].value]
-      }))
-
+      const uploadData = this.content.map((order: any) => {
+        const externalFacilityId = order[this.fieldMapping['facilityId'].value];
+        const data = {
+          'orderId': order[this.fieldMapping['orderId'].value],
+          'trackingNumber': order[this.fieldMapping['trackingCode'].value]
+        } as any;
+        if (externalFacilityId) {
+          data['externalFacilityId'] = externalFacilityId;
+        } else {
+          data['facilityId'] = this.currentFacility?.facilityId;
+        }
+        return data;
+      });
+      
       const fileName = this.file.name.replace(".csv", ".json");
       const params = {
         "configId": "IMP_TRACK_NUM"
