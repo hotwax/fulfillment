@@ -87,8 +87,7 @@
               </div>
               <div class="product-metadata">
                 <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponent(item)">
-                  <ion-icon v-if="!item.showKitComponents" color="medium" slot="icon-only" :icon="chevronDownOutline"/>
-                  <ion-icon v-else color="medium" slot="icon-only" :icon="chevronUpOutline"/>
+                  <ion-icon color="medium" slot="icon-only" :icon="listOutline"/>
                 </ion-button>
                 <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
                 <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
@@ -189,7 +188,7 @@ import {
   modalController
 } from '@ionic/vue';
 import { computed, defineComponent } from 'vue';
-import { caretDownOutline, chevronDownOutline, chevronUpOutline, cubeOutline, printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
+import { caretDownOutline, cubeOutline, printOutline, downloadOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
@@ -737,8 +736,6 @@ export default defineComponent({
     return {
       Actions,
       caretDownOutline,
-      chevronDownOutline,
-      chevronUpOutline,
       copyToClipboard,
       checkmarkDoneOutline,
       cubeOutline,
@@ -749,6 +746,7 @@ export default defineComponent({
       getProductIdentificationValue,
       hasPermission,
       isKit,
+      listOutline,
       optionsOutline,
       pricetagOutline,
       productIdentificationPref,

@@ -130,8 +130,7 @@
 
               <div class="product-metadata">
                 <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponent(item)">
-                  <ion-icon v-if="!item.showKitComponents" color="medium" slot="icon-only" :icon="chevronDownOutline"/>
-                  <ion-icon v-else color="medium" slot="icon-only" :icon="chevronUpOutline"/>
+                  <ion-icon color="medium" slot="icon-only" :icon="listOutline"/>
                 </ion-button>
                 <ion-button fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
                   <ion-icon color="danger" slot="icon-only" :icon="trashBinOutline"/>
@@ -257,12 +256,11 @@ import {
   addOutline,
   caretDownOutline,
   checkmarkDoneOutline,
-  chevronDownOutline,
-  chevronUpOutline,
   closeCircleOutline,
   cubeOutline,
   ellipsisVerticalOutline,
   fileTrayOutline,
+  listOutline,
   pencilOutline,
   optionsOutline,
   pricetagOutline,
@@ -1202,8 +1200,6 @@ export default defineComponent({
       addOutline,
       authStore,
       caretDownOutline,
-      chevronDownOutline,
-      chevronUpOutline,
       copyToClipboard,
       checkmarkDoneOutline,
       closeCircleOutline,
@@ -1215,6 +1211,7 @@ export default defineComponent({
       getProductIdentificationValue,
       hasPermission,
       isKit,
+      listOutline,
       optionsOutline,
       pencilOutline,
       pricetagOutline,

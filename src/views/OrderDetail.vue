@@ -113,8 +113,7 @@
               </ion-button>
               <ion-button v-if="isKit(item)" fill="clear" color="medium" size="small" @click.stop="fetchKitComponent(item)">
                 {{ translate('Components') }}
-                <ion-icon v-if="!item.showKitComponents" color="medium" slot="end" :icon="chevronDownOutline"/>
-                <ion-icon v-else color="medium" slot="end" :icon="chevronUpOutline"/>
+                <ion-icon color="medium" slot="end" :icon="listOutline"/>
               </ion-button>
             </div>
             </div>
@@ -277,12 +276,11 @@ import {
   bagCheckOutline,
   caretDownOutline,
   cashOutline,
-  chevronDownOutline,
-  chevronUpOutline,
   cubeOutline,
   documentTextOutline,
   ellipsisVerticalOutline,
   fileTrayOutline,
+  listOutline,
   locateOutline,
   personAddOutline,
   pricetagOutline,
@@ -1199,8 +1197,6 @@ export default defineComponent({
       bagCheckOutline,
       cashOutline,
       caretDownOutline,
-      chevronDownOutline,
-      chevronUpOutline,
       copyToClipboard,
       cubeOutline,
       documentTextOutline,
@@ -1211,6 +1207,7 @@ export default defineComponent({
       getProductIdentificationValue,
       hasPermission,
       isKit,
+      listOutline,
       locateOutline,
       personAddOutline,
       pricetagOutline,
