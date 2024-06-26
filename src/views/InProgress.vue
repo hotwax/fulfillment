@@ -379,7 +379,7 @@ export default defineComponent({
       await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
       
       //update the order in order to toggle kit components section
-      const updatedOrder = this.inProgressOrders.list.find((order: any) => order.orderId === orderItem.orderId);
+      const updatedOrder = this.inProgressOrders.list.find((order: any) => order.orderId === orderItem.orderId && order.picklistBinId === orderItem.picklistBinId);
       const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
       updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
       this.store.dispatch('order/updateInProgressOrder', updatedOrder)

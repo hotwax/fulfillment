@@ -105,7 +105,6 @@
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
                       {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
-                      <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
                       <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
                     </ion-label>
                   </ion-item>
@@ -287,7 +286,7 @@ export default defineComponent({
       await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
       
       //update the order in order to toggle kit components section
-      const updatedOrder = this.completedOrders.list.find((order: any) => order.orderId === orderItem.orderId);
+      const updatedOrder = this.completedOrders.list.find((order: any) =>  order.orderId === orderItem.orderId && order.picklistBinId === orderItem.picklistBinId);
       const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
       updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
     },
