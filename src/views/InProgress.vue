@@ -121,7 +121,7 @@
                   </template>
                   <template v-else>
                     <ion-chip outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
-                      <ion-label>{{ item.rejectReason }}</ion-label>
+                      <ion-label>{{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
                       <ion-icon :icon="closeCircleOutline" />
                     </ion-chip>
                   </template>
@@ -356,6 +356,9 @@ export default defineComponent({
     this.isScrollingEnabled = false;
   },
   methods: {
+    getRejectionReasonDescription (rejectionReasonId: string) {
+      return this.rejectReasons?.find((reason: any) => reason.enumId === rejectionReasonId)?.description;
+    },
     async openRejectReasonPopover(ev: Event, item: any, order: any) {
       const reportIssuePopover = await popoverController.create({
         component: ReportIssuePopover,
