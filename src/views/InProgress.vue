@@ -392,7 +392,7 @@ export default defineComponent({
             delete orderItem["rejectReason"];
           }
         })
-        order.hasRejectedItem = false
+        order.hasRejectedItem = order.items.some((item:any) => item.rejectReason);
       this.store.dispatch('order/updateInProgressOrder', order)
     },
 
