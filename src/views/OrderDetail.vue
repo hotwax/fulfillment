@@ -216,7 +216,8 @@
               </ion-label>
             </ion-item>
     
-            <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
+            <div v-for="item in shipGroup.items" :key="item">
+            <ion-item lines="none">
               <ion-thumbnail slot="start">
                 <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
               </ion-thumbnail>
@@ -226,12 +227,33 @@
                 <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
               </ion-label>
               
-              <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
-              <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-              <ion-button slot="end" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
-                <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
-              </ion-button>
+              <div class="other-shipment-actions">
+                <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+                <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                <ion-button slot="end" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
+                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                </ion-button>
+                <ion-button slot="end" v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponent(item, true)">
+                  <ion-icon color="medium" slot="icon-only" :icon="listOutline"/>
+                </ion-button>
+              </div>
             </ion-item>
+
+              <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
+                <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
+                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                      <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
+                    </ion-label>
+                  </ion-item>
+                </ion-card>
+              </div>
+            </div>
           </ion-card>
         </div>
       </div>
@@ -385,12 +407,20 @@ export default defineComponent({
         : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
   },
   methods: {
-    async fetchKitComponent(orderItem: any) {
+    async fetchKitComponent(orderItem: any, isOtherShipment = false ) {
       await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
       
       //update the order in order to toggle kit components section
-      const updatedItem = this.order.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
-      updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
+      if (isOtherShipment) {
+        const updatedShipGroup = this.order?.shipGroups.find((shipGroup: any) => shipGroup.shipGroupSeqId === orderItem.shipGroupSeqId)
+        if (updatedShipGroup){
+          const updatedItem = updatedShipGroup?.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
+          updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
+        }
+      } else {
+        const updatedItem = this.order.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
+        updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
+      }
     },
     async printPicklist (order: any) {
       await OrderService.printPicklist(order.picklistId)
@@ -1253,5 +1283,11 @@ ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-te
 
 .order-item {
   grid-template-columns: repeat(3, 1fr);
+}
+
+.other-shipment-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 </style>
