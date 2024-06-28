@@ -276,6 +276,14 @@ const updateOrder = async (payload: any): Promise<any> => {
   })
 }
 
+const rejectFulfillmentReadyOrderItem = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/rejectFulfillmentReadyOrderItem",
+    method: "post",
+    data: payload.data,
+  })
+}
+
 const fetchShipments = async (picklistBinIds: Array<string>, orderIds: Array<string>, originFacilityId: string, statusId = ["SHIPMENT_SHIPPED", "SHIPMENT_PACKED"]): Promise<any> => {
   let shipments = [];
 
@@ -808,6 +816,7 @@ export const OrderService = {
   printPicklist,
   printShippingLabel,
   printShippingLabelAndPackingSlip,
+  rejectFulfillmentReadyOrderItem,
   rejectOrderItem,
   retryShippingLabel,
   shipOrder,

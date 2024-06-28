@@ -272,7 +272,7 @@ const actions: ActionTree<OrderState, RootState> = {
         orders = resp.data.grouped.picklistBinId.groups
 
         // TODO get only product visible
-        this.dispatch('product/getProductInformation', { orders })
+        await this.dispatch('product/getProductInformation', { orders })
 
         orders = orders.map((order: any) => {
           const orderItem = order.doclist.docs[0];

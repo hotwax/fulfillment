@@ -113,16 +113,21 @@
                 <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
                 
                 <div v-if="order.shipmentPackages && order.shipmentPackages.length">
-                  <template v-if="!item.rejectReason">
+                  <template v-if="!item.rejectReason && !isEntierOrderRejectionEnabled(order)">
                     <ion-chip outline @click="openShipmentBoxPopover($event, item, item.orderItemSeqId, order)">
                       {{ `Box ${item.selectedBox}` }}
                       <ion-icon :icon="caretDownOutline" />
                     </ion-chip>
                   </template>
-                  <template v-else>
+                  <template v-else-if="item.rejectReason">
                     <ion-chip outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
-                      <ion-label>{{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
+                      <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
                       <ion-icon :icon="closeCircleOutline" />
+                    </ion-chip>
+                  </template>
+                  <template v-else-if="isEntierOrderRejectionEnabled(order)">
+                    <ion-chip outline color="danger">
+                      <ion-label> {{ translate("Reject Entire Order") }}</ion-label>
                     </ion-chip>
                   </template>
                 </div>
@@ -270,7 +275,7 @@ import {
 } from 'ionicons/icons'
 import PackagingPopover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
-import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils';
+import { copyToClipboard, formatUtcDate, getFeature, jsonToCsv, showToast } from '@/utils';
 import { isKit } from '@/utils/order'
 import { hasError } from '@/adapter';
 import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
@@ -338,7 +343,8 @@ export default defineComponent({
       userPreference: 'user/getUserPreference',
       boxTypeDesc: 'util/getShipmentBoxDesc',
       getProductStock: 'stock/getProductStock',
-      isForceScanEnabled: 'util/isForceScanEnabled'
+      isForceScanEnabled: 'util/isForceScanEnabled',
+      partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig'
     }),
   },
   data() {
@@ -719,14 +725,19 @@ export default defineComponent({
       })
 
       // creating updated data for items
+      const rejectedOrderItems = [] as any;
       items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
         let prefix = 'rtp'
-        // check for item.rejectReason is added to handle the case for rejecting kitProducts
         if (updateParameter === 'report' && item.rejectReason) {
-          prefix = 'rej'
-          form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
+          rejectedOrderItems.push({
+            "shipmentId": item.shipmentId,
+            "shipmentItemSeqId": item.shipmentItemSeqId,
+            "reason": item.rejectReason
+          })
+          //prefix = 'rej'
+          //form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
         } else {
           form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
         }
@@ -739,7 +750,19 @@ export default defineComponent({
       form.append('picklistBinId', order.picklistBinId)
 
       try {
-        const resp = await OrderService.updateOrder({
+        let resp;
+        if (rejectedOrderItems.length > 0) {
+          resp = await OrderService.rejectFulfillmentReadyOrderItem({
+            data: {
+              facilityId : this.currentFacility.facilityId,
+              rejectEntireShipment: this.isEntierOrderRejectionEnabled(order) ? "Y" : "N",
+              defaultReason: "REJECT_ENTIRE_ORDER",
+              items: rejectedOrderItems
+            }
+          });
+        }
+
+        resp = await OrderService.updateOrder({
           headers: {
             'Content-Type': 'multipart/form-data;'
           },
@@ -792,6 +815,9 @@ export default defineComponent({
       })
       order.hasRejectedItem = true
       this.store.dispatch('order/updateInProgressOrder', order)
+    },
+    isEntierOrderRejectionEnabled(order: any) {
+      return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
     },
     updateBox(updatedBox: string, item: any, order: any) {
       item.selectedBox = updatedBox;

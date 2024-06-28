@@ -58,6 +58,9 @@ const mutations: MutationTree <UserState> = {
     },
     [types.USER_UNREAD_NOTIFICATIONS_STATUS_UPDATED] (state, payload) {
         state.hasUnreadNotifications = payload
+    },
+    [types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED] (state, payload) {
+        state.partialOrderRejectionConfig = payload
     }
 }
 export default mutations;
