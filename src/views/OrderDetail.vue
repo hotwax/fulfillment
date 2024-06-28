@@ -223,7 +223,9 @@
               <ion-label>
                 <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                 {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
               </ion-label>
+              
               <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
               <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
               <ion-button slot="end" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
