@@ -120,7 +120,7 @@
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ translate('Specify whether you reject a BOPIS order partially when any order item inventory is insufficient at the store.') }}
+            {{ translate('Specify whether you reject an order partially when any order item inventory is insufficient at the store.') }}
           </ion-card-content>
           <ion-item lines="none">
             <ion-toggle label-placement="start" :disabled="!hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE)" :checked="partialOrderRejectionConfig.settingValue" @ionChange="updatePartialOrderRejectionConfig(partialOrderRejectionConfig, $event.detail.checked)">{{ translate("Allow partial rejection") }}</ion-toggle>

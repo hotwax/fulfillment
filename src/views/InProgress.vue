@@ -113,13 +113,8 @@
                 <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
                 
                 <div v-if="order.shipmentPackages && order.shipmentPackages.length">
-                  <template v-if="!item.rejectReason && !isEntierOrderRejectionEnabled(order)">
-                    <ion-chip outline @click="openShipmentBoxPopover($event, item, item.orderItemSeqId, order)">
-                      {{ `Box ${item.selectedBox}` }}
-                      <ion-icon :icon="caretDownOutline" />
-                    </ion-chip>
-                  </template>
-                  <template v-else-if="item.rejectReason">
+                  
+                  <template v-if="item.rejectReason">
                     <ion-chip outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
                       <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
                       <ion-icon :icon="closeCircleOutline" />
@@ -128,6 +123,12 @@
                   <template v-else-if="isEntierOrderRejectionEnabled(order)">
                     <ion-chip outline color="danger">
                       <ion-label> {{ translate("Reject Entire Order") }}</ion-label>
+                    </ion-chip>
+                  </template>
+                  <template v-else>
+                    <ion-chip outline @click="openShipmentBoxPopover($event, item, item.orderItemSeqId, order)">
+                      {{ `Box ${item.selectedBox}` }}
+                      <ion-icon :icon="caretDownOutline" />
                     </ion-chip>
                   </template>
                 </div>
