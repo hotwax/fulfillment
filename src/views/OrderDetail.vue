@@ -375,7 +375,8 @@ export default defineComponent({
       getfacilityTypeDesc: 'util/getFacilityTypeDesc',
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
       getStatusDesc: 'util/getStatusDesc',
-      productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount'
+      productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
+      partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig'
     })
   },
   data() {
@@ -421,6 +422,9 @@ export default defineComponent({
         const updatedItem = this.order.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
         updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
       }
+    },
+    isEntierOrderRejectionEnabled(order: any) {
+      return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
     },
     async printPicklist (order: any) {
       await OrderService.printPicklist(order.picklistId)
@@ -928,14 +932,19 @@ export default defineComponent({
       })
 
       // creating updated data for items
+      const rejectedOrderItems = [] as any;
       items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
-
         let prefix = 'rtp'
         // reject the item only when item is having a rejection reason
         if(updateParameter === 'report' && item.rejectReason) {
-          prefix = 'rej'
-          form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
+          rejectedOrderItems.push({
+            "shipmentId": item.shipmentId,
+            "shipmentItemSeqId": item.shipmentItemSeqId,
+            "reason": item.rejectReason
+          })
+          //prefix = 'rej'
+          //form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
         } else {
           form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
         }
@@ -948,7 +957,19 @@ export default defineComponent({
       form.append('picklistBinId', order.picklistBinId)
 
       try {
-        const resp = await OrderService.updateOrder({
+        let resp;
+        if (rejectedOrderItems.length > 0) {
+          resp = await OrderService.rejectFulfillmentReadyOrderItem({
+            data: {
+              facilityId : this.currentFacility.facilityId,
+              rejectEntireShipment: this.isEntierOrderRejectionEnabled(order) ? "Y" : "N",
+              defaultReason: "REJECT_ENTIRE_ORDER",
+              items: rejectedOrderItems
+            }
+          });
+        }
+
+        resp = await OrderService.updateOrder({
           headers: {
             'Content-Type': 'multipart/form-data;'
           },
