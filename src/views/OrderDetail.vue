@@ -72,7 +72,8 @@
             </div>  
           </div>
 
-          <div v-for="item in order.orderItems" :key="item" class="order-item">
+          <div v-for="item in order.items" :key="item" class="order-line-item">
+            <div class="order-item">
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
@@ -81,6 +82,7 @@
                 <ion-label>
                   <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                   {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                  <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
                   <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                 </ion-label>
               </ion-item>
@@ -109,65 +111,29 @@
                 {{ translate('Report an issue') }}
                 <ion-icon slot="end" :icon="trashBinOutline"/>
               </ion-button>
+              <ion-button v-if="isKit(item)" fill="clear" color="medium" size="small" @click.stop="fetchKitComponent(item)">
+                {{ translate('Components') }}
+                <ion-icon color="medium" slot="end" :icon="listOutline"/>
+              </ion-button>
             </div>
-          </div>
-
-          <div v-if="order.kitProducts">
-            <div v-for="(kitProducts, orderItemSeqId) in order.kitProducts" :key="orderItemSeqId">
-              <ion-item-divider class="order-item" color="light">
-                <div class="product-info">
-                  <ion-label>
-                    <p>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(kitProducts[0]?.parentProductId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(kitProducts[0]?.parentProductId)) : getProduct(kitProducts[0]?.parentProductId).productName }}</p>
-                    <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(kitProducts[0]?.parentProductId)) }}</p>
-                  </ion-label>
-                </div>
-
-                <div v-if="category === 'in-progress' && order.shipmentPackages && order.shipmentPackages.length">
-                  <ion-chip outline @click="openShipmentBoxPopover($event, null, order, kitProducts, orderItemSeqId)">
-                    <ion-icon :icon="fileTrayOutline" />
-                    {{ `Box ${kitProducts[0]?.selectedBox}` }} 
-                    <ion-icon :icon="caretDownOutline" />
-                  </ion-chip>
-                </div>
-
-                <!-- In completed and inprogress category we only have two items in product item while css needs 3 hence adding an empty div. -->
-                <div v-else></div>
-
-                <div class="product-metadata" v-if="category === 'in-progress' && order.shipmentPackages && order.shipmentPackages.length">
-                  <ion-button @click="openRejectReasonPopover($event, null, order, kitProducts)" color="danger" fill="outline">
-                    {{ translate('Report an issue') }}
-                  </ion-button>
-                </div>
-              </ion-item-divider>
-
-              <div v-for="item in kitProducts" :key="item.orderItemSeqId" class="order-item">
-                <ion-item lines="none" class="product-info">
+            </div>
+            <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
+              <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
+                <ion-item lines="none">
                   <ion-thumbnail slot="start">
-                    <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                    <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
-                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                    <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
+                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                    <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                    <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                 </ion-item>
-
-                <!-- Order item css needs 3 child items. Hence adding an empty div. -->
-                <div></div>
-
-                <div class="product-metadata">
-                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">
-                    {{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}
-                  </ion-note>
-                  <ion-button color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
-                    {{ translate('Check stock') }}
-                    <ion-icon slot="end" :icon="cubeOutline"/>
-                  </ion-button>
-                </div>
-              </div>
+              </ion-card>
             </div>
           </div>
-
+          
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
               <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
@@ -250,20 +216,44 @@
               </ion-label>
             </ion-item>
     
-            <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
+            <div v-for="item in shipGroup.items" :key="item">
+            <ion-item lines="none">
               <ion-thumbnail slot="start">
                 <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
               </ion-thumbnail>
               <ion-label>
                 <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                 {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
               </ion-label>
-              <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
-              <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-              <ion-button slot="end" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
-                <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
-              </ion-button>
+              
+              <div class="other-shipment-actions">
+                <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+                <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                <ion-button slot="end" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
+                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                </ion-button>
+                <ion-button slot="end" v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponent(item, true)">
+                  <ion-icon color="medium" slot="icon-only" :icon="listOutline"/>
+                </ion-button>
+              </div>
             </ion-item>
+
+              <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
+                <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
+                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                      <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
+                    </ion-label>
+                  </ion-item>
+                </ion-card>
+              </div>
+            </div>
           </ion-card>
         </div>
       </div>
@@ -289,7 +279,6 @@ import {
   IonHeader,
   IonIcon,
   IonItem,
-  IonItemDivider,
   IonLabel,
   IonNote,
   IonPage,
@@ -315,6 +304,7 @@ import {
   documentTextOutline,
   ellipsisVerticalOutline,
   fileTrayOutline,
+  listOutline,
   locateOutline,
   personAddOutline,
   pricetagOutline,
@@ -339,6 +329,7 @@ import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
 import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
 import ShippingDetails from '@/views/ShippingDetails.vue';
+import { isKit } from '@/utils/order'
 
 export default defineComponent({
   name: "OrderDetail",
@@ -357,7 +348,6 @@ export default defineComponent({
     IonHeader,
     IonIcon,
     IonItem,
-    IonItemDivider,
     IonLabel,
     IonNote,
     IonPage,
@@ -417,6 +407,21 @@ export default defineComponent({
         : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
   },
   methods: {
+    async fetchKitComponent(orderItem: any, isOtherShipment = false ) {
+      await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
+      
+      //update the order in order to toggle kit components section
+      if (isOtherShipment) {
+        const updatedShipGroup = this.order?.shipGroups.find((shipGroup: any) => shipGroup.shipGroupSeqId === orderItem.shipGroupSeqId)
+        if (updatedShipGroup){
+          const updatedItem = updatedShipGroup?.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
+          updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
+        }
+      } else {
+        const updatedItem = this.order.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
+        updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
+      }
+    },
     async printPicklist (order: any) {
       await OrderService.printPicklist(order.picklistId)
     },
@@ -434,7 +439,7 @@ export default defineComponent({
 
       const result = await popover.onDidDismiss();
 
-      if (result.data && (kitProducts ? kitProducts[0].selectedBox !== result.data : item.selectedBox !== result.data)) {
+      if (result.data && item.selectedBox !== result.data) {
         this.confirmUpdateBox(item, order, result.data, kitProducts, orderItemSeqId)
       }
     },
@@ -450,22 +455,11 @@ export default defineComponent({
           {
             text: translate("Confirm"),
             handler: async () => {
-              // For the case of kit products updating the order.items property as all the operations are handled on items
-              if(kitProducts) {
-                const kitItemAssocs = kitProducts[0].toOrderItemAssocs.find((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
-                order.items.map((orderItem: any) => {
-                  if(orderItem.toOrderItemAssocs.includes(kitItemAssocs)) {
-                    orderItem.selectedBox = selectedBox
-                  }
-                  return orderItem
-                })
-              } else {
-                order.items.map((orderItem: any) => {
-                  if(orderItem.orderItemSeqId === item.orderItemSeqId) {
-                    orderItem.selectedBox = selectedBox
-                  }
-                })
-              }
+              order.items.map((orderItem: any) => {
+                if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+                  orderItem.selectedBox = selectedBox
+                }
+              })
 
               await this.updateOrder(order, 'box-selection').then(async () => {
                 await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
@@ -689,21 +683,11 @@ export default defineComponent({
       const result = await reportIssuePopover.onDidDismiss();
 
       if(result.data) {
-        if(kitProducts) {
-          const kitItemAssocs = kitProducts[0].toOrderItemAssocs.find((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
-          order.items.map((orderItem: any) => {
-            if(orderItem.toOrderItemAssocs.includes(kitItemAssocs)) {
-              orderItem.rejectReason = result.data
-            }
-            return orderItem
-          })
-        } else {
-          order.items.map((orderItem: any) => {
-            if(orderItem.orderItemSeqId === item.orderItemSeqId) {
-              orderItem.rejectReason = result.data
-            }
-          })
-        }
+        order.items.map((orderItem: any) => {
+          if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+            orderItem.rejectReason = result.data
+          }
+        })
 
         const itemsToReject = order.items.filter((item: any) => item.rejectReason)
         this.reportIssue(order, itemsToReject)
@@ -1254,6 +1238,8 @@ export default defineComponent({
       getFeature,
       getProductIdentificationValue,
       hasPermission,
+      isKit,
+      listOutline,
       locateOutline,
       personAddOutline,
       pricetagOutline,
@@ -1297,5 +1283,11 @@ ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-te
 
 .order-item {
   grid-template-columns: repeat(3, 1fr);
+}
+
+.other-shipment-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 </style>
