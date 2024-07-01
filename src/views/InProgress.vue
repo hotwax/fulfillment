@@ -730,7 +730,7 @@ export default defineComponent({
       items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
-        let prefix = 'rtp'
+        
         if (updateParameter === 'report' && item.rejectReason) {
           rejectedOrderItems.push({
             "shipmentId": item.shipmentId,
@@ -740,35 +740,39 @@ export default defineComponent({
           //prefix = 'rej'
           //form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
         } else {
+          const prefix = 'rtp'
           form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
+          form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
+          form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
+          form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
         }
-
-        form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
-        form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
-        form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
       })
 
       form.append('picklistBinId', order.picklistBinId)
 
       try {
         let resp;
+        //Rejection of items will now be handled by the logic below.
         if (rejectedOrderItems.length > 0) {
           resp = await OrderService.rejectFulfillmentReadyOrderItem({
             data: {
               facilityId : this.currentFacility.facilityId,
               rejectEntireShipment: this.isEntierOrderRejectionEnabled(order) ? "Y" : "N",
-              defaultReason: "REJECT_ENTIRE_ORDER",
+              defaultReason: "REJECT_ENTIRE_ORDER", //default reason for items for which reason is not selected but rejecting due to entire order rejection config.
               items: rejectedOrderItems
             }
           });
         }
 
-        resp = await OrderService.updateOrder({
-          headers: {
-            'Content-Type': 'multipart/form-data;'
-          },
-          data: form
-        })
+        //Run this logic only when entire order rejection is disabled. This logic will now be used only to update shipment boxes, not to reject items.
+        if (!this.isEntierOrderRejectionEnabled(order)) {
+          resp = await OrderService.updateOrder({
+            headers: {
+              'Content-Type': 'multipart/form-data;'
+            },
+            data: form
+          })
+        }
 
         if(!hasError(resp)) {
           if (order.hasRejectedItem) {
