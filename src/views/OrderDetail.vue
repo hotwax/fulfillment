@@ -97,7 +97,7 @@
               </template>
               <template v-else-if="isEntierOrderRejectionEnabled(order)">
                 <ion-chip outline color="danger">
-                  <ion-label> {{ translate("Reject Entire Order") }}</ion-label>
+                  <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject entire order')}}</ion-label>
                 </ion-chip>
               </template>
               <template v-else>
@@ -413,7 +413,8 @@ export default defineComponent({
         'PAYMENT_RECEIVED': '',
         'PAYMENT_REFUNDED': 'warning',
         'PAYMENT_SETTLED': ''
-      } as any
+      } as any,
+      rejectEntireOrderReasonId: 'REJECT_ENTIRE_ORDER'
     }
   },
   async ionViewDidEnter() {
@@ -1010,7 +1011,7 @@ export default defineComponent({
             data: {
               facilityId : this.currentFacility.facilityId,
               rejectEntireShipment: this.isEntierOrderRejectionEnabled(order) ? "Y" : "N",
-              defaultReason: "REJECT_ENTIRE_ORDER", //default reason for items for which reason is not selected but rejecting due to entire order rejection config.
+              defaultReason: this.rejectEntireOrderReasonId, //default reason for items for which reason is not selected but rejecting due to entire order rejection config.
               items: rejectedOrderItems
             }
           });
