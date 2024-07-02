@@ -81,7 +81,8 @@ const actions: ActionTree<OrderState, RootState> = {
 
         order.items.map((item: any) => {
           // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
-          const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)
+          //Added a check for shipmentItem.productId === orderItem.productId to identify the correct shipment item. In the case of a kit, the ShipmentItem will be created with the same orderItemSeqId for both the kit and its components.
+          const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId && shipmentItem.productId === item.productId)
 
           if (shipment) {
             item.shipmentId = shipment.shipmentId
@@ -1039,7 +1040,8 @@ const actions: ActionTree<OrderState, RootState> = {
 
       current.items.map((item: any) => {
         // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
-        const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)
+       //Added a check for shipmentItem.productId === orderItem.productId to identify the correct shipment item. In the case of a kit, the ShipmentItem will be created with the same orderItemSeqId for both the kit and its components.
+        const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId && shipmentItem.productId === item.productId)
 
         if (shipment) {
           item.shipmentId = shipment.shipmentId

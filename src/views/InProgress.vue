@@ -757,7 +757,8 @@ export default defineComponent({
             const itemInformation = itemInformationByOrderResp[order.orderId]
 
             itemInformation?.map((orderItem: any) => {
-              const item = items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
+              //Added a check for item.productId === orderItem.productId to identify the correct shipment item. In the case of a kit, the ShipmentItem will be created with the same orderItemSeqId for both the kit and its components.
+              const item = items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId && item.productId === orderItem.productId)
 
               item.shipmentId = orderItem.shipmentId
               item.shipmentItemSeqId = orderItem.shipmentItemSeqId
