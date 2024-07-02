@@ -135,7 +135,7 @@
                 </div>
 
                 <div class="product-metadata">
-                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponent(item)">
+                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
                   <ion-button fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
@@ -148,7 +148,15 @@
                 </div>
               </div>
 
-              <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
+              <div v-if="item.showKitComponents && !getProduct(item.productId)?.productComponents" class="kit-components">
+                <ion-item lines="none">
+                  <ion-skeleton-text animated style="height: 80%;"/>
+                </ion-item>
+                <ion-item lines="none">
+                  <ion-skeleton-text animated style="height: 80%;"/>
+                </ion-item>
+              </div>
+              <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
@@ -382,8 +390,8 @@ export default defineComponent({
         this.updateRejectReason(result.data, item, order)
       }
     },
-    async fetchKitComponent(orderItem: any) {
-      await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
+    async fetchKitComponents(orderItem: any) {
+      this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
       
       //update the order in order to toggle kit components section
       const updatedOrder = this.inProgressOrders.list.find((order: any) => order.orderId === orderItem.orderId && order.picklistBinId === orderItem.picklistBinId);
