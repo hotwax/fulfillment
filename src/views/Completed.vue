@@ -86,7 +86,7 @@
                   </ion-item>
                 </div>
                 <div class="product-metadata">
-                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponent(item)">
+                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
@@ -289,7 +289,7 @@ export default defineComponent({
         return order.hasMissingShipmentInfo || order.hasMissingPackageInfo;
       })
     },
-    async fetchKitComponent(orderItem: any) {
+    async fetchKitComponents(orderItem: any) {
       this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
       
       //update the order in order to toggle kit components section

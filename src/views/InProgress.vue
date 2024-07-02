@@ -135,7 +135,7 @@
                 </div>
 
                 <div class="product-metadata">
-                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponent(item)">
+                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
                   <ion-button fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
@@ -390,7 +390,7 @@ export default defineComponent({
         this.updateRejectReason(result.data, item, order)
       }
     },
-    async fetchKitComponent(orderItem: any) {
+    async fetchKitComponents(orderItem: any) {
       this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
       
       //update the order in order to toggle kit components section
