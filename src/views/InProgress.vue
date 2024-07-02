@@ -105,10 +105,7 @@
 
                 <div class="desktop-only" v-if="!order.shipmentPackages && !order.hasMissingInfo">
                   <ion-item lines="none">
-                    <ion-skeleton-text animated style="height: 80%;"/>
-                  </ion-item>
-                  <ion-item lines="none">
-                    <ion-skeleton-text animated style="height: 80%;"/>
+                    <ion-skeleton-text animated style="width: 50%;"/>
                   </ion-item>
                 </div>
 
@@ -153,8 +150,10 @@
 
               <div v-if="item.showKitComponents && !getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-item lines="none">
-                  <ion-skeleton-text animated />
-                  <ion-skeleton-text animated />
+                  <ion-skeleton-text animated style="height: 80%;"/>
+                </ion-item>
+                <ion-item lines="none">
+                  <ion-skeleton-text animated style="height: 80%;"/>
                 </ion-item>
               </div>
               <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
