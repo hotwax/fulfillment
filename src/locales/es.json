@@ -383,6 +383,7 @@
   "Reject all": "Rechazar todo",
   "Reject all in progress orders": "Rechazar todos los pedidos en curso",
   "Reject all open orders": "Rechazar todos los pedidos abiertos",
+  "Reject entire order": "Reject entire order",
   "Reject in progress orders.": "Rechazar { ordersCount } pedidos en curso.",
   "Reject open orders.": "Rechazar { ordersCount } pedidos abiertos.",
   "Reject order": "Rechazar pedido",

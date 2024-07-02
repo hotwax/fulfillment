@@ -89,11 +89,24 @@
             </div>
 
             <div v-if="category === 'in-progress'" class="desktop-only" >
-              <ion-chip outline @click="openShipmentBoxPopover($event, item, order)">
-                <ion-icon :icon="fileTrayOutline" />
-                {{ `Box ${item.selectedBox}` }} 
-                <ion-icon :icon="caretDownOutline" />
-              </ion-chip>
+              <template v-if="item.rejectReason">
+                <ion-chip outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
+                  <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
+                  <ion-icon :icon="closeCircleOutline" />
+                </ion-chip>
+              </template>
+              <template v-else-if="isEntierOrderRejectionEnabled(order)">
+                <ion-chip outline color="danger">
+                  <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject entire order')}}</ion-label>
+                </ion-chip>
+              </template>
+              <template v-else>
+                <ion-chip outline @click="openShipmentBoxPopover($event, item, order)">
+                  <ion-icon :icon="fileTrayOutline" />
+                  {{ `Box ${item.selectedBox}` }} 
+                  <ion-icon :icon="caretDownOutline" />
+                </ion-chip>
+              </template>
             </div>
 
             <!-- In completed and inprogress category we only have two items in product item while css needs 3 hence adding an empty div. -->
@@ -154,11 +167,14 @@
 
           <div class="actions">
             <!-- positive -->
-            <div>  
-              <ion-button v-if="category === 'in-progress'" :disabled="order.hasMissingInfo" @click="packOrder(order)">
-                <ion-icon slot="start" :icon="personAddOutline" />
-                {{ translate("Pack order") }}
-              </ion-button>
+            <div>
+              <template v-if="category === 'in-progress'">
+                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click="packOrder(order)">
+                  <ion-icon slot="start" :icon="personAddOutline" />
+                  {{ translate("Pack order") }}
+                </ion-button>
+                <ion-button :disabled="order.hasMissingInfo" fill="outline" @click.stop="save(order)">{{ translate("Save") }}</ion-button>
+              </template>  
               <ion-button v-else-if="category === 'open'" @click="assignPickers">
                 <ion-icon slot="start" :icon="archiveOutline" />
                 {{ translate("Pick order") }}
@@ -300,6 +316,7 @@ import {
   bagCheckOutline,
   caretDownOutline,
   cashOutline,
+  closeCircleOutline,
   cubeOutline,
   documentTextOutline,
   ellipsisVerticalOutline,
@@ -375,7 +392,8 @@ export default defineComponent({
       getfacilityTypeDesc: 'util/getFacilityTypeDesc',
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
       getStatusDesc: 'util/getStatusDesc',
-      productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount'
+      productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
+      partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig'
     })
   },
   data() {
@@ -395,7 +413,8 @@ export default defineComponent({
         'PAYMENT_RECEIVED': '',
         'PAYMENT_REFUNDED': 'warning',
         'PAYMENT_SETTLED': ''
-      } as any
+      } as any,
+      rejectEntireOrderReasonId: 'REJECT_ENTIRE_ORDER'
     }
   },
   async ionViewDidEnter() {
@@ -421,6 +440,12 @@ export default defineComponent({
         const updatedItem = this.order.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
         updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
       }
+    },
+    getRejectionReasonDescription (rejectionReasonId: string) {
+      return this.rejectReasons?.find((reason: any) => reason.enumId === rejectionReasonId)?.description;
+    },
+    isEntierOrderRejectionEnabled(order: any) {
+      return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
     },
     async printPicklist (order: any) {
       await OrderService.printPicklist(order.picklistId)
@@ -454,21 +479,32 @@ export default defineComponent({
           },
           {
             text: translate("Confirm"),
-            handler: async () => {
+            handler: () => {
               order.items.map((orderItem: any) => {
                 if(orderItem.orderItemSeqId === item.orderItemSeqId) {
                   orderItem.selectedBox = selectedBox
                 }
               })
+              order.isModified = true;
 
+              /*
+              Commenting this out to avoid directly updating items. Now user need to click on the save button to save the detail.
               await this.updateOrder(order, 'box-selection').then(async () => {
                 await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
-              }).catch(err => err);
+              }).catch(err => err);*/
             }
           }
         ],
       });
       return alert.present();
+    },
+    save(order: any) {
+      if(order.hasRejectedItem) {
+        const itemsToReject = order.items.filter((item: any) => item.rejectReason)
+        this.reportIssue(order, itemsToReject);
+        return;
+      }
+      this.updateOrder(order);
     },
     async orderActionsPopover(order: any, ev: Event) {
       const popover = await popoverController.create({
@@ -688,10 +724,24 @@ export default defineComponent({
             orderItem.rejectReason = result.data
           }
         })
+        order.hasRejectedItem = true
+        
 
+        /*
+        Commenting this out to avoid directly updating items. Now user need to click on the save button to save the detail.
         const itemsToReject = order.items.filter((item: any) => item.rejectReason)
-        this.reportIssue(order, itemsToReject)
+        this.reportIssue(order, itemsToReject)*/
       }
+    },
+    async removeRejectionReason(ev: Event, item: any, order: any) {
+      delete item["rejectReason"];
+      item.rejectReason = "";
+        order.items.map((orderItem: any) => {
+          if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+            delete orderItem["rejectReason"];
+          }
+        })
+        order.hasRejectedItem = order.items.some((item:any) => item.rejectReason);
     },
     async assignPickers() {
       const assignPickerModal = await modalController.create({
@@ -875,6 +925,7 @@ export default defineComponent({
 
       if (result.data) {
         shipmentPackage.shipmentBoxTypeId = result.data;
+        order.isModified = true;
         this.store.dispatch('order/updateInProgressOrder', order);
       }
     },
@@ -908,7 +959,7 @@ export default defineComponent({
       this.itemsIssueSegmentSelected = []
       await this.store.dispatch('order/findInProgressOrders')
     },
-    async updateOrder(order: any, updateParameter: string) {
+    async updateOrder(order: any, updateParameter?: string) {
       const form = new FormData()
 
       form.append('facilityId', this.currentFacility.facilityId)
@@ -928,32 +979,53 @@ export default defineComponent({
       })
 
       // creating updated data for items
+      const rejectedOrderItems = [] as any;
       items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
-
-        let prefix = 'rtp'
+        
         // reject the item only when item is having a rejection reason
         if(updateParameter === 'report' && item.rejectReason) {
-          prefix = 'rej'
-          form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
+          rejectedOrderItems.push({
+            "shipmentId": item.shipmentId,
+            "shipmentItemSeqId": item.shipmentItemSeqId,
+            "reason": item.rejectReason
+          })
+          //prefix = 'rej'
+          //form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
         } else {
+          const prefix = 'rtp'
           form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
+          form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
+          form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
+          form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
         }
-
-        form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
-        form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
-        form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
       })
 
       form.append('picklistBinId', order.picklistBinId)
 
       try {
-        const resp = await OrderService.updateOrder({
-          headers: {
-            'Content-Type': 'multipart/form-data;'
-          },
-          data: form
-        })
+        let resp;
+        //Rejection of items will now be handled by the logic below.
+        if (rejectedOrderItems.length > 0) {
+          resp = await OrderService.rejectFulfillmentReadyOrderItem({
+            data: {
+              facilityId : this.currentFacility.facilityId,
+              rejectEntireShipment: this.isEntierOrderRejectionEnabled(order) ? "Y" : "N",
+              defaultReason: this.rejectEntireOrderReasonId, //default reason for items for which reason is not selected but rejecting due to entire order rejection config.
+              items: rejectedOrderItems
+            }
+          });
+        }
+
+        //Run this logic only when entire order rejection is disabled. This logic will now be used only to update shipment boxes, not to reject items.
+        if (!this.isEntierOrderRejectionEnabled(order)) {
+          resp = await OrderService.updateOrder({
+            headers: {
+              'Content-Type': 'multipart/form-data;'
+            },
+            data: form
+          })
+        }
 
         if(!hasError(resp)) {
             // updating the shipment information on item level
@@ -968,6 +1040,7 @@ export default defineComponent({
           })
           order.items = items
 
+          order.isModified = false;
           await this.store.dispatch('order/updateInProgressOrder', order)
           showToast(translate('Order updated successfully'))
           return Promise.resolve(order);
@@ -1026,7 +1099,7 @@ export default defineComponent({
               await this.updateOrder(order, 'report').then(async () => {
                 // redirect user to inProgress list page only when the order has a single item, and the user initiated report action on the same
                 // update the current order only when order contains multiple items in it.
-                if(order.items.length === 1) {
+                if(order.items.length === 1 || this.isEntierOrderRejectionEnabled(order)) {
                   this.router.push('/in-progress')
                 } else {
                   await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
@@ -1229,6 +1302,7 @@ export default defineComponent({
       bagCheckOutline,
       cashOutline,
       caretDownOutline,
+      closeCircleOutline,
       copyToClipboard,
       cubeOutline,
       documentTextOutline,

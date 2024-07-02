@@ -401,6 +401,76 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_PWA_STATE_UPDATED, payload);
   },
 
+  async updatePartialOrderRejectionConfig ({ dispatch }, payload) {  
+    let resp = {} as any;
+    try {
+      if(!await UserService.isEnumExists("FULFILL_PART_ODR_REJ")) {
+        resp = await UserService.createEnumeration({
+          "enumId": "FULFILL_PART_ODR_REJ",
+          "enumTypeId": "PROD_STR_STNG",
+          "description": "Fulfillment Partial Order Rejection",
+          "enumName": "Fulfillment Partial Order Rejection",
+          "enumCode": "FULFILL_PART_ODR_REJ"
+        })
+
+        if(hasError(resp)) {
+          throw resp.data;
+        }
+      }
+
+      if (!payload.fromDate) {
+        //Create Product Store Setting
+        payload = {
+          ...payload, 
+          "productStoreId": this.state.user.currentEComStore.productStoreId,
+          "settingTypeEnumId": "FULFILL_PART_ODR_REJ",
+          "fromDate": DateTime.now().toMillis()
+        }
+        resp = await UserService.createPartialOrderRejectionConfig(payload) as any
+      } else {
+        //Update Product Store Setting
+        resp = await UserService.updatePartialOrderRejectionConfig(payload) as any
+      }
+
+      if (!hasError(resp)) {
+        showToast(translate('Configuration updated'))
+      } else {
+        showToast(translate('Failed to update configuration'))
+      }
+    } catch(err) {
+      showToast(translate('Failed to update configuration'))
+      logger.error(err)
+    }
+
+    // Fetch the updated configuration
+    await dispatch("getPartialOrderRejectionConfig");
+  },
+  async getPartialOrderRejectionConfig ({ commit }) {
+    let config = {};
+    const params = {
+      "inputFields": {
+        "productStoreId": this.state.user.currentEComStore.productStoreId,
+        "settingTypeEnumId": "FULFILL_PART_ODR_REJ"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "viewSize": 1
+    } as any
+
+    try {
+      const resp = await UserService.getPartialOrderRejectionConfig(params)
+      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
+        config = resp.data?.docs[0];
+      } else {
+        logger.error('Failed to fetch partial order rejection configuration');
+      }
+    } catch (err) {
+      logger.error(err);
+    } 
+    commit(types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED, config);   
+  },
+
   addNotification({ state, commit }, payload) {
     const notifications = JSON.parse(JSON.stringify(state.notifications))
     notifications.push({ ...payload.notification, time: DateTime.now().toMillis() })

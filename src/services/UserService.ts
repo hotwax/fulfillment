@@ -292,10 +292,69 @@ const getFieldMappings = async (payload: any): Promise <any> => {
     data: payload
   });
 }
+const getPartialOrderRejectionConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: payload,
+  });
+}
+
+const createEnumeration = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createEnumeration",
+    method: "post",
+    data: payload
+  })
+}
+
+const isEnumExists = async (enumId: string): Promise<any> => {
+  try {
+    const resp = await api({
+      url: 'performFind',
+      method: 'POST',
+      data: {
+        entityName: "Enumeration",
+        inputFields: {
+          enumId
+        },
+        viewSize: 1,
+        fieldList: ["enumId"],
+        noConditionFind: 'Y'
+      }
+    }) as any
+
+    if (!hasError(resp) && resp.data.docs.length) {
+      return true
+    }
+    return false
+  } catch (err) {
+    return false
+  }
+}
+
+const createPartialOrderRejectionConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
+
+const updatePartialOrderRejectionConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
+
 
 export const UserService = {
     addFacilityToGroup,
+    createEnumeration,
     createFieldMapping,
+    createPartialOrderRejectionConfig,
     deleteFieldMapping,
     login,
     getEComStores,
@@ -304,13 +363,16 @@ export const UserService = {
     getFieldMappings,
     getFacilityGroupDetails,
     getFacilityGroupAndMemberDetails,
+    getPartialOrderRejectionConfig,
     getUserProfile,
     getPreferredStore,
+    isEnumExists,
     recycleInProgressOrders,
     recycleOutstandingOrders,
     setUserPreference,
     getUserPermissions,
     updateFacility,
     updateFacilityToGroup,
-    updateFieldMapping
+    updateFieldMapping,
+    updatePartialOrderRejectionConfig
 }

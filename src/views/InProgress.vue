@@ -113,16 +113,22 @@
                 <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
                 
                 <div v-if="order.shipmentPackages && order.shipmentPackages.length">
-                  <template v-if="!item.rejectReason">
-                    <ion-chip outline @click="openShipmentBoxPopover($event, item, item.orderItemSeqId, order)">
-                      {{ `Box ${item.selectedBox}` }}
-                      <ion-icon :icon="caretDownOutline" />
+                  
+                  <template v-if="item.rejectReason">
+                    <ion-chip outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
+                      <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
+                      <ion-icon :icon="closeCircleOutline" />
+                    </ion-chip>
+                  </template>
+                  <template v-else-if="isEntierOrderRejectionEnabled(order)">
+                    <ion-chip outline color="danger">
+                      <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject entire order')}}</ion-label>
                     </ion-chip>
                   </template>
                   <template v-else>
-                    <ion-chip outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
-                      <ion-label>{{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
-                      <ion-icon :icon="closeCircleOutline" />
+                    <ion-chip outline @click="openShipmentBoxPopover($event, item, item.orderItemSeqId, order)">
+                      {{ `Box ${item.selectedBox}` }}
+                      <ion-icon :icon="caretDownOutline" />
                     </ion-chip>
                   </template>
                 </div>
@@ -270,7 +276,7 @@ import {
 } from 'ionicons/icons'
 import PackagingPopover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
-import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils';
+import { copyToClipboard, formatUtcDate, getFeature, jsonToCsv, showToast } from '@/utils';
 import { isKit } from '@/utils/order'
 import { hasError } from '@/adapter';
 import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
@@ -338,7 +344,8 @@ export default defineComponent({
       userPreference: 'user/getUserPreference',
       boxTypeDesc: 'util/getShipmentBoxDesc',
       getProductStock: 'stock/getProductStock',
-      isForceScanEnabled: 'util/isForceScanEnabled'
+      isForceScanEnabled: 'util/isForceScanEnabled',
+      partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig'
     }),
   },
   data() {
@@ -349,7 +356,8 @@ export default defineComponent({
       searchedQuery: '',
       addingBoxForOrderIds: [] as any,
       selectedPicklistId: '',
-      isScrollingEnabled: false
+      isScrollingEnabled: false,
+      rejectEntireOrderReasonId: 'REJECT_ENTIRE_ORDER'
     }
   },
   async ionViewWillEnter() {
@@ -719,32 +727,53 @@ export default defineComponent({
       })
 
       // creating updated data for items
+      const rejectedOrderItems = [] as any;
       items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
-        let prefix = 'rtp'
-        // check for item.rejectReason is added to handle the case for rejecting kitProducts
+        
         if (updateParameter === 'report' && item.rejectReason) {
-          prefix = 'rej'
-          form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
+          rejectedOrderItems.push({
+            "shipmentId": item.shipmentId,
+            "shipmentItemSeqId": item.shipmentItemSeqId,
+            "reason": item.rejectReason
+          })
+          //prefix = 'rej'
+          //form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
         } else {
+          const prefix = 'rtp'
           form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
+          form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
+          form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
+          form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
         }
-
-        form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
-        form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
-        form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
       })
 
       form.append('picklistBinId', order.picklistBinId)
 
       try {
-        const resp = await OrderService.updateOrder({
-          headers: {
-            'Content-Type': 'multipart/form-data;'
-          },
-          data: form
-        })
+        let resp;
+        //Rejection of items will now be handled by the logic below.
+        if (rejectedOrderItems.length > 0) {
+          resp = await OrderService.rejectFulfillmentReadyOrderItem({
+            data: {
+              facilityId : this.currentFacility.facilityId,
+              rejectEntireShipment: this.isEntierOrderRejectionEnabled(order) ? "Y" : "N",
+              defaultReason: this.rejectEntireOrderReasonId, //default reason for items for which reason is not selected but rejecting due to entire order rejection config.
+              items: rejectedOrderItems
+            }
+          });
+        }
+
+        //Run this logic only when entire order rejection is disabled. This logic will now be used only to update shipment boxes, not to reject items.
+        if (!this.isEntierOrderRejectionEnabled(order)) {
+          resp = await OrderService.updateOrder({
+            headers: {
+              'Content-Type': 'multipart/form-data;'
+            },
+            data: form
+          })
+        }
 
         if(!hasError(resp)) {
           if (order.hasRejectedItem) {
@@ -793,6 +822,9 @@ export default defineComponent({
       })
       order.hasRejectedItem = true
       this.store.dispatch('order/updateInProgressOrder', order)
+    },
+    isEntierOrderRejectionEnabled(order: any) {
+      return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
     },
     updateBox(updatedBox: string, item: any, order: any) {
       item.selectedBox = updatedBox;

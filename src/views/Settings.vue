@@ -113,6 +113,19 @@
             <ion-toggle label-placement="start" v-model="isEComInvEnabled" @click.prevent="updateEComInvStatus($event)">{{ translate("Sell online") }}</ion-toggle>
           </ion-item>
         </ion-card>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Partial Order rejection") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate('Specify whether you reject an order partially when any order item inventory is insufficient at the store.') }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-toggle label-placement="start" :disabled="!hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE)" :checked="partialOrderRejectionConfig.settingValue" @ionChange="updatePartialOrderRejectionConfig(partialOrderRejectionConfig, $event.detail.checked)">{{ translate("Allow partial rejection") }}</ion-toggle>
+          </ion-item>
+        </ion-card>
       </section>
 
       <hr />
@@ -270,11 +283,15 @@ export default defineComponent({
       locale: 'user/getLocale',
       notificationPrefs: 'user/getNotificationPrefs',
       firebaseDeviceId: 'user/getFirebaseDeviceId',
-      isForceScanEnabled: 'util/isForceScanEnabled'
+      isForceScanEnabled: 'util/isForceScanEnabled',
+      partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
     })
   },
   async ionViewWillEnter() {
     Promise.all([this.getCurrentFacilityDetails(), this.getFacilityOrderCount(), this.getEcomInvStatus()]);
+
+    // fetching partial order rejection when entering setting page to have latest information
+    await this.store.dispatch('user/getPartialOrderRejectionConfig')
     
     // as notification prefs can also be updated from the notification pref modal,
     // latest state is fetched each time we open the settings page
@@ -604,6 +621,13 @@ export default defineComponent({
         ],
       });
       return alert.present();
+    },
+    async updatePartialOrderRejectionConfig(config: any, value: any) {
+      const params = {
+        ...config,
+        "settingValue": value
+      }
+      await this.store.dispatch('user/updatePartialOrderRejectionConfig', params)
     }
   },
   setup() {
