@@ -89,7 +89,15 @@
                   </ion-button>
                 </div>
               </div>
-              <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
+              <div v-if="item.showKitComponents && !getProduct(item.productId)?.productComponents" class="kit-components">
+                <ion-item lines="none">
+                  <ion-skeleton-text animated style="height: 80%;"/>
+                </ion-item>
+                <ion-item lines="none">
+                  <ion-skeleton-text animated style="height: 80%;"/>
+                </ion-item>
+              </div>
+              <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
@@ -280,7 +288,7 @@ export default defineComponent({
       this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
     },
     async fetchKitComponent(orderItem: any) {
-      await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
+      this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
       
       //update the order in order to toggle kit components section
       const updatedOrder = this.openOrders.list.find((order: any) => order.orderId === orderItem.orderId);
