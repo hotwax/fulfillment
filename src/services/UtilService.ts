@@ -202,13 +202,14 @@ const findCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promis
 const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<any> => {
   let shipmentItemsInformation = {}
   const params = {
-    "entityName": "OrderShipment",
+    "entityName": "ShipmentItemDetail",
     "inputFields": {
       "shipmentId": shipmentIds,
       "shipmentId_op": "in"
     },
-    "fieldList": ["shipmentItemSeqId", "orderItemSeqId", "orderId", "shipmentId"],
+    "fieldList": ["shipmentItemSeqId", "orderItemSeqId", "orderId", "shipmentId", "productId"],
     "viewSize": shipmentIds.length * 5, // TODO: check what should be the viewSize here
+    "distinct": "Y"
   }
 
   try {
