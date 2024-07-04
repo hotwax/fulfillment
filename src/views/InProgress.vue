@@ -183,7 +183,7 @@
 
             <div class="actions">
               <div>
-                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click.stop="!isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack") }}</ion-button>
+                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click.stop="isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack") }}</ion-button>
                 <ion-button :disabled="order.hasMissingInfo" fill="outline" @click.stop="save(order)">{{ translate("Save") }}</ion-button>
               </div>
 
