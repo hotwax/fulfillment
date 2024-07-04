@@ -214,7 +214,8 @@ export default defineComponent({
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       getProductStock: 'stock/getProductStock',
       notifications: 'user/getNotifications',
-      unreadNotificationsStatus: 'user/getUnreadNotificationsStatus'
+      unreadNotificationsStatus: 'user/getUnreadNotificationsStatus',
+      userProfile:'user/getUserProfile'
     })
   },
   data () {
@@ -292,9 +293,13 @@ export default defineComponent({
         component: AssignPickerModal
       });
       
+      const user = this.userProfile
+
+      identify(user.userId)
+
       // tracking event for Print Picklist button
       trackEvent('Print Picklist clicked', {
-        '$userLoginId': this.store.state.user.userLoginId,
+        '$userLoginId': user.userLoginId,
         '$app_name': 'fulfillment',
       })
       return assignPickerModal.present();
