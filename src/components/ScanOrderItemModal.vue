@@ -30,6 +30,7 @@
             <ion-label>
               <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
               {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
+              <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
               <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
             </ion-label>
           </ion-item>
@@ -73,6 +74,7 @@ import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIden
 import { mapGetters } from 'vuex';
 import { getFeature, showToast } from "@/utils"
 import Scanner from "@/components/Scanner.vue"
+import { isKit } from '@/utils/order'
 
 export default defineComponent({
   name: "ScanOrderItemModal",
@@ -169,6 +171,7 @@ export default defineComponent({
       copyOutline,
       getFeature,
       getProductIdentificationValue,
+      isKit,
       productIdentificationPref,
       saveOutline,
       translate
