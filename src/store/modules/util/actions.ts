@@ -480,7 +480,7 @@ const actions: ActionTree<UtilState, RootState> = {
     try {
       const resp = await UtilService.getProductStoreSetting(payload) as any
       if(!hasError(resp)) {
-        const respValue = resp.data.docs[0].settingValue === "true" ? true : false
+        const respValue = resp.data.docs[0].settingValue === "true"
         commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, respValue)
       } else {
         dispatch('createForceScanSetting');
