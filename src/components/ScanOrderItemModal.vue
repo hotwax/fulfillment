@@ -107,7 +107,7 @@ export default defineComponent({
   },
   props: ["order"],
   mounted() {
-    this.orderItems = this.order.orderItems.length ? JSON.parse(JSON.stringify(this.order.orderItems)) : []
+    this.orderItems = this.order.items.length ? JSON.parse(JSON.stringify(this.order.items)) : []
   },
   methods: {
     closeModal(payload= {}) {

@@ -174,7 +174,7 @@
 
             <div class="mobile-only">
               <ion-item>
-                <ion-button fill="clear"  :disabled="order.isModified || order.hasMissingInfo" @click.stop="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+                <ion-button fill="clear"  :disabled="order.isModified || order.hasMissingInfo" @click.stop="isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click.stop="packagingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -197,7 +197,7 @@
           </ion-infinite-scroll>
         </div>
       </div>
-      <ion-fab v-if="inProgressOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab v-if="inProgressOrders.total && !isForceScanEnabled" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="packOrders()">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
