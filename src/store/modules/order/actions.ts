@@ -287,7 +287,7 @@ const actions: ActionTree<OrderState, RootState> = {
             groupValue: order.groupValue,
             picklistBinId: orderItem.picklistBinId,
             picklistId: orderItem.picklistId,
-            items: order.doclist.docs,
+            items: removeKitComponents({items: order.doclist.docs}),
             shipGroupSeqId: orderItem.shipGroupSeqId,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
             shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
