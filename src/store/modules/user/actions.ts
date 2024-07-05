@@ -74,11 +74,6 @@ const actions: ActionTree<UserState, RootState> = {
       const currentFacility = userProfile.facilities[0];
       userProfile.stores = await UserService.getEComStores(token, currentFacility.facilityId);
 
-      // In Job Manager application, we have jobs which may not be associated with any product store
-      userProfile.stores.push({
-        productStoreId: "",
-        storeName: "None"
-      })
       let preferredStore = userProfile.stores[0]
 
       const preferredStoreId =  await UserService.getPreferredStore(token);
