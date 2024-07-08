@@ -49,21 +49,38 @@ const fetchOrderItems = async (orderId: string): Promise<any> => {
 }
 
 const fetchShippedQuantity = async (orderId: string): Promise<any> => {
-  const params = {
-    "entityName": "ShippedItemQuantitySum",
-    "inputFields": {
-      "orderId": orderId,
-    },
-    "fieldList": ["orderId", "orderItemSeqId", "productId", "shippedQuantity"],
-    "viewSize": 250,  // maximum records we could have
-    "distinct": "Y"
-  } as any;
+  let docCount = 0;
+  let shippedItemQuantitySum = [] as any
+  let viewIndex = 0;
 
-  return await api({
-    url: "performFind",
-    method: "get",
-    params
-  })
+  do {
+    const params = {
+      "entityName": "ShippedItemQuantitySum",
+      "inputFields": {
+        "orderId": orderId,
+      },
+      "fieldList": ["orderId", "orderItemSeqId", "productId", "shippedQuantity"],
+      "viewSize": 250,  // maximum records we could have
+      "distinct": "Y",
+      viewIndex
+    } as any;
+
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    }) as any
+
+    if (!hasError(resp) && resp.data.count) {
+      shippedItemQuantitySum = [...shippedItemQuantitySum, ...resp.data.docs]
+      docCount = resp.data.docs.length;
+      viewIndex++;
+    } else {
+      docCount = 0
+    }
+  } while(docCount >= 250);
+
+  return shippedItemQuantitySum;
 }
 
 const fetchShipmentItems = async (orderId: string, shipmentId: string): Promise<any> => {
