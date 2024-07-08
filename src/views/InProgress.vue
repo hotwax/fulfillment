@@ -10,7 +10,7 @@
         <ion-title v-else>{{ inProgressOrders.query.viewSize }} {{ translate('of') }} {{ inProgressOrders.total }} {{ translate('orders') }}</ion-title>
 
         <ion-buttons slot="end">
-          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !inProgressOrders.total" fill="clear" color="danger" @click="recycleInProgressOrders()">
+          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !inProgressOrders.total || isRejecting" fill="clear" color="danger" @click="recycleInProgressOrders()">
             {{ translate("Reject all") }}
           </ion-button>
           <ion-menu-button menu="view-size-selector-inprogress" :disabled="!inProgressOrders.total">
@@ -364,6 +364,7 @@ export default defineComponent({
       addingBoxForOrderIds: [] as any,
       selectedPicklistId: '',
       isScrollingEnabled: false,
+      isRejecting: false,
       rejectEntireOrderReasonId: 'REJECT_ENTIRE_ORDER'
     }
   },
@@ -1120,6 +1121,7 @@ export default defineComponent({
         }, {
           text: translate('Reject'),
           handler: async () => {
+            this.isRejecting = true;
             emitter.emit("presentLoader")  
             await alert.dismiss()  
 
