@@ -110,13 +110,11 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           //fetch shipped quantity
           const shippedQuantityInfo = {} as any;
           resp = await OrderService.fetchShippedQuantity(payload.orderId);
-          if (!hasError(resp)) {
-            resp.data.docs.forEach((doc:any) => {
-              shippedQuantityInfo[doc.orderItemSeqId] = doc.shippedQuantity;
-            });
-            orderDetail.shippedQuantityInfo = shippedQuantityInfo;
-          }
-  
+          resp.forEach((doc:any) => {
+            shippedQuantityInfo[doc.orderItemSeqId] = doc.shippedQuantity;
+          });
+          orderDetail.shippedQuantityInfo = shippedQuantityInfo;
+
           //fetch product details
           const productIds = [...new Set(orderDetail.items.map((item:any) => item.productId))];
   
