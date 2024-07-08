@@ -253,7 +253,7 @@ const actions: ActionTree<OrderState, RootState> = {
         groupBy: 'picklistBinId',
         filters: {
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
-          '-fulfillmentStatus': { value: 'Rejected' },
+          '-fulfillmentStatus': { value: ['Rejected', 'Cancelled'] },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
           productStoreId: { value: this.state.user.currentEComStore.productStoreId }
@@ -346,7 +346,7 @@ const actions: ActionTree<OrderState, RootState> = {
         quantityNotAvailable: { value: 0 },
         isPicked: { value: 'N' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        '-fulfillmentStatus': { value: 'Cancelled' },
+        '-fulfillmentStatus': { value: ['Cancelled', 'Rejected']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
         facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
@@ -679,7 +679,7 @@ const actions: ActionTree<OrderState, RootState> = {
         isPicked: { value: 'N' },
         shipGroupSeqId: { value: payload.shipGroupSeqId },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        '-fulfillmentStatus': { value: 'Cancelled' },
+        '-fulfillmentStatus': { value: ['Cancelled', 'Rejected']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
         facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
@@ -749,7 +749,7 @@ const actions: ActionTree<OrderState, RootState> = {
           orderId: { value: payload.orderId },
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           shipGroupSeqId: { value: payload.shipGroupSeqId },
-          '-fulfillmentStatus': { value: 'Rejected' },
+          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected']},
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
           productStoreId: { value: this.state.user.currentEComStore.productStoreId }
