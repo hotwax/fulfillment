@@ -215,6 +215,7 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
+      userProfile: 'user/getUserProfile',   
       currentFacility: 'user/getCurrentFacility',
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
