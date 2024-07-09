@@ -81,58 +81,36 @@ const getOrderCategory = (order: any) => {
   return result;
 }
 
-const isKitComponent = (item: any) => {
-  return item.toOrderItemAssocs?.some((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
-}
 const isKit = (item: any) => {
   const product = store.getters['product/getProduct'](item.productId);
   return product && product.productTypeId === 'MARKETING_PKG_PICK';
 }
 
 const removeKitComponents = (order: any) => {
-  const processedKitItemSeqIds = new Set();
+  const kitItemSeqIds = new Set();
   const itemsWithoutKitComponents = [] as any;
 
-  //In current implementation kit product and 
+
   order.items.forEach((item:any) => {
     const product = store.getters['product/getProduct'](item.productId);
     if (product && product.productTypeId === "MARKETING_PKG_PICK") {
-      if (!processedKitItemSeqIds.has(item.orderItemSeqId)) {
-        processedKitItemSeqIds.add(item.orderItemSeqId);
-        itemsWithoutKitComponents.push(item);
-      }
-    } else {
-      itemsWithoutKitComponents.push(item);
+      kitItemSeqIds.add(item.orderItemSeqId);
     }
-  });
+  })
+  
+  //In current implementation kit product and component product will have the same orderItemSeqId
+  order.items.forEach((item:any) => {
+    const product = store.getters['product/getProduct'](item.productId);
+    if ((product && product.productTypeId === "MARKETING_PKG_PICK") || !kitItemSeqIds.has(item.orderItemSeqId)) {
+      itemsWithoutKitComponents.push(item)
+    }
+  })
 
   return itemsWithoutKitComponents;
 }
 
-const prepareKitProducts = (order: any) => {
-  return order.items.reduce((kitProducts: any, item: any) => {
-    if (item.toOrderItemAssocs && isKitComponent(item)) {
-      const kitItemAssocs = item.toOrderItemAssocs.find((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
-      // getting second and third values i.e kit product's orderItemSeqId and parentProductId
-      const [, orderItemSeqId, parentProductId] = kitItemAssocs.split('/')
-      if (!kitProducts[orderItemSeqId]) {
-        kitProducts[orderItemSeqId] = []
-      }
-
-      kitProducts[orderItemSeqId].push({
-        parentProductId,
-        ...item
-      })
-    }
-
-    return kitProducts
-  }, {})
-}
-
 export {
-  prepareKitProducts,
   getOrderCategory,
   isKit,
-  isKitComponent,
   removeKitComponents
 }
