@@ -26,7 +26,7 @@
         <ion-spinner name="crescent" />
         <ion-label>{{ translate("Fetching pickers") }}</ion-label>
       </div>
-      <div class="empty-state" v-if="!pickers.length">
+      <div class="empty-state" v-else-if="!pickers.length">
         {{ 'No picker found' }}
       </div>
       <div v-else>
