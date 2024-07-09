@@ -23,7 +23,11 @@
       <!-- TODO: added click event on the item as when using the ionChange event then it's getting
       called every time the v-for loop runs and then removes or adds the currently rendered picker
       -->
-      <div class="ion-padding" v-if="!pickers.length">{{ 'No picker found' }}</div>
+      <div v-if="isLoading" class="empty-state">
+        <ion-spinner name="crescent" />
+        <ion-label>{{ translate("Fetching pickers") }}</ion-label>
+      </div>
+      <div class="empty-state" v-else-if="!pickers.length">{{ "No picker found" }}</div>
       <div v-else>
         <ion-item v-for="(picker, index) in pickers" :key="index" @click="selectPicker(picker.id)">
           <ion-checkbox :checked="isPickerSelected(picker.id)">
@@ -61,6 +65,7 @@ import {
   IonListHeader,
   IonRow,
   IonSearchbar,
+  IonSpinner,
   IonTitle,
   IonToolbar,
   modalController } from "@ionic/vue";
@@ -93,6 +98,7 @@ export default defineComponent({
     IonListHeader,
     IonRow,
     IonSearchbar,
+    IonSpinner,
     IonTitle,
     IonToolbar,
   },
@@ -106,7 +112,8 @@ export default defineComponent({
     return {
       selectedPickers: [],
       queryString: '',
-      pickers: []
+      pickers: [],
+      isLoading: false
     }
   },
   props: ["order"], // if we have order in props then create picklist for this single order only
@@ -182,6 +189,8 @@ export default defineComponent({
       emitter.emit("dismissLoader")
     },
     async findPickers() {
+      this.isLoading = true;
+
       let inputFields = {}
       this.pickers = []
 
@@ -238,6 +247,7 @@ export default defineComponent({
       } catch (err) {
         logger.error('Failed to fetch the pickers information or there are no pickers available', err)
       }
+      this.isLoading = false
     }
   },
   async mounted() {
