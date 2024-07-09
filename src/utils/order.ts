@@ -81,9 +81,6 @@ const getOrderCategory = (order: any) => {
   return result;
 }
 
-const isKitComponent = (item: any) => {
-  return item.toOrderItemAssocs?.some((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
-}
 const isKit = (item: any) => {
   const product = store.getters['product/getProduct'](item.productId);
   return product && product.productTypeId === 'MARKETING_PKG_PICK';
@@ -112,30 +109,8 @@ const removeKitComponents = (order: any) => {
   return itemsWithoutKitComponents;
 }
 
-const prepareKitProducts = (order: any) => {
-  return order.items.reduce((kitProducts: any, item: any) => {
-    if (item.toOrderItemAssocs && isKitComponent(item)) {
-      const kitItemAssocs = item.toOrderItemAssocs.find((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
-      // getting second and third values i.e kit product's orderItemSeqId and parentProductId
-      const [, orderItemSeqId, parentProductId] = kitItemAssocs.split('/')
-      if (!kitProducts[orderItemSeqId]) {
-        kitProducts[orderItemSeqId] = []
-      }
-
-      kitProducts[orderItemSeqId].push({
-        parentProductId,
-        ...item
-      })
-    }
-
-    return kitProducts
-  }, {})
-}
-
 export {
-  prepareKitProducts,
   getOrderCategory,
   isKit,
-  isKitComponent,
   removeKitComponents
 }
