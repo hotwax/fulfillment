@@ -188,6 +188,7 @@
   "Failed to update variance type.": "変動タイプの更新に失敗しました。",
   "Fetching time zones": "タイムゾーンの取得中",
   "Fetching order information...": "注文情報の取得中...",
+  "Fetching pickers": "Fetching pickers",
   "Field mapping name": "フィールドマッピング名",
   "File downloaded successfully": "ファイルが正常にダウンロードされました",
   "File uploaded successfully": "ファイルが正常にアップロードされました",
