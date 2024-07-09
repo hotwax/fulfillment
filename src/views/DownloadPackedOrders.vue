@@ -16,7 +16,7 @@
               <ion-icon :icon="addOutline" />
               <ion-label>{{ translate("New mapping") }}</ion-label>
             </ion-chip>
-            <ion-chip v-for="(mapping, index) in fieldMappings('EXPORD') ?? []" :key="index" @click="mapFields(mapping)" :outline=true>
+            <ion-chip v-for="(mapping, index) in fieldMappings('EXPORD') ?? []" :key="index" @click="mapFields(mapping, index)" :outline="selectedMappingId == index ? false : true">
               {{ mapping.name }}
             </ion-chip>
           </div>
@@ -118,6 +118,7 @@ export default defineComponent({
       fields: process.env["VUE_APP_MAPPING_EXPORD"] ? JSON.parse(process.env["VUE_APP_MAPPING_EXPORD"]) : {},
       customFields: {} as any,
       selectedFieldMappings: {} as any,
+      selectedMappingId: "" as any
     }
   },
   computed: {
@@ -321,9 +322,16 @@ export default defineComponent({
         component: CreateMappingModal,
         componentProps: { content: this.content, mappings: { ...mappings }, mappingType: 'EXPORD'}
       });
+
+      createMappingModal.onDidDismiss().then((result: any) => {
+        if(result.data?.mappingId) {
+          this.selectedMappingId = result.data.mappingId
+        }
+      })
+
       return createMappingModal.present();
     },
-    mapFields(mapping: any) {
+    mapFields(mapping: any, mappingId: any) {
       const fieldMapping = JSON.parse(JSON.stringify(mapping));
       const mappingValue = fieldMapping.value
 
@@ -349,6 +357,7 @@ export default defineComponent({
           this.selectedData[mapping] = mappingValue[mapping].value
           this.selectedFieldMappings[mapping] = mappingValue[mapping].value
         }
+        this.selectedMappingId = mappingId;
       })
     },
     async addCustomField() {
