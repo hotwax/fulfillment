@@ -90,21 +90,24 @@ const isKit = (item: any) => {
 }
 
 const removeKitComponents = (order: any) => {
-  const processedKitItemSeqIds = new Set();
+  const kitItemSeqIds = new Set();
   const itemsWithoutKitComponents = [] as any;
 
-  //In current implementation kit product and 
+
   order.items.forEach((item:any) => {
     const product = store.getters['product/getProduct'](item.productId);
     if (product && product.productTypeId === "MARKETING_PKG_PICK") {
-      if (!processedKitItemSeqIds.has(item.orderItemSeqId)) {
-        processedKitItemSeqIds.add(item.orderItemSeqId);
-        itemsWithoutKitComponents.push(item);
-      }
-    } else {
-      itemsWithoutKitComponents.push(item);
+      kitItemSeqIds.add(item.orderItemSeqId);
     }
-  });
+  })
+  
+  //In current implementation kit product and component product will have the same orderItemSeqId
+  order.items.forEach((item:any) => {
+    const product = store.getters['product/getProduct'](item.productId);
+    if ((product && product.productTypeId === "MARKETING_PKG_PICK") || !kitItemSeqIds.has(item.orderItemSeqId)) {
+      itemsWithoutKitComponents.push(item)
+    }
+  })
 
   return itemsWithoutKitComponents;
 }
