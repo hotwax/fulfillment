@@ -223,7 +223,7 @@ import { useRouter } from 'vue-router';
 import { UserService } from '@/services/UserService';
 import { showToast } from '@/utils';
 import { hasError, removeClientRegistrationToken, subscribeTopic, unsubscribeTopic } from '@/adapter'
-import { translate } from '@hotwax/dxp-components';
+import { translate, addMixPanelEvent, addMixPanelUser } from '@hotwax/dxp-components';
 import logger from '@/logger';
 import { Actions, hasPermission } from '@/authorization'
 import { DateTime } from 'luxon';
@@ -231,6 +231,7 @@ import Image from '@/components/Image.vue';
 import OrderLimitPopover from '@/components/OrderLimitPopover.vue'
 import emitter from "@/event-bus"
 import { generateTopicName } from "@/utils/firebase";
+import store from '@/store';
 
 
 
@@ -551,6 +552,14 @@ export default defineComponent({
     },
     async updateForceScanStatus(event: any) {
       event.stopImmediatePropagation();
+
+      // tracking login action for fulfillment app in mix-panel 
+      const user = this.userProfile;
+      // event tracking for Force Scan toggle - data send to mix-panel 
+      addMixPanelEvent('Force Scan toggled', {
+        '$userLoginId': user.userLoginId,
+        '$app_name': 'fulfillment',
+      })
 
       this.store.dispatch("util/setForceScanSetting", !this.isForceScanEnabled)
     },

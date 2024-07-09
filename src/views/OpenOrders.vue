@@ -179,7 +179,7 @@ import { prepareOrderQuery } from '@/utils/solrHelper';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import emitter from '@/event-bus';
 import logger from '@/logger';
-import { translate } from '@hotwax/dxp-components';
+import { translate , addMixPanelEvent , addMixPanelUser } from '@hotwax/dxp-components';
 import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
@@ -215,6 +215,7 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
+      userProfile: 'user/getUserProfile',   
       currentFacility: 'user/getCurrentFacility',
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
@@ -299,6 +300,14 @@ export default defineComponent({
       const assignPickerModal = await modalController.create({
         component: AssignPickerModal
       });
+
+      const user = this.userProfile
+      // tracking event for Print Picklist button
+      addMixPanelEvent('Print Picklist clicked', {
+        '$userLoginId': user.userLoginId,
+        '$app_name': 'fulfillment',
+      })
+      
       return assignPickerModal.present();
     },
     async fetchShipmentMethods() {

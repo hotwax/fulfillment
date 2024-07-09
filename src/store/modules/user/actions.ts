@@ -6,7 +6,7 @@ import UserState from './UserState'
 import * as types from './mutation-types'
 import { showToast } from '@/utils'
 import { hasError } from '@/adapter'
-import { translate } from '@hotwax/dxp-components'
+import { translate , addMixPanelUser , addMixPanelEvent } from '@hotwax/dxp-components'
 import { DateTime, Settings } from 'luxon';
 import { logout, updateInstanceUrl, updateToken, resetConfig, getUserFacilities, getNotificationEnumIds,
   getNotificationUserPrefTypeIds, storeClientRegistrationToken } from '@/adapter'
@@ -53,6 +53,18 @@ const actions: ActionTree<UserState, RootState> = {
       }
 
       const userProfile = await UserService.getUserProfile(token);
+
+      // tracking login action for fulfillment app in mix-panel 
+      const appName = 'fulfillment';
+      const user = userProfile;
+      addMixPanelUser(user.userId, {
+        '$userLoginId': user.userLoginId,
+        '$email': user.email,
+        'app_name': appName,
+      });
+      addMixPanelEvent('Login-fulfillment', {
+        '$app_name': appName,
+      })
       
       //fetching user facilities
       const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_STOREFULFILLMENT_ADMIN" );
