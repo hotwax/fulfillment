@@ -6,7 +6,7 @@ import UserState from './UserState'
 import * as types from './mutation-types'
 import { showToast } from '@/utils'
 import { hasError } from '@/adapter'
-import { translate , mixPanelIdentifyUser , mixPanelSetUserProperties , mixPanelTrackEvent } from '@hotwax/dxp-components'
+import { translate , addMixPanelUser , addMixPanelEvent } from '@hotwax/dxp-components'
 import { DateTime, Settings } from 'luxon';
 import { logout, updateInstanceUrl, updateToken, resetConfig, getUserFacilities, getNotificationEnumIds,
   getNotificationUserPrefTypeIds, storeClientRegistrationToken } from '@/adapter'
@@ -57,13 +57,12 @@ const actions: ActionTree<UserState, RootState> = {
       // tracking login action for fulfillment app in mix-panel 
       const appName = 'fulfillment';
       const user = userProfile;
-      mixPanelIdentifyUser(user.userId);
-      mixPanelSetUserProperties({
+      addMixPanelUser(user.userId, {
         '$userLoginId': user.userLoginId,
         '$email': user.email,
         'app_name': appName,
       });
-      mixPanelTrackEvent('Login-fulfillment', {
+      addMixPanelEvent('Login-fulfillment', {
         '$app_name': appName,
       })
       
