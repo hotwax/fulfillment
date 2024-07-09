@@ -23,7 +23,7 @@
               <ion-icon :icon="addOutline" />
               <ion-label>{{ translate("New mapping") }}</ion-label>
             </ion-chip>
-            <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('IMPORD') ?? []" :key="index" @click="mapFields(mapping.value, index)" :outline="selectedMappingId == index ? false : true">
+            <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('IMPORD') ?? []" :key="index" @click="mapFields(mapping.value, index)" :outline="selectedMappingId != index">
               {{ mapping.name }}
             </ion-chip>
           </div>
