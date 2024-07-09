@@ -23,7 +23,7 @@
               <ion-icon :icon="addOutline" />
               <ion-label>{{ translate("New mapping") }}</ion-label>
             </ion-chip>
-            <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('IMPORD') ?? []" :key="index" @click="mapFields(mapping.value)" :outline=true>
+            <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('IMPORD') ?? []" :key="index" @click="mapFields(mapping.value, index)" :outline="selectedMappingId == index ? false : true">
               {{ mapping.name }}
             </ion-chip>
           </div>
@@ -90,7 +90,8 @@ export default defineComponent({
         'trackingCode': {}
       } as any,
       fileColumns: [] as Array<string>,
-      fields: process.env["VUE_APP_MAPPING_IMPORD"] ? JSON.parse(process.env["VUE_APP_MAPPING_IMPORD"]) : {}
+      fields: process.env["VUE_APP_MAPPING_IMPORD"] ? JSON.parse(process.env["VUE_APP_MAPPING_IMPORD"]) : {},
+      selectedMappingId: "" as any
     }
   },
   computed: {
@@ -192,7 +193,7 @@ export default defineComponent({
       });
       return alert.present();
     },
-    mapFields(mapping: any) {
+    mapFields(mapping: any, mappingId: any) {
       const fieldMapping = JSON.parse(JSON.stringify(mapping));
 
       // TODO: Store an object in this.content variable, so everytime when accessing it, we don't need to use 0th index
@@ -213,6 +214,7 @@ export default defineComponent({
       })
 
       this.fieldMapping = fieldMapping;
+      this.selectedMappingId = mappingId
     },
     async addFieldMapping() {
       let mappings: any = {};
@@ -225,6 +227,13 @@ export default defineComponent({
         component: CreateMappingModal,
         componentProps: { content: this.content, mappings, mappingType: 'IMPORD'}
       });
+
+      createMappingModal.onDidDismiss().then((result: any) => {
+        if(result.data?.mappingId) {
+          this.selectedMappingId = result.data.mappingId
+        }
+      })
+
       return createMappingModal.present();
     }
   },
