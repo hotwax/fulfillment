@@ -179,7 +179,7 @@ import { prepareOrderQuery } from '@/utils/solrHelper';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import emitter from '@/event-bus';
 import logger from '@/logger';
-import { translate , trackEvent , identify } from '@hotwax/dxp-components';
+import { translate , mixPanelTrackEvent , mixPanelIdentifyUser } from '@hotwax/dxp-components';
 import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
@@ -301,9 +301,9 @@ export default defineComponent({
       });
 
       const user = this.userProfile
-      identify(user.userId)
+      mixPanelIdentifyUser(user.userId)
       // tracking event for Print Picklist button
-      trackEvent('Print Picklist clicked', {
+      mixPanelTrackEvent('Print Picklist clicked', {
         '$userLoginId': user.userLoginId,
         '$app_name': 'fulfillment',
       })

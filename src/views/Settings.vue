@@ -223,7 +223,7 @@ import { useRouter } from 'vue-router';
 import { UserService } from '@/services/UserService';
 import { showToast } from '@/utils';
 import { hasError, removeClientRegistrationToken, subscribeTopic, unsubscribeTopic } from '@/adapter'
-import { translate, trackEvent, identify } from '@hotwax/dxp-components';
+import { translate, mixPanelTrackEvent, mixPanelIdentifyUser } from '@hotwax/dxp-components';
 import logger from '@/logger';
 import { Actions, hasPermission } from '@/authorization'
 import { DateTime } from 'luxon';
@@ -555,9 +555,9 @@ export default defineComponent({
 
       // tracking login action for fulfillment app in mix-panel 
       const user = this.userProfile;
-      identify(user.userId);
+      mixPanelIdentifyUser(user.userId);
       // event tracking for Force Scan toggle - data send to mix-panel 
-      trackEvent('Force Scan toggled', {
+      mixPanelTrackEvent('Force Scan toggled', {
         '$userLoginId': user.userLoginId,
         '$app_name': 'fulfillment',
       })
