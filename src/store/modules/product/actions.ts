@@ -5,7 +5,6 @@ import ProductState from './ProductState'
 import * as types from './mutation-types'
 import { hasError } from '@/adapter'
 import logger from "@/logger";
-import { isKitComponent } from "@/utils/order";
 
 const actions: ActionTree<ProductState, RootState> = {
 
@@ -51,11 +50,6 @@ const actions: ActionTree<ProductState, RootState> = {
       list.doclist.docs.forEach((order: any) => {
         if (order.productId) {
           productIds.add(order.productId)
-          // when the item is a kitComponent, fetching information for kit parentProduct
-          if(isKitComponent(order)) {
-            const assoc = order.toOrderItemAssocs.find((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
-            productIds.add(assoc.split("/")[2])
-          }
         }
       })
     })
