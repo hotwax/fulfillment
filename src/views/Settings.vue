@@ -579,6 +579,12 @@ export default defineComponent({
       let isToggledOn = false;
 
       try {
+        if (!process.env.VUE_APP_FIREBASE_CONFIG || !JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any).apiKey) {
+          logger.error("FCM is not configured.");
+          showToast(translate('Notification preferences not updated. Please try again.'))
+          return;
+        }
+
         emitter.emit('presentLoader',  { backdropDismiss: false })
         const facilityId = (this.currentFacility as any).facilityId
         const topicName = generateTopicName(facilityId, enumId)
