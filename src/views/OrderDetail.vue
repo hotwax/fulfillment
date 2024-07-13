@@ -31,7 +31,7 @@
           </div>
         </div>
 
-        <ion-card>
+        <ion-card class="order">
           <div class="order-header">
             <div class="order-primary-info">
               <ion-label>
@@ -207,7 +207,7 @@
 
         <ShippingDetails />
         
-        <h4 v-if="order.shipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
+        <h4 class="ion-padding-top ion-padding-start" v-if="order.shipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
         <div class="shipgroup-details">
           <ion-card v-for="shipGroup in order.shipGroups" :key="shipGroup.shipmentId">
             <ion-card-header>
