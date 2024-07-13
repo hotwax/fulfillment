@@ -85,19 +85,19 @@
             <br/><br/>
             {{ translate("Setting fulfillment capacity to 0 disables new order from being allocated to this facility. Leave this empty if this facility's fulfillment capacity is unrestricted.") }}
           </ion-card-content>
-          <ion-item lines="none" v-if="orderLimitType === 'custom'">
+          <ion-row class="ion-padding-horizontal" v-if="orderLimitType === 'custom'">
             <ion-text>{{ currentFacilityDetails?.orderCount }}</ion-text>
             <ion-progress-bar class="ion-margin" :value="currentFacilityDetails?.orderCount / fulfillmentOrderLimit"></ion-progress-bar>
             <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{currentFacilityDetails?.maximumOrderLimit}}</ion-chip>
-          </ion-item>      
-          <ion-item lines="none" v-else-if="orderLimitType === 'unlimited'">
+          </ion-row>
+          <ion-row class="ion-padding-horizontal" v-else-if="orderLimitType === 'unlimited'">
             <ion-label>{{ translate("orders allocated today", {orderCount: currentFacilityDetails?.orderCount}) }}</ion-label>
             <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{ translate("Unlimited") }}</ion-chip>
-          </ion-item>      
-          <ion-item lines="none" v-else>
+          </ion-row>
+          <ion-row class="ion-padding-horizontal" v-else>
             <ion-label>{{ translate("orders in fulfillment queue", {orderCount: currentFacilityDetails?.orderCount}) }}</ion-label>
             <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover" color="danger" fill="outline">{{ fulfillmentOrderLimit }}</ion-chip>
-          </ion-item>
+          </ion-row>
         </ion-card>
 
         <ion-card>
@@ -207,6 +207,7 @@ import {
   IonMenuButton,
   IonPage, 
   IonProgressBar,
+  IonRow,
   IonSelect, 
   IonSelectOption, 
   IonTitle, 
@@ -254,6 +255,7 @@ export default defineComponent({
     IonMenuButton,
     IonPage, 
     IonProgressBar,
+    IonRow,
     IonSelect, 
     IonSelectOption,
     IonTitle, 
