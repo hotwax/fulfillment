@@ -673,4 +673,9 @@ hr {
   align-items: center;
   padding: var(--spacer-xs) 10px 0px;
 }
+
+ion-chip {
+  flex-shrink: 0;
+}
+
 </style>
