@@ -223,14 +223,14 @@ import { useRouter } from 'vue-router';
 import { UserService } from '@/services/UserService';
 import { showToast } from '@/utils';
 import { hasError, removeClientRegistrationToken, subscribeTopic, unsubscribeTopic } from '@/adapter'
-import { translate } from '@hotwax/dxp-components';
+import { initialiseFirebaseApp, translate } from '@hotwax/dxp-components';
 import logger from '@/logger';
 import { Actions, hasPermission } from '@/authorization'
 import { DateTime } from 'luxon';
 import Image from '@/components/Image.vue';
 import OrderLimitPopover from '@/components/OrderLimitPopover.vue'
 import emitter from "@/event-bus"
-import { generateTopicName } from "@/utils/firebase";
+import { addNotification, generateTopicName, isFcmConfigured, storeClientRegistrationToken } from "@/utils/firebase";
 
 
 
@@ -282,6 +282,7 @@ export default defineComponent({
       userPreference: 'user/getUserPreference',
       locale: 'user/getLocale',
       notificationPrefs: 'user/getNotificationPrefs',
+      allNotificationPrefs: 'user/getAllNotificationPrefs',
       firebaseDeviceId: 'user/getFirebaseDeviceId',
       isForceScanEnabled: 'util/isForceScanEnabled',
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
@@ -575,7 +576,16 @@ export default defineComponent({
       this.store.dispatch('user/setLocale',locale)
     },
     async updateNotificationPref(enumId: string, event: any) {
+      let isToggledOn = false;
+
       try {
+        if (!isFcmConfigured()) {
+          event.target.checked = !event.target.checked
+          logger.error("FCM is not configured.");
+          showToast(translate('Notification preferences not updated. Please try again.'))
+          return;
+        }
+
         emitter.emit('presentLoader',  { backdropDismiss: false })
         const facilityId = (this.currentFacility as any).facilityId
         const topicName = generateTopicName(facilityId, enumId)
@@ -586,6 +596,8 @@ export default defineComponent({
         event.target.checked
           ? await subscribeTopic(topicName, process.env.VUE_APP_NOTIF_APP_ID as any)
           : await unsubscribeTopic(topicName, process.env.VUE_APP_NOTIF_APP_ID as any)
+          
+        isToggledOn = event.target.checked
         showToast(translate('Notification preferences updated.'))
       } catch (error) {
         // reverting the value of toggle as event.target.checked is 
@@ -594,6 +606,16 @@ export default defineComponent({
         showToast(translate('Notification preferences not updated. Please try again.'))
       } finally {
         emitter.emit("dismissLoader")
+      }
+      try {
+        if(!this.allNotificationPrefs.length && isToggledOn) {
+          await initialiseFirebaseApp(JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any), process.env.VUE_APP_FIREBASE_VAPID_KEY, storeClientRegistrationToken, addNotification)
+        } else if(this.allNotificationPrefs.length == 1 && !isToggledOn) {
+          await removeClientRegistrationToken(this.firebaseDeviceId, process.env.VUE_APP_NOTIF_APP_ID as any)
+        }
+        await this.store.dispatch("user/fetchAllNotificationPrefs");
+      } catch(error) {
+        logger.error(error);
       }
     },
     async confirmNotificationPrefUpdate(enumId: string, event: any) {

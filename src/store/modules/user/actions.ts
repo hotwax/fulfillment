@@ -102,6 +102,7 @@ const actions: ActionTree<UserState, RootState> = {
       await useProductIdentificationStore().getIdentificationPref(preferredStoreId ? preferredStoreId : preferredStore.productStoreId)
         .catch((error) => logger.error(error));
 
+      await dispatch("fetchAllNotificationPrefs");
       this.dispatch('util/findProductStoreShipmentMethCount')
       this.dispatch('util/getForceScanSetting', preferredStore.productStoreId);
     } catch (err: any) {
@@ -510,6 +511,19 @@ const actions: ActionTree<UserState, RootState> = {
     } catch (error) {
       logger.error(error)
     }
+  },
+
+  async fetchAllNotificationPrefs({ commit, state }) {
+    let allNotificationPrefs = [];
+
+    try {
+      const resp = await getNotificationUserPrefTypeIds(process.env.VUE_APP_NOTIF_APP_ID as any, state.current.userLoginId)
+      allNotificationPrefs = resp.docs
+    } catch(error) {
+      logger.error(error)
+    }
+
+    commit(types.USER_ALL_NOTIFICATION_PREFS_UPDATED, allNotificationPrefs)
   },
 
   clearNotificationState({ commit }) {
