@@ -230,7 +230,7 @@ import { DateTime } from 'luxon';
 import Image from '@/components/Image.vue';
 import OrderLimitPopover from '@/components/OrderLimitPopover.vue'
 import emitter from "@/event-bus"
-import { addNotification, generateTopicName, storeClientRegistrationToken } from "@/utils/firebase";
+import { addNotification, generateTopicName, isFcmConfigured, storeClientRegistrationToken } from "@/utils/firebase";
 
 
 
@@ -579,7 +579,8 @@ export default defineComponent({
       let isToggledOn = false;
 
       try {
-        if (!process.env.VUE_APP_FIREBASE_CONFIG || !JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any).apiKey) {
+        if (!isFcmConfigured()) {
+          event.target.checked = !event.target.checked
           logger.error("FCM is not configured.");
           showToast(translate('Notification preferences not updated. Please try again.'))
           return;
