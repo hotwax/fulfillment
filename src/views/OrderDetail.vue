@@ -149,7 +149,7 @@
           
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
-              <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+              <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="isForceScanEnabled ? scanOrder(order) :packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -169,7 +169,7 @@
             <!-- positive -->
             <div>
               <template v-if="category === 'in-progress'">
-                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click="packOrder(order)">
+                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click="isForceScanEnabled ? scanOrder(order) : packOrder(order)">
                   <ion-icon slot="start" :icon="personAddOutline" />
                   {{ translate("Pack order") }}
                 </ion-button>
@@ -347,6 +347,7 @@ import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
 import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
 import ShippingDetails from '@/views/ShippingDetails.vue';
 import { isKit } from '@/utils/order'
+import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 
 export default defineComponent({
   name: "OrderDetail",
@@ -393,7 +394,8 @@ export default defineComponent({
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
       getStatusDesc: 'util/getStatusDesc',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
-      partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig'
+      partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
+      isForceScanEnabled: 'util/isForceScanEnabled',
     })
   },
   data() {
@@ -1287,6 +1289,20 @@ export default defineComponent({
     },
     isTrackingRequiredForAnyShipmentPackage(order: any) {
       return order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
+    },
+    async scanOrder(order: any) {
+      const modal = await modalController.create({
+        component: ScanOrderItemModal,
+        componentProps: { order }
+      })
+
+      modal.onDidDismiss().then((result: any) => {
+        if(result.data?.packOrder) {
+          this.packOrder(order);
+        }
+      })
+
+      modal.present();
     }
   },
   setup() {
