@@ -109,7 +109,7 @@
                   </ion-item>
                 </div>
 
-                <div class="desktop-only" v-else-if="order.shipmentPackages">
+                <div class="desktop-only ion-text-center" v-else-if="order.shipmentPackages">
                   <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
                   
                   <div v-if="order.shipmentPackages && order.shipmentPackages.length">
