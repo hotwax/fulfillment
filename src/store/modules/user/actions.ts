@@ -532,6 +532,10 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_ALL_NOTIFICATION_PREFS_UPDATED, allNotificationPrefs)
   },
 
+  async updateNotificationPreferences({ commit }, payload) {
+    commit(types.USER_NOTIFICATIONS_PREFERENCES_UPDATED, payload)
+  },
+
   clearNotificationState({ commit }) {
     commit(types.USER_NOTIFICATIONS_UPDATED, [])
     commit(types.USER_NOTIFICATIONS_PREFERENCES_UPDATED, [])
