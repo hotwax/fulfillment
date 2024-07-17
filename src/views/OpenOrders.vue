@@ -12,7 +12,7 @@
           <ion-button @click="viewNotifications()">
             <ion-icon slot="icon-only" :icon="notificationsOutline" :color="(unreadNotificationsStatus && notifications.length) ? 'primary' : ''" />
           </ion-button>
-          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !openOrders.total" fill="clear" color="danger" @click="recycleOutstandingOrders()">
+          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !openOrders.total" fill="clear" color="danger" :trackable="JSON.stringify({ label: 'reject order fulfillment', id: 'print-picksheet-button' })" @click="recycleOutstandingOrders() ">
             {{ translate("Reject all") }}
           </ion-button>
           <ion-menu-button menu="view-size-selector-open" :disabled="!openOrders.total">
@@ -37,7 +37,7 @@
         </div>
 
         <div class="results">
-          <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picksheet") }}</ion-button>
+          <ion-button class="bulk-action desktop-only" :trackable="JSON.stringify({ label: 'Print Picksheet fulfillment', id: 'print-picksheet-button' })" size="large" has @click="assignPickers">{{ translate("Print Picksheet") }}</ion-button>
 
           <ion-card class="order" v-for="(order, index) in getOpenOrders()" :key="index">
             <div class="order-header">
@@ -171,7 +171,7 @@ import { computed, defineComponent } from 'vue';
 import { caretDownOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
-import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore, useAnalytics } from '@hotwax/dxp-components';
 import { formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
@@ -211,7 +211,7 @@ export default defineComponent({
     IonThumbnail,
     IonTitle,
     IonToolbar,
-    ViewSizeSelector
+    ViewSizeSelector,
   },
   computed: {
     ...mapGetters({
@@ -426,6 +426,7 @@ export default defineComponent({
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   setup() {
+    useAnalytics();
     const store = useStore();
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)

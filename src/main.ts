@@ -29,7 +29,7 @@ import store from './store'
 import permissionPlugin from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
-import { dxpComponents } from '@hotwax/dxp-components';
+import { dxpComponents , useAnalytics } from '@hotwax/dxp-components';
 import { login, logout, loader } from '@/utils/user';
 import { getConfig, getProductIdentificationPref, initialise, setProductIdentificationPref, setUserLocale, setUserTimeZone,
   getAvailableTimeZones } from './adapter';
@@ -68,7 +68,8 @@ const app = createApp(App)
     setUserTimeZone,
     storeClientRegistrationToken,
     getAvailableTimeZones
-  });
+  })
+  .mixin([useAnalytics]);
 
 router.isReady().then(() => {
   app.mount('#app');
