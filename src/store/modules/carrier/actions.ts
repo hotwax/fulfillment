@@ -354,6 +354,73 @@ const actions: ActionTree<CarrierState, RootState> = {
       logger.error(messages["errorMessage"], error)
     }
   },
+
+  async fetchFacilityCarriers({ state, commit }, payload) {
+    let facilityCarriers  = [] as any;
+    let viewIndex = 0, resp, docCount = 0;
+    
+    try {
+      do {
+        const params = {
+          "entityName": "FacilityAndParty",
+          "inputFields": {
+            "roleTypeId": "CARRIER",
+            "facilityId": this.state.user.currentFacility.facilityId
+          },
+          "fieldList": ["facilityId", "partyId", "firstName", "lastName", "groupName", "roleTypeId", "fromDate"],
+          "noConditionFind": "Y",
+          "viewIndex": viewIndex,
+          "viewSize": 250,
+          "filterByDate": "Y"
+        }
+  
+        resp = await CarrierService.fetchCarrierFacilities(params)
+        if (!hasError(resp) && resp.data.count) {
+          facilityCarriers = [...facilityCarriers, ...resp.data.docs]
+          docCount = resp.data.docs.length;
+          viewIndex++;
+        } else {
+          docCount = 0
+        }
+      } while (docCount >= 250);
+    } catch(error) {
+      logger.error(error);
+    }
+    commit(types.CARRIER_FACILITY_CARRIERS_UPDATED, facilityCarriers)
+  },
+  async fetchProductStoreShipmentMeths({ state, commit }) {
+    let productStoreShipmentMethods  = [] as any;
+    let viewIndex = 0, resp;
+    
+    try {
+      do {
+        const params = {
+          "entityName": "ProductStoreShipmentMethView",
+          "inputFields": {
+            "roleTypeId": "CARRIER",
+            "productStoreId": this.state.user.currentEComStore.productStoreId,
+          },
+          "fieldList": ["productStoreShipMethId", "productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "shipmentGatewayConfigId", "isTrackingRequired", "sequenceNumber", "description", "fromDate"],
+          "noConditionFind": "Y",
+          "viewIndex": viewIndex,
+          "viewSize": 250,
+          "filterByDate": "Y"
+        }
+  
+        resp = await CarrierService.fetchProductStoreShipmentMethods(params)
+        if (!hasError(resp) && resp.data.count) {
+          productStoreShipmentMethods = [...productStoreShipmentMethods, ...resp.data.docs]
+          viewIndex++;
+        } else {
+          throw resp.data
+        }
+      } while (resp.data.docs.length >= 250);
+
+    } catch(error) {
+      logger.error(error);
+    }
+    commit(types.CARRIER_STORE_SHIPMENT_METHODS_UPDATED, productStoreShipmentMethods)
+  },
   
   async updateShipmentMethods({ commit }, payload) {
     commit(types.SHIPMENT_METHODS_UPDATED, payload)

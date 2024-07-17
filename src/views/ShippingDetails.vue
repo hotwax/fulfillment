@@ -42,6 +42,37 @@
         </ion-button>
       </ion-item>
     </ion-card>
+
+    <ion-card v-if="['PICKITEM_PICKED', 'PICKITEM_COMPLETED'].includes(currentOrder?.items[0]?.picklistItemStatusId)">
+      <ion-card-header>
+        <ion-card-title>
+          {{ translate('Shipment method') }}
+        </ion-card-title>
+      </ion-card-header>
+      <ion-item>
+        <ion-select :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
+          <ion-select-option v-for="method in carrierMethods" :key="method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-item>
+        <ion-select :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')">
+          <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-button v-if="!currentOrder.trackingCode" :disabled="!shipmentMethodTypeId" fill="outline" expand="block" @click.stop="retryShippingLabel(currentOrder)">
+        {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
+        <ion-spinner color="primary" slot="end" v-if="currentOrder.isGeneratingShippingLabel" name="crescent" />
+      </ion-button>
+      <ion-item v-else>
+        <ion-label>
+          {{ currentOrder.trackingCode }}
+          <p>{{ translate("tracking code") }}</p>
+        </ion-label>        
+        <ion-button slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, currentOrder)">
+          <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+        </ion-button>
+      </ion-item>
+    </ion-card>
   </div>
 </template>
 
@@ -53,15 +84,20 @@ import {
   IonCardTitle,
   IonIcon,
   IonItem,
-  IonLabel
+  IonLabel,
+  IonSelect,
+  IonSelectOption,
+  popoverController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { openOutline, refreshSharp } from "ionicons/icons";
+import { ellipsisVerticalOutline, openOutline, refreshSharp } from "ionicons/icons";
 import { useStore, mapGetters } from "vuex";
 import { showToast } from '@/utils';
 import { translate } from '@hotwax/dxp-components'
 import { OrderService } from '@/services/OrderService';
+import logger from '@/logger';
 import { hasError } from '@/adapter'
+import ShippingLabelActionPopover from '@/components/ShippingLabelActionPopover.vue';
 
 export default defineComponent({
   name: "ShippingDetails",
@@ -72,19 +108,34 @@ export default defineComponent({
     IonCardTitle,
     IonIcon,
     IonItem,
-    IonLabel
+    IonLabel,
+    IonSelect,
+    IonSelectOption
   },
   data() {
     return {
-      shipmentLabelErrorMessages: ""
+      shipmentLabelErrorMessages: "",
+      shipmentMethodTypeId: "",
+      carrierPartyId: "",
+      carrierMethods:[] as any
     }
   },
   computed: {
     ...mapGetters({
-      currentOrder: 'order/getCurrent'
+      currentOrder: 'order/getCurrent',
+      productStoreShipmentMethods: 'carrier/getProductStoreShipmentMethods',
+      facilityCarriers: 'carrier/getFacilityCarriers',
     })
   },
   async mounted() {
+    await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths')]);
+    if (this.facilityCarriers) {
+      const shipmentPackage = this.currentOrder.shipmentPackages?.[0];
+      this.carrierPartyId = shipmentPackage?.carrierPartyId ? shipmentPackage?.carrierPartyId : this.facilityCarriers[0].partyId;
+      await this.getProductStoreShipmentMethods(this.carrierPartyId);
+      this.shipmentMethodTypeId = shipmentPackage?.shipmentMethodTypeId;
+    }
+    
     // Fetching shipment label errors 
     const shipmentIds = this.currentOrder?.shipmentIds?.length > 0 ? this.currentOrder?.shipmentIds : this.currentOrder.shipments?.map((shipment: any) => shipment.shipmentId);
     if (shipmentIds && shipmentIds.length > 0) {
@@ -93,6 +144,46 @@ export default defineComponent({
     }
   },
   methods: {
+    async shippingLabelActionPopover(ev: Event, currentOrder: any) {
+      const popover = await popoverController.create({
+        component: ShippingLabelActionPopover,
+        componentProps: {
+          currentOrder: currentOrder
+        },
+        event: ev,
+        showBackdrop: false
+      });
+
+      return popover.present()
+    },
+    async updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMethodTypeId: string) {
+      let resp;
+      try {
+        for (const shipmentPackage of this.currentOrder.shipmentPackages) {
+          resp = await OrderService.updateShipmentRouteSegment({
+            "shipmentId": shipmentPackage.shipmentId,
+            "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
+            "carrierPartyId": carrierPartyId,
+            "shipmentMethodTypeId": shipmentMethodTypeId
+          }) as any;
+          if (!hasError(resp)) {
+            showToast(translate("Carrier and shipping method updated successfully."))
+            //fetching updated shipment packages
+            await this.store.dispatch('order/updateShipmentPackageDetail', this.currentOrder) 
+            await this.getProductStoreShipmentMethods(carrierPartyId)
+          } else {
+            throw resp.data;
+          }
+        }
+      } catch (err) {
+        logger.error('Failed to update carrier and method', err);
+        showToast(translate("Failed to update carrier and method"));
+      }
+    },
+
+    async getProductStoreShipmentMethods(carrierPartyId: string) {
+      this.carrierMethods = this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId) || [];
+    },
     async printShippingLabel(order: any) {
       const shipmentIds = order?.shipmentIds?.length > 0 ? order?.shipmentIds : order.shipments?.map((shipment: any) => shipment.shipmentId);
       const shippingLabelPdfUrls = order.shipmentPackages
@@ -118,6 +209,7 @@ export default defineComponent({
   setup() {
     const store = useStore();
     return {
+      ellipsisVerticalOutline,
       openOutline,
       refreshSharp,
       translate,

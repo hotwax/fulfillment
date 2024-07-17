@@ -105,7 +105,6 @@ const fetchCarrierFacilities = async (payload: any): Promise<any> => {
     url: "performFind",
     method: "POST",
     data: payload,
-    cache: true
   })
 }
 const createShipmentMethod = async (payload: any): Promise<any> => {
