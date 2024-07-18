@@ -386,6 +386,11 @@ const actions: ActionTree<CarrierState, RootState> = {
     } catch(error) {
       logger.error(error);
     }
+    //appending default carrier (partyId = _NA_) if not associated with facility
+    if (!facilityCarriers.find((facilityCarrier:any) => facilityCarrier.partyId === '_NA_')) {
+      facilityCarriers = [...facilityCarriers, {"partyId": "_NA_", "groupName": "Default", "roleTypeId": "CARRIER"}]
+    }
+
     commit(types.CARRIER_FACILITY_CARRIERS_UPDATED, facilityCarriers)
   },
   async fetchProductStoreShipmentMeths({ state, commit }) {

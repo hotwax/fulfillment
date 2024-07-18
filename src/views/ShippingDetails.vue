@@ -30,17 +30,6 @@
           <ion-icon :icon="openOutline" slot="icon-only" />
         </ion-button>
       </ion-item>
-      <ion-item lines="none" v-if="currentOrder.missingLabelImage || (!currentOrder.trackingCode && currentOrder.shipmentPackages && ['PICKITEM_PICKED', 'PICKITEM_COMPLETED'].includes(currentOrder?.items[0]?.picklistItemStatusId))">
-        <ion-label class="ion-text-wrap" v-if="shipmentLabelErrorMessages">
-          {{ shipmentLabelErrorMessages }}
-        </ion-label>
-        <ion-label v-else>
-          {{ translate('Missing shipping label') }}
-        </ion-label>
-        <ion-button fill="clear" slot="end" @click="retryShippingLabel(currentOrder)">
-          <ion-icon :icon="refreshSharp" slot="icon-only" />
-        </ion-button>
-      </ion-item>
     </ion-card>
 
     <ion-card v-if="['PICKITEM_PICKED', 'PICKITEM_COMPLETED'].includes(currentOrder?.items[0]?.picklistItemStatusId)">
@@ -59,10 +48,17 @@
           <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
         </ion-select>
       </ion-item>
-      <ion-button v-if="!currentOrder.trackingCode" :disabled="!shipmentMethodTypeId" fill="outline" expand="block" @click.stop="retryShippingLabel(currentOrder)">
-        {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
-        <ion-spinner color="primary" slot="end" v-if="currentOrder.isGeneratingShippingLabel" name="crescent" />
-      </ion-button>
+      <template v-if="!currentOrder.trackingCode">
+        <ion-button :disabled="!shipmentMethodTypeId" fill="outline" expand="block" @click.stop="retryShippingLabel(currentOrder)">
+          {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
+          <ion-spinner color="primary" slot="end" v-if="currentOrder.isGeneratingShippingLabel" name="crescent" />
+        </ion-button>
+        <ion-item lines="none" v-if="shipmentLabelErrorMessages">
+          <ion-label class="ion-text-wrap">
+            {{ shipmentLabelErrorMessages }}
+          </ion-label>
+        </ion-item>
+      </template>
       <ion-item v-else>
         <ion-label>
           {{ currentOrder.trackingCode }}
@@ -87,6 +83,7 @@ import {
   IonLabel,
   IonSelect,
   IonSelectOption,
+  IonSpinner,
   popoverController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
@@ -110,6 +107,7 @@ export default defineComponent({
     IonItem,
     IonLabel,
     IonSelect,
+    IonSpinner,
     IonSelectOption
   },
   data() {
@@ -167,7 +165,7 @@ export default defineComponent({
             "shipmentMethodTypeId": shipmentMethodTypeId
           }) as any;
           if (!hasError(resp)) {
-            showToast(translate("Carrier and shipping method updated successfully."))
+            showToast(translate("Shipment method detail updated successfully."))
             //fetching updated shipment packages
             await this.store.dispatch('order/updateShipmentPackageDetail', this.currentOrder) 
             await this.getProductStoreShipmentMethods(carrierPartyId)
@@ -177,7 +175,7 @@ export default defineComponent({
         }
       } catch (err) {
         logger.error('Failed to update carrier and method', err);
-        showToast(translate("Failed to update carrier and method"));
+        showToast(translate("Failed to update shipment method detail."));
       }
     },
 
@@ -192,18 +190,19 @@ export default defineComponent({
       await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
     },
     async retryShippingLabel(order: any) {
+      order.isGeneratingShippingLabel = true;
       const shipmentIds = order.shipmentPackages.map((shipmentPackage: any) => shipmentPackage.shipmentId);
       const resp = await OrderService.retryShippingLabel(shipmentIds)
       if (!hasError(resp)) {
         //Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
         await this.store.dispatch('order/updateShipmentPackageDetail', order) 
         order = this.currentOrder;
-        
         showToast(translate("Shipping Label generated successfully"))
         await this.printShippingLabel(order)
       } else {
         showToast(translate("Failed to generate shipping label"))
       }
+      order.isGeneratingShippingLabel = false;
     }
   },
   setup() {
