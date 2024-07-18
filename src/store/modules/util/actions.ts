@@ -494,14 +494,28 @@ const actions: ActionTree<UtilState, RootState> = {
     const ecomStore = store.getters['user/getCurrentEComStore'];
     const fromDate = Date.now()
 
-    const params = {
-      fromDate,
-      "productStoreId": ecomStore.productStoreId,
-      "settingTypeEnumId": "FULFILL_FORCE_SCAN",
-      "settingValue": false
-    }
-
     try {
+      if(!await UtilService.isEnumExists("FULFILL_FORCE_SCAN")) {
+        const resp = await UtilService.createEnumeration({
+          "enumId": "FULFILL_FORCE_SCAN",
+          "enumTypeId": "PROD_STR_STNG",
+          "description": "Impose force scanning of items while packing from fulfillment app",
+          "enumName": "Fulfillment Force Scan",
+          "enumCode": "FULFILL_FORCE_SCAN"
+        })
+
+        if(hasError(resp)) {
+          throw resp.data;
+        }
+      }
+
+      const params = {
+        fromDate,
+        "productStoreId": ecomStore.productStoreId,
+        "settingTypeEnumId": "FULFILL_FORCE_SCAN",
+        "settingValue": "false"
+      }
+
       await UtilService.createForceScanSetting(params) as any
     } catch(err) {
       console.error(err)
