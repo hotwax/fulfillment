@@ -352,7 +352,8 @@ export default defineComponent({
       boxTypeDesc: 'util/getShipmentBoxDesc',
       getProductStock: 'stock/getProductStock',
       isForceScanEnabled: 'util/isForceScanEnabled',
-      partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig'
+      partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
+      collateralRejectionConfig: 'user/getCollateralRejectionConfig'
     }),
   },
   data() {
@@ -767,6 +768,7 @@ export default defineComponent({
             data: {
               facilityId : this.currentFacility.facilityId,
               rejectEntireShipment: this.isEntierOrderRejectionEnabled(order) ? "Y" : "N",
+              rejectAllRelatedShipment: this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
               defaultReason: this.rejectEntireOrderReasonId, //default reason for items for which reason is not selected but rejecting due to entire order rejection config.
               items: rejectedOrderItems
             }

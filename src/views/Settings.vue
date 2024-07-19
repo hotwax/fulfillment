@@ -113,19 +113,6 @@
             <ion-toggle label-placement="start" v-model="isEComInvEnabled" @click.prevent="updateEComInvStatus($event)">{{ translate("Sell online") }}</ion-toggle>
           </ion-item>
         </ion-card>
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>
-              {{ translate("Partial Order rejection") }}
-            </ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            {{ translate('Specify whether you reject an order partially when any order item inventory is insufficient at the store.') }}
-          </ion-card-content>
-          <ion-item lines="none">
-            <ion-toggle label-placement="start" :disabled="!hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE)" :checked="partialOrderRejectionConfig.settingValue" @ionChange="updatePartialOrderRejectionConfig(partialOrderRejectionConfig, $event.detail.checked)">{{ translate("Allow partial rejection") }}</ion-toggle>
-          </ion-item>
-        </ion-card>
       </section>
 
       <hr />
@@ -181,6 +168,33 @@
           </ion-card-content>
           <ion-item lines="none" >
             <ion-toggle label-placement="start" :checked="isForceScanEnabled" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
+          </ion-item>
+        </ion-card>
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Allow partial rejections") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate('Rejecting any items in an order will automatically reject other items of an order.') }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-toggle label-placement="start" :disabled="!hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE)" :checked="partialOrderRejectionConfig.settingValue" @click.prevent="confirmPartialOrderRejection(partialOrderRejectionConfig, $event)">{{ translate("Partial rejections") }}</ion-toggle>
+          </ion-item>
+        </ion-card>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Collateral rejections") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate('When rejecting an item, automatically reject all other orders for that item as well.') }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-toggle label-placement="start" :disabled="!hasPermission(Actions.APP_COLLATERAL_REJECTION_CONFIG_UPDATE)" :checked="'true' === collateralRejectionConfig.settingValue" @click.prevent="confirmCollateralRejection(collateralRejectionConfig, $event)">{{ translate("Auto reject related items") }}</ion-toggle>
           </ion-item>
         </ion-card>
       </section>
@@ -286,6 +300,7 @@ export default defineComponent({
       firebaseDeviceId: 'user/getFirebaseDeviceId',
       isForceScanEnabled: 'util/isForceScanEnabled',
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
+      collateralRejectionConfig: 'user/getCollateralRejectionConfig',
     })
   },
   async ionViewWillEnter() {
@@ -293,6 +308,7 @@ export default defineComponent({
 
     // fetching partial order rejection when entering setting page to have latest information
     await this.store.dispatch('user/getPartialOrderRejectionConfig')
+    await this.store.dispatch('user/getCollateralRejectionConfig')
     
     // as notification prefs can also be updated from the notification pref modal,
     // latest state is fetched each time we open the settings page
@@ -637,12 +653,70 @@ export default defineComponent({
       });
       return alert.present();
     },
+    async confirmPartialOrderRejection(config: any, event: any) {
+      event.stopImmediatePropagation();
+      const isChecked = !event.target.checked;
+      const message = translate("Are you sure you want to perform this action?");
+      const header = isChecked ? translate('Allow partial rejections ') : translate('Disallow partial rejections')
+
+      const alert = await alertController.create({
+        header,
+        message,
+        buttons: [
+          {
+            text: translate("Cancel"),
+            role: "cancel"
+          },
+          {
+            text: translate("Confirm"),
+            handler: async () => {
+              alertController.dismiss()
+              await this.updatePartialOrderRejectionConfig(config, isChecked)
+            }
+          }
+        ],
+      });
+      return alert.present();
+    },
     async updatePartialOrderRejectionConfig(config: any, value: any) {
       const params = {
         ...config,
         "settingValue": value
       }
       await this.store.dispatch('user/updatePartialOrderRejectionConfig', params)
+    },
+    async confirmCollateralRejection(config: any, event: any) {
+      event.stopImmediatePropagation();
+
+      const isChecked = !event.target.checked;
+      const message = translate("Are you sure you want to perform this action?");
+      const header = isChecked ? translate('Allow collateral rejections') : translate('Disallow collateral rejections')
+
+      const alert = await alertController.create({
+        header,
+        message,
+        buttons: [
+          {
+            text: translate("Cancel"),
+            role: "cancel"
+          },
+          {
+            text: translate("Confirm"),
+            handler: async () => {
+              alertController.dismiss()
+              await this.updateCollateralRejectionConfig(config, !event.target.checked)
+            }
+          }
+        ],
+      });
+      return alert.present();
+    },
+    async updateCollateralRejectionConfig(config: any, value: any) {
+      const params = {
+        ...config,
+        "settingValue": value
+      }
+      await this.store.dispatch('user/updateCollateralRejectionConfig', params)
     }
   },
   setup() {

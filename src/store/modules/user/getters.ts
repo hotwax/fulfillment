@@ -66,6 +66,9 @@ const getters: GetterTree <UserState, RootState> = {
     },
     getPartialOrderRejectionConfig(state) {
         return  state.partialOrderRejectionConfig;
-    }
+    },
+    getCollateralRejectionConfig(state) {
+        return  state.collateralRejectionConfig;
+    },
 }
 export default getters;

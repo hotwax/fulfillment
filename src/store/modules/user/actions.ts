@@ -447,6 +447,50 @@ const actions: ActionTree<UserState, RootState> = {
     // Fetch the updated configuration
     await dispatch("getPartialOrderRejectionConfig");
   },
+  async updateCollateralRejectionConfig ({ dispatch }, payload) {  
+    let resp = {} as any;
+    try {
+      if(!await UserService.isEnumExists("FF_COLLATERAL_REJ")) {
+        resp = await UserService.createEnumeration({
+          "enumId": "FF_COLLATERAL_REJ",
+          "enumTypeId": "PROD_STR_STNG",
+          "description": "Fulfillment Collateral Rejection",
+          "enumName": "Fulfillment Collateral Rejection",
+          "enumCode": "FF_COLLATERAL_REJ"
+        })
+
+        if(hasError(resp)) {
+          throw resp.data;
+        }
+      }
+
+      if (!payload.fromDate) {
+        //Create Product Store Setting
+        payload = {
+          ...payload, 
+          "productStoreId": this.state.user.currentEComStore.productStoreId,
+          "settingTypeEnumId": "FF_COLLATERAL_REJ",
+          "fromDate": DateTime.now().toMillis()
+        }
+        resp = await UserService.createCollateralRejectionConfig(payload) as any
+      } else {
+        //Update Product Store Setting
+        resp = await UserService.updateCollateralRejectionConfig(payload) as any
+      }
+
+      if (!hasError(resp)) {
+        showToast(translate('Configuration updated'))
+      } else {
+        showToast(translate('Failed to update configuration'))
+      }
+    } catch(err) {
+      showToast(translate('Failed to update configuration'))
+      logger.error(err)
+    }
+
+    // Fetch the updated configuration
+    await dispatch("getCollateralRejectionConfig");
+  },
   async getPartialOrderRejectionConfig ({ commit }) {
     let config = {};
     const params = {
@@ -471,6 +515,31 @@ const actions: ActionTree<UserState, RootState> = {
       logger.error(err);
     } 
     commit(types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED, config);   
+  },
+  async getCollateralRejectionConfig ({ commit }) {
+    let config = {};
+    const params = {
+      "inputFields": {
+        "productStoreId": this.state.user.currentEComStore.productStoreId,
+        "settingTypeEnumId": "FF_COLLATERAL_REJ"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "viewSize": 1
+    } as any
+
+    try {
+      const resp = await UserService.getCollateralRejectionConfig(params)
+      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
+        config = resp.data?.docs[0];
+      } else {
+        logger.error('Failed to fetch collateral rejection configuration');
+      }
+    } catch (err) {
+      logger.error(err);
+    } 
+    commit(types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED, config);   
   },
 
   addNotification({ state, commit }, payload) {
