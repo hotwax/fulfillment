@@ -23,4 +23,5 @@ export default interface UserState {
     hasUnreadNotifications: boolean;
     allNotificationPrefs: any;
     partialOrderRejectionConfig: any;
+    collateralRejectionConfig: any;
 }

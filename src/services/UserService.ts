@@ -349,14 +349,38 @@ const updatePartialOrderRejectionConfig = async (payload: any): Promise<any> => 
   });
 }
 
+const getCollateralRejectionConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: payload,
+  });
+}
+const createCollateralRejectionConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
+const updateCollateralRejectionConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
+
 
 export const UserService = {
     addFacilityToGroup,
+    createCollateralRejectionConfig,
     createEnumeration,
     createFieldMapping,
     createPartialOrderRejectionConfig,
     deleteFieldMapping,
     login,
+    getCollateralRejectionConfig,
     getEComStores,
     getFacilityDetails,
     getFacilityOrderCount,
@@ -374,5 +398,6 @@ export const UserService = {
     updateFacility,
     updateFacilityToGroup,
     updateFieldMapping,
+    updateCollateralRejectionConfig,
     updatePartialOrderRejectionConfig
 }

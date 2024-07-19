@@ -34,7 +34,8 @@ const userModule: Module<UserState, RootState> = {
       firebaseDeviceId: '',
       hasUnreadNotifications: true,
       allNotificationPrefs: [],
-      partialOrderRejectionConfig: {}
+      partialOrderRejectionConfig: {},
+      collateralRejectionConfig: {}
     },
     getters,
     actions,

@@ -65,6 +65,9 @@ const mutations: MutationTree <UserState> = {
     },
     [types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED] (state, payload) {
         state.partialOrderRejectionConfig = payload
+    },
+    [types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED] (state, payload) {
+        state.collateralRejectionConfig = payload
     }
 }
 export default mutations;
