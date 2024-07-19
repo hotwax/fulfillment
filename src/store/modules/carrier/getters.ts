@@ -30,5 +30,11 @@ const getters: GetterTree<CarrierState, RootState> = {
   getCarrierShipmentMethodsByProductStore (state) {
     return state.carrierShipmentMethodsByProductStore;
   },
+  getProductStoreShipmentMethods (state) {
+    return state.productStoreShipmentMethods;
+  },
+  getFacilityCarriers (state) {
+    return state.facilityCarriers;
+  }
 };
 export default getters;

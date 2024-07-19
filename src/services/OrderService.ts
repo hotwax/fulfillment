@@ -840,6 +840,8 @@ export const OrderService = {
   unpackOrder,
   updateOrder,
   updateShipment,
+  updateShipmentPackageRouteSeg,
+  updateShipmentRouteSegment,
   fetchShipmentLabelError,
   fetchOrderItemShipGroup,
   fetchShippingAddress,
