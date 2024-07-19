@@ -32,7 +32,7 @@
       </ion-item>
     </ion-card>
 
-    <ion-card v-if="['PICKITEM_PICKED', 'PICKITEM_COMPLETED'].includes(currentOrder?.items[0]?.picklistItemStatusId)">
+    <ion-card v-if="['PICKITEM_PENDING', 'PICKITEM_PICKED', 'PICKITEM_COMPLETED'].includes(currentOrder?.items[0]?.picklistItemStatusId)">
       <ion-card-header>
         <ion-card-title>
           {{ translate('Shipment method') }}
