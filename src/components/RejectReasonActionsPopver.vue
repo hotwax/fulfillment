@@ -59,7 +59,7 @@ export default defineComponent({
         popoverController.dismiss()
       })
 
-      editRejectionReasonModal.present()
+      return editRejectionReasonModal.present()
     },
     async removeRejectionReason() {
       const alert = await alertController.create({
