@@ -487,6 +487,7 @@ const actions: ActionTree<UtilState, RootState> = {
       }
     } catch(err) {
       console.error(err)
+      commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, "false")
     }
   },
 
@@ -494,14 +495,28 @@ const actions: ActionTree<UtilState, RootState> = {
     const ecomStore = store.getters['user/getCurrentEComStore'];
     const fromDate = Date.now()
 
-    const params = {
-      fromDate,
-      "productStoreId": ecomStore.productStoreId,
-      "settingTypeEnumId": "FULFILL_FORCE_SCAN",
-      "settingValue": false
-    }
-
     try {
+      if(!await UtilService.isEnumExists("FULFILL_FORCE_SCAN")) {
+        const resp = await UtilService.createEnumeration({
+          "enumId": "FULFILL_FORCE_SCAN",
+          "enumTypeId": "PROD_STR_STNG",
+          "description": "Impose force scanning of items while packing from fulfillment app",
+          "enumName": "Fulfillment Force Scan",
+          "enumCode": "FULFILL_FORCE_SCAN"
+        })
+
+        if(hasError(resp)) {
+          throw resp.data;
+        }
+      }
+
+      const params = {
+        fromDate,
+        "productStoreId": ecomStore.productStoreId,
+        "settingTypeEnumId": "FULFILL_FORCE_SCAN",
+        "settingValue": "false"
+      }
+
       await UtilService.createForceScanSetting(params) as any
     } catch(err) {
       console.error(err)
@@ -516,6 +531,13 @@ const actions: ActionTree<UtilState, RootState> = {
   async setForceScanSetting({ commit, dispatch, state }, value) {
     let prefValue = state.isForceScanEnabled
     const eComStoreId = store.getters['user/getCurrentEComStore'].productStoreId;
+
+    // when selecting none as ecom store, not updating the pref as it's not possible to save pref with empty productStoreId
+    if(!eComStoreId) {
+      showToast(translate("Unable to update force scan preference."))
+      commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
+      return;
+    }
 
     let fromDate;
 
@@ -535,13 +557,6 @@ const actions: ActionTree<UtilState, RootState> = {
       }
     } catch(err) {
       console.error(err)
-    }
-
-    // when selecting none as ecom store, not updating the pref as it's not possible to save pref with empty productStoreId
-    if(!eComStoreId) {
-      showToast(translate("Unable to update force scan preference."))
-      commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
-      return;
     }
 
     if(!fromDate) {
