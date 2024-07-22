@@ -122,8 +122,9 @@
             <!-- TODO: implement functionality to mobile view -->
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
-                <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
+                <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
+                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+                <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover($event, order)">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -198,7 +199,7 @@ import {
 } from '@ionic/vue';
 import { computed, defineComponent } from 'vue';
 import { caretDownOutline, cubeOutline, printOutline, downloadOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
-import Popover from '@/views/ShippingPopover.vue'
+import ShippingPopover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
@@ -456,13 +457,30 @@ export default defineComponent({
       return shipOrderAlert.present();
     },
 
-    async shippingPopover(ev: Event) {
+    async shippingPopover(ev: Event, order: any) {
       const popover = await popoverController.create({
-        component: Popover,
+        component: ShippingPopover,
+        componentProps: {
+          hasPackedShipments: this.hasPackedShipments(order),
+          order
+        },
         event: ev,
         translucent: true,
         showBackdrop: false,
       });
+
+      popover.onDidDismiss().then(async(result) => {
+        if(result.data?.dismissed) {
+          const selectedMethod = result.data?.selectedMethod
+
+          // Retrieved the method name on popover dismissal and respective method is called.
+          if(typeof(this[selectedMethod]) === 'function') {
+            await (this as any)[selectedMethod](order);
+          }
+        }
+       
+      })
+
       return popover.present();
     },
 
