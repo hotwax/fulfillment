@@ -105,6 +105,9 @@ const actions: ActionTree<UserState, RootState> = {
       await dispatch("fetchAllNotificationPrefs");
       this.dispatch('util/findProductStoreShipmentMethCount')
       this.dispatch('util/getForceScanSetting', preferredStore.productStoreId);
+      await dispatch('user/getPartialOrderRejectionConfig')
+      await dispatch('user/getCollateralRejectionConfig')
+    
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
       // TODO Check if handling of specific status codes is required.
@@ -151,6 +154,8 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch("orderLookup/clearOrderLookup")
     this.dispatch('user/clearNotificationState')
     this.dispatch('util/updateForceScanStatus', false)
+    this.dispatch('user/clearPartialOrderRejectionConfig')
+    this.dispatch('user/clearCollateralRejectionConfig')
     resetConfig();
     resetPermissions();
 
@@ -614,8 +619,13 @@ const actions: ActionTree<UserState, RootState> = {
 
   setUnreadNotificationsStatus({ commit }, payload) {
     commit(types.USER_UNREAD_NOTIFICATIONS_STATUS_UPDATED, payload)
+  },
+  clearPartialOrderRejectionConfig ({ commit }) {
+    commit(types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED, {})
+  },
+  clearCollateralRejectionConfig ({ commit }) {
+    commit(types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED, {})
   }
-
 }
 
 export default actions;
