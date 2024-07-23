@@ -126,6 +126,7 @@ const actions: ActionTree<OrderState, RootState> = {
           shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
           shipmentPackages: shipmentPackages,
           carrierPartyIds,
+          trackingCode: shipmentPackages?.[0].trackingCode,
           shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty,
           missingLabelImage
         }
@@ -562,9 +563,10 @@ const actions: ActionTree<OrderState, RootState> = {
   async updateShipmentPackageDetail ({ commit, state }, payload) {
     const currentOrder = JSON.parse(JSON.stringify(state.current));
     const completedOrders = JSON.parse(JSON.stringify(state.completed.list));
+    const inProgressOrders = JSON.parse(JSON.stringify(state.inProgress.list));
 
     try {
-      const shipmentIds = payload?.shipments?.map((shipment: any) => shipment.shipmentId);
+      const shipmentIds = (payload?.shipmentIds && payload?.shipmentIds.length > 0) ? payload?.shipmentIds : payload?.shipments?.map((shipment: any) => shipment.shipmentId);
       const shipmentPackages = await UtilService.findShipmentPackages([...shipmentIds])
       const shipmentPackageValues = Object.values(shipmentPackages).flat() as any;
 
@@ -583,6 +585,8 @@ const actions: ActionTree<OrderState, RootState> = {
           if (updatedShipmentPackage) {
             shipmentPackage.trackingCode = updatedShipmentPackage.trackingCode;
             shipmentPackage.labelPdfUrl = updatedShipmentPackage.labelPdfUrl;
+            shipmentPackage.shipmentMethodTypeId = updatedShipmentPackage.shipmentMethodTypeId;
+            shipmentPackage.carrierPartyId = updatedShipmentPackage.carrierPartyId;
             shipmentPackage.missingLabelImage = missingLabelImage;
           }
         });
@@ -599,6 +603,13 @@ const actions: ActionTree<OrderState, RootState> = {
         if (order) {
           updateShipmentPackages(order);
           commit(types.ORDER_COMPLETED_UPDATED, { list: completedOrders, total: state.completed.total });
+        }
+      }
+      if (inProgressOrders && inProgressOrders.length > 0) {
+        const order = inProgressOrders.find((inProgressOrder:any) => inProgressOrder.orderId === payload.orderId);
+        if (order) {
+          updateShipmentPackages(order);
+          commit(types.ORDER_INPROGRESS_UPDATED, { orders: inProgressOrders, total: state.inProgress.total });
         }
       }
     } catch(err) {
@@ -1086,6 +1097,7 @@ const actions: ActionTree<OrderState, RootState> = {
         items: removeKitComponents({items: current.items}),
         shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
         shipmentPackages: shipmentPackages,
+        trackingCode: shipmentPackages?.[0].trackingCode,
         carrierPartyIdsOnOrderShipment,
         shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty,
         missingLabelImage

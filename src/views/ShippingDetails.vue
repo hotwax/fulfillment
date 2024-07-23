@@ -22,14 +22,6 @@
           <p>{{ currentOrder?.shippingInstructions ? currentOrder.shippingInstructions : 'Sample Handling instructions' }}</p>
         </ion-label>
       </ion-item>
-      <ion-item lines="none" v-if="currentOrder.trackingCode">
-        <ion-label>
-          {{ currentOrder.trackingCode }}
-        </ion-label>        
-        <ion-button slot="end" fill="clear" @click="printShippingLabel(currentOrder)">
-          <ion-icon :icon="openOutline" slot="icon-only" />
-        </ion-button>
-      </ion-item>
     </ion-card>
 
     <ion-card v-if="['PICKITEM_PENDING', 'PICKITEM_PICKED', 'PICKITEM_COMPLETED'].includes(currentOrder?.items[0]?.picklistItemStatusId)">
@@ -39,12 +31,12 @@
         </ion-card-title>
       </ion-card-header>
       <ion-item>
-        <ion-select :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
+        <ion-select :disabled="currentOrder.trackingCode" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
           <ion-select-option v-for="method in carrierMethods" :key="method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
         </ion-select>
       </ion-item>
       <ion-item>
-        <ion-select :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')">
+        <ion-select :disabled="currentOrder.trackingCode" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')">
           <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
         </ion-select>
       </ion-item>
