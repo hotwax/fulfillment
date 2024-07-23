@@ -7,9 +7,6 @@
         </ion-button>
       </ion-buttons>
       <ion-title>{{ translate("Edit packaging") }}</ion-title>
-      <ion-buttons slot="end">
-        <ion-button fill="clear">{{ translate("Save") }}</ion-button>
-      </ion-buttons>
     </ion-toolbar>
   </ion-header>
 
@@ -17,46 +14,45 @@
     <ion-card>
       <div class="card-header">
         <div class="order-tags">
-          <ion-chip outline>
+          <ion-chip outline @click="copyToClipboard(order.orderName, 'Copied to clipboard')">
             <ion-icon :icon="pricetag" />
-            <ion-label>NN10584</ion-label>
+            <ion-label>{{ order.orderName }}</ion-label>
           </ion-chip>
         </div>
 
         <div class="order-primary-info">
           <ion-label>
-            Darooty Magwood
-            <p>{{ translate("Ordered") }} 27th January 2020 9:24 PM EST</p>
+            {{ order.customerName }}
+            <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
           </ion-label>
         </div>
 
         <div class="order-metadata">
           <ion-label>
-            Next Day Shipping
-            <p>{{ translate("Ordered") }} 28th January 2020 2:32 PM EST</p>
+            {{ order.shipmentMethodTypeDesc }}
+            <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
           </ion-label>
         </div>
       </div>
 
-      <div class="order-item">
+      <div class="order-item" v-for="(item, index) in order.items" :key="index">
         <div class="product-info">
           <ion-item lines="none">
             <ion-thumbnail slot="start">
-              <img src="https://dev-resources.hotwax.io/resources/uploads/images/product/m/j/mj08-blue_main.jpg" />
+              <DxpShopifyImg size="small" :src="getProduct(item.productId).mainImageUrl" />
             </ion-thumbnail>
             <ion-label>
-              <p class="overline">WJ06-XL-PURPLE</p>
-              Juno Jacket
-              <p>Blue XL</p>
+              <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+              {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
+              <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
             </ion-label>
           </ion-item>
         </div>
 
         <div class="product-metadata">
           <ion-item lines="none">
-            <ion-select :label="translate('Select box')">
-              <ion-select-option>Box A Type 3</ion-select-option>
-              <ion-select-option>Box B Type 2</ion-select-option>
+            <ion-select aria-label="Select box" interface="popover" :value="item.selectedBox">
+              <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName"> {{ translate("Box") }} {{ shipmentPackage.packageName }}</ion-select-option>
             </ion-select>
           </ion-item>
         </div>
@@ -71,24 +67,30 @@
           <ion-icon :icon="addCircleOutline"/>
         </ion-button>
       </ion-item>
-      <ion-item>
-        <ion-select label="Box A" value="3">
-          <ion-select-option value="1">Type 1</ion-select-option>
-          <ion-select-option value="2">Type 2</ion-select-option>
-          <ion-select-option value="3">Type 3</ion-select-option>  
+      <ion-item v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">
+        <ion-select :label="translate('Box ') + shipmentPackage.packageName" interface="popover" :value="getShipmentPackageType(shipmentPackage)">
+          <ion-select-option v-for="boxType in shipmentPackage.shipmentBoxTypes" :key="boxTypeDesc(boxType)" :value="boxType">{{ boxTypeDesc(boxType) }}</ion-select-option>
         </ion-select>
       </ion-item>
     </ion-list>
   </ion-content>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button>
+      <ion-icon :icon="saveOutline" />
+    </ion-fab-button>
+  </ion-fab>
 </template>
 
-<script>
+<script lang="ts">
 import { 
   IonButtons,
   IonButton,
   IonCard,
   IonChip,
   IonContent,
+  IonFab,
+  IonFabButton,
   IonHeader,
   IonIcon,
   IonItem,
@@ -101,9 +103,11 @@ import {
   IonTitle,
   IonToolbar,
   modalController } from "@ionic/vue";
-import { defineComponent } from "vue";
-import { addCircleOutline, closeOutline, pricetag } from "ionicons/icons";
-import { translate } from '@hotwax/dxp-components'
+import { computed, defineComponent } from "vue";
+import { addCircleOutline, closeOutline, pricetag, saveOutline } from "ionicons/icons";
+import { getProductIdentificationValue, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { copyToClipboard, formatUtcDate, getFeature } from "@/utils";
+import { mapGetters } from "vuex";
 
 export default defineComponent({
   name: "EditPackagingModal",
@@ -113,6 +117,8 @@ export default defineComponent({
     IonCard,
     IonChip,
     IonContent,
+    IonFab,
+    IonFabButton,
     IonHeader,
     IonIcon,
     IonItem,
@@ -125,16 +131,47 @@ export default defineComponent({
     IonTitle,
     IonToolbar,
   },
+  props: ["order"],
+  computed: {
+    ...mapGetters({
+      getProduct: 'product/getProduct',
+      boxTypeDesc: 'util/getShipmentBoxDesc'
+    }),
+  },
+  data() {
+    return {
+      currentOrder: {} as any
+    }
+  },
+  mounted() {
+    this.currentOrder = JSON.parse(JSON.stringify(this.order));
+  },
   methods: {
     closeModal() {
       modalController.dismiss({ dismissed: true });
     },
+    getShipmentPackageType(shipmentPackage: any) {
+      let packageType = '';
+      if(shipmentPackage.shipmentBoxTypes.length){
+        packageType = shipmentPackage.shipmentBoxTypes.find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId) ? shipmentPackage.shipmentBoxTypes.find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId) : shipmentPackage.shipmentBoxTypes[0];
+      }
+      return packageType;
+    },
   },
   setup() {
+    const productIdentificationStore = useProductIdentificationStore();
+    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+
     return {
       addCircleOutline,
       closeOutline,
+      copyToClipboard,
+      formatUtcDate,
+      getFeature,
+      getProductIdentificationValue,
+      productIdentificationPref,
       pricetag,
+      saveOutline,
       translate
     };
   },

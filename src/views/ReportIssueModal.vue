@@ -98,7 +98,7 @@ import { computed, defineComponent } from "vue";
 import { closeOutline, cubeOutline, pricetag, saveOutline } from "ionicons/icons";
 import { mapGetters, useStore } from 'vuex';
 import { copyToClipboard, formatUtcDate, getFeature } from '@/utils';
-import { getProductIdentificationValue, ShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: "ReportIssueModal",
@@ -125,7 +125,7 @@ export default defineComponent({
   data() {
     return {
       selectedReason: "",
-      currentOrder: {}
+      currentOrder: {} as any
     }
   },
   computed: {

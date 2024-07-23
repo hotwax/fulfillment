@@ -40,9 +40,17 @@ export default defineComponent({
   methods: {
     async editPackaging() {
       const editmodal = await modalController.create({
-        component: EditPackagingModal
+        component: EditPackagingModal,
+        componentProps: { order: this.order }
       });
-      return editmodal.present();
+
+      editmodal.present();
+
+      editmodal.onDidDismiss().then((result) => {
+        if(result.data?.dismissed) {
+          popoverController.dismiss(result.data);
+        }
+      })
     },
      async reportIssue() {
       const reportmodal = await modalController.create({
