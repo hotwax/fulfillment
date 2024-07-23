@@ -138,7 +138,7 @@
                   <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
-                  <ion-button fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
+                  <ion-button fill="clear" size="small" class="desktop-only" @click.stop="openRejectReasonPopover($event, item, order)">
                     <ion-icon color="danger" slot="icon-only" :icon="trashBinOutline"/>
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
@@ -175,7 +175,7 @@
             <div class="mobile-only">
               <ion-item>
                 <ion-button fill="clear"  :disabled="order.isModified || order.hasMissingInfo" @click.stop="isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
-                <ion-button slot="end" fill="clear" color="medium" @click.stop="packagingPopover">
+                <ion-button slot="end" fill="clear" color="medium" @click.stop="packagingPopover($event, order)">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -437,14 +437,22 @@ export default defineComponent({
     getInProgressOrders() {
       return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
     },
-    async packagingPopover(ev: Event) {
+    async packagingPopover(ev: Event, order: any) {
       const popover = await popoverController.create({
         component: PackagingPopover,
+        componentProps: { order },
         event: ev,
         translucent: true,
         showBackdrop: false,
       });
-      return popover.present();
+
+      popover.present();
+
+      popover.onDidDismiss().then((result) => {
+        if(result.data?.updatedOrder) {
+          this.save(result.data.updatedOrder);
+        }
+      })
     },
     async packOrder(order: any) {
       const confirmPackOrder = await alertController
@@ -1285,8 +1293,10 @@ ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-te
   height: 30px;
 }
 
-.order-item {
-  grid-template-columns: repeat(3, 1fr);
+@media (min-width: 991px) {
+  .order-item {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 </style>
 

@@ -343,6 +343,8 @@ img {
 }
 
 .product-metadata {
+  display: flex;
+  align-items: center;
   margin-inline-start: auto;
   padding-inline-end: var(--spacer-sm);
 }

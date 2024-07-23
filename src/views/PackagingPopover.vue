@@ -5,13 +5,9 @@
         <ion-icon slot="start" :icon="pencil" />
         {{ translate("Edit packaging") }}
       </ion-item>
-      <ion-item button @click="reportIssue">
+      <ion-item button @click="reportIssue" lines="none">
         <ion-icon slot="start" :icon="warning" />
         {{ translate("Report an issue") }}
-      </ion-item>
-      <ion-item button lines="none">
-        <ion-icon slot="start" :icon="refresh" />
-        {{ translate("Reject order") }}
       </ion-item>
     </ion-list>
   </ion-content>
@@ -24,6 +20,7 @@ import {
   IonItem,
   IonList,
   modalController,
+  popoverController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import EditPackagingModal from '@/views/EditPackagingModal.vue'
@@ -39,6 +36,7 @@ export default defineComponent({
     IonItem,
     IonList,
   },
+  props: ["order"],
   methods: {
     async editPackaging() {
       const editmodal = await modalController.create({
@@ -48,9 +46,17 @@ export default defineComponent({
     },
      async reportIssue() {
       const reportmodal = await modalController.create({
-        component: ReportIssueModal
+        component: ReportIssueModal,
+        componentProps: { order: this.order }
       });
-      return reportmodal.present();
+
+      reportmodal.present();
+
+      reportmodal.onDidDismiss().then((result) => {
+        if(result.data?.dismissed) {
+          popoverController.dismiss(result.data);
+        }
+      })
     }
   },
   setup() {
