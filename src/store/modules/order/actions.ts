@@ -126,6 +126,7 @@ const actions: ActionTree<OrderState, RootState> = {
           shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
           shipmentPackages: shipmentPackages,
           carrierPartyIds,
+          trackingCode: shipmentPackages?.[0].trackingCode,
           shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty,
           missingLabelImage
         }
@@ -562,9 +563,10 @@ const actions: ActionTree<OrderState, RootState> = {
   async updateShipmentPackageDetail ({ commit, state }, payload) {
     const currentOrder = JSON.parse(JSON.stringify(state.current));
     const completedOrders = JSON.parse(JSON.stringify(state.completed.list));
+    const inProgressOrders = JSON.parse(JSON.stringify(state.inProgress.list));
 
     try {
-      const shipmentIds = payload?.shipments?.map((shipment: any) => shipment.shipmentId);
+      const shipmentIds = (payload?.shipmentIds && payload?.shipmentIds.length > 0) ? payload?.shipmentIds : payload?.shipments?.map((shipment: any) => shipment.shipmentId);
       const shipmentPackages = await UtilService.findShipmentPackages([...shipmentIds])
       const shipmentPackageValues = Object.values(shipmentPackages).flat() as any;
 
@@ -583,6 +585,8 @@ const actions: ActionTree<OrderState, RootState> = {
           if (updatedShipmentPackage) {
             shipmentPackage.trackingCode = updatedShipmentPackage.trackingCode;
             shipmentPackage.labelPdfUrl = updatedShipmentPackage.labelPdfUrl;
+            shipmentPackage.shipmentMethodTypeId = updatedShipmentPackage.shipmentMethodTypeId;
+            shipmentPackage.carrierPartyId = updatedShipmentPackage.carrierPartyId;
             shipmentPackage.missingLabelImage = missingLabelImage;
           }
         });
@@ -599,6 +603,13 @@ const actions: ActionTree<OrderState, RootState> = {
         if (order) {
           updateShipmentPackages(order);
           commit(types.ORDER_COMPLETED_UPDATED, { list: completedOrders, total: state.completed.total });
+        }
+      }
+      if (inProgressOrders && inProgressOrders.length > 0) {
+        const order = inProgressOrders.find((inProgressOrder:any) => inProgressOrder.orderId === payload.orderId);
+        if (order) {
+          updateShipmentPackages(order);
+          commit(types.ORDER_INPROGRESS_UPDATED, { orders: inProgressOrders, total: state.inProgress.total });
         }
       }
     } catch(err) {
@@ -761,7 +772,8 @@ const actions: ActionTree<OrderState, RootState> = {
 
       resp = await OrderService.findInProgressOrders(orderQueryPayload);
       if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
-        await this.dispatch('product/fetchProducts', { productIds: order.items.map((item: any) => item.productId) })
+        const productIds = resp.data.grouped.picklistBinId.groups[0].doclist.docs.map((item: any) => item.productId)
+        await this.dispatch('product/fetchProducts', { productIds })
         
         const orderItem = resp.data.grouped.picklistBinId.groups[0].doclist.docs[0];
         order = {
@@ -827,7 +839,8 @@ const actions: ActionTree<OrderState, RootState> = {
 
       resp = await OrderService.findCompletedOrders(orderQueryPayload);
       if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
-        await this.dispatch('product/fetchProducts', { productIds: order.items.map((item: any) => item.productId) })
+        const productIds = resp.data.grouped.picklistBinId.groups[0].doclist.docs.map((item: any) => item.productId)
+        await this.dispatch('product/fetchProducts', { productIds })
 
         const orderItem = resp.data.grouped.picklistBinId.groups[0].doclist.docs[0];
         order = {
@@ -1080,12 +1093,12 @@ const actions: ActionTree<OrderState, RootState> = {
 
       // When the shipment method for product store is configured then only check for shipmentPackages otherwise we won't show missing label error button
       const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
-
       current = {
         ...current,
         items: removeKitComponents({items: current.items}),
         shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
         shipmentPackages: shipmentPackages,
+        trackingCode: shipmentPackages?.[0].trackingCode,
         carrierPartyIdsOnOrderShipment,
         shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty,
         missingLabelImage
