@@ -772,7 +772,8 @@ const actions: ActionTree<OrderState, RootState> = {
 
       resp = await OrderService.findInProgressOrders(orderQueryPayload);
       if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
-        await this.dispatch('product/fetchProducts', { productIds: order.items.map((item: any) => item.productId) })
+        const productIds = resp.data.grouped.picklistBinId.groups[0].doclist.docs.map((item: any) => item.productId)
+        await this.dispatch('product/fetchProducts', { productIds })
         
         const orderItem = resp.data.grouped.picklistBinId.groups[0].doclist.docs[0];
         order = {
@@ -838,7 +839,8 @@ const actions: ActionTree<OrderState, RootState> = {
 
       resp = await OrderService.findCompletedOrders(orderQueryPayload);
       if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
-        await this.dispatch('product/fetchProducts', { productIds: order.items.map((item: any) => item.productId) })
+        const productIds = resp.data.grouped.picklistBinId.groups[0].doclist.docs.map((item: any) => item.productId)
+        await this.dispatch('product/fetchProducts', { productIds })
 
         const orderItem = resp.data.grouped.picklistBinId.groups[0].doclist.docs[0];
         order = {
@@ -1091,7 +1093,6 @@ const actions: ActionTree<OrderState, RootState> = {
 
       // When the shipment method for product store is configured then only check for shipmentPackages otherwise we won't show missing label error button
       const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
-
       current = {
         ...current,
         items: removeKitComponents({items: current.items}),
