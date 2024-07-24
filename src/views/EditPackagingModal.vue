@@ -51,7 +51,7 @@
 
         <div class="product-metadata">
           <ion-item lines="none">
-            <ion-select aria-label="Select box" interface="popover" :value="item.selectedBox">
+            <ion-select aria-label="Select box" interface="popover" :value="item.selectedBox" @ionChange="updateBox($event, item)">
               <ion-select-option v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" :value="shipmentPackage.packageName"> {{ translate("Box") }} {{ shipmentPackage.packageName }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -62,13 +62,13 @@
     <ion-list>
       <ion-item lines="none">
         <ion-note slot="start">{{ translate('Boxes') }}</ion-note>
-        <ion-button fill="clear" slot="end">
+        <ion-button fill="clear" slot="end" :disabled="addingBoxForOrderIds.includes(currentOrder.orderId)" @click="addShipmentBox(currentOrder)">
           {{ translate("Add") }}
           <ion-icon :icon="addCircleOutline"/>
         </ion-button>
       </ion-item>
       <ion-item v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId">
-        <ion-select :label="translate('Box ') + shipmentPackage.packageName" interface="popover" :value="getShipmentPackageType(shipmentPackage)">
+        <ion-select :label="translate('Box ') + shipmentPackage.packageName" interface="popover" :value="shipmentPackage.shipmentBoxTypeId" :placeholder="translate('Select')" :disabled="!shipmentPackage.shipmentBoxTypes.length" @ionChange="updateBoxType($event, shipmentPackage.shipmentId)">
           <ion-select-option v-for="boxType in shipmentPackage.shipmentBoxTypes" :key="boxTypeDesc(boxType)" :value="boxType">{{ boxTypeDesc(boxType) }}</ion-select-option>
         </ion-select>
       </ion-item>
@@ -76,7 +76,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button>
+    <ion-fab-button @click="saveOrder()">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -131,7 +131,7 @@ export default defineComponent({
     IonTitle,
     IonToolbar,
   },
-  props: ["order"],
+  props: ["addingBoxForOrderIds", "addShipmentBox", "order"],
   computed: {
     ...mapGetters({
       getProduct: 'product/getProduct',
@@ -147,8 +147,8 @@ export default defineComponent({
     this.currentOrder = JSON.parse(JSON.stringify(this.order));
   },
   methods: {
-    closeModal() {
-      modalController.dismiss({ dismissed: true });
+    closeModal(payload = {}) {
+      modalController.dismiss({ dismissed: true, ...payload });
     },
     getShipmentPackageType(shipmentPackage: any) {
       let packageType = '';
@@ -157,6 +157,25 @@ export default defineComponent({
       }
       return packageType;
     },
+    updateBox(event: any, item: any) {
+      const updatedBox = event.detail.value;
+
+      const currentOrderItem = this.currentOrder.items.find((currentItem: any) => currentItem.orderItemSeqId === item.orderItemSeqId);
+      currentOrderItem.selectedBox = updatedBox
+
+      this.currentOrder.isModified = true;
+    },
+    updateBoxType(event: any, shipmentId: any) {
+      const updatedBoxType = event.detail.value;
+
+      const currentShipmentPackage = this.currentOrder.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.shipmentId === shipmentId)
+      currentShipmentPackage.shipmentBoxTypeId = updatedBoxType;
+
+      this.currentOrder.isModified = true
+    },
+    saveOrder() {
+      this.closeModal({ updatedOrder: this.currentOrder })
+    }
   },
   setup() {
     const productIdentificationStore = useProductIdentificationStore();
@@ -177,3 +196,9 @@ export default defineComponent({
   },
 });
 </script>
+
+<style scoped>
+ion-content {
+  --padding-bottom: 80px;
+}
+</style>

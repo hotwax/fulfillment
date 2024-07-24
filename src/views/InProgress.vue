@@ -306,6 +306,8 @@ import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
 import QRCodeModal from '@/components/QRCodeModal.vue'
 import { useAuthStore } from '@hotwax/dxp-components'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
+import EditPackagingModal from '@/views/EditPackagingModal.vue'
+import ReportIssueModal from '@/views/ReportIssueModal.vue'
 
 
 export default defineComponent({
@@ -446,13 +448,26 @@ export default defineComponent({
         showBackdrop: false,
       });
 
-      popover.present();
+      popover.onDidDismiss().then(async(result) => {
+        if(result.data?.dismissed) {
+          const selectedAction = result.data.selectedAction;
 
-      popover.onDidDismiss().then((result) => {
-        if(result.data?.updatedOrder) {
-          this.save(result.data.updatedOrder);
+          const modal = await modalController.create({
+            component: selectedAction === 'editPackaging' ? EditPackagingModal : ReportIssueModal,
+            componentProps: selectedAction === 'editPackaging' ? { order, addingBoxForOrderIds: this.addingBoxForOrderIds, addShipmentBox: this.addShipmentBox } : { order }
+          })
+
+          modal.onDidDismiss().then((result) => {
+            if(result.data?.updatedOrder) {
+              this.save(result.data.updatedOrder);
+            }
+          })
+
+          modal.present();
         }
       })
+
+      return popover.present();
     },
     async packOrder(order: any) {
       const confirmPackOrder = await alertController
