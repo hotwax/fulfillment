@@ -62,7 +62,7 @@
     <ion-list>
       <ion-item lines="none">
         <ion-note slot="start">{{ translate('Boxes') }}</ion-note>
-        <ion-button fill="clear" slot="end" :disabled="addingBoxForOrderIds.includes(currentOrder.orderId)" @click="addShipmentBox(currentOrder)">
+        <ion-button fill="clear" slot="end" :disabled="addingBoxForOrderIds.includes(currentOrder.orderId)" @click="addBox(currentOrder)">
           {{ translate("Add") }}
           <ion-icon :icon="addCircleOutline"/>
         </ion-button>
@@ -172,6 +172,10 @@ export default defineComponent({
       currentShipmentPackage.shipmentBoxTypeId = updatedBoxType;
 
       this.currentOrder.isModified = true
+    },
+    addBox(currentOrder: any) {
+      this.addShipmentBox(currentOrder);
+      modalController.dismiss();
     },
     saveOrder() {
       this.closeModal({ updatedOrder: this.currentOrder })
