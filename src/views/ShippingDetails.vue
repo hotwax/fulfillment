@@ -33,6 +33,7 @@
       <ion-item>
         <ion-select :disabled="currentOrder.trackingCode" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
           <ion-select-option v-for="method in carrierMethods" :key="method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
+          <ion-select-option value="">{{ translate("None") }}</ion-select-option>
         </ion-select>
       </ion-item>
       <ion-item>
