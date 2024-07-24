@@ -116,7 +116,7 @@
                   </ion-item>
                   <ion-item lines="none">
                     <ion-label class="ion-text-wrap">{{ translate("Channel") }}</ion-label>
-                    <ion-label class="ion-text-wrap">{{ order.salesChanel || "-" }}</ion-label>
+                    <ion-label class="ion-text-wrap">{{ order.salesChannel || "-" }}</ion-label>
                   </ion-item>
                 </ion-list>
               </ion-card>
