@@ -197,11 +197,13 @@
           </ion-infinite-scroll>
         </div>
       </div>
-      <ion-fab v-if="inProgressOrders.total && !isForceScanEnabled" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="packOrders()">
-          <ion-icon :icon="checkmarkDoneOutline" />
-        </ion-fab-button>
-      </ion-fab>
+      <template v-if="inProgressOrders.total">
+        <ion-fab v-if="!isForceScanEnabled" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
+          <ion-fab-button @click="packOrders()">
+            <ion-icon :icon="checkmarkDoneOutline" />
+          </ion-fab-button>
+        </ion-fab>
+      </template>
       <div class="empty-state" v-else>
         <p v-html="getErrorMessage()"></p>
       </div>
