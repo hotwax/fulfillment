@@ -166,7 +166,7 @@
           <ion-card-content>
             {{ translate("Control whether the store requires the force scan during order packing or not.") }}
           </ion-card-content>
-          <ion-item lines="none" >
+          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_UPDT_FULFILL_FORCE_SCAN_CONFIG)">
             <ion-toggle label-placement="start" :checked="isForceScanEnabled" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
           </ion-item>
         </ion-card>

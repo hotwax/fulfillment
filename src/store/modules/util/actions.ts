@@ -480,7 +480,7 @@ const actions: ActionTree<UtilState, RootState> = {
     try {
       const resp = await UtilService.getProductStoreSetting(payload) as any
       if(!hasError(resp)) {
-        const respValue = resp.data.docs[0].settingValue
+        const respValue = resp.data.docs[0].settingValue === "true"
         commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, respValue)
       } else {
         dispatch('createForceScanSetting');
@@ -498,7 +498,7 @@ const actions: ActionTree<UtilState, RootState> = {
       fromDate,
       "productStoreId": ecomStore.productStoreId,
       "settingTypeEnumId": "FULFILL_FORCE_SCAN",
-      "settingValue": false
+      "settingValue": "false"
     }
 
     try {
@@ -552,7 +552,7 @@ const actions: ActionTree<UtilState, RootState> = {
       "fromDate": fromDate,
       "productStoreId": eComStoreId,
       "settingTypeEnumId": "FULFILL_FORCE_SCAN",
-      "settingValue": value
+      "settingValue": `${value}`
     }
 
     try {
