@@ -114,7 +114,7 @@
 
             <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
             <div class="product-metadata">
-              <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+              <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal" class="ion-padding-end">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
               <ion-button color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
                 {{ translate('Check stock') }}
                 <ion-icon slot="end" :icon="cubeOutline"/>
@@ -1377,5 +1377,11 @@ ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-te
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.product-metadata {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
 }
 </style>
