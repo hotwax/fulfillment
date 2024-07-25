@@ -81,8 +81,10 @@
                 </ion-thumbnail>
                 <ion-label>
                   <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                  {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                  <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                  <div class="kit-label">
+                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                    <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                  </div>
                   <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                 </ion-label>
               </ion-item>
@@ -138,8 +140,10 @@
                   </ion-thumbnail>
                   <ion-label>
                     <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
-                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
-                    <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                    <div class="kit-label">
+                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                      <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                    </div>
                     <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                 </ion-item>
@@ -235,8 +239,10 @@
               </ion-thumbnail>
               <ion-label>
                 <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                <div class="kit-label">
+                  {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                  <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                </div>
               </ion-label>
               
               <div class="other-shipment-actions">
