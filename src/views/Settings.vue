@@ -140,6 +140,63 @@
             <ion-toggle label-placement="start" :checked="userPreference.printPackingSlip" @ionChange="setPrintPackingSlipPreference($event)">{{ translate("Generate packing slip") }}</ion-toggle>
           </ion-item>
         </ion-card>
+
+        <ion-card v-if="notificationPrefs.length">
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Notification Preference") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate('Select the notifications you want to receive.') }}
+          </ion-card-content>
+          <ion-list>
+            <ion-item :key="pref.enumId" v-for="pref in notificationPrefs" lines="none">
+              <ion-toggle label-placement="start" @click.prevent="confirmNotificationPrefUpdate(pref.enumId, $event)" :checked="pref.isEnabled">{{ pref.description }}</ion-toggle>
+            </ion-item>
+          </ion-list>
+        </ion-card>
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Force scan") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate("Control whether the store requires the force scan during order packing or not.") }}
+          </ion-card-content>
+          <ion-item lines="none" >
+            <ion-toggle label-placement="start" :disabled="!hasPermission(Actions.APP_UPDT_FULFILL_FORCE_SCAN_CONFIG)" :checked="isForceScanEnabled" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
+          </ion-item>
+        </ion-card>
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Allow partial rejections") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate('Rejecting any items in an order will automatically reject other items of an order.') }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-toggle label-placement="start" :disabled="!hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE)" :checked="partialOrderRejectionConfig.settingValue" @click.prevent="confirmPartialOrderRejection(partialOrderRejectionConfig, $event)">{{ translate("Partial rejections") }}</ion-toggle>
+          </ion-item>
+        </ion-card>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Collateral rejections") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate('When rejecting an item, automatically reject all other orders for that item as well.') }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-toggle label-placement="start" :disabled="!hasPermission(Actions.APP_COLLATERAL_REJECTION_CONFIG_UPDATE)" :checked="'true' === collateralRejectionConfig.settingValue" @click.prevent="confirmCollateralRejection(collateralRejectionConfig, $event)">{{ translate("Auto reject related items") }}</ion-toggle>
+          </ion-item>
+        </ion-card>
       </section>
     </ion-content>
   </ion-page>
@@ -160,6 +217,7 @@ import {
   IonIcon, 
   IonItem, 
   IonLabel,
+  IonList,
   IonMenuButton,
   IonPage, 
   IonProgressBar,
@@ -178,13 +236,17 @@ import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { UserService } from '@/services/UserService';
 import { showToast } from '@/utils';
-import { hasError } from '@/adapter';
-import { translate } from '@hotwax/dxp-components';
+import { hasError, removeClientRegistrationToken, subscribeTopic, unsubscribeTopic } from '@/adapter'
+import { initialiseFirebaseApp, translate } from '@hotwax/dxp-components';
 import logger from '@/logger';
 import { Actions, hasPermission } from '@/authorization'
 import { DateTime } from 'luxon';
 import Image from '@/components/Image.vue';
 import OrderLimitPopover from '@/components/OrderLimitPopover.vue'
+import emitter from "@/event-bus"
+import { addNotification, generateTopicName, isFcmConfigured, storeClientRegistrationToken } from "@/utils/firebase";
+
+
 
 export default defineComponent({
   name: 'Settings',
@@ -201,6 +263,7 @@ export default defineComponent({
     IonHeader, 
     IonIcon,
     IonItem, 
+    IonList,
     IonLabel,
     IonMenuButton,
     IonPage, 
@@ -231,11 +294,25 @@ export default defineComponent({
       instanceUrl: 'user/getInstanceUrl',
       currentEComStore: 'user/getCurrentEComStore',
       userPreference: 'user/getUserPreference',
-      locale: 'user/getLocale'
+      locale: 'user/getLocale',
+      notificationPrefs: 'user/getNotificationPrefs',
+      allNotificationPrefs: 'user/getAllNotificationPrefs',
+      firebaseDeviceId: 'user/getFirebaseDeviceId',
+      isForceScanEnabled: 'util/isForceScanEnabled',
+      partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
+      collateralRejectionConfig: 'user/getCollateralRejectionConfig',
     })
   },
   async ionViewWillEnter() {
     Promise.all([this.getCurrentFacilityDetails(), this.getFacilityOrderCount(), this.getEcomInvStatus()]);
+
+    // fetching partial order rejection when entering setting page to have latest information
+    await this.store.dispatch('user/getPartialOrderRejectionConfig')
+    await this.store.dispatch('user/getCollateralRejectionConfig')
+    
+    // as notification prefs can also be updated from the notification pref modal,
+    // latest state is fetched each time we open the settings page
+    await this.store.dispatch('user/fetchNotificationPreferences')
   },
   methods: {
     async getCurrentFacilityDetails() {
@@ -341,7 +418,16 @@ export default defineComponent({
         logger.error('Failed to fetch eCom inventory config', err)
       }
     },
-    logout () {
+    async logout () {
+
+      // remove firebase notification registration token -
+      // OMS and auth is required hence, removing it before logout (clearing state)
+      try {
+        await removeClientRegistrationToken(this.firebaseDeviceId, process.env.VUE_APP_NOTIF_APP_ID as any)
+      } catch (error) {
+        logger.error(error)
+      }
+
       this.store.dispatch('user/logout', { isUserUnauthorised: false }).then((redirectionUrl) => {
         this.store.dispatch('order/clearOrders')
 
@@ -381,6 +467,7 @@ export default defineComponent({
         await this.store.dispatch('user/setFacility', {
           'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == event.detail.value)
         });
+        await this.store.dispatch('user/fetchNotificationPreferences')
         this.store.dispatch('order/clearOrders')
         this.getCurrentFacilityDetails();
         this.getFacilityOrderCount();
@@ -479,6 +566,11 @@ export default defineComponent({
       }
 
     },
+    async updateForceScanStatus(event: any) {
+      event.stopImmediatePropagation();
+
+      this.store.dispatch("util/setForceScanSetting", !this.isForceScanEnabled)
+    },
     async setEComStore(event: any) {
       // not updating the ecomstore when an empty value is given (on logout)
       if (!event.detail.value) {
@@ -498,6 +590,133 @@ export default defineComponent({
     },
     setLocale(locale: string) {
       this.store.dispatch('user/setLocale',locale)
+    },
+    async updateNotificationPref(enumId: string) {
+      let isToggledOn = false;
+
+      try {
+        if (!isFcmConfigured()) {
+          logger.error("FCM is not configured.");
+          showToast(translate('Notification preferences not updated. Please try again.'))
+          return;
+        }
+
+        emitter.emit('presentLoader',  { backdropDismiss: false })
+        const facilityId = (this.currentFacility as any).facilityId
+        const topicName = generateTopicName(facilityId, enumId)
+
+        const notificationPref = this.notificationPrefs.find((pref: any) => pref.enumId === enumId)
+        notificationPref.isEnabled
+          ? await unsubscribeTopic(topicName, process.env.VUE_APP_NOTIF_APP_ID as any)
+          : await subscribeTopic(topicName, process.env.VUE_APP_NOTIF_APP_ID as any)
+          
+        notificationPref.isEnabled = !notificationPref.isEnabled
+        await this.store.dispatch('user/updateNotificationPreferences', this.notificationPrefs)
+        isToggledOn = notificationPref.isEnabled
+        showToast(translate('Notification preferences updated.'))
+      } catch (error) {
+        showToast(translate('Notification preferences not updated. Please try again.'))
+      } finally {
+        emitter.emit("dismissLoader")
+      }
+      try {
+        if(!this.allNotificationPrefs.length && isToggledOn) {
+          await initialiseFirebaseApp(JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any), process.env.VUE_APP_FIREBASE_VAPID_KEY, storeClientRegistrationToken, addNotification)
+        } else if(this.allNotificationPrefs.length == 1 && !isToggledOn) {
+          await removeClientRegistrationToken(this.firebaseDeviceId, process.env.VUE_APP_NOTIF_APP_ID as any)
+        }
+        await this.store.dispatch("user/fetchAllNotificationPrefs");
+      } catch(error) {
+        logger.error(error);
+      }
+    },
+    async confirmNotificationPrefUpdate(enumId: string, event: CustomEvent) {
+      event.stopImmediatePropagation();
+
+      const message = translate("Are you sure you want to update the notification preferences?");
+      const alert = await alertController.create({
+        header: translate("Update notification preferences"),
+        message,
+        buttons: [
+          {
+            text: translate("Cancel"),
+            role: "cancel"
+          },
+          {
+            text: translate("Confirm"),
+            handler: async () => {
+              alertController.dismiss()
+              await this.updateNotificationPref(enumId)
+            }
+          }
+        ],
+      });
+      return alert.present();
+    },
+    async confirmPartialOrderRejection(config: any, event: any) {
+      event.stopImmediatePropagation();
+      const isChecked = !event.target.checked;
+      const message = translate("Are you sure you want to perform this action?");
+      const header = isChecked ? translate('Allow partial rejections ') : translate('Disallow partial rejections')
+
+      const alert = await alertController.create({
+        header,
+        message,
+        buttons: [
+          {
+            text: translate("Cancel"),
+            role: "cancel"
+          },
+          {
+            text: translate("Confirm"),
+            handler: async () => {
+              alertController.dismiss()
+              await this.updatePartialOrderRejectionConfig(config, isChecked)
+            }
+          }
+        ],
+      });
+      return alert.present();
+    },
+    async updatePartialOrderRejectionConfig(config: any, value: any) {
+      const params = {
+        ...config,
+        "settingValue": value
+      }
+      await this.store.dispatch('user/updatePartialOrderRejectionConfig', params)
+    },
+    async confirmCollateralRejection(config: any, event: any) {
+      event.stopImmediatePropagation();
+
+      const isChecked = !event.target.checked;
+      const message = translate("Are you sure you want to perform this action?");
+      const header = isChecked ? translate('Allow collateral rejections') : translate('Disallow collateral rejections')
+
+      const alert = await alertController.create({
+        header,
+        message,
+        buttons: [
+          {
+            text: translate("Cancel"),
+            role: "cancel"
+          },
+          {
+            text: translate("Confirm"),
+            handler: async () => {
+              alertController.dismiss()
+              await this.updateCollateralRejectionConfig(config, !event.target.checked)
+            }
+          }
+        ],
+      });
+      return alert.present();
+    },
+    async updateCollateralRejectionConfig(config: any, value: any) {
+      const params = {
+        ...config,
+        "settingValue": value
+      }
+      await this.store.dispatch('user/updateCollateralRejectionConfig', params)
     }
   },
   setup() {
@@ -543,4 +762,9 @@ hr {
   align-items: center;
   padding: var(--spacer-xs) 10px 0px;
 }
+
+ion-chip {
+  flex-shrink: 0;
+}
+
 </style>

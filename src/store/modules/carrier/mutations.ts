@@ -27,6 +27,12 @@ const mutations: MutationTree <CarrierState> = {
   },
   [types.CARRIER_PRODUCT_STORE_SHIPMENT_METHODS_UPDATED](state, payload) {
     state.carrierShipmentMethodsByProductStore = payload
+  },
+  [types.CARRIER_STORE_SHIPMENT_METHODS_UPDATED](state, payload) {
+    state.productStoreShipmentMethods = payload
+  },
+  [types.CARRIER_FACILITY_CARRIERS_UPDATED](state, payload) {
+    state.facilityCarriers = payload
   }
 }
 export default mutations;

@@ -21,7 +21,12 @@
 
     <ion-list>
       <ion-list-header>{{ translate("Staff") }}</ion-list-header>
-      <div class="ion-padding" v-if="!pickers.length">
+
+      <div v-if="isLoading" class="empty-state">
+        <ion-spinner name="crescent" />
+        <ion-label>{{ translate("Fetching pickers") }}</ion-label>
+      </div>
+      <div class="empty-state" v-else-if="!pickers.length">
         {{ 'No picker found' }}
       </div>
       <div v-else>
@@ -62,6 +67,7 @@ import {
   IonListHeader,
   IonRow,
   IonSearchbar,
+  IonSpinner,
   modalController,
   alertController
 } from "@ionic/vue";
@@ -93,13 +99,15 @@ export default defineComponent({
     IonListHeader,
     IonRow,
     IonSearchbar,
+    IonSpinner
   },
   data () {
     return {
       selectedPickers: [] as any,
       queryString: '',
       pickers: [] as any,
-      editedPicklist: {} as any
+      editedPicklist: {} as any,
+      isLoading: false
     }
   },
   async mounted() {
@@ -121,6 +129,8 @@ export default defineComponent({
       }
     },
     async findPickers(pickerIds?: Array<any>) {
+      this.isLoading = true;
+
       let inputFields = {}
       this.pickers = []
 
@@ -183,6 +193,7 @@ export default defineComponent({
       } catch (err) {
         logger.error('Failed to fetch the pickers information or there are no pickers available', err)
       }
+      this.isLoading = false;
     },
     async confirmSave() {
       const message = translate("Replace current pickers with new selection?");

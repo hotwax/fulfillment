@@ -199,6 +199,10 @@
         }
 
         currentShipment.isGeneratingShippingLabel = true;
+        let shippingLabelPdfUrls = currentShipment.shipmentPackages
+          ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+          .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+        
 
         if (!currentShipment.trackingCode) {
           //regenerate shipping label if missing tracking code
@@ -207,7 +211,14 @@
           if (!hasError(resp)) {
             this.showLabelError = false;
             showToast(translate("Shipping Label generated successfully"))
-            await OrderService.printShippingLabel([currentShipment.shipmentId])
+
+            //retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
+            await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
+            shippingLabelPdfUrls = this.currentShipment?.shipmentPackages
+                ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+                .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+
+            await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
             await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
           } else {
             this.showLabelError = true;
@@ -216,7 +227,7 @@
         } else {
           this.showLabelError = false;
           //print shipping label if label already exists
-          await OrderService.printShippingLabel([currentShipment.shipmentId])
+          await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
         }
 
         currentShipment.isGeneratingShippingLabel = false;

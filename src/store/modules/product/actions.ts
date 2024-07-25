@@ -5,7 +5,6 @@ import ProductState from './ProductState'
 import * as types from './mutation-types'
 import { hasError } from '@/adapter'
 import logger from "@/logger";
-import { isKitComponent } from "@/utils/order";
 
 const actions: ActionTree<ProductState, RootState> = {
 
@@ -51,19 +50,58 @@ const actions: ActionTree<ProductState, RootState> = {
       list.doclist.docs.forEach((order: any) => {
         if (order.productId) {
           productIds.add(order.productId)
-          // when the item is a kitComponent, fetching information for kit parentProduct
-          if(isKitComponent(order)) {
-            const assoc = order.toOrderItemAssocs.find((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
-            productIds.add(assoc.split("/")[2])
-          }
         }
       })
     })
 
     productIds = [...productIds]
     if (productIds.length) {
-      dispatch('fetchProducts', { productIds })
+      await dispatch('fetchProducts', { productIds })
     }
+  },
+
+  async fetchProductComponents ( { commit, dispatch, state }, { productId }) {
+    // If there are no products skip the API call
+    if (productId === '') return;
+
+    const cachedProductIds = Object.keys(state.cached);
+    if (!cachedProductIds.includes(productId)) {
+      await dispatch('fetchProducts', { productIds: [productId] })
+    }
+    const product = state.cached[productId]
+    if (product.productComponents && product.productComponents.length > 0) {
+      return;
+    }
+
+    let resp;
+    try {
+      resp = await ProductService.fetchProductComponents({
+        "entityName": "ProductAssoc",
+          "inputFields": {
+            "productId": productId,
+            "productTypeId": "PRODUCT_COMPONENT"
+          },
+          "fieldList": ["productId", "productIdTo", "productAssocTypeId"],
+          "viewIndex": 0,
+          "viewSize": 250,  // maximum records we could have
+          "distinct": "Y",
+          "noConditionFind": "Y",
+          "filterByDate": "Y"
+      })
+      if (!hasError(resp)) {
+        const productComponents = resp.data.docs;
+        const componentProductIds = productComponents.map((productComponent: any) => productComponent.productIdTo);
+        await dispatch('fetchProducts', { productIds: componentProductIds })
+        
+        product["productComponents"] = productComponents;
+        commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products: [product] });
+      } else {
+        throw resp.data
+      }
+    } catch(err) {
+      logger.error('Failed to fetch product components information', err)
+    }
+    return resp;
   }
 }
 

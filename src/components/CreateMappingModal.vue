@@ -94,8 +94,8 @@ export default defineComponent({
     })
   },
   methods: {
-    closeModal() {
-      modalController.dismiss({ dismissed: true });
+    closeModal(mappingId = "") {
+      modalController.dismiss({ dismissed: true, mappingId });
     },
     async saveMapping() {
       if(!this.mappingName) {
@@ -122,10 +122,10 @@ export default defineComponent({
       })
 
       await this.store.dispatch("user/createFieldMapping", { id, name: this.mappingName, value: mappings, mappingType: this.mappingType })
-      this.closeModal();
+      this.closeModal(id);
     },
     areAllFieldsSelected() {
-      return Object.values(this.fieldMapping).every((field: any) => field.value !== "");
+      return Object.values(this.fieldMapping).every((field: any) => field.isCustomField || (field.value != "") );
     },
     //Todo: Generating unique identifiers as we are currently storing in local storage. Need to remove it as we will be storing data on server.
     generateUniqueMappingPrefId(): any {

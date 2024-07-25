@@ -5,6 +5,9 @@ import * as types from './mutation-types'
 import { UtilService } from '@/services/UtilService'
 import { hasError } from '@/adapter'
 import logger from '@/logger'
+import store from '@/store';
+import { showToast } from '@/utils'
+import { translate } from '@hotwax/dxp-components'
 
 const actions: ActionTree<UtilState, RootState> = {
   async fetchRejectReasons({ commit }) {
@@ -460,6 +463,131 @@ const actions: ActionTree<UtilState, RootState> = {
       logger.error('Failed to fetch shipment gateway config', err)
     }
     commit(types.UTIL_SHIPMENT_GATEWAY_CONFIGS_UPDATED, configs)
+  },
+  
+  async getForceScanSetting({ commit, dispatch }, eComStoreId) {
+    const payload = {
+      "inputFields": {
+        "productStoreId": eComStoreId,
+        "settingTypeEnumId": "FULFILL_FORCE_SCAN"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["settingValue", "fromDate"],
+      "viewSize": 1
+    }
+
+    try {
+      const resp = await UtilService.getProductStoreSetting(payload) as any
+      if(!hasError(resp)) {
+        const respValue = resp.data.docs[0].settingValue === "true"
+        commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, respValue)
+      } else {
+        dispatch('createForceScanSetting');
+      }
+    } catch(err) {
+      console.error(err)
+      commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, false)
+    }
+  },
+
+  async createForceScanSetting({ commit }) {
+    const ecomStore = store.getters['user/getCurrentEComStore'];
+    const fromDate = Date.now()
+
+    try {
+      if(!await UtilService.isEnumExists("FULFILL_FORCE_SCAN")) {
+        const resp = await UtilService.createEnumeration({
+          "enumId": "FULFILL_FORCE_SCAN",
+          "enumTypeId": "PROD_STR_STNG",
+          "description": "Impose force scanning of items while packing from fulfillment app",
+          "enumName": "Fulfillment Force Scan",
+          "enumCode": "FULFILL_FORCE_SCAN"
+        })
+
+        if(hasError(resp)) {
+          throw resp.data;
+        }
+      }
+
+      const params = {
+        fromDate,
+        "productStoreId": ecomStore.productStoreId,
+        "settingTypeEnumId": "FULFILL_FORCE_SCAN",
+        "settingValue": "false"
+      }
+
+      await UtilService.createForceScanSetting(params) as any
+    } catch(err) {
+      console.error(err)
+    }
+
+    // not checking for resp success and fail case as every time we need to update the state with the
+    // default value when creating a scan setting
+    commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, false)
+    return fromDate;
+  },
+
+  async setForceScanSetting({ commit, dispatch, state }, value) {
+    let prefValue = state.isForceScanEnabled
+    const eComStoreId = store.getters['user/getCurrentEComStore'].productStoreId;
+
+    // when selecting none as ecom store, not updating the pref as it's not possible to save pref with empty productStoreId
+    if(!eComStoreId) {
+      showToast(translate("Unable to update force scan preference."))
+      commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
+      return;
+    }
+
+    let fromDate;
+
+    try {
+      const resp = await UtilService.getProductStoreSetting({
+        "inputFields": {
+          "productStoreId": eComStoreId,
+          "settingTypeEnumId": "FULFILL_FORCE_SCAN"
+        },
+        "filterByDate": 'Y',
+        "entityName": "ProductStoreSetting",
+        "fieldList": ["fromDate"],
+        "viewSize": 1
+      }) as any
+      if(!hasError(resp)) {
+        fromDate = resp.data.docs[0]?.fromDate
+      }
+    } catch(err) {
+      console.error(err)
+    }
+
+    if(!fromDate) {
+      fromDate = await dispatch("createForceScanSetting");
+    }
+
+    const params = {
+      "fromDate": fromDate,
+      "productStoreId": eComStoreId,
+      "settingTypeEnumId": "FULFILL_FORCE_SCAN",
+      "settingValue": `${value}`
+    }
+
+    try {
+      const resp = await UtilService.updateForceScanSetting(params) as any
+
+      if((!hasError(resp))) {
+        showToast(translate("Force scan preference updated successfully."))
+        prefValue = value
+      } else {
+        throw resp.data;
+      }
+    } catch(err) {
+      showToast(translate("Failed to update force scan preference."))
+      console.error(err)
+    }
+    commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
+  },
+  
+  async updateForceScanStatus({ commit }, payload) { 
+    commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, payload)
   }
 }
 

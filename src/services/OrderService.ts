@@ -49,21 +49,38 @@ const fetchOrderItems = async (orderId: string): Promise<any> => {
 }
 
 const fetchShippedQuantity = async (orderId: string): Promise<any> => {
-  const params = {
-    "entityName": "ShippedItemQuantitySum",
-    "inputFields": {
-      "orderId": orderId,
-    },
-    "fieldList": ["orderId", "orderItemSeqId", "productId", "shippedQuantity"],
-    "viewSize": 250,  // maximum records we could have
-    "distinct": "Y"
-  } as any;
+  let docCount = 0;
+  let shippedItemQuantitySum = [] as any
+  let viewIndex = 0;
 
-  return await api({
-    url: "performFind",
-    method: "get",
-    params
-  })
+  do {
+    const params = {
+      "entityName": "ShippedItemQuantitySum",
+      "inputFields": {
+        "orderId": orderId,
+      },
+      "fieldList": ["orderId", "orderItemSeqId", "productId", "shippedQuantity"],
+      "viewSize": 250,  // maximum records we could have
+      "distinct": "Y",
+      viewIndex
+    } as any;
+
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    }) as any
+
+    if (!hasError(resp) && resp.data.count) {
+      shippedItemQuantitySum = [...shippedItemQuantitySum, ...resp.data.docs]
+      docCount = resp.data.docs.length;
+      viewIndex++;
+    } else {
+      docCount = 0
+    }
+  } while(docCount >= 250);
+
+  return shippedItemQuantitySum;
 }
 
 const fetchShipmentItems = async (orderId: string, shipmentId: string): Promise<any> => {
@@ -276,6 +293,14 @@ const updateOrder = async (payload: any): Promise<any> => {
   })
 }
 
+const rejectFulfillmentReadyOrderItem = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/rejectFulfillmentReadyOrderItem",
+    method: "post",
+    data: payload.data,
+  })
+}
+
 const fetchShipments = async (picklistBinIds: Array<string>, orderIds: Array<string>, originFacilityId: string, statusId = ["SHIPMENT_SHIPPED", "SHIPMENT_PACKED"]): Promise<any> => {
   let shipments = [];
 
@@ -478,8 +503,10 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
   }
 }
 
-const printShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
+const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>): Promise<any> => {
   try {
+    let pdfUrls = shippingLabelPdfUrls;
+    if (!pdfUrls || pdfUrls.length == 0) {
     // Get packing slip from the server
     const resp: any = await api({
       method: 'get',
@@ -496,13 +523,17 @@ const printShippingLabel = async (shipmentIds: Array<string>): Promise<any> => {
 
     // Generate local file URL for the blob received
     const pdfUrl = window.URL.createObjectURL(resp.data);
+    pdfUrls = [pdfUrl];
+    }
     // Open the file in new tab
+    pdfUrls.forEach((pdfUrl: string) => {
     try {
       (window as any).open(pdfUrl, "_blank").focus();
     }
     catch {
       showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'shipping label'}), { icon: cogOutline });
     }
+    })
 
   } catch (err) {
     showToast(translate('Failed to print shipping label'))
@@ -802,12 +833,15 @@ export const OrderService = {
   printPicklist,
   printShippingLabel,
   printShippingLabelAndPackingSlip,
+  rejectFulfillmentReadyOrderItem,
   rejectOrderItem,
   retryShippingLabel,
   shipOrder,
   unpackOrder,
   updateOrder,
   updateShipment,
+  updateShipmentPackageRouteSeg,
+  updateShipmentRouteSegment,
   fetchShipmentLabelError,
   fetchOrderItemShipGroup,
   fetchShippingAddress,

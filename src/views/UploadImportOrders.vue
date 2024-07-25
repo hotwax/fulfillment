@@ -23,7 +23,7 @@
               <ion-icon :icon="addOutline" />
               <ion-label>{{ translate("New mapping") }}</ion-label>
             </ion-chip>
-            <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('IMPORD') ?? []" :key="index" @click="mapFields(mapping.value)" :outline=true>
+            <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('IMPORD') ?? []" :key="index" @click="mapFields(mapping.value, index)" :outline="selectedMappingId != index">
               {{ mapping.name }}
             </ion-chip>
           </div>
@@ -90,12 +90,14 @@ export default defineComponent({
         'trackingCode': {}
       } as any,
       fileColumns: [] as Array<string>,
-      fields: process.env["VUE_APP_MAPPING_IMPORD"] ? JSON.parse(process.env["VUE_APP_MAPPING_IMPORD"]) : {}
+      fields: process.env["VUE_APP_MAPPING_IMPORD"] ? JSON.parse(process.env["VUE_APP_MAPPING_IMPORD"]) : {},
+      selectedMappingId: "" as any
     }
   },
   computed: {
     ...mapGetters({
-      fieldMappings: 'user/getFieldMappings'
+      fieldMappings: 'user/getFieldMappings',
+      currentFacility: 'user/getCurrentFacility',
     })
   },
   ionViewDidEnter() {
@@ -132,19 +134,28 @@ export default defineComponent({
       }
     },
     async save() {
-      const areAllFieldsSelected = Object.values(this.fieldMapping).every((field: any) => field.value !== "");
+      // Added check to allow uploading CSV even when user has not mapped the facilityID
+      const areAllFieldsSelected = Object.keys(this.fieldMapping).every((field: any) => field === "facilityId" || this.fieldMapping[field]?.value); 
       
       if (!areAllFieldsSelected) {
-        showToast(translate("Select all the fields to continue"));
+        showToast(translate("Select orderId and tracking code to continue"));
         return;
       }
 
-      const uploadData = this.content.map((order: any) => ({
-        'orderIdValue': order[this.fieldMapping['orderId'].value],
-        'externalFacilityId': order[this.fieldMapping['facilityId'].value],
-        'trackingNumber': order[this.fieldMapping['trackingCode'].value]
-      }))
-
+      const uploadData = this.content.map((order: any) => {
+        const externalFacilityId = order[this.fieldMapping['facilityId'].value];
+        const data = {
+          'orderId': order[this.fieldMapping['orderId'].value],
+          'trackingNumber': order[this.fieldMapping['trackingCode'].value]
+        } as any;
+        if (externalFacilityId) {
+          data['externalFacilityId'] = externalFacilityId;
+        } else {
+          data['facilityId'] = this.currentFacility?.facilityId;
+        }
+        return data;
+      });
+      
       const fileName = this.file.name.replace(".csv", ".json");
       const params = {
         "configId": "IMP_TRACK_NUM"
@@ -182,7 +193,7 @@ export default defineComponent({
       });
       return alert.present();
     },
-    mapFields(mapping: any) {
+    mapFields(mapping: any, mappingId: any) {
       const fieldMapping = JSON.parse(JSON.stringify(mapping));
 
       // TODO: Store an object in this.content variable, so everytime when accessing it, we don't need to use 0th index
@@ -203,6 +214,7 @@ export default defineComponent({
       })
 
       this.fieldMapping = fieldMapping;
+      this.selectedMappingId = mappingId
     },
     async addFieldMapping() {
       let mappings: any = {};
@@ -215,6 +227,13 @@ export default defineComponent({
         component: CreateMappingModal,
         componentProps: { content: this.content, mappings, mappingType: 'IMPORD'}
       });
+
+      createMappingModal.onDidDismiss().then((result: any) => {
+        if(result.data?.mappingId) {
+          this.selectedMappingId = result.data.mappingId
+        }
+      })
+
       return createMappingModal.present();
     }
   },

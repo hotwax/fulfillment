@@ -1,6 +1,7 @@
 import { api, client, hasError } from '@/adapter';
 import logger from '@/logger';
 import store from '@/store';
+import { isPdf } from '@/utils';
 
 const fetchShipmentMethods = async (query: any): Promise <any>  => {
   return api({
@@ -84,7 +85,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
       "shipmentId": shipmentIds,
       "shipmentId_op": "in"
     },
-    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "picklistBinId", "isTrackingRequired", "trackingCode", "internationalInvoiceUrl"],
+    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentRouteSegmentId", "shipmentMethodTypeId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "picklistBinId", "isTrackingRequired", "trackingCode", "internationalInvoiceUrl", "labelImageUrl"],
     "viewSize": shipmentIds.length,
     "distinct": "Y"
   }
@@ -100,6 +101,9 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
       shipmentPackages = resp.data.docs.reduce((shipmentForOrders: any, shipmentPackage: any) => {
         // creating key in this pattern as the same order can have multiple picklist bin and in that we need to find to which picklist bin shipment is associated
         const key = `${shipmentPackage.primaryOrderId}_${shipmentPackage.picklistBinId}`
+        if (shipmentPackage.labelImageUrl && isPdf(shipmentPackage.labelImageUrl)) {
+          shipmentPackage.labelPdfUrl = shipmentPackage.labelImageUrl;
+        }
         if(shipmentForOrders[key]) {
           shipmentForOrders[key].push(shipmentPackage)
         } else {
@@ -198,13 +202,14 @@ const findCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promis
 const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<any> => {
   let shipmentItemsInformation = {}
   const params = {
-    "entityName": "OrderShipment",
+    "entityName": "ShipmentItemDetail",
     "inputFields": {
       "shipmentId": shipmentIds,
       "shipmentId_op": "in"
     },
-    "fieldList": ["shipmentItemSeqId", "orderItemSeqId", "orderId", "shipmentId"],
+    "fieldList": ["shipmentItemSeqId", "orderItemSeqId", "orderId", "shipmentId", "productId"],
     "viewSize": shipmentIds.length * 5, // TODO: check what should be the viewSize here
+    "distinct": "Y"
   }
 
   try {
@@ -419,9 +424,58 @@ const fetchShipmentGatewayConfigs = async (payload: any): Promise<any> => {
     cache: true
   })
 }
-  
+
+const updateForceScanSetting = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
+
+const createForceScanSetting = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
+
+const getProductStoreSetting = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "post",
+    data: payload
+  });
+}
+
+const isEnumExists = async (enumId: string): Promise<any> => {
+  try {
+    const resp = await api({
+      url: 'performFind',
+      method: 'POST',
+      data: {
+        entityName: "Enumeration",
+        inputFields: {
+          enumId
+        },
+        viewSize: 1,
+        fieldList: ["enumId"],
+        noConditionFind: 'Y'
+      }
+    }) as any
+
+    if (!hasError(resp) && resp.data.docs.length) {
+      return true
+    }
+    return false
+  } catch (err) {
+    return false
+  }
+}
 
 export const UtilService = {
+  createForceScanSetting,
   createPicklist,
   createEnumeration,
   fetchCarrierPartyIds,
@@ -449,7 +503,10 @@ export const UtilService = {
   findShipmentPackages,
   fetchTransferOrderFacets,
   getAvailablePickers,
+  getProductStoreSetting,
+  isEnumExists,
   resetPicker,
   deleteEnumeration,
-  updateEnumeration
+  updateEnumeration,
+  updateForceScanSetting
 }

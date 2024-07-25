@@ -16,7 +16,7 @@
               <ion-icon :icon="addOutline" />
               <ion-label>{{ translate("New mapping") }}</ion-label>
             </ion-chip>
-            <ion-chip v-for="(mapping, index) in fieldMappings('EXPORD') ?? []" :key="index" @click="mapFields(mapping)" :outline=true>
+            <ion-chip v-for="(mapping, index) in fieldMappings('EXPORD') ?? []" :key="index" @click="mapFields(mapping, index)" :outline="selectedMappingId != index">
               {{ mapping.name }}
             </ion-chip>
           </div>
@@ -35,7 +35,7 @@
               <ion-button v-else slot="start" fill="clear" @click="removeCustomField(field)">
                 <ion-icon :icon="trashOutline" />
               </ion-button>
-              <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
+              <ion-label>{{ fields[field] ? translate(fields[field].label) : field }}</ion-label>
               <ion-button v-if="!customFields[field] && value === field" fill="outline" @click="addCustomLabel(field)">{{ translate('Custom Label') }}</ion-button>
               <!-- Using multiple if's instead of wrapping in a single parent div, to style the component properly without adding any extra css -->
               <ion-label v-if="!customFields[field] && value !== field" slot="end">{{ value }}</ion-label>
@@ -56,7 +56,7 @@
             <ion-button slot="start" fill="clear" @click="updateSelectedData(field)">
               <ion-icon color="success" :icon="addCircleOutline"/>
             </ion-button>
-            <ion-label>{{ fields[field] ? fields[field].label : field }}</ion-label>
+            <ion-label>{{ fields[field] ? translate(fields[field].label) : field }}</ion-label>
           </ion-item>
         </ion-list>
       </main> 
@@ -118,6 +118,7 @@ export default defineComponent({
       fields: process.env["VUE_APP_MAPPING_EXPORD"] ? JSON.parse(process.env["VUE_APP_MAPPING_EXPORD"]) : {},
       customFields: {} as any,
       selectedFieldMappings: {} as any,
+      selectedMappingId: "" as any
     }
   },
   computed: {
@@ -168,6 +169,15 @@ export default defineComponent({
     async parse(data: any) {
       try {
         this.content = await parseCsv(data).then(res => res);
+
+        // Creating a new field by combining the state and city field
+        this.content = this.content.map((contentData: any) => {
+          contentData["state+city"] = (contentData["state"] ? contentData["state"] : "") + (contentData["state"] && contentData["city"] ? " " : "") + (contentData["city"] ? contentData["city"] : "")
+          contentData["facility-state+city"] = (contentData["facility-state"] ? contentData["facility-state"] : "") + (contentData["facility-state"] && contentData["facility-city"] ? " " : "") + (contentData["facility-city"] ? contentData["facility-city"] : "")
+          contentData["billing-state+city"] = (contentData["billing-state"] ? contentData["billing-state"] : "") + (contentData["billing-state"] && contentData["billing-city"] ? " " : "") + (contentData["billing-city"] ? contentData["billing-city"] : "")
+
+          return contentData
+        })
         // get the column names from the data
         this.dataColumns = Object.keys(this.content[0]);
         // generating mapping only when we get the packed orders information and parsing of data is successfull
@@ -312,9 +322,16 @@ export default defineComponent({
         component: CreateMappingModal,
         componentProps: { content: this.content, mappings: { ...mappings }, mappingType: 'EXPORD'}
       });
+
+      createMappingModal.onDidDismiss().then((result: any) => {
+        if(result.data?.mappingId) {
+          this.selectedMappingId = result.data.mappingId
+        }
+      })
+
       return createMappingModal.present();
     },
-    mapFields(mapping: any) {
+    mapFields(mapping: any, mappingId: any) {
       const fieldMapping = JSON.parse(JSON.stringify(mapping));
       const mappingValue = fieldMapping.value
 
@@ -341,6 +358,7 @@ export default defineComponent({
           this.selectedFieldMappings[mapping] = mappingValue[mapping].value
         }
       })
+      this.selectedMappingId = mappingId;
     },
     async addCustomField() {
       const customFieldModal = await modalController.create({

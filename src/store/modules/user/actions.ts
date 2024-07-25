@@ -7,12 +7,14 @@ import * as types from './mutation-types'
 import { showToast } from '@/utils'
 import { hasError } from '@/adapter'
 import { translate } from '@hotwax/dxp-components'
-import { Settings } from 'luxon'
-import { logout, updateInstanceUrl, updateToken, resetConfig, getUserFacilities } from '@/adapter'
+import { DateTime, Settings } from 'luxon';
+import { logout, updateInstanceUrl, updateToken, resetConfig, getUserFacilities, getNotificationEnumIds,
+  getNotificationUserPrefTypeIds, storeClientRegistrationToken } from '@/adapter'
 import logger from '@/logger'
 import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from '@/authorization'
 import { useAuthStore, useUserStore, useProductIdentificationStore } from '@hotwax/dxp-components'
 import emitter from '@/event-bus'
+import { generateDeviceId, generateTopicName } from '@/utils/firebase'
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -72,11 +74,6 @@ const actions: ActionTree<UserState, RootState> = {
       const currentFacility = userProfile.facilities[0];
       userProfile.stores = await UserService.getEComStores(token, currentFacility.facilityId);
 
-      // In Job Manager application, we have jobs which may not be associated with any product store
-      userProfile.stores.push({
-        productStoreId: "",
-        storeName: "None"
-      })
       let preferredStore = userProfile.stores[0]
 
       const preferredStoreId =  await UserService.getPreferredStore(token);
@@ -105,7 +102,12 @@ const actions: ActionTree<UserState, RootState> = {
       await useProductIdentificationStore().getIdentificationPref(preferredStoreId ? preferredStoreId : preferredStore.productStoreId)
         .catch((error) => logger.error(error));
 
+      await dispatch("fetchAllNotificationPrefs");
       this.dispatch('util/findProductStoreShipmentMethCount')
+      this.dispatch('util/getForceScanSetting', preferredStore.productStoreId);
+      await dispatch('user/getPartialOrderRejectionConfig')
+      await dispatch('user/getCollateralRejectionConfig')
+    
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
       // TODO Check if handling of specific status codes is required.
@@ -150,6 +152,10 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_END_SESSION)
     this.dispatch('order/clearOrders')
     this.dispatch("orderLookup/clearOrderLookup")
+    this.dispatch('user/clearNotificationState')
+    this.dispatch('util/updateForceScanStatus', false)
+    this.dispatch('user/clearPartialOrderRejectionConfig')
+    this.dispatch('user/clearCollateralRejectionConfig')
     resetConfig();
     resetPermissions();
 
@@ -170,6 +176,10 @@ const actions: ActionTree<UserState, RootState> = {
    * update current facility information
    */
   async setFacility ({ commit, state }, payload) {
+    // On slow api response, setFacility takes long to update facility in state.
+    // Hence displaying loader to not allowing user to navigate to orders page to avoid wrong results.
+    emitter.emit('presentLoader', {message: 'Updating facility', backdropDismiss: false})
+
     const userProfile = JSON.parse(JSON.stringify(state.current as any));
     userProfile.stores = await UserService.getEComStores(undefined, payload.facility.facilityId);
 
@@ -184,6 +194,8 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
     commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
     this.dispatch('order/clearOrders')
+
+    emitter.emit('dismissLoader')
   },
   
   /**
@@ -216,6 +228,7 @@ const actions: ActionTree<UserState, RootState> = {
       .catch((error) => logger.error(error));
 
     this.dispatch('util/findProductStoreShipmentMethCount')
+    this.dispatch('util/getForceScanSetting', payload.ecomStore.productStoreId)
   },
 
   setUserPreference({ commit }, payload){
@@ -393,6 +406,225 @@ const actions: ActionTree<UserState, RootState> = {
   
   updatePwaState({ commit }, payload) {
     commit(types.USER_PWA_STATE_UPDATED, payload);
+  },
+
+  async updatePartialOrderRejectionConfig ({ dispatch }, payload) {  
+    let resp = {} as any;
+    try {
+      if(!await UserService.isEnumExists("FULFILL_PART_ODR_REJ")) {
+        resp = await UserService.createEnumeration({
+          "enumId": "FULFILL_PART_ODR_REJ",
+          "enumTypeId": "PROD_STR_STNG",
+          "description": "Fulfillment Partial Order Rejection",
+          "enumName": "Fulfillment Partial Order Rejection",
+          "enumCode": "FULFILL_PART_ODR_REJ"
+        })
+
+        if(hasError(resp)) {
+          throw resp.data;
+        }
+      }
+
+      if (!payload.fromDate) {
+        //Create Product Store Setting
+        payload = {
+          ...payload, 
+          "productStoreId": this.state.user.currentEComStore.productStoreId,
+          "settingTypeEnumId": "FULFILL_PART_ODR_REJ",
+          "fromDate": DateTime.now().toMillis()
+        }
+        resp = await UserService.createPartialOrderRejectionConfig(payload) as any
+      } else {
+        //Update Product Store Setting
+        resp = await UserService.updatePartialOrderRejectionConfig(payload) as any
+      }
+
+      if (!hasError(resp)) {
+        showToast(translate('Configuration updated'))
+      } else {
+        showToast(translate('Failed to update configuration'))
+      }
+    } catch(err) {
+      showToast(translate('Failed to update configuration'))
+      logger.error(err)
+    }
+
+    // Fetch the updated configuration
+    await dispatch("getPartialOrderRejectionConfig");
+  },
+  async updateCollateralRejectionConfig ({ dispatch }, payload) {  
+    let resp = {} as any;
+    try {
+      if(!await UserService.isEnumExists("FF_COLLATERAL_REJ")) {
+        resp = await UserService.createEnumeration({
+          "enumId": "FF_COLLATERAL_REJ",
+          "enumTypeId": "PROD_STR_STNG",
+          "description": "Fulfillment Collateral Rejection",
+          "enumName": "Fulfillment Collateral Rejection",
+          "enumCode": "FF_COLLATERAL_REJ"
+        })
+
+        if(hasError(resp)) {
+          throw resp.data;
+        }
+      }
+
+      if (!payload.fromDate) {
+        //Create Product Store Setting
+        payload = {
+          ...payload, 
+          "productStoreId": this.state.user.currentEComStore.productStoreId,
+          "settingTypeEnumId": "FF_COLLATERAL_REJ",
+          "fromDate": DateTime.now().toMillis()
+        }
+        resp = await UserService.createCollateralRejectionConfig(payload) as any
+      } else {
+        //Update Product Store Setting
+        resp = await UserService.updateCollateralRejectionConfig(payload) as any
+      }
+
+      if (!hasError(resp)) {
+        showToast(translate('Configuration updated'))
+      } else {
+        showToast(translate('Failed to update configuration'))
+      }
+    } catch(err) {
+      showToast(translate('Failed to update configuration'))
+      logger.error(err)
+    }
+
+    // Fetch the updated configuration
+    await dispatch("getCollateralRejectionConfig");
+  },
+  async getPartialOrderRejectionConfig ({ commit }) {
+    let config = {};
+    const params = {
+      "inputFields": {
+        "productStoreId": this.state.user.currentEComStore.productStoreId,
+        "settingTypeEnumId": "FULFILL_PART_ODR_REJ"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "viewSize": 1
+    } as any
+
+    try {
+      const resp = await UserService.getPartialOrderRejectionConfig(params)
+      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
+        config = resp.data?.docs[0];
+      } else {
+        logger.error('Failed to fetch partial order rejection configuration');
+      }
+    } catch (err) {
+      logger.error(err);
+    } 
+    commit(types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED, config);   
+  },
+  async getCollateralRejectionConfig ({ commit }) {
+    let config = {};
+    const params = {
+      "inputFields": {
+        "productStoreId": this.state.user.currentEComStore.productStoreId,
+        "settingTypeEnumId": "FF_COLLATERAL_REJ"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "viewSize": 1
+    } as any
+
+    try {
+      const resp = await UserService.getCollateralRejectionConfig(params)
+      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
+        config = resp.data?.docs[0];
+      } else {
+        logger.error('Failed to fetch collateral rejection configuration');
+      }
+    } catch (err) {
+      logger.error(err);
+    } 
+    commit(types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED, config);   
+  },
+
+  addNotification({ state, commit }, payload) {
+    const notifications = JSON.parse(JSON.stringify(state.notifications))
+    notifications.push({ ...payload.notification, time: DateTime.now().toMillis() })
+    commit(types.USER_UNREAD_NOTIFICATIONS_STATUS_UPDATED, true)
+    if (payload.isForeground) {
+      showToast(translate("New notification received."));
+    }
+    commit(types.USER_NOTIFICATIONS_UPDATED, notifications)
+  },
+
+  async fetchNotificationPreferences({ commit, state }) {
+    let resp = {} as any
+    const facilityId = (state.currentFacility as any).facilityId
+    let notificationPreferences = [], enumerationResp = [], userPrefIds = [] as any
+    try {
+      resp = await getNotificationEnumIds(process.env.VUE_APP_NOTIF_ENUM_TYPE_ID as any)
+      enumerationResp = resp.docs
+      resp = await getNotificationUserPrefTypeIds(process.env.VUE_APP_NOTIF_APP_ID as any, state.current.userLoginId)
+      userPrefIds = resp.docs.map((userPref: any) => userPref.userPrefTypeId)
+    } catch (error) {
+      logger.error(error)
+    } finally {
+      // checking enumerationResp as we want to show disbaled prefs if only getNotificationEnumIds returns
+      // data and getNotificationUserPrefTypeIds fails or returns empty response (all disbaled)
+      if (enumerationResp.length) {
+        notificationPreferences = enumerationResp.reduce((notifactionPref: any, pref: any) => {
+          const userPrefTypeIdToSearch = generateTopicName(facilityId, pref.enumId)
+          notifactionPref.push({ ...pref, isEnabled: userPrefIds.includes(userPrefTypeIdToSearch) })
+          return notifactionPref
+        }, [])
+      }
+      commit(types.USER_NOTIFICATIONS_PREFERENCES_UPDATED, notificationPreferences)
+    }
+  },
+
+  async storeClientRegistrationToken({ commit }, registrationToken) {
+    const firebaseDeviceId = generateDeviceId()
+    commit(types.USER_FIREBASE_DEVICEID_UPDATED, firebaseDeviceId)
+
+    try {
+      await storeClientRegistrationToken(registrationToken, firebaseDeviceId,  process.env.VUE_APP_NOTIF_APP_ID as any)
+    } catch (error) {
+      logger.error(error)
+    }
+  },
+
+  async fetchAllNotificationPrefs({ commit, state }) {
+    let allNotificationPrefs = [];
+
+    try {
+      const resp = await getNotificationUserPrefTypeIds(process.env.VUE_APP_NOTIF_APP_ID as any, state.current.userLoginId)
+      allNotificationPrefs = resp.docs
+    } catch(error) {
+      logger.error(error)
+    }
+
+    commit(types.USER_ALL_NOTIFICATION_PREFS_UPDATED, allNotificationPrefs)
+  },
+
+  async updateNotificationPreferences({ commit }, payload) {
+    commit(types.USER_NOTIFICATIONS_PREFERENCES_UPDATED, payload)
+  },
+
+  clearNotificationState({ commit }) {
+    commit(types.USER_NOTIFICATIONS_UPDATED, [])
+    commit(types.USER_NOTIFICATIONS_PREFERENCES_UPDATED, [])
+    commit(types.USER_FIREBASE_DEVICEID_UPDATED, '')
+    commit(types.USER_UNREAD_NOTIFICATIONS_STATUS_UPDATED, true)
+  },
+
+  setUnreadNotificationsStatus({ commit }, payload) {
+    commit(types.USER_UNREAD_NOTIFICATIONS_STATUS_UPDATED, payload)
+  },
+  clearPartialOrderRejectionConfig ({ commit }) {
+    commit(types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED, {})
+  },
+  clearCollateralRejectionConfig ({ commit }) {
+    commit(types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED, {})
   }
 }
 
