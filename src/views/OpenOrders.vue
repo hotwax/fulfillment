@@ -37,7 +37,7 @@
         </div>
 
         <div class="results">
-          <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picksheet") }}</ion-button>
+          <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Pickslist") }}</ion-button>
 
           <ion-card class="order" v-for="(order, index) in getOpenOrders()" :key="index">
             <div class="order-header">
