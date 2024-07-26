@@ -31,7 +31,7 @@
           </div>
         </div>
 
-        <ion-card>
+        <ion-card class="order">
           <div class="order-header">
             <div class="order-primary-info">
               <ion-label>
@@ -72,7 +72,8 @@
             </div>  
           </div>
 
-          <div v-for="item in order.orderItems" :key="item" class="order-item">
+          <div v-for="item in order.items" :key="item" class="order-line-item">
+            <div class="order-item">
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
@@ -81,17 +82,31 @@
                 <ion-label>
                   <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                   {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                  <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
                   <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                 </ion-label>
               </ion-item>
             </div>
 
             <div v-if="category === 'in-progress'" class="desktop-only" >
-              <ion-chip outline @click="openShipmentBoxPopover($event, item, order)">
-                <ion-icon :icon="fileTrayOutline" />
-                {{ `Box ${item.selectedBox}` }} 
-                <ion-icon :icon="caretDownOutline" />
-              </ion-chip>
+              <template v-if="item.rejectReason">
+                <ion-chip outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
+                  <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
+                  <ion-icon :icon="closeCircleOutline" />
+                </ion-chip>
+              </template>
+              <template v-else-if="isEntierOrderRejectionEnabled(order)">
+                <ion-chip outline color="danger">
+                  <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject entire order')}}</ion-label>
+                </ion-chip>
+              </template>
+              <template v-else>
+                <ion-chip outline @click="openShipmentBoxPopover($event, item, order)">
+                  <ion-icon :icon="fileTrayOutline" />
+                  {{ `Box ${item.selectedBox}` }} 
+                  <ion-icon :icon="caretDownOutline" />
+                </ion-chip>
+              </template>
             </div>
 
             <!-- In completed and inprogress category we only have two items in product item while css needs 3 hence adding an empty div. -->
@@ -109,68 +124,32 @@
                 {{ translate('Report an issue') }}
                 <ion-icon slot="end" :icon="trashBinOutline"/>
               </ion-button>
+              <ion-button v-if="isKit(item)" fill="clear" color="medium" size="small" @click.stop="fetchKitComponent(item)">
+                {{ translate('Components') }}
+                <ion-icon color="medium" slot="end" :icon="listOutline"/>
+              </ion-button>
             </div>
-          </div>
-
-          <div v-if="order.kitProducts">
-            <div v-for="(kitProducts, orderItemSeqId) in order.kitProducts" :key="orderItemSeqId">
-              <ion-item-divider class="order-item" color="light">
-                <div class="product-info">
-                  <ion-label>
-                    <p>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(kitProducts[0]?.parentProductId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(kitProducts[0]?.parentProductId)) : getProduct(kitProducts[0]?.parentProductId).productName }}</p>
-                    <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(kitProducts[0]?.parentProductId)) }}</p>
-                  </ion-label>
-                </div>
-
-                <div v-if="category === 'in-progress' && order.shipmentPackages && order.shipmentPackages.length">
-                  <ion-chip outline @click="openShipmentBoxPopover($event, null, order, kitProducts, orderItemSeqId)">
-                    <ion-icon :icon="fileTrayOutline" />
-                    {{ `Box ${kitProducts[0]?.selectedBox}` }} 
-                    <ion-icon :icon="caretDownOutline" />
-                  </ion-chip>
-                </div>
-
-                <!-- In completed and inprogress category we only have two items in product item while css needs 3 hence adding an empty div. -->
-                <div v-else></div>
-
-                <div class="product-metadata" v-if="category === 'in-progress' && order.shipmentPackages && order.shipmentPackages.length">
-                  <ion-button @click="openRejectReasonPopover($event, null, order, kitProducts)" color="danger" fill="outline">
-                    {{ translate('Report an issue') }}
-                  </ion-button>
-                </div>
-              </ion-item-divider>
-
-              <div v-for="item in kitProducts" :key="item.orderItemSeqId" class="order-item">
-                <ion-item lines="none" class="product-info">
+            </div>
+            <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
+              <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
+                <ion-item lines="none">
                   <ion-thumbnail slot="start">
-                    <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                    <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
-                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                    <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
+                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                    <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                    <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                 </ion-item>
-
-                <!-- Order item css needs 3 child items. Hence adding an empty div. -->
-                <div></div>
-
-                <div class="product-metadata">
-                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">
-                    {{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}
-                  </ion-note>
-                  <ion-button color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
-                    {{ translate('Check stock') }}
-                    <ion-icon slot="end" :icon="cubeOutline"/>
-                  </ion-button>
-                </div>
-              </div>
+              </ion-card>
             </div>
           </div>
-
+          
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
-              <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+              <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="isForceScanEnabled ? scanOrder(order) :packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -188,11 +167,14 @@
 
           <div class="actions">
             <!-- positive -->
-            <div>  
-              <ion-button v-if="category === 'in-progress'" :disabled="order.hasMissingInfo" @click="packOrder(order)">
-                <ion-icon slot="start" :icon="personAddOutline" />
-                {{ translate("Pack order") }}
-              </ion-button>
+            <div>
+              <template v-if="category === 'in-progress'">
+                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click="isForceScanEnabled ? scanOrder(order) : packOrder(order)">
+                  <ion-icon slot="start" :icon="personAddOutline" />
+                  {{ translate("Pack order") }}
+                </ion-button>
+                <ion-button :disabled="order.hasMissingInfo" fill="outline" @click.stop="save(order)">{{ translate("Save") }}</ion-button>
+              </template>  
               <ion-button v-else-if="category === 'open'" @click="assignPickers">
                 <ion-icon slot="start" :icon="archiveOutline" />
                 {{ translate("Pick order") }}
@@ -206,13 +188,9 @@
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Ship order") }}
                 </ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
-                  {{ translate("Regenerate Shipping Label") }}
-                  <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
-                </ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
                   {{ translate("Print Customer Letter") }}
-                  <ion-spinner color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
+                  <ion-spinner data-spinner-size="medium" color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
                 </ion-button>
               </div>
             </div>
@@ -225,7 +203,7 @@
 
         <ShippingDetails />
         
-        <h4 v-if="order.shipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
+        <h4 class="ion-padding-top ion-padding-start" v-if="order.shipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
         <div class="shipgroup-details">
           <ion-card v-for="shipGroup in order.shipGroups" :key="shipGroup.shipmentId">
             <ion-card-header>
@@ -250,20 +228,44 @@
               </ion-label>
             </ion-item>
     
-            <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
+            <div v-for="item in shipGroup.items" :key="item">
+            <ion-item lines="none">
               <ion-thumbnail slot="start">
                 <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
               </ion-thumbnail>
               <ion-label>
                 <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                 {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
               </ion-label>
-              <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
-              <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-              <ion-button slot="end" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
-                <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
-              </ion-button>
+              
+              <div class="other-shipment-actions">
+                <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+                <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                <ion-button slot="end" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
+                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                </ion-button>
+                <ion-button slot="end" v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponent(item, true)">
+                  <ion-icon color="medium" slot="icon-only" :icon="listOutline"/>
+                </ion-button>
+              </div>
             </ion-item>
+
+              <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
+                <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
+                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                      <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
+                    </ion-label>
+                  </ion-item>
+                </ion-card>
+              </div>
+            </div>
           </ion-card>
         </div>
       </div>
@@ -289,7 +291,6 @@ import {
   IonHeader,
   IonIcon,
   IonItem,
-  IonItemDivider,
   IonLabel,
   IonNote,
   IonPage,
@@ -311,10 +312,12 @@ import {
   bagCheckOutline,
   caretDownOutline,
   cashOutline,
+  closeCircleOutline,
   cubeOutline,
   documentTextOutline,
   ellipsisVerticalOutline,
   fileTrayOutline,
+  listOutline,
   locateOutline,
   personAddOutline,
   pricetagOutline,
@@ -339,6 +342,8 @@ import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
 import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
 import ShippingDetails from '@/views/ShippingDetails.vue';
+import { isKit } from '@/utils/order'
+import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 
 export default defineComponent({
   name: "OrderDetail",
@@ -357,7 +362,6 @@ export default defineComponent({
     IonHeader,
     IonIcon,
     IonItem,
-    IonItemDivider,
     IonLabel,
     IonNote,
     IonPage,
@@ -385,7 +389,10 @@ export default defineComponent({
       getfacilityTypeDesc: 'util/getFacilityTypeDesc',
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
       getStatusDesc: 'util/getStatusDesc',
-      productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount'
+      productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
+      partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
+      collateralRejectionConfig: 'user/getCollateralRejectionConfig',
+      isForceScanEnabled: 'util/isForceScanEnabled',
     })
   },
   data() {
@@ -405,7 +412,8 @@ export default defineComponent({
         'PAYMENT_RECEIVED': '',
         'PAYMENT_REFUNDED': 'warning',
         'PAYMENT_SETTLED': ''
-      } as any
+      } as any,
+      rejectEntireOrderReasonId: 'REJECT_ENTIRE_ORDER'
     }
   },
   async ionViewDidEnter() {
@@ -417,6 +425,27 @@ export default defineComponent({
         : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
   },
   methods: {
+    async fetchKitComponent(orderItem: any, isOtherShipment = false ) {
+      await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
+      
+      //update the order in order to toggle kit components section
+      if (isOtherShipment) {
+        const updatedShipGroup = this.order?.shipGroups.find((shipGroup: any) => shipGroup.shipGroupSeqId === orderItem.shipGroupSeqId)
+        if (updatedShipGroup){
+          const updatedItem = updatedShipGroup?.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
+          updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
+        }
+      } else {
+        const updatedItem = this.order.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
+        updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
+      }
+    },
+    getRejectionReasonDescription (rejectionReasonId: string) {
+      return this.rejectReasons?.find((reason: any) => reason.enumId === rejectionReasonId)?.description;
+    },
+    isEntierOrderRejectionEnabled(order: any) {
+      return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
+    },
     async printPicklist (order: any) {
       await OrderService.printPicklist(order.picklistId)
     },
@@ -434,7 +463,7 @@ export default defineComponent({
 
       const result = await popover.onDidDismiss();
 
-      if (result.data && (kitProducts ? kitProducts[0].selectedBox !== result.data : item.selectedBox !== result.data)) {
+      if (result.data && item.selectedBox !== result.data) {
         this.confirmUpdateBox(item, order, result.data, kitProducts, orderItemSeqId)
       }
     },
@@ -449,32 +478,32 @@ export default defineComponent({
           },
           {
             text: translate("Confirm"),
-            handler: async () => {
-              // For the case of kit products updating the order.items property as all the operations are handled on items
-              if(kitProducts) {
-                const kitItemAssocs = kitProducts[0].toOrderItemAssocs.find((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
-                order.items.map((orderItem: any) => {
-                  if(orderItem.toOrderItemAssocs.includes(kitItemAssocs)) {
-                    orderItem.selectedBox = selectedBox
-                  }
-                  return orderItem
-                })
-              } else {
-                order.items.map((orderItem: any) => {
-                  if(orderItem.orderItemSeqId === item.orderItemSeqId) {
-                    orderItem.selectedBox = selectedBox
-                  }
-                })
-              }
+            handler: () => {
+              order.items.map((orderItem: any) => {
+                if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+                  orderItem.selectedBox = selectedBox
+                }
+              })
+              order.isModified = true;
 
+              /*
+              Commenting this out to avoid directly updating items. Now user need to click on the save button to save the detail.
               await this.updateOrder(order, 'box-selection').then(async () => {
                 await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
-              }).catch(err => err);
+              }).catch(err => err);*/
             }
           }
         ],
       });
       return alert.present();
+    },
+    save(order: any) {
+      if(order.hasRejectedItem) {
+        const itemsToReject = order.items.filter((item: any) => item.rejectReason)
+        this.reportIssue(order, itemsToReject);
+        return;
+      }
+      this.updateOrder(order);
     },
     async orderActionsPopover(order: any, ev: Event) {
       const popover = await popoverController.create({
@@ -521,6 +550,10 @@ export default defineComponent({
               emitter.emit('presentLoader');
               let toast: any;
               const shipmentIds: Array<any> = [...new Set(order.items.map((item: any) => item.shipmentId))]
+              const shippingLabelPdfUrls = order.shipmentPackages
+                  ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+                  .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+
               try {
                 const resp = await OrderService.packOrder(params);
                 if (hasError(resp)) {
@@ -534,11 +567,16 @@ export default defineComponent({
                   toast.present()
 
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                    if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
+                      await OrderService.printPackingSlip(shipmentIds)
+                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                    } else {
+                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                    }
                   } else if (data.includes('printPackingSlip')) {
                     await OrderService.printPackingSlip(shipmentIds)
                   } else if (data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(shipmentIds)
+                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
                   }
                   if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
                     await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
@@ -680,25 +718,29 @@ export default defineComponent({
       const result = await reportIssuePopover.onDidDismiss();
 
       if(result.data) {
-        if(kitProducts) {
-          const kitItemAssocs = kitProducts[0].toOrderItemAssocs.find((assoc: any) => assoc.split("/")[0] === 'KIT_COMPONENT')
-          order.items.map((orderItem: any) => {
-            if(orderItem.toOrderItemAssocs.includes(kitItemAssocs)) {
-              orderItem.rejectReason = result.data
-            }
-            return orderItem
-          })
-        } else {
-          order.items.map((orderItem: any) => {
-            if(orderItem.orderItemSeqId === item.orderItemSeqId) {
-              orderItem.rejectReason = result.data
-            }
-          })
-        }
+        order.items.map((orderItem: any) => {
+          if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+            orderItem.rejectReason = result.data
+          }
+        })
+        order.hasRejectedItem = true
+        
 
+        /*
+        Commenting this out to avoid directly updating items. Now user need to click on the save button to save the detail.
         const itemsToReject = order.items.filter((item: any) => item.rejectReason)
-        this.reportIssue(order, itemsToReject)
+        this.reportIssue(order, itemsToReject)*/
       }
+    },
+    async removeRejectionReason(ev: Event, item: any, order: any) {
+      delete item["rejectReason"];
+      item.rejectReason = "";
+        order.items.map((orderItem: any) => {
+          if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+            delete orderItem["rejectReason"];
+          }
+        })
+        order.hasRejectedItem = order.items.some((item:any) => item.rejectReason);
     },
     async assignPickers() {
       const assignPickerModal = await modalController.create({
@@ -767,6 +809,10 @@ export default defineComponent({
       // TODO Handle error case
       const resp = await OrderService.retryShippingLabel(shipmentIds)
       if (!hasError(resp)) {
+        //Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
+        await this.store.dispatch('order/updateShipmentPackageDetail', order) 
+        order = this.order;
+        
         showToast(translate("Shipping Label generated successfully"))
         await this.printShippingLabel(order)
         // TODO fetch specific order
@@ -786,13 +832,16 @@ export default defineComponent({
     },
     async printShippingLabel(order: any) {
       const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId)
+      const shippingLabelPdfUrls = order.shipmentPackages
+          ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+          .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
 
       if(!shipmentIds?.length) {
         showToast(translate('Failed to generate shipping label'))
         return;
       }
 
-      await OrderService.printShippingLabel(shipmentIds)
+      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
       if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
         await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
       }
@@ -875,6 +924,7 @@ export default defineComponent({
 
       if (result.data) {
         shipmentPackage.shipmentBoxTypeId = result.data;
+        order.isModified = true;
         this.store.dispatch('order/updateInProgressOrder', order);
       }
     },
@@ -908,7 +958,7 @@ export default defineComponent({
       this.itemsIssueSegmentSelected = []
       await this.store.dispatch('order/findInProgressOrders')
     },
-    async updateOrder(order: any, updateParameter: string) {
+    async updateOrder(order: any, updateParameter?: string) {
       const form = new FormData()
 
       form.append('facilityId', this.currentFacility.facilityId)
@@ -928,32 +978,54 @@ export default defineComponent({
       })
 
       // creating updated data for items
+      const rejectedOrderItems = [] as any;
       items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
-
-        let prefix = 'rtp'
+        
         // reject the item only when item is having a rejection reason
         if(updateParameter === 'report' && item.rejectReason) {
-          prefix = 'rej'
-          form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
+          rejectedOrderItems.push({
+            "shipmentId": item.shipmentId,
+            "shipmentItemSeqId": item.shipmentItemSeqId,
+            "reason": item.rejectReason
+          })
+          //prefix = 'rej'
+          //form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
         } else {
+          const prefix = 'rtp'
           form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
+          form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
+          form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
+          form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
         }
-
-        form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
-        form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
-        form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
       })
 
       form.append('picklistBinId', order.picklistBinId)
 
       try {
-        const resp = await OrderService.updateOrder({
-          headers: {
-            'Content-Type': 'multipart/form-data;'
-          },
-          data: form
-        })
+        let resp;
+        //Rejection of items will now be handled by the logic below.
+        if (rejectedOrderItems.length > 0) {
+          resp = await OrderService.rejectFulfillmentReadyOrderItem({
+            data: {
+              facilityId : this.currentFacility.facilityId,
+              rejectEntireShipment: this.isEntierOrderRejectionEnabled(order) ? "Y" : "N",
+              rejectAllRelatedShipment: this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
+              defaultReason: this.rejectEntireOrderReasonId, //default reason for items for which reason is not selected but rejecting due to entire order rejection config.
+              items: rejectedOrderItems
+            }
+          });
+        }
+
+        //Run this logic only when entire order rejection is disabled. This logic will now be used only to update shipment boxes, not to reject items.
+        if (!this.isEntierOrderRejectionEnabled(order)) {
+          resp = await OrderService.updateOrder({
+            headers: {
+              'Content-Type': 'multipart/form-data;'
+            },
+            data: form
+          })
+        }
 
         if(!hasError(resp)) {
             // updating the shipment information on item level
@@ -968,6 +1040,7 @@ export default defineComponent({
           })
           order.items = items
 
+          order.isModified = false;
           await this.store.dispatch('order/updateInProgressOrder', order)
           showToast(translate('Order updated successfully'))
           return Promise.resolve(order);
@@ -1026,7 +1099,7 @@ export default defineComponent({
               await this.updateOrder(order, 'report').then(async () => {
                 // redirect user to inProgress list page only when the order has a single item, and the user initiated report action on the same
                 // update the current order only when order contains multiple items in it.
-                if(order.items.length === 1) {
+                if(order.items.length === 1 || this.isEntierOrderRejectionEnabled(order)) {
                   this.router.push('/in-progress')
                 } else {
                   await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
@@ -1214,6 +1287,20 @@ export default defineComponent({
     },
     isTrackingRequiredForAnyShipmentPackage(order: any) {
       return order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
+    },
+    async scanOrder(order: any) {
+      const modal = await modalController.create({
+        component: ScanOrderItemModal,
+        componentProps: { order }
+      })
+
+      modal.onDidDismiss().then((result: any) => {
+        if(result.data?.packOrder) {
+          this.packOrder(order);
+        }
+      })
+
+      modal.present();
     }
   },
   setup() {
@@ -1229,6 +1316,7 @@ export default defineComponent({
       bagCheckOutline,
       cashOutline,
       caretDownOutline,
+      closeCircleOutline,
       copyToClipboard,
       cubeOutline,
       documentTextOutline,
@@ -1238,6 +1326,8 @@ export default defineComponent({
       getFeature,
       getProductIdentificationValue,
       hasPermission,
+      isKit,
+      listOutline,
       locateOutline,
       personAddOutline,
       pricetagOutline,
@@ -1281,5 +1371,11 @@ ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-te
 
 .order-item {
   grid-template-columns: repeat(3, 1fr);
+}
+
+.other-shipment-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 </style>

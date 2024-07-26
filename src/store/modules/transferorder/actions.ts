@@ -9,6 +9,7 @@ import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import logger from '@/logger'
 import { shopifyImgContext, translate } from '@hotwax/dxp-components'
 import { showToast } from "@/utils";
+import { UtilService } from '@/services/UtilService'
 
 const actions: ActionTree<TransferOrderState, RootState> = {
 
@@ -109,13 +110,11 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           //fetch shipped quantity
           const shippedQuantityInfo = {} as any;
           resp = await OrderService.fetchShippedQuantity(payload.orderId);
-          if (!hasError(resp)) {
-            resp.data.docs.forEach((doc:any) => {
-              shippedQuantityInfo[doc.orderItemSeqId] = doc.shippedQuantity;
-            });
-            orderDetail.shippedQuantityInfo = shippedQuantityInfo;
-          }
-  
+          resp.forEach((doc:any) => {
+            shippedQuantityInfo[doc.orderItemSeqId] = doc.shippedQuantity;
+          });
+          orderDetail.shippedQuantityInfo = shippedQuantityInfo;
+
           //fetch product details
           const productIds = [...new Set(orderDetail.items.map((item:any) => item.productId))];
   
@@ -141,10 +140,13 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     
     try {
       let eligibleItems = payload.items.filter((item: any) => item.pickedQuantity > 0)
+      let seqIdCounter = 1;
       eligibleItems = eligibleItems.map((item:any) => ({
+        orderItemSeqId: item.orderItemSeqId, //This is needed to map shipment item with order item correctly if multiple order items for the same product are there in the TO.
         productId: item.productId,
         sku: item.internalName,
-        quantity: parseInt(item.pickedQuantity) // Using parseInt to convert to an integer
+        quantity: parseInt(item.pickedQuantity), // Using parseInt to convert to an integer
+        itemSeqId: String(seqIdCounter++).padStart(5, '0') // This is needed to correctly create the shipment package content if multiple order items for the same product are there in the TO.
       }));  
 
       const params = {
@@ -177,7 +179,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       const shipmentItems = await OrderService.fetchShipmentItems('', payload.shipmentId);
         
       if (shipmentItems?.length > 0) {
-        const [shipmentPackagesWithMissingLabel, shipmentCarriers] = await Promise.all([OrderService.fetchShipmentPackages([payload.shipmentId]), OrderService.fetchShipmentCarrierDetail([payload.shipmentId])]);
+        const [shipmentPackagesWithMissingLabel, shipmentPackages, shipmentCarriers] = await Promise.all([OrderService.fetchShipmentPackages([payload.shipmentId]), UtilService.findShipmentPackages([payload.shipmentId]), OrderService.fetchShipmentCarrierDetail([payload.shipmentId])]);
 
         const shipment = {
           shipmentId: shipmentItems?.[0].shipmentId,
@@ -187,6 +189,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           carrierPartyId: shipmentCarriers?.[0].carrierPartyId,
           shipmentMethodTypeId: shipmentCarriers?.[0].shipmentMethodTypeId,
           shipmentPackagesWithMissingLabel: shipmentPackagesWithMissingLabel,
+          shipmentPackages: shipmentPackages ? Object.values(shipmentPackages).flat() : [],
           isTrackingRequired: shipmentPackagesWithMissingLabel?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y'),
           items: shipmentItems.map((item: any) => ({
             ...item,
@@ -235,7 +238,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         }, {}));
 
         const shipmentIds = new Set(shipments.map((shipment:any) => shipment.shipmentId));
-        const [shipmentCarriers, shipmentShippedStatuses] = await Promise.all([OrderService.fetchShipmentCarrierDetail([...shipmentIds]), OrderService.fetchShipmentShippedStatusHistory([...shipmentIds])]);
+        const [shipmentCarriers, shipmentShippedStatuses, shipmentPackages] = await Promise.all([OrderService.fetchShipmentCarrierDetail([...shipmentIds]), OrderService.fetchShipmentShippedStatusHistory([...shipmentIds]), UtilService.findShipmentPackages([...shipmentIds])]);
         const shipmentCarrierDetail = shipmentCarriers.reduce((carriers: any, carrierDetail:any) => {
           carriers[carrierDetail.shipmentId] = carrierDetail;
           return carriers;
@@ -246,10 +249,22 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           return shipments;
         }, {});
 
+        
+        const shipmentPackageValues = Object.values(shipmentPackages).flat() as any;
+        const shipmentPackageDetail = shipmentPackageValues.reduce((shipPackages:any, shipmentPackageDetail:any) => {
+          const { shipmentId } = shipmentPackageDetail;
+          if (!shipPackages[shipmentId]) {
+            shipPackages[shipmentId] = [];
+          }
+          shipPackages[shipmentId].push(shipmentPackageDetail);
+          return shipPackages;
+        }, {})
+
         shipments = shipments.map((shipment:any) => {
           const shipmentDetails = shipmentShippedStatusDetail[shipment.shipmentId];
           const carrierDetails = shipmentCarrierDetail[shipment.shipmentId]
-          return { ...shipment, ...shipmentDetails, ...carrierDetails };
+          const shipmentPackages = shipmentPackageDetail[shipment.shipmentId]
+          return { ...shipment, ...shipmentDetails, ...carrierDetails, shipmentPackages };
         });
 
         await this.dispatch('util/fetchShipmentMethodTypeDesc', shipmentCarriers.map((carrier:any) => carrier.shipmentMethodTypeId))

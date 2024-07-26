@@ -28,7 +28,14 @@ const userModule: Module<UserState, RootState> = {
         mappingType: '',
         name: '',
         value: {}
-      }
+      },
+      notifications: [],
+      notificationPrefs: [],
+      firebaseDeviceId: '',
+      hasUnreadNotifications: true,
+      allNotificationPrefs: [],
+      partialOrderRejectionConfig: {},
+      collateralRejectionConfig: {}
     },
     getters,
     actions,

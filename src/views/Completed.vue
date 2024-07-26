@@ -70,59 +70,52 @@
               </div>
             </div>
 
-            <div v-for="item in order.orderItems" :key="item.orderItemSeqId" class="order-item">
-              <div class="product-info">
+            <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-line-item">
+              <div class="order-item">
+                <div class="product-info">
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                      <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                    </ion-label>
+                  </ion-item>
+                </div>
+                <div class="product-metadata">
+                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
+                    <ion-icon color="medium" slot="icon-only" :icon="listOutline"/>
+                  </ion-button>
+                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                    <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                  </ion-button>
+                </div>
+              </div>
+              <div v-if="item.showKitComponents && !getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-item lines="none">
-                  <ion-thumbnail slot="start">
-                    <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
-                  </ion-thumbnail>
-                  <ion-label>
-                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                    <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
-                  </ion-label>
+                  <ion-skeleton-text animated style="height: 80%;"/>
+                </ion-item>
+                <ion-item lines="none">
+                  <ion-skeleton-text animated style="height: 80%;"/>
                 </ion-item>
               </div>
-              <div class="product-metadata">
-                <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
-                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
-                </ion-button>
-              </div>
-            </div>
-
-            <div v-if="order.kitProducts">
-              <div v-for="(kitProduct, orderItemSeqId) in order.kitProducts" :key="orderItemSeqId">
-                <ion-item-divider class="order-item" color="light">
-                  <div class="product-info">
+              <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
+                <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
+                    </ion-thumbnail>
                     <ion-label>
-                      <p>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(kitProduct[0].parentProductId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(kitProduct[0].parentProductId)) : getProduct(kitProduct[0].parentProductId).productName }}</p>
-                      <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(kitProduct[0].parentProductId)) }}</p>
+                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
+                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                      <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
                     </ion-label>
-                  </div>
-                </ion-item-divider>
-
-                <div v-for="item in kitProduct" :key="item.orderItemSeqId" class="order-item">
-                  <div class="product-info">
-                    <ion-item lines="none">
-                      <ion-thumbnail slot="start">
-                        <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
-                      </ion-thumbnail>
-                      <ion-label>
-                        <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                        {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                        <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
-                      </ion-label>
-                    </ion-item>
-                  </div>
-
-                  <div class="product-metadata">
-                    <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                    <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
-                      <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
-                    </ion-button>
-                  </div>
-                </div>
+                  </ion-item>
+                </ion-card>
               </div>
             </div>
 
@@ -175,6 +168,7 @@
 
 <script lang="ts">
 import {
+  IonBadge,
   IonButton,
   IonButtons,
   IonCard,
@@ -188,12 +182,12 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonItem,
-  IonItemDivider,
   IonLabel,
   IonMenuButton,
   IonNote,
   IonPage,
   IonSearchbar,
+  IonSkeletonText,
   IonSpinner,
   IonThumbnail,
   IonTitle,
@@ -203,7 +197,7 @@ import {
   modalController
 } from '@ionic/vue';
 import { computed, defineComponent } from 'vue';
-import { caretDownOutline, cubeOutline, printOutline, downloadOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
+import { caretDownOutline, cubeOutline, printOutline, downloadOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
@@ -220,11 +214,13 @@ import logger from '@/logger';
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
+import { isKit } from '@/utils/order'
 
 export default defineComponent({
   name: 'Completed',
   components: {
     DxpShopifyImg,
+    IonBadge,
     IonButton,
     IonButtons,
     IonCard,
@@ -238,12 +234,12 @@ export default defineComponent({
     IonInfiniteScroll,
     IonInfiniteScrollContent,
     IonItem,
-    IonItemDivider,
     IonLabel,
     IonMenuButton,
     IonNote,
     IonPage,
     IonSearchbar,
+    IonSkeletonText,
     IonSpinner,
     IonThumbnail,
     IonTitle,
@@ -294,6 +290,14 @@ export default defineComponent({
       return this.completedOrders.list.some((order: any) => {
         return order.hasMissingShipmentInfo || order.hasMissingPackageInfo;
       })
+    },
+    async fetchKitComponents(orderItem: any) {
+      this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
+      
+      //update the order in order to toggle kit components section
+      const updatedOrder = this.completedOrders.list.find((order: any) =>  order.orderId === orderItem.orderId && order.picklistBinId === orderItem.picklistBinId);
+      const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
+      updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
     },
     getCompletedOrders() {
       return JSON.parse(JSON.stringify(this.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
@@ -638,6 +642,10 @@ export default defineComponent({
       // TODO Handle error case
       const resp = await OrderService.retryShippingLabel(shipmentIds)
       if (!hasError(resp)) {
+        //Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
+        await this.store.dispatch('order/updateShipmentPackageDetail', order)
+        order = this.completedOrders.list.find((completedOrder:any) => completedOrder.orderId === order.orderId);
+
         showToast(translate("Shipping Label generated successfully"))
         await this.printShippingLabel(order)
         // TODO fetch specific order
@@ -660,13 +668,15 @@ export default defineComponent({
     },
     async printShippingLabel(order: any) {
       const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId)
-
+      const shippingLabelPdfUrls = order.shipmentPackages
+          ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+          .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
       if(!shipmentIds?.length) {
         showToast(translate('Failed to generate shipping label'))
         return
       }
 
-      await OrderService.printShippingLabel(shipmentIds)
+      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
       if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
         await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
       }
@@ -745,6 +755,8 @@ export default defineComponent({
       getFeature,
       getProductIdentificationValue,
       hasPermission,
+      isKit,
+      listOutline,
       optionsOutline,
       pricetagOutline,
       productIdentificationPref,

@@ -183,6 +183,7 @@
           updatedShipmentMethodName = updatedShipmentMethodName.trim()
           if (!updatedShipmentMethodName) {
             showToast(translate("Shipment method name can not be empty."));
+            return;
           }
           
           if (updatedShipmentMethodName != shipmentMethod.description) {

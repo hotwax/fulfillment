@@ -1,6 +1,6 @@
 export default interface UserState {
     token: string;
-    current: object | null;
+    current: any;
     permissions: any;
     pwaState: any;
     currentFacility: object;
@@ -17,4 +17,11 @@ export default interface UserState {
         name: string;
         value: object;
     };
+    notifications: any;
+    notificationPrefs: any;
+    firebaseDeviceId: string;
+    hasUnreadNotifications: boolean;
+    allNotificationPrefs: any;
+    partialOrderRejectionConfig: any;
+    collateralRejectionConfig: any;
 }

@@ -49,5 +49,26 @@ const getters: GetterTree <UserState, RootState> = {
     getPwaState(state) {
         return state.pwaState;
     },
+    getNotifications(state) {
+        return state.notifications.sort((a: any, b: any) => b.time - a.time)
+    },
+    getNotificationPrefs(state) {
+        return state.notificationPrefs
+    },
+    getFirebaseDeviceId(state) {
+        return state.firebaseDeviceId
+    },
+    getUnreadNotificationsStatus(state) {
+        return state.hasUnreadNotifications
+    },
+    getAllNotificationPrefs(state) {
+        return state.allNotificationPrefs
+    },
+    getPartialOrderRejectionConfig(state) {
+        return  state.partialOrderRejectionConfig;
+    },
+    getCollateralRejectionConfig(state) {
+        return  state.collateralRejectionConfig;
+    },
 }
 export default getters;

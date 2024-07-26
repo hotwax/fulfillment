@@ -34,6 +34,7 @@ import { login, logout, loader } from '@/utils/user';
 import { getConfig, getProductIdentificationPref, initialise, setProductIdentificationPref, setUserLocale, setUserTimeZone,
   getAvailableTimeZones } from './adapter';
 import localeMessages from '@/locales';
+import { addNotification, storeClientRegistrationToken } from '@/utils/firebase';
 
 const app = createApp(App)
   .use(IonicVue, {
@@ -50,11 +51,14 @@ const app = createApp(App)
     actions: permissionActions
   })
   .use(dxpComponents, {
+    addNotification,
     defaultImgUrl: require("@/assets/images/defaultImage.png"),
     login,
     logout,
     loader,
     appLoginUrl: process.env.VUE_APP_LOGIN_URL as string,
+    appFirebaseConfig: JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any),
+    appFirebaseVapidKey: process.env.VUE_APP_FIREBASE_VAPID_KEY,
     getConfig,
     getProductIdentificationPref,
     initialise,
@@ -62,6 +66,7 @@ const app = createApp(App)
     localeMessages,
     setUserLocale,
     setUserTimeZone,
+    storeClientRegistrationToken,
     getAvailableTimeZones
   });
 

@@ -11,7 +11,8 @@ const mutations: MutationTree <UserState> = {
       state.current = {},
       state.currentFacility = {}
       state.currentEComStore = {}
-      state.permissions = []
+      state.permissions = [],
+      state.allNotificationPrefs = []
     },
     [types.USER_INFO_UPDATED] (state, payload) {
         state.current = { ...state.current,  ...payload}
@@ -46,6 +47,27 @@ const mutations: MutationTree <UserState> = {
     [types.USER_PWA_STATE_UPDATED](state, payload) {
         state.pwaState.registration = payload.registration;
         state.pwaState.updateExists = payload.updateExists;
+    },
+    [types.USER_NOTIFICATIONS_UPDATED] (state, payload) {
+        state.notifications = payload
+    },
+    [types.USER_NOTIFICATIONS_PREFERENCES_UPDATED] (state, payload) {
+        state.notificationPrefs = payload
+    },
+    [types.USER_FIREBASE_DEVICEID_UPDATED] (state, payload) {
+        state.firebaseDeviceId = payload
+    },
+    [types.USER_UNREAD_NOTIFICATIONS_STATUS_UPDATED] (state, payload) {
+        state.hasUnreadNotifications = payload
+    },
+    [types.USER_ALL_NOTIFICATION_PREFS_UPDATED] (state, payload) {
+        state.allNotificationPrefs = payload
+    },
+    [types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED] (state, payload) {
+        state.partialOrderRejectionConfig = payload
+    },
+    [types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED] (state, payload) {
+        state.collateralRejectionConfig = payload
     }
 }
 export default mutations;
