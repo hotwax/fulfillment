@@ -136,7 +136,8 @@
 
                 <div class="product-metadata">
                   <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
-                    <ion-icon color="medium" slot="icon-only" :icon="listOutline"/>
+                    <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
+                    <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
                   <ion-button fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
                     <ion-icon color="danger" slot="icon-only" :icon="trashBinOutline"/>
@@ -270,6 +271,7 @@ import { computed, defineComponent } from 'vue';
 import {
   addOutline,
   caretDownOutline,
+  chevronUpOutline,
   checkmarkDoneOutline,
   closeCircleOutline,
   cubeOutline,
@@ -1242,6 +1244,7 @@ export default defineComponent({
       addOutline,
       authStore,
       caretDownOutline,
+      chevronUpOutline,
       copyToClipboard,
       checkmarkDoneOutline,
       closeCircleOutline,
