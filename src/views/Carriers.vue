@@ -2,6 +2,7 @@
     <ion-page>      
       <ion-header :translucent="true">
         <ion-toolbar>
+          <ion-menu-button menu="start" slot="start" />
           <ion-title>{{ translate('Carriers') }}</ion-title>
         </ion-toolbar>
       </ion-header>
@@ -44,6 +45,7 @@
     IonItem, 
     IonLabel, 
     IonList,
+    IonMenuButton,
     IonNote,
     IonPage, 
     IonTitle, 
@@ -67,6 +69,7 @@
       IonItem, 
       IonLabel, 
       IonList,
+      IonMenuButton,
       IonNote,
       IonPage, 
       IonTitle, 

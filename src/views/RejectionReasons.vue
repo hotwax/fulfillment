@@ -2,6 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
+        <ion-menu-button menu="start" slot="start" />
         <ion-title @click="saveReasonsOrder()">{{ translate("Rejection reasons") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -61,6 +62,7 @@ import {
   IonIcon,
   IonItem,
   IonLabel,
+  IonMenuButton,
   IonPage,
   IonReorder,
   IonReorderGroup,
@@ -92,6 +94,7 @@ export default defineComponent({
     IonIcon,
     IonItem,
     IonLabel,
+    IonMenuButton,
     IonPage,
     IonReorder,
     IonReorderGroup,
