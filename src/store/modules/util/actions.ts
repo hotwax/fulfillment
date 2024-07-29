@@ -487,7 +487,7 @@ const actions: ActionTree<UtilState, RootState> = {
       }
     } catch(err) {
       console.error(err)
-      commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, "false")
+      commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, false)
     }
   },
 

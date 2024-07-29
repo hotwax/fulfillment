@@ -295,15 +295,21 @@
           showToast(translate("Scanned item is already completed:", { itemName: payload }))
         }
         else if (result.isProductFound) {
-          showToast(translate("Scanned successfully.", { itemName: payload }))
-          this.lastScannedId = payload
-          // Highlight specific element
-          const scannedElement = document.getElementById(payload);
-          scannedElement && (scannedElement.scrollIntoView());
-          // Scanned product should get un-highlighted after 3s for better experience hence adding setTimeOut
-          setTimeout(() => {
-            this.lastScannedId = ''
-          }, 3000)
+          const item = result.orderItem
+          const shippedQuantity = this.getShippedQuantity(item)
+          if(item.pickedQuantity > item.orderedQuantity - shippedQuantity) {
+            showToast(translate('The picked quantity cannot exceed the ordered quantity.') + " " + translate("already shipped.", {shippedQuantity: shippedQuantity}))
+          } else {
+            showToast(translate("Scanned successfully.", { itemName: payload }))
+            this.lastScannedId = payload
+            // Highlight specific element
+            const scannedElement = document.getElementById(payload);
+            scannedElement && (scannedElement.scrollIntoView());
+            // Scanned product should get un-highlighted after 3s for better experience hence adding setTimeOut
+            setTimeout(() => {
+              this.lastScannedId = ''
+            }, 3000)
+          }
         } else {
           showToast(translate("Scanned item is not present within the order:", { itemName: payload }));
         }

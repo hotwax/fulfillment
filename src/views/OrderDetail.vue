@@ -126,7 +126,8 @@
               </ion-button>
               <ion-button v-if="isKit(item)" fill="clear" color="medium" size="small" @click.stop="fetchKitComponent(item)">
                 {{ translate('Components') }}
-                <ion-icon color="medium" slot="end" :icon="listOutline"/>
+                <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
+                <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
               </ion-button>
             </div>
             </div>
@@ -246,7 +247,8 @@
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
                 <ion-button slot="end" v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponent(item, true)">
-                  <ion-icon color="medium" slot="icon-only" :icon="listOutline"/>
+                  <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
+                  <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                 </ion-button>
               </div>
             </ion-item>
@@ -312,6 +314,7 @@ import {
   bagCheckOutline,
   caretDownOutline,
   cashOutline,
+  chevronUpOutline,
   closeCircleOutline,
   cubeOutline,
   documentTextOutline,
@@ -1316,6 +1319,7 @@ export default defineComponent({
       bagCheckOutline,
       cashOutline,
       caretDownOutline,
+      chevronUpOutline,
       closeCircleOutline,
       copyToClipboard,
       cubeOutline,

@@ -76,6 +76,7 @@ export default defineComponent({
           name: "setLimit",
           placeholder: translate("Order fulfillment capacity"),
           type: "number",
+          value: this.fulfillmentOrderLimit?.toString(),
           min: 0
         }] : [],
         buttons: [{
