@@ -1313,6 +1313,11 @@ ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-te
   height: 30px;
 }
 
+.product-metadata {
+  display: flex;
+  align-items: center;
+}
+
 @media (min-width: 991px) {
   .order-item {
     grid-template-columns: repeat(3, 1fr);
