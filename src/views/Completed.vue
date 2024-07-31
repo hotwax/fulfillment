@@ -301,7 +301,9 @@ export default defineComponent({
       updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
     },
     getCompletedOrders() {
-      return JSON.parse(JSON.stringify(this.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
+      const viewSize = process.env.VUE_APP_VIEW_SIZE as any;
+      const viewEndIndex = (this.completedOrders.query.viewIndex + 1) * viewSize;
+      return this.completedOrders.list.slice(0, viewEndIndex);
     },
     enableScrolling() {
       const parentElement = (this as any).$refs.contentRef.$el
