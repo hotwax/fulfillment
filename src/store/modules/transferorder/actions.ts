@@ -276,14 +276,18 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   },
 
   async updateOrderProductCount({ commit, state }, payload ) {
-    const item = state.current.items.find((item: any) => item.internalName === payload);
+    const item = state.current.items.find((item: any) => (item.internalName === payload && item.statusId !== 'ITEM_COMPLETED' && item.statusId !== 'ITEM_REJECTED'));
     if(item){
-      if(item.statusId === 'ITEM_COMPLETED') 
-      return { isCompleted: true }
       item.pickedQuantity = parseInt(item.pickedQuantity) + 1;
       commit(types.ORDER_CURRENT_UPDATED, state.current )
       return { isProductFound: true, orderItem: item }
     }
+
+    const completedItem = state.current.items.find((item: any) => item.internalName === payload && item.statusId === 'ITEM_COMPLETED');
+    if(completedItem) {
+      return { isCompleted: true }
+    }
+
     return { isProductFound: false }
   },
 
