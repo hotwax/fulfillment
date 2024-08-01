@@ -32,7 +32,7 @@
       </ion-card-header>
       <ion-item>
         <ion-select :disabled="currentOrder.trackingCode" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
-          <ion-select-option v-for="method in carrierMethods" :key="method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
+          <ion-select-option v-for="method in carrierMethods" :key="method.productStoreShipMethId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
           <ion-select-option value="">{{ translate("None") }}</ion-select-option>
         </ion-select>
       </ion-item>
@@ -158,6 +158,7 @@ export default defineComponent({
             "shipmentMethodTypeId": shipmentMethodTypeId
           }) as any;
           if (!hasError(resp)) {
+            this.shipmentMethodTypeId = shipmentMethodTypeId;
             showToast(translate("Shipment method detail updated successfully."))
             //fetching updated shipment packages
             await this.store.dispatch('order/updateShipmentPackageDetail', this.currentOrder) 
