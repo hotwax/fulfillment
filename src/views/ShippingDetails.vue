@@ -31,14 +31,13 @@
         </ion-card-title>
       </ion-card-header>
       <ion-item>
-        <ion-select :disabled="currentOrder.trackingCode" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
-          <ion-select-option v-for="method in carrierMethods" :key="method.productStoreShipMethId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
-          <ion-select-option value="">{{ translate("None") }}</ion-select-option>
+        <ion-select :disabled="currentOrder.trackingCode" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')">
+          <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
         </ion-select>
       </ion-item>
       <ion-item>
-        <ion-select :disabled="currentOrder.trackingCode" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')">
-          <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
+        <ion-select :disabled="currentOrder.trackingCode" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
+          <ion-select-option v-for="method in carrierMethods" :key="method.productStoreShipMethId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
         </ion-select>
       </ion-item>
       <template v-if="!currentOrder.trackingCode">
@@ -123,7 +122,7 @@ export default defineComponent({
     if (this.facilityCarriers) {
       const shipmentPackage = this.currentOrder.shipmentPackages?.[0];
       this.carrierPartyId = shipmentPackage?.carrierPartyId ? shipmentPackage?.carrierPartyId : this.facilityCarriers[0].partyId;
-      await this.getProductStoreShipmentMethods(this.carrierPartyId);
+      this.carrierMethods = await this.getProductStoreShipmentMethods(this.carrierPartyId);
       this.shipmentMethodTypeId = shipmentPackage?.shipmentMethodTypeId;
     }
     
@@ -150,31 +149,44 @@ export default defineComponent({
     async updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMethodTypeId: string) {
       let resp;
       try {
-        for (const shipmentPackage of this.currentOrder.shipmentPackages) {
-          resp = await OrderService.updateShipmentRouteSegment({
-            "shipmentId": shipmentPackage.shipmentId,
-            "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-            "carrierPartyId": carrierPartyId,
-            "shipmentMethodTypeId": shipmentMethodTypeId
-          }) as any;
-          if (!hasError(resp)) {
-            this.shipmentMethodTypeId = shipmentMethodTypeId;
-            showToast(translate("Shipment method detail updated successfully."))
-            //fetching updated shipment packages
-            await this.store.dispatch('order/updateShipmentPackageDetail', this.currentOrder) 
-            await this.getProductStoreShipmentMethods(carrierPartyId)
-          } else {
-            throw resp.data;
+        const carrierShipmentMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
+        shipmentMethodTypeId = shipmentMethodTypeId ? shipmentMethodTypeId : carrierShipmentMethods?.[0]?.shipmentMethodTypeId;
+
+        const params = {
+          orderId: this.currentOrder.orderId,
+          shipGroupSeqId: this.currentOrder.shipGroupSeqId,
+          shipmentMethodTypeId,
+          carrierPartyId
+        }
+        resp = await OrderService.updateOrderItemShipGroup(params)
+        if (!hasError(resp)) {
+          for (const shipmentPackage of this.currentOrder.shipmentPackages) {
+            resp = await OrderService.updateShipmentRouteSegment({
+              "shipmentId": shipmentPackage.shipmentId,
+              "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
+              "carrierPartyId": carrierPartyId,
+              "shipmentMethodTypeId": shipmentMethodTypeId
+            }) as any;
+            if (!hasError(resp)) {
+              this.shipmentMethodTypeId = shipmentMethodTypeId
+              showToast(translate("Shipment method detail updated successfully."))
+              //fetching updated shipment packages
+              await this.store.dispatch('order/updateShipmentPackageDetail', this.currentOrder) 
+              this.carrierMethods = carrierShipmentMethods;
+            } else {
+              throw resp.data;
+            }
           }
+        } else {
+          throw resp.data;
         }
       } catch (err) {
         logger.error('Failed to update carrier and method', err);
         showToast(translate("Failed to update shipment method detail."));
       }
     },
-
-    async getProductStoreShipmentMethods(carrierPartyId: string) {
-      this.carrierMethods = this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId) || [];
+    async getProductStoreShipmentMethods(carrierPartyId: string) { 
+      return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId) || [];
     },
     async printShippingLabel(order: any) {
       const shipmentIds = order?.shipmentIds?.length > 0 ? order?.shipmentIds : order.shipments?.map((shipment: any) => shipment.shipmentId);
