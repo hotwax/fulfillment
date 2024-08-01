@@ -69,8 +69,11 @@
               "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
               "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
               "trackingCode": "",
-              "labelImage": "",
-              "labelHtml": ""
+              "labelImage": null,
+              "labelIntlSignImage": null,
+              "labelHtml": "",
+              "labelImageUrl": "",
+              "internationalInvoiceUrl": ""
 
             });
             if (!hasError(resp)) {
@@ -78,8 +81,7 @@
                 "shipmentId": shipmentPackage.shipmentId,
                 "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
                 "carrierServiceStatusId": "SHRSCS_VOIDED",
-                "trackingIdNumber": "",
-                "labelImageUrl": ""
+                "trackingIdNumber": ""
               }) as any;
               if (hasError(resp)) {
                 throw resp.data;             
