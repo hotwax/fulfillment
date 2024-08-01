@@ -181,6 +181,9 @@ export default defineComponent({
           throw resp.data;
         }
       } catch (err) {
+        this.carrierPartyId = this.currentOrder.shipmentPackages?.[0].carrierPartyId;
+        this.shipmentMethodTypeId = this.currentOrder.shipmentPackages?.[0].shipmentMethodTypeId;
+
         logger.error('Failed to update carrier and method', err);
         showToast(translate("Failed to update shipment method detail."));
       }

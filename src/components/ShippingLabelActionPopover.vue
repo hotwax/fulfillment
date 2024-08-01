@@ -69,12 +69,11 @@
               "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
               "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
               "trackingCode": "",
-              "labelImage": null,
-              "labelIntlSignImage": null,
+              "labelImage": "",
+              "labelIntlSignImage": "",
               "labelHtml": "",
               "labelImageUrl": "",
               "internationalInvoiceUrl": ""
-
             });
             if (!hasError(resp)) {
               resp = await OrderService.updateShipmentRouteSegment({
