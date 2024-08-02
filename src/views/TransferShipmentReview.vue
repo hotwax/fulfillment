@@ -27,7 +27,10 @@
               </ion-item>
               <ion-item>
                 <ion-input :label="translate('Tracking Code')" placeholder="add tracking code" v-if="!currentShipment.trackingCode" v-model="trackingCode"></ion-input>
-                <p v-else slot="end">{{ currentShipment.trackingCode }}</p>
+                <template v-else>
+                  <ion-label>{{ translate("Tracking Code") }}</ion-label>
+                  <p slot="end">{{ currentShipment.trackingCode }}</p>
+                </template>
               </ion-item>
               <ion-item>
                 <ion-label>{{ translate('Carrier') }}</ion-label>
