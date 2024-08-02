@@ -139,7 +139,7 @@
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
-                  <ion-button fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
+                  <ion-button fill="clear" size="small" class="desktop-only" @click.stop="openRejectReasonPopover($event, item, order)">
                     <ion-icon color="danger" slot="icon-only" :icon="trashBinOutline"/>
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
@@ -176,7 +176,7 @@
             <div class="mobile-only">
               <ion-item>
                 <ion-button fill="clear"  :disabled="order.isModified || order.hasMissingInfo" @click.stop="isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
-                <ion-button slot="end" fill="clear" color="medium" @click.stop="packagingPopover">
+                <ion-button slot="end" fill="clear" color="medium" @click.stop="packagingPopover($event, order)">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -310,6 +310,8 @@ import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
 import QRCodeModal from '@/components/QRCodeModal.vue'
 import { useAuthStore } from '@hotwax/dxp-components'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
+import EditPackagingModal from '@/views/EditPackagingModal.vue'
+import ReportIssueModal from '@/views/ReportIssueModal.vue'
 
 
 export default defineComponent({
@@ -441,13 +443,34 @@ export default defineComponent({
     getInProgressOrders() {
       return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
     },
-    async packagingPopover(ev: Event) {
+    async packagingPopover(ev: Event, order: any) {
       const popover = await popoverController.create({
         component: PackagingPopover,
+        componentProps: { order },
         event: ev,
         translucent: true,
         showBackdrop: false,
       });
+
+      popover.onDidDismiss().then(async(result) => {
+        if(result.data?.dismissed) {
+          const selectedAction = result.data.selectedAction;
+
+          const modal = await modalController.create({
+            component: selectedAction === 'editPackaging' ? EditPackagingModal : ReportIssueModal,
+            componentProps: selectedAction === 'editPackaging' ? { order, addingBoxForOrderIds: this.addingBoxForOrderIds, addShipmentBox: this.addShipmentBox } : { order }
+          })
+
+          modal.onDidDismiss().then((result) => {
+            if(result.data?.updatedOrder) {
+              this.save(result.data.updatedOrder);
+            }
+          })
+
+          modal.present();
+        }
+      })
+
       return popover.present();
     },
     async packOrder(order: any) {
@@ -1303,8 +1326,15 @@ ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-te
   height: 30px;
 }
 
-.order-item {
-  grid-template-columns: repeat(3, 1fr);
+.product-metadata {
+  display: flex;
+  align-items: center;
+}
+
+@media (min-width: 991px) {
+  .order-item {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 </style>
 

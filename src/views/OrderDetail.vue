@@ -151,7 +151,7 @@
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
               <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="isForceScanEnabled ? scanOrder(order) :packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
-              <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
+              <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover($event, order)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
@@ -347,6 +347,8 @@ import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
 import ShippingDetails from '@/views/ShippingDetails.vue';
 import { isKit } from '@/utils/order'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
+import EditPackagingModal from '@/views/EditPackagingModal.vue';
+import ReportIssueModal from '@/views/ReportIssueModal.vue';
 
 export default defineComponent({
   name: "OrderDetail",
@@ -699,13 +701,34 @@ export default defineComponent({
       inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
     },
-    async packagingPopover(ev: Event) {
+    async packagingPopover(ev: Event, order: any) {
       const popover = await popoverController.create({
         component: PackagingPopover,
+        componentProps: { order },
         event: ev,
         translucent: true,
         showBackdrop: false,
       });
+
+      popover.onDidDismiss().then(async(result) => {
+        if(result.data?.dismissed) {
+          const selectedAction = result.data.selectedAction;
+
+          const modal = await modalController.create({
+            component: selectedAction === 'editPackaging' ? EditPackagingModal : ReportIssueModal,
+            componentProps: selectedAction === 'editPackaging' ? { order, addingBoxForOrderIds: this.addingBoxForOrderIds, addShipmentBox: this.addShipmentBox } : { order }
+          })
+
+          modal.onDidDismiss().then((result) => {
+            if(result.data?.updatedOrder) {
+              this.save(result.data.updatedOrder);
+            }
+          })
+
+          modal.present();
+        }
+      })
+
       return popover.present();
     },
     async openRejectReasonPopover(ev: Event, item: any, order: any, kitProducts?: any) {
@@ -1373,8 +1396,10 @@ ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-te
   height: 30px;
 }
 
-.order-item {
-  grid-template-columns: repeat(3, 1fr);
+@media (min-width: 991px) {
+  .order-item {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .other-shipment-actions {
