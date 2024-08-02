@@ -112,11 +112,11 @@
                 <ion-list>
                   <ion-item>
                     <ion-label class="ion-text-wrap">{{ translate("Brand") }}</ion-label>
-                    <ion-label class="ion-text-wrap">{{ currentEcomStore.storeName || "-" }}</ion-label>
+                    <ion-label class="ion-text-wrap" slot="end">{{ currentEcomStore.storeName || "-" }}</ion-label>
                   </ion-item>
                   <ion-item lines="none">
                     <ion-label class="ion-text-wrap">{{ translate("Channel") }}</ion-label>
-                    <ion-label class="ion-text-wrap">{{ order.salesChannel || "-" }}</ion-label>
+                    <ion-label class="ion-text-wrap" slot="end">{{ order.salesChannel || "-" }}</ion-label>
                   </ion-item>
                 </ion-list>
               </ion-card>
