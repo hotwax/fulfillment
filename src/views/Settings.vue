@@ -166,8 +166,8 @@
           <ion-card-content>
             {{ translate("Control whether the store requires the force scan during order packing or not.") }}
           </ion-card-content>
-          <ion-item lines="none" >
-            <ion-toggle label-placement="start" :disabled="!hasPermission(Actions.APP_UPDT_FULFILL_FORCE_SCAN_CONFIG)" :checked="isForceScanEnabled" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
+          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_UPDT_FULFILL_FORCE_SCAN_CONFIG)">
+            <ion-toggle label-placement="start" :checked="isForceScanEnabled" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
           </ion-item>
         </ion-card>
 
@@ -180,8 +180,8 @@
           <ion-card-content>
             {{ translate('Rejecting any items in an order will automatically reject other items of an order.') }}
           </ion-card-content>
-          <ion-item lines="none">
-            <ion-toggle label-placement="start" :disabled="!hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE)" :checked="partialOrderRejectionConfig.settingValue" @click.prevent="confirmPartialOrderRejection(partialOrderRejectionConfig, $event)">{{ translate("Partial rejections") }}</ion-toggle>
+          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE)">
+            <ion-toggle label-placement="start" :checked="partialOrderRejectionConfig.settingValue" @click.prevent="confirmPartialOrderRejection(partialOrderRejectionConfig, $event)">{{ translate("Partial rejections") }}</ion-toggle>
           </ion-item>
         </ion-card>
         <ion-card>
@@ -193,8 +193,8 @@
           <ion-card-content>
             {{ translate('When rejecting an item, automatically reject all other orders for that item as well.') }}
           </ion-card-content>
-          <ion-item lines="none">
-            <ion-toggle label-placement="start" :disabled="!hasPermission(Actions.APP_COLLATERAL_REJECTION_CONFIG_UPDATE)" :checked="'true' === collateralRejectionConfig.settingValue" @click.prevent="confirmCollateralRejection(collateralRejectionConfig, $event)">{{ translate("Auto reject related items") }}</ion-toggle>
+          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_COLLATERAL_REJECTION_CONFIG_UPDATE)">
+            <ion-toggle label-placement="start" :checked="'true' === collateralRejectionConfig.settingValue" @click.prevent="confirmCollateralRejection(collateralRejectionConfig, $event)">{{ translate("Auto reject related items") }}</ion-toggle>
           </ion-item>
         </ion-card>
       </section>
