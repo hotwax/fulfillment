@@ -761,6 +761,19 @@ export default defineComponent({
           form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
         }
       })
+      if (this.isEntierOrderRejectionEnabled(order)) {
+        const shipmentIds = rejectedOrderItems.map((item:any) => item.shipmentId);
+        items.map((item: any) => {
+          if (!shipmentIds.includes(item.shipmentId)) {
+            rejectedOrderItems.push({
+              "shipmentId": item.shipmentId,
+              "shipmentItemSeqId": item.shipmentItemSeqId,
+              "reason": this.rejectEntireOrderReasonId
+            })
+            shipmentIds.push(item.shipmentId)
+          }
+        })
+      }
 
       form.append('picklistBinId', order.picklistBinId)
 
