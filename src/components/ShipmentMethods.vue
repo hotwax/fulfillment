@@ -27,7 +27,7 @@
       </ion-chip>
       <ion-note class="config-label">{{ translate('carrier code') }}</ion-note>
     </div>
-    <div class="tablet">
+    <div class="shipment-status">
       <ion-checkbox :checked="shipmentMethod.isChecked" @click="updateCarrierShipmentMethodAssociation($event, shipmentMethod)" />
     </div>
     <ion-button fill="clear" color="medium" @click="openShipmentMethodActionsPopover($event, shipmentMethod)">
@@ -267,11 +267,12 @@
   <style scoped>
   .list-item {
     --columns-desktop: 5;
+    --columns-mobile: 3;
   }
   .list-item:hover {
     cursor: default;
   }
-  .tablet {
+  .shipment-status {
     display: block;
     text-align: center;
   }

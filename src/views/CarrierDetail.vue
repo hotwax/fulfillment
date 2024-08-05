@@ -85,7 +85,7 @@
                     <ion-toggle :checked="shipmentMethod.isTrackingRequired" :disabled="!shipmentMethod.isChecked" @ionChange="updateTrackingRequired($event, shipmentMethod)"/>
                     <ion-note class="config-label">{{ translate("require tracking code") }}</ion-note>
                   </div>
-                  <div class="tablet">
+                  <div>
                     <ion-checkbox :checked="shipmentMethod.isChecked" @click="updateProductStoreShipmentMethodAssociation($event, shipmentMethod, productStore)" />
                   </div>
                 </div>
@@ -486,10 +486,6 @@
   }
   .list-item:hover {
     cursor: default;
-  }
-  .tablet {
-    display: block;
-    text-align: center;
   }
   .config-label {
     display: block;
