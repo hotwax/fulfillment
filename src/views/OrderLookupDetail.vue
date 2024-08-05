@@ -190,6 +190,7 @@
                   <h1>{{ shipGroups[0].facilityName || shipGroups[0].facilityId }}</h1>
                   <p v-if="shipGroups[0].facilityId !== '_NA_'">{{ getShipmentMethodDesc(shipGroups[0].shipmentMethodTypeId) || shipGroups[0].shipmentMethodTypeId }}</p>
                 </ion-label>
+                <ion-label slot="end" v-if="shipGroups[0].trackingIdNumber">{{ translate("Tracking Code: ") }}{{ shipGroups[0].trackingIdNumber }}</ion-label>
               </ion-item>
     
               <div class="product-card">
