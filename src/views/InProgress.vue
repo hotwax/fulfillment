@@ -741,6 +741,8 @@ export default defineComponent({
 
       // creating updated data for items
       const rejectedOrderItems = [] as any;
+      const rejectedProductIds = [] as any;
+      const rejectedItems = [] as any;
       items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
@@ -751,6 +753,9 @@ export default defineComponent({
             "shipmentItemSeqId": item.shipmentItemSeqId,
             "reason": item.rejectReason
           })
+
+          if(!rejectedProductIds.includes(item.productId)) rejectedProductIds.push(item.productId);
+          if(!rejectedItems.includes(`${item.orderId}-${item.orderItemSeqId}`)) rejectedItems.push(`${item.orderId}-${item.orderItemSeqId}`);
           //prefix = 'rej'
           //form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
         } else {
@@ -804,7 +809,8 @@ export default defineComponent({
 
         if(!hasError(resp)) {
           if (order.hasRejectedItem) {
-            this.updateOrderQuery()
+            await this.updateOrderQuery()
+            this.removeRejectedOrder(rejectedProductIds, rejectedItems);
           } else {
             order.isModified = false;
 
@@ -832,6 +838,32 @@ export default defineComponent({
         logger.error('Failed to update order', err)
       }
     },
+    removeRejectedOrder(rejectedProductIds: any, rejectedItems: any) {
+      const orders = JSON.parse(JSON.stringify(this.getInProgressOrders()))
+      const updatedOrders = orders.filter((order: any) => {
+        let rejectWholeOrder = false;
+
+        if(this.isEntierOrderRejectionEnabled()) {
+          rejectWholeOrder = order.items.some((item: any) => rejectedItems.includes(`${item.orderId}-${item.orderItemSeqId}`));
+        }
+
+        if(this.isEntierOrderRejectionEnabled() && (this.collateralRejectionConfig?.settingValue === 'true')) {
+          rejectWholeOrder = order.items.some((item: any) => rejectedProductIds.includes(item.productId))
+        }
+
+        if(rejectWholeOrder) return false;
+
+        if(this.collateralRejectionConfig?.settingValue === 'true') {
+          order.items = order.items.filter((item: any) => !rejectedProductIds.includes(item.productId));
+        }
+
+        order.items = order.items.filter((item: any) => !rejectedItems.includes(`${order.orderId}-${item.orderItemSeqId}`));
+
+        // Keep the order if it still has items
+        return order.items.length > 0;
+      })
+      this.store.dispatch("order/updateAllInProgressOrder", { orders: updatedOrders, total: updatedOrders.length })
+    },
     save(order: any) {
       if(order.hasRejectedItem) {
         const itemsToReject = order.items.filter((item: any) => item.rejectReason)
@@ -850,8 +882,12 @@ export default defineComponent({
       order.hasRejectedItem = true
       this.store.dispatch('order/updateInProgressOrder', order)
     },
-    isEntierOrderRejectionEnabled(order: any) {
-      return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
+    isEntierOrderRejectionEnabled(order?: any) {
+      if(order) {
+        return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
+      }
+
+      return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue))
     },
     updateBox(updatedBox: string, item: any, order: any) {
       item.selectedBox = updatedBox;
