@@ -843,20 +843,25 @@ export default defineComponent({
       const updatedOrders = orders.filter((order: any) => {
         let rejectWholeOrder = false;
 
+        // If the EntireOrderRejection setting is true, check if any item in the order needs rejection
         if(this.isEntierOrderRejectionEnabled()) {
           rejectWholeOrder = order.items.some((item: any) => rejectedItems.includes(`${item.orderId}-${item.orderItemSeqId}`));
         }
 
+        // If both collateralRejection and entireOrderRejection settings are true, reject the whole order if any item matches the productId
         if(this.isEntierOrderRejectionEnabled() && (this.collateralRejectionConfig?.settingValue === 'true')) {
           rejectWholeOrder = order.items.some((item: any) => rejectedProductIds.includes(item.productId))
         }
 
+        // If the EntireRejection setting is true and any item in the order needs rejection, remove the order
         if(rejectWholeOrder) return false;
 
+        // If the CollateralRejection setting is true, reject all items with the same productId
         if(this.collateralRejectionConfig?.settingValue === 'true') {
           order.items = order.items.filter((item: any) => !rejectedProductIds.includes(item.productId));
         }
 
+        // Otherwise, reject only the specific items
         order.items = order.items.filter((item: any) => !rejectedItems.includes(`${order.orderId}-${item.orderItemSeqId}`));
 
         // Keep the order if it still has items
