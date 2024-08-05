@@ -113,6 +113,8 @@ export default defineComponent({
         }
         transferOrdersQuery.selectedStatuses = selectedStatuses
       }
+
+      transferOrdersQuery.viewIndex = 0;
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
     },
     async fetchFilters() {
