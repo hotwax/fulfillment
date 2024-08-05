@@ -310,7 +310,7 @@ const actions: ActionTree<OrderState, RootState> = {
     // fetching the additional information like shipmentRoute, carrierParty information
     // If no orders then no need to fetch any additional information
     if(orders.length){      
-      dispatch('fetchInProgressOrdersAdditionalInformation');
+      await dispatch('fetchInProgressOrdersAdditionalInformation');
     }
 
     emitter.emit('dismissLoader');
@@ -329,6 +329,14 @@ const actions: ActionTree<OrderState, RootState> = {
     })
 
     commit(types.ORDER_INPROGRESS_UPDATED, {orders, total: state.inProgress.total})
+  },
+
+  updateAllInProgressOrder ({ commit, state }, payload) {
+    const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
+
+    inProgressQuery.viewSize = payload.total
+    commit(types.ORDER_INPROGRESS_QUERY_UPDATED, { ...inProgressQuery })
+    commit(types.ORDER_INPROGRESS_UPDATED, payload)
   },
 
   // get open orders
