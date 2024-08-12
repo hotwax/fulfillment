@@ -178,7 +178,7 @@
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ translate('Rejecting any items in an order will automatically reject other items of an order.') }}
+            {{ translate("Individual items within an order will be rejected without affecting the other items in the order.") }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE)">
             <ion-toggle label-placement="start" :checked="partialOrderRejectionConfig.settingValue" @click.prevent="confirmPartialOrderRejection(partialOrderRejectionConfig, $event)">{{ translate("Partial rejections") }}</ion-toggle>
