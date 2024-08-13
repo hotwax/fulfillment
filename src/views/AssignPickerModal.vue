@@ -25,9 +25,9 @@
       -->
       <div v-if="isLoading" class="empty-state">
         <ion-spinner name="crescent" />
-        <ion-label>{{ translate("Loading") }}</ion-label>
+        <ion-label>{{ translate("Fetching pickers") }}</ion-label>
       </div>
-      <div class="ion-padding" v-if="!pickers.length && !isLoading">{{ 'No picker found' }}</div>      
+      <div class="empty-state" v-else-if="!pickers.length">{{ "No picker found" }}</div>
       <div v-else>
         <ion-item v-for="(picker, index) in pickers" :key="index" @click="selectPicker(picker.id)">
           <ion-checkbox :checked="isPickerSelected(picker.id)">
@@ -65,6 +65,7 @@ import {
   IonListHeader,
   IonRow,
   IonSearchbar,
+  IonSpinner,
   IonTitle,
   IonToolbar,
   modalController } from "@ionic/vue";
@@ -97,6 +98,7 @@ export default defineComponent({
     IonListHeader,
     IonRow,
     IonSearchbar,
+    IonSpinner,
     IonTitle,
     IonToolbar,
   },
@@ -110,7 +112,8 @@ export default defineComponent({
     return {
       selectedPickers: [],
       queryString: '',
-      pickers: []
+      pickers: [],
+      isLoading: false
     }
   },
   props: ["order"], // if we have order in props then create picklist for this single order only

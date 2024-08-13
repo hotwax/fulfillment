@@ -15,7 +15,9 @@ const orderModule: Module<CarrierState, RootState> = {
     current: {},
     shipmentMethodQuery:{},
     shipmentMethods: {},
-    carrierShipmentMethodsByProductStore: {}
+    carrierShipmentMethodsByProductStore: {},
+    facilityCarriers:[],
+    productStoreShipmentMethods:[]
   },
   getters,
   actions,

@@ -10,6 +10,15 @@ const fetchProducts = async (query: any): Promise <any>  => {
   });
 }
 
+const fetchProductComponents = async (params: any): Promise<any> => {
+  return await api({
+    url: "performFind",
+    method: "get",
+    params
+  })
+}
+
 export const ProductService = {
-  fetchProducts
+  fetchProducts,
+  fetchProductComponents
 }

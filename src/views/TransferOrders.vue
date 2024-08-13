@@ -113,6 +113,7 @@ export default defineComponent({
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
+    await this.initialiseTransferOrderQuery();
   },
   methods: {
     getErrorMessage() {
@@ -162,10 +163,7 @@ export default defineComponent({
       this.router.push({ path: `/transfer-order-details/${order.orderId}` })
     },
   },
-  async mounted () {
-    await this.initialiseTransferOrderQuery();
-  },
-  unmounted() {
+  ionViewDidLeave() {
     this.store.dispatch('transferorder/clearTransferOrders');
   },
   setup() {

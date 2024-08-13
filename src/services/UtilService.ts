@@ -85,7 +85,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
       "shipmentId": shipmentIds,
       "shipmentId_op": "in"
     },
-    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "picklistBinId", "isTrackingRequired", "trackingCode", "internationalInvoiceUrl", "labelImageUrl"],
+    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentRouteSegmentId", "shipmentMethodTypeId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "picklistBinId", "isTrackingRequired", "trackingCode", "internationalInvoiceUrl", "labelImageUrl"],
     "viewSize": shipmentIds.length,
     "distinct": "Y"
   }
@@ -202,13 +202,14 @@ const findCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promis
 const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<any> => {
   let shipmentItemsInformation = {}
   const params = {
-    "entityName": "OrderShipment",
+    "entityName": "ShipmentItemDetail",
     "inputFields": {
       "shipmentId": shipmentIds,
       "shipmentId_op": "in"
     },
-    "fieldList": ["shipmentItemSeqId", "orderItemSeqId", "orderId", "shipmentId"],
+    "fieldList": ["shipmentItemSeqId", "orderItemSeqId", "orderId", "shipmentId", "productId"],
     "viewSize": shipmentIds.length * 5, // TODO: check what should be the viewSize here
+    "distinct": "Y"
   }
 
   try {
@@ -447,6 +448,31 @@ const getProductStoreSetting = async (payload: any): Promise<any> => {
   });
 }
 
+const isEnumExists = async (enumId: string): Promise<any> => {
+  try {
+    const resp = await api({
+      url: 'performFind',
+      method: 'POST',
+      data: {
+        entityName: "Enumeration",
+        inputFields: {
+          enumId
+        },
+        viewSize: 1,
+        fieldList: ["enumId"],
+        noConditionFind: 'Y'
+      }
+    }) as any
+
+    if (!hasError(resp) && resp.data.docs.length) {
+      return true
+    }
+    return false
+  } catch (err) {
+    return false
+  }
+}
+
 export const UtilService = {
   createForceScanSetting,
   createPicklist,
@@ -477,6 +503,7 @@ export const UtilService = {
   fetchTransferOrderFacets,
   getAvailablePickers,
   getProductStoreSetting,
+  isEnumExists,
   resetPicker,
   deleteEnumeration,
   updateEnumeration,

@@ -60,6 +60,15 @@ const getters: GetterTree <UserState, RootState> = {
     },
     getUnreadNotificationsStatus(state) {
         return state.hasUnreadNotifications
-    }
+    },
+    getAllNotificationPrefs(state) {
+        return state.allNotificationPrefs
+    },
+    getPartialOrderRejectionConfig(state) {
+        return  state.partialOrderRejectionConfig;
+    },
+    getCollateralRejectionConfig(state) {
+        return  state.collateralRejectionConfig;
+    },
 }
 export default getters;

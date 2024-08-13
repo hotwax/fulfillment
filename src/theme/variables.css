@@ -327,16 +327,25 @@ img {
   grid-template-columns: repeat(2, 1fr);
   align-items: center;
   padding: var(--spacer-xs) 0;
+  /*border-bottom: var(--border-medium);*/
+}
+
+/*.order-item:last-child {
+  border-bottom: none;
+}*/
+
+.order-line-item {
   border-bottom: var(--border-medium);
 }
 
-.order-item:last-child {
+.order-line-item:last-child {
   border-bottom: none;
 }
 
 .product-metadata {
   margin-inline-start: auto;
   padding-inline-end: var(--spacer-sm);
+  text-align: end;
 }
 
 .actions {
@@ -429,6 +438,11 @@ img {
   .order-metadata {
     text-align: end;
     border-bottom: none
+  }
+
+  .kit-components {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
 
   .actions {

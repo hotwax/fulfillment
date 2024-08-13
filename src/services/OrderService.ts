@@ -49,21 +49,38 @@ const fetchOrderItems = async (orderId: string): Promise<any> => {
 }
 
 const fetchShippedQuantity = async (orderId: string): Promise<any> => {
-  const params = {
-    "entityName": "ShippedItemQuantitySum",
-    "inputFields": {
-      "orderId": orderId,
-    },
-    "fieldList": ["orderId", "orderItemSeqId", "productId", "shippedQuantity"],
-    "viewSize": 250,  // maximum records we could have
-    "distinct": "Y"
-  } as any;
+  let docCount = 0;
+  let shippedItemQuantitySum = [] as any
+  let viewIndex = 0;
 
-  return await api({
-    url: "performFind",
-    method: "get",
-    params
-  })
+  do {
+    const params = {
+      "entityName": "ShippedItemQuantitySum",
+      "inputFields": {
+        "orderId": orderId,
+      },
+      "fieldList": ["orderId", "orderItemSeqId", "productId", "shippedQuantity"],
+      "viewSize": 250,  // maximum records we could have
+      "distinct": "Y",
+      viewIndex
+    } as any;
+
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    }) as any
+
+    if (!hasError(resp) && resp.data.count) {
+      shippedItemQuantitySum = [...shippedItemQuantitySum, ...resp.data.docs]
+      docCount = resp.data.docs.length;
+      viewIndex++;
+    } else {
+      docCount = 0
+    }
+  } while(docCount >= 250);
+
+  return shippedItemQuantitySum;
 }
 
 const fetchShipmentItems = async (orderId: string, shipmentId: string): Promise<any> => {
@@ -133,6 +150,13 @@ const updateShipmentRouteSegment = async (payload: any): Promise<any> => {
 const updateShipmentPackageRouteSeg = async (payload: any): Promise<any> => {
   return api({
     url: "service/updateShipmentPackageRouteSeg",
+    method: "POST",
+    data: payload
+  })
+}
+const updateOrderItemShipGroup = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateOrderItemShipGroup",
     method: "POST",
     data: payload
   })
@@ -273,6 +297,14 @@ const updateOrder = async (payload: any): Promise<any> => {
     method: "post",
     data: payload.data,
     headers: payload.headers
+  })
+}
+
+const rejectFulfillmentReadyOrderItem = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/rejectFulfillmentReadyOrderItem",
+    method: "post",
+    data: payload.data,
   })
 }
 
@@ -808,12 +840,16 @@ export const OrderService = {
   printPicklist,
   printShippingLabel,
   printShippingLabelAndPackingSlip,
+  rejectFulfillmentReadyOrderItem,
   rejectOrderItem,
   retryShippingLabel,
   shipOrder,
   unpackOrder,
   updateOrder,
+  updateOrderItemShipGroup,
   updateShipment,
+  updateShipmentPackageRouteSeg,
+  updateShipmentRouteSegment,
   fetchShipmentLabelError,
   fetchOrderItemShipGroup,
   fetchShippingAddress,

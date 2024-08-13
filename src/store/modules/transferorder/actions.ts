@@ -110,13 +110,11 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           //fetch shipped quantity
           const shippedQuantityInfo = {} as any;
           resp = await OrderService.fetchShippedQuantity(payload.orderId);
-          if (!hasError(resp)) {
-            resp.data.docs.forEach((doc:any) => {
-              shippedQuantityInfo[doc.orderItemSeqId] = doc.shippedQuantity;
-            });
-            orderDetail.shippedQuantityInfo = shippedQuantityInfo;
-          }
-  
+          resp.forEach((doc:any) => {
+            shippedQuantityInfo[doc.orderItemSeqId] = doc.shippedQuantity;
+          });
+          orderDetail.shippedQuantityInfo = shippedQuantityInfo;
+
           //fetch product details
           const productIds = [...new Set(orderDetail.items.map((item:any) => item.productId))];
   
@@ -278,14 +276,20 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   },
 
   async updateOrderProductCount({ commit, state }, payload ) {
-    const item = state.current.items.find((item: any) => item.internalName === payload);
+    // When there exists multiple line item for a single product, then may arise discrepancy in scanning
+    // since some items might be completed and some pending. Hence searching is done with status check.
+    const item = state.current.items.find((item: any) => (item.internalName === payload && item.statusId !== 'ITEM_COMPLETED' && item.statusId !== 'ITEM_REJECTED'));
     if(item){
-      if(item.statusId === 'ITEM_COMPLETED') 
-      return { isCompleted: true }
       item.pickedQuantity = parseInt(item.pickedQuantity) + 1;
       commit(types.ORDER_CURRENT_UPDATED, state.current )
-      return { isProductFound: true }
+      return { isProductFound: true, orderItem: item }
     }
+
+    const completedItem = state.current.items.some((item: any) => item.internalName === payload && item.statusId === 'ITEM_COMPLETED');
+    if(completedItem) {
+      return { isCompleted: true }
+    }
+
     return { isProductFound: false }
   },
 

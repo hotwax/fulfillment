@@ -8,7 +8,7 @@ import * as types from './mutation-types'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
-import { getOrderCategory, isKitComponent, prepareKitProducts } from '@/utils/order'
+import { getOrderCategory, removeKitComponents } from '@/utils/order'
 
 const actions: ActionTree<OrderState, RootState> = {
   async fetchInProgressOrdersAdditionalInformation({ commit, state }, payload = { viewIndex: 0 }) {
@@ -81,7 +81,8 @@ const actions: ActionTree<OrderState, RootState> = {
 
         order.items.map((item: any) => {
           // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
-          const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)
+          //Added a check for shipmentItem.productId === orderItem.productId to identify the correct shipment item. In the case of a kit, the ShipmentItem will be created with the same orderItemSeqId for both the kit and its components.
+          const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId && shipmentItem.productId === item.productId)
 
           if (shipment) {
             item.shipmentId = shipment.shipmentId
@@ -118,15 +119,14 @@ const actions: ActionTree<OrderState, RootState> = {
 
         // When the shipment method for product store is configured then only check for shipmentPackages otherwise we won't show missing label error button
         const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
-        const kitProducts = prepareKitProducts(order)
 
         return {
           ...order,
-          orderItems: order.items.filter((item: any) => !isKitComponent(item)),
-          ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
+          items: removeKitComponents(order),
           shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
           shipmentPackages: shipmentPackages,
           carrierPartyIds,
+          trackingCode: shipmentPackages?.[0].trackingCode,
           shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty,
           missingLabelImage
         }
@@ -213,12 +213,10 @@ const actions: ActionTree<OrderState, RootState> = {
 
         // If there is any shipment package with missing tracking code, retry shipping label
         const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.some((shipmentPackage:any) => shipmentPackage.trackingCode === null) : false;
-        const kitProducts = prepareKitProducts(order)
 
         return {
           ...order,
-          orderItems: order.items.filter((item: any) => !isKitComponent(item)),
-          ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
+          items: removeKitComponents(order),
           shipments: orderShipments,
           missingLabelImage,
           trackingCode: currentShipmentPackages?.[0].trackingCode,
@@ -256,7 +254,7 @@ const actions: ActionTree<OrderState, RootState> = {
         groupBy: 'picklistBinId',
         filters: {
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
-          '-fulfillmentStatus': { value: 'Rejected' },
+          '-fulfillmentStatus': { value: ['Rejected', 'Cancelled'] },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
           productStoreId: { value: this.state.user.currentEComStore.productStoreId }
@@ -276,7 +274,7 @@ const actions: ActionTree<OrderState, RootState> = {
         orders = resp.data.grouped.picklistBinId.groups
 
         // TODO get only product visible
-        this.dispatch('product/getProductInformation', { orders })
+        await this.dispatch('product/getProductInformation', { orders })
 
         orders = orders.map((order: any) => {
           const orderItem = order.doclist.docs[0];
@@ -290,7 +288,7 @@ const actions: ActionTree<OrderState, RootState> = {
             groupValue: order.groupValue,
             picklistBinId: orderItem.picklistBinId,
             picklistId: orderItem.picklistId,
-            items: order.doclist.docs,
+            items: removeKitComponents({items: order.doclist.docs}),
             shipGroupSeqId: orderItem.shipGroupSeqId,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
             shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
@@ -349,7 +347,7 @@ const actions: ActionTree<OrderState, RootState> = {
         quantityNotAvailable: { value: 0 },
         isPicked: { value: 'N' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        '-fulfillmentStatus': { value: 'Cancelled' },
+        '-fulfillmentStatus': { value: ['Cancelled', 'Rejected']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
         facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
@@ -371,11 +369,10 @@ const actions: ActionTree<OrderState, RootState> = {
       if (!hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
         total = resp.data.grouped.orderId.ngroups
         orders = resp.data.grouped.orderId.groups
-        this.dispatch('product/getProductInformation', { orders })
+        await this.dispatch('product/getProductInformation', { orders })
 
         orders = orders.map((order: any) => {
           const orderItem = order.doclist.docs[0];
-          const kitProducts = prepareKitProducts({ items: order.doclist.docs })
 
           return {
             category: 'open',
@@ -385,9 +382,7 @@ const actions: ActionTree<OrderState, RootState> = {
             orderDate: orderItem.orderDate,
             orderName: orderItem.orderName,
             groupValue: order.groupValue,
-            items: order.doclist.docs,  // all order items
-            orderItems: order.doclist.docs.filter((item: any) => !isKitComponent(item)),  // order items other than kit
-            ...(!!(Object.keys(kitProducts)).length && { kitProducts }),  // kit products in order
+            items: removeKitComponents({items: order.doclist.docs}),
             shipGroupSeqId: orderItem.shipGroupSeqId,
             shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
             shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
@@ -449,7 +444,7 @@ const actions: ActionTree<OrderState, RootState> = {
       if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
         total = resp.data.grouped.picklistBinId.ngroups
         orders = resp.data.grouped.picklistBinId.groups
-        this.dispatch('product/getProductInformation', { orders })
+        await this.dispatch('product/getProductInformation', { orders })
       } else {
         throw resp.data
       }
@@ -474,7 +469,7 @@ const actions: ActionTree<OrderState, RootState> = {
         groupValue: order.groupValue,
         picklistBinId: orderItem.picklistBinId,
         picklistId: orderItem.picklistId,
-        items: order.doclist.docs,
+        items: removeKitComponents({items: order.doclist.docs}),
         shipGroupSeqId: orderItem.shipGroupSeqId,
         shipmentId: orderItem.shipmentId,
         shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
@@ -568,9 +563,10 @@ const actions: ActionTree<OrderState, RootState> = {
   async updateShipmentPackageDetail ({ commit, state }, payload) {
     const currentOrder = JSON.parse(JSON.stringify(state.current));
     const completedOrders = JSON.parse(JSON.stringify(state.completed.list));
+    const inProgressOrders = JSON.parse(JSON.stringify(state.inProgress.list));
 
     try {
-      const shipmentIds = payload?.shipments?.map((shipment: any) => shipment.shipmentId);
+      const shipmentIds = (payload?.shipmentIds && payload?.shipmentIds.length > 0) ? payload?.shipmentIds : payload?.shipments?.map((shipment: any) => shipment.shipmentId);
       const shipmentPackages = await UtilService.findShipmentPackages([...shipmentIds])
       const shipmentPackageValues = Object.values(shipmentPackages).flat() as any;
 
@@ -589,9 +585,12 @@ const actions: ActionTree<OrderState, RootState> = {
           if (updatedShipmentPackage) {
             shipmentPackage.trackingCode = updatedShipmentPackage.trackingCode;
             shipmentPackage.labelPdfUrl = updatedShipmentPackage.labelPdfUrl;
+            shipmentPackage.shipmentMethodTypeId = updatedShipmentPackage.shipmentMethodTypeId;
+            shipmentPackage.carrierPartyId = updatedShipmentPackage.carrierPartyId;
             shipmentPackage.missingLabelImage = missingLabelImage;
           }
         });
+        order.trackingCode = order.shipmentPackages?.[0]?.trackingCode
       };
   
       if (currentOrder && currentOrder.orderId === payload.orderId) {
@@ -604,6 +603,13 @@ const actions: ActionTree<OrderState, RootState> = {
         if (order) {
           updateShipmentPackages(order);
           commit(types.ORDER_COMPLETED_UPDATED, { list: completedOrders, total: state.completed.total });
+        }
+      }
+      if (inProgressOrders && inProgressOrders.length > 0) {
+        const order = inProgressOrders.find((inProgressOrder:any) => inProgressOrder.orderId === payload.orderId);
+        if (order) {
+          updateShipmentPackages(order);
+          commit(types.ORDER_INPROGRESS_UPDATED, { orders: inProgressOrders, total: state.inProgress.total });
         }
       }
     } catch(err) {
@@ -685,7 +691,7 @@ const actions: ActionTree<OrderState, RootState> = {
         isPicked: { value: 'N' },
         shipGroupSeqId: { value: payload.shipGroupSeqId },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        '-fulfillmentStatus': { value: 'Cancelled' },
+        '-fulfillmentStatus': { value: ['Cancelled', 'Rejected']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
         facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
@@ -697,11 +703,9 @@ const actions: ActionTree<OrderState, RootState> = {
       resp = await OrderService.findOpenOrders(orderQueryPayload);
       if (!hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
         const orderItem = resp.data.grouped.orderId.groups[0].doclist.docs[0];
-        const kitProducts = prepareKitProducts({ items: resp.data.grouped.orderId.groups[0].doclist.docs })
-        let productIds = resp.data.grouped.orderId.groups[0].doclist.docs.map((item: any) => item.productId)
-        if (Object.keys(kitProducts).length) {
-          productIds = [...productIds, ...Object.values(kitProducts).map((item: any) => item.parentProductId)]
-        }
+        const productIds = resp.data.grouped.orderId.groups[0].doclist.docs.map((item: any) => item.productId)
+        await this.dispatch('product/fetchProducts', { productIds })
+
         order = {
           category: 'open',
           customerId: orderItem.customerId,
@@ -710,16 +714,13 @@ const actions: ActionTree<OrderState, RootState> = {
           orderDate: orderItem.orderDate,
           orderName: orderItem.orderName,
           groupValue: resp.data.grouped.orderId.groups[0].groupValue,
-          ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
-          items: resp.data.grouped.orderId.groups[0].doclist.docs,
-          orderItems: resp.data.grouped.orderId.groups[0].doclist.docs.filter((item: any) => !isKitComponent(item)),
+          items:  removeKitComponents({items: resp.data.grouped.orderId.groups[0].doclist.docs}),
           shipGroupSeqId: orderItem.shipGroupSeqId,
           shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
           shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
           reservedDatetime: orderItem.reservedDatetime
         }
-
-        await this.dispatch('product/fetchProducts', { productIds })
+        
       } else {
         throw resp.data
       }
@@ -760,7 +761,7 @@ const actions: ActionTree<OrderState, RootState> = {
           orderId: { value: payload.orderId },
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           shipGroupSeqId: { value: payload.shipGroupSeqId },
-          '-fulfillmentStatus': { value: 'Rejected' },
+          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected']},
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
           productStoreId: { value: this.state.user.currentEComStore.productStoreId }
@@ -771,6 +772,9 @@ const actions: ActionTree<OrderState, RootState> = {
 
       resp = await OrderService.findInProgressOrders(orderQueryPayload);
       if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
+        const productIds = resp.data.grouped.picklistBinId.groups[0].doclist.docs.map((item: any) => item.productId)
+        await this.dispatch('product/fetchProducts', { productIds })
+        
         const orderItem = resp.data.grouped.picklistBinId.groups[0].doclist.docs[0];
         order = {
           category: 'in-progress',
@@ -781,12 +785,12 @@ const actions: ActionTree<OrderState, RootState> = {
           orderName: orderItem.orderName,
           groupValue: resp.data.grouped.picklistBinId.groups[0].groupValue,
           picklistBinId: orderItem.picklistBinId,
-          items: resp.data.grouped.picklistBinId.groups[0].doclist.docs,
+          items: removeKitComponents({items: resp.data.grouped.picklistBinId.groups[0].doclist.docs}) ,
           shipGroupSeqId: orderItem.shipGroupSeqId,
           shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
           shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
         }
-        await this.dispatch('product/fetchProducts', { productIds: order.items.map((item: any) => item.productId) })
+        
       } else {
         throw resp.data
       }
@@ -835,6 +839,9 @@ const actions: ActionTree<OrderState, RootState> = {
 
       resp = await OrderService.findCompletedOrders(orderQueryPayload);
       if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
+        const productIds = resp.data.grouped.picklistBinId.groups[0].doclist.docs.map((item: any) => item.productId)
+        await this.dispatch('product/fetchProducts', { productIds })
+
         const orderItem = resp.data.grouped.picklistBinId.groups[0].doclist.docs[0];
         order = {
           category: 'completed',
@@ -846,7 +853,7 @@ const actions: ActionTree<OrderState, RootState> = {
           reservedDatetime: orderItem.reservedDatetime,
           groupValue: resp.data.grouped.picklistBinId.groups[0].groupValue,
           picklistBinId: orderItem.picklistBinId,
-          items: resp.data.grouped.picklistBinId.groups[0].doclist.docs,
+          items: removeKitComponents({items : resp.data.grouped.picklistBinId.groups[0].doclist.docs}),
           shipmentId: orderItem.shipmentId,
           shipGroupSeqId: orderItem.shipGroupSeqId,
           shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
@@ -854,8 +861,6 @@ const actions: ActionTree<OrderState, RootState> = {
           isGeneratingShippingLabel: false,
           isGeneratingPackingSlip: false
         }
-
-        await this.dispatch('product/fetchProducts', { productIds: order.items.map((item: any) => item.productId) })
       } else {
         throw resp.data
       }
@@ -972,22 +977,16 @@ const actions: ActionTree<OrderState, RootState> = {
 
       // If there is any shipment package with missing tracking code, retry shipping label
       const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.some((shipmentPackage:any) => shipmentPackage.trackingCode === null || shipmentPackage.trackingCode === '') : false;
-      const kitProducts = prepareKitProducts(current)
 
       current = {
         ...current,
-        orderItems: current.items.filter((item: any) => !isKitComponent(item)),
-        ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
+        items: removeKitComponents({items: current.items}),
         shipments: orderShipments,
         trackingCode: currentShipmentPackages?.[0].trackingCode,
         missingLabelImage,
         shipmentPackages: currentShipmentPackages  // ShipmentPackages information is required when performing retryShippingLabel action
       }
-
-      if (Object.keys(kitProducts).length) {
-        const productIds = [...Object.values(kitProducts).map((item: any) => item.parentProductId)]
-        await this.dispatch('product/fetchProducts', { productIds })
-      }
+      
     } catch(err) {
       current.hasMissingPackageInfo = true;
       logger.error('Something went wrong', err)
@@ -1055,7 +1054,8 @@ const actions: ActionTree<OrderState, RootState> = {
 
       current.items.map((item: any) => {
         // fetching shipmentItemInformation for the current order item and then assigning the shipmentItemSeqId to item
-        const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId)
+       //Added a check for shipmentItem.productId === orderItem.productId to identify the correct shipment item. In the case of a kit, the ShipmentItem will be created with the same orderItemSeqId for both the kit and its components.
+        const shipment = itemInformationByOrder[item.orderId]?.find((shipmentItem: any) => shipmentItem.orderItemSeqId === item.orderItemSeqId && shipmentItem.productId === item.productId)
 
         if (shipment) {
           item.shipmentId = shipment.shipmentId
@@ -1093,25 +1093,17 @@ const actions: ActionTree<OrderState, RootState> = {
 
       // When the shipment method for product store is configured then only check for shipmentPackages otherwise we won't show missing label error button
       const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
-      const kitProducts = prepareKitProducts(current)
-
       current = {
         ...current,
-        orderItems: current.items.filter((item: any) => !isKitComponent(item)),
-        ...(!!(Object.keys(kitProducts)).length && { kitProducts }),
+        items: removeKitComponents({items: current.items}),
         shipmentIds: shipmentIdsForOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`],
         shipmentPackages: shipmentPackages,
+        trackingCode: shipmentPackages?.[0].trackingCode,
         carrierPartyIdsOnOrderShipment,
         shipmentBoxTypeByCarrierParty: shipmentBoxTypeByCarrierParty,
         missingLabelImage
       }
 
-      if (Object.keys(kitProducts).length) {
-        // used flat as the Object.values returns array, that results in an array of array structure [[], []]
-        // used Set a=to only have unique product Ids
-        const productIds = [...new Set(Object.values(kitProducts).flat().map((item: any) => item.parentProductId))]
-        await this.dispatch('product/fetchProducts', { productIds })
-      }
       this.dispatch('util/fetchShipmentBoxTypeDesc', [...new Set(Object.values(carrierShipmentBoxType).flat())])
     } catch (err) {
       current.hasMissingPackageInfo = true;
