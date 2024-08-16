@@ -16,7 +16,7 @@
       <ion-content>
         <main>
           <div class="scanner">
-            <ion-searchbar class="better-name-here" :value="queryString" @keyup.enter="searchItems($event.target.value)"/>
+            <ion-searchbar class="searchbar" :value="queryString" @keyup.enter="searchItems($event.target.value)"/>
             <div>
               <ion-item>
                 <ion-label>{{ currentShipment.totalQuantityPicked }} {{ translate("items picked") }}</ion-label>
