@@ -14,8 +14,8 @@
           </ion-label>
         </ion-item>
         <ion-item button v-for="(shipmentMethod, index) in shipmentMethods" :key="index" @click="applyFilter(shipmentMethod.val, 'shipment-method')">
-          <ion-checkbox slot="end" :checked="transferOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)">
-            <ion-label>{{ translate(getShipmentMethodDesc(shipmentMethod.val)) }}</ion-label>
+          <ion-checkbox label-placement="start" :checked="transferOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)">
+            {{ translate(getShipmentMethodDesc(shipmentMethod.val)) }}
           </ion-checkbox>
         </ion-item>
 
@@ -25,8 +25,8 @@
           </ion-label>
         </ion-item>
         <ion-item button v-for="(status, index) in statuses" :key="index" @click="applyFilter(status.val, 'status')">
-          <ion-checkbox slot="end" :checked="transferOrders.query.selectedStatuses.includes(status.val)">
-            <ion-label>{{ translate(getStatusDesc(status.val)) }}</ion-label>
+          <ion-checkbox label-placement="start" :checked="transferOrders.query.selectedStatuses.includes(status.val)">
+            {{ translate(getStatusDesc(status.val)) }}
           </ion-checkbox>
         </ion-item>
       </ion-list>
