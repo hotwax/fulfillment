@@ -141,7 +141,10 @@ export default defineComponent({
       },
       {
         title: "Organization",
-        url: ""
+        url: "",
+        meta: {
+          permissionId: "APP_ORGANIZATION_HEADER_VIEW"
+        }
       }, {
         title: "Rejection reasons",
         url: "/rejection-reasons",
