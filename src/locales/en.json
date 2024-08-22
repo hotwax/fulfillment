@@ -285,6 +285,7 @@
   "No orders are currently able to be shipped due to missing tracking codes.": "No orders are currently able to be shipped due to missing tracking codes.",
   "No payments found": "No payments found",
   "No reason": "No reason",
+  "No results found for .": "No results found for { searchedQuery }.",
   "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.": "No results found for { searchedQuery }. Try searching Open or Completed tab instead.{ lineBreak } If you still can't find what you're looking for, try switching stores.",
   "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.": "No results found for { searchedQuery }. Try searching In Progress or Open tab instead.{ lineBreak } If you still can't find what you're looking for, try switching stores.",
   "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.": "No results found for { searchedQuery }. Try searching In Progress or Completed tab instead.{ lineBreak } If you still can't find what you're looking for, try switching stores.",
