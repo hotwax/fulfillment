@@ -234,16 +234,16 @@
               </ion-card-title>
             </ion-card-header>
             <ion-item>
-              <ion-select :disabled="order.trackingCode" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')">
+              <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')">
                 <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item>
-              <ion-select :disabled="order.trackingCode" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
+              <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
                 <ion-select-option v-for="method in carrierMethods" :key="method.productStoreShipMethId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
               </ion-select>
             </ion-item>
-            <template v-if="!order.trackingCode">
+            <template v-if="order.missingLabelImage">
               <ion-button :disabled="!shipmentMethodTypeId" fill="outline" expand="block" @click.stop="regenerateShippingLabel(order)">
                 {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
                 <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
@@ -943,9 +943,10 @@ export default defineComponent({
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async retryShippingLabel(order: any) {
-      // Getting all the shipmentIds from shipmentPackages, as we only need to pass those shipmentIds for which label is missing
-      // In shipmentPackages only those shipmentInformation is available for which shippingLabel is missing
-      const shipmentIds = order.shipmentPackages?.map((shipmentPackage: any) => shipmentPackage.shipmentId);
+      // Getting all the shipmentIds from shipmentPackages for which label is missing
+      const shipmentIds = order.shipmentPackages
+          ?.filter((shipmentPackage: any) => !shipmentPackage.trackingCode)
+          .map((shipmentPackage: any) => shipmentPackage.shipmentId);
 
       if(!shipmentIds?.length) {
         showToast(translate("Failed to generate shipping label"))
@@ -978,7 +979,7 @@ export default defineComponent({
       return popover.present();
     },
     async printShippingLabel(order: any) {
-      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId)
+      const shipmentIds = order.shipmentIds ? order.shipmentIds : order.shipmentPackages?.map((shipmentPackage: any) => shipmentPackage.shipmentId);
       const shippingLabelPdfUrls = order.shipmentPackages
           ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
           .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);

@@ -630,9 +630,10 @@ export default defineComponent({
       return order.shipments ? Object.values(order.shipments).some((shipment: any) => shipment.statusId === 'SHIPMENT_PACKED') : {}
     },
     async retryShippingLabel(order: any) {
-      // Getting all the shipmentIds from shipmentPackages, as we only need to pass those shipmentIds for which label is missing
-      // In shipmentPackages only those shipmentInformation is available for which shippingLabel is missing
-      const shipmentIds = order.shipmentPackages?.map((shipmentPackage: any) => shipmentPackage.shipmentId);
+      // Getting all the shipmentIds from shipmentPackages for which label is missing
+      const shipmentIds = order.shipmentPackages
+          ?.filter((shipmentPackage: any) => !shipmentPackage.trackingCode)
+          .map((shipmentPackage: any) => shipmentPackage.shipmentId);
 
       // Don't make any api call when we does not have any shipmentIds for order
       if(!shipmentIds?.length) {

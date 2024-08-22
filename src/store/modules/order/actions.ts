@@ -591,6 +591,7 @@ const actions: ActionTree<OrderState, RootState> = {
           }
         });
         order.trackingCode = order.shipmentPackages?.[0]?.trackingCode
+        order.missingLabelImage = missingLabelImage
       };
   
       if (currentOrder && currentOrder.orderId === payload.orderId) {
