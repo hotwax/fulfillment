@@ -15,8 +15,8 @@
         <ion-input :label="translate('Tracking code')" :helper-text="translate('Carrier:', { carrierName: getCarrierName() })" v-model="trackingCode" />
       </ion-item>
       <ion-item>
-        <ion-label>
-          <p>{{ translate("Enter tracking details for shipping labels generated outside of the fulfillment app. This tracking code will be shared with customers when you complete the fulfillment of the order.") }}</p>
+        <ion-label color="medium">
+          {{ translate("Enter tracking details for shipping labels generated outside of the fulfillment app. This tracking code will be shared with customers when you complete the fulfillment of the order.") }}
         </ion-label>
       </ion-item>
     </ion-list>
