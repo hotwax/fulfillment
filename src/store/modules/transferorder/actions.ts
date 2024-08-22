@@ -303,8 +303,11 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     commit(types.ORDER_TRANSFER_QUERY_UPDATED, payload)
     await dispatch('findTransferOrders');
   },
-  async clearTransferOrders({ commit }) {
-    commit(types.ORDER_TRANSFER_CLEARED)
+  async clearTransferOrdersList({ commit }) {
+    commit(types.ORDER_TRANSFER_LIST_CLEARED)
+  },
+  async clearTransferOrdersQuery({ commit }) {
+    commit(types.ORDER_TRANSFER_QUERY_CLEARED)
   },
   async clearCurrentTransferOrder({ commit }) {
     commit(types.ORDER_CURRENT_CLEARED)
