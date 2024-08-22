@@ -9,6 +9,7 @@
       <ion-title>{{ translate("Adding tracking code") }}</ion-title>
     </ion-toolbar>
   </ion-header>
+
   <ion-content>
     <ion-list lines="none">
       <ion-item>
@@ -51,7 +52,6 @@ import { closeOutline, copyOutline, saveOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
 import { mapGetters, useStore } from "vuex";
 import { OrderService } from '@/services/OrderService';
-import { hasError } from "@/adapter";
 import logger from "@/logger";
 import { showToast } from "@/utils";
 
@@ -95,7 +95,7 @@ export default defineComponent({
             "shipmentId": shipmentPackage.shipmentId,
             "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
             "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
-            "trackingCode": this.trackingCode 
+            "trackingCode": this.trackingCode.trim()
           });
         }
 
@@ -125,12 +125,3 @@ export default defineComponent({
   },
 });
 </script>
-
-<style scoped>
-.box-type {
-  display: flex;
-  gap: var(--spacer-sm);
-  padding: var(--ion-item-like-padding);
-  align-items: center;
-}
-</style>
