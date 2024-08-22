@@ -157,7 +157,7 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch('user/clearPartialOrderRejectionConfig')
     this.dispatch('user/clearCollateralRejectionConfig')
     this.dispatch('transferorder/clearTransferOrdersList')
-    this.dispatch('transferorder/clearTransferOrdersQuery')
+    this.dispatch('transferorder/clearTransferOrderFilters')
     this.dispatch('transferorder/clearCurrentTransferOrder')
     this.dispatch('transferorder/clearCurrentTransferShipment')
     resetConfig();

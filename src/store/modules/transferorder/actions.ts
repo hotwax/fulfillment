@@ -306,7 +306,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   async clearTransferOrdersList({ commit }) {
     commit(types.ORDER_TRANSFER_LIST_CLEARED)
   },
-  async clearTransferOrdersQuery({ commit }) {
+  async clearTransferOrderFilters({ commit }) {
     commit(types.ORDER_TRANSFER_QUERY_CLEARED)
   },
   async clearCurrentTransferOrder({ commit }) {

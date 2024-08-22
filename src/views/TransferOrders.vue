@@ -166,7 +166,7 @@ export default defineComponent({
   ionViewDidLeave() {
     const routeTo = this.router.currentRoute;
     if (routeTo.value.name !== 'TransferOrderDetail') {
-      this.store.dispatch('transferorder/clearTransferOrdersQuery');
+      this.store.dispatch('transferorder/clearTransferOrderFilters');
     }
     this.store.dispatch('transferorder/clearTransferOrdersList');
   },
