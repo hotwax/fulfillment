@@ -13,17 +13,17 @@ const mutations: MutationTree <TransferOrderState> = {
   [types.ORDER_TRANSFER_QUERY_UPDATED](state, payload) {
     state.transferOrder.query = payload
   },
-  [types.ORDER_TRANSFER_CLEARED](state) {
-    state.transferOrder = {
-      list: [],
-      total: 0,
-      query: {
-        viewIndex: 0,
-        viewSize: process.env.VUE_APP_VIEW_SIZE,
-        queryString: '',
-        selectedShipmentMethods: [],
-        selectedStatuses: ['ORDER_APPROVED']
-      }
+  [types.ORDER_TRANSFER_LIST_CLEARED](state) {
+    state.transferOrder.list = [];
+    state.transferOrder.total = 0;
+  },
+  [types.ORDER_TRANSFER_QUERY_CLEARED](state) {
+    state.transferOrder.query = {
+      viewIndex: 0,
+      viewSize: process.env.VUE_APP_VIEW_SIZE,
+      queryString: '',
+      selectedShipmentMethods: [],
+      selectedStatuses: ['ORDER_APPROVED']
     }
   },
   [types.ORDER_CURRENT_SHIPMENT_UPDATED](state, payload) {
