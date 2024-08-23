@@ -170,7 +170,7 @@
             <!-- positive -->
             <div>
               <template v-if="category === 'in-progress'">
-                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click="isForceScanEnabled ? scanOrder(order) : packOrder(order)">
+                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">
                   <ion-icon slot="start" :icon="personAddOutline" />
                   {{ translate("Pack order") }}
                 </ion-button>
@@ -411,6 +411,7 @@ import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
 import { isKit } from '@/utils/order'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import ShippingLabelActionPopover from '@/components/ShippingLabelActionPopover.vue';
+import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
 
 export default defineComponent({
   name: "OrderDetail",
@@ -1445,6 +1446,22 @@ export default defineComponent({
       modal.onDidDismiss().then((result: any) => {
         if(result.data?.packOrder) {
           this.packOrder(order);
+        }
+      })
+
+      modal.present();
+    },
+    async generateTrackingCodeForPacking(order: any) {
+      const modal = await modalController.create({
+        component: GenerateTrackingCodeModal,
+        componentProps: { order }
+      })
+
+      modal.onDidDismiss().then((result: any) => {
+        console.log(result);
+        if(result.data?.isRegenerated) {
+          if(this.isForceScanEnabled) this.scanOrder(order);
+          else this.packOrder(order);
         }
       })
 
