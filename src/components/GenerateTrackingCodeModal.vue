@@ -34,7 +34,7 @@
         <ion-label>
           {{ translate("Tracking URL:", { trackingUrl: "http" }) }}
         </ion-label>
-        <ion-button slot="end" fill="clear" size="default" :disabled="!trackingCode.trim()">
+        <ion-button slot="end" fill="clear" size="default" :disabled="!trackingCode.trim()" @click="redirectToTrackingUrl()">
           {{ translate("Test") }}
           <ion-icon :icon="openOutline" slot="end" />
         </ion-button>
@@ -226,6 +226,17 @@ export default defineComponent({
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
+    getCarrierTrackingUrl() {
+      return this.facilityCarriers.find((carrier: any) => carrier.partyId === this.carrierPartyId)?.trackingUrl
+    },
+    redirectToTrackingUrl() {
+      const trackingUrl = this.getCarrierTrackingUrl()
+      if(!trackingUrl) {
+        showToast(translate("Tracking url is not configured for following carrier."));
+        return;
+      }
+      window.open(trackingUrl.replace("${trackingNumber}", this.trackingCode), "_blank");
+    }
   },
   setup() {
     const store = useStore();
