@@ -13,12 +13,18 @@
   <ion-content>
     <ion-list lines="none">
       <ion-item>
-        <ion-input :label="translate('Tracking code')" :helper-text="translate('Carrier:', { carrierName: getCarrierName() })" v-model="trackingCode" />
+        <ion-input :label="translate('Tracking code')" :helper-text="translate('Carrier:', { carrierName: getCarrierInfo() ? getCarrierInfo().groupName : ''  })" v-model="trackingCode" />
       </ion-item>
       <ion-item>
         <ion-label color="medium">
           {{ translate("Enter tracking details for shipping labels generated outside of the fulfillment app. This tracking code will be shared with customers when you complete the fulfillment of the order.") }}
         </ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-button fill="clear" :disabled="!trackingCode.trim()" @click="redirectToTrackingUrl()">
+          {{ translate("Test tracking url") }}
+          <ion-icon :icon="openOutline" slot="end" />
+        </ion-button>
       </ion-item>
     </ion-list>
   </ion-content>
@@ -48,7 +54,7 @@ import {
   IonList
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { closeOutline, copyOutline, saveOutline } from "ionicons/icons";
+import { closeOutline, copyOutline, openOutline, saveOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
 import { mapGetters, useStore } from "vuex";
 import { OrderService } from '@/services/OrderService';
@@ -108,8 +114,17 @@ export default defineComponent({
         showToast(translate("Failed to add tracking code."));
       }
     },
-    getCarrierName() {
-      return this.facilityCarriers.find((carrier: any) => carrier.partyId === this.carrierPartyId)?.groupName
+    getCarrierInfo() {
+      return this.facilityCarriers.find((carrier: any) => carrier.partyId === this.carrierPartyId)
+    },
+    redirectToTrackingUrl() {
+      const trackingUrl = this.getCarrierInfo()?.trackingUrl
+      if(!trackingUrl) {
+        showToast(translate("Tracking url is not configured for following carrier."));
+        return;
+      }
+
+      window.open(trackingUrl.replace("${trackingNumber}", this.trackingCode), "_blank");
     }
   },
   setup() {
@@ -118,6 +133,7 @@ export default defineComponent({
     return {
       closeOutline,
       copyOutline,
+      openOutline,
       saveOutline,
       store,
       translate
