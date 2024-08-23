@@ -21,7 +21,7 @@
         </ion-label>
       </ion-item>
       <ion-item>
-        <ion-button fill="clear" :disabled="!trackingCode.trim()" @click="redirectToTrackingUrl()">
+        <ion-button fill="clear" :disabled="!trackingCode.trim()" @click="redirectToTrackingUrl()" size="default">
           {{ translate("Test tracking url") }}
           <ion-icon :icon="openOutline" slot="end" />
         </ion-button>
