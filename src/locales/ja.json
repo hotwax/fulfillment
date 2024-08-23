@@ -537,6 +537,7 @@
   "Tracking Code": "追跡コード",
   "Tracking code settings updated successfully.": "追跡コード設定が正常に更新されました。",
   "Tracking ID": "追跡ID",
+  "Tracking URL:": "Tracking URL: {trackingUrl}",
   "Transfer Orders": "転送注文",
   "Transfer Order Details": "転送注文の詳細",
   "Turn off eCom inventory": "EC在庫をオフにする",

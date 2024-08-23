@@ -11,8 +11,8 @@
   </ion-header>
 
   <ion-content>
-    <ion-list lines="none">
-      <ion-item>
+    <ion-list>
+      <ion-item lines="none">
         <ion-label>
           {{ translate(isTrackingRequired ? "Tracking details are required in order to pack this shipment. Try generating a label from the selected carrier or enter a tracking code manually." : "Tracking details are missing in order to pack this shipment. Try generating a label from the selected carrier or enter a tracking code manually.") }}
         </ion-label>
@@ -29,6 +29,15 @@
       </ion-item>
       <ion-item>
         <ion-input :label="translate('Tracking code')" :placeholder="translate('enter code')" v-model="trackingCode" />
+      </ion-item>
+      <ion-item>
+        <ion-label>
+          {{ translate("Tracking URL:", { trackingUrl: "http" }) }}
+        </ion-label>
+        <ion-button slot="end" fill="clear" size="default" :disabled="!trackingCode.trim()">
+          {{ translate("Test") }}
+          <ion-icon :icon="openOutline" slot="end" />
+        </ion-button>
       </ion-item>
     </ion-list>
   </ion-content>
@@ -60,7 +69,7 @@ import {
   IonList
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { barcodeOutline, closeOutline, copyOutline, saveOutline } from "ionicons/icons";
+import { barcodeOutline, closeOutline, copyOutline, openOutline, saveOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
 import { mapGetters, useStore } from "vuex";
 import { OrderService } from '@/services/OrderService';
@@ -224,6 +233,7 @@ export default defineComponent({
       barcodeOutline,
       closeOutline,
       copyOutline,
+      openOutline,
       saveOutline,
       store,
       translate

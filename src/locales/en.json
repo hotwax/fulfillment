@@ -539,6 +539,7 @@
   "Tracking Code": "Tracking Code",
   "Tracking code settings updated successfully.": "Tracking code settings updated successfully.",
   "Tracking ID": "Tracking ID",
+  "Tracking URL:": "Tracking URL: {trackingUrl}",
   "Transfer Orders": "Transfer Orders",
   "Transfer Order Details": "Transfer Order Details",
   "Turn off eCom inventory": "Turn off eCom inventory",

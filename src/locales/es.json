@@ -536,6 +536,7 @@
   "Tracking Code": "Código de Seguimiento",
   "Tracking code settings updated successfully.": "Tracking code settings updated successfully.",
   "Tracking ID": "ID de Seguimiento",
+  "Tracking URL:": "Tracking URL: {trackingUrl}",
   "Transfer Orders": "Transferir Ordenes",
   "Transfer Order Details": "Transferir los Detalles del Pedido",
   "Turn off eCom inventory": "Desactivar el inventario de eCom",
