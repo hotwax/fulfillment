@@ -173,7 +173,7 @@
                   <ion-label slot="end">{{ order.orderAttributes.customerid || "-" }}</ion-label>
                 </ion-item>
                 <ion-item lines="none">
-                  <ion-label class="ion-text-wrap">{{ translate("Muncipio") }}</ion-label>
+                  <ion-label class="ion-text-wrap">{{ translate("Municipio") }}</ion-label>
                   <ion-label slot="end">{{ order.orderAttributes.municipio || "-" }}</ion-label>
                 </ion-item>
               </ion-list>
