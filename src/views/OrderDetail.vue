@@ -150,7 +150,7 @@
           
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
-              <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="isForceScanEnabled ? scanOrder(order) :packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+              <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) :packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -1462,7 +1462,7 @@ export default defineComponent({
     async generateTrackingCodeForPacking(order: any) {
       const modal = await modalController.create({
         component: GenerateTrackingCodeModal,
-        componentProps: { updateCarrierShipmentDetails: this.updateCarrierShipmentDetails }
+        componentProps: { order, updateCarrierShipmentDetails: this.updateCarrierShipmentDetails }
       })
 
       modal.onDidDismiss().then((result: any) => {

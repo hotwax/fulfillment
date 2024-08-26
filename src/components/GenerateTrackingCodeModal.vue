@@ -102,7 +102,6 @@ export default defineComponent({
       isForceScanEnabled: 'util/isForceScanEnabled',
       productStoreShipmentMethods: 'carrier/getProductStoreShipmentMethods',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
-      order: "order/getCurrent",
       completedOrders: 'order/getCompletedOrders',
     })
   },
@@ -116,7 +115,7 @@ export default defineComponent({
       isGeneratingShippingLabel: false
     }
   },
-  props: ["updateCarrierShipmentDetails"],
+  props: ["order", "updateCarrierShipmentDetails"],
   async mounted() {
     this.isTrackingRequired = this.isTrackingRequiredForAnyShipmentPackage()
     if(this.facilityCarriers) {
