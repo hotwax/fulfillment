@@ -239,9 +239,19 @@
               </ion-select>
             </ion-item>
             <ion-item>
-              <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
-                <ion-select-option v-for="method in carrierMethods" :key="method.productStoreShipMethId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
-              </ion-select>
+              <template v-if="carrierMethods && carrierMethods.length > 0">
+                <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
+                  <ion-select-option v-for="method in carrierMethods" :key="method.productStoreShipMethId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
+                </ion-select>
+              </template>
+              <template v-else-if="!isUpdatingCarrierDetail">
+                <ion-label>
+                  {{ translate('No shipment methods linked to', {carrierName: getCarrierName(carrierPartyId)}) }}
+                </ion-label>
+                <ion-button @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
+                  <ion-icon slot="icon-only" :icon="informationCircleOutline" />
+                </ion-button>
+              </template>
             </ion-item>
             <template v-if="order.missingLabelImage">
               <ion-button :disabled="!shipmentMethodTypeId" fill="outline" expand="block" @click.stop="regenerateShippingLabel(order)">
@@ -387,6 +397,7 @@ import {
   documentTextOutline,
   ellipsisVerticalOutline,
   fileTrayOutline,
+  informationCircleOutline,
   listOutline,
   locateOutline,
   personAddOutline,
@@ -491,7 +502,8 @@ export default defineComponent({
       shipmentLabelErrorMessages: "",
       shipmentMethodTypeId: "",
       carrierPartyId: "",
-      carrierMethods:[] as any
+      carrierMethods:[] as any,
+      isUpdatingCarrierDetail: true
     }
   },
   async ionViewDidEnter() {
@@ -518,6 +530,13 @@ export default defineComponent({
     }
   },
   methods: {
+    getCarrierName(carrierPartyId: string) {
+      const selectedCarrier = this.facilityCarriers.find((carrier: any) => carrier.partyId === carrierPartyId)
+      return selectedCarrier && selectedCarrier.groupName ? selectedCarrier.groupName : carrierPartyId
+    },
+    openShippingMethodDocumentReference() {
+      window.open('https://docs.hotwax.co/documents/v/system-admins/fulfillment/shipping-methods/carrier-and-shipment-methods', '_blank');
+    },
     async getProductStoreShipmentMethods(carrierPartyId: string) { 
       return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId) || [];
     },
@@ -536,6 +555,7 @@ export default defineComponent({
     async updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMethodTypeId: string) {
       let resp;
       try {
+        this.isUpdatingCarrierDetail = true;
         const carrierShipmentMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
         shipmentMethodTypeId = shipmentMethodTypeId ? shipmentMethodTypeId : carrierShipmentMethods?.[0]?.shipmentMethodTypeId;
 
@@ -560,6 +580,7 @@ export default defineComponent({
               //fetching updated shipment packages
               await this.store.dispatch('order/updateShipmentPackageDetail', this.order) 
               this.carrierMethods = carrierShipmentMethods;
+              this.isUpdatingCarrierDetail = false;
             } else {
               throw resp.data;
             }
@@ -568,6 +589,7 @@ export default defineComponent({
           throw resp.data;
         }
       } catch (err) {
+        this.isUpdatingCarrierDetail = false;
         this.carrierPartyId = this.order.shipmentPackages?.[0].carrierPartyId;
         this.shipmentMethodTypeId = this.order.shipmentPackages?.[0].shipmentMethodTypeId;
 
@@ -1488,6 +1510,7 @@ export default defineComponent({
       getProductIdentificationValue,
       hasPermission,
       isKit,
+      informationCircleOutline,
       listOutline,
       locateOutline,
       personAddOutline,
