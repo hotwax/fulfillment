@@ -289,6 +289,7 @@
   "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.": "No se encontraron resultados para { searchedQuery }. Intenta buscar en la pestaña 'En Curso' o 'Abierto' en su lugar.{ lineBreak } Si aún no puedes encontrar lo que buscas, prueba cambiando de tiendas.",
   "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.": "No se encontraron resultados para { searchedQuery }. Intenta buscar en la pestaña 'En Curso' o 'Completado' en su lugar.{ lineBreak } Si aún no puedes encontrar lo que buscas, prueba cambiando de tiendas.",
   "No ship groups found": "No se encontraron grupos de envío",
+  "No shipment methods linked to": "No shipment methods linked to {carrierName}",
   "No time zone found": "No se encontró zona horaria",
   "No fulfillment capacity": "Sin capacidad de cumplimiento",
   "No keyword matches the search criteria.": "La palabra coincide con los criterios de búsqueda.",
