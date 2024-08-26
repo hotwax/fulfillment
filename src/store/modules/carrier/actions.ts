@@ -404,7 +404,7 @@ const actions: ActionTree<CarrierState, RootState> = {
           "systemPropertyId": "%trackingUrl%",
           "systemPropertyId_op": "like"
         },
-        "fieldList": ["systemResourceId", "systemPropertyValue"]
+        "fieldList": ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
       })
 
       if(!hasError(resp)) {
