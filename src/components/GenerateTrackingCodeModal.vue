@@ -43,30 +43,30 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="!shipmentMethodTypeId" @click="confirmSave()">
+    <ion-fab-button :disabled="isTrackingRequired ? !shipmentMethodTypeId: ''" @click="confirmSave()">
       <ion-icon :icon="isForceScanEnabled ? barcodeOutline : saveOutline" />
     </ion-fab-button>
   </ion-fab>
 </template>
 
 <script lang="ts">
-import { 
+import {
+  IonButton,
+  IonButtons,
   IonContent,
   IonFab,
   IonFabButton,
   IonHeader,
   IonIcon,
   IonInput,
+  IonItem,
   IonLabel,
+  IonList,
   IonSelect,
   IonSelectOption,
   IonTitle,
   IonToolbar,
   modalController,
-  IonButton,
-  IonButtons,
-  IonItem,
-  IonList
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { barcodeOutline, closeOutline, copyOutline, openOutline, saveOutline } from "ionicons/icons";
@@ -80,21 +80,21 @@ import { hasError } from "@/adapter";
 export default defineComponent({
   name: "GenerateTrackingCodeModal",
   components: { 
+    IonButton,
+    IonButtons,
     IonContent,
     IonFab,
     IonFabButton,
     IonHeader,
     IonIcon,
     IonInput,
+    IonItem,
     IonLabel,
+    IonList,
     IonSelect,
     IonSelectOption,
     IonTitle,
     IonToolbar,
-    IonButton,
-    IonButtons,
-    IonItem,
-    IonList
   },
   computed: {
     ...mapGetters({
@@ -119,7 +119,7 @@ export default defineComponent({
   props: ["updateCarrierShipmentDetails"],
   async mounted() {
     this.isTrackingRequired = this.isTrackingRequiredForAnyShipmentPackage()
-    if (this.facilityCarriers) {
+    if(this.facilityCarriers) {
       const shipmentPackage = this.order.shipmentPackages?.[0];
       this.carrierPartyId = shipmentPackage?.carrierPartyId ? shipmentPackage?.carrierPartyId : this.facilityCarriers[0].partyId;
       this.carrierMethods = await this.getProductStoreShipmentMethods(this.carrierPartyId);
@@ -127,8 +127,8 @@ export default defineComponent({
     }
   },
   methods: {
-    closeModal() {
-      modalController.dismiss({ dismissed: true });
+    closeModal(payload = {}) {
+      modalController.dismiss({ dismissed: true, ...payload });
     },
     isTrackingRequiredForAnyShipmentPackage() {
       return this.order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
@@ -152,23 +152,29 @@ export default defineComponent({
 
       this.isGeneratingShippingLabel = true;
 
-      const isUpdated = await this.updateCarrierAndShippingMethod(this.carrierPartyId, this.shipmentMethodTypeId)
-      if(!isUpdated) {
-        showToast(translate("Failed to update shipment method detail."));
-        return;
-      }
+      if(this.shipmentMethodTypeId) {
+        const isUpdated = await this.updateCarrierAndShippingMethod(this.carrierPartyId, this.shipmentMethodTypeId)
+        if(!isUpdated) {
+          showToast(translate("Failed to update shipment method detail."));
+          return;
+        }
 
-      this.updateCarrierShipmentDetails(this.carrierPartyId, this.shipmentMethodTypeId);
+        this.updateCarrierShipmentDetails && this.updateCarrierShipmentDetails(this.carrierPartyId, this.shipmentMethodTypeId);
+      }
 
       if(this.trackingCode.trim()) {
         isRegenerated = await this.addCustomTrackingCode(order);
-      } else {
+      } else if(this.shipmentMethodTypeId) {
         isRegenerated = await this.regenerateShippingLabel(order)
       }
 
-      if(isRegenerated) {
-        modalController.dismiss({ dismissed: true, isRegenerated });
+      //fetching updated shipment packages
+      await this.store.dispatch('order/updateShipmentPackageDetail', order)
+
+      if(isRegenerated || !this.isTrackingRequired) {
+        this.closeModal({ moveToNext: true });
       }
+
       this.isGeneratingShippingLabel = false;
     },
     async addCustomTrackingCode(order: any) {
@@ -181,8 +187,6 @@ export default defineComponent({
             "trackingCode": this.trackingCode.trim()
           });
         }
-        //fetching updated shipment packages
-        await this.store.dispatch('order/updateShipmentPackageDetail', order)
         return true;
       } catch (error: any) {
         logger.error('Failed to add tracking code', error);
@@ -194,26 +198,22 @@ export default defineComponent({
       // If there are no product store shipment method configured, then not generating the label and displaying an error toast
       if(this.productStoreShipmentMethCount <= 0) {
         showToast(translate('Unable to generate shipping label due to missing product store shipping method configuration'))
-        return;
+        return false;
       }
 
       // Getting all the shipmentIds from shipmentPackages for which label is missing
       const shipmentIds = order.shipmentPackages
-          ?.filter((shipmentPackage: any) => !shipmentPackage.trackingCode)
-          .map((shipmentPackage: any) => shipmentPackage.shipmentId);
+        ?.filter((shipmentPackage: any) => !shipmentPackage.trackingCode)
+        .map((shipmentPackage: any) => shipmentPackage.shipmentId);
 
       if(!shipmentIds?.length) {
         showToast(translate("Failed to generate shipping label"))
-        return;
+        return false;
       }
 
       try {
         const resp = await OrderService.retryShippingLabel(shipmentIds)
-
-        if (!hasError(resp)) {
-          //Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
-          await this.store.dispatch('order/updateShipmentPackageDetail', order) 
-
+        if(!hasError(resp)) {
           // TODO fetch specific order
           this.initialiseOrderQuery();
           return true;
@@ -246,15 +246,16 @@ export default defineComponent({
     },
     async updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMethodTypeId: string) {
       let resp;
-      try {
+      try{
         const params = {
           orderId: this.order.orderId,
           shipGroupSeqId: this.order.shipGroupSeqId,
           shipmentMethodTypeId,
           carrierPartyId
         }
+
         resp = await OrderService.updateOrderItemShipGroup(params)
-        if (!hasError(resp)) {
+        if(!hasError(resp)) {
           for (const shipmentPackage of this.order.shipmentPackages) {
             resp = await OrderService.updateShipmentRouteSegment({
               "shipmentId": shipmentPackage.shipmentId,
@@ -269,8 +270,8 @@ export default defineComponent({
         } else {
           throw resp.data;
         }
-      } catch (err) {
-        logger.error('Failed to update carrier and method', err);
+      } catch(error: any) {
+        logger.error("Failed to update carrier and method", error);
         return false;
       }
       return true;
