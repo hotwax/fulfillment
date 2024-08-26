@@ -13,10 +13,9 @@
   <ion-content>
     <ion-list>
       <ion-item lines="none">
-        <ion-label>
-          {{ translate(isTrackingRequired ? "Tracking details are required in order to pack this shipment. Try generating a label from the selected carrier or enter a tracking code manually." : "Tracking details are missing in order to pack this shipment. Try generating a label from the selected carrier or enter a tracking code manually.") }}
-        </ion-label>
+        <ion-label>{{ translate(isTrackingRequired ? "Tracking details are required in order to pack this shipment. Try generating a label from the selected carrier or enter a tracking code manually." : "Tracking details are missing in order to pack this shipment. Try generating a label from the selected carrier or enter a tracking code manually.") }}</ion-label>
       </ion-item>
+
       <ion-item>
         <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
           <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
@@ -31,9 +30,7 @@
         <ion-input :label="translate('Tracking code')" :placeholder="translate('enter code')" v-model="trackingCode" />
       </ion-item>
       <ion-item>
-        <ion-label>
-          {{ translate("Tracking URL:", { trackingUrl: generateTrackingUrl() }) }}
-        </ion-label>
+        <ion-label>{{ translate("Tracking URL:", { trackingUrl: generateTrackingUrl() }) }}</ion-label>
         <ion-button slot="end" fill="clear" size="default" :disabled="!trackingCode.trim() || !getCarrierTrackingUrl()" @click="redirectToTrackingUrl()">
           {{ translate("Test") }}
           <ion-icon :icon="openOutline" slot="end" />
@@ -151,14 +148,10 @@ export default defineComponent({
 
       this.isGeneratingShippingLabel = true;
 
-      if(this.shipmentMethodTypeId) {
-        const isUpdated = await this.updateCarrierAndShippingMethod(this.carrierPartyId, this.shipmentMethodTypeId)
-        if(!isUpdated) {
-          showToast(translate("Failed to update shipment method detail."));
-          return;
-        }
-
-        this.updateCarrierShipmentDetails && this.updateCarrierShipmentDetails(this.carrierPartyId, this.shipmentMethodTypeId);
+      const isUpdated = await this.updateCarrierAndShippingMethod(this.carrierPartyId, this.shipmentMethodTypeId)
+      if(!isUpdated) {
+        showToast(translate("Failed to update shipment method detail."));
+        return;
       }
 
       if(this.trackingCode.trim()) {
@@ -186,17 +179,17 @@ export default defineComponent({
             "trackingCode": this.trackingCode.trim()
           });
         }
-        return true;
       } catch (error: any) {
         logger.error('Failed to add tracking code', error);
         showToast(translate("Failed to add tracking code."));
+        return false;
       }
-      return false;
+      return true;
     },
     async regenerateShippingLabel(order: any) {
       // If there are no product store shipment method configured, then not generating the label and displaying an error toast
       if(this.productStoreShipmentMethCount <= 0) {
-        showToast(translate('Unable to generate shipping label due to missing product store shipping method configuration'))
+        showToast(translate("Unable to generate shipping label due to missing product store shipping method configuration"))
         return false;
       }
 
@@ -212,24 +205,15 @@ export default defineComponent({
 
       try {
         const resp = await OrderService.retryShippingLabel(shipmentIds)
-        if(!hasError(resp)) {
-          // TODO fetch specific order
-          this.initialiseOrderQuery();
-          return true;
-        } else {
+        if(hasError(resp)) {
           throw resp.data;
         }
       } catch(error: any) {
         logger.error(error);
         showToast(translate("Failed to generate shipping label"))
+        return false;
       }
-      return false;
-    },
-    async initialiseOrderQuery() {
-      const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
-      completedOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
-      completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+      return true;
     },
     getCarrierTrackingUrl() {
       return this.facilityCarriers.find((carrier: any) => carrier.partyId === this.carrierPartyId)?.trackingUrl
@@ -246,10 +230,13 @@ export default defineComponent({
     async updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMethodTypeId: string) {
       let resp;
       try{
+        const carrierShipmentMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
+        shipmentMethodTypeId = shipmentMethodTypeId ? shipmentMethodTypeId : carrierShipmentMethods?.[0]?.shipmentMethodTypeId;
+
         const params = {
           orderId: this.order.orderId,
           shipGroupSeqId: this.order.shipGroupSeqId,
-          shipmentMethodTypeId,
+          shipmentMethodTypeId : shipmentMethodTypeId ? shipmentMethodTypeId : "",
           carrierPartyId
         }
 
@@ -260,7 +247,7 @@ export default defineComponent({
               "shipmentId": shipmentPackage.shipmentId,
               "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
               "carrierPartyId": carrierPartyId,
-              "shipmentMethodTypeId": shipmentMethodTypeId
+              "shipmentMethodTypeId" : shipmentMethodTypeId ? shipmentMethodTypeId : "",
             }) as any;
             if(hasError(resp)) {
               throw resp.data;
@@ -273,6 +260,8 @@ export default defineComponent({
         logger.error("Failed to update carrier and method", error);
         return false;
       }
+
+      this.updateCarrierShipmentDetails && this.updateCarrierShipmentDetails(carrierPartyId, shipmentMethodTypeId);
       return true;
     },
     redirectToTrackingUrl() {
