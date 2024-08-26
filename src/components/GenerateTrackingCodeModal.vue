@@ -43,7 +43,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="!isTrackingDetailUpdated()" @click="confirmSave()">
+    <ion-fab-button :disabled="!shipmentMethodTypeId" @click="confirmSave()">
       <ion-icon :icon="isForceScanEnabled ? barcodeOutline : saveOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -116,6 +116,7 @@ export default defineComponent({
       isGeneratingShippingLabel: false
     }
   },
+  props: ["updateCarrierShipmentDetails"],
   async mounted() {
     this.isTrackingRequired = this.isTrackingRequiredForAnyShipmentPackage()
     if (this.facilityCarriers) {
@@ -134,9 +135,6 @@ export default defineComponent({
     },
     async getProductStoreShipmentMethods(carrierPartyId: string) { 
       return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId) || [];
-    },
-    isTrackingDetailUpdated() {
-      return (this.trackingCode.trim() && this.shipmentMethodTypeId)
     },
     async updateCarrier(carrierPartyId: string) {
       this.carrierMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
@@ -159,6 +157,8 @@ export default defineComponent({
         showToast(translate("Failed to update shipment method detail."));
         return;
       }
+
+      this.updateCarrierShipmentDetails(this.carrierPartyId, this.shipmentMethodTypeId);
 
       if(this.trackingCode.trim()) {
         isRegenerated = await this.addCustomTrackingCode(order);
@@ -262,13 +262,7 @@ export default defineComponent({
               "carrierPartyId": carrierPartyId,
               "shipmentMethodTypeId": shipmentMethodTypeId
             }) as any;
-            if (!hasError(resp)) {
-              this.shipmentMethodTypeId = shipmentMethodTypeId
-              showToast(translate("Shipment method detail updated successfully."))
-              //fetching updated shipment packages
-              await this.store.dispatch('order/updateShipmentPackageDetail', this.order)
-              return true;
-            } else {
+            if(hasError(resp)) {
               throw resp.data;
             }
           }
@@ -276,19 +270,13 @@ export default defineComponent({
           throw resp.data;
         }
       } catch (err) {
-        this.carrierPartyId = this.order.shipmentPackages?.[0].carrierPartyId;
-        this.shipmentMethodTypeId = this.order.shipmentPackages?.[0].shipmentMethodTypeId;
         logger.error('Failed to update carrier and method', err);
         return false;
       }
+      return true;
     },
     redirectToTrackingUrl() {
-      const trackingUrl = this.getCarrierTrackingUrl()
-      if(!trackingUrl) {
-        showToast(translate("Tracking url is not configured for following carrier."));
-        return;
-      }
-      window.open(trackingUrl.replace("${trackingNumber}", this.trackingCode), "_blank");
+      window.open(this.getCarrierTrackingUrl().replace("${trackingNumber}", this.trackingCode), "_blank");
     }
   },
   setup() {

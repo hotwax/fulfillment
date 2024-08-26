@@ -572,6 +572,10 @@ export default defineComponent({
         showToast(translate("Failed to update shipment method detail."));
       }
     },
+    updateCarrierShipmentDetails(carrierPartyId: string, shipmentMethodTypeId: string) {
+      this.carrierPartyId = carrierPartyId
+      this.shipmentMethodTypeId = shipmentMethodTypeId
+    },
     async fetchKitComponent(orderItem: any, isOtherShipment = false ) {
       await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
       
@@ -1454,7 +1458,7 @@ export default defineComponent({
     async generateTrackingCodeForPacking(order: any) {
       const modal = await modalController.create({
         component: GenerateTrackingCodeModal,
-        componentProps: { order }
+        componentProps: { updateCarrierShipmentDetails: this.updateCarrierShipmentDetails }
       })
 
       modal.onDidDismiss().then((result: any) => {
