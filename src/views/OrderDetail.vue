@@ -1458,7 +1458,6 @@ export default defineComponent({
       })
 
       modal.onDidDismiss().then((result: any) => {
-        console.log(result);
         if(result.data?.isRegenerated) {
           if(this.isForceScanEnabled) this.scanOrder(order);
           else this.packOrder(order);

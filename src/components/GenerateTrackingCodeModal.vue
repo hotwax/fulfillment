@@ -32,9 +32,9 @@
       </ion-item>
       <ion-item>
         <ion-label>
-          {{ translate("Tracking URL:", { trackingUrl: "http" }) }}
+          {{ translate("Tracking URL:", { trackingUrl: generateTrackingUrl() }) }}
         </ion-label>
-        <ion-button slot="end" fill="clear" size="default" :disabled="!trackingCode.trim()" @click="redirectToTrackingUrl()">
+        <ion-button slot="end" fill="clear" size="default" :disabled="!trackingCode.trim() || !getCarrierTrackingUrl()" @click="redirectToTrackingUrl()">
           {{ translate("Test") }}
           <ion-icon :icon="openOutline" slot="end" />
         </ion-button>
@@ -136,7 +136,7 @@ export default defineComponent({
       return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId) || [];
     },
     isTrackingDetailUpdated() {
-      return (this.trackingCode.trim() || this.shipmentMethodTypeId)
+      return (this.trackingCode.trim() && this.shipmentMethodTypeId)
     },
     async updateCarrier(carrierPartyId: string) {
       this.carrierMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
@@ -153,6 +153,12 @@ export default defineComponent({
       }
 
       this.isGeneratingShippingLabel = true;
+
+      const isUpdated = await this.updateCarrierAndShippingMethod(this.carrierPartyId, this.shipmentMethodTypeId)
+      if(!isUpdated) {
+        showToast(translate("Failed to update shipment method detail."));
+        return;
+      }
 
       if(this.trackingCode.trim()) {
         isRegenerated = await this.addCustomTrackingCode(order);
@@ -228,6 +234,53 @@ export default defineComponent({
     },
     getCarrierTrackingUrl() {
       return this.facilityCarriers.find((carrier: any) => carrier.partyId === this.carrierPartyId)?.trackingUrl
+    },
+    generateTrackingUrl() {
+      if(this.getCarrierTrackingUrl()) {
+        return this.getCarrierTrackingUrl()?.replace("${trackingNumber}", this.trackingCode)
+      }
+      return translate("A tracking URL not configured for", { carrierName: this.getCarrierName() })
+    },
+    getCarrierName() {
+      return this.facilityCarriers.find((carrier: any) => carrier.partyId === this.carrierPartyId)?.groupName
+    },
+    async updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMethodTypeId: string) {
+      let resp;
+      try {
+        const params = {
+          orderId: this.order.orderId,
+          shipGroupSeqId: this.order.shipGroupSeqId,
+          shipmentMethodTypeId,
+          carrierPartyId
+        }
+        resp = await OrderService.updateOrderItemShipGroup(params)
+        if (!hasError(resp)) {
+          for (const shipmentPackage of this.order.shipmentPackages) {
+            resp = await OrderService.updateShipmentRouteSegment({
+              "shipmentId": shipmentPackage.shipmentId,
+              "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
+              "carrierPartyId": carrierPartyId,
+              "shipmentMethodTypeId": shipmentMethodTypeId
+            }) as any;
+            if (!hasError(resp)) {
+              this.shipmentMethodTypeId = shipmentMethodTypeId
+              showToast(translate("Shipment method detail updated successfully."))
+              //fetching updated shipment packages
+              await this.store.dispatch('order/updateShipmentPackageDetail', this.order)
+              return true;
+            } else {
+              throw resp.data;
+            }
+          }
+        } else {
+          throw resp.data;
+        }
+      } catch (err) {
+        this.carrierPartyId = this.order.shipmentPackages?.[0].carrierPartyId;
+        this.shipmentMethodTypeId = this.order.shipmentPackages?.[0].shipmentMethodTypeId;
+        logger.error('Failed to update carrier and method', err);
+        return false;
+      }
     },
     redirectToTrackingUrl() {
       const trackingUrl = this.getCarrierTrackingUrl()
