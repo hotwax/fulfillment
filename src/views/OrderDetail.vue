@@ -248,6 +248,9 @@
                 {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
                 <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
               </ion-button>
+              <ion-button :disabled="!shipmentMethodTypeId || !carrierPartyId" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
+                {{ translate("Add tracking code manually") }}
+              </ion-button>
               <ion-item lines="none" v-if="shipmentLabelErrorMessages">
                 <ion-label class="ion-text-wrap">
                   {{ shipmentLabelErrorMessages }}
@@ -411,6 +414,7 @@ import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
 import { isKit } from '@/utils/order'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import ShippingLabelActionPopover from '@/components/ShippingLabelActionPopover.vue';
+import TrackingCodeModal from '@/components/TrackingCodeModal.vue';
 
 export default defineComponent({
   name: "OrderDetail",
@@ -1449,7 +1453,15 @@ export default defineComponent({
       })
 
       modal.present();
-    }
+    },
+    async openTrackingCodeModal() {
+      const addTrackingCodeModal = await modalController.create({
+        component: TrackingCodeModal,
+        componentProps: { carrierPartyId: this.carrierPartyId }
+      });
+
+      return addTrackingCodeModal.present();
+    },
   },
   setup() {
     const store = useStore();
