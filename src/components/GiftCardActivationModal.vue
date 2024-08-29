@@ -166,7 +166,7 @@ export default defineComponent({
           orderId: this.item.orderId,
           orderItemSeqId: this.item.orderItemSeqId,
           amount: this.itemPriceInfo.unitPrice,
-          typeEnumId: "GIFT_CARD_ITEM",
+          typeEnumId: "GC_ACTIVATE",
           cardNumber: this.activationCode.trim()
         })
 
