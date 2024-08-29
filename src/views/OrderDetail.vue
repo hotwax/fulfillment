@@ -88,7 +88,7 @@
               </ion-item>
             </div>
 
-            <div v-if="category === 'in-progress'" class="desktop-only" >
+            <div v-if="category === 'in-progress'" class="desktop-only ion-text-center" >
               <template v-if="item.rejectReason">
                 <ion-chip outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
                   <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
