@@ -449,6 +449,76 @@ const getProductStoreSetting = async (payload: any): Promise<any> => {
   });
 }
 
+const fetchGiftCardItemPriceInfo = async (payload: any): Promise<any> => {
+  // Todo: find a better alternative for fetching unitPrice and currency together
+  let resp = {} as any;
+  const itemPriceInfo = {} as any;
+
+  const params = {
+    "inputFields": {
+     "orderId": payload.orderId,
+     "orderItemSeqId": payload.orderItemSeqId
+    },
+    "entityName": "OrderItem",
+    "fieldList": ["unitPrice"],
+    "viewSize": 1
+  }
+
+  try {
+    resp = await api({
+      url: "performFind",
+      method: "post",
+      data: params
+    });
+
+    if(!hasError(resp)) {
+      itemPriceInfo.unitPrice = resp.data.docs[0].unitPrice
+
+      resp = await api({
+        url: "performFind",
+        method: "post",
+        data: {
+          "inputFields": {
+            "orderId": payload.orderId,
+            "orderItemSeqId": payload.orderItemSeqId
+          },
+          "entityName": "OrderHeader",
+          "fieldList": ["currencyUom"],
+          "viewSize": 1
+        }
+      });
+
+      if(!hasError(resp)) {
+        itemPriceInfo.currency = resp.data.docs[0].currencyUom
+      } else {
+        throw resp.data;
+      }
+    } else {
+      throw resp.data;
+    }
+  } catch(error: any) {
+    logger.error(error);
+  }
+
+  return itemPriceInfo;
+}
+
+const fetchGiftCardFulfillmentInfo = async (payload: any): Promise<any> => {
+  return await api({
+    url: 'performFind',
+    method: 'POST',
+    data: payload
+  }) as any
+}
+
+const activateGiftCard = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createGcFulFillmentRecord",
+    method: "post",
+    data: payload
+  });
+}
+
 const isEnumExists = async (enumId: string): Promise<any> => {
   try {
     const resp = await api({
@@ -475,6 +545,7 @@ const isEnumExists = async (enumId: string): Promise<any> => {
 }
 
 export const UtilService = {
+  activateGiftCard,
   createForceScanSetting,
   createPicklist,
   createEnumeration,
@@ -483,6 +554,8 @@ export const UtilService = {
   fetchEnumeration,
   fetchFacilities,
   fetchFacilityTypeInformation,
+  fetchGiftCardFulfillmentInfo,
+  fetchGiftCardItemPriceInfo,
   fetchPartyInformation,
   fetchPicklistInformation,
   fetchProductStores,
