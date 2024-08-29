@@ -455,13 +455,13 @@ const fetchGiftCardItemPriceInfo = async (payload: any): Promise<any> => {
   const itemPriceInfo = {} as any;
 
   const params = {
-    "inputFields": {
-     "orderId": payload.orderId,
-     "orderItemSeqId": payload.orderItemSeqId
+    inputFields: {
+      orderId: payload.orderId,
+      orderItemSeqId: payload.orderItemSeqId
     },
-    "entityName": "OrderItem",
-    "fieldList": ["unitPrice"],
-    "viewSize": 1
+    entityName: "OrderItem",
+    fieldList: ["unitPrice"],
+    viewSize: 1
   }
 
   try {
@@ -478,13 +478,13 @@ const fetchGiftCardItemPriceInfo = async (payload: any): Promise<any> => {
         url: "performFind",
         method: "post",
         data: {
-          "inputFields": {
-            "orderId": payload.orderId,
-            "orderItemSeqId": payload.orderItemSeqId
+          inputFields: {
+            orderId: payload.orderId,
+            orderItemSeqId: payload.orderItemSeqId
           },
-          "entityName": "OrderHeader",
-          "fieldList": ["currencyUom"],
-          "viewSize": 1
+          entityName: "OrderHeader",
+          fieldList: ["currencyUom"],
+          viewSize: 1
         }
       });
 

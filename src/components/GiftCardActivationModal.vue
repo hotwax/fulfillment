@@ -147,8 +147,8 @@ export default defineComponent({
             orderId: this.item.orderId,
             orderItemSeqId: this.item.orderItemSeqId
           },
-          fieldList: ["cardNumber", "createdDate"],
-          viewSize: 1,
+          fieldList: ["cardNumber", "fulfillmentDate"],
+          viewSize: 1
         })
 
         if(!hasError(resp)) {

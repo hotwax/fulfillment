@@ -129,6 +129,10 @@
                 <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                 <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
               </ion-button>
+              <ion-button v-if="item.productTypeId === 'GIFT_CARD'" fill="clear" color="medium" size="small" @click="openGiftCardActivationModal(item)">
+                {{ translate('Gift card') }}
+                <ion-icon color="medium" slot="end" :icon="giftOutline"/>
+              </ion-button>
             </div>
             </div>
             <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
@@ -397,6 +401,7 @@ import {
   documentTextOutline,
   ellipsisVerticalOutline,
   fileTrayOutline,
+  giftOutline,
   informationCircleOutline,
   listOutline,
   locateOutline,
@@ -426,6 +431,7 @@ import { isKit } from '@/utils/order'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import ShippingLabelActionPopover from '@/components/ShippingLabelActionPopover.vue';
 import TrackingCodeModal from '@/components/TrackingCodeModal.vue';
+import GiftCardActivationModal from '@/components/GiftCardActivationModal.vue';
 
 export default defineComponent({
   name: "OrderDetail",
@@ -1484,6 +1490,14 @@ export default defineComponent({
 
       return addTrackingCodeModal.present();
     },
+    async openGiftCardActivationModal(item: any) {
+      const modal = await modalController.create({
+        component: GiftCardActivationModal,
+        componentProps: { item }
+      })
+
+      modal.present();
+    }
   },
   setup() {
     const store = useStore();
@@ -1508,6 +1522,7 @@ export default defineComponent({
       formatUtcDate,
       getFeature,
       getProductIdentificationValue,
+      giftOutline,
       hasPermission,
       isKit,
       informationCircleOutline,
