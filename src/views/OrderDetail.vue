@@ -254,9 +254,9 @@
               </template>
             </ion-item>
             <template v-if="order.missingLabelImage">
-              <ion-button :disabled="!shipmentMethodTypeId" fill="outline" expand="block" @click.stop="regenerateShippingLabel(order)">
+              <ion-button :disabled="!shipmentMethodTypeId" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
                 {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
-                <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
+                <ion-spinner color="primary" slot="end" data-spinner-size="medium" v-if="order.isGeneratingShippingLabel" name="crescent" />
               </ion-button>
               <ion-button :disabled="!shipmentMethodTypeId || !carrierPartyId" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
                 {{ translate("Add tracking code manually") }}
