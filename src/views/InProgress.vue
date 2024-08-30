@@ -140,7 +140,7 @@
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
                   <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
-                    <ion-icon slot="icon-only" :icon="giftOutline"/>
+                    <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline"/>
                   </ion-button>
                   <ion-button color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
                     <ion-icon slot="icon-only" :icon="trashBinOutline"/>
@@ -280,6 +280,7 @@ import {
   cubeOutline,
   ellipsisVerticalOutline,
   fileTrayOutline,
+  gift,
   giftOutline,
   listOutline,
   pencilOutline,
@@ -1247,6 +1248,12 @@ export default defineComponent({
         componentProps: { item }
       })
 
+      modal.onDidDismiss().then((result: any) => {
+        if(result.data?.isGCActivated) {
+          this.store.dispatch("order/updateCurrentItemGCActivationDetails", { item, category: "in-progress", isDetailsPage: false })
+        }
+      })
+
       modal.present();
     }
   },
@@ -1280,6 +1287,7 @@ export default defineComponent({
       formatUtcDate,
       getFeature,
       getProductIdentificationValue,
+      gift,
       giftOutline,
       hasPermission,
       isKit,

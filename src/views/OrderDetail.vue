@@ -131,7 +131,7 @@
               </ion-button>
               <ion-button v-if="item.productTypeId === 'GIFT_CARD'" fill="clear" color="medium" size="small" @click="openGiftCardActivationModal(item)">
                 {{ translate('Gift card') }}
-                <ion-icon color="medium" slot="end" :icon="giftOutline"/>
+                <ion-icon color="medium" slot="end" :icon="item.isGCActivated ? gift : giftOutline"/>
               </ion-button>
             </div>
             </div>
@@ -401,6 +401,7 @@ import {
   documentTextOutline,
   ellipsisVerticalOutline,
   fileTrayOutline,
+  gift,
   giftOutline,
   informationCircleOutline,
   listOutline,
@@ -1496,6 +1497,12 @@ export default defineComponent({
         componentProps: { item }
       })
 
+      modal.onDidDismiss().then((result: any) => {
+        if(result.data?.isGCActivated) {
+          this.store.dispatch("order/updateCurrentItemGCActivationDetails", { item, category: this.category, isDetailsPage: true })
+        }
+      })
+
       modal.present();
     }
   },
@@ -1522,6 +1529,7 @@ export default defineComponent({
       formatUtcDate,
       getFeature,
       getProductIdentificationValue,
+      gift,
       giftOutline,
       hasPermission,
       isKit,

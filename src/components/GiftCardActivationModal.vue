@@ -16,13 +16,13 @@
       <ion-label>{{ translate("Fetching gift card info.") }}</ion-label>
     </div>
     <ion-list v-else>
-      <ion-item lines="none" v-if="!cardInfo.cardNumber">
+      <ion-item lines="none" v-if="!item.isGCActivated">
         <ion-input :label="translate('Activation code')" :placeholder="translate('serial number')" :helper-text="translate('Scan or enter the unique code on the gift card')" v-model="activationCode" />
       </ion-item>
 
       <ion-item v-else>
         <ion-icon :icon="cardOutline" slot="start" />
-        <ion-label>{{ cardInfo.cardNumber }}</ion-label>
+        <ion-label>{{ item.gcInfo.cardNumber }}</ion-label>
         <ion-note slot="end">{{ getCreatedDateTime() }}</ion-note>
       </ion-item>
 
@@ -37,7 +37,7 @@
     </ion-list>
   </ion-content>
 
-  <ion-fab v-if="!cardInfo.cardNumber" vertical="bottom" horizontal="end" slot="fixed">
+  <ion-fab v-if="!item.isGCActivated" vertical="bottom" horizontal="end" slot="fixed">
     <ion-fab-button @click="confirmSave()">
       <ion-icon :icon="cardOutline" />
     </ion-fab-button>
@@ -101,20 +101,18 @@ export default defineComponent({
     return {
       isLoading: false,
       itemPriceInfo: {} as any,
-      cardInfo: {} as any,
       activationCode: ""
     }
   },
   props: ["item"],
   async mounted() {
     this.isLoading = true;
-    await this.fetchGiftCardInfo();
     this.itemPriceInfo = await UtilService.fetchGiftCardItemPriceInfo({ orderId: this.item.orderId, orderItemSeqId: this.item.orderItemSeqId })
     this.isLoading = false;
   },
   methods: {
-    closeModal() {
-      modalController.dismiss()
+    closeModal(payload = {}) {
+      modalController.dismiss({ dismissed: true, ...payload })
     },
     async confirmSave() {
       if(!this.activationCode.trim()) {
@@ -139,27 +137,6 @@ export default defineComponent({
       });
       return alert.present();
     },
-    async fetchGiftCardInfo() {
-      try {
-        const resp = await UtilService.fetchGiftCardFulfillmentInfo({
-          entityName: "GiftCardFulfillment",
-          inputFields: {
-            orderId: this.item.orderId,
-            orderItemSeqId: this.item.orderItemSeqId
-          },
-          fieldList: ["cardNumber", "fulfillmentDate"],
-          viewSize: 1
-        })
-
-        if(!hasError(resp)) {
-          this.cardInfo = resp.data.docs[0]
-        } else {
-          throw resp.data
-        }
-      } catch(error) {
-        logger.error(error)
-      }
-    },
     async activateGitCard() {
       try {
         const resp = await UtilService.activateGiftCard({
@@ -172,7 +149,7 @@ export default defineComponent({
 
         if(!hasError(resp)) {
           showToast(translate("Gift card activated successfully."))
-          this.closeModal()
+          this.closeModal({ isGCActivated: true, item: this.item })
         } else {
           throw resp.data;
         }
@@ -182,7 +159,7 @@ export default defineComponent({
       }
     },
     getCreatedDateTime() {
-      return DateTime.fromMillis(this.cardInfo.fulfillmentDate).toFormat("dd MMMM yyyy t a ZZZZ");
+      return DateTime.fromMillis(this.item.gcInfo.fulfillmentDate).toFormat("dd MMMM yyyy t a ZZZZ");
     }
   },
   setup() {
