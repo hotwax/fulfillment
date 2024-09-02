@@ -489,7 +489,7 @@ const fetchGiftCardItemPriceInfo = async (payload: any): Promise<any> => {
       });
 
       if(!hasError(resp)) {
-        itemPriceInfo.currency = resp.data.docs[0].currencyUom
+        itemPriceInfo.currencyUom = resp.data.docs[0].currencyUom
       } else {
         throw resp.data;
       }

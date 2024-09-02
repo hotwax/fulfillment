@@ -32,7 +32,7 @@
           {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
           <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
         </ion-label>
-        <ion-label slot="end">{{ itemPriceInfo.unitPrice }} {{ itemPriceInfo.currency }}</ion-label>
+        <ion-label slot="end">{{ formatCurrency(itemPriceInfo.unitPrice, itemPriceInfo.currencyUom) }}</ion-label>
       </ion-item>
     </ion-list>
   </ion-content>
@@ -69,7 +69,7 @@ import { mapGetters, useStore } from "vuex";
 import { cardOutline, closeOutline, giftOutline, saveOutline } from "ionicons/icons";
 import { getProductIdentificationValue, translate, useProductIdentificationStore } from '@hotwax/dxp-components'
 import { UtilService } from "@/services/UtilService";
-import { formatUtcDate, hasError, showToast } from '@/utils';
+import { formatCurrency, formatUtcDate, hasError, showToast } from '@/utils';
 import logger from "@/logger";
 import { DateTime } from 'luxon';
 
@@ -170,6 +170,7 @@ export default defineComponent({
     return {
       cardOutline,
       closeOutline,
+      formatCurrency,
       formatUtcDate,
       getProductIdentificationValue,
       giftOutline,
