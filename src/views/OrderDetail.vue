@@ -154,7 +154,7 @@
           
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
-              <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="isForceScanEnabled ? scanOrder(order) :packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+              <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) :packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -174,7 +174,7 @@
             <!-- positive -->
             <div>
               <template v-if="category === 'in-progress'">
-                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click="isForceScanEnabled ? scanOrder(order) : packOrder(order)">
+                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">
                   <ion-icon slot="start" :icon="personAddOutline" />
                   {{ translate("Pack order") }}
                 </ion-button>
@@ -431,6 +431,7 @@ import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
 import { isKit } from '@/utils/order'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import ShippingLabelActionPopover from '@/components/ShippingLabelActionPopover.vue';
+import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
 import TrackingCodeModal from '@/components/TrackingCodeModal.vue';
 import GiftCardActivationModal from '@/components/GiftCardActivationModal.vue';
 
@@ -603,6 +604,10 @@ export default defineComponent({
         logger.error('Failed to update carrier and method', err);
         showToast(translate("Failed to update shipment method detail."));
       }
+    },
+    updateCarrierShipmentDetails(carrierPartyId: string, shipmentMethodTypeId: string) {
+      this.carrierPartyId = carrierPartyId
+      this.shipmentMethodTypeId = shipmentMethodTypeId
     },
     async fetchKitComponent(orderItem: any, isOtherShipment = false ) {
       await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
@@ -1478,6 +1483,21 @@ export default defineComponent({
       modal.onDidDismiss().then((result: any) => {
         if(result.data?.packOrder) {
           this.packOrder(order);
+        }
+      })
+
+      modal.present();
+    },
+    async generateTrackingCodeForPacking(order: any) {
+      const modal = await modalController.create({
+        component: GenerateTrackingCodeModal,
+        componentProps: { order, updateCarrierShipmentDetails: this.updateCarrierShipmentDetails }
+      })
+
+      modal.onDidDismiss().then((result: any) => {
+        if(result.data?.moveToNext) {
+          if(this.isForceScanEnabled) this.scanOrder(order);
+          else this.packOrder(order);
         }
       })
 
