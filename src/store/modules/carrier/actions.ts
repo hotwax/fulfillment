@@ -6,7 +6,7 @@ import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import logger from '@/logger'
 import store from '@/store';
-import { translate } from '@hotwax/dxp-components';
+import { translate, useUserStore } from '@hotwax/dxp-components';
 import { showToast, isValidCarrierCode, isValidDeliveryDays } from '@/utils';
   
 
@@ -184,7 +184,7 @@ const actions: ActionTree<CarrierState, RootState> = {
     const currentCarrier = state.current;
     const carrierShipmentMethods = currentCarrier.shipmentMethods
     const carrierProductStoreShipmentMethods = currentCarrier.productStoreShipmentMethods
-    const productStores = store.getters['util/getProductStores'];
+    const productStores = useUserStore().getProductStores;
     const carrierShipmentMethodsByProductStore = {} as any;
     const productStoreShipmentMethodFields = ["description", "productStoreId", "isTrackingRequired", "shipmentGatewayConfigId", "productStoreShipMethId"]
 
@@ -427,6 +427,7 @@ const actions: ActionTree<CarrierState, RootState> = {
     commit(types.CARRIER_FACILITY_CARRIERS_UPDATED, facilityCarriers)
   },
   async fetchProductStoreShipmentMeths({ state, commit }) {
+    const currentEComStore: any = useUserStore().getCurrentEComStore;
     let productStoreShipmentMethods  = [] as any;
     let viewIndex = 0, resp;
     
@@ -436,7 +437,7 @@ const actions: ActionTree<CarrierState, RootState> = {
           "entityName": "ProductStoreShipmentMethView",
           "inputFields": {
             "roleTypeId": "CARRIER",
-            "productStoreId": this.state.user.currentEComStore.productStoreId,
+            "productStoreId": currentEComStore.productStoreId,
           },
           "fieldList": ["productStoreShipMethId", "productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "shipmentGatewayConfigId", "isTrackingRequired", "sequenceNumber", "description", "fromDate"],
           "noConditionFind": "Y",

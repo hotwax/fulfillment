@@ -290,7 +290,7 @@ import { mapGetters, useStore } from 'vuex';
 import { copyToClipboard, formatUtcDate, getFeature, jsonToCsv, showToast } from '@/utils';
 import { isKit } from '@/utils/order'
 import { hasError } from '@/adapter';
-import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue';
 import { OrderService } from '@/services/OrderService';
 import emitter from '@/event-bus';
@@ -351,7 +351,6 @@ export default defineComponent({
       inProgressOrders: 'order/getInProgressOrders',
       getProduct: 'product/getProduct',
       rejectReasons: 'util/getRejectReasons',
-      currentEComStore: 'user/getCurrentEComStore',
       userPreference: 'user/getUserPreference',
       boxTypeDesc: 'util/getShipmentBoxDesc',
       getProductStock: 'stock/getProductStock',
@@ -873,7 +872,7 @@ export default defineComponent({
           '-fulfillmentStatus': { value: 'Rejected' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.currentFacility.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.value?.productStoreId }
         },
         facet: {
           picklistFacet: {
@@ -1149,7 +1148,7 @@ export default defineComponent({
             try {
               resp = await UserService.recycleInProgressOrders({
                 "facilityId": this.currentFacility.facilityId,
-                "productStoreId": this.currentEComStore.productStoreId,
+                "productStoreId": this.currentEComStore.value?.productStoreId,
                 "reasonId": "INACTIVE_STORE"
               })
 
@@ -1249,8 +1248,10 @@ export default defineComponent({
   setup() {
     const authStore = useAuthStore()
     const store = useStore();
+    const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
 
     return {
       Actions,
@@ -1262,6 +1263,7 @@ export default defineComponent({
       checkmarkDoneOutline,
       closeCircleOutline,
       cubeOutline,
+      currentEComStore,
       ellipsisVerticalOutline,
       fileTrayOutline,
       formatUtcDate,

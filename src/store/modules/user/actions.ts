@@ -16,6 +16,11 @@ import { useAuthStore, useUserStore, useProductIdentificationStore } from '@hotw
 import emitter from '@/event-bus'
 import { generateDeviceId, generateTopicName } from '@/utils/firebase'
 
+const getProductStoreId = () => {
+  const currentEComStore: any = useUserStore().getCurrentEComStore;
+  return currentEComStore.productStoreId
+};
+
 const actions: ActionTree<UserState, RootState> = {
 
   /**
@@ -72,15 +77,9 @@ const actions: ActionTree<UserState, RootState> = {
 
       // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
       const currentFacility = userProfile.facilities[0];
-      userProfile.stores = await UserService.getEComStores(token, currentFacility.facilityId);
-
-      let preferredStore = userProfile.stores[0]
-
-      const preferredStoreId =  await UserService.getPreferredStore(token);
-      if (preferredStoreId) {
-        const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
-        store && (preferredStore = store)
-      }
+      userProfile.stores = await useUserStore().getEComStores(currentFacility.facilityId);
+      await useUserStore().getPreferredStore('SELECTED_BRAND');
+      const preferredStore: any = useUserStore().getCurrentEComStore
       /*  ---- Guard clauses ends here --- */
 
       setPermissions(appPermissions);
@@ -92,21 +91,20 @@ const actions: ActionTree<UserState, RootState> = {
       dispatch('getFieldMappings')
 
       // TODO user single mutation
-      commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
       commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
       commit(types.USER_INFO_UPDATED, userProfile);
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       commit(types.USER_TOKEN_CHANGED, { newToken: token })
 
       // Get product identification from api using dxp-component
-      await useProductIdentificationStore().getIdentificationPref(preferredStoreId ? preferredStoreId : preferredStore.productStoreId)
+      await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
         .catch((error) => logger.error(error));
 
       await dispatch("fetchAllNotificationPrefs");
       this.dispatch('util/findProductStoreShipmentMethCount')
       this.dispatch('util/getForceScanSetting', preferredStore.productStoreId);
-      await dispatch('user/getPartialOrderRejectionConfig')
-      await dispatch('user/getCollateralRejectionConfig')
+      await dispatch('getPartialOrderRejectionConfig')
+      await dispatch('getCollateralRejectionConfig')
     
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
@@ -185,18 +183,11 @@ const actions: ActionTree<UserState, RootState> = {
     emitter.emit('presentLoader', {message: 'Updating facility', backdropDismiss: false})
 
     const userProfile = JSON.parse(JSON.stringify(state.current as any));
-    userProfile.stores = await UserService.getEComStores(undefined, payload.facility.facilityId);
+    userProfile.stores = await useUserStore().getEComStores(payload.facility.facilityId);
 
-    let preferredStore = userProfile.stores[0];
-    const preferredStoreId =  await UserService.getPreferredStore(undefined);
-
-    if (preferredStoreId) {
-      const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
-      store && (preferredStore = store)
-    }
+    await useUserStore().getPreferredStore('SELECTED_BRAND');
     commit(types.USER_INFO_UPDATED, userProfile);
     commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
-    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
     this.dispatch('order/clearOrders')
 
     emitter.emit('dismissLoader')
@@ -215,28 +206,6 @@ const actions: ActionTree<UserState, RootState> = {
   setUserInstanceUrl ({ commit }, payload){
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
     updateInstanceUrl(payload)
-  },
-
-  /**
-   *  update current eComStore information
-  */
-  async setEComStore({ commit }, payload) {
-    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, payload.eComStore);
-    await UserService.setUserPreference({
-      'userPrefTypeId': 'SELECTED_BRAND',
-      'userPrefValue': payload.eComStore.productStoreId
-    });
-
-    // Get product identification from api using dxp-component
-    await useProductIdentificationStore().getIdentificationPref(payload.eComStore.productStoreId)
-      .catch((error) => logger.error(error));
-
-    this.dispatch('util/findProductStoreShipmentMethCount')
-    this.dispatch('util/getForceScanSetting', payload.ecomStore.productStoreId)
-  },
-
-  setUserPreference({ commit }, payload){
-    commit(types.USER_PREFERENCE_UPDATED, payload)
   },
 
   async getFieldMappings({ commit }) {
@@ -433,7 +402,7 @@ const actions: ActionTree<UserState, RootState> = {
         //Create Product Store Setting
         payload = {
           ...payload, 
-          "productStoreId": this.state.user.currentEComStore.productStoreId,
+          "productStoreId": getProductStoreId(),
           "settingTypeEnumId": "FULFILL_PART_ODR_REJ",
           "fromDate": DateTime.now().toMillis()
         }
@@ -477,7 +446,7 @@ const actions: ActionTree<UserState, RootState> = {
         //Create Product Store Setting
         payload = {
           ...payload, 
-          "productStoreId": this.state.user.currentEComStore.productStoreId,
+          "productStoreId": getProductStoreId(),
           "settingTypeEnumId": "FF_COLLATERAL_REJ",
           "fromDate": DateTime.now().toMillis()
         }
@@ -504,7 +473,7 @@ const actions: ActionTree<UserState, RootState> = {
     let config = {};
     const params = {
       "inputFields": {
-        "productStoreId": this.state.user.currentEComStore.productStoreId,
+        "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "FULFILL_PART_ODR_REJ"
       },
       "filterByDate": 'Y',
@@ -529,7 +498,7 @@ const actions: ActionTree<UserState, RootState> = {
     let config = {};
     const params = {
       "inputFields": {
-        "productStoreId": this.state.user.currentEComStore.productStoreId,
+        "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "FF_COLLATERAL_REJ"
       },
       "filterByDate": 'Y',

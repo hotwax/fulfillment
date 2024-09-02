@@ -17,7 +17,7 @@ import { mapGetters, useStore } from 'vuex';
 import { initialise, resetConfig } from '@/adapter'
 import { useRouter } from 'vue-router';
 import { Settings } from 'luxon'
-import { translate, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import logger from '@/logger'
 
 export default defineComponent({
@@ -40,7 +40,7 @@ export default defineComponent({
       instanceUrl: 'user/getInstanceUrl',
       userProfile: 'user/getUserProfile',
       locale: 'user/getLocale',
-      currentEComStore: 'user/getCurrentEComStore'
+      currentFacility: 'user/getCurrentFacility',
     })
   },
   methods: {
@@ -127,11 +127,15 @@ export default defineComponent({
       Settings.defaultZone = this.userProfile.userTimeZone;
     }
 
+    // need to discuss this case 
+    // await useUserStore().getEComStores('');
+    // await useUserStore().getPreferredStore('SELECTED_BRAND');
+    const currentEComStore: any = useUserStore().getCurrentEComStore;
     // If fetching identifier without checking token then on login the app stucks in a loop, as the mounted hook runs before
     // token is available which results in api failure as unauthenticated, thus making logout call and then login call again and so on.
     if(this.userToken) {
       // Get product identification from api using dxp-component
-      await useProductIdentificationStore().getIdentificationPref(this.currentEComStore?.productStoreId)
+      await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId)
         .catch((error) => logger.error(error));
     }
   },

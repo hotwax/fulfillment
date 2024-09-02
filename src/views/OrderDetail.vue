@@ -394,7 +394,7 @@ import {
   trashBinOutline,
   ribbonOutline
 } from 'ionicons/icons';
-import { getProductIdentificationValue, translate, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, translate, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
@@ -450,7 +450,6 @@ export default defineComponent({
       boxTypeDesc: 'util/getShipmentBoxDesc',
       completedOrders: 'order/getCompletedOrders',
       currentFacility: 'user/getCurrentFacility',
-      currentEComStore: 'user/getCurrentEComStore',
       getProduct: 'product/getProduct',
       getProductStock: 'stock/getProductStock',
       inProgressOrders: 'order/getInProgressOrders',
@@ -758,7 +757,7 @@ export default defineComponent({
           '-fulfillmentStatus': { value: 'Rejected' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.currentFacility.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.value?.productStoreId }
         },
         facet: {
           picklistFacet: {
@@ -1320,7 +1319,7 @@ export default defineComponent({
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.currentFacility.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.value?.productStoreId }
         },
         facet: {
           "shipmentMethodFacet": {
@@ -1361,7 +1360,7 @@ export default defineComponent({
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.currentFacility.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId },
+          productStoreId: { value: this.currentEComStore.value?.productStoreId },
         },
         facet: {
           manifestContentIdFacet: {
@@ -1466,8 +1465,10 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const router = useRouter();
+    const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
 
     return {
       addOutline,
@@ -1480,6 +1481,7 @@ export default defineComponent({
       closeCircleOutline,
       copyToClipboard,
       cubeOutline,
+      currentEComStore,
       documentTextOutline,
       ellipsisVerticalOutline,
       fileTrayOutline,

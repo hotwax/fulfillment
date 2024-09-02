@@ -46,14 +46,14 @@ import {
   IonTitle,
   IonToolbar
 } from "@ionic/vue";
-import { defineComponent } from "vue";
+import { computed, defineComponent } from "vue";
 import { albumsOutline, banOutline, barChartOutline, calendarNumberOutline, checkmarkDoneOutline, closeOutline, filterOutline, iceCreamOutline, libraryOutline, pulseOutline, settings, shirtOutline, ticketOutline } from "ionicons/icons";
 import { mapGetters, useStore } from 'vuex'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper';
 import { UtilService } from '@/services/UtilService';
 import { hasError } from '@/adapter';
 import logger from '@/logger';
-import { translate } from '@hotwax/dxp-components';
+import { translate, useUserStore } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: "TransferOrderFilters",
@@ -81,7 +81,6 @@ export default defineComponent({
       transferOrders: 'transferorder/getTransferOrders',
       getStatusDesc: 'util/getStatusDesc',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
-      currentEComStore: 'user/getCurrentEComStore',
     })
   },
   async mounted() {
@@ -127,7 +126,7 @@ export default defineComponent({
           '-orderStatusId': { value: 'ORDER_CREATED' },
           orderTypeId: { value: 'TRANSFER_ORDER' },
           facilityId: { value: escapeSolrSpecialChars(this.currentFacility.facilityId) },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.value?.productStoreId }
         },
         facet: {
           "shipmentMethodTypeIdFacet":{
@@ -172,7 +171,9 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
-    
+    const userStore = useUserStore()
+    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
+
     return {
       albumsOutline,
       banOutline,
@@ -180,6 +181,7 @@ export default defineComponent({
       calendarNumberOutline,
       checkmarkDoneOutline,
       closeOutline,
+      currentEComStore,
       filterOutline,
       iceCreamOutline,
       libraryOutline,

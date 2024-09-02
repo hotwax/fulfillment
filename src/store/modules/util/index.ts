@@ -18,7 +18,6 @@ const utilModule: Module<UtilState, RootState> = {
     productStoreShipmentMethCount: 0,
     rejectReasonEnumTypes: [],
     enumerations: {},
-    productStores: [],
     facilities: [],
     shipmentGatewayConfigs: [],
     isForceScanEnabled: false

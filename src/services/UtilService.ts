@@ -398,15 +398,6 @@ const fetchEnumeration = async (query: any): Promise <any> => {
   })
 }
 
-const fetchProductStores = async (payload: any): Promise<any> => {
-  return api({
-    url: "performFind",
-    method: "POST",
-    data: payload,
-    cache: true
-  })
-}
-
 const fetchFacilities = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
@@ -485,7 +476,6 @@ export const UtilService = {
   fetchFacilityTypeInformation,
   fetchPartyInformation,
   fetchPicklistInformation,
-  fetchProductStores,
   fetchRejectReasonEnumTypes,
   fetchRejectReasons,
   fetchShipmentGatewayConfigs,

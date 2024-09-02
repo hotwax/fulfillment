@@ -133,10 +133,10 @@
     alertController,
     modalController,
   } from '@ionic/vue';
-  import { defineComponent } from 'vue';
+  import { defineComponent, computed } from 'vue';
   import { add, checkmarkDone, barcodeOutline, pricetagOutline, addCircleOutline, addOutline, ellipsisVerticalOutline, peopleOutline, shieldCheckmarkOutline } from 'ionicons/icons';
   import { mapGetters, useStore } from "vuex";
-  import { translate } from '@hotwax/dxp-components';
+  import { translate, useUserStore } from '@hotwax/dxp-components';
 
   import { useRouter } from 'vue-router';
   import { Actions, hasPermission } from '@/authorization'
@@ -187,8 +187,7 @@
     async mounted() {
       emitter.emit('presentLoader');
       await this.store.dispatch('carrier/fetchCarrierDetail', { partyId: this.$route.params.partyId });
-      await Promise.all([this.store.dispatch('carrier/fetchShipmentMethodTypes'), this.store.dispatch('util/fetchProductStores'),
-       this.store.dispatch('util/fetchShipmentGatewayConfigs'),
+      await Promise.all([this.store.dispatch('carrier/fetchShipmentMethodTypes'), this.store.dispatch('util/fetchShipmentGatewayConfigs'),
         this.store.dispatch('carrier/fetchCarrierShipmentMethods', {partyId: this.$route.params.partyId}),
          this.store.dispatch('carrier/fetchProductStoreShipmentMethods', {partyId: this.$route.params.partyId}),
           this.store.dispatch('util/fetchFacilities')])
@@ -202,7 +201,6 @@
       ...mapGetters({
         shipmentMethodQuery: 'carrier/getShipmentMethodQuery',
         currentCarrier: 'carrier/getCurrent',
-        productStores : 'util/getProductStores',
         shipmentMethods: "carrier/getShipmentMethods",
         carrierShipmentMethodsByProductStore: "carrier/getCarrierShipmentMethodsByProductStore",
         shipmentGatewayConfigs : "util/getShipmentGatewayConfigs"
@@ -441,6 +439,8 @@
     setup() {
       const store = useStore(); 
       const router = useRouter();
+      const userStore = useUserStore()
+      let productStores: any = computed(() => userStore.getProductStores)
   
       return {
         Actions,
@@ -453,6 +453,7 @@
         hasPermission,
         pricetagOutline,
         peopleOutline,
+        productStores,
         shieldCheckmarkOutline,
         showToast,
         store,

@@ -9,7 +9,6 @@ export default interface UtilState {
   productStoreShipmentMethCount: number;
   rejectReasonEnumTypes: [];
   enumerations: object;
-  productStores: any;
   facilities: any;
   shipmentGatewayConfigs: any;
   isForceScanEnabled: boolean;
