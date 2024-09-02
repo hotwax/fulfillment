@@ -99,7 +99,6 @@ export default defineComponent({
       isForceScanEnabled: 'util/isForceScanEnabled',
       productStoreShipmentMethods: 'carrier/getProductStoreShipmentMethods',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
-      completedOrders: 'order/getCompletedOrders',
     })
   },
   data() {
@@ -155,7 +154,7 @@ export default defineComponent({
       }
 
       if(this.trackingCode.trim()) {
-        isRegenerated = await this.addCustomTrackingCode(order);
+        isRegenerated = await this.addTrackingCode(order);
       } else if(this.shipmentMethodTypeId) {
         isRegenerated = await this.regenerateShippingLabel(order)
       }
@@ -169,7 +168,7 @@ export default defineComponent({
 
       this.isGeneratingShippingLabel = false;
     },
-    async addCustomTrackingCode(order: any) {
+    async addTrackingCode(order: any) {
       try {
         for (const shipmentPackage of order.shipmentPackages) {
           await OrderService.addTrackingCode({
