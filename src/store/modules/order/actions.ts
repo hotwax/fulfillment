@@ -141,7 +141,7 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('Failed to fetch shipmentIds for orders', err)
     }
 
-    inProgressOrders = await dispatch("fetchOrdersCardActivationDetails", inProgressOrders)
+    inProgressOrders = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: false, currentOrders: inProgressOrders })
 
     // updating the state with the updated orders information
     commit(types.ORDER_INPROGRESS_UPDATED, { orders: inProgressOrders, total: state.inProgress.total })
@@ -234,24 +234,28 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('Failed to fetch shipmentIds for orders', err)
     }
 
-    completedOrders = await dispatch("fetchOrdersCardActivationDetails", completedOrders)
+    completedOrders = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: false, currentOrders: completedOrders })
 
     // updating the state with the updated orders information
     commit(types.ORDER_COMPLETED_UPDATED, { list: completedOrders, total: state.completed.total })
   },
 
-  async fetchOrdersCardActivationDetails({ commit }, currentOrders: any) {
+  async fetchGiftCardActivationDetails({ commit, state }, { isDetailsPage, currentOrders }) {
     const orders = JSON.parse(JSON.stringify(currentOrders));
     const orderIds = [] as any;
     let giftCardActivations = [] as any;
 
-    orders.map((order: any) => {
-      order.items.map((item: any) => {
-        if(item.productTypeId === 'GIFT_CARD' && !orderIds.includes(item.orderId)) {
-          orderIds.push(item.orderId);
-        }
+    if(isDetailsPage) {
+      orderIds.push(orders[0].orderId);
+    } else {
+      orders.map((order: any) => {
+        order.items.map((item: any) => {
+          if(item.productTypeId === 'GIFT_CARD' && !orderIds.includes(item.orderId)) {
+            orderIds.push(item.orderId);
+          }
+        })
       })
-    })
+    }
 
     if(!orderIds.length) return orders;
 
@@ -262,7 +266,8 @@ const actions: ActionTree<OrderState, RootState> = {
           orderId: orderIds,
           orderId_op: "in"
         },
-        fieldList: ["amount", "cardNumber", "fulfillmentDate", "orderId", "orderItemSeqId"]
+        fieldList: ["amount", "cardNumber", "fulfillmentDate", "orderId", "orderItemSeqId"],
+        viewSize: 250
       })
 
       if(!hasError(resp)) {
@@ -275,18 +280,28 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     if(giftCardActivations.length) {
-      orders.map((order: any) => {
-        order.items.map((item: any) => {
+      if(isDetailsPage) {
+        orders[0].items.map((item: any) => {
           const activationRecord = giftCardActivations.find((card: any) => card.orderId === item.orderId && card.orderItemSeqId === item.orderItemSeqId)
           if(activationRecord?.cardNumber) {
             item.isGCActivated = true;
             item.gcInfo = activationRecord
           }
         })
-      })
+      } else {
+        orders.map((order: any) => {
+          order.items.map((item: any) => {
+            const activationRecord = giftCardActivations.find((card: any) => card.orderId === item.orderId && card.orderItemSeqId === item.orderItemSeqId)
+            if(activationRecord?.cardNumber) {
+              item.isGCActivated = true;
+              item.gcInfo = activationRecord
+            }
+          })
+        })
+      }
     }
 
-    return orders
+    return isDetailsPage ? orders[0] : orders
   },
 
   // get in-progress orders
@@ -1046,7 +1061,7 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('Something went wrong', err)
     }
 
-    current = await dispatch("fetchCurrentOrderCardActivationDetail", current);
+    current = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: true, currentOrders: [current] });
 
     dispatch('updateCurrent', current)
   },
@@ -1166,58 +1181,10 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('Something went wrong', err)
     }
 
-    current = await dispatch("fetchCurrentOrderCardActivationDetail", current);
+    current = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: true, currentOrders: [current]});
 
     // updating the state with the updated orders information
     await dispatch('updateCurrent', current)
-  },
-
-  async fetchCurrentOrderCardActivationDetail({ commit }, currentOrder) {
-    const order = JSON.parse(JSON.stringify(currentOrder));
-
-    const itemIds = [] as any;
-
-    order.items.map((item: any) => {
-      if(item.productTypeId === "GIFT_CARD" && !itemIds.includes(item.orderItemSeqId)) {
-        itemIds.push(item.orderItemSeqId)
-      }
-    })
-
-    if(!itemIds.length) return order;
-
-    let giftCardActivations = [] as any;
-
-    try {
-      const resp = await UtilService.fetchGiftCardFulfillmentInfo({
-        entityName: "GiftCardFulfillment",
-        inputFields: {
-          orderId: order.orderId,
-          orderItemSeqId: itemIds,
-          orderItemSeqId_op: "in"
-        },
-        fieldList: ["amount", "cardNumber", "fulfillmentDate", "orderId", "orderItemSeqId"]
-      })
-
-      if(!hasError(resp)) {
-        giftCardActivations = resp.data.docs
-      } else {
-        throw resp.data
-      }
-    } catch(error) {
-      logger.error(error)
-    }
-
-    if(giftCardActivations.length) {
-      order.items.map((item: any) => {
-        const activationRecord = giftCardActivations.find((card: any) => card.orderId === item.orderId && card.orderItemSeqId === item.orderItemSeqId)
-        if(activationRecord?.cardNumber) {
-          item.isGCActivated = true;
-          item.gcInfo = activationRecord
-        }
-      })
-    }
-
-    return order
   },
 
   async fetchAdditionalShipGroupForOrder({ commit, state }, payload) {
