@@ -90,6 +90,9 @@
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
+                  <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
+                    <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline"/>
+                  </ion-button>
                   <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
                   <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
@@ -198,7 +201,7 @@ import {
   modalController
 } from '@ionic/vue';
 import { computed, defineComponent } from 'vue';
-import { caretDownOutline, chevronUpOutline, cubeOutline, printOutline, downloadOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
+import { caretDownOutline, chevronUpOutline, cubeOutline, printOutline, downloadOutline, gift, giftOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline } from 'ionicons/icons'
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
@@ -216,6 +219,7 @@ import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import { isKit } from '@/utils/order'
+import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
 
 export default defineComponent({
   name: 'Completed',
@@ -738,6 +742,20 @@ export default defineComponent({
       });
       return popover.present();
     },
+    async openGiftCardActivationModal(item: any) {
+      const modal = await modalController.create({
+        component: GiftCardActivationModal,
+        componentProps: { item }
+      })
+
+      modal.onDidDismiss().then((result: any) => {
+        if(result.data?.isGCActivated) {
+          this.store.dispatch("order/updateCurrentItemGCActivationDetails", { item, category: "completed", isDetailsPage: false })
+        }
+      })
+
+      modal.present();
+    }
   },
   setup() {
     const store = useStore();
@@ -757,6 +775,8 @@ export default defineComponent({
       formatUtcDate,
       getFeature,
       getProductIdentificationValue,
+      gift,
+      giftOutline,
       hasPermission,
       isKit,
       listOutline,
