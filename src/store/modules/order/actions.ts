@@ -1296,6 +1296,8 @@ const actions: ActionTree<OrderState, RootState> = {
 
     if(!isGCActivated) return;
 
+    const orders = JSON.parse(JSON.stringify(category === "in-progress" ? state.inProgress.list : state.completed.list));
+
     if(isDetailsPage) {
       const order = JSON.parse(JSON.stringify(state.current));
 
@@ -1306,11 +1308,19 @@ const actions: ActionTree<OrderState, RootState> = {
         }
       })
 
+      orders.map((currentOrder: any) => {
+        if(currentOrder.orderId === order.orderId) currentOrder.items = order.items
+      })
+
+      if(category === "in-progress") {
+        commit(types.ORDER_INPROGRESS_UPDATED, { orders, total: state.inProgress.total })
+      } else {
+        commit(types.ORDER_COMPLETED_UPDATED, { list: orders, total: state.completed.total })
+      }
+
       commit(types.ORDER_CURRENT_UPDATED, order)
       return;
     }
-
-    const orders = JSON.parse(JSON.stringify(category === "in-progress" ? state.inProgress.list : state.completed.list));
 
     orders.map((order: any) => {
       order.items.map((currentItem: any) => {
