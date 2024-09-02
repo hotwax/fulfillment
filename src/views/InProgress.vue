@@ -139,6 +139,9 @@
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
+                  <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
+                    <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline"/>
+                  </ion-button>
                   <ion-button color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
                     <ion-icon slot="icon-only" :icon="trashBinOutline"/>
                   </ion-button>
@@ -277,6 +280,8 @@ import {
   cubeOutline,
   ellipsisVerticalOutline,
   fileTrayOutline,
+  gift,
+  giftOutline,
   listOutline,
   pencilOutline,
   optionsOutline,
@@ -311,6 +316,7 @@ import QRCodeModal from '@/components/QRCodeModal.vue'
 import { useAuthStore } from '@hotwax/dxp-components'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
+import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
 
 
 export default defineComponent({
@@ -1253,6 +1259,21 @@ export default defineComponent({
 
       modal.present();
     },
+ 
+    async openGiftCardActivationModal(item: any) {
+      const modal = await modalController.create({
+        component: GiftCardActivationModal,
+        componentProps: { item }
+      })
+
+      modal.onDidDismiss().then((result: any) => {
+        if(result.data?.isGCActivated) {
+          this.store.dispatch("order/updateCurrentItemGCActivationDetails", { item, category: "in-progress", isDetailsPage: false })
+        }
+      })
+
+      modal.present();
+    }
   },
   async mounted () {
     this.store.dispatch('util/fetchRejectReasons')
@@ -1284,6 +1305,8 @@ export default defineComponent({
       formatUtcDate,
       getFeature,
       getProductIdentificationValue,
+      gift,
+      giftOutline,
       hasPermission,
       isKit,
       listOutline,
