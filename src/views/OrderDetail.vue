@@ -147,6 +147,7 @@
                     <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
                     <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
+                  <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.rejectedComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
                 </ion-item>
               </ion-card>
             </div>
@@ -367,6 +368,7 @@ import {
   IonCardHeader,
   IonCardSubtitle,
   IonCardTitle,
+  IonCheckbox,
   IonChip,
   IonContent,
   IonHeader,
@@ -444,6 +446,7 @@ export default defineComponent({
     IonBadge,
     IonButton,
     IonCard,
+    IonCheckbox,
     IonChip,
     IonCardHeader,
     IonCardSubtitle,
@@ -926,6 +929,20 @@ export default defineComponent({
         })
         order.hasRejectedItem = order.items.some((item:any) => item.rejectReason);
     },
+    rejectKitComponent(order: any, item: any, componentProductId: string) {
+      let rejectedComponents = item.rejectedComponents ? item.rejectedComponents : []
+      if (rejectedComponents.includes(componentProductId)) {
+        rejectedComponents = rejectedComponents.filter((rejectedComponent: any) => rejectedComponent !== componentProductId)
+      } else {
+        rejectedComponents.push(componentProductId);
+      }
+      item.rejectedComponents = rejectedComponents;
+      order.items.map((orderItem: any) => {
+        if (orderItem.orderItemSeqId === item.orderItemSeqId) {
+          orderItem.rejectedComponents = rejectedComponents;
+        }
+      })
+    },
     async assignPickers() {
       const assignPickerModal = await modalController.create({
         component: AssignPickerModal,
@@ -1173,7 +1190,8 @@ export default defineComponent({
           rejectedOrderItems.push({
             "shipmentId": item.shipmentId,
             "shipmentItemSeqId": item.shipmentItemSeqId,
-            "reason": item.rejectReason
+            "reason": item.rejectReason,
+            "rejectedComponents": item.rejectedComponents
           })
           //prefix = 'rej'
           //form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
