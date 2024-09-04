@@ -5,9 +5,13 @@ import * as types from './mutation-types'
 import { UtilService } from '@/services/UtilService'
 import { hasError } from '@/adapter'
 import logger from '@/logger'
-import store from '@/store';
 import { showToast } from '@/utils'
-import { translate } from '@hotwax/dxp-components'
+import { translate, useUserStore } from '@hotwax/dxp-components'
+
+const getProductStoreId = () => {
+  const currentEComStore: any = useUserStore().getCurrentEComStore;
+  return currentEComStore.productStoreId
+};
 
 const actions: ActionTree<UtilState, RootState> = {
   async fetchRejectReasons({ commit }) {
@@ -293,7 +297,7 @@ const actions: ActionTree<UtilState, RootState> = {
     return statusDesc;
   },
 
-  async findProductStoreShipmentMethCount({ commit }) {
+  async findProductStoreShipmentMethCount({ commit }, eComStoreId) {
     let productStoreShipmentMethCount = 0
     const params = {
       "entityName": "ProductStoreShipmentMeth",
@@ -301,7 +305,7 @@ const actions: ActionTree<UtilState, RootState> = {
         "partyId": "_NA_",
         "partyId_op": "notEqual",
         "roleTypeId": "CARRIER",
-        "productStoreId": this.state.user.currentEComStore.productStoreId
+        "productStoreId": eComStoreId
       },
       "fieldList": ['roleTypeId', "partyId"],
       "viewSize": 1
@@ -420,27 +424,6 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_FACILITIES_UPDATED, facilities)
   },
 
-  async fetchProductStores({ commit }) {
-    let stores  = [];
-    try {
-      const payload = {
-        "entityName": "ProductStore",
-        "noConditionFind": "Y",
-        "viewSize": 250 // keeping view size 100 as considering that we will have max 100 product stores
-      }
-
-      const resp = await UtilService.fetchProductStores(payload)
-      if (!hasError(resp) && resp.data.count > 0) {
-        stores = resp.data.docs
-      } else {
-        throw resp.data
-      }
-    } catch (err) {
-      logger.error('Failed to fetch product stores', err)
-    }
-    commit(types.UTIL_PRODUCT_STORES_UPDATED, stores)
-  },
-
   async fetchShipmentGatewayConfigs({ commit }) {
     let configs  = {};
     try {
@@ -492,7 +475,6 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   async createForceScanSetting({ commit }) {
-    const ecomStore = store.getters['user/getCurrentEComStore'];
     const fromDate = Date.now()
 
     try {
@@ -512,7 +494,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
       const params = {
         fromDate,
-        "productStoreId": ecomStore.productStoreId,
+        "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "FULFILL_FORCE_SCAN",
         "settingValue": "false"
       }
@@ -530,7 +512,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async setForceScanSetting({ commit, dispatch, state }, value) {
     let prefValue = state.isForceScanEnabled
-    const eComStoreId = store.getters['user/getCurrentEComStore'].productStoreId;
+    const eComStoreId: any = getProductStoreId();
 
     // when selecting none as ecom store, not updating the pref as it's not possible to save pref with empty productStoreId
     if(!eComStoreId) {

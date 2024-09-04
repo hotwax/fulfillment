@@ -33,9 +33,6 @@ const getters: GetterTree <UtilState, RootState> = {
   getEnumerations(state) {
     return state.enumerations
   },
-  getProductStores(state) {
-    return state.productStores;
-  },
   getFacilities(state) {
     return state.facilities
   },

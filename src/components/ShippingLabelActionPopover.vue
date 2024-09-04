@@ -46,7 +46,6 @@
       ...mapGetters({
         facilityProductStores: 'facility/getFacilityProductStores',
         getProductStore: 'util/getProductStore',
-        productStores: 'util/getProductStores',
         shopifyShopIdForProductStore: 'util/getShopifyShopIdForProductStore',
         current: 'facility/getCurrent'
       })

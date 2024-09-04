@@ -100,7 +100,6 @@ export default defineComponent({
     ...mapGetters({
       currentFacility: 'user/getCurrentFacility',
       transferOrders: 'transferorder/getTransferOrders',
-      currentEComStore: 'user/getCurrentEComStore',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
     })
   },

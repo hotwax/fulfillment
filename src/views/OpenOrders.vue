@@ -173,7 +173,7 @@ import { computed, defineComponent } from 'vue';
 import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
-import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import { formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
@@ -221,7 +221,6 @@ export default defineComponent({
       currentFacility: 'user/getCurrentFacility',
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
-      currentEComStore: 'user/getCurrentEComStore',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       getProductStock: 'stock/getProductStock',
       notifications: 'user/getNotifications',
@@ -319,7 +318,7 @@ export default defineComponent({
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
           facilityId: { value: this.currentFacility.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.value?.productStoreId }
         },
         facet: {
           "shipmentMethodTypeIdFacet":{
@@ -387,7 +386,7 @@ export default defineComponent({
             try {
               resp = await UserService.recycleOutstandingOrders({
                 "facilityId": this.currentFacility.facilityId,
-                "productStoreId": this.currentEComStore.productStoreId,
+                "productStoreId": this.currentEComStore.value?.productStoreId,
                 "reasonId": "INACTIVE_STORE"
               })
 
@@ -432,14 +431,17 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
 
     return{
       Actions,
       caretDownOutline,
       chevronUpOutline,
       cubeOutline,
+      currentEComStore,
       formatUtcDate,
       getFeature,
       getProductIdentificationValue,

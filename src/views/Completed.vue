@@ -207,7 +207,7 @@ import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter'
-import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import emitter from '@/event-bus';
@@ -264,7 +264,6 @@ export default defineComponent({
       completedOrders: 'order/getCompletedOrders',
       getProduct: 'product/getProduct',
       currentFacility: 'user/getCurrentFacility',
-      currentEComStore: 'user/getCurrentEComStore',
       getPartyName: 'util/getPartyName',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       getProductStock: 'stock/getProductStock',
@@ -481,7 +480,7 @@ export default defineComponent({
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.currentFacility.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.value?.productStoreId }
         },
         facet: {
           "shipmentMethodFacet": {
@@ -522,7 +521,7 @@ export default defineComponent({
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.currentFacility.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId },
+          productStoreId: { value: this.currentEComStore.value?.productStoreId },
         },
         facet: {
           manifestContentIdFacet: {
@@ -760,8 +759,10 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const router = useRouter();
+    const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
 
     return {
       Actions,
@@ -770,6 +771,7 @@ export default defineComponent({
       copyToClipboard,
       checkmarkDoneOutline,
       cubeOutline,
+      currentEComStore,
       downloadOutline,
       ellipsisVerticalOutline,
       formatUtcDate,

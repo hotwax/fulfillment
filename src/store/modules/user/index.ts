@@ -13,7 +13,6 @@ const userModule: Module<UserState, RootState> = {
       current: {},
       currentFacility: {},
       instanceUrl: '',
-      currentEComStore: {},
       preference: {
         printShippingLabel: false,
         printPackingSlip: false

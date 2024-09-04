@@ -7,13 +7,14 @@ import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import logger from '@/logger'
-import { shopifyImgContext, translate } from '@hotwax/dxp-components'
+import { shopifyImgContext, translate, useUserStore } from '@hotwax/dxp-components'
 import { showToast } from "@/utils";
 import { UtilService } from '@/services/UtilService'
 
 const actions: ActionTree<TransferOrderState, RootState> = {
 
   async findTransferOrders ({ commit, state }, payload = {}) {
+    const currentEComStore: any = useUserStore().getCurrentEComStore;
     emitter.emit('presentLoader');
     let resp;
     const transferOrderQuery = JSON.parse(JSON.stringify(state.transferOrder.query))
@@ -29,7 +30,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       filters: {
         orderTypeId: { value: 'TRANSFER_ORDER' },
         facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
-        productStoreId: { value: this.state.user.currentEComStore.productStoreId }
+        productStoreId: { value: currentEComStore.productStoreId }
       }
     }
 
