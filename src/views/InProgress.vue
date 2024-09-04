@@ -537,9 +537,10 @@ export default defineComponent({
               } catch (err) {
                 // in case of error, if loader and toast are not dismissed above
                 if (toast) toast.dismiss()
-                emitter.emit('dismissLoader');
                 showToast(translate('Failed to pack order'))
                 logger.error('Failed to pack order', err)
+              } finally {
+                emitter.emit("dismissLoader");
               }
             }
           }]
