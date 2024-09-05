@@ -1297,7 +1297,7 @@ export default defineComponent({
               await this.updateOrder(order, 'report').then(async () => {
                 // redirect user to inProgress list page only when the order has a single item, and the user initiated report action on the same
                 // update the current order only when order contains multiple items in it.
-                if(order.items.length === 1 || this.isEntierOrderRejectionEnabled(order)) {
+                if(order.items.length === 1 ||  (this.useNewRejectionApi() && this.isEntierOrderRejectionEnabled(order))) {
                   this.router.push('/in-progress')
                 } else {
                   await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
