@@ -64,6 +64,9 @@ const getters: GetterTree <UserState, RootState> = {
     getAllNotificationPrefs(state) {
         return state.allNotificationPrefs
     },
+    getNewRejectionApiConfig(state) {
+        return  state.newRejectionApiConfig;
+    },
     getPartialOrderRejectionConfig(state) {
         return  state.partialOrderRejectionConfig;
     },

@@ -105,8 +105,9 @@ const actions: ActionTree<UserState, RootState> = {
       await dispatch("fetchAllNotificationPrefs");
       this.dispatch('util/findProductStoreShipmentMethCount')
       this.dispatch('util/getForceScanSetting', preferredStore.productStoreId);
-      await dispatch('user/getPartialOrderRejectionConfig')
-      await dispatch('user/getCollateralRejectionConfig')
+      await dispatch('getNewRejectionApiConfig')
+      await dispatch('getPartialOrderRejectionConfig')
+      await dispatch('getCollateralRejectionConfig')
     
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
@@ -412,6 +413,31 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_PWA_STATE_UPDATED, payload);
   },
 
+  async getNewRejectionApiConfig ({ commit }) {
+    let config = {};
+    const params = {
+      "inputFields": {
+        "productStoreId": this.state.user.currentEComStore.productStoreId,
+        "settingTypeEnumId": "FF_USE_NEW_REJ_API"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "viewSize": 1
+    } as any
+
+    try {
+      const resp = await UserService.getNewRejectionApiConfig(params)
+      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
+        config = resp.data?.docs[0];
+      } else {
+        logger.error('Failed to fetch new rejection API configuration');
+      }
+    } catch (err) {
+      logger.error(err);
+    } 
+    commit(types.USER_NEW_REJECTION_API_CONFIG_UPDATED, config);   
+  },
   async updatePartialOrderRejectionConfig ({ dispatch }, payload) {  
     let resp = {} as any;
     try {
