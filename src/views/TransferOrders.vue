@@ -16,7 +16,7 @@
     </ion-header>
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="transfer-order-filters">
-      <ion-searchbar class="better-name-here" :value="transferOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
+      <ion-searchbar class="searchbar" :value="transferOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="transferOrders.total">
         <div class="results">
           <ion-list>
@@ -164,7 +164,11 @@ export default defineComponent({
     },
   },
   ionViewDidLeave() {
-    this.store.dispatch('transferorder/clearTransferOrders');
+    const routeTo = this.router.currentRoute;
+    if (routeTo.value.name !== 'TransferOrderDetail') {
+      this.store.dispatch('transferorder/clearTransferOrderFilters');
+    }
+    this.store.dispatch('transferorder/clearTransferOrdersList');
   },
   setup() {
     const router = useRouter();

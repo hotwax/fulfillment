@@ -151,9 +151,16 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         },
         viewSize: 50,
         entityName: "OrderItemShipGroupAndFacility"
+      }, {
+        inputFields: {
+          orderId
+        },
+        fieldList: ["orderId", "shipGroupSeqId", "shipmentId", "trackingIdNumber"],
+        viewSize: 50,
+        entityName: "OrderShipmentAndRouteSegment"
       }]
 
-      const [orderHeader, orderContactMech, orderIdentifications, orderAttributes, orderBrokeringInfo, orderStatusInfo, orderPaymentPreference, orderShipGroups] = await Promise.allSettled(apiPayload.map((payload: any) => OrderLookupService.performFind(payload)))
+      const [orderHeader, orderContactMech, orderIdentifications, orderAttributes, orderBrokeringInfo, orderStatusInfo, orderPaymentPreference, orderShipGroups, orderRouteSegment] = await Promise.allSettled(apiPayload.map((payload: any) => OrderLookupService.performFind(payload)))
 
       if(orderHeader.status === "fulfilled" && !hasError(orderHeader.value) && orderHeader.value.data.count > 0) {
         order = orderHeader.value.data.docs[0]
@@ -283,6 +290,11 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       const productIds: Array<string> = []
       const shipmentMethodIds: Array<string> = []
 
+      const orderRouteSegmentInfo = orderRouteSegment.status === "fulfilled" && orderRouteSegment.value.data.docs.length > 0 ? orderRouteSegment.value.data.docs.reduce((orderSegmentInfo: any, routeSegment: any) => {
+        orderSegmentInfo[routeSegment.shipGroupSeqId] = routeSegment
+        return orderSegmentInfo
+      }, {}) : []
+
       if(orderShipGroups.status === "fulfilled" && !hasError(orderShipGroups.value) && orderShipGroups.value.data.count > 0) {
         shipGroups = orderShipGroups.value.data.docs.reduce((shipGroups: any, shipGroup: any) => {
           productIds.push(shipGroup.productId)
@@ -292,7 +304,10 @@ const actions: ActionTree<OrderLookupState, RootState> = {
           if(shipGroups[shipGroup.shipGroupSeqId]) {
             shipGroups[shipGroup.shipGroupSeqId].push(shipGroup)
           } else {
-            shipGroups[shipGroup.shipGroupSeqId] = [shipGroup]
+            shipGroups[shipGroup.shipGroupSeqId] = [{
+              ...shipGroup,
+              trackingIdNumber: orderRouteSegmentInfo[shipGroup.shipGroupSeqId] ? orderRouteSegmentInfo[shipGroup.shipGroupSeqId].trackingIdNumber : ""
+            }]
           }
           return shipGroups;
         }, {})

@@ -391,6 +391,39 @@ const actions: ActionTree<CarrierState, RootState> = {
       facilityCarriers = [...facilityCarriers, {"partyId": "_NA_", "groupName": "Default", "roleTypeId": "CARRIER"}]
     }
 
+    const carrierIds = facilityCarriers.map((carrier: any) => carrier.partyId)
+    const systemProperties = {} as any;
+
+    try {
+      resp = await CarrierService.fetchCarrierTrackingUrls({
+        "entityName": "SystemProperty",
+        "inputFields": {
+          "systemResourceId": carrierIds,
+          "systemResourceId_op": "in",
+          "systemResourceId_ic": "Y",
+          "systemPropertyId": "%trackingUrl%",
+          "systemPropertyId_op": "like"
+        },
+        "fieldList": ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
+      })
+
+      if(!hasError(resp)) {
+        resp.data.docs.map((doc: any) => {
+          systemProperties[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue
+        })
+      } else {
+        throw resp.data;
+      }
+    } catch(error: any) {
+      logger.error(error);
+    }
+
+    if(Object.keys(systemProperties).length) {
+      facilityCarriers.map((carrier: any) => {
+        carrier.trackingUrl = systemProperties[carrier.partyId.toUpperCase()]
+      })
+    }
+
     commit(types.CARRIER_FACILITY_CARRIERS_UPDATED, facilityCarriers)
   },
   async fetchProductStoreShipmentMeths({ state, commit }) {

@@ -173,7 +173,7 @@
                   <ion-label slot="end">{{ order.orderAttributes.customerid || "-" }}</ion-label>
                 </ion-item>
                 <ion-item lines="none">
-                  <ion-label class="ion-text-wrap">{{ translate("Muncipio") }}</ion-label>
+                  <ion-label class="ion-text-wrap">{{ translate("Municipio") }}</ion-label>
                   <ion-label slot="end">{{ order.orderAttributes.municipio || "-" }}</ion-label>
                 </ion-item>
               </ion-list>
@@ -190,6 +190,7 @@
                   <h1>{{ shipGroups[0].facilityName || shipGroups[0].facilityId }}</h1>
                   <p v-if="shipGroups[0].facilityId !== '_NA_'">{{ getShipmentMethodDesc(shipGroups[0].shipmentMethodTypeId) || shipGroups[0].shipmentMethodTypeId }}</p>
                 </ion-label>
+                <ion-label slot="end" v-if="shipGroups[0].trackingIdNumber">{{ translate("Tracking Code") }}{{ ":" }} {{ shipGroups[0].trackingIdNumber }}</ion-label>
               </ion-item>
     
               <div class="product-card">

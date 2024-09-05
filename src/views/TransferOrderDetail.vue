@@ -381,6 +381,12 @@
         currentShipment.isGeneratingShippingLabel = false;
       }
     }, 
+    ionViewDidLeave() {
+      const routeTo = this.router.currentRoute;
+      if (routeTo.value.name !== 'Transfer Orders') {
+        this.store.dispatch('transferorder/clearTransferOrderFilters');
+      }
+    },
     setup() {
       const store = useStore(); 
       const router = useRouter();

@@ -15,7 +15,7 @@
       </div>
       <div class="product-count">
         <ion-item v-if="!item.shipmentId" lines="none">
-          <ion-input :label="translate('Qty')" label-placement="floating" ref="pickedQuantity" type="number" min="0" v-model="item.pickedQuantity" @ionChange="updatePickedQuantity($event, item)" @ionInput="validatePickedQuantity($event, item)" @ionBlur="markPickedQuantityTouched" :errorText="getErrorText(item)" />
+          <ion-input :label="translate('Qty')" label-placement="floating" ref="pickedQuantity" type="number" min="0" v-model="item.pickedQuantity" @ionInput="updatePickedQuantity($event, item); validatePickedQuantity($event, item); markPickedQuantityTouched()" :errorText="getErrorText(item)" />
         </ion-item>
         <ion-item v-else lines="none">
           <ion-label slot="end">{{ item.pickedQuantity }} {{ translate('packed') }}</ion-label>

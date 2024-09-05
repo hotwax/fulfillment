@@ -139,6 +139,9 @@
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
+                  <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
+                    <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline"/>
+                  </ion-button>
                   <ion-button color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
                     <ion-icon slot="icon-only" :icon="trashBinOutline"/>
                   </ion-button>
@@ -175,7 +178,7 @@
 
             <div class="mobile-only">
               <ion-item>
-                <ion-button fill="clear"  :disabled="order.isModified || order.hasMissingInfo" @click.stop="isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+                <ion-button fill="clear"  :disabled="order.isModified || order.hasMissingInfo" @click.stop="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click.stop="packagingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -184,7 +187,7 @@
 
             <div class="actions">
               <div>
-                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click.stop="isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack") }}</ion-button>
+                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click.stop="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack") }}</ion-button>
                 <ion-button :disabled="order.hasMissingInfo" fill="outline" @click.stop="save(order)">{{ translate("Save") }}</ion-button>
               </div>
 
@@ -277,6 +280,8 @@ import {
   cubeOutline,
   ellipsisVerticalOutline,
   fileTrayOutline,
+  gift,
+  giftOutline,
   listOutline,
   pencilOutline,
   optionsOutline,
@@ -310,6 +315,8 @@ import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
 import QRCodeModal from '@/components/QRCodeModal.vue'
 import { useAuthStore } from '@hotwax/dxp-components'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
+import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
+import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
 
 
 export default defineComponent({
@@ -375,6 +382,7 @@ export default defineComponent({
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
+    await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths')]);
   },
   methods: {
     getRejectionReasonDescription (rejectionReasonId: string) {
@@ -526,9 +534,10 @@ export default defineComponent({
               } catch (err) {
                 // in case of error, if loader and toast are not dismissed above
                 if (toast) toast.dismiss()
-                emitter.emit('dismissLoader');
                 showToast(translate('Failed to pack order'))
                 logger.error('Failed to pack order', err)
+              } finally {
+                emitter.emit("dismissLoader");
               }
             }
           }]
@@ -1235,6 +1244,36 @@ export default defineComponent({
       })
 
       modal.present();
+    },
+    async generateTrackingCodeForPacking(order: any) {
+      const modal = await modalController.create({
+        component: GenerateTrackingCodeModal,
+        componentProps: { order }
+      })
+
+      modal.onDidDismiss().then((result: any) => {
+        if(result.data?.moveToNext) {
+          if(this.isForceScanEnabled) this.scanOrder(order);
+          else this.packOrder(order);
+        }
+      })
+
+      modal.present();
+    },
+ 
+    async openGiftCardActivationModal(item: any) {
+      const modal = await modalController.create({
+        component: GiftCardActivationModal,
+        componentProps: { item }
+      })
+
+      modal.onDidDismiss().then((result: any) => {
+        if(result.data?.isGCActivated) {
+          this.store.dispatch("order/updateCurrentItemGCActivationDetails", { item, category: "in-progress", isDetailsPage: false })
+        }
+      })
+
+      modal.present();
     }
   },
   async mounted () {
@@ -1267,6 +1306,8 @@ export default defineComponent({
       formatUtcDate,
       getFeature,
       getProductIdentificationValue,
+      gift,
+      giftOutline,
       hasPermission,
       isKit,
       listOutline,
