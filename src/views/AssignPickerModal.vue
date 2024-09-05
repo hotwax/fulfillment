@@ -194,7 +194,7 @@ export default defineComponent({
       this.pickers = []
 
       if(this.queryString.length > 0) {
-        inputFields = `firstName:*${this.queryString}* OR externalId:*${this.queryString}* OR lastName:*${this.queryString}* OR partyId:*${this.queryString}* OR groupName:*${this.queryString}*`
+        inputFields = `*(${this.queryString.trim().split(' ').join(' OR ')})* OR "${this.queryString}"^100`
       }
       else {
         inputFields = `*:*`
@@ -205,7 +205,8 @@ export default defineComponent({
           "params": {
             "rows": "50",
             "q": inputFields,
-            "fl": "firstName externalId lastName partyId groupName",
+            "defType" : "edismax",
+            "qf": "firstName lastName groupName partyId externalId",
             "sort": "firstName asc"
           },
           "filter": ["docType:EMPLOYEE", "WAREHOUSE_PICKER_role:true"]
@@ -216,7 +217,8 @@ export default defineComponent({
         const resp = await UtilService.getAvailablePickers(payload);
         if (resp.status === 200 && !hasError(resp)) {
           this.pickers = resp.data.response.docs.map((picker) => ({
-            name: picker.groupName ? picker.groupName : (picker.firstName && picker.lastName) ? picker.firstName + ' ' + picker.lastName : picker.partyId,
+            name: picker.groupName ? picker.groupName : (picker.firstName || picker.lastName)
+                ? (picker.firstName ? picker.firstName : '') + (picker.lastName ? ' ' + picker.lastName : '') : picker.partyId,           
             id: picker.partyId,
             externalId: picker.externalId
           }))
@@ -226,7 +228,7 @@ export default defineComponent({
       } catch (err) {
         logger.error('Failed to fetch the pickers information or there are no pickers available', err)
       }
-      this.isLoading = false;
+      this.isLoading = false
     }
   },
   async mounted() {
