@@ -190,21 +190,22 @@ export default defineComponent({
     },
     async findPickers() {
       this.isLoading = true;
-      let inputFields = {}
+      let query = {}
       this.pickers = []
 
       if(this.queryString.length > 0) {
-        inputFields = `*(${this.queryString.trim().split(' ').join(' OR ')})* OR "${this.queryString}"^100`
+        let keyword = this.queryString.trim().split(' ')
+        query = `(${keyword.map(key => `*${key}*`).join(' OR ')}) OR "${this.queryString}"^100`;
       }
       else {
-        inputFields = `*:*`
+        query = `*:*`
       }
 
       const payload = {
         "json": {
           "params": {
             "rows": "50",
-            "q": inputFields,
+            "q": query,
             "defType" : "edismax",
             "qf": "firstName lastName groupName partyId externalId",
             "sort": "firstName asc"
