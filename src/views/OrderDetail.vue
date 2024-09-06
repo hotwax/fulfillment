@@ -95,7 +95,7 @@
                   <ion-icon :icon="closeCircleOutline" />
                 </ion-chip>
               </template>
-              <template v-else-if="isEntierOrderRejectionEnabled(order)">
+              <template v-else-if="useNewRejectionApi() && isEntierOrderRejectionEnabled(order)">
                 <ion-chip outline color="danger">
                   <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject entire order')}}</ion-label>
                 </ion-chip>
@@ -484,6 +484,7 @@ export default defineComponent({
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
       getStatusDesc: 'util/getStatusDesc',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
+      newRejectionApiConfig: 'user/getNewRejectionApiConfig',
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
       isForceScanEnabled: 'util/isForceScanEnabled',
@@ -632,6 +633,9 @@ export default defineComponent({
     },
     isEntierOrderRejectionEnabled(order: any) {
       return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
+    },
+    useNewRejectionApi() {
+      return this.newRejectionApiConfig && this.newRejectionApiConfig.settingValue && JSON.parse(this.newRejectionApiConfig.settingValue)
     },
     async printPicklist (order: any) {
       await OrderService.printPicklist(order.picklistId)
@@ -1185,18 +1189,25 @@ export default defineComponent({
       items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
         
+        let prefix = 'rtp'
+
         // reject the item only when item is having a rejection reason
         if(updateParameter === 'report' && item.rejectReason) {
-          rejectedOrderItems.push({
-            "shipmentId": item.shipmentId,
-            "shipmentItemSeqId": item.shipmentItemSeqId,
-            "reason": item.rejectReason,
-            "rejectedComponents": item.rejectedComponents
-          })
-          //prefix = 'rej'
-          //form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
+          if (this.useNewRejectionApi()) {
+            rejectedOrderItems.push({
+              "shipmentId": item.shipmentId,
+              "shipmentItemSeqId": item.shipmentItemSeqId,
+              "reason": item.rejectReason
+            })
+          } else {
+            prefix = 'rej'
+            form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
+            form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
+            form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
+            form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
+          }
         } else {
-          const prefix = 'rtp'
+          prefix = 'rtp'
           form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
           form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
           form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
@@ -1222,7 +1233,7 @@ export default defineComponent({
         }
 
         //Run this logic only when entire order rejection is disabled. This logic will now be used only to update shipment boxes, not to reject items.
-        if (!this.isEntierOrderRejectionEnabled(order)) {
+        if (!this.useNewRejectionApi() || !this.isEntierOrderRejectionEnabled(order)) {
           resp = await OrderService.updateOrder({
             headers: {
               'Content-Type': 'multipart/form-data;'
@@ -1303,7 +1314,7 @@ export default defineComponent({
               await this.updateOrder(order, 'report').then(async () => {
                 // redirect user to inProgress list page only when the order has a single item, and the user initiated report action on the same
                 // update the current order only when order contains multiple items in it.
-                if(order.items.length === 1 || this.isEntierOrderRejectionEnabled(order)) {
+                if(order.items.length === 1 ||  (this.useNewRejectionApi() && this.isEntierOrderRejectionEnabled(order))) {
                   this.router.push('/in-progress')
                 } else {
                   await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })

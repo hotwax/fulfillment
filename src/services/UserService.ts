@@ -333,6 +333,14 @@ const isEnumExists = async (enumId: string): Promise<any> => {
   }
 }
 
+const getNewRejectionApiConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: payload,
+  });
+}
+
 const createPartialOrderRejectionConfig = async (payload: any): Promise<any> => {
   return api({
     url: "service/createProductStoreSetting",
@@ -387,6 +395,7 @@ export const UserService = {
     getFieldMappings,
     getFacilityGroupDetails,
     getFacilityGroupAndMemberDetails,
+    getNewRejectionApiConfig,
     getPartialOrderRejectionConfig,
     getUserProfile,
     getPreferredStore,

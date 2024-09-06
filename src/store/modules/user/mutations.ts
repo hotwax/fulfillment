@@ -63,6 +63,9 @@ const mutations: MutationTree <UserState> = {
     [types.USER_ALL_NOTIFICATION_PREFS_UPDATED] (state, payload) {
         state.allNotificationPrefs = payload
     },
+    [types.USER_NEW_REJECTION_API_CONFIG_UPDATED] (state, payload) {
+        state.newRejectionApiConfig = payload
+    },
     [types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED] (state, payload) {
         state.partialOrderRejectionConfig = payload
     },

@@ -40,7 +40,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="isTrackingRequired ? !shipmentMethodTypeId: ''" @click="confirmSave()">
+    <ion-fab-button :disabled="isTrackingRequired ? !shipmentMethodTypeId: false" @click="confirmSave()">
       <ion-icon :icon="isForceScanEnabled ? barcodeOutline : saveOutline" />
     </ion-fab-button>
   </ion-fab>
