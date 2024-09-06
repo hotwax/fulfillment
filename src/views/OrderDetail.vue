@@ -147,6 +147,7 @@
                     <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
                     <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
+                  <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.rejectedComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
                 </ion-item>
               </ion-card>
             </div>
@@ -367,6 +368,7 @@ import {
   IonCardHeader,
   IonCardSubtitle,
   IonCardTitle,
+  IonCheckbox,
   IonChip,
   IonContent,
   IonHeader,
@@ -444,6 +446,7 @@ export default defineComponent({
     IonBadge,
     IonButton,
     IonCard,
+    IonCheckbox,
     IonChip,
     IonCardHeader,
     IonCardSubtitle,
@@ -922,13 +925,30 @@ export default defineComponent({
     },
     async removeRejectionReason(ev: Event, item: any, order: any) {
       delete item["rejectReason"];
+      delete item["rejectedComponents"];
+
       item.rejectReason = "";
         order.items.map((orderItem: any) => {
           if(orderItem.orderItemSeqId === item.orderItemSeqId) {
             delete orderItem["rejectReason"];
+            delete orderItem["rejectedComponents"];
           }
         })
         order.hasRejectedItem = order.items.some((item:any) => item.rejectReason);
+    },
+    rejectKitComponent(order: any, item: any, componentProductId: string) {
+      let rejectedComponents = item.rejectedComponents ? item.rejectedComponents : []
+      if (rejectedComponents.includes(componentProductId)) {
+        rejectedComponents = rejectedComponents.filter((rejectedComponent: any) => rejectedComponent !== componentProductId)
+      } else {
+        rejectedComponents.push(componentProductId);
+      }
+      item.rejectedComponents = rejectedComponents;
+      order.items.map((orderItem: any) => {
+        if (orderItem.orderItemSeqId === item.orderItemSeqId) {
+          orderItem.rejectedComponents = rejectedComponents;
+        }
+      })
     },
     async assignPickers() {
       const assignPickerModal = await modalController.create({

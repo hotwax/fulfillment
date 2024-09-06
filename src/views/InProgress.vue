@@ -171,6 +171,7 @@
                       {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
                       <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
                     </ion-label>
+                    <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.rejectedComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
                   </ion-item>
                 </ion-card>
               </div>
@@ -243,6 +244,7 @@ import {
   IonButton,
   IonButtons,
   IonCard,
+  IonCheckbox,
   IonChip,
   IonContent,
   IonFab,
@@ -326,6 +328,7 @@ export default defineComponent({
     IonButton,
     IonButtons,
     IonCard,
+    IonCheckbox,
     IonChip,
     IonContent,
     IonFab,
@@ -378,7 +381,7 @@ export default defineComponent({
       selectedPicklistId: '',
       isScrollingEnabled: false,
       isRejecting: false,
-      rejectEntireOrderReasonId: 'REJECT_ENTIRE_ORDER'
+      rejectEntireOrderReasonId: 'REJECT_ENTIRE_ORDER',
     }
   },
   async ionViewWillEnter() {
@@ -416,10 +419,12 @@ export default defineComponent({
     },
     async removeRejectionReason(ev: Event, item: any, order: any) {
       delete item["rejectReason"];
+      delete item["rejectedComponents"];
       item.rejectReason = "";
         order.items.map((orderItem: any) => {
           if(orderItem.orderItemSeqId === item.orderItemSeqId) {
             delete orderItem["rejectReason"];
+            delete orderItem["rejectedComponents"];
           }
         })
         order.hasRejectedItem = order.items.some((item:any) => item.rejectReason);
@@ -785,7 +790,8 @@ export default defineComponent({
             rejectedOrderItems.push({
               "shipmentId": item.shipmentId,
               "shipmentItemSeqId": item.shipmentItemSeqId,
-              "reason": this.rejectEntireOrderReasonId
+              "reason": this.rejectEntireOrderReasonId,
+              "rejectedComponents": item.rejectedComponents
             })
             shipmentIds.push(item.shipmentId)
           }
@@ -865,6 +871,21 @@ export default defineComponent({
         }
       })
       order.hasRejectedItem = true
+      this.store.dispatch('order/updateInProgressOrder', order)
+    },
+    rejectKitComponent(order: any, item: any, componentProductId: string) {
+      let rejectedComponents = item.rejectedComponents ? item.rejectedComponents : []
+      if (rejectedComponents.includes(componentProductId)) {
+        rejectedComponents = rejectedComponents.filter((rejectedComponent: any) => rejectedComponent !== componentProductId)
+      } else {
+        rejectedComponents.push(componentProductId);
+      }
+      item.rejectedComponents = rejectedComponents;
+      order.items.map((orderItem: any) => {
+        if (orderItem.orderItemSeqId === item.orderItemSeqId) {
+          orderItem.rejectedComponents = rejectedComponents;
+        }
+      })
       this.store.dispatch('order/updateInProgressOrder', order)
     },
     isEntierOrderRejectionEnabled(order: any) {
