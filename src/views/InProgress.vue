@@ -419,10 +419,12 @@ export default defineComponent({
     },
     async removeRejectionReason(ev: Event, item: any, order: any) {
       delete item["rejectReason"];
+      delete item["rejectedComponents"];
       item.rejectReason = "";
         order.items.map((orderItem: any) => {
           if(orderItem.orderItemSeqId === item.orderItemSeqId) {
             delete orderItem["rejectReason"];
+            delete orderItem["rejectedComponents"];
           }
         })
         order.hasRejectedItem = order.items.some((item:any) => item.rejectReason);
