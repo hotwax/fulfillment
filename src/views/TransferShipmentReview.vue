@@ -209,8 +209,7 @@
 
         if (!currentShipment.trackingCode) {
           //regenerate shipping label if missing tracking code
-          //TODO: Currently doing force rate shop. Need to add support on easypost integration if we don't want it
-          const resp = await OrderService.retryShippingLabel([currentShipment.shipmentId], true)
+          const resp = await OrderService.retryShippingLabel([currentShipment.shipmentId])
           if (!hasError(resp)) {
             this.showLabelError = false;
             showToast(translate("Shipping Label generated successfully"))
