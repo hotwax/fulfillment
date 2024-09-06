@@ -532,13 +532,16 @@ export default defineComponent({
     }
     
     // Fetching shipment label errors 
-    const shipmentIds = this.order?.shipmentIds?.length > 0 ? this.order?.shipmentIds : this.order.shipments?.map((shipment: any) => shipment.shipmentId);
-    if (shipmentIds && shipmentIds.length > 0) {
-      const labelErrors = await OrderService.fetchShipmentLabelError(shipmentIds);
-      this.shipmentLabelErrorMessages = labelErrors.join(', ');
-    }
+    await this.fetchShipmentLabelError()
   },
   methods: {
+    async fetchShipmentLabelError() {
+      const shipmentIds = this.order?.shipmentIds?.length > 0 ? this.order?.shipmentIds : this.order.shipments?.map((shipment: any) => shipment.shipmentId);
+      if (shipmentIds && shipmentIds.length > 0) {
+        const labelErrors = await OrderService.fetchShipmentLabelError(shipmentIds);
+        this.shipmentLabelErrorMessages = labelErrors.join(', ');
+      }
+    },
     getCarrierName(carrierPartyId: string) {
       const selectedCarrier = this.facilityCarriers.find((carrier: any) => carrier.partyId === carrierPartyId)
       return selectedCarrier && selectedCarrier.groupName ? selectedCarrier.groupName : carrierPartyId
@@ -584,6 +587,22 @@ export default defineComponent({
               "shipmentMethodTypeId": shipmentMethodTypeId ? shipmentMethodTypeId : ""
             }) as any;
             if (!hasError(resp)) {
+              //on changing the shipment carrier/method, voiding the gatewayMessage and gatewayStatus
+              if (this.shipmentLabelErrorMessages) {
+                resp = await OrderService.updateShipmentPackageRouteSeg({
+                  "shipmentId": shipmentPackage.shipmentId,
+                  "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
+                  "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
+                  "gatewayMessage": "",
+                  "gatewayStatus": ""
+                }) as any;
+                if (!hasError(resp)) {
+                  this.shipmentLabelErrorMessages = ""
+                } else {
+                  throw resp.data
+                }
+              }
+
               this.shipmentMethodTypeId = shipmentMethodTypeId
               showToast(translate("Shipment method detail updated successfully."))
               //fetching updated shipment packages
@@ -609,6 +628,7 @@ export default defineComponent({
     updateCarrierShipmentDetails(carrierPartyId: string, shipmentMethodTypeId: string) {
       this.carrierPartyId = carrierPartyId
       this.shipmentMethodTypeId = shipmentMethodTypeId
+      this.shipmentLabelErrorMessages = ""
     },
     async fetchKitComponent(orderItem: any, isOtherShipment = false ) {
       await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
@@ -1009,6 +1029,7 @@ export default defineComponent({
         order.isGeneratingShippingLabel = false
       } else {
         showToast(translate("Failed to generate shipping label"))
+        this.fetchShipmentLabelError()
       }
     },
     async shippingPopover(ev: Event) {
@@ -1503,7 +1524,7 @@ export default defineComponent({
     async generateTrackingCodeForPacking(order: any) {
       const modal = await modalController.create({
         component: GenerateTrackingCodeModal,
-        componentProps: { order, updateCarrierShipmentDetails: this.updateCarrierShipmentDetails }
+        componentProps: { order, updateCarrierShipmentDetails: this.updateCarrierShipmentDetails, shipmentLabelErrorMessages: this.shipmentLabelErrorMessages, fetchShipmentLabelError: this.fetchShipmentLabelError }
       })
 
       modal.onDidDismiss().then((result: any) => {
