@@ -120,7 +120,7 @@
                         <ion-icon :icon="closeCircleOutline" />
                       </ion-chip>
                     </template>
-                    <template v-else-if="isEntierOrderRejectionEnabled(order)">
+                    <template v-else-if="useNewRejectionApi() && isEntierOrderRejectionEnabled(order)">
                       <ion-chip outline color="danger">
                         <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject entire order')}}</ion-label>
                       </ion-chip>
@@ -363,6 +363,7 @@ export default defineComponent({
       boxTypeDesc: 'util/getShipmentBoxDesc',
       getProductStock: 'stock/getProductStock',
       isForceScanEnabled: 'util/isForceScanEnabled',
+      newRejectionApiConfig: 'user/getNewRejectionApiConfig',
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig'
     }),
@@ -753,24 +754,31 @@ export default defineComponent({
       items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
 
-        
+        let prefix = 'rtp'
         if (updateParameter === 'report' && item.rejectReason) {
-          rejectedOrderItems.push({
-            "shipmentId": item.shipmentId,
-            "shipmentItemSeqId": item.shipmentItemSeqId,
-            "reason": item.rejectReason
-          })
-          //prefix = 'rej'
-          //form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
+          if (this.useNewRejectionApi()) {
+            rejectedOrderItems.push({
+              "shipmentId": item.shipmentId,
+              "shipmentItemSeqId": item.shipmentItemSeqId,
+              "reason": item.rejectReason
+            })
+          } else {
+            prefix = 'rej'
+            form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
+            form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
+            form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
+            form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
+          }
         } else {
-          const prefix = 'rtp'
+          prefix = 'rtp'
           form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
           form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
           form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
           form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
         }
       })
-      if (this.isEntierOrderRejectionEnabled(order)) {
+      
+      if (this.useNewRejectionApi() && this.isEntierOrderRejectionEnabled(order)) {
         const shipmentIds = rejectedOrderItems.map((item:any) => item.shipmentId);
         items.map((item: any) => {
           if (!shipmentIds.includes(item.shipmentId)) {
@@ -802,7 +810,7 @@ export default defineComponent({
         }
 
         //Run this logic only when entire order rejection is disabled. This logic will now be used only to update shipment boxes, not to reject items.
-        if (!this.isEntierOrderRejectionEnabled(order)) {
+        if (!this.useNewRejectionApi() || !this.isEntierOrderRejectionEnabled(order)) {
           resp = await OrderService.updateOrder({
             headers: {
               'Content-Type': 'multipart/form-data;'
@@ -861,6 +869,9 @@ export default defineComponent({
     },
     isEntierOrderRejectionEnabled(order: any) {
       return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
+    },
+    useNewRejectionApi() {
+      return this.newRejectionApiConfig && this.newRejectionApiConfig.settingValue && JSON.parse(this.newRejectionApiConfig.settingValue)
     },
     updateBox(updatedBox: string, item: any, order: any) {
       item.selectedBox = updatedBox;

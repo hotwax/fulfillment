@@ -171,6 +171,7 @@
           </ion-item>
         </ion-card>
 
+        <template v-if="useNewRejectionApi()">
         <ion-card>
           <ion-card-header>
             <ion-card-title>
@@ -197,6 +198,7 @@
             <ion-toggle label-placement="start" :checked="'true' === collateralRejectionConfig.settingValue" @click.prevent="confirmCollateralRejection(collateralRejectionConfig, $event)">{{ translate("Auto reject related items") }}</ion-toggle>
           </ion-item>
         </ion-card>
+        </template>
       </section>
     </ion-content>
   </ion-page>
@@ -299,6 +301,7 @@ export default defineComponent({
       allNotificationPrefs: 'user/getAllNotificationPrefs',
       firebaseDeviceId: 'user/getFirebaseDeviceId',
       isForceScanEnabled: 'util/isForceScanEnabled',
+      newRejectionApiConfig: 'user/getNewRejectionApiConfig',
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
     })
@@ -309,12 +312,16 @@ export default defineComponent({
     // fetching partial order rejection when entering setting page to have latest information
     await this.store.dispatch('user/getPartialOrderRejectionConfig')
     await this.store.dispatch('user/getCollateralRejectionConfig')
+    await this.store.dispatch('user/getNewRejectionApiConfig')
     
     // as notification prefs can also be updated from the notification pref modal,
     // latest state is fetched each time we open the settings page
     await this.store.dispatch('user/fetchNotificationPreferences')
   },
   methods: {
+    useNewRejectionApi() {
+      return this.newRejectionApiConfig && this.newRejectionApiConfig.settingValue && JSON.parse(this.newRejectionApiConfig.settingValue)
+    },
     async getCurrentFacilityDetails() {
       let resp: any;
       try {        
