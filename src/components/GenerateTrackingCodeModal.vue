@@ -111,7 +111,7 @@ export default defineComponent({
       isGeneratingShippingLabel: false
     }
   },
-  props: ["order", "updateCarrierShipmentDetails"],
+  props: ["order", "updateCarrierShipmentDetails", "shipmentLabelErrorMessages", "fetchShipmentLabelError"],
   async mounted() {
     this.isTrackingRequired = this.isTrackingRequiredForAnyShipmentPackage()
     if(this.facilityCarriers) {
@@ -208,6 +208,7 @@ export default defineComponent({
           throw resp.data;
         }
       } catch(error: any) {
+        this.fetchShipmentLabelError && this.fetchShipmentLabelError()
         logger.error(error);
         showToast(translate("Failed to generate shipping label"))
         return false;
@@ -248,8 +249,22 @@ export default defineComponent({
               "carrierPartyId": carrierPartyId,
               "shipmentMethodTypeId" : shipmentMethodTypeId ? shipmentMethodTypeId : "",
             }) as any;
-            if(hasError(resp)) {
-              throw resp.data;
+            if(!hasError(resp)) {
+              //on changing the shipment carrier/method, voiding the gatewayMessage and gatewayStatus
+              if (this.shipmentLabelErrorMessages) {
+                resp = await OrderService.updateShipmentPackageRouteSeg({
+                  "shipmentId": shipmentPackage.shipmentId,
+                  "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
+                  "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
+                  "gatewayMessage": "",
+                  "gatewayStatus": ""
+                }) as any;
+                if (hasError(resp)) {
+                  throw resp.data
+                }
+              }
+            } else {
+              throw resp.data
             }
           }
         } else {
