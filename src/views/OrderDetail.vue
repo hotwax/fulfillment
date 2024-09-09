@@ -515,7 +515,7 @@ export default defineComponent({
       shipmentMethodTypeId: "",
       carrierPartyId: "",
       carrierMethods:[] as any,
-      isUpdatingCarrierDetail: true
+      isUpdatingCarrierDetail: false
     }
   },
   async ionViewDidEnter() {
