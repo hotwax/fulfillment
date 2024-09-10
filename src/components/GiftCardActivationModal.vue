@@ -144,7 +144,8 @@ export default defineComponent({
           orderItemSeqId: this.item.orderItemSeqId,
           amount: this.itemPriceInfo.unitPrice,
           typeEnumId: "GC_ACTIVATE",
-          cardNumber: this.activationCode.trim()
+          cardNumber: this.activationCode.trim(),
+          partyId: this.item.customerId
         })
 
         if(!hasError(resp)) {
