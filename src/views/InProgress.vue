@@ -773,6 +773,9 @@ export default defineComponent({
             form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
             form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
             form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
+            if (item.rejectedComponents && item.rejectedComponents.length > 0) {
+              form.append(`${prefix}_rejectedComponents_${index}`, JSON.stringify(item.rejectedComponents))
+            }
             form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
           }
         } else {
