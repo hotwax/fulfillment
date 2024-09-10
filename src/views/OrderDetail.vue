@@ -1221,7 +1221,8 @@ export default defineComponent({
             rejectedOrderItems.push({
               "shipmentId": item.shipmentId,
               "shipmentItemSeqId": item.shipmentItemSeqId,
-              "reason": item.rejectReason
+              "reason": item.rejectReason,
+              "rejectedComponents": item.rejectedComponents
             })
           } else {
             prefix = 'rej'
