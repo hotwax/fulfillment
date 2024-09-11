@@ -634,7 +634,8 @@ const retryShippingLabel = async (shipmentIds: Array<string>, forceRateShop = fa
     url: 'retryShippingLabel',  // TODO: update the api
     data: {
       shipmentIds,
-      forceRateShop: forceRateShop ? 'Y' : 'N'
+      forceRateShop: forceRateShop ? 'Y' : 'N',
+      generateLabel: "Y" // This is needed to generate label after the new changes in backend related to auto generation of label.
     }
   })
 }
