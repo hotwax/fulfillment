@@ -283,7 +283,7 @@
             </ion-item>
           </ion-card>
 
-          <ion-card v-if="!hasPermission(Actions.APP_INVOICING_STATUS_VIEW) && (category === 'completed') && orderInvoicingInfo.id">
+          <ion-card v-if="hasPermission(Actions.APP_INVOICING_STATUS_VIEW) && (category === 'completed') && orderInvoicingInfo.id">
             <ion-card-header>
               <ion-card-title>
                 {{ translate("Order Invoicing Status") }}
@@ -1565,7 +1565,7 @@ export default defineComponent({
         if(!this.orderInvoicingInfo.statusCode && !Object.keys(this.orderInvoicingInfo.response).length) {
           message = "Failed to send to Retail Pro Server due to connection issues with Retail Pro, please try again."
         } else {
-          message = "Failed to send to Retail Pro Server due to the following error, please contact support:"
+          message = "Failed to send to Retail Pro Server due to the following error, please contact support:."
           isMessageRequired = true;
         }
       }

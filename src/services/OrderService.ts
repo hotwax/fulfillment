@@ -14,7 +14,7 @@ const fetchOrderHeader = async (params: any): Promise<any> => {
 }
 
 const fetchOrderAttribute = async (params: any): Promise<any> => {
-  return await api({
+  return api({
     url: "performFind",
     method: "get",
     params
