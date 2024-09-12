@@ -260,13 +260,15 @@
               </template>
             </ion-item>
             <template v-if="order.missingLabelImage">
-              <ion-button :disabled="!shipmentMethodTypeId" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
-                {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
-                <ion-spinner color="primary" slot="end" data-spinner-size="medium" v-if="order.isGeneratingShippingLabel" name="crescent" />
-              </ion-button>
-              <ion-button :disabled="!shipmentMethodTypeId || !carrierPartyId" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
-                {{ translate("Add tracking code manually") }}
-              </ion-button>
+              <template v-if="category === 'completed'">
+                <ion-button :disabled="!shipmentMethodTypeId" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
+                  {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
+                  <ion-spinner color="primary" slot="end" data-spinner-size="medium" v-if="order.isGeneratingShippingLabel" name="crescent" />
+                </ion-button>
+                <ion-button :disabled="!shipmentMethodTypeId || !carrierPartyId" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
+                  {{ translate("Add tracking code manually") }}
+                </ion-button>
+              </template>
               <ion-item lines="none" v-if="shipmentLabelErrorMessages">
                 <ion-label class="ion-text-wrap">
                   {{ shipmentLabelErrorMessages }}
