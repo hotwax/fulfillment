@@ -611,5 +611,20 @@
   "Zip Code": "郵便番号",
   ", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.": "{ productName }、および{ products }の他の製品は出荷不可能と判定されました。{ space }これらの注文項目はこのストアから解除され、再仲介のために送られます。",
   ", and other products are identified as unfulfillable. other containing these products will be unassigned from this store and sent to be rebrokered.": "{productName}、および{products}の他の製品は出荷不可能と判定されました。{ space }これらの製品を含む{orders}件の他の{orderText}はこのストアから解除され、再仲介のために送られます。",
-  ", and other products were identified as unfulfillable. These items will be unassigned from this store and sent to be rebrokered.": "{productName}、および{products}の他の製品は出荷不可能と判定されました。{ space }これらの項目はこのストアから解除され、再仲介のために送られます。"
+  ", and other products were identified as unfulfillable. These items will be unassigned from this store and sent to be rebrokered.": "{productName}、および{products}の他の製品は出荷不可能と判定されました。{ space }これらの項目はこのストアから解除され、再仲介のために送られます。",
+   "C807": "C807",
+  "Citi Express": "Citi Express",
+  "DrivIn": "DrivIn",
+  "Forza": "Forza",
+  "Moovin": "Moovin",
+  "CargoTrans": "CargoTrans",
+  "Terminal Express": "Terminal Express",
+  "Shipping - (1-2 Days)": "Shipping - (1-2 Days)",
+  "Delivery (48 - 72 Hrs)": "Delivery (48 - 72 Hrs)",
+  "Cash on delivery - (48 to 72 Hrs)": "Cash on delivery - (48 to 72 Hrs)",
+  "Cash on delivery - 24 Hrs": "Cash on delivery - 24 Hrs",
+  "Next day - 24 Hrs": "Next day - 24 Hrs",
+  "Same day (12 Hrs)": "Same day (12 Hrs)",
+  "Two Day": "Two Day",
+  "Gratis": "Gratis"
 }
