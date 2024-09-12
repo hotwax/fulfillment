@@ -268,12 +268,12 @@
                 <ion-button :disabled="!shipmentMethodTypeId || !carrierPartyId" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
                   {{ translate("Add tracking code manually") }}
                 </ion-button>
-                <ion-item lines="none" v-if="shipmentLabelErrorMessages">
-                  <ion-label class="ion-text-wrap">
-                    {{ shipmentLabelErrorMessages }}
-                  </ion-label>
-                </ion-item>
               </template>
+              <ion-item lines="none" v-if="shipmentLabelErrorMessages">
+                <ion-label class="ion-text-wrap">
+                  {{ shipmentLabelErrorMessages }}
+                </ion-label>
+              </ion-item>
             </template>
             <ion-item v-else>
               <ion-label>
