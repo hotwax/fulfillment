@@ -3,7 +3,6 @@ export default interface UserState {
     current: any;
     permissions: any;
     pwaState: any;
-    currentFacility: object;
     instanceUrl: string;
     currentEComStore: object;
     preference: {

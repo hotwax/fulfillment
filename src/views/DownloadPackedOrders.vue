@@ -75,12 +75,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, computed } from 'vue';
 import { mapGetters, useStore } from "vuex";
 import { alertController, IonBackButton, IonButton, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonPage, IonReorder, IonReorderGroup, IonTitle, IonToolbar, modalController } from '@ionic/vue'
 import { addCircleOutline, addOutline, cloudDownloadOutline, pencilOutline, removeCircleOutline, trashOutline } from 'ionicons/icons'
 import { parseCsv, jsonToCsv, showToast } from '@/utils';
-import { translate,useUserStore } from "@hotwax/dxp-components"
+import { translate, useUserStore } from "@hotwax/dxp-components"
 import logger from '@/logger';
 import { DateTime } from 'luxon';
 import { useRouter } from 'vue-router';
@@ -123,7 +123,6 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      currentFacility: 'user/getCurrentFacility',
       fieldMappings: 'user/getFieldMappings'
     }),
     areAllFieldsSelected() {
@@ -143,7 +142,7 @@ export default defineComponent({
         params: {
           configId: 'MDM_PACKED_SHIPMENT',
           mimeTypeId: 'application/octet',
-          facilityId: this.currentFacility.facilityId
+          facilityId: this.currentFacility?.facilityId
         }
       }
 
@@ -398,12 +397,15 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
-    const router = useRouter();
+    const router = useRouter(); 
+    const userStore = useUserStore()
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
 
     return {
       addCircleOutline,
       addOutline,
       cloudDownloadOutline,
+      currentFacility,
       pencilOutline,
       removeCircleOutline,
       store,

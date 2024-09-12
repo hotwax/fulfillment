@@ -56,9 +56,8 @@ const actions: ActionTree<UserState, RootState> = {
       
       //fetching user facilities
       const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_STOREFULFILLMENT_ADMIN" );
-      const baseURL = store.getters['user/getBaseUrl'];
-      const facilities = await getUserFacilities(token, baseURL, userProfile?.partyId, "OMS_FULFILLMENT", isAdminUser);
-
+      const facilities = await useUserStore().getUserFacilities(userProfile?.partyId, "OMS_FULFILLMENT", isAdminUser)
+      await useUserStore().getPreferredFacility('SELECTED_FACILITY')
 
       if (!facilities.length) throw 'Unable to login. User is not assocaited with any facility'
 
@@ -71,8 +70,8 @@ const actions: ActionTree<UserState, RootState> = {
       }, []);
 
       // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
-      const currentFacility = userProfile.facilities[0];
-      userProfile.stores = await UserService.getEComStores(token, currentFacility.facilityId);
+      const currentFacility: any = useUserStore().getCurrentFacility
+      userProfile.stores = await UserService.getEComStores(token, currentFacility?.facilityId);
 
       let preferredStore = userProfile.stores[0]
 
@@ -93,7 +92,6 @@ const actions: ActionTree<UserState, RootState> = {
 
       // TODO user single mutation
       commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
-      commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
       commit(types.USER_INFO_UPDATED, userProfile);
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       commit(types.USER_TOKEN_CHANGED, { newToken: token })
@@ -589,7 +587,8 @@ const actions: ActionTree<UserState, RootState> = {
 
   async fetchNotificationPreferences({ commit, state }) {
     let resp = {} as any
-    const facilityId = (state.currentFacility as any).facilityId
+    const currentFacility: any = useUserStore().getCurrentFacility
+    const facilityId = currentFacility?.facilityId
     let notificationPreferences = [], enumerationResp = [], userPrefIds = [] as any
     try {
       resp = await getNotificationEnumIds(process.env.VUE_APP_NOTIF_ENUM_TYPE_ID as any)

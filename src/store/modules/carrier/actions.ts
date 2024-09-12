@@ -6,7 +6,7 @@ import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import logger from '@/logger'
 import store from '@/store';
-import { translate } from '@hotwax/dxp-components';
+import { translate, useUserStore } from '@hotwax/dxp-components';
 import { showToast, isValidCarrierCode, isValidDeliveryDays } from '@/utils';
   
 
@@ -358,14 +358,16 @@ const actions: ActionTree<CarrierState, RootState> = {
   async fetchFacilityCarriers({ state, commit }, payload) {
     let facilityCarriers  = [] as any;
     let viewIndex = 0, resp, docCount = 0;
-    
+    const currentFacility: any = useUserStore().getCurrentFacility
+    const facilityId = currentFacility?.facilityId
+
     try {
       do {
         const params = {
           "entityName": "FacilityAndParty",
           "inputFields": {
             "roleTypeId": "CARRIER",
-            "facilityId": this.state.user.currentFacility.facilityId
+            "facilityId": facilityId
           },
           "fieldList": ["facilityId", "partyId", "firstName", "lastName", "groupName", "roleTypeId", "fromDate"],
           "noConditionFind": "Y",

@@ -49,11 +49,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { IonChip, IonIcon, IonPage, IonSelect, IonSelectOption, IonHeader, IonList, IonListHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonButton, alertController, modalController } from '@ionic/vue'
 import { parseCsv, showToast } from '@/utils';
-import { translate } from "@hotwax/dxp-components";
+import { translate, useUserStore } from "@hotwax/dxp-components";
 import { UploadService } from "@/services/UploadService"
 import { hasError } from '@/adapter';
 import logger from '@/logger';
@@ -97,7 +97,6 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       fieldMappings: 'user/getFieldMappings',
-      currentFacility: 'user/getCurrentFacility',
     })
   },
   ionViewDidEnter() {
@@ -240,9 +239,12 @@ export default defineComponent({
   setup() {
     const router = useRouter();
     const store = useStore();
+    const userStore = useUserStore()
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
     
     return {
       addOutline,
+      currentFacility,
       router,
       store,
       translate

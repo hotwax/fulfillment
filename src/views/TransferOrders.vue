@@ -68,11 +68,11 @@ import {
   IonTitle, 
   IonToolbar, 
 } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import { defineComponent, computed } from 'vue';
 import { caretDownOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import { translate } from '@hotwax/dxp-components';
+import { translate, useUserStore } from '@hotwax/dxp-components';
 import { Actions } from '@/authorization'
 import TransferOrderFilters from '@/components/TransferOrderFilters.vue'
 
@@ -98,7 +98,6 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      currentFacility: 'user/getCurrentFacility',
       transferOrders: 'transferorder/getTransferOrders',
       currentEComStore: 'user/getCurrentEComStore',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
@@ -117,7 +116,7 @@ export default defineComponent({
   },
   methods: {
     getErrorMessage() {
-      return this.searchedQuery === '' ? translate("doesn't have any transfer orders right now.", { facilityName: this.currentFacility.facilityName }) : translate( "No results found for .", { searchedQuery: this.searchedQuery })
+      return this.searchedQuery === '' ? translate("doesn't have any transfer orders right now.", { facilityName: this.currentFacility?.facilityName }) : translate( "No results found for .", { searchedQuery: this.searchedQuery })
     },
     enableScrolling() {
       const parentElement = (this as any).$refs.contentRef.$el
@@ -173,11 +172,14 @@ export default defineComponent({
   setup() {
     const router = useRouter();
     const store = useStore();
+    const userStore = useUserStore()
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
 
     return{
       Actions,
       caretDownOutline,
       cubeOutline,
+      currentFacility,
       optionsOutline,
       pricetagOutline,
       printOutline,

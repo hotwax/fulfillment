@@ -6,11 +6,13 @@ import * as types from './mutation-types'
 import { hasError } from '@/adapter'
 import logger from '@/logger'
 import { showToast } from '@/utils'
-import { translate } from '@hotwax/dxp-components'
+import { translate, useUserStore } from '@hotwax/dxp-components'
 
 const actions: ActionTree<StockState, RootState> = {
   async fetchStock({ commit }, { productId, facilityId = '' }) {
-    const id = facilityId ? facilityId : this.state.user.currentFacility.facilityId
+    const getCurrentFacility: any = useUserStore().getCurrentFacility
+    const currentFacilityId = getCurrentFacility?.facilityId
+    const id = facilityId ? facilityId : currentFacilityId
 
     try {
       const payload = {
