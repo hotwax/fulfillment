@@ -1541,8 +1541,10 @@ export default defineComponent({
           }
 
           resp = await OrderService.fetchOrderAttribute(params);
-          if(!hasError(resp) && resp.data?.docs[0]?.lastUpdatedStamp) {
-            orderInvoicingInfo["invoicingConfirmationDate"] = resp.data?.docs[0]?.lastUpdatedStamp
+          if(!hasError(resp)) {
+            if(resp.data?.docs[0]?.attrValue === "Invoiced") {
+              orderInvoicingInfo["invoicingConfirmationDate"] = resp.data?.docs[0]?.lastUpdatedStamp
+            }
           } else {
             throw resp.data;
           }
