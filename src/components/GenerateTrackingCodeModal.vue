@@ -22,9 +22,19 @@
         </ion-select>
       </ion-item>
       <ion-item>
-        <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
-          <ion-select-option v-for="method in carrierMethods" :key="method.productStoreShipMethId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
-        </ion-select>
+        <template v-if="carrierMethods && carrierMethods.length > 0">
+          <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
+            <ion-select-option v-for="method in carrierMethods" :key="method.productStoreShipMethId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
+          </ion-select>
+        </template>
+        <template v-else>
+          <ion-label>
+            {{ translate('No shipment methods linked to', {carrierName: getCarrierName()}) }}
+          </ion-label>
+          <ion-button @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
+            <ion-icon slot="icon-only" :icon="informationCircleOutline" />
+          </ion-button>
+        </template>
       </ion-item>
       <ion-item>
         <ion-input :label="translate('Tracking code')" :placeholder="translate('enter code')" v-model="trackingCode" />
@@ -66,7 +76,7 @@ import {
   modalController,
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { barcodeOutline, closeOutline, copyOutline, openOutline, saveOutline } from "ionicons/icons";
+import { barcodeOutline, closeOutline, copyOutline, informationCircleOutline, openOutline, saveOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
 import { mapGetters, useStore } from "vuex";
 import { OrderService } from '@/services/OrderService';
@@ -124,6 +134,9 @@ export default defineComponent({
   methods: {
     closeModal(payload = {}) {
       modalController.dismiss({ dismissed: true, ...payload });
+    },
+    openShippingMethodDocumentReference() {
+      window.open('https://docs.hotwax.co/documents/v/system-admins/fulfillment/shipping-methods/carrier-and-shipment-methods', '_blank');
     },
     isTrackingRequiredForAnyShipmentPackage() {
       return this.order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
@@ -288,6 +301,7 @@ export default defineComponent({
       barcodeOutline,
       closeOutline,
       copyOutline,
+      informationCircleOutline,
       openOutline,
       saveOutline,
       store,

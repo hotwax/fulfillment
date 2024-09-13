@@ -109,24 +109,22 @@
                   </ion-item>
                 </div>
 
-                <div class="desktop-only ion-text-center" v-else-if="order.shipmentPackages">
+                <div class="desktop-only ion-text-center">
                   <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
-                  
-                  <div v-if="order.shipmentPackages && order.shipmentPackages.length">
-                    
+                  <div>
                     <template v-if="item.rejectReason">
-                      <ion-chip outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
+                      <ion-chip :disabled="order.hasMissingInfo" outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
                         <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
                         <ion-icon :icon="closeCircleOutline" />
                       </ion-chip>
                     </template>
                     <template v-else-if="useNewRejectionApi() && isEntierOrderRejectionEnabled(order)">
-                      <ion-chip outline color="danger">
+                      <ion-chip :disabled="order.hasMissingInfo" outline color="danger">
                         <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject entire order')}}</ion-label>
                       </ion-chip>
                     </template>
                     <template v-else>
-                      <ion-chip outline @click="openShipmentBoxPopover($event, item, item.orderItemSeqId, order)">
+                      <ion-chip :disabled="order.hasMissingInfo || !order.shipmentPackages || order.shipmentPackages.length === 0" outline @click="openShipmentBoxPopover($event, item, item.orderItemSeqId, order)">
                         {{ `Box ${item.selectedBox}` }}
                         <ion-icon :icon="caretDownOutline" />
                       </ion-chip>
@@ -134,19 +132,20 @@
                   </div>
                 </div>
 
+                <!--Adding checks to avoid any operations if order has missing info, mostly when after packing Solr is not updaing immediately-->
                 <div class="product-metadata">
                   <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
-                  <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
+                  <ion-button :disabled="order.hasMissingInfo" color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
                     <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline"/>
                   </ion-button>
-                  <ion-button color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
+                  <ion-button :disabled="order.hasMissingInfo" color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
                     <ion-icon slot="icon-only" :icon="trashBinOutline"/>
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button color="medium" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                  <ion-button :disabled="order.hasMissingInfo" color="medium" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
                 </div>

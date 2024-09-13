@@ -90,20 +90,20 @@
 
             <div v-if="category === 'in-progress'" class="desktop-only ion-text-center" >
               <template v-if="item.rejectReason">
-                <ion-chip outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
+                <ion-chip :disabled="order.hasMissingInfo" outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
                   <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
                   <ion-icon :icon="closeCircleOutline" />
                 </ion-chip>
               </template>
               <template v-else-if="useNewRejectionApi() && isEntierOrderRejectionEnabled(order)">
-                <ion-chip outline color="danger">
+                <ion-chip :disabled="order.hasMissingInfo" outline color="danger">
                   <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject entire order')}}</ion-label>
                 </ion-chip>
               </template>
               <template v-else>
-                <ion-chip outline @click="openShipmentBoxPopover($event, item, order)">
+                <ion-chip :disabled="order.hasMissingInfo" outline @click="openShipmentBoxPopover($event, item, order)">
                   <ion-icon :icon="fileTrayOutline" />
-                  {{ `Box ${item.selectedBox}` }} 
+                  {{ `Box ${item.selectedBox || ''}` }} 
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </template>
@@ -113,14 +113,15 @@
             <div v-else></div>
 
             <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+             <!--Adding checks to avoid any operations if order has missing info, mostly when after packing Solr is not updaing immediately-->
             <div class="product-metadata">
               <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-              <ion-button color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+              <ion-button :disabled="order.hasMissingInfo" color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
                 {{ translate('Check stock') }}
                 <ion-icon slot="end" :icon="cubeOutline"/>
               </ion-button>
               <!-- TODO make functional -->
-              <ion-button v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
+              <ion-button :disabled="order.hasMissingInfo" v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
                 {{ translate('Report an issue') }}
                 <ion-icon slot="end" :icon="trashBinOutline"/>
               </ion-button>
@@ -129,7 +130,7 @@
                 <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                 <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
               </ion-button>
-              <ion-button v-if="item.productTypeId === 'GIFT_CARD'" fill="clear" color="medium" size="small" @click="openGiftCardActivationModal(item)">
+              <ion-button :disabled="order.hasMissingInfo" v-if="item.productTypeId === 'GIFT_CARD'" fill="clear" color="medium" size="small" @click="openGiftCardActivationModal(item)">
                 {{ translate('Gift card') }}
                 <ion-icon color="medium" slot="end" :icon="item.isGCActivated ? gift : giftOutline"/>
               </ion-button>
@@ -259,13 +260,15 @@
               </template>
             </ion-item>
             <template v-if="order.missingLabelImage">
-              <ion-button :disabled="!shipmentMethodTypeId" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
-                {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
-                <ion-spinner color="primary" slot="end" data-spinner-size="medium" v-if="order.isGeneratingShippingLabel" name="crescent" />
-              </ion-button>
-              <ion-button :disabled="!shipmentMethodTypeId || !carrierPartyId" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
-                {{ translate("Add tracking code manually") }}
-              </ion-button>
+              <template v-if="category === 'completed'">
+                <ion-button :disabled="!shipmentMethodTypeId" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
+                  {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
+                  <ion-spinner color="primary" slot="end" data-spinner-size="medium" v-if="order.isGeneratingShippingLabel" name="crescent" />
+                </ion-button>
+                <ion-button :disabled="!shipmentMethodTypeId || !carrierPartyId" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
+                  {{ translate("Add tracking code manually") }}
+                </ion-button>
+              </template>
               <ion-item lines="none" v-if="shipmentLabelErrorMessages">
                 <ion-label class="ion-text-wrap">
                   {{ shipmentLabelErrorMessages }}
@@ -277,9 +280,30 @@
                 {{ order.trackingCode }}
                 <p>{{ translate("tracking code") }}</p>
               </ion-label>        
-              <ion-button slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, order)">
+              <ion-button :disabled="order.hasMissingInfo" slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, order)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
+            </ion-item>
+          </ion-card>
+
+          <ion-card v-if="hasPermission(Actions.APP_INVOICING_STATUS_VIEW) && (category === 'completed') && orderInvoicingInfo.id">
+            <ion-card-header>
+              <ion-card-title>
+                {{ translate("Order Invoicing Status") }}
+              </ion-card-title>
+            </ion-card-header>
+
+            <ion-item v-if="orderInvoicingInfo.invoicingConfirmationDate">
+              <ion-label>
+                <p class="overline">{{ getInvoicingConfirmationDate(orderInvoicingInfo.invoicingConfirmationDate) }}</p>
+                {{ translate("Retail Pro invoicing confirmed") }}
+              </ion-label>
+            </ion-item>
+            <ion-item lines="none">
+              <ion-label>
+                <p class="overline">{{ formatUtcDate(orderInvoicingInfo.createdDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                {{ getOrderInvoicingMessage() }}
+              </ion-label>
             </ion-item>
           </ion-card>
         </div>
@@ -423,7 +447,7 @@ import { hasError } from "@/adapter";
 import logger from '@/logger';
 import { UtilService } from "@/services/UtilService";
 import { DateTime } from 'luxon';
-import { prepareOrderQuery } from '@/utils/solrHelper';
+import { prepareOrderQuery, prepareSolrQuery } from '@/utils/solrHelper';
 import Popover from '@/views/ShippingPopover.vue'
 import PackagingPopover from "@/views/PackagingPopover.vue";
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
@@ -490,6 +514,7 @@ export default defineComponent({
       isForceScanEnabled: 'util/isForceScanEnabled',
       productStoreShipmentMethods: 'carrier/getProductStoreShipmentMethods',
       facilityCarriers: 'carrier/getFacilityCarriers',
+      userProfile: 'user/getUserProfile'
     })
   },
   data() {
@@ -515,7 +540,8 @@ export default defineComponent({
       shipmentMethodTypeId: "",
       carrierPartyId: "",
       carrierMethods:[] as any,
-      isUpdatingCarrierDetail: false
+      isUpdatingCarrierDetail: false,
+      orderInvoicingInfo: {} as any
     }
   },
   async ionViewDidEnter() {
@@ -525,8 +551,7 @@ export default defineComponent({
     : this.category === 'in-progress'
     ? await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
     : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
-    
-    await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths')]);
+    await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths'), this.fetchOrderInvoicingStatus()]);
     if (this.facilityCarriers) {
       const shipmentPackage = this.order.shipmentPackages?.[0];
       this.carrierPartyId = shipmentPackage?.carrierPartyId ? shipmentPackage?.carrierPartyId : this.facilityCarriers[0].partyId;
@@ -1481,6 +1506,79 @@ export default defineComponent({
       } catch(err) {
         logger.error('Failed to fetch carrierPartyIds', err)
       }
+    },
+    async fetchOrderInvoicingStatus() {
+      let orderInvoicingInfo = {} as any, resp;
+      const params = {
+        viewSize: 1,
+        sort: "createdDate_dt desc",
+        filters: {
+          id: { value: this.order.orderName }
+        },
+        docType: "ORDER_TO_INVOICE_API",
+        coreName: "logInsights"
+      }
+
+      const orderInvoicingQueryPayload = prepareSolrQuery(params)
+
+      try {
+        resp = await OrderService.findOrderInvoicingInfo(orderInvoicingQueryPayload);
+
+        if(!hasError(resp) && resp.data?.response?.docs?.length) {
+          const response = resp.data.response.docs[0];
+
+          orderInvoicingInfo = {
+            id: response.id,
+            createdDate: response.createdDate_dt,
+            response : Object.keys(response.response_txt_en).length ? JSON.parse(response.response_txt_en) : {},
+            status: response.status_txt_en,
+            statusCode: response.statusCode_txt_en
+          }
+
+          const params = {
+            entityName: "OrderAttribute",
+            inputFields: {
+              orderId: this.order.orderId,
+              attrName: "retailProStatus"
+            }
+          }
+
+          resp = await OrderService.fetchOrderAttribute(params);
+          if(!hasError(resp)) {
+            if(resp.data?.docs[0]?.attrValue === "Invoiced") {
+              orderInvoicingInfo["invoicingConfirmationDate"] = resp.data?.docs[0]?.lastUpdatedStamp
+            }
+          } else {
+            throw resp.data;
+          }
+        } else {
+          throw resp.data;
+        }
+      } catch(error: any) {
+        logger.error(error);
+      }
+
+      this.orderInvoicingInfo = orderInvoicingInfo
+    },
+    getOrderInvoicingMessage() {
+      let message = "";
+      let isMessageRequired = false;
+
+      if(this.orderInvoicingInfo.status === "success") {
+        message = "Successfully sent to Retail Pro Server. This order will be completed once the invoicing is done in Retail Pro."
+      } else {
+        if(!this.orderInvoicingInfo.statusCode && !Object.keys(this.orderInvoicingInfo.response).length) {
+          message = "Failed to send to Retail Pro Server due to connection issues with Retail Pro, please try again."
+        } else {
+          message = "Failed to send to Retail Pro Server due to the following error, please contact support:."
+          isMessageRequired = true;
+        }
+      }
+
+      return isMessageRequired ? translate(message, { message: this.orderInvoicingInfo.response.Message }) : translate(message);
+    },
+    getInvoicingConfirmationDate(date: any) {
+      return DateTime.fromMillis(date).setZone(this.userProfile.userTimeZone).toFormat('dd MMMM yyyy t a ZZZZ')
     },
     async printPackingSlip(order: any) {
       // if the request to print packing slip is not yet completed, then clicking multiple times on the button
