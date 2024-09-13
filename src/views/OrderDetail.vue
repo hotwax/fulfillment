@@ -1513,7 +1513,7 @@ export default defineComponent({
         viewSize: 1,
         sort: "createdDate_dt desc",
         filters: {
-          id: { value: this.orderId }
+          id: { value: this.order.orderName }
         },
         docType: "ORDER_TO_INVOICE_API",
         coreName: "logInsights"
@@ -1575,7 +1575,7 @@ export default defineComponent({
         }
       }
 
-      return isMessageRequired ? translate(message, { message: this.orderInvoicingInfo.response.message }) : translate(message);
+      return isMessageRequired ? translate(message, { message: this.orderInvoicingInfo.response.Message }) : translate(message);
     },
     getInvoicingConfirmationDate(date: any) {
       return DateTime.fromMillis(date).setZone(this.userProfile.userTimeZone).toFormat('dd MMMM yyyy t a ZZZZ')
