@@ -12,6 +12,15 @@ const fetchOrderHeader = async (params: any): Promise<any> => {
     params
   })
 }
+
+const fetchOrderAttribute = async (params: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params
+  })
+}
+
 const fetchOrderItems = async (orderId: string): Promise<any> => {
   let viewIndex = 0;
   let orderItems = [] as any, resp;
@@ -209,6 +218,14 @@ const findOpenOrders = async (query: any): Promise<any> => {
 const findCompletedOrders = async (query: any): Promise<any> => {
   return api({
     // TODO: We can replace this with any API
+    url: "solr-query",
+    method: "post",
+    data: query
+  });
+}
+
+const findOrderInvoicingInfo = async (query: any): Promise<any> => {
+  return api({
     url: "solr-query",
     method: "post",
     data: query
@@ -820,6 +837,7 @@ export const OrderService = {
   bulkShipOrders,
   createOutboundTransferShipment,
   fetchAdditionalShipGroupForOrder,
+  fetchOrderAttribute,
   fetchOrderHeader,
   fetchOrderItems,
   fetchShipmentCarrierDetail,
@@ -830,6 +848,7 @@ export const OrderService = {
   fetchShippedQuantity,
   fetchTrackingCodes,
   findCompletedOrders,
+  findOrderInvoicingInfo,
   findInProgressOrders,
   findTransferOrders,
   findOpenOrders,

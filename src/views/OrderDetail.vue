@@ -285,6 +285,27 @@
               </ion-button>
             </ion-item>
           </ion-card>
+
+          <ion-card v-if="hasPermission(Actions.APP_INVOICING_STATUS_VIEW) && (category === 'completed') && orderInvoicingInfo.id">
+            <ion-card-header>
+              <ion-card-title>
+                {{ translate("Order Invoicing Status") }}
+              </ion-card-title>
+            </ion-card-header>
+
+            <ion-item v-if="orderInvoicingInfo.invoicingConfirmationDate">
+              <ion-label>
+                <p class="overline">{{ getInvoicingConfirmationDate(orderInvoicingInfo.invoicingConfirmationDate) }}</p>
+                {{ translate("Retail Pro invoicing confirmed") }}
+              </ion-label>
+            </ion-item>
+            <ion-item lines="none">
+              <ion-label>
+                <p class="overline">{{ formatUtcDate(orderInvoicingInfo.createdDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                {{ getOrderInvoicingMessage() }}
+              </ion-label>
+            </ion-item>
+          </ion-card>
         </div>
         
         <h4 class="ion-padding-top ion-padding-start" v-if="order.shipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
@@ -426,7 +447,7 @@ import { hasError } from "@/adapter";
 import logger from '@/logger';
 import { UtilService } from "@/services/UtilService";
 import { DateTime } from 'luxon';
-import { prepareOrderQuery } from '@/utils/solrHelper';
+import { prepareOrderQuery, prepareSolrQuery } from '@/utils/solrHelper';
 import Popover from '@/views/ShippingPopover.vue'
 import PackagingPopover from "@/views/PackagingPopover.vue";
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
@@ -493,6 +514,7 @@ export default defineComponent({
       isForceScanEnabled: 'util/isForceScanEnabled',
       productStoreShipmentMethods: 'carrier/getProductStoreShipmentMethods',
       facilityCarriers: 'carrier/getFacilityCarriers',
+      userProfile: 'user/getUserProfile'
     })
   },
   data() {
@@ -518,7 +540,8 @@ export default defineComponent({
       shipmentMethodTypeId: "",
       carrierPartyId: "",
       carrierMethods:[] as any,
-      isUpdatingCarrierDetail: false
+      isUpdatingCarrierDetail: false,
+      orderInvoicingInfo: {} as any
     }
   },
   async ionViewDidEnter() {
@@ -528,8 +551,7 @@ export default defineComponent({
     : this.category === 'in-progress'
     ? await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
     : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
-    
-    await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths')]);
+    await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths'), this.fetchOrderInvoicingStatus()]);
     if (this.facilityCarriers) {
       const shipmentPackage = this.order.shipmentPackages?.[0];
       this.carrierPartyId = shipmentPackage?.carrierPartyId ? shipmentPackage?.carrierPartyId : this.facilityCarriers[0].partyId;
@@ -1484,6 +1506,79 @@ export default defineComponent({
       } catch(err) {
         logger.error('Failed to fetch carrierPartyIds', err)
       }
+    },
+    async fetchOrderInvoicingStatus() {
+      let orderInvoicingInfo = {} as any, resp;
+      const params = {
+        viewSize: 1,
+        sort: "createdDate_dt desc",
+        filters: {
+          id: { value: this.orderId }
+        },
+        docType: "ORDER_TO_INVOICE_API",
+        coreName: "logInsights"
+      }
+
+      const orderInvoicingQueryPayload = prepareSolrQuery(params)
+
+      try {
+        resp = await OrderService.findOrderInvoicingInfo(orderInvoicingQueryPayload);
+
+        if(!hasError(resp) && resp.data?.response?.docs?.length) {
+          const response = resp.data.response.docs[0];
+
+          orderInvoicingInfo = {
+            id: response.id,
+            createdDate: response.createdDate_dt,
+            response : Object.keys(response.response_txt_en).length ? JSON.parse(response.response_txt_en) : {},
+            status: response.status_txt_en,
+            statusCode: response.statusCode_txt_en
+          }
+
+          const params = {
+            entityName: "OrderAttribute",
+            inputFields: {
+              orderId: this.order.orderId,
+              attrName: "retailProStatus"
+            }
+          }
+
+          resp = await OrderService.fetchOrderAttribute(params);
+          if(!hasError(resp)) {
+            if(resp.data?.docs[0]?.attrValue === "Invoiced") {
+              orderInvoicingInfo["invoicingConfirmationDate"] = resp.data?.docs[0]?.lastUpdatedStamp
+            }
+          } else {
+            throw resp.data;
+          }
+        } else {
+          throw resp.data;
+        }
+      } catch(error: any) {
+        logger.error(error);
+      }
+
+      this.orderInvoicingInfo = orderInvoicingInfo
+    },
+    getOrderInvoicingMessage() {
+      let message = "";
+      let isMessageRequired = false;
+
+      if(this.orderInvoicingInfo.status === "success") {
+        message = "Successfully sent to Retail Pro Server. This order will be completed once the invoicing is done in Retail Pro."
+      } else {
+        if(!this.orderInvoicingInfo.statusCode && !Object.keys(this.orderInvoicingInfo.response).length) {
+          message = "Failed to send to Retail Pro Server due to connection issues with Retail Pro, please try again."
+        } else {
+          message = "Failed to send to Retail Pro Server due to the following error, please contact support:."
+          isMessageRequired = true;
+        }
+      }
+
+      return isMessageRequired ? translate(message, { message: this.orderInvoicingInfo.response.message }) : translate(message);
+    },
+    getInvoicingConfirmationDate(date: any) {
+      return DateTime.fromMillis(date).setZone(this.userProfile.userTimeZone).toFormat('dd MMMM yyyy t a ZZZZ')
     },
     async printPackingSlip(order: any) {
       // if the request to print packing slip is not yet completed, then clicking multiple times on the button
