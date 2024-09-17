@@ -47,10 +47,15 @@
         </ion-button>
       </ion-item>
     </ion-list>
+
+    <div class="empty-state" v-if="isGeneratingShippingLabel">
+      <ion-spinner name="crescent" />
+      <ion-label>{{ translate("Generating label") }}</ion-label>
+    </div>
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="isTrackingRequired ? !shipmentMethodTypeId: false" @click="confirmSave()">
+    <ion-fab-button :disabled="isGeneratingShippingLabel ? true : isTrackingRequired ? !shipmentMethodTypeId : false" @click="confirmSave()">
       <ion-icon :icon="isForceScanEnabled ? barcodeOutline : saveOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -71,6 +76,7 @@ import {
   IonList,
   IonSelect,
   IonSelectOption,
+  IonSpinner,
   IonTitle,
   IonToolbar,
   modalController,
@@ -100,6 +106,7 @@ export default defineComponent({
     IonList,
     IonSelect,
     IonSelectOption,
+    IonSpinner,
     IonTitle,
     IonToolbar,
   },
@@ -151,12 +158,6 @@ export default defineComponent({
     async confirmSave() {
       let order = this.order
       let isRegenerated = false as any;
-
-      // if the request to print shipping label is not yet completed, then clicking multiple times on the button
-      // should not do anything
-      if(this.isGeneratingShippingLabel) {
-        return;
-      }
 
       this.isGeneratingShippingLabel = true;
 

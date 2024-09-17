@@ -1288,8 +1288,10 @@ export default defineComponent({
 
       modal.onDidDismiss().then((result: any) => {
         if(result.data?.moveToNext) {
-          if(this.isForceScanEnabled) this.scanOrder(order);
-          else this.packOrder(order);
+          const inProgressOrders = this.getInProgressOrders()
+          const updatedOrder = inProgressOrders.find((currentOrder: any) => currentOrder.orderId === order.orderId);
+          if(this.isForceScanEnabled) this.scanOrder(updatedOrder);
+          else this.packOrder(updatedOrder);
         }
       })
 
