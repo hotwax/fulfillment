@@ -645,6 +645,38 @@ const printPicklist = async (picklistId: string): Promise<any> => {
   }
 }
 
+const printTransferOrder = async (orderId: string): Promise<any> => {
+  try {
+    // Get packing slip from the server
+    const resp: any = await api({
+      method: 'get',
+      url: 'TransferOrder.pdf',
+      params: {
+        orderId: orderId
+      },
+      responseType: "blob"
+    })
+
+    if (!resp || resp.status !== 200 || hasError(resp)) {
+      throw resp.data
+    }
+
+    // Generate local file URL for the blob received
+    const pdfUrl = window.URL.createObjectURL(resp.data);
+    // Open the file in new tab
+    try {
+      (window as any).open(pdfUrl, "_blank").focus();
+    }
+    catch {
+      showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'picklist'}), { icon: cogOutline });
+    }
+
+  } catch (err) {
+    showToast(translate('Failed to print picklist'))
+    logger.error("Failed to load picklist", err)
+  }
+}
+
 const retryShippingLabel = async (shipmentIds: Array<string>, forceRateShop = false): Promise<any> => {
   return api({
     method: 'POST',
@@ -860,6 +892,7 @@ export const OrderService = {
   printPicklist,
   printShippingLabel,
   printShippingLabelAndPackingSlip,
+  printTransferOrder,
   rejectFulfillmentReadyOrderItem,
   rejectOrderItem,
   retryShippingLabel,
