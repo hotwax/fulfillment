@@ -176,7 +176,8 @@ const isValidCarrierCode = (trackingCode : any) => {
 }
 
 const  isPdf = (url: any) => {
-  return url && url.toLowerCase().endsWith('.pdf');
+  const pdfUrlPattern = /\.pdf(\?.*)?$/;
+  return url && pdfUrlPattern.test(url.toLowerCase());
 }
 
 const currentSymbol: any = {
