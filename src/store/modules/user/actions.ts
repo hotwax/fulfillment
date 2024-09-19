@@ -235,7 +235,7 @@ const actions: ActionTree<UserState, RootState> = {
 
     await dispatch('getDisableShipNowConfig')
     this.dispatch('util/findProductStoreShipmentMethCount')
-    this.dispatch('util/getForceScanSetting', payload.ecomStore.productStoreId)
+    this.dispatch('util/getForceScanSetting', payload.eComStore.productStoreId)
   },
 
   setUserPreference({ commit }, payload){
