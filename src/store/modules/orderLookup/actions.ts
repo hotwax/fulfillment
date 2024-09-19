@@ -298,8 +298,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       }, {}) : []
 
       let orderShipmentPackages = []
-      const shipmentIds = [] as any;
-      Object.values(orderRouteSegmentInfo).map((routes: any) => routes.map((route: any) => {shipmentIds.push(route.shipmentId)}));
+      const shipmentIds = Object.values(orderRouteSegmentInfo).flatMap((routes: any) => routes.map((route: any) => route.shipmentId));
 
       try {
         orderShipmentPackages = await OrderService.fetchShipmentPackages(shipmentIds, true);
@@ -307,12 +306,15 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         logger.error(error)
       }
 
-      const shipmentPackages = {} as any;
+      const shipmentPackages = orderShipmentPackages.reduce((shipment: any, shipmentPackage: any) => {
+        const key = shipmentPackage.primaryShipGroupSeqId;
+        if (!shipment[key]) {
+          shipment[key] = [];
+        }
+        shipment[key].push(shipmentPackage);
+        return shipment;
+      }, {});
 
-      orderShipmentPackages.map((shipmentPackage: any) => {
-        if(shipmentPackages[shipmentPackage.primaryShipGroupSeqId]) shipmentPackages[shipmentPackage.primaryShipGroupSeqId].push(shipmentPackage)
-        else shipmentPackages[shipmentPackage.primaryShipGroupSeqId] = [shipmentPackage]
-      })
       order["shipmentPackages"] = shipmentPackages;
 
       if(orderShipGroups.status === "fulfilled" && !hasError(orderShipGroups.value) && orderShipGroups.value.data.count > 0) {
