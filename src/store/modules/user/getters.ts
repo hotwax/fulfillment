@@ -73,5 +73,8 @@ const getters: GetterTree <UserState, RootState> = {
     getCollateralRejectionConfig(state) {
         return  state.collateralRejectionConfig;
     },
+    isShipNowDisabled(state) {
+        return state.isShipNowDisabled;
+    }
 }
 export default getters;
