@@ -364,17 +364,25 @@ const fetchShipments = async (picklistBinIds: Array<string>, orderIds: Array<str
   return shipments;
 }
 
-const fetchShipmentPackages = async (shipmentIds: Array<string>): Promise<any> => {
+const fetchShipmentPackages = async (shipmentIds: Array<string>, isTrackingRequired = false): Promise<any> => {
   let shipmentPackages = [];
+  let trackingCodeFilters = {};
+
+  if(!isTrackingRequired) {
+    trackingCodeFilters = {
+      "trackingCode_op": "empty",
+    }
+  }
+
   const params = {
     "entityName": "ShipmentPackageRouteSegDetail",
     "inputFields": {
       "shipmentId": shipmentIds,
       "shipmentId_op": "in",
-      "trackingCode_op": "empty",
-      "shipmentItemSeqId_op": "not-empty"
+      "shipmentItemSeqId_op": "not-empty",
+      ...trackingCodeFilters
     },
-    "fieldList": ["shipmentId", "shipmentRouteSegmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "isTrackingRequired"],
+    "fieldList": ["shipmentId", "shipmentRouteSegmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "isTrackingRequired", "primaryShipGroupSeqId"],
     "viewSize": 250,  // maximum records we could have
     "distinct": "Y"
   }

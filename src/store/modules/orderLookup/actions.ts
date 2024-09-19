@@ -8,6 +8,7 @@ import * as types from "./mutation-types"
 import { showToast } from "@/utils";
 import { translate } from "@hotwax/dxp-components";
 import logger from "@/logger";
+import { OrderService } from "@/services/OrderService";
 
 const actions: ActionTree<OrderLookupState, RootState> = {
   async findOrders({ commit, state }, params) {
@@ -291,9 +292,30 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       const shipmentMethodIds: Array<string> = []
 
       const orderRouteSegmentInfo = orderRouteSegment.status === "fulfilled" && orderRouteSegment.value.data.docs.length > 0 ? orderRouteSegment.value.data.docs.reduce((orderSegmentInfo: any, routeSegment: any) => {
-        orderSegmentInfo[routeSegment.shipGroupSeqId] = routeSegment
+        if(orderSegmentInfo[routeSegment.shipGroupSeqId]) orderSegmentInfo[routeSegment.shipGroupSeqId].push(routeSegment)
+        else orderSegmentInfo[routeSegment.shipGroupSeqId] = [routeSegment]
         return orderSegmentInfo
       }, {}) : []
+
+      let orderShipmentPackages = []
+      const shipmentIds = Object.values(orderRouteSegmentInfo).flatMap((routes: any) => routes.map((route: any) => route.shipmentId));
+
+      try {
+        orderShipmentPackages = await OrderService.fetchShipmentPackages(shipmentIds, true);
+      } catch(error: any) {
+        logger.error(error)
+      }
+
+      const shipmentPackages = orderShipmentPackages.reduce((shipment: any, shipmentPackage: any) => {
+        const key = shipmentPackage.primaryShipGroupSeqId;
+        if (!shipment[key]) {
+          shipment[key] = [];
+        }
+        shipment[key].push(shipmentPackage);
+        return shipment;
+      }, {});
+
+      order["shipmentPackages"] = shipmentPackages;
 
       if(orderShipGroups.status === "fulfilled" && !hasError(orderShipGroups.value) && orderShipGroups.value.data.count > 0) {
         shipGroups = orderShipGroups.value.data.docs.reduce((shipGroups: any, shipGroup: any) => {
@@ -306,7 +328,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
           } else {
             shipGroups[shipGroup.shipGroupSeqId] = [{
               ...shipGroup,
-              trackingIdNumber: orderRouteSegmentInfo[shipGroup.shipGroupSeqId] ? orderRouteSegmentInfo[shipGroup.shipGroupSeqId].trackingIdNumber : ""
+              trackingIdNumber: orderRouteSegmentInfo[shipGroup.shipGroupSeqId]?.length ? orderRouteSegmentInfo[shipGroup.shipGroupSeqId][0].trackingIdNumber : ""
             }]
           }
           return shipGroups;
