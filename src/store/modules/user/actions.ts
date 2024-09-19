@@ -108,6 +108,7 @@ const actions: ActionTree<UserState, RootState> = {
       await dispatch('getNewRejectionApiConfig')
       await dispatch('getPartialOrderRejectionConfig')
       await dispatch('getCollateralRejectionConfig')
+      await dispatch('getDisableShipNowConfig')
     
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
@@ -437,6 +438,33 @@ const actions: ActionTree<UserState, RootState> = {
       logger.error(err);
     } 
     commit(types.USER_NEW_REJECTION_API_CONFIG_UPDATED, config);   
+  },
+
+  async getDisableShipNowConfig ({ commit }) {
+    let isShipNowDisabled = false;
+    const params = {
+      "inputFields": {
+        "productStoreId": this.state.user.currentEComStore.productStoreId,
+        "settingTypeEnumId": "DISABLE_SHIPNOW"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["settingTypeEnumId", "settingValue"],
+      "viewSize": 1
+    } as any
+
+    try { 
+      const resp = await UserService.getDisableShipNowConfig(params)
+
+      if (!hasError(resp)) {
+        isShipNowDisabled = resp.data?.docs[0]?.settingValue === "true";
+      } else {
+        logger.error('Failed to fetch disable ship now config.');
+      }
+    } catch (err) {
+      logger.error(err);
+    }
+    commit(types.USER_DISABLE_SHIP_NOW_CONFIG_UPDATED, isShipNowDisabled);
   },
   async updatePartialOrderRejectionConfig ({ dispatch }, payload) {  
     let resp = {} as any;
