@@ -382,7 +382,7 @@ const fetchShipmentPackages = async (shipmentIds: Array<string>, isTrackingRequi
       "shipmentItemSeqId_op": "not-empty",
       ...trackingCodeFilters
     },
-    "fieldList": ["shipmentId", "shipmentRouteSegmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "isTrackingRequired", "primaryShipGroupSeqId"],
+    "fieldList": ["shipmentId", "shipmentRouteSegmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "isTrackingRequired", "primaryShipGroupSeqId", "labelImageUrl"],
     "viewSize": 250,  // maximum records we could have
     "distinct": "Y"
   }

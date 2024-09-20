@@ -191,8 +191,8 @@
                   <p v-if="shipGroups[0].facilityId !== '_NA_'">{{ getShipmentMethodDesc(shipGroups[0].shipmentMethodTypeId) || shipGroups[0].shipmentMethodTypeId }}</p>
                 </ion-label>
                 <ion-label slot="end" v-if="shipGroups[0].trackingIdNumber">{{ translate("Tracking Code") }}{{ ":" }} {{ shipGroups[0].trackingIdNumber }}</ion-label>
-                <ion-button slot="end" fill="outline" color="medium" @click="voidShippingLabel(shipGroups[0]?.shipGroupSeqId)" v-if="shipGroups[0].trackingIdNumber && isEligibleForVoiding(shipGroups[0])">
-                  <ion-label>{{ translate("Void") }}</ion-label>
+                <ion-button :disabled="order.hasMissingInfo" slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, shipGroups[0]?.shipGroupSeqId)" v-if="shipGroups[0].trackingIdNumber && isEligibleForVoiding(shipGroups[0])">
+                  <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
     
@@ -270,17 +270,19 @@ import {
   IonThumbnail,
   IonTitle,
   IonToolbar,
-  alertController
+  alertController,
+  popoverController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { translate } from '@hotwax/dxp-components';
-import { cubeOutline, golfOutline, callOutline, cashOutline, closeCircleOutline, informationCircleOutline, ribbonOutline, mailOutline, ticketOutline, timeOutline, pulseOutline, storefrontOutline, sunnyOutline, checkmarkDoneOutline, downloadOutline } from "ionicons/icons";
+import { cubeOutline, golfOutline, callOutline, cashOutline, closeCircleOutline, ellipsisVerticalOutline, informationCircleOutline, ribbonOutline, mailOutline, ticketOutline, timeOutline, pulseOutline, storefrontOutline, sunnyOutline, checkmarkDoneOutline, downloadOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { DateTime } from "luxon";
 import { formatCurrency, getColorByDesc, showToast } from "@/utils"
 import { OrderService } from "@/services/OrderService";
 import { hasError } from "@/adapter";
 import logger from "@/logger";
+import OrderLookupLabelActionsPopover from '@/components/OrderLookupLabelActionsPopover.vue';
 
 export default defineComponent({
   name: "OrderLookupDetail",
@@ -353,63 +355,19 @@ export default defineComponent({
       const twentyFourHoursInMillis = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
       return (DateTime.now().toMillis() - shipGroup.orderDate >= twentyFourHoursInMillis);
     },
-    async voidShippingLabel(shipGroupSeqId: any) {
-      const alert = await alertController.create({
-        header: translate("Void label"),
-        message: translate("Are you sure you want to void label?"),
-        buttons: [
-          {
-            text: translate("Cancel"),
-            role: "cancel"
-          },
-          {
-            text: translate("Confirm"),
-            handler: () => {
-              this.voidLabel(shipGroupSeqId)
-            }
-          }
-        ],
+    async shippingLabelActionPopover(ev: Event, shipGroupSeqId: any) {
+      const popover = await popoverController.create({
+        component: OrderLookupLabelActionsPopover,
+        componentProps: {
+          currentOrder: this.order,
+          shipGroupSeqId
+        },
+        event: ev,
+        showBackdrop: false
       });
-      return alert.present();
-    },
-    async voidLabel(shipGroupSeqId: any) {
-      let resp = {} as any;
 
-      try {
-        for(const shipmentPackage of this.order.shipmentPackages[shipGroupSeqId]) {
-          resp = await OrderService.updateShipmentPackageRouteSeg({
-            "shipmentId": shipmentPackage.shipmentId,
-            "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-            "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
-            "trackingCode": "",
-            "labelImage": "",
-            "labelIntlSignImage": "",
-            "labelHtml": "",
-            "labelImageUrl": "",
-            "internationalInvoiceUrl": ""
-          });
-          if(!hasError(resp)) {
-            resp = await OrderService.updateShipmentRouteSegment({
-              "shipmentId": shipmentPackage.shipmentId,
-              "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-              "carrierServiceStatusId": "SHRSCS_VOIDED",
-              "trackingIdNumber": ""
-            }) as any;
-            if(!hasError(resp)) {
-              showToast(translate("Shipping label voided successfully."))
-            } else {
-              throw resp.data;
-            }
-          } else {
-            throw resp.data;
-          }
-        }
-      } catch (err) {
-        logger.error("Failed to void shipping label", err);
-        showToast(translate("Failed to void shipping label"));
-      }
-      await this.store.dispatch("orderLookup/getOrderDetails", this.orderId)
-    }
+      return popover.present()
+    },
   },
   setup() {
     const store = useStore();
@@ -421,6 +379,7 @@ export default defineComponent({
       closeCircleOutline,
       cubeOutline,
       downloadOutline,
+      ellipsisVerticalOutline,
       formatCurrency,
       getColorByDesc,
       golfOutline,
