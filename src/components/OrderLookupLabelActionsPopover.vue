@@ -44,7 +44,6 @@ export default defineComponent({
   props: ["currentOrder", "shipGroupSeqId"],
   methods: {
     async printShippingLabel(shipGroupSeqId: any) {
-      console.log(this.currentOrder);
       const shipmentPackages = this.currentOrder.shipmentPackages[shipGroupSeqId];
       const shipmentIds = [] as any;
       const shippingLabelPdfUrls = [] as any;
@@ -83,7 +82,6 @@ export default defineComponent({
             }) as any;
             if(!hasError(resp)) {
               showToast(translate("Shipping label voided successfully."))
-              popoverController.dismiss()
             } else {
               throw resp.data;
             }
@@ -96,6 +94,7 @@ export default defineComponent({
         showToast(translate("Failed to void shipping label"));
       }
       await this.store.dispatch("orderLookup/getOrderDetails", this.currentOrder.orderId)
+      popoverController.dismiss()
     },
   },
   setup() {
