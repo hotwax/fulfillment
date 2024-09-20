@@ -4,7 +4,7 @@ import RejectionState from './RejectionState'
 import { RejectionService } from '@/services/RejectionService'
 import { hasError } from '@/adapter'
 import * as types from './mutation-types'
-import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
+import { escapeSolrSpecialChars, prepareSolrQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
 
@@ -16,12 +16,11 @@ const actions: ActionTree<RejectionState, RootState> = {
     if (payload.rejectionPeriodId && payload.rejectionPeriodId === 'LAST_SEVEN_DAYS') {
       rejectionPeriodFilter = "[NOW-7DAYS TO NOW]"
     }
-    const query = prepareOrderQuery({
+    const query = prepareSolrQuery({
+        coreName: "logInsights",
         docType: "FULFILLMENT_REJECTION",
-        queryFields: 'orderId_s',
+        sort: "orderId_s desc",
         viewSize: '0',  // passed viewSize as 0 to not fetch any data
-        sort: 'rejectedAt_dt desc',
-        groupBy: 'orderId_s',
         filters: {
           rejectedAt_dt: {value: rejectionPeriodFilter},
           rejectedFrom_txt_en: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
@@ -43,8 +42,6 @@ const actions: ActionTree<RejectionState, RootState> = {
           }
         }
       })
-      query.coreName = "logInsights"
-
 
       try {
         const resp = await RejectionService.fetchRejectionStats(query);
@@ -95,126 +92,133 @@ const actions: ActionTree<RejectionState, RootState> = {
   },
 
   async fetchRejectedOrders({ commit, dispatch, state }, payload) {
-    let orders = [] as any, total = 0
-
+    let orders = [] as any, orderList = [] as any, total = 0
+    const rejectedOrderQuery = JSON.parse(JSON.stringify(state.rejectedOrders.query))
+    
     let rejectionPeriodFilter = "[NOW-24HOURS TO NOW]"
-    if (payload.rejectionPeriodId && payload.rejectionPeriodId === 'LAST_SEVEN_DAYS') {
+    if (rejectedOrderQuery.rejectionPeriodId === 'LAST_SEVEN_DAYS') {
       rejectionPeriodFilter = "[NOW-7DAYS TO NOW]"
     }
-    const rejectedOrderQuery = JSON.parse(JSON.stringify(state.rejectedOrders.query))
-    const query = prepareOrderQuery({
+
+    const query = prepareSolrQuery({
+      coreName: "logInsights",
       docType: "FULFILLMENT_REJECTION",
       queryString: rejectedOrderQuery.queryString,
-      queryFields: 'orderId_s',
+      queryFields: 'orderId_s itemDescription_txt_en productId_s rejectedFrom_txt_en rejectedBy_txt_en rejectionReasonId_txt_en rejectionReasonDesc_txt_en',
       viewIndex: rejectedOrderQuery.viewIndex,
       viewSize: rejectedOrderQuery.viewSize,
       sort: 'rejectedAt_dt desc',
+      isGroupingRequired: true,
       groupBy: 'orderId_s',
       filters: {
         rejectedAt_dt: {value: rejectionPeriodFilter},
         rejectedFrom_txt_en: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
       }
     })
-    query.coreName = "logInsights"
-
 
     try {
       const resp = await RejectionService.fetchRejctedOrders(query);
       if (!hasError(resp)) {
-        total = resp.data.grouped.picklistBinId.ngroups
-        orders = resp.data.grouped.picklistBinId.groups
+        total = resp.data.grouped.orderId_s.ngroups
+        orders = resp.data.grouped.orderId_s.groups
 
         orders = orders.map((order: any) => {
-          const orderItem = order.doclist.docs[0];
-          return {
-            customerId: orderItem.customerId,
-            customerName: orderItem.customerName,
-            orderId: orderItem.orderId,
-            orderDate: orderItem.orderDate,
-            orderName: orderItem.orderName,
-            groupValue: order.groupValue,
-            items: order.doclist.docs,
-            shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
-            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
-          }
-        })
-      } else {
-        throw resp.data;
-      }
-    } catch(err) {
-      logger.error('Failed to fetch rejected orders.', err)
-    }
-    rejectedOrderQuery.viewSize = orders.length
-    commit(types.ORDER_REJECTED_QUERY_UPDATED, { ...rejectedOrderQuery })
-    commit(types.ORDER_REJECTED_UPDATED, {orders, total})
-  },
+          const orderItemDocs = order.doclist.docs.map((doc: any) => {
+            return {
+              orderId: doc.orderId_s,
+              orderItemSeqId: doc.orderItemSeqId_s,
+              itemDescription: doc.itemDescription_txt_en,
+              productId: doc.productId_s,
+              availableToPromise: doc.availableToPromise_d,
+              rejectedFrom: order.rejectedFrom_txt_en,
+              rejectedBy: doc.rejectedBy_txt_en,
+              rejectedAt: doc.rejectedAt_dt,
+              rejectionReasonId: doc.rejectionReasonId_txt_en,
+              rejectionReasonDesc: doc.rejectionReasonDesc_txt_en,
+              brokeredAt: doc.brokeredAt_dt,
+              brokeredBy: doc.brokeredBy_txt_en,
+            };
+          });
 
-  async fetchRejectedOrdersDetail ({ commit, dispatch, state }, payload = {}) {
-    let resp;
-    let orders = JSON.parse(JSON.stringify(state.rejectedOrders.list));
+          const orderItem = orderItemDocs[0];
+          return {
+            orderId: orderItem.orderId,
+            items: orderItemDocs,
+          };
+        });
+        
+        if (rejectedOrderQuery.viewIndex && rejectedOrderQuery.viewIndex > 0) orderList = JSON.parse(JSON.stringify(state.rejectedOrders.list)).concat(orders)
+        } else {
+      throw resp.data;
+    }
+  } catch(err) {
+    logger.error('Failed to fetch rejected orders.', err)
+  }
+  commit(types.REJECTION_ORDERS_UPDATED, { list: orderList.length > 0 ? orderList : orders, total})
+  dispatch("fetchRejectedOrdersDetail", { orderIds: orders.map((order:any) =>  order.orderId)})
+},
+
+  async fetchRejectedOrdersDetail ({ commit, dispatch, state }, payload) {
+    let resp, orders = [];
+    const rejectedOrders = JSON.parse(JSON.stringify(state.rejectedOrders.list));
+    const total = JSON.parse(JSON.stringify(state.rejectedOrders.total));
+    const orderIds = payload.orderIds
+    if (!orderIds.length) {
+      return
+    }
 
     try {
       const params = {
-        ...payload,
-        viewSize: ,
+        docType: "ORDER",
+        viewIndex: 0,
+        viewSize: orderIds.length,
         sort: 'orderDate asc',
+        fieldsToSelect: "orderId customerId customerName orderDate orderName reservedDatetime shipmentMethodTypeId shipmentMethodTypeDesc",
+        isGroupingRequired: true,
         groupBy: 'orderId',
+        groupLimit: 1,
         filters: {
-          productStoreId: { value: productIds }
+          orderId: { value: orderIds}
         }
       }
 
-      const orderQueryPayload = prepareOrderQuery(params)
+      const orderQueryPayload = prepareSolrQuery(params)
 
-      resp = await OrderService.findInProgressOrders(orderQueryPayload);
-      if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.picklistBinId.matches > 0) {
-        total = resp.data.grouped.picklistBinId.ngroups
-        orders = resp.data.grouped.picklistBinId.groups
+      resp = await RejectionService.findRejectedOrdersDetail(orderQueryPayload);
+      if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
+        orders = resp.data.grouped.orderId.groups
+        const orderDetails = orders.reduce((orderDetail: any, order: any) => {
+          orderDetail[order.doclist.docs[0].orderId] = order.doclist.docs[0]; //we are fetching only one item for order detail
+          return orderDetail;
+        }, {});
 
-        // TODO get only product visible
-        await this.dispatch('product/getProductInformation', { orders })
-
-        orders = orders.map((order: any) => {
-          const orderItem = order.doclist.docs[0];
-          return {
-            category: 'in-progress',
-            customerId: orderItem.customerId,
-            customerName: orderItem.customerName,
-            orderId: orderItem.orderId,
-            orderDate: orderItem.orderDate,
-            orderName: orderItem.orderName,
-            groupValue: order.groupValue,
-            picklistBinId: orderItem.picklistBinId,
-            picklistId: orderItem.picklistId,
-            items: removeKitComponents({items: order.doclist.docs}),
-            shipGroupSeqId: orderItem.shipGroupSeqId,
-            shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
-            shipmentMethodTypeDesc: orderItem.shipmentMethodTypeDesc,
-            shippingInstructions: orderItem.shippingInstructions
+        rejectedOrders.map((rejectedOrder: any) => {
+          if (orderIds.includes(rejectedOrder.orderId)) {
+            const detail = orderDetails[rejectedOrder.orderId]
+            rejectedOrder.customerId = detail.customerId
+            rejectedOrder.customerName = detail.customerName
+            rejectedOrder.orderDate = detail.orderDate
+            rejectedOrder.orderName = detail.orderName
+            rejectedOrder.reservedDatetime = detail.reservedDatetime
+            rejectedOrder.shipmentMethodTypeId = detail.shipmentMethodTypeId
+            rejectedOrder.shipmentMethodTypeDesc = detail.shipmentMethodTypeDesc
           }
         })
+
       } else {
         throw resp.data
       }
     } catch (err) {
-      logger.error('No inProgress orders found', err)
+      logger.error('No rejected orders found', err)
     }
-
-    inProgressQuery.viewSize = orders.length
-
-    commit(types.ORDER_INPROGRESS_QUERY_UPDATED, { ...inProgressQuery })
-    commit(types.ORDER_INPROGRESS_UPDATED, {orders, total})
-
-    // fetching the additional information like shipmentRoute, carrierParty information
-    // If no orders then no need to fetch any additional information
-    if(orders.length){      
-      dispatch('fetchInProgressOrdersAdditionalInformation');
-    }
-
-    emitter.emit('dismissLoader');
+    commit(types.REJECTION_ORDERS_UPDATED, { list: rejectedOrders, total})
     return resp;
   },
 
+  async updateRejectedOrderQuery({ commit, dispatch }, payload) {
+    commit(types.REJECTION_ORDER_QUERY_UPDATED, payload)
+    await dispatch('fetchRejectedOrders');
+  },
 }
 
 export default actions;

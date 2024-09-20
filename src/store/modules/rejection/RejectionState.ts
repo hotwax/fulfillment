@@ -7,7 +7,8 @@ export default interface OrderState {
       query: {
         viewIndex: number,
         viewSize: any,
-        queryString: string
+        queryString: string,
+        rejectionPeriodId: string
       }
     }
   }

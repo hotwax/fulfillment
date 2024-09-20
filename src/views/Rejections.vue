@@ -11,11 +11,11 @@
           <ion-card>
             <ion-item lines="none">
               <ion-label class="rejection-count">
-                {{ "4" }}
+                {{ rejectedOrders.total }}
               </ion-label>
             </ion-item>
             <ion-item>
-              <ion-select :label="translate('Rejections')" interface="popover" v-model="selectedRejectionPeriod" @ionChange="fetchRejectionsStats(selectedRejectionPeriod)">
+              <ion-select :label="translate('Rejections')" interface="popover" v-model="selectedRejectionPeriod" @ionChange="updateRejectionPeriod(selectedRejectionPeriod)">
                 <ion-select-option v-for="rejectionPeriod in rejectionPeriods" :key="rejectionPeriod.id" :value="rejectionPeriod.id">{{ rejectionPeriod.description }}</ion-select-option>
               </ion-select>
             </ion-item>
@@ -24,51 +24,61 @@
             <ion-list>
               <ion-list-header color="light">
                 <ion-label>{{ translate('Most rejected items') }}</ion-label>
-                <ion-button  @click="showAllRejectedItemsModal()">
+                <ion-button :disabled="!getMostRejectedItems().length" @click="showAllRejectedItemsModal()">
                   {{ translate('View All') }}
                 </ion-button>
               </ion-list-header>
-              <ion-item v-for="(item, index) in getMostRejectedItems()" :key="item.val" :lines="getMostRejectedItems().length -1 === index ? 'none' : 'inset'">
-                <ion-thumbnail slot="start">
-                  <DxpShopifyImg :src="getProduct(item.val).mainImageUrl" size="small"/>
-                </ion-thumbnail>
-                <ion-label>
-                  <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.val)) }}</p>
-                  {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.val)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.val)) : item.val }}
-                </ion-label>
-                <ion-note slot="end">{{ item.count }}</ion-note>
-              </ion-item>
+              <template v-if="getMostRejectedItems().length">
+                <ion-item v-for="(item, index) in getMostRejectedItems()" :key="item.val" :lines="getMostRejectedItems().length -1 === index ? 'none' : 'inset'">
+                  <ion-thumbnail slot="start">
+                    <DxpShopifyImg :src="getProduct(item.val).mainImageUrl" size="small"/>
+                  </ion-thumbnail>
+                  <ion-label>
+                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.val)) }}</p>
+                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.val)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.val)) : item.val }}
+                  </ion-label>
+                  <ion-note slot="end">{{ item.count }}</ion-note>
+                </ion-item>
+              </template>
+              <div class="empty-state" v-else>
+                <p>{{ translate("No items found.") }}</p>
+              </div>
             </ion-list>
           </ion-card>
           <ion-card>
             <ion-list>
               <ion-list-header color="light">
                 <ion-label>{{ translate('Most used reasons') }}</ion-label>
-                <ion-button  @click="showAllReasonsModal()">
+                <ion-button :disabled="!getMostUsedReasons().length"  @click="showAllReasonsModal()">
                   {{ translate('View All') }}
                 </ion-button>
               </ion-list-header>
-              <ion-item v-for="(reason, index) in getMostUsedReasons()" :key="reason.enumId" :lines="getMostUsedReasons().length -1 === index ? 'none' : 'inset'">
-                <ion-label>
-                  {{ reason.description }}
-                  <p>{{ reason.enumTypeId }}</p>
-                </ion-label>
-                <ion-note slot="end"> {{ reason.count }}</ion-note>
-              </ion-item>
+              <template v-if="getMostUsedReasons().length">
+                <ion-item v-for="(reason, index) in getMostUsedReasons()" :key="reason.enumId" :lines="getMostUsedReasons().length -1 === index ? 'none' : 'inset'">
+                  <ion-label>
+                    {{ reason.description }}
+                    <p>{{ reason.enumTypeId }}</p>
+                  </ion-label>
+                  <ion-note slot="end"> {{ reason.count }}</ion-note>
+                </ion-item>
+              </template>
+              <div class="empty-state" v-else>
+                <p>{{ translate("No reasons found.") }}</p>
+              </div>
             </ion-list>
           </ion-card>
         </div>
             
-        <div class="rejection-search ion-margin-top">
-          <ion-searchbar class="searchbar" :placeholder="translate('Search orders')" v-model="rejectedOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
-          <ion-label>
-            {{ translate("13 rejections") }}
+        <div class="rejection-search">
+          <ion-searchbar class="searchbar" :placeholder="translate('Search orders')" v-model="queryString" @keyup.enter="updateQueryString($event.target.value)"/>
+            <ion-label>
+            {{ rejectedOrders.total }} {{translate("rejections") }}
           </ion-label>
+          
           <ion-button expand="block" fill="outline" @click="downloadRejections()">
             <ion-icon slot="end" :icon="cloudDownloadOutline" />{{ translate("Download rejections") }}
           </ion-button>
         </div>
-          <div class="results">
             <ion-card class="order" v-for="order in rejectedOrders.list" :key="order.orderId">
               <div class="order-header">
                 <div class="order-primary-info">
@@ -81,7 +91,7 @@
                 <div class="order-tags">
                   <ion-chip outline>
                     <ion-icon :icon="pricetagOutline" />
-                    <ion-label>{{ order.orderName }}</ion-label>
+                    <ion-label>{{ order.orderId }}</ion-label>
                   </ion-chip>
                 </div>
 
@@ -93,7 +103,7 @@
                 </div>
               </div>
               <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-line-item">
-                <div class="order-item">
+                <div class="rejected-order-item">
                   <div class="product-info">
                     <ion-item lines="none">
                       <ion-thumbnail slot="start">
@@ -102,30 +112,29 @@
                       <ion-label>
                         <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                         {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
-                        <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
                       </ion-label>
                     </ion-item>
                   </div>
                   <div>
-                    <ion-item>
+                    <ion-item lines="none">
                       <ion-label>
-                        {{ "2024/01/01 23:10:10"}}
+                        {{ formatUtcDate(item.rejectedAt, 'dd MMMM yyyy t a ZZZZ')}}
                         <p>{{ translate('rejected time') }}</p>
                       </ion-label>
                     </ion-item>
                   </div>
                   <div>
-                    <ion-item>
-                      <ion-label>
-                        {{ "100"}}
+                    <ion-item lines="none">
+                      <ion-label lines="none">
+                        {{ item.availableToPromise}}
                         <p>{{ translate('ATP') }}</p>
                       </ion-label>
                     </ion-item>
                   </div>
                   <div>
-                    <ion-item>
+                    <ion-item lines="none">
                       <ion-label>
-                        {{ "Not in stock"}}
+                        {{ item.rejectionReasonDesc }}
                         <p>{{ translate('rejection reason') }}</p>
                       </ion-label>
                     </ion-item>
@@ -133,7 +142,7 @@
                   <div>
                     <ion-chip outline>
                       <ion-icon :icon="personCircleOutline" />
-                      <ion-label>{{ order.orderName }}</ion-label>
+                      <ion-label>{{ item.rejectedBy }}</ion-label>
                     </ion-chip>
                   </div>
                 </div>
@@ -142,14 +151,12 @@
             <ion-infinite-scroll @ionInfinite="loadMoreRejectedOrders($event)" threshold="100px"  v-show="isRejectedOrdersScrollable()" ref="infiniteScrollRef">
               <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
             </ion-infinite-scroll>
-          </div>
       </ion-content>
     </ion-page>
   </template>
   
   <script lang="ts">
   import {
-    IonBadge,
     IonButton,
     IonCard,
     IonChip,
@@ -176,13 +183,11 @@
   import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
   import { mapGetters, useStore } from 'vuex';
   import { formatUtcDate } from '@/utils';
-  import { isKit } from '@/utils/order'
 
   
   export default defineComponent({
     name: 'RejectionReasons',
     components: {
-      IonBadge,
       IonButton,
       IonCard,
       IonChip,
@@ -206,6 +211,7 @@
     },
     data() {
       return {
+        queryString: '',
         rejectionPeriods: [] as any,
         selectedRejectionPeriod: '',
         searchedQuery: '',
@@ -225,6 +231,8 @@
       this.rejectionPeriods = [{"id": "LAST_TWENTY_FOUR_HOURS", "description": "Last 24 hours"}, {"id": "LAST_SEVEN_DAYS", "description": "Last 7 days"}]
       this.selectedRejectionPeriod = this.rejectionPeriods[0]?.id;
       await this.fetchRejectionsStats(this.selectedRejectionPeriod)
+      this.isScrollingEnabled = false;
+      await this.initialiseRejectedOrderQuery();
     },
     
     methods: {
@@ -240,7 +248,13 @@
         }
       },
       isRejectedOrdersScrollable() {
-        return ((this.rejectedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any)) <  this.rejectedOrders.query.viewSize;
+        return ((this.rejectedOrders.query?.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any)) <  this.rejectedOrders.query?.viewSize;
+      },
+      async initialiseRejectedOrderQuery() {
+        const rejectedOrdersQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
+        rejectedOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
+        rejectedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+        await this.store.dispatch('rejection/updateRejectedOrderQuery', { ...rejectedOrdersQuery })
       },
       async loadMoreRejectedOrders(event: any) {
         // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
@@ -248,8 +262,8 @@
           await event.target.complete();
         }
         const rejectedOrdersQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
-        rejectedOrdersQuery.viewIndex++;
-        await this.store.dispatch('order/updateInProgressIndex', { ...rejectedOrdersQuery })
+        rejectedOrdersQuery.viewIndex = this.rejectedOrders.list?.length / (process.env.VUE_APP_VIEW_SIZE as any);
+        await this.store.dispatch('rejection/updateRejectedOrderQuery', { ...rejectedOrdersQuery })
         event.target.complete();
       },
       async fetchRejectionsStats(selectedRejectionPeriod: string) {
@@ -270,12 +284,20 @@
       downloadRejections() {
         //logic here
       },
+      async updateRejectionPeriod(rejectionPeriodId: string) {
+        const rejectedOrdersQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
+        rejectedOrdersQuery.rejectionPeriodId = rejectionPeriodId
+        await this.store.dispatch('rejection/updateRejectedOrderQuery', { ...rejectedOrdersQuery })
+        await this.fetchRejectionsStats(rejectionPeriodId);
+        this.selectedRejectionPeriod = rejectionPeriodId;
+      },
       async updateQueryString(queryString: string) {
         const rejectedOrdersQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
 
+        rejectedOrdersQuery.viewIndex = 0
         rejectedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
         rejectedOrdersQuery.queryString = queryString
-        await this.store.dispatch('order/updateInProgressQuery', { ...rejectedOrdersQuery })
+        await this.store.dispatch('rejection/updateRejectedOrderQuery', { ...rejectedOrdersQuery })
         this.searchedQuery = queryString;
       },
       getErrorMessage() {
@@ -312,14 +334,20 @@
   .rejection-summary {
     display: grid;
     align-items: start;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(343px, 1fr));
   }
   .rejection-search {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(343px, 1fr));
-    gap: var(--spacer-xs);
-    align-items: center;
+    grid-template-columns: repeat(auto-fill, minmax(343px, 1fr));
     margin-bottom: var(--spacer-lg);
+    align-items: center;
+    margin-right: var(--spacer-sm);
   }
+  .rejected-order-item {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    align-items: center;
+    padding: var(--spacer-xs) 0;
+}
 </style>
   

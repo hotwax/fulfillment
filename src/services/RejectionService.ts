@@ -16,7 +16,16 @@ const fetchRejctedOrders = async (query: any): Promise<any> => {
   });
 }
 
+const findRejectedOrdersDetail = async (query: any): Promise<any> => {
+  return api({
+    url: "solr-query",
+    method: "post",
+    data: query
+  });
+}
+
   export const RejectionService = {
     fetchRejctedOrders,
-    fetchRejectionStats
+    findRejectedOrdersDetail,
+    fetchRejectionStats,
   }  

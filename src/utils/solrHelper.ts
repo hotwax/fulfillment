@@ -57,7 +57,7 @@ const prepareSolrQuery = (params: any) => {
     groupParams = {
       "group": true,
       "group.field": params.groupBy ? params.groupBy : "orderId",
-      "group.limit": 1000,
+      "group.limit": params.groupLimit ? params.groupLimit : 1000,
       "group.ngroups": true,
     }
   }
@@ -83,6 +83,10 @@ const prepareSolrQuery = (params: any) => {
     payload.json.query = `(*${params.queryString}*) OR "${params.queryString}"^100`
     payload.json.params['qf'] = params.queryFields ? params.queryFields : "productId productName virtualProductName orderId productSku customerId customerName search_orderIdentifications goodIdentifications"
     payload.json.params['defType'] = "edismax"
+  }
+
+  if (params.fieldsToSelect) {
+    payload.json.params['fl'] = params.fieldsToSelect
   }
 
   // checking that if the params has filters, and then adding the filter values in the payload filter
