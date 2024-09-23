@@ -62,33 +62,16 @@ export default defineComponent({
 
       try {
         for(const shipmentPackage of this.currentOrder.shipmentPackages[shipGroupSeqId]) {
-          resp = await OrderService.updateShipmentPackageRouteSeg({
+          resp = await OrderService.voidShipmentLabel({
             "shipmentId": shipmentPackage.shipmentId,
-            "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-            "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
-            "trackingCode": "",
-            "labelImage": "",
-            "labelIntlSignImage": "",
-            "labelHtml": "",
-            "labelImageUrl": "",
-            "internationalInvoiceUrl": ""
-          });
-          if(!hasError(resp)) {
-            resp = await OrderService.updateShipmentRouteSegment({
-              "shipmentId": shipmentPackage.shipmentId,
-              "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-              "carrierServiceStatusId": "SHRSCS_VOIDED",
-              "trackingIdNumber": ""
-            }) as any;
-            if(!hasError(resp)) {
-              showToast(translate("Shipping label voided successfully."))
-            } else {
-              throw resp.data;
-            }
-          } else {
+            "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId
+          })
+
+          if(hasError(resp)) {
             throw resp.data;
           }
         }
+        showToast(translate("Shipping label voided successfully."))
       } catch (err) {
         logger.error("Failed to void shipping label", err);
         showToast(translate("Failed to void shipping label"));

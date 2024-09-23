@@ -118,6 +118,7 @@ const actions: ActionTree<OrderState, RootState> = {
         }, []);
 
         // When the shipment method for product store is configured then only check for shipmentPackages otherwise we won't show missing label error button
+        
         const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.length > 0 : false;
 
         return {
