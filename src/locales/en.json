@@ -257,6 +257,7 @@
   "Import shipped order details from an external system based on tracking codes. Orders that have tracking codes will automatically be shipped at the end of the day.": "Import shipped order details from an external system based on tracking codes. Orders that have tracking codes will automatically be shipped at the end of the day.",
   "Import shipped orders": "Import shipped orders",
   "In Progress": "In Progress",
+  "Invoicing facility": "Invoicing facility",
   "Key": "Key",
   "Kit": "Kit",
   "Language": "Language",

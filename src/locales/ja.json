@@ -257,6 +257,7 @@
   "Import shipped order details from an external system based on tracking codes. Orders that have tracking codes will automatically be shipped at the end of the day.": "追跡コードに基づいて外部システムから出荷済み注文の詳細をインポートします。追跡コードのある注文は、日末に自動的に出荷されます。",
   "Import shipped orders": "出荷済み注文をインポート",
   "In Progress": "進行中",
+  "Invoicing facility": "Invoicing facility",
   "Key": "キー",
   "Language": "言語",
   "Last 7 days": "過去7日間",

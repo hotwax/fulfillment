@@ -253,6 +253,7 @@
   "Import shipped order details from an external system based on tracking codes. Orders that have tracking codes will automatically be shipped at the end of the day.": "Importa los detalles de los pedidos enviados desde un sistema externo basado en códigos de seguimiento. Los pedidos que tienen códigos de seguimiento se enviarán automáticamente al final del día.",
   "Import shipped orders": "Importar pedidos enviados",
   "In Progress": "En Curso",
+  "Invoicing facility": "Invoicing facility",
   "Key": "Clave",
   "Kit": "Kit",
   "Language": "Lenguaje",
