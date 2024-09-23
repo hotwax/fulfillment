@@ -173,29 +173,20 @@ const updateOrderItemShipGroup = async (payload: any): Promise<any> => {
 
 const addTrackingCode = async (payload: any): Promise<any> => {
   try {
-    let resp = await updateShipmentRouteSegment({
+    let resp = await updateShipmentPackageRouteSeg({
       "shipmentId": payload.shipmentId,
       "shipmentRouteSegmentId": payload.shipmentRouteSegmentId,
-      "carrierServiceStatusId": "SHRSCS_CONFIRMED"
-    }) as any;
+      "shipmentPackageSeqId": payload.shipmentPackageSeqId,
+      "trackingCode": payload.trackingCode
+    });
     if (!hasError(resp)) {
-      resp = await updateShipmentPackageRouteSeg({
+      resp = await updateShipmentRouteSegment({
         "shipmentId": payload.shipmentId,
         "shipmentRouteSegmentId": payload.shipmentRouteSegmentId,
-        "shipmentPackageSeqId": payload.shipmentPackageSeqId,
-        "trackingCode": payload.trackingCode
+        "trackingIdNumber": payload.trackingCode,
+        "carrierServiceStatusId": "SHRSCS_ACCEPTED"
       });
-      if (!hasError(resp)) {
-        resp = await updateShipmentRouteSegment({
-          "shipmentId": payload.shipmentId, 
-          "shipmentRouteSegmentId": payload.shipmentRouteSegmentId,
-          "trackingIdNumber": payload.trackingCode,
-          "carrierServiceStatusId": "SHRSCS_ACCEPTED"
-        });
-        if (hasError(resp)) {
-          throw resp.data;
-        }
-      } else {
+      if (hasError(resp)) {
         throw resp.data;
       }
     } else {
