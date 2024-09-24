@@ -163,6 +163,15 @@ const updateShipmentPackageRouteSeg = async (payload: any): Promise<any> => {
     data: payload
   })
 }
+
+const voidShipmentLabel = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/voidShipmentLabel",
+    method: "POST",
+    data: payload
+  })
+}
+
 const updateOrderItemShipGroup = async (payload: any): Promise<any> => {
   return api({
     url: "service/updateOrderItemShipGroup",
@@ -173,29 +182,25 @@ const updateOrderItemShipGroup = async (payload: any): Promise<any> => {
 
 const addTrackingCode = async (payload: any): Promise<any> => {
   try {
-    let resp = await updateShipmentRouteSegment({
+    let resp = await updateShipmentPackageRouteSeg({
       "shipmentId": payload.shipmentId,
       "shipmentRouteSegmentId": payload.shipmentRouteSegmentId,
-      "carrierServiceStatusId": "SHRSCS_CONFIRMED"
-    }) as any;
+      "shipmentPackageSeqId": payload.shipmentPackageSeqId,
+      "trackingCode": payload.trackingCode,
+      "labelImage": "",
+      "labelIntlSignImage": "",
+      "labelHtml": "",
+      "labelImageUrl": "",
+      "internationalInvoiceUrl": ""
+    });
     if (!hasError(resp)) {
-      resp = await updateShipmentPackageRouteSeg({
+      resp = await updateShipmentRouteSegment({
         "shipmentId": payload.shipmentId,
         "shipmentRouteSegmentId": payload.shipmentRouteSegmentId,
-        "shipmentPackageSeqId": payload.shipmentPackageSeqId,
-        "trackingCode": payload.trackingCode
+        "trackingIdNumber": payload.trackingCode,
+        "carrierServiceStatusId": "SHRSCS_ACCEPTED"
       });
-      if (!hasError(resp)) {
-        resp = await updateShipmentRouteSegment({
-          "shipmentId": payload.shipmentId, 
-          "shipmentRouteSegmentId": payload.shipmentRouteSegmentId,
-          "trackingIdNumber": payload.trackingCode,
-          "carrierServiceStatusId": "SHRSCS_ACCEPTED"
-        });
-        if (hasError(resp)) {
-          throw resp.data;
-        }
-      } else {
+      if (hasError(resp)) {
         throw resp.data;
       }
     } else {
@@ -382,7 +387,7 @@ const fetchShipmentPackages = async (shipmentIds: Array<string>, isTrackingRequi
       "shipmentItemSeqId_op": "not-empty",
       ...trackingCodeFilters
     },
-    "fieldList": ["shipmentId", "shipmentRouteSegmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "isTrackingRequired", "primaryShipGroupSeqId"],
+    "fieldList": ["shipmentId", "shipmentRouteSegmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "isTrackingRequired", "primaryShipGroupSeqId", "labelImageUrl", "carrierServiceStatusId"],
     "viewSize": 250,  // maximum records we could have
     "distinct": "Y"
   }
@@ -396,6 +401,13 @@ const fetchShipmentPackages = async (shipmentIds: Array<string>, isTrackingRequi
 
     if (!hasError(resp)) {
       shipmentPackages = resp?.data.docs;
+      shipmentPackages.map((shipmentPackage: any) => {
+        if(shipmentPackage.carrierServiceStatusId === "SHRSCS_VOIDED") {
+          shipmentPackage.trackingCode = ""
+          shipmentPackage.labelImageUrl = ""
+          shipmentPackage.internationalInvoiceUrl = ""
+        }
+      })
     } else if (!resp?.data.error || (resp.data.error && resp.data.error !== "No record found")) {
       return Promise.reject(resp?.data.error);
     }
@@ -915,5 +927,6 @@ export const OrderService = {
   fetchOrderItemShipGroup,
   fetchShippingAddress,
   fetchOrderPaymentPreferences,
-  getShippingPhoneNumber
+  getShippingPhoneNumber,
+  voidShipmentLabel
 }
