@@ -275,7 +275,7 @@
                 </ion-label>
               </ion-item>
             </template>
-            <ion-item v-else>
+            <ion-item v-else-if="order.trackingCode">
               <ion-label>
                 {{ order.trackingCode }}
                 <p>{{ translate("tracking code") }}</p>
