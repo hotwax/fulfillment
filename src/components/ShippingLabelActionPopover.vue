@@ -6,7 +6,7 @@
           {{ translate("View Label") }}
           <ion-icon slot="end" :icon="documentOutline" />
         </ion-item>
-        <ion-item button lines="none" @click="voidShippingLabel(currentOrder)">
+        <ion-item button lines="none" :disabled="isVoidLabelDisabled" @click="voidShippingLabel(currentOrder)">
           {{ translate("Void Label") }}
           <ion-icon slot="end" :icon="trashOutline" />
         </ion-item>
@@ -41,7 +41,7 @@
       IonList,
       IonListHeader
     },
-    props: ['currentOrder'],
+    props: ['currentOrder', 'isVoidLabelDisabled'],
     computed: {
       ...mapGetters({
         facilityProductStores: 'facility/getFacilityProductStores',
