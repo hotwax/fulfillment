@@ -293,6 +293,13 @@
               </ion-card-title>
             </ion-card-header>
 
+            <ion-item v-if="orderInvoicingInfo.invoicingFacility?.facilityId">
+              <ion-label>
+                {{ orderInvoicingInfo.invoicingFacility?.facilityName ? orderInvoicingInfo.invoicingFacility.facilityName : orderInvoicingInfo.invoicingFacility.facilityId }}
+                <p>{{ translate("Invoicing facility") }}</p>
+              </ion-label>
+            </ion-item>
+
             <ion-item v-if="orderInvoicingInfo.invoicingConfirmationDate">
               <ion-label>
                 <p class="overline">{{ getInvoicingConfirmationDate(orderInvoicingInfo.invoicingConfirmationDate) }}</p>
@@ -1528,12 +1535,16 @@ export default defineComponent({
         if(!hasError(resp) && resp.data?.response?.docs?.length) {
           const response = resp.data.response.docs[0];
 
+          const request = Object.keys(response.request_txt_en).length ? JSON.parse(response.request_txt_en) : {}
+          const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === request.InvoicingStore)
+
           orderInvoicingInfo = {
             id: response.id,
             createdDate: response.createdDate_dt,
             response : Object.keys(response.response_txt_en).length ? JSON.parse(response.response_txt_en) : {},
             status: response.status_txt_en,
-            statusCode: response.statusCode_txt_en
+            statusCode: response.statusCode_txt_en,
+            invoicingFacility
           }
 
           const params = {
