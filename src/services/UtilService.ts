@@ -122,7 +122,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
   } catch(err) {
     logger.error('Failed to fetch shipment packages information', err)
   }
-  
+
   return shipmentPackages;
 }
 

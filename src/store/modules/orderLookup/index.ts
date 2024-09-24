@@ -32,7 +32,7 @@ const orderLookupModule: Module<OrderLookupState, RootState> = {
     productStores: [],
     facilities: [],
     orderStatuses: [],
-    carrierTrackingUrls: {}
+    carriersTrackingInfo: {}
   },
   getters,
   actions,

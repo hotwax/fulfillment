@@ -2,8 +2,8 @@
   <ion-content>
     <ion-list>
       <ion-list-header>{{ currentOrder.shipGroups[shipGroupSeqId][0]?.trackingIdNumber }}</ion-list-header>
-      <ion-item button :disabled="getCarrierTrackingUrl(carrierPartyId)?.trackingUrl" @click="redirectToTrackingUrl()">
-        {{ getCarrierTrackingUrl(carrierPartyId)?.carrierName ? getCarrierTrackingUrl(carrierPartyId).carrierName : carrierPartyId }}
+      <ion-item button :disabled="getCarriersTrackingInfo(carrierPartyId)?.trackingUrl" @click="redirectToTrackingUrl()">
+        {{ getCarriersTrackingInfo(carrierPartyId)?.carrierName ? getCarriersTrackingInfo(carrierPartyId).carrierName : carrierPartyId }}
         <ion-icon slot="end" :icon="openOutline" />
       </ion-item>
       <ion-item button @click="printShippingLabel(shipGroupSeqId)">
@@ -47,7 +47,7 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      getCarrierTrackingUrl: "orderLookup/getCarrierTrackingUrl",
+      getCarriersTrackingInfo: "orderLookup/getCarriersTrackingInfo",
     })
   },
   props: ["carrierPartyId", "currentOrder", "shipGroupSeqId"],
@@ -89,9 +89,10 @@ export default defineComponent({
       popoverController.dismiss()
     },
     redirectToTrackingUrl() {
-      const trackingUrl = this.getCarrierTrackingUrl(this.carrierPartyId)
+      const trackingUrl = this.getCarriersTrackingInfo(this.carrierPartyId)
       const trackingCode = this.currentOrder.shipGroups[this.shipGroupSeqId][0]?.trackingIdNumber
       window.open(trackingUrl.replace("${trackingNumber}", trackingCode), "_blank");
+      popoverController.dismiss()
     }
   },
   setup() {
