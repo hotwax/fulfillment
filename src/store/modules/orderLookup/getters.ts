@@ -26,6 +26,9 @@ const getters: GetterTree<OrderLookupState, RootState> = {
   },
   getOrderStatusOptions: (state) => {
     return state.orderStatuses || [];
+  },
+  getCarrierTrackingUrl: (state) => (carrierId: any) => {
+    return state.carrierTrackingUrls[carrierId];
   }
 };
 export default getters;

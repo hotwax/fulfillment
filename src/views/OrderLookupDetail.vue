@@ -191,7 +191,7 @@
                   <p v-if="shipGroups[0].facilityId !== '_NA_'">{{ getShipmentMethodDesc(shipGroups[0].shipmentMethodTypeId) || shipGroups[0].shipmentMethodTypeId }}</p>
                 </ion-label>
                 <ion-label slot="end" v-if="shipGroups[0].trackingIdNumber">{{ translate("Tracking Code") }}{{ ":" }} {{ shipGroups[0].trackingIdNumber }}</ion-label>
-                <ion-button :disabled="order.hasMissingInfo" slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, shipGroups[0]?.shipGroupSeqId)" v-if="shipGroups[0].trackingIdNumber && isEligibleForVoiding(shipGroups[0])">
+                <ion-button :disabled="order.hasMissingInfo" slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, shipGroups[0])" v-if="shipGroups[0].trackingIdNumber && isEligibleForVoiding(shipGroups[0])">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -355,12 +355,13 @@ export default defineComponent({
       const twentyFourHoursInMillis = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
       return (DateTime.now().toMillis() - shipGroup.orderDate >= twentyFourHoursInMillis);
     },
-    async shippingLabelActionPopover(ev: Event, shipGroupSeqId: any) {
+    async shippingLabelActionPopover(ev: Event, shipGroup: any) {
       const popover = await popoverController.create({
         component: OrderLookupLabelActionsPopover,
         componentProps: {
           currentOrder: this.order,
-          shipGroupSeqId
+          shipGroupSeqId: shipGroup.shipGroupSeqId,
+          carrierPartyId: shipGroup.carrierPartyId
         },
         event: ev,
         showBackdrop: false

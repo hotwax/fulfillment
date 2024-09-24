@@ -2,6 +2,10 @@
   <ion-content>
     <ion-list>
       <ion-list-header>{{ currentOrder.shipGroups[shipGroupSeqId][0]?.trackingIdNumber }}</ion-list-header>
+      <ion-item button :disabled="getCarrierTrackingUrl(carrierPartyId)?.trackingUrl" @click="redirectToTrackingUrl()">
+        {{ getCarrierTrackingUrl(carrierPartyId)?.carrierName ? getCarrierTrackingUrl(carrierPartyId).carrierName : carrierPartyId }}
+        <ion-icon slot="end" :icon="openOutline" />
+      </ion-item>
       <ion-item button @click="printShippingLabel(shipGroupSeqId)">
         {{ translate("View Label") }}
         <ion-icon slot="end" :icon="documentOutline" />
@@ -24,9 +28,9 @@ import {
   popoverController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { documentOutline, trashOutline } from "ionicons/icons";
+import { documentOutline, openOutline, trashOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
-import { useStore } from "vuex";
+import { mapGetters, useStore } from "vuex";
 import { OrderService } from '@/services/OrderService';
 import { isPdf, showToast } from '@/utils'
 import { hasError } from "@/adapter";
@@ -41,7 +45,12 @@ export default defineComponent({
     IonList,
     IonListHeader
   },
-  props: ["currentOrder", "shipGroupSeqId"],
+  computed: {
+    ...mapGetters({
+      getCarrierTrackingUrl: "orderLookup/getCarrierTrackingUrl",
+    })
+  },
+  props: ["carrierPartyId", "currentOrder", "shipGroupSeqId"],
   methods: {
     async printShippingLabel(shipGroupSeqId: any) {
       const shipmentPackages = this.currentOrder.shipmentPackages[shipGroupSeqId];
@@ -79,6 +88,11 @@ export default defineComponent({
       await this.store.dispatch("orderLookup/getOrderDetails", this.currentOrder.orderId)
       popoverController.dismiss()
     },
+    redirectToTrackingUrl() {
+      const trackingUrl = this.getCarrierTrackingUrl(this.carrierPartyId)
+      const trackingCode = this.currentOrder.shipGroups[this.shipGroupSeqId][0]?.trackingIdNumber
+      window.open(trackingUrl.replace("${trackingNumber}", trackingCode), "_blank");
+    }
   },
   setup() {
     const store = useStore();
@@ -86,6 +100,7 @@ export default defineComponent({
     return {
       documentOutline,
       isPdf,
+      openOutline,
       trashOutline,
       store,
       translate
