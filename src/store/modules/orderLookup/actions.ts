@@ -341,7 +341,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         return orderSegmentInfo
       }, {}) : []
 
-      let orderShipmentPackages = []
+      let orderShipmentPackages = [] as any
       const shipmentIds = Object.values(orderRouteSegmentInfo).flatMap((routes: any) => routes.map((route: any) => route.shipmentId));
 
       try {
@@ -358,6 +358,15 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         shipment[key].push(shipmentPackage);
         return shipment;
       }, {});
+
+      Object.values(orderRouteSegmentInfo).map((segments: any) => {
+        segments.map((segment: any) => {
+          const currentPackage = orderShipmentPackages.find((shipmentPackage: any) => shipmentPackage.shipmentId === segment.shipmentId)
+          if(currentPackage && currentPackage.carrierServiceStatusId === "SHRSCS_VOIDED") {
+            segment.trackingIdNumber = ""
+          }
+        })
+      })
 
       order["shipmentPackages"] = shipmentPackages;
       const carrierPartyIds = [] as any;
