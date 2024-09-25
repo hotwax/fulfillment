@@ -196,7 +196,9 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         entityName: "OrderItemShipGroupAndFacility"
       }, {
         inputFields: {
-          orderId
+          orderId,
+          shipmentStatusId: "SHIPMENT_INPUT",
+          shipmentStatusId_op: "notEqual"
         },
         fieldList: ["orderId", "shipGroupSeqId", "shipmentId", "trackingIdNumber"],
         viewSize: 50,
