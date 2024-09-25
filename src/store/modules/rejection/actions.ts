@@ -9,11 +9,13 @@ import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
 
 const actions: ActionTree<RejectionState, RootState> = {
-  async fetchRejectionStats({ commit, dispatch, state }, payload) {
-    let rejectionReasons = [] as any, rejectedItems= [] as any
+  async fetchRejectionStats({ commit, state }) {
+    let rejectionReasons = [] as any, rejectedItems = [] as any, total = 0
 
+    const rejectedOrderQuery = JSON.parse(JSON.stringify(state.rejectedOrders.query))
+    
     let rejectionPeriodFilter = "[NOW-24HOURS TO NOW]"
-    if (payload.rejectionPeriodId && payload.rejectionPeriodId === 'LAST_SEVEN_DAYS') {
+    if (rejectedOrderQuery.rejectionPeriodId === 'LAST_SEVEN_DAYS') {
       rejectionPeriodFilter = "[NOW-7DAYS TO NOW]"
     }
     const query = prepareSolrQuery({
@@ -26,6 +28,7 @@ const actions: ActionTree<RejectionState, RootState> = {
           rejectedFrom_txt_en: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
         },
         facet: {
+          "total":"unique(orderId_s)",
           "rejectionReasonIdFacet":{
             "field":"rejectionReasonId_txt_en",
             "mincount":1,
@@ -46,6 +49,7 @@ const actions: ActionTree<RejectionState, RootState> = {
       try {
         const resp = await RejectionService.fetchRejectionStats(query);
         if (!hasError(resp)) {
+          total = resp.data.facets.total
           const usedReasons = resp.data.facets.rejectionReasonIdFacet.buckets
           rejectedItems = resp.data.facets.prodductIdFacet.buckets
           if (rejectedItems) {
@@ -87,8 +91,7 @@ const actions: ActionTree<RejectionState, RootState> = {
       } catch(err) {
         logger.error('Failed to fetch rejection stats.', err)
       }
-    commit(types.REJECTION_REJECTED_ITEMS_UPDATED, rejectedItems)
-    commit(types.REJECTION_USED_REASONS_UPDATED, rejectionReasons)
+    commit(types.REJECTION_STATS_UPDATED, { rejectedItems, rejectionReasons, total})
   },
 
   async fetchRejectedOrders({ commit, dispatch, state }, payload) {
@@ -112,6 +115,7 @@ const actions: ActionTree<RejectionState, RootState> = {
       groupBy: 'orderId_s',
       filters: {
         rejectedAt_dt: {value: rejectionPeriodFilter},
+        rejectionReasonId_txt_en: {value: rejectedOrderQuery.rejectionReasons},
         rejectedFrom_txt_en: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
       }
     })
@@ -154,8 +158,11 @@ const actions: ActionTree<RejectionState, RootState> = {
   } catch(err) {
     logger.error('Failed to fetch rejected orders.', err)
   }
+  console.log("=======orderList===", orderList);
   commit(types.REJECTION_ORDERS_UPDATED, { list: orderList.length > 0 ? orderList : orders, total})
-  dispatch("fetchRejectedOrdersDetail", { orderIds: orders.map((order:any) =>  order.orderId)})
+  if () {
+    dispatch("fetchRejectedOrdersDetail", { orderIds: orders.map((order:any) =>  order.orderId)})
+  }
 },
 
   async fetchRejectedOrdersDetail ({ commit, dispatch, state }, payload) {
@@ -217,8 +224,10 @@ const actions: ActionTree<RejectionState, RootState> = {
 
   async updateRejectedOrderQuery({ commit, dispatch }, payload) {
     commit(types.REJECTION_ORDER_QUERY_UPDATED, payload)
-    await dispatch('fetchRejectedOrders');
   },
+  async clearRejectedOrdersFilters ({ commit }) {
+    commit(types.REJECTION_ORDER_QUERY_CLEARED, )
+  }
 }
 
 export default actions;

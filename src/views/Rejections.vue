@@ -1,12 +1,20 @@
 <template>
     <ion-page>
+      <RejectedOrdersFilters menu-id="rejected-orders-filters" content-id="rejected-orders-filters" :queryString="rejectedOrders.query.queryString" />
+    
       <ion-header :translucent="true">
         <ion-toolbar>
+          <ion-menu-button menu="start" slot="start" />
           <ion-title>{{ translate("Rejections") }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-menu-button menu="rejected-orders-filters">
+              <ion-icon :icon="filterOutline" />
+            </ion-menu-button>
+          </ion-buttons>
         </ion-toolbar>
       </ion-header>
   
-      <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
+      <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="rejected-orders-filters">
         <div class="rejection-summary">
           <ion-card>
             <ion-item lines="none">
@@ -15,7 +23,7 @@
               </ion-label>
             </ion-item>
             <ion-item>
-              <ion-select :label="translate('Rejections')" interface="popover" v-model="selectedRejectionPeriod" @ionChange="updateRejectionPeriod(selectedRejectionPeriod)">
+              <ion-select :label="translate('Rejections')" interface="popover" :value="rejectedOrders.query.rejectionPeriodId" @ionChange="updateRejectionPeriod($event['detail'].value)">
                 <ion-select-option v-for="rejectionPeriod in rejectionPeriods" :key="rejectionPeriod.id" :value="rejectionPeriod.id">{{ rejectionPeriod.description }}</ion-select-option>
               </ion-select>
             </ion-item>
@@ -75,7 +83,7 @@
             {{ rejectedOrders.total }} {{translate("rejections") }}
           </ion-label>
           
-          <ion-button expand="block" fill="outline" @click="downloadRejections()">
+          <ion-button expand="block" fill="outline" @click="downloadRejections()" class="ion-margin-end">
             <ion-icon slot="end" :icon="cloudDownloadOutline" />{{ translate("Download rejections") }}
           </ion-button>
         </div>
@@ -158,6 +166,7 @@
   <script lang="ts">
   import {
     IonButton,
+    IonButtons,
     IonCard,
     IonChip,
     IonContent,
@@ -169,6 +178,7 @@
     IonLabel,
     IonList,
     IonListHeader,
+    IonMenuButton,
     IonNote,
     IonPage,
     IonSearchbar,
@@ -177,18 +187,23 @@
     IonThumbnail,
     IonTitle,
     IonToolbar,
+    modalController
   } from '@ionic/vue';
   import { computed, defineComponent } from 'vue';
-  import { addOutline, caretDownOutline, cloudDownloadOutline, ellipsisVerticalOutline, personCircleOutline, pricetagOutline } from 'ionicons/icons';
+  import { addOutline, caretDownOutline, cloudDownloadOutline, ellipsisVerticalOutline, filterOutline, personCircleOutline, pricetagOutline } from 'ionicons/icons';
   import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
   import { mapGetters, useStore } from 'vuex';
   import { formatUtcDate } from '@/utils';
+  import RejectedItemsModal from '@/components/RejectedItemsModal.vue';
+  import UsedReasonsModal from '@/components/UsedReasonsModal.vue';
+  import RejectedOrdersFilters from '@/components/RejectedOrdersFilters.vue'
 
-  
   export default defineComponent({
-    name: 'RejectionReasons',
+    name: 'Rejections',
     components: {
+      DxpShopifyImg,
       IonButton,
+      IonButtons,
       IonCard,
       IonChip,
       IonContent,
@@ -200,6 +215,7 @@
       IonLabel,
       IonList,
       IonListHeader,
+      IonMenuButton,
       IonNote,
       IonPage,
       IonSearchbar,
@@ -208,20 +224,19 @@
       IonThumbnail,
       IonTitle,
       IonToolbar,
+      RejectedOrdersFilters
     },
     data() {
       return {
         queryString: '',
         rejectionPeriods: [] as any,
-        selectedRejectionPeriod: '',
         searchedQuery: '',
         isScrollingEnabled: false,
       }
     },
     computed: {
       ...mapGetters({
-        rejectedItems: 'rejection/getRejectedItems',
-        usedReasons: 'rejection/getUsedReasons',
+        rejectionStats: 'rejection/getRejectedStats',
         getProduct: 'product/getProduct',
         rejectedOrders: 'rejection/getRejectedOrders',
         currentFacility: 'user/getCurrentFacility',
@@ -229,8 +244,6 @@
     },
     async ionViewWillEnter() {
       this.rejectionPeriods = [{"id": "LAST_TWENTY_FOUR_HOURS", "description": "Last 24 hours"}, {"id": "LAST_SEVEN_DAYS", "description": "Last 7 days"}]
-      this.selectedRejectionPeriod = this.rejectionPeriods[0]?.id;
-      await this.fetchRejectionsStats(this.selectedRejectionPeriod)
       this.isScrollingEnabled = false;
       await this.initialiseRejectedOrderQuery();
     },
@@ -255,6 +268,7 @@
         rejectedOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
         rejectedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
         await this.store.dispatch('rejection/updateRejectedOrderQuery', { ...rejectedOrdersQuery })
+        await this.store.dispatch('rejection/fetchRejectionStats')
       },
       async loadMoreRejectedOrders(event: any) {
         // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
@@ -266,20 +280,26 @@
         await this.store.dispatch('rejection/updateRejectedOrderQuery', { ...rejectedOrdersQuery })
         event.target.complete();
       },
-      async fetchRejectionsStats(selectedRejectionPeriod: string) {
-        await this.store.dispatch('rejection/fetchRejectionStats', {rejectionPeriodId: selectedRejectionPeriod})
+      async fetchRejectionsStats() {
+        await this.store.dispatch('rejection/fetchRejectionStats')
       },
       getMostUsedReasons() {
-        return this.usedReasons && this.usedReasons.length >=3 ? this.usedReasons.slice(0, 3) : this.usedReasons;
+        return this.rejectionStats.usedReasons && this.rejectionStats.usedReasons.length >=3 ? this.rejectionStats.usedReasons.slice(0, 3) : this.rejectionStats.usedReasons;
       },
       getMostRejectedItems() {
-        return this.rejectedItems && this.rejectedItems.length >=3 ? this.rejectedItems.slice(0, 3) : this.rejectedItems;
+        return this.rejectionStats.rejectedItems && this.rejectionStats.rejectedItems.length >=3 ? this.rejectionStats.rejectedItems.slice(0, 3) : this.rejectionStats.rejectedItems;
       },
-      showAllRejectedItemsModal() {
-        //logic here
+      async showAllRejectedItemsModal() {
+        const rejectedItemsModal = await modalController.create({
+          component: RejectedItemsModal
+        });
+        return rejectedItemsModal.present();
       },
-      showAllReasonsModal() {
-        //logic here
+      async showAllReasonsModal() {
+        const rejectedReasonsModal = await modalController.create({
+          component: UsedReasonsModal
+        });
+        return rejectedReasonsModal.present();
       },
       downloadRejections() {
         //logic here
@@ -288,8 +308,8 @@
         const rejectedOrdersQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
         rejectedOrdersQuery.rejectionPeriodId = rejectionPeriodId
         await this.store.dispatch('rejection/updateRejectedOrderQuery', { ...rejectedOrdersQuery })
-        await this.fetchRejectionsStats(rejectionPeriodId);
-        this.selectedRejectionPeriod = rejectionPeriodId;
+        await this.store.dispatch('rejection/fetchRejectionStats')
+        await this.store.dispatch('rejection/fetchRejectedOrders');
       },
       async updateQueryString(queryString: string) {
         const rejectedOrdersQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
@@ -298,6 +318,7 @@
         rejectedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
         rejectedOrdersQuery.queryString = queryString
         await this.store.dispatch('rejection/updateRejectedOrderQuery', { ...rejectedOrdersQuery })
+        await this.store.dispatch('rejection/fetchRejectedOrders');
         this.searchedQuery = queryString;
       },
       getErrorMessage() {
@@ -315,6 +336,7 @@
         caretDownOutline,
         cloudDownloadOutline,
         ellipsisVerticalOutline,
+        filterOutline,
         formatUtcDate,
         getProductIdentificationValue,
         personCircleOutline,
@@ -335,13 +357,16 @@
     display: grid;
     align-items: start;
     grid-template-columns: repeat(auto-fill, minmax(343px, 1fr));
+    margin-bottom: var(--spacer-lg);
+  }
+  .rejection-summary > ion-card:first-child {
+    margin-left: var(--spacer-sm);
   }
   .rejection-search {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(343px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(343px, 1fr));
     margin-bottom: var(--spacer-lg);
     align-items: center;
-    margin-right: var(--spacer-sm);
   }
   .rejected-order-item {
     display: grid;
@@ -349,5 +374,7 @@
     align-items: center;
     padding: var(--spacer-xs) 0;
 }
+.searchbar{
+  padding-top: 0;
+}
 </style>
-  

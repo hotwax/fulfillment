@@ -8,8 +8,11 @@ import RootState from '../../RootState'
 const rejectionModule: Module<RejectionState, RootState> = {
   namespaced: true,
   state: {
-    rejectedItems: [],
-    usedReasons: [],
+    stats:{
+      total: 0,
+      rejectedItems: [],
+      usedReasons: [],
+    },
     rejectedOrders: {
       list: [],
       total: 0,
@@ -17,7 +20,8 @@ const rejectionModule: Module<RejectionState, RootState> = {
         viewIndex: 0,
         viewSize: process.env.VUE_APP_VIEW_SIZE,
         queryString: '',
-        rejectionPeriodId: 'LAST_TWENTY_FOUR_HOURS'
+        rejectionPeriodId: 'LAST_TWENTY_FOUR_HOURS',
+        rejectionReasons: []
       }
     }
   },

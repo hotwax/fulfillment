@@ -1,6 +1,9 @@
 export default interface OrderState {
-    rejectedItems: any,
-    usedReasons: any,
+    stats:{
+      total: number,
+      rejectedItems: any,
+      usedReasons: any,
+    },
     rejectedOrders: {
       list: any,
       total: number,
@@ -8,7 +11,8 @@ export default interface OrderState {
         viewIndex: number,
         viewSize: any,
         queryString: string,
-        rejectionPeriodId: string
+        rejectionPeriodId: string,
+        rejectionReasons: any
       }
     }
   }
