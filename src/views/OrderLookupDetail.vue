@@ -191,7 +191,7 @@
                   <p v-if="shipGroups[0].facilityId !== '_NA_'">{{ getShipmentMethodDesc(shipGroups[0].shipmentMethodTypeId) || shipGroups[0].shipmentMethodTypeId }}</p>
                 </ion-label>
                 <ion-label slot="end" v-if="shipGroups[0].trackingIdNumber">{{ translate("Tracking Code") }}{{ ":" }} {{ shipGroups[0].trackingIdNumber }}</ion-label>
-                <ion-button :disabled="order.hasMissingInfo" slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, shipGroups[0])" v-if="shipGroups[0].trackingIdNumber && isEligibleForVoiding(shipGroups[0])">
+                <ion-button :disabled="order.hasMissingInfo" slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, shipGroups[0])" v-if="shipGroups[0].trackingIdNumber">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -270,7 +270,6 @@ import {
   IonThumbnail,
   IonTitle,
   IonToolbar,
-  alertController,
   popoverController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
@@ -278,10 +277,7 @@ import { translate } from '@hotwax/dxp-components';
 import { cubeOutline, golfOutline, callOutline, cashOutline, closeCircleOutline, ellipsisVerticalOutline, informationCircleOutline, ribbonOutline, mailOutline, ticketOutline, timeOutline, pulseOutline, storefrontOutline, sunnyOutline, checkmarkDoneOutline, downloadOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { DateTime } from "luxon";
-import { formatCurrency, getColorByDesc, showToast } from "@/utils"
-import { OrderService } from "@/services/OrderService";
-import { hasError } from "@/adapter";
-import logger from "@/logger";
+import { formatCurrency, getColorByDesc } from "@/utils"
 import OrderLookupLabelActionsPopover from '@/components/OrderLookupLabelActionsPopover.vue';
 
 export default defineComponent({
@@ -350,10 +346,6 @@ export default defineComponent({
       // TODO: fetch QOH only for brokered facility
       await this.store.dispatch('stock/fetchStock', { productId, facilityId })
       this.isFetchingStock = false
-    },
-    isEligibleForVoiding(shipGroup: any) {
-      const twentyFourHoursInMillis = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-      return (DateTime.now().toMillis() - shipGroup.orderDate >= twentyFourHoursInMillis);
     },
     async shippingLabelActionPopover(ev: Event, shipGroup: any) {
       const popover = await popoverController.create({

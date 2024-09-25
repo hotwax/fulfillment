@@ -376,6 +376,9 @@ const fetchShipmentPackages = async (shipmentIds: Array<string>, isTrackingRequi
   if(!isTrackingRequired) {
     trackingCodeFilters = {
       "trackingCode_op": "empty",
+      "trackingCode_grp": "1",
+      "fetchShipmentPackages_op": "SHRSCS_VOIDED",
+      "fetchShipmentPackages_grp": "2"
     }
   }
 
