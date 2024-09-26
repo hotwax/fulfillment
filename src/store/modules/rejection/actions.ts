@@ -10,7 +10,7 @@ import logger from '@/logger'
 
 const actions: ActionTree<RejectionState, RootState> = {
   async fetchRejectionStats({ commit, state }) {
-    let rejectionReasons = [] as any, rejectedItems = [] as any, total = 0
+    let usedRejectionReasons = [] as any, rejectedItems = [] as any, total = 0
 
     const rejectedOrderQuery = JSON.parse(JSON.stringify(state.rejectedOrders.query))
     
@@ -49,7 +49,7 @@ const actions: ActionTree<RejectionState, RootState> = {
       try {
         const resp = await RejectionService.fetchRejectionStats(query);
         if (!hasError(resp)) {
-          total = resp.data.facets.total
+          total = resp.data.facets.total ? resp.data.facets.total : 0
           const usedReasons = resp.data.facets.rejectionReasonIdFacet.buckets
           rejectedItems = resp.data.facets.prodductIdFacet.buckets
           if (rejectedItems) {
@@ -77,8 +77,8 @@ const actions: ActionTree<RejectionState, RootState> = {
                 reasonDetail[reason.val.trim().toUpperCase()] = reason;
                 return reasonDetail;
               }, {});
-              rejectionReasons = resp.data.docs
-              rejectionReasons.map((rejectionReason: any) => {
+              usedRejectionReasons = resp.data.docs
+              usedRejectionReasons.map((rejectionReason: any) => {
                 rejectionReason.count = reasonCountDetail[rejectionReason.enumId]?.count
               })
             } else {
@@ -91,16 +91,29 @@ const actions: ActionTree<RejectionState, RootState> = {
       } catch(err) {
         logger.error('Failed to fetch rejection stats.', err)
       }
-    commit(types.REJECTION_STATS_UPDATED, { rejectedItems, rejectionReasons, total})
+    commit(types.REJECTION_STATS_UPDATED, { rejectedItems, usedReasons: usedRejectionReasons, total })
   },
 
   async fetchRejectedOrders({ commit, dispatch, state }, payload) {
     let orders = [] as any, orderList = [] as any, total = 0
     const rejectedOrderQuery = JSON.parse(JSON.stringify(state.rejectedOrders.query))
     
-    let rejectionPeriodFilter = "[NOW-24HOURS TO NOW]"
-    if (rejectedOrderQuery.rejectionPeriodId === 'LAST_SEVEN_DAYS') {
-      rejectionPeriodFilter = "[NOW-7DAYS TO NOW]"
+    
+
+    const filters = {
+      rejectedFrom_txt_en: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
+    } as any
+
+    //when user search the rejected results are not bound to time duration
+    if (!rejectedOrderQuery.queryString) {
+      let rejectionPeriodFilter = "[NOW-24HOURS TO NOW]"
+      if (rejectedOrderQuery.rejectionPeriodId === 'LAST_SEVEN_DAYS') {
+        rejectionPeriodFilter = "[NOW-7DAYS TO NOW]"
+      }
+      filters.rejectedAt_dt = {value: rejectionPeriodFilter}
+    }
+    if (rejectedOrderQuery.rejectionReasons.length) {
+      filters.rejectionReasonId_txt_en = {value: rejectedOrderQuery.rejectionReasons}
     }
 
     const query = prepareSolrQuery({
@@ -113,11 +126,7 @@ const actions: ActionTree<RejectionState, RootState> = {
       sort: 'rejectedAt_dt desc',
       isGroupingRequired: true,
       groupBy: 'orderId_s',
-      filters: {
-        rejectedAt_dt: {value: rejectionPeriodFilter},
-        rejectionReasonId_txt_en: {value: rejectedOrderQuery.rejectionReasons},
-        rejectedFrom_txt_en: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
-      }
+      filters
     })
 
     try {
@@ -152,18 +161,17 @@ const actions: ActionTree<RejectionState, RootState> = {
         });
         
         if (rejectedOrderQuery.viewIndex && rejectedOrderQuery.viewIndex > 0) orderList = JSON.parse(JSON.stringify(state.rejectedOrders.list)).concat(orders)
-        } else {
-      throw resp.data;
+      } else {
+          throw resp.data;
+      }
+    } catch(err) {
+      logger.error('Failed to fetch rejected orders.', err)
     }
-  } catch(err) {
-    logger.error('Failed to fetch rejected orders.', err)
-  }
-  console.log("=======orderList===", orderList);
-  commit(types.REJECTION_ORDERS_UPDATED, { list: orderList.length > 0 ? orderList : orders, total})
-  if () {
-    dispatch("fetchRejectedOrdersDetail", { orderIds: orders.map((order:any) =>  order.orderId)})
-  }
-},
+    commit(types.REJECTION_ORDERS_UPDATED, { list: orderList.length > 0 ? orderList : orders, total})
+    if (orderList) {
+      dispatch("fetchRejectedOrdersDetail", { orderIds: orders.map((order:any) =>  order.orderId)})
+    }
+  },
 
   async fetchRejectedOrdersDetail ({ commit, dispatch, state }, payload) {
     let resp, orders = [];
@@ -180,7 +188,7 @@ const actions: ActionTree<RejectionState, RootState> = {
         viewIndex: 0,
         viewSize: orderIds.length,
         sort: 'orderDate asc',
-        fieldsToSelect: "orderId customerId customerName orderDate orderName reservedDatetime shipmentMethodTypeId shipmentMethodTypeDesc",
+        fieldsToSelect: "orderId customerPartyId customerPartyName orderDate orderName reservedDatetime shipmentMethodTypeId shipmentMethod",
         isGroupingRequired: true,
         groupBy: 'orderId',
         groupLimit: 1,
@@ -202,13 +210,13 @@ const actions: ActionTree<RejectionState, RootState> = {
         rejectedOrders.map((rejectedOrder: any) => {
           if (orderIds.includes(rejectedOrder.orderId)) {
             const detail = orderDetails[rejectedOrder.orderId]
-            rejectedOrder.customerId = detail.customerId
-            rejectedOrder.customerName = detail.customerName
+            rejectedOrder.customerId = detail.customerPartyId
+            rejectedOrder.customerName = detail.customerPartyName
             rejectedOrder.orderDate = detail.orderDate
             rejectedOrder.orderName = detail.orderName
             rejectedOrder.reservedDatetime = detail.reservedDatetime
             rejectedOrder.shipmentMethodTypeId = detail.shipmentMethodTypeId
-            rejectedOrder.shipmentMethodTypeDesc = detail.shipmentMethodTypeDesc
+            rejectedOrder.shipmentMethod = detail.shipmentMethod
           }
         })
 
@@ -224,6 +232,8 @@ const actions: ActionTree<RejectionState, RootState> = {
 
   async updateRejectedOrderQuery({ commit, dispatch }, payload) {
     commit(types.REJECTION_ORDER_QUERY_UPDATED, payload)
+    await dispatch('fetchRejectionStats')
+    await dispatch('fetchRejectedOrders');
   },
   async clearRejectedOrdersFilters ({ commit }) {
     commit(types.REJECTION_ORDER_QUERY_CLEARED, )
