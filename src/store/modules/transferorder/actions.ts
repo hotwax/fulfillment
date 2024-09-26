@@ -278,7 +278,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   async updateOrderProductCount({ commit, state }, payload ) {
     // When there exists multiple line item for a single product, then may arise discrepancy in scanning
     // since some items might be completed and some pending. Hence searching is done with status check.
-    const item = state.current.items.find((item: any) => (item.internalName === payload && item.statusId !== 'ITEM_COMPLETED' && item.statusId !== 'ITEM_REJECTED'));
+    const item = state.current.items.find((item: any) => (item.internalName === payload && item.statusId !== 'ITEM_COMPLETED' && item.statusId !== 'ITEM_REJECTED' && item.statusId !== 'ITEM_CANCELLED'));
     if(item){
       item.pickedQuantity = parseInt(item.pickedQuantity) + 1;
       commit(types.ORDER_CURRENT_UPDATED, state.current )
