@@ -85,7 +85,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
       "shipmentId": shipmentIds,
       "shipmentId_op": "in"
     },
-    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentRouteSegmentId", "shipmentMethodTypeId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "picklistBinId", "isTrackingRequired", "trackingCode", "internationalInvoiceUrl", "labelImageUrl"],
+    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentRouteSegmentId", "shipmentMethodTypeId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "picklistBinId", "isTrackingRequired", "trackingCode", "internationalInvoiceUrl", "labelImageUrl", "carrierServiceStatusId"],
     "viewSize": shipmentIds.length,
     "distinct": "Y"
   }
@@ -101,6 +101,11 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
       shipmentPackages = resp.data.docs.reduce((shipmentForOrders: any, shipmentPackage: any) => {
         // creating key in this pattern as the same order can have multiple picklist bin and in that we need to find to which picklist bin shipment is associated
         const key = `${shipmentPackage.primaryOrderId}_${shipmentPackage.picklistBinId}`
+        if(shipmentPackage.carrierServiceStatusId === "SHRSCS_VOIDED") {
+            shipmentPackage.trackingCode = ""
+            shipmentPackage.labelImageUrl = ""
+            shipmentPackage.internationalInvoiceUrl = ""
+        }
         if (shipmentPackage.labelImageUrl && isPdf(shipmentPackage.labelImageUrl)) {
           shipmentPackage.labelPdfUrl = shipmentPackage.labelImageUrl;
         }

@@ -191,6 +191,9 @@
                   <p v-if="shipGroups[0].facilityId !== '_NA_'">{{ getShipmentMethodDesc(shipGroups[0].shipmentMethodTypeId) || shipGroups[0].shipmentMethodTypeId }}</p>
                 </ion-label>
                 <ion-label slot="end" v-if="shipGroups[0].trackingIdNumber">{{ translate("Tracking Code") }}{{ ":" }} {{ shipGroups[0].trackingIdNumber }}</ion-label>
+                <ion-button :disabled="order.hasMissingInfo" slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, shipGroups[0])" v-if="shipGroups[0].trackingIdNumber">
+                  <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+                </ion-button>
               </ion-item>
     
               <div class="product-card">
@@ -266,14 +269,16 @@ import {
   IonSpinner,
   IonThumbnail,
   IonTitle,
-  IonToolbar
+  IonToolbar,
+  popoverController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { translate } from '@hotwax/dxp-components';
-import { cubeOutline, golfOutline, callOutline, cashOutline, informationCircleOutline, ribbonOutline, mailOutline, ticketOutline, timeOutline, pulseOutline, storefrontOutline, sunnyOutline, checkmarkDoneOutline, downloadOutline } from "ionicons/icons";
+import { cubeOutline, golfOutline, callOutline, cashOutline, closeCircleOutline, ellipsisVerticalOutline, informationCircleOutline, ribbonOutline, mailOutline, ticketOutline, timeOutline, pulseOutline, storefrontOutline, sunnyOutline, checkmarkDoneOutline, downloadOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { DateTime } from "luxon";
 import { formatCurrency, getColorByDesc } from "@/utils"
+import OrderLookupLabelActionsPopover from '@/components/OrderLookupLabelActionsPopover.vue';
 
 export default defineComponent({
   name: "OrderLookupDetail",
@@ -342,6 +347,20 @@ export default defineComponent({
       await this.store.dispatch('stock/fetchStock', { productId, facilityId })
       this.isFetchingStock = false
     },
+    async shippingLabelActionPopover(ev: Event, shipGroup: any) {
+      const popover = await popoverController.create({
+        component: OrderLookupLabelActionsPopover,
+        componentProps: {
+          currentOrder: this.order,
+          shipGroupSeqId: shipGroup.shipGroupSeqId,
+          carrierPartyId: shipGroup.carrierPartyId
+        },
+        event: ev,
+        showBackdrop: false
+      });
+
+      return popover.present()
+    },
   },
   setup() {
     const store = useStore();
@@ -350,8 +369,10 @@ export default defineComponent({
       callOutline,
       cashOutline,
       checkmarkDoneOutline,
+      closeCircleOutline,
       cubeOutline,
       downloadOutline,
+      ellipsisVerticalOutline,
       formatCurrency,
       getColorByDesc,
       golfOutline,

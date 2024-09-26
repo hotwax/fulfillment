@@ -25,4 +25,5 @@ export default interface UserState {
     newRejectionApiConfig: any;
     partialOrderRejectionConfig: any;
     collateralRejectionConfig: any;
+    isShipNowDisabled: boolean;
 }

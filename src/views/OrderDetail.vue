@@ -165,7 +165,7 @@
 
           <div v-else-if="category === 'completed'" class="mobile-only">
             <ion-item>
-              <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
+              <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -191,7 +191,7 @@
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Shipped") }}
                 </ion-button>
-                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
+                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Ship order") }}
                 </ion-button>
@@ -261,11 +261,11 @@
             </ion-item>
             <template v-if="order.missingLabelImage">
               <template v-if="category === 'completed'">
-                <ion-button :disabled="!shipmentMethodTypeId" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
+                <ion-button :disabled="!shipmentMethodTypeId || !hasPackedShipments(order)" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
                   {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
                   <ion-spinner color="primary" slot="end" data-spinner-size="medium" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
-                <ion-button :disabled="!shipmentMethodTypeId || !carrierPartyId" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
+                <ion-button :disabled="!shipmentMethodTypeId || !carrierPartyId || !hasPackedShipments(order)" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
                   {{ translate("Add tracking code manually") }}
                 </ion-button>
               </template>
@@ -275,7 +275,7 @@
                 </ion-label>
               </ion-item>
             </template>
-            <ion-item v-else>
+            <ion-item v-else-if="order.trackingCode">
               <ion-label>
                 {{ order.trackingCode }}
                 <p>{{ translate("tracking code") }}</p>
@@ -292,6 +292,13 @@
                 {{ translate("Order Invoicing Status") }}
               </ion-card-title>
             </ion-card-header>
+
+            <ion-item v-if="orderInvoicingInfo.invoicingFacility?.facilityId">
+              <ion-label>
+                {{ orderInvoicingInfo.invoicingFacility?.facilityName ? orderInvoicingInfo.invoicingFacility.facilityName : orderInvoicingInfo.invoicingFacility.facilityId }}
+                <p>{{ translate("Invoicing facility") }}</p>
+              </ion-label>
+            </ion-item>
 
             <ion-item v-if="orderInvoicingInfo.invoicingConfirmationDate">
               <ion-label>
@@ -514,7 +521,8 @@ export default defineComponent({
       isForceScanEnabled: 'util/isForceScanEnabled',
       productStoreShipmentMethods: 'carrier/getProductStoreShipmentMethods',
       facilityCarriers: 'carrier/getFacilityCarriers',
-      userProfile: 'user/getUserProfile'
+      userProfile: 'user/getUserProfile',
+      isShipNowDisabled: 'user/isShipNowDisabled'
     })
   },
   data() {
@@ -584,7 +592,8 @@ export default defineComponent({
       const popover = await popoverController.create({
         component: ShippingLabelActionPopover,
         componentProps: {
-          currentOrder: currentOrder
+          currentOrder: currentOrder,
+          isVoidLabelDisabled: (this.category === "completed" && !this.hasPackedShipments(currentOrder))
         },
         event: ev,
         showBackdrop: false
@@ -1527,12 +1536,16 @@ export default defineComponent({
         if(!hasError(resp) && resp.data?.response?.docs?.length) {
           const response = resp.data.response.docs[0];
 
+          const request = Object.keys(response.request_txt_en).length ? JSON.parse(response.request_txt_en) : {}
+          const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === request.InvoicingStore)
+
           orderInvoicingInfo = {
             id: response.id,
             createdDate: response.createdDate_dt,
             response : Object.keys(response.response_txt_en).length ? JSON.parse(response.response_txt_en) : {},
             status: response.status_txt_en,
-            statusCode: response.statusCode_txt_en
+            statusCode: response.statusCode_txt_en,
+            invoicingFacility
           }
 
           const params = {

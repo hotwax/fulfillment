@@ -71,6 +71,9 @@ const mutations: MutationTree <UserState> = {
     },
     [types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED] (state, payload) {
         state.collateralRejectionConfig = payload
+    },
+    [types.USER_DISABLE_SHIP_NOW_CONFIG_UPDATED] (state, payload) {
+        state.isShipNowDisabled = payload
     }
 }
 export default mutations;
