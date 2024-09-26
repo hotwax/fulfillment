@@ -149,7 +149,7 @@
               </div>
               <div class="desktop-only">
                 <ion-button v-if="order.missingLabelImage" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
-                <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+                <ion-button :disabled="isUnpackDisabled || !hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -269,7 +269,8 @@ export default defineComponent({
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       getProductStock: 'stock/getProductStock',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
-      isShipNowDisabled: 'user/isShipNowDisabled'
+      isShipNowDisabled: 'user/isShipNowDisabled',
+      isUnpackDisabled: 'user/isUnpackDisabled'
     })
   },
   async mounted() {
