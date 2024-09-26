@@ -50,7 +50,7 @@
             </ion-item>
           </ion-list>
           <div class="empty-state" v-else>
-            <p>{{ translate("No items found.") }}</p>
+            <p>{{ translate("No data found") }}</p>
           </div>
         </ion-card>
         <ion-card>
@@ -72,7 +72,7 @@
             </ion-item>
           </ion-list>
           <div class="empty-state" v-else>
-            <p>{{ translate("No reasons found.") }}</p>
+            <p>{{ translate("No data found") }}</p>
           </div>
         </ion-card>
       </div>

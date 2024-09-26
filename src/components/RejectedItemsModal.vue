@@ -23,7 +23,7 @@
       </ion-item>
     </ion-list>
     <div class="empty-state" v-else>
-      <p>{{ translate("No items found.") }}</p>
+      <p>{{ translate("No data found") }}</p>
     </div>
   </ion-content>
 </template>
@@ -37,6 +37,7 @@ import {
   IonIcon,
   IonItem,
   IonLabel,
+  IonList,
   IonNote,
   IonTitle,
   IonThumbnail,
@@ -59,6 +60,7 @@ export default defineComponent({
       IonIcon,
       IonItem,
       IonLabel,
+      IonList,
       IonNote,
       IonTitle,
       IonThumbnail,
