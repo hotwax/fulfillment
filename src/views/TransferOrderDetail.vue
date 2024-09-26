@@ -117,7 +117,7 @@
       <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED'">
         <ion-toolbar>
           <ion-buttons slot="end">
-            <ion-button  color="primary" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment()" @click="printTransferOrder()">
+            <ion-button  color="primary" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="printTransferOrder()">
               <ion-icon :icon="printOutline" />
               {{ translate('Picklist') }}   
             </ion-button>

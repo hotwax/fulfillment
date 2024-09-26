@@ -6,13 +6,9 @@
         {{ getCarriersTrackingInfo(carrierPartyId)?.carrierName ? getCarriersTrackingInfo(carrierPartyId).carrierName : carrierPartyId }}
         <ion-icon slot="end" :icon="openOutline" />
       </ion-item>
-      <ion-item button @click="printShippingLabel(shipGroupSeqId)">
+      <ion-item button @click="printShippingLabel(shipGroupSeqId)" lines="none">
         {{ translate("View Label") }}
         <ion-icon slot="end" :icon="documentOutline" />
-      </ion-item>
-      <ion-item button lines="none" @click="voidShippingLabel(shipGroupSeqId)">
-        {{ translate("Void Label") }}
-        <ion-icon slot="end" :icon="trashOutline" />
       </ion-item>
     </ion-list>
   </ion-content>
@@ -28,13 +24,11 @@ import {
   popoverController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { documentOutline, openOutline, trashOutline } from "ionicons/icons";
+import { documentOutline, openOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
 import { mapGetters, useStore } from "vuex";
 import { OrderService } from '@/services/OrderService';
-import { isPdf, showToast } from '@/utils'
-import { hasError } from "@/adapter";
-import logger from '@/logger';
+import { isPdf } from '@/utils'
 
 export default defineComponent({
   name: "OrderLookupLabelActionsPopover",
@@ -65,29 +59,7 @@ export default defineComponent({
       await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
       popoverController.dismiss()
     },
-    
-    async voidShippingLabel(shipGroupSeqId: any) {
-      let resp = {} as any;
 
-      try {
-        for(const shipmentPackage of this.currentOrder.shipmentPackages[shipGroupSeqId]) {
-          resp = await OrderService.voidShipmentLabel({
-            "shipmentId": shipmentPackage.shipmentId,
-            "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId
-          })
-
-          if(hasError(resp)) {
-            throw resp.data;
-          }
-        }
-        showToast(translate("Shipping label voided successfully."))
-      } catch (err) {
-        logger.error("Failed to void shipping label", err);
-        showToast(translate("Failed to void shipping label"));
-      }
-      await this.store.dispatch("orderLookup/getOrderDetails", this.currentOrder.orderId)
-      popoverController.dismiss()
-    },
     redirectToTrackingUrl() {
       const trackingUrl = this.getCarriersTrackingInfo(this.carrierPartyId)
       const trackingCode = this.currentOrder.shipGroups[this.shipGroupSeqId][0]?.trackingIdNumber
@@ -102,7 +74,6 @@ export default defineComponent({
       documentOutline,
       isPdf,
       openOutline,
-      trashOutline,
       store,
       translate
     };

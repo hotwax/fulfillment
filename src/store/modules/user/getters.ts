@@ -75,6 +75,9 @@ const getters: GetterTree <UserState, RootState> = {
     },
     isShipNowDisabled(state) {
         return state.isShipNowDisabled;
+    },
+    isUnpackDisabled(state) {
+        return state.isUnpackDisabled;
     }
 }
 export default getters;

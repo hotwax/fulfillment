@@ -45,7 +45,7 @@
         </main>
   
         <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-          <ion-fab-button :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !Object.keys(currentShipment).length || (currentShipment.isTrackingRequired &&  !trackingCode)" @click="confirmShip()">
+          <ion-fab-button :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !Object.keys(currentShipment).length || (currentShipment.isTrackingRequired &&  !trackingCode?.trim())" @click="confirmShip()">
             <ion-icon :icon="sendOutline" />
           </ion-fab-button>
         </ion-fab>

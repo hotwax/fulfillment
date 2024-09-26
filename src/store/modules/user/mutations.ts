@@ -74,6 +74,9 @@ const mutations: MutationTree <UserState> = {
     },
     [types.USER_DISABLE_SHIP_NOW_CONFIG_UPDATED] (state, payload) {
         state.isShipNowDisabled = payload
+    },
+    [types.USER_DISABLE_UNPACK_CONFIG_UPDATED] (state, payload) {
+        state.isUnpackDisabled = payload
     }
 }
 export default mutations;

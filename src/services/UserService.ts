@@ -349,6 +349,14 @@ const getDisableShipNowConfig = async (payload: any): Promise<any> => {
   });
 }
 
+const getDisableUnpackConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: payload,
+  });
+}
+
 const createPartialOrderRejectionConfig = async (payload: any): Promise<any> => {
   return api({
     url: "service/createProductStoreSetting",
@@ -398,6 +406,7 @@ export const UserService = {
     login,
     getCollateralRejectionConfig,
     getDisableShipNowConfig,
+    getDisableUnpackConfig,
     getEComStores,
     getFacilityDetails,
     getFacilityOrderCount,
