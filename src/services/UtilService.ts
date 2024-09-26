@@ -271,10 +271,9 @@ const fetchRejectReasons = async(query: any): Promise<any> => {
 
 const getAvailablePickers = async (query: any): Promise <any> => {
   return api({
-    url: 'performFind',
-    method: 'get',
-    params: query,
-    cache: true
+    url: "solr-query",
+    method: "post",
+    data: query,
   })
 }
 
