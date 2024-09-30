@@ -335,7 +335,7 @@ export default defineComponent({
   async ionViewWillEnter() {
     this.isFetchingOrderInfo = true
     await this.store.dispatch("orderLookup/getOrderDetails", this.orderId)
-    this.fetchOrderInvoicingFacility()
+    await this.fetchOrderInvoicingFacility()
     this.isFetchingOrderInfo = false
   },
   methods: {
