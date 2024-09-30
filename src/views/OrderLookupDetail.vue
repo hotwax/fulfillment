@@ -172,9 +172,13 @@
                   <ion-label class="ion-text-wrap">{{ translate("Customer ID") }}</ion-label>
                   <ion-label slot="end">{{ order.orderAttributes.customerid || "-" }}</ion-label>
                 </ion-item>
-                <ion-item lines="none">
+                <ion-item>
                   <ion-label class="ion-text-wrap">{{ translate("Municipio") }}</ion-label>
                   <ion-label slot="end">{{ order.orderAttributes.municipio || "-" }}</ion-label>
+                </ion-item>
+                <ion-item lines="none">
+                  <ion-label class="ion-text-wrap">{{ translate("Invoicing facility") }}</ion-label>
+                  <ion-label class="ion-text-wrap" slot="end">{{ (invoicingFacility.facilityName ? invoicingFacility.facilityName : invoicingFacility.facilityId) || '-'  }}</ion-label>
                 </ion-item>
               </ion-list>
             </ion-card>
@@ -278,7 +282,11 @@ import { cubeOutline, golfOutline, callOutline, cashOutline, closeCircleOutline,
 import { mapGetters, useStore } from "vuex";
 import { DateTime } from "luxon";
 import { formatCurrency, getColorByDesc } from "@/utils"
+import { prepareSolrQuery } from '@/utils/solrHelper';
 import OrderLookupLabelActionsPopover from '@/components/OrderLookupLabelActionsPopover.vue';
+import { hasError } from "@hotwax/oms-api";
+import logger from "@/logger";
+import { OrderService } from "@/services/OrderService";
 
 export default defineComponent({
   name: "OrderLookupDetail",
@@ -308,7 +316,8 @@ export default defineComponent({
       orderStatuses: JSON.parse(process.env.VUE_APP_ORDER_STATUS as any),
       itemStatuses: JSON.parse(process.env.VUE_APP_ITEM_STATUS as any),
       isFetchingStock: false,
-      isFetchingOrderInfo: false
+      isFetchingOrderInfo: false,
+      invoicingFacility: {} as any
     }
   },
   computed: {
@@ -320,11 +329,13 @@ export default defineComponent({
       getStatusDesc: "util/getStatusDesc",
       getShipmentMethodDesc: "util/getShipmentMethodDesc",
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
+      userProfile: 'user/getUserProfile',
     })
   },
   async ionViewWillEnter() {
     this.isFetchingOrderInfo = true
     await this.store.dispatch("orderLookup/getOrderDetails", this.orderId)
+    this.fetchOrderInvoicingFacility()
     this.isFetchingOrderInfo = false
   },
   methods: {
@@ -361,6 +372,35 @@ export default defineComponent({
 
       return popover.present()
     },
+    async fetchOrderInvoicingFacility() {
+      const params = {
+        viewSize: 1,
+        sort: "createdDate_dt desc",
+        filters: {
+          id: { value: this.order.orderName }
+        },
+        docType: "ORDER_TO_INVOICE_API",
+        coreName: "logInsights"
+      }
+
+      const orderInvoicingQueryPayload = prepareSolrQuery(params)
+
+      try {
+        const resp = await OrderService.findOrderInvoicingInfo(orderInvoicingQueryPayload);
+
+        if(!hasError(resp) && resp.data?.response?.docs?.length) {
+          const response = resp.data.response.docs[0];
+
+          const request = Object.keys(response.request_txt_en).length ? JSON.parse(response.request_txt_en) : {}
+          const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === request.InvoicingStore)
+          if(invoicingFacility) {
+            this.invoicingFacility = invoicingFacility
+          }
+        }
+      } catch(error: any) {
+        logger.error(error);
+      }
+    }
   },
   setup() {
     const store = useStore();
