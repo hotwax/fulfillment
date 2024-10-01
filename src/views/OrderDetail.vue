@@ -203,7 +203,7 @@
             </div>
             <!-- negative -->
             <div class="desktop-only" v-if="category === 'completed'">
-              <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+              <ion-button :disabled="isUnpackDisabled || !hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
             </div>
           </div>
         </ion-card>
@@ -522,7 +522,8 @@ export default defineComponent({
       productStoreShipmentMethods: 'carrier/getProductStoreShipmentMethods',
       facilityCarriers: 'carrier/getFacilityCarriers',
       userProfile: 'user/getUserProfile',
-      isShipNowDisabled: 'user/isShipNowDisabled'
+      isShipNowDisabled: 'user/isShipNowDisabled',
+      isUnpackDisabled: 'user/isUnpackDisabled'
     })
   },
   data() {

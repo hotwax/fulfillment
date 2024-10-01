@@ -37,7 +37,8 @@ const userModule: Module<UserState, RootState> = {
       newRejectionApiConfig: {},
       partialOrderRejectionConfig: {},
       collateralRejectionConfig: {},
-      isShipNowDisabled: false
+      isShipNowDisabled: false,
+      isUnpackDisabled: false
     },
     getters,
     actions,

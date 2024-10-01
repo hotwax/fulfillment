@@ -109,6 +109,7 @@ const actions: ActionTree<UserState, RootState> = {
       await dispatch('getPartialOrderRejectionConfig')
       await dispatch('getCollateralRejectionConfig')
       await dispatch('getDisableShipNowConfig')
+      await dispatch('getDisableUnpackConfig')
     
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
@@ -201,6 +202,7 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
     this.dispatch('order/clearOrders')
     await dispatch('getDisableShipNowConfig')
+    await dispatch('getDisableUnpackConfig')
     emitter.emit('dismissLoader')
   },
   
@@ -234,6 +236,7 @@ const actions: ActionTree<UserState, RootState> = {
       .catch((error) => logger.error(error));
 
     await dispatch('getDisableShipNowConfig')
+    await dispatch('getDisableUnpackConfig')
     this.dispatch('util/findProductStoreShipmentMethCount')
     this.dispatch('util/getForceScanSetting', payload.eComStore.productStoreId)
   },
@@ -466,6 +469,33 @@ const actions: ActionTree<UserState, RootState> = {
       logger.error(err);
     }
     commit(types.USER_DISABLE_SHIP_NOW_CONFIG_UPDATED, isShipNowDisabled);
+  },
+
+  async getDisableUnpackConfig ({ commit }) {
+    let isUnpackDisabled = false;
+    const params = {
+      "inputFields": {
+        "productStoreId": this.state.user.currentEComStore.productStoreId,
+        "settingTypeEnumId": "DISABLE_UNPACK"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["settingTypeEnumId", "settingValue"],
+      "viewSize": 1
+    } as any
+
+    try {
+      const resp = await UserService.getDisableUnpackConfig(params)
+
+      if (!hasError(resp)) {
+        isUnpackDisabled = resp.data?.docs[0]?.settingValue === "true";
+      } else {
+        logger.error('Failed to fetch disable unpack config.');
+      }
+    } catch (err) {
+      logger.error(err);
+    }
+    commit(types.USER_DISABLE_UNPACK_CONFIG_UPDATED, isUnpackDisabled);
   },
   async updatePartialOrderRejectionConfig ({ dispatch }, payload) {  
     let resp = {} as any;

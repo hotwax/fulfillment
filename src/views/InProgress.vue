@@ -105,11 +105,11 @@
 
                 <div class="desktop-only" v-if="!order.shipmentPackages && !order.hasMissingInfo">
                   <ion-item lines="none">
-                    <ion-skeleton-text animated style="width: 50%;"/>
+                    <ion-skeleton-text animated />
                   </ion-item>
                 </div>
 
-                <div class="desktop-only ion-text-center">
+                <div class="desktop-only ion-text-center" v-else>
                   <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
                   <div>
                     <template v-if="item.rejectReason">

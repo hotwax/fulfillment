@@ -801,6 +801,7 @@ const fetchOrderPaymentPreferences = async (orderId: any): Promise<any> => {
       "orderId": orderId,
     },
     "fieldList": ["orderId", "paymentMethodTypeId", "statusId"],
+    "orderBy": "createdDate DESC",
     "distinct": "Y"
   }
 
