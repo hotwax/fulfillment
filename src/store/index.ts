@@ -13,6 +13,7 @@ import stockModule from "./modules/stock"
 import carrierModule from "./modules/carrier"
 import { setPermissions } from '@/authorization'
 import orderLookupModule from "./modules/orderLookup"
+import rejectionModule from "./modules/rejection"
 
 
 // TODO check how to register it from the components only
@@ -44,7 +45,8 @@ const store = createStore<RootState>({
         'util': utilModule,
         'stock': stockModule,
         'transferorder': transferOrderModule,
-        'carrier': carrierModule
+        'carrier': carrierModule,
+        'rejection': rejectionModule
     },
 })
 

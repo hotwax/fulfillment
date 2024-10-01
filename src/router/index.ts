@@ -34,6 +34,7 @@ import { useAuthStore, DxpLogin } from '@hotwax/dxp-components'
 import { loader } from '@/utils/user';
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
+import Rejections from '@/views/Rejections.vue';
 
 const authGuard = async (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
@@ -242,6 +243,15 @@ const routes: Array<RouteRecordRaw> = [
     name: "Notifications",
     component: Notifications,
     beforeEnter: authGuard,
+  },
+  {
+    path: "/rejections",
+    name: "Rejections",
+    component: Rejections,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_REJECTIONS_VIEW"
+    }
   }
 ]
 
