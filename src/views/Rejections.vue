@@ -198,7 +198,7 @@ import { formatUtcDate, jsonToCsv } from '@/utils';
 import RejectedItemsModal from '@/components/RejectedItemsModal.vue';
 import UsedReasonsModal from '@/components/UsedReasonsModal.vue';
 import RejectedOrdersFilters from '@/components/RejectedOrdersFilters.vue'
-import { DateTime } from 'luxon';
+import DownloadRejectedOrdersModal from "@/components/DownloadRejectedOrdersModal.vue";
 
 export default defineComponent({
   name: 'Rejections',
@@ -301,14 +301,11 @@ export default defineComponent({
       return rejectedReasonsModal.present();
     },
     async downloadRejections() {
-      
-      const allRejectedItems = this.rejectedOrders.list.map((order:any) => order.items).flat();
-      const fileName = `RejectedOrders-${this.currentFacility.facilityId}-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`
-
-      const userStore = useUserStore()
-      const locale = userStore.getLocale
-
-      await jsonToCsv(allRejectedItems, { download: true, name: fileName, encode: locale === 'ja-JP' ? { default: 'shift-jis' } : {} })
+      const downloadRejectedOrdersModal = await modalController.create({
+        component: DownloadRejectedOrdersModal,
+        showBackdrop: false,
+      });
+      await downloadRejectedOrdersModal.present();
     },
     async updateRejectionPeriod(rejectionPeriodId: string) {
       const rejectedOrdersQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
