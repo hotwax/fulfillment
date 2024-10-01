@@ -264,7 +264,7 @@ export default defineComponent({
       }
     },
     isRejectedOrdersScrollable() {
-      return ((this.rejectedOrders.query?.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any)) <  this.rejectedOrders.query?.viewSize;
+      return this.rejectedOrders.list?.length > 0 && this.rejectedOrders.list?.length < this.rejectedOrders.total
     },
     async initialiseRejectedOrderQuery() {
       const rejectedOrdersQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
@@ -301,6 +301,7 @@ export default defineComponent({
       return rejectedReasonsModal.present();
     },
     async downloadRejections() {
+      
       const allRejectedItems = this.rejectedOrders.list.map((order:any) => order.items).flat();
       const fileName = `RejectedOrders-${this.currentFacility.facilityId}-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`
 
