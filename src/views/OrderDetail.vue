@@ -443,7 +443,7 @@ import {
   trashBinOutline,
   ribbonOutline
 } from 'ionicons/icons';
-import { getProductIdentificationValue, translate, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, translate, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
@@ -501,7 +501,6 @@ export default defineComponent({
     ...mapGetters({
       boxTypeDesc: 'util/getShipmentBoxDesc',
       completedOrders: 'order/getCompletedOrders',
-      currentFacility: 'user/getCurrentFacility',
       currentEComStore: 'user/getCurrentEComStore',
       getProduct: 'product/getProduct',
       getProductStock: 'stock/getProductStock',
@@ -852,7 +851,7 @@ export default defineComponent({
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           '-fulfillmentStatus': { value: 'Rejected' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility.facilityId },
+          facilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId }
         },
         facet: {
@@ -1226,7 +1225,7 @@ export default defineComponent({
     async updateOrder(order: any, updateParameter?: string) {
       const form = new FormData()
 
-      form.append('facilityId', this.currentFacility.facilityId)
+      form.append('facilityId', this.currentFacility?.facilityId)
       form.append('orderId', order.orderId)
 
       order.shipmentIds?.map((shipmentId: string) => {
@@ -1285,7 +1284,7 @@ export default defineComponent({
         if (rejectedOrderItems.length > 0) {
           resp = await OrderService.rejectFulfillmentReadyOrderItem({
             data: {
-              facilityId : this.currentFacility.facilityId,
+              facilityId : this.currentFacility?.facilityId,
               rejectEntireShipment: this.isEntierOrderRejectionEnabled(order) ? "Y" : "N",
               rejectAllRelatedShipment: this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
               defaultReason: this.rejectEntireOrderReasonId, //default reason for items for which reason is not selected but rejecting due to entire order rejection config.
@@ -1444,7 +1443,7 @@ export default defineComponent({
         filters: {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility.facilityId },
+          facilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId }
         },
         facet: {
@@ -1485,7 +1484,7 @@ export default defineComponent({
         filters: {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility.facilityId },
+          facilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId },
         },
         facet: {
@@ -1697,8 +1696,10 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const router = useRouter();
+    const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
 
     return {
       addOutline,
@@ -1711,6 +1712,7 @@ export default defineComponent({
       closeCircleOutline,
       copyToClipboard,
       cubeOutline,
+      currentFacility,
       documentTextOutline,
       ellipsisVerticalOutline,
       fileTrayOutline,

@@ -50,7 +50,7 @@ import { arrowBackOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutl
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 import { hasPermission } from "@/authorization";
-import { translate } from '@hotwax/dxp-components';
+import { translate, useUserStore } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: "Menu",
@@ -70,7 +70,6 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       isUserAuthenticated: 'user/isUserAuthenticated',
-      currentFacility: 'user/getCurrentFacility',
     })
   },
   methods: {
@@ -81,6 +80,8 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const router = useRouter();
+    const userStore = useUserStore()
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
 
     const appPages = [
       {
@@ -179,6 +180,7 @@ export default defineComponent({
     return {
       appPages,
       checkmarkDoneOutline,
+      currentFacility,
       hasPermission,
       arrowBackOutline,
       mailUnreadOutline,

@@ -7,9 +7,14 @@ import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import logger from '@/logger'
-import { shopifyImgContext, translate } from '@hotwax/dxp-components'
+import { shopifyImgContext, translate, useUserStore } from '@hotwax/dxp-components'
 import { showToast } from "@/utils";
 import { UtilService } from '@/services/UtilService'
+
+const getCurrentFacilityId = () => {
+  const currentFacility: any = useUserStore().getCurrentFacility;
+  return currentFacility?.facilityId
+}
 
 const actions: ActionTree<TransferOrderState, RootState> = {
 
@@ -17,6 +22,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     emitter.emit('presentLoader');
     let resp;
     const transferOrderQuery = JSON.parse(JSON.stringify(state.transferOrder.query))
+    const currentFacilityId = getCurrentFacilityId();
 
     const params = {
       ...payload,
@@ -28,7 +34,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       sort: payload.sort ? payload.sort : "orderDate asc",
       filters: {
         orderTypeId: { value: 'TRANSFER_ORDER' },
-        facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
+        facilityId: { value: escapeSolrSpecialChars(currentFacilityId) },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
       }
     }
@@ -153,7 +159,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         "shipmentTypeId": "OUT_TRANSFER",
         orderId: payload.orderId,
         "shipGroupSeqId": payload.shipGroupSeqId,
-        "originFacilityId": this.state.user.currentFacility.facilityId,
+        "originFacilityId": getCurrentFacilityId(),
         "destinationFacilityId": payload.orderFacilityId,
         "items": eligibleItems,
         "packages": [{

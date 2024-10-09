@@ -69,12 +69,12 @@ import {
   IonTitle,
   IonToolbar,
   modalController } from "@ionic/vue";
-import { defineComponent } from "vue";
+import { defineComponent, computed } from "vue";
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { showToast } from "@/utils";
 import { hasError } from "@/adapter";
-import { translate } from '@hotwax/dxp-components'
+import { translate, useUserStore } from '@hotwax/dxp-components'
 import { UtilService } from "@/services/UtilService";
 import emitter from "@/event-bus";
 import logger from "@/logger"
@@ -104,7 +104,6 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      currentFacility: 'user/getCurrentFacility',
       openOrders: 'order/getOpenOrders'
     })
   },
@@ -149,9 +148,9 @@ export default defineComponent({
       }
 
       const formData = new FormData();
-      formData.append("facilityId", this.currentFacility.facilityId);
+      formData.append("facilityId", this.currentFacility?.facilityId);
       orderItems.map((item, index) => {
-        formData.append("facilityId_o_"+index, this.currentFacility.facilityId)
+        formData.append("facilityId_o_"+index, this.currentFacility?.facilityId)
         formData.append("shipmentMethodTypeId_o_"+index, item.shipmentMethodTypeId)
         formData.append("itemStatusId_o_"+index, "PICKITEM_PENDING")
         formData.append("shipGroupSeqId_o_"+index, item.shipGroupSeqId)
@@ -238,9 +237,12 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const userStore = useUserStore()
+    let currentFacility = computed(() => userStore.getCurrentFacility) 
 
     return {
       closeOutline,
+      currentFacility,
       saveOutline,
       store,
       translate

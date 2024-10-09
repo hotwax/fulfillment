@@ -7,8 +7,14 @@ import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
+import { useUserStore } from '@hotwax/dxp-components'
 import logger from '@/logger'
 import { getOrderCategory, removeKitComponents } from '@/utils/order'
+
+const getCurrentFacilityId = () => {
+  const currentFacility: any = useUserStore().getCurrentFacility;
+  return currentFacility?.facilityId
+}
 
 const actions: ActionTree<OrderState, RootState> = {
   async fetchInProgressOrdersAdditionalInformation({ commit, dispatch, state }, payload = { viewIndex: 0 }) {
@@ -151,6 +157,7 @@ const actions: ActionTree<OrderState, RootState> = {
     // getting all the orders from state
     const cachedOrders = JSON.parse(JSON.stringify(state.completed.list)); // maintaining cachedOrders as to prepare the orders payload
     let completedOrders = JSON.parse(JSON.stringify(state.completed.list)); // maintaining completedOrders as update the orders information once information in fetched
+    const currentFacilityId = getCurrentFacilityId();
 
     // Split orders in batch of 40
     const batchSize = 20;
@@ -171,7 +178,7 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     try {
-      const shipmentbatches = await Promise.all(requestParams.map((params) => OrderService.fetchShipments(params.picklistBinIds, params.orderIds, this.state.user.currentFacility.facilityId)))
+      const shipmentbatches = await Promise.all(requestParams.map((params) => OrderService.fetchShipments(params.picklistBinIds, params.orderIds, currentFacilityId)))
       // TODO simplify below logic by returning shipments list
       const shipments = shipmentbatches.flat();
 
@@ -310,6 +317,7 @@ const actions: ActionTree<OrderState, RootState> = {
     let resp;
     let orders = [];
     let total = 0;
+    const currentFacilityId = getCurrentFacilityId();
 
     const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
 
@@ -324,7 +332,7 @@ const actions: ActionTree<OrderState, RootState> = {
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           '-fulfillmentStatus': { value: ['Rejected', 'Cancelled'] },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
+          facilityId: { value: escapeSolrSpecialChars(currentFacilityId) },
           productStoreId: { value: this.state.user.currentEComStore.productStoreId }
         }
       }
@@ -403,6 +411,7 @@ const actions: ActionTree<OrderState, RootState> = {
   async findOpenOrders ({ commit, state }, payload = {}) {
     emitter.emit('presentLoader');
     let resp;
+    const currentFacilityId = getCurrentFacilityId();
 
     const openOrderQuery = JSON.parse(JSON.stringify(state.open.query))
 
@@ -418,7 +427,7 @@ const actions: ActionTree<OrderState, RootState> = {
         '-fulfillmentStatus': { value: ['Cancelled', 'Rejected']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
-        facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
+        facilityId: { value: escapeSolrSpecialChars(currentFacilityId) },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
       }
     }
@@ -477,6 +486,7 @@ const actions: ActionTree<OrderState, RootState> = {
   async findCompletedOrders ({ commit, dispatch, state }, payload = {}) {
     emitter.emit('presentLoader');
     let resp;
+    const currentFacilityId = getCurrentFacilityId();
 
     const completedOrderQuery = JSON.parse(JSON.stringify(state.completed.query))
 
@@ -489,7 +499,7 @@ const actions: ActionTree<OrderState, RootState> = {
       filters: {
         picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
+        facilityId: { value: escapeSolrSpecialChars(currentFacilityId) },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
       }
     }
@@ -750,6 +760,7 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     let resp, order = {} as any;
+    const currentFacilityId = getCurrentFacilityId();
     emitter.emit('presentLoader');
 
     const params = {
@@ -763,7 +774,7 @@ const actions: ActionTree<OrderState, RootState> = {
         '-fulfillmentStatus': { value: ['Cancelled', 'Rejected']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
-        facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
+        facilityId: { value: escapeSolrSpecialChars(currentFacilityId) },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
       }
     }
@@ -820,6 +831,7 @@ const actions: ActionTree<OrderState, RootState> = {
     }
     emitter.emit('presentLoader');
     let resp, order = {} as any;
+    const currentFacilityId = getCurrentFacilityId();
 
     try {
       const params = {
@@ -832,7 +844,7 @@ const actions: ActionTree<OrderState, RootState> = {
           shipGroupSeqId: { value: payload.shipGroupSeqId },
           '-fulfillmentStatus': { value: ['Cancelled', 'Rejected']},
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
+          facilityId: { value: escapeSolrSpecialChars(currentFacilityId) },
           productStoreId: { value: this.state.user.currentEComStore.productStoreId }
         }
       }
@@ -888,6 +900,7 @@ const actions: ActionTree<OrderState, RootState> = {
     }
     emitter.emit('presentLoader');
     let resp, order = {} as  any;
+    const currentFacilityId = getCurrentFacilityId();
 
     try {
       const params = {
@@ -899,7 +912,7 @@ const actions: ActionTree<OrderState, RootState> = {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           shipGroupSeqId: { value: payload.shipGroupSeqId },
-          facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
+          facilityId: { value: escapeSolrSpecialChars(currentFacilityId) },
           productStoreId: { value: this.state.user.currentEComStore.productStoreId }
         }
       }
@@ -1014,10 +1027,11 @@ const actions: ActionTree<OrderState, RootState> = {
 
   async fetchCompletedOrderAdditionalInformation({ dispatch }, order) {
     let current = JSON.parse(JSON.stringify(order))
+    const currentFacilityId = getCurrentFacilityId();
 
     try {
       // fetchShipments accepts Array parameters for picklistBinId and orderId
-      const shipmentBatches = await OrderService.fetchShipments([current.picklistBinId], [current.orderId], this.state.user.currentFacility.facilityId)
+      const shipmentBatches = await OrderService.fetchShipments([current.picklistBinId], [current.orderId], currentFacilityId)
       const shipments = shipmentBatches.flat();
       const shipmentIds = [...new Set(shipments.map((shipment: any) => shipment.shipmentId))] as Array<string>
       let shipmentPackages = [] as any;

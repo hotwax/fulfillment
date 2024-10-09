@@ -300,7 +300,7 @@ import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationS
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue';
 import { OrderService } from '@/services/OrderService';
 import emitter from '@/event-bus';
-import { translate } from '@hotwax/dxp-components';
+import { translate, useUserStore } from '@hotwax/dxp-components';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import { UtilService } from '@/services/UtilService';
 import { DateTime } from 'luxon';
@@ -356,7 +356,6 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      currentFacility: 'user/getCurrentFacility',
       inProgressOrders: 'order/getInProgressOrders',
       getProduct: 'product/getProduct',
       rejectReasons: 'util/getRejectReasons',
@@ -449,7 +448,7 @@ export default defineComponent({
       }
     },
     getErrorMessage() {
-      return this.searchedQuery === '' ? translate("doesn't have any orders in progress right now.", { facilityName: this.currentFacility.facilityName }) : translate( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+      return this.searchedQuery === '' ? translate("doesn't have any orders in progress right now.", { facilityName: this.currentFacility?.facilityName }) : translate( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
     },
     getInProgressOrders() {
       return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
@@ -737,7 +736,7 @@ export default defineComponent({
     async updateOrder(order: any, updateParameter?: string) {
       const form = new FormData()
 
-      form.append('facilityId', this.currentFacility.facilityId)
+      form.append('facilityId', this.currentFacility?.facilityId)
       form.append('orderId', order.orderId)
 
       order.shipmentIds.map((shipmentId: string) => {
@@ -809,7 +808,7 @@ export default defineComponent({
         if (rejectedOrderItems.length > 0) {
           resp = await OrderService.rejectFulfillmentReadyOrderItem({
             data: {
-              facilityId : this.currentFacility.facilityId,
+              facilityId : this.currentFacility?.facilityId,
               rejectEntireShipment: this.isEntierOrderRejectionEnabled(order) ? "Y" : "N",
               rejectAllRelatedShipment: this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
               defaultReason: this.rejectEntireOrderReasonId, //default reason for items for which reason is not selected but rejecting due to entire order rejection config.
@@ -916,7 +915,7 @@ export default defineComponent({
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           '-fulfillmentStatus': { value: 'Rejected' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility.facilityId },
+          facilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId }
         },
         facet: {
@@ -1192,7 +1191,7 @@ export default defineComponent({
 
             try {
               resp = await UserService.recycleInProgressOrders({
-                "facilityId": this.currentFacility.facilityId,
+                "facilityId": this.currentFacility?.facilityId,
                 "productStoreId": this.currentEComStore.productStoreId,
                 "reasonId": "INACTIVE_STORE"
               })
@@ -1325,8 +1324,10 @@ export default defineComponent({
   setup() {
     const authStore = useAuthStore()
     const store = useStore();
+    const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
 
     return {
       Actions,
@@ -1338,6 +1339,7 @@ export default defineComponent({
       checkmarkDoneOutline,
       closeCircleOutline,
       cubeOutline,
+      currentFacility,
       ellipsisVerticalOutline,
       fileTrayOutline,
       formatUtcDate,

@@ -11,7 +11,6 @@ const userModule: Module<UserState, RootState> = {
       token: '',
       permissions: [],
       current: {},
-      currentFacility: {},
       instanceUrl: '',
       currentEComStore: {},
       preference: {

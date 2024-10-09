@@ -31,8 +31,8 @@ import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
 import { dxpComponents } from '@hotwax/dxp-components';
 import { login, logout, loader } from '@/utils/user';
-import { getConfig, getProductIdentificationPref, initialise, setProductIdentificationPref, setUserLocale, setUserTimeZone,
-  getAvailableTimeZones } from './adapter';
+import { getConfig, getProductIdentificationPref, getUserFacilities, getUserPreference, initialise, setProductIdentificationPref, setUserLocale, getAvailableTimeZones, setUserTimeZone, 
+  setUserPreference } from './adapter';
 import localeMessages from '@/locales';
 import { addNotification, storeClientRegistrationToken } from '@/utils/firebase';
 
@@ -67,7 +67,10 @@ const app = createApp(App)
     setUserLocale,
     setUserTimeZone,
     storeClientRegistrationToken,
-    getAvailableTimeZones
+    getAvailableTimeZones,
+    getUserFacilities,
+    setUserPreference,
+    getUserPreference
   });
 
 router.isReady().then(() => {
