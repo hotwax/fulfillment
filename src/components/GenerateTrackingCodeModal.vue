@@ -55,7 +55,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="isGeneratingShippingLabel ? true : isTrackingRequired ? !shipmentMethodTypeId : false" @click="confirmSave()">
+    <ion-fab-button :disabled="isGeneratingShippingLabel ? true : !shipmentMethodTypeId" @click="confirmSave()">
       <ion-icon :icon="isForceScanEnabled ? barcodeOutline : saveOutline" />
     </ion-fab-button>
   </ion-fab>
