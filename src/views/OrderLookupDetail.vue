@@ -126,14 +126,17 @@
                   <ion-card-title>{{ translate("Payment") }}</ion-card-title>
                 </ion-card-header>
                 <div v-if="order.orderPayments?.length">
-                  <ion-list v-for="orderPayment in order.orderPayments" :key="orderPayment">
+                  <ion-list v-for="(orderPayment, index) in order.orderPayments" :key="index">
                     <ion-item lines="none">
                       <ion-label class="ion-text-wrap">
                         <p class="overline">{{ orderPayment.methodTypeId }}</p>
                         <ion-label>{{ translate(getPaymentMethodDesc(orderPayment.methodTypeId)) || orderPayment.methodTypeId }}</ion-label>
                         <ion-note :color="getColorByDesc(getStatusDesc(orderPayment.paymentStatus))">{{ translate(getStatusDesc(orderPayment.paymentStatus)) }}</ion-note>
                       </ion-label>
-                      <p slot="end">{{ formatCurrency(orderPayment.amount, order.currencyUom) }}</p>
+                      <div slot="end" class="ion-text-end">
+                        <ion-badge v-if="order.orderPayments.length > 1 && index === 0" color="dark">{{ translate("Latest") }}</ion-badge>
+                        <ion-label slot="end">{{ formatCurrency(orderPayment.amount, order.currencyUom) }}</ion-label>
+                      </div>
                     </ion-item>
                   </ion-list>
                 </div>
