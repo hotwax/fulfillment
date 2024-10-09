@@ -185,6 +185,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
           statusId: "PAYMENT_CANCELLED",
           statusId_op: "notEqual"
         },
+        orderBy: "createdDate DESC",
         viewSize: 50,
         fieldList: ["paymentMethodTypeId", "maxAmount", "statusId"],
         entityName: "OrderPaymentPreference"
