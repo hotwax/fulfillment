@@ -45,6 +45,9 @@
       </div>
       <div v-else class="empty-state">
         <p v-html="getErrorMessage()"></p>
+        <ion-button v-if="!transferOrders.query.queryString" size="small" fill="outline" color="medium" @click="showCompletedTransferOrders">
+          <ion-icon slot="end" :icon="checkmarkDone"/>{{ translate("Show completed transfer orders") }}
+        </ion-button>
       </div>
     </ion-content>
   </ion-page>
@@ -53,6 +56,7 @@
 <script lang="ts">
 import { 
   IonBadge,
+  IonButton,
   IonButtons,
   IonIcon,
   IonContent, 
@@ -69,7 +73,7 @@ import {
   IonToolbar, 
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { caretDownOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
+import { caretDownOutline, checkmarkDone, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { translate } from '@hotwax/dxp-components';
@@ -80,6 +84,7 @@ export default defineComponent({
   name: 'TransferOrders',
   components: {
     IonBadge,
+    IonButton,
     IonButtons,
     IonIcon,  
     IonContent,
@@ -143,6 +148,13 @@ export default defineComponent({
     isTransferOrdersScrollable() {
       return this.transferOrders.list?.length > 0 && this.transferOrders.list?.length < this.transferOrders.total
     },
+    async showCompletedTransferOrders() {
+      const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
+      transferOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
+      transferOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      transferOrdersQuery.selectedStatuses = ["ORDER_COMPLETED"]
+      await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
+    },
     async updateQueryString(queryString: string) {
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
 
@@ -177,6 +189,7 @@ export default defineComponent({
     return{
       Actions,
       caretDownOutline,
+      checkmarkDone,
       cubeOutline,
       optionsOutline,
       pricetagOutline,
