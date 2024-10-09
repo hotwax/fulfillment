@@ -86,7 +86,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
       "shipmentId_op": "in"
     },
     "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentRouteSegmentId", "shipmentMethodTypeId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "picklistBinId", "isTrackingRequired", "trackingCode", "internationalInvoiceUrl", "labelImageUrl", "carrierServiceStatusId"],
-    "viewSize": shipmentIds.length,
+    "viewSize": 250, //max size perform find support, need to update this logic to fetch the paginated detail
     "distinct": "Y"
   }
 
