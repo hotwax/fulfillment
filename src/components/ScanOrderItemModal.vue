@@ -133,8 +133,8 @@ export default defineComponent({
 
       let currentItem = {} as any;
       const item = this.orderItems.find((orderItem: any) => {
-        const itemVal = getProductIdentificationValue(this.productIdentificationPref.primaryId, this.getProduct(orderItem.productId));
-        return itemVal === payload;
+        const itemVal = getProductIdentificationValue(this.productIdentificationPref.primaryId, this.getProduct(orderItem.productId)) ? getProductIdentificationValue(this.productIdentificationPref.primaryId, this.getProduct(orderItem.productId)) : orderItem.productSku
+        return itemVal === payload && !orderItem.isChecked;
       });
 
       if(item) {
