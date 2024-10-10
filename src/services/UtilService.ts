@@ -126,6 +126,53 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
   return shipmentPackages;
 }
 
+const findShipmentPackageContents = async (shipmentIds: Array<string>): Promise<any> => {
+  let viewIndex = 0;
+  let shipmentPackageContents: any[] = [];
+  let shipmentPackageContentInfo: { [key: string]: any[] } = {}; 
+  let resp;
+
+  try {
+    do {
+      resp = await api({
+        url: "performFind",
+        method: "get",
+        params: {
+          "entityName": "ShipmentPackageAndContent",
+          "inputFields": {
+            "shipmentId": shipmentIds,
+            "shipmentId_op": "in"
+          },
+          "fieldList": ["shipmentId", "shipmentItemSeqId", "shipmentPackageSeqId", "packageName", "quantity"],
+          viewIndex,
+          "viewSize": 250,
+          "distinct": "Y"
+        }
+      }) as any;
+
+      if (!hasError(resp) && resp.data.count) {
+        shipmentPackageContents = shipmentPackageContents.concat(resp.data.docs);
+        viewIndex++;
+      } else {
+        throw resp;
+      }
+    } while (resp.data.docs.length >= 250);
+  } catch (error) {
+    logger.error(error);
+  }
+
+  shipmentPackageContentInfo = shipmentPackageContents.reduce((contents: any, shipmentPackageContent: any) => {
+    if (contents[shipmentPackageContent.shipmentId]) {
+      contents[shipmentPackageContent.shipmentId].push(shipmentPackageContent);
+    } else {
+      contents[shipmentPackageContent.shipmentId] = [shipmentPackageContent];
+    }
+    return contents;
+  }, {});
+
+  return shipmentPackageContentInfo;
+};
+
 
 const findCarrierPartyIdsForShipment = async(shipmentIds: Array<string>): Promise<any> => {
   let carrierPartyIdsByShipment = {};
@@ -578,6 +625,7 @@ export const UtilService = {
   findShipmentIdsForOrders,
   findShipmentItemInformation,
   findShipmentPackages,
+  findShipmentPackageContents,
   fetchTransferOrderFacets,
   getAvailablePickers,
   getProductStoreSetting,

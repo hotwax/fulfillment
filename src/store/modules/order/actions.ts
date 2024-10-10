@@ -38,7 +38,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
       // TODO: handle case when shipmentIds is empty
       // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
-      const [shipmentPackagesByOrderInformationAndPicklistBin, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
+      const [shipmentPackagesByOrderInformationAndPicklistBin, shipmentPackageContents, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentPackageContents(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
 
       // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
       const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
@@ -88,8 +88,8 @@ const actions: ActionTree<OrderState, RootState> = {
             item.shipmentId = shipment.shipmentId
             item.shipmentItemSeqId = shipment.shipmentItemSeqId
           }
-
-          item.selectedBox = shipmentPackagesByOrderAndPicklistBin[`${item.orderId}_${item.picklistBinId}`]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+          
+          item.selectedBox = shipmentPackageContents[`${item.shipmentId}`].find((shipmentPackageContent: any) => shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId)?.packageName
         })
 
         const orderItem = order.items[0];
@@ -1083,7 +1083,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
       // TODO: handle case when shipmentIds is empty
       // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
-      const [shipmentPackagesByOrderInformationAndPicklistBin, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
+      const [shipmentPackagesByOrderInformationAndPicklistBin, shipmentPackageContents, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentPackageContents(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
 
       // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
       const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
@@ -1133,6 +1133,7 @@ const actions: ActionTree<OrderState, RootState> = {
           item.shipmentItemSeqId = shipment.shipmentItemSeqId
         }
 
+        item.selectedBox = shipmentPackageContents[`${item.shipmentId}`].find((shipmentPackageContent: any) => shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId)?.packageName
         item.selectedBox = shipmentPackagesByOrderAndPicklistBin[`${item.orderId}_${item.picklistBinId}`]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
       })
 
