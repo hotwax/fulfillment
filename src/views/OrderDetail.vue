@@ -1319,6 +1319,7 @@ export default defineComponent({
 
           order.isModified = false;
           await this.store.dispatch('order/updateInProgressOrder', order)
+          await this.store.dispatch('order/updateShipmentPackageDetail', order)
           showToast(translate('Order updated successfully'))
           return Promise.resolve(order);
         } else {

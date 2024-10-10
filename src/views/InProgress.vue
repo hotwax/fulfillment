@@ -848,6 +848,7 @@ export default defineComponent({
             order.items = items
 
             await this.store.dispatch('order/updateInProgressOrder', order)
+            await this.store.dispatch('order/updateShipmentPackageDetail', order)
           }
           showToast(translate('Order updated successfully'))
         } else {
