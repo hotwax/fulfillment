@@ -281,9 +281,10 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     // since some items might be completed and some pending. Hence searching is done with status check.
     const getProduct = store.getters['product/getProduct'];
     const productIdentificationStore = useProductIdentificationStore()
+    let productIdentificationPref = productIdentificationStore.getProductIdentificationPref.primaryId
 
     const item = state.current.items.find((orderItem: any) => {
-      const itemVal = getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(orderItem.productId)) ? getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(orderItem.productId)) : orderItem.internalName;
+      const itemVal = getProductIdentificationValue(productIdentificationPref, getProduct(orderItem.productId)) ? getProductIdentificationValue(productIdentificationPref, getProduct(orderItem.productId)) : orderItem.internalName;
       return itemVal === payload && orderItem.statusId !== 'ITEM_COMPLETED' && orderItem.statusId !== 'ITEM_REJECTED' && orderItem.statusId !== 'ITEM_CANCELLED';
     })
     if(item){
