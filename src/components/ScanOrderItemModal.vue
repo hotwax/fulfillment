@@ -133,8 +133,9 @@ export default defineComponent({
 
       let currentItem = {} as any;
       const item = this.orderItems.find((orderItem: any) => {
-        if(orderItem.productSku === payload) currentItem = orderItem
-        return orderItem.productSku === payload && !orderItem.isChecked;
+        const itemVal = getProductIdentificationValue(this.productIdentificationPref.primaryId, this.getProduct(orderItem.productId)) ? getProductIdentificationValue(this.productIdentificationPref.primaryId, this.getProduct(orderItem.productId)) : orderItem.productSku
+        if(itemVal === payload) currentItem = orderItem;
+        return itemVal === payload && !orderItem.isChecked;
       });
 
       if(item) {
