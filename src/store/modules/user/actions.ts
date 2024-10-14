@@ -72,7 +72,7 @@ const actions: ActionTree<UserState, RootState> = {
 
       // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
       const currentFacility = userProfile.facilities[0];
-      userProfile.stores = await UserService.getEComStores(token, currentFacility.facilityId);
+      userProfile.stores = await UserService.getEComStores(token, currentFacility);
 
       let preferredStore = userProfile.stores[0]
 
@@ -187,22 +187,28 @@ const actions: ActionTree<UserState, RootState> = {
     // Hence displaying loader to not allowing user to navigate to orders page to avoid wrong results.
     emitter.emit('presentLoader', {message: 'Updating facility', backdropDismiss: false})
 
-    const userProfile = JSON.parse(JSON.stringify(state.current as any));
-    userProfile.stores = await UserService.getEComStores(undefined, payload.facility.facilityId);
+    try {
+      const userProfile = JSON.parse(JSON.stringify(state.current as any));
+      userProfile.stores = await UserService.getEComStores(undefined, payload.facility);
 
-    let preferredStore = userProfile.stores[0];
-    const preferredStoreId =  await UserService.getPreferredStore(undefined);
+      let preferredStore = userProfile.stores[0];
+      const preferredStoreId =  await UserService.getPreferredStore(undefined);
 
-    if (preferredStoreId) {
-      const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
-      store && (preferredStore = store)
+      if (preferredStoreId) {
+        const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
+        store && (preferredStore = store)
+      }
+      commit(types.USER_INFO_UPDATED, userProfile);
+      commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
+      commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
+      this.dispatch('order/clearOrders')
+      await dispatch('getDisableShipNowConfig')
+      await dispatch('getDisableUnpackConfig')
+    } catch(error: any) {
+      logger.error(error);
+      showToast(error?.message ? error.message : translate("Something went wrong"))
     }
-    commit(types.USER_INFO_UPDATED, userProfile);
-    commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
-    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
-    this.dispatch('order/clearOrders')
-    await dispatch('getDisableShipNowConfig')
-    await dispatch('getDisableUnpackConfig')
+
     emitter.emit('dismissLoader')
   },
   
