@@ -779,7 +779,7 @@ export default defineComponent({
           }
         } else {
           prefix = 'rtp'
-          form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
+          form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId + "-" + shipmentPackage.shipmentPackageSeqId)
           form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
           form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
           form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
@@ -848,6 +848,7 @@ export default defineComponent({
             order.items = items
 
             await this.store.dispatch('order/updateInProgressOrder', order)
+            await this.store.dispatch('order/updateShipmentPackageDetail', order)
           }
           showToast(translate('Order updated successfully'))
         } else {
