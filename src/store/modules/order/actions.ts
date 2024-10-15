@@ -971,7 +971,7 @@ const actions: ActionTree<OrderState, RootState> = {
         shipGroups = resp.data.grouped.shipGroupSeqId.groups
 
         // creating the key as orders as the product information action accept only the orders as a param
-        this.dispatch('product/getProductInformation', { orders: shipGroups })
+        await this.dispatch('product/getProductInformation', { orders: shipGroups })
       } else {
         throw resp.data
       }
@@ -1230,7 +1230,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
       return reservedShipGroup ? {
         ...shipGroup,
-        items: reservedShipGroupForOrder.doclist.docs,
+        items: removeKitComponents({ items: reservedShipGroupForOrder.doclist.docs }),
         carrierPartyId: reservedShipGroup.carrierPartyId,
         shipmentId: reservedShipGroup.shipmentId,
         category: getOrderCategory(reservedShipGroupForOrder.doclist.docs[0])
