@@ -1,8 +1,8 @@
 <template>
   <ion-content>
     <ion-list>
-      <ion-item v-for="reason in rejectReasons" :key="reason.enumId" @click="updateIssue(reason.enumId)" button>
-        {{ reason.description ? translate(reason.description) : reason.enumId  }}
+      <ion-item v-for="reason in rejectReasonOptions" :key="reason.enumId" @click="updateIssue(reason.enumId)" button>
+        {{ reason.description ? translate(reason.description) : reason.enumDescription ? translate(reason.enumDescription) : reason.enumId  }}
       </ion-item>
     </ion-list>
   </ion-content>
@@ -28,7 +28,7 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      rejectReasons: 'util/getRejectReasons'
+      rejectReasonOptions: 'util/getRejectReasonOptions'
     })
   },
   props: ["shipmentPackages"],
