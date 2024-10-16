@@ -260,7 +260,7 @@ const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<a
       "shipmentId_op": "in"
     },
     "fieldList": ["shipmentItemSeqId", "orderItemSeqId", "orderId", "shipmentId", "productId"],
-    "viewSize": shipmentIds.length * 5, // TODO: check what should be the viewSize here
+    "viewSize": 250, // TODO: Need to fetch all data paginated
     "distinct": "Y"
   }
 
