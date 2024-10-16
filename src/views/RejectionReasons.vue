@@ -257,11 +257,8 @@ export default defineComponent({
       const payload = {
         enumerationId: reason.enumId,
         enumerationGroupId: "FF_REJ_RSN_GRP",
-        // sequenceNum: reason.sequenceNum
+        sequenceNum: reason.sequenceNum
       }
-
-      console.log(this.fulfillmentRejectReasons[reason.enumId]);
-      
 
       try {
         if(this.fulfillmentRejectReasons[reason.enumId]?.fromDate) {
