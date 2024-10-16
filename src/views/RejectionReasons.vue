@@ -2,6 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
+        <ion-menu-button menu="start" slot="start" />
         <ion-title @click="saveReasonsOrder()">{{ translate("Rejection reasons") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -19,14 +20,16 @@
                 </ion-label>
               </ion-item>
 
-              <div class="tablet">
+              <div class="deskptop-only">
                 <ion-chip outline @click="openVarianceTypeActionsPopover($event, reason)">
                   <ion-label>{{ reason.enumTypeId }}</ion-label>
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </div>
   
-              <ion-reorder />
+              <div class="desktop-only">
+                <ion-reorder />
+              </div>
   
               <ion-button fill="clear" color="medium" @click="openRejectionReasonActionsPopover($event, reason)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
@@ -59,6 +62,7 @@ import {
   IonIcon,
   IonItem,
   IonLabel,
+  IonMenuButton,
   IonPage,
   IonReorder,
   IonReorderGroup,
@@ -90,6 +94,7 @@ export default defineComponent({
     IonIcon,
     IonItem,
     IonLabel,
+    IonMenuButton,
     IonPage,
     IonReorder,
     IonReorderGroup,
@@ -259,6 +264,7 @@ export default defineComponent({
 <style scoped>
 .list-item {
   --columns-desktop: 4;
+  --columns-tablet: 2;
 }
 
 .list-item:hover {
