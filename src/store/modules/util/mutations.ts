@@ -47,6 +47,12 @@ const mutations: MutationTree <UtilState> = {
   },
   [types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED](state, payload) {
     state.barcodeIdentificationPref = payload
+  },
+  [types.UTIL_FULFILLMENT_REJECT_REASONS_UPDATED](state, payload) {
+    state.fulfillmentRejectReasons = payload
+  },
+  [types.UTIL_REJECT_REASON_OPTIONS_UPDATED](state, payload) {
+    state.rejectReasonOptions = payload
   }
 }
 export default mutations;

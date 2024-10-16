@@ -539,6 +539,30 @@ const activateGiftCard = async (payload: any): Promise<any> => {
   });
 }
 
+const fetchFulfillmentRejectReasons = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "post",
+    data: payload
+  });
+}
+
+const createEnumerationGroupMember = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createEnumerationGroupMember",
+    method: "post",
+    data: payload
+  });
+}
+
+const updateEnumerationGroupMember = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateEnumerationGroupMember",
+    method: "post",
+    data: payload
+  });
+}
+
 const isEnumExists = async (enumId: string): Promise<any> => {
   try {
     const resp = await api({
@@ -567,6 +591,7 @@ const isEnumExists = async (enumId: string): Promise<any> => {
 export const UtilService = {
   activateGiftCard,
   createBarcodeIdentificationPref,
+  createEnumerationGroupMember,
   createForceScanSetting,
   createPicklist,
   createEnumeration,
@@ -575,6 +600,7 @@ export const UtilService = {
   fetchEnumeration,
   fetchFacilities,
   fetchFacilityTypeInformation,
+  fetchFulfillmentRejectReasons,
   fetchGiftCardFulfillmentInfo,
   fetchGiftCardItemPriceInfo,
   fetchPartyInformation,
@@ -603,5 +629,6 @@ export const UtilService = {
   deleteEnumeration,
   updateEnumeration,
   updateBarcodeIdentificationPref,
+  updateEnumerationGroupMember,
   updateForceScanSetting
 }
