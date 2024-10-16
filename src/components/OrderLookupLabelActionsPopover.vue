@@ -2,7 +2,7 @@
   <ion-content>
     <ion-list>
       <ion-list-header>{{ currentOrder.shipGroups[shipGroupSeqId][0]?.trackingIdNumber }}</ion-list-header>
-      <ion-item button :disabled="getCarriersTrackingInfo(carrierPartyId)?.trackingUrl" @click="redirectToTrackingUrl()">
+      <ion-item button :disabled="!getCarriersTrackingInfo(carrierPartyId)?.trackingUrl" @click="redirectToTrackingUrl()">
         {{ getCarriersTrackingInfo(carrierPartyId)?.carrierName ? getCarriersTrackingInfo(carrierPartyId).carrierName : carrierPartyId }}
         <ion-icon slot="end" :icon="openOutline" />
       </ion-item>
@@ -61,7 +61,7 @@ export default defineComponent({
     },
 
     redirectToTrackingUrl() {
-      const trackingUrl = this.getCarriersTrackingInfo(this.carrierPartyId)
+      const trackingUrl = this.getCarriersTrackingInfo(this.carrierPartyId)?.trackingUrl
       const trackingCode = this.currentOrder.shipGroups[this.shipGroupSeqId][0]?.trackingIdNumber
       window.open(trackingUrl.replace("${trackingNumber}", trackingCode), "_blank");
       popoverController.dismiss()

@@ -119,7 +119,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
     carrierPartyIds.map((partyId: any) => {
       carriersTrackingInfo[partyId] = {
         carrierName: store.getters["util/getPartyName"](partyId),
-        trackingUrl: systemProperties[partyId.toUpperCase()]?.trackingUrl ? systemProperties[partyId.toUpperCase()].trackingUrl : ""
+        trackingUrl: systemProperties[partyId.toUpperCase()] ? systemProperties[partyId.toUpperCase()] : ""
       }
     })
 
