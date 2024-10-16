@@ -43,9 +43,9 @@ const actions: ActionTree<UtilState, RootState> = {
     const permissions = store.getters['user/getUserPermissions'];
 
     const isAdminUser = permissions.some((permission: any) => permission.action === "APP_STOREFULFILLMENT_ADMIN")
-    isAdminUser ? dispatch("fetchRejectReasons") : dispatch("fetchFulfillmentRejectReasons")
+    isAdminUser ? await dispatch("fetchRejectReasons") : await dispatch("fetchFulfillmentRejectReasons")
 
-    commit(types.UTIL_REJECT_REASON_OPTIONS_UPDATED, isAdminUser ? state.rejectReasons : Object.values(state.fulfillmentRejectReasons));
+    commit(types.UTIL_REJECT_REASON_OPTIONS_UPDATED, (isAdminUser ? state.rejectReasons : Object.values(state.fulfillmentRejectReasons)));
   },
 
   async fetchFulfillmentRejectReasons({ commit }) {
