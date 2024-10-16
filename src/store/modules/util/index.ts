@@ -21,7 +21,9 @@ const utilModule: Module<UtilState, RootState> = {
     productStores: [],
     facilities: [],
     shipmentGatewayConfigs: [],
-    isForceScanEnabled: false
+    isForceScanEnabled: false,
+    fulfillmentRejectReasons: {},
+    rejectReasonOptions: []
   },
   getters,
   actions,

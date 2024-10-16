@@ -44,6 +44,12 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   isForceScanEnabled(state) {
     return state.isForceScanEnabled
+  },
+  getFulfillmentRejectReasons(state) {
+    return state.fulfillmentRejectReasons
+  },
+  getRejectReasonOptions(state) {
+    return state.rejectReasonOptions
   }
 }
 export default getters;

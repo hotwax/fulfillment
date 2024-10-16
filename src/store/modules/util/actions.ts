@@ -38,6 +38,46 @@ const actions: ActionTree<UtilState, RootState> = {
 
     commit(types.UTIL_REJECT_REASONS_UPDATED, rejectReasons)
   },
+  
+  async fetchRejectReasonOptions({ commit, dispatch, state }) {
+    const permissions = store.getters['user/getUserPermissions'];
+
+    const isAdminUser = permissions.some((permission: any) => permission.action === "APP_STOREFULFILLMENT_ADMIN")
+    isAdminUser ? dispatch("fetchRejectReasons") : dispatch("fetchFulfillmentRejectReasons")
+
+    commit(types.UTIL_REJECT_REASON_OPTIONS_UPDATED, isAdminUser ? state.rejectReasons : Object.values(state.fulfillmentRejectReasons));
+  },
+
+  async fetchFulfillmentRejectReasons({ commit }) {
+    const fulfillmentRejectReasons  = {}  as any;
+    try {
+      const payload = {
+        "inputFields": {
+          "enumerationGroupId": "FF_REJ_RSN_GRP"
+        },
+        "fieldList": ["enumerationGroupId", "enumId", "fromDate", "sequenceNum", "enumDescription", "enumName"],
+        "distinct": "Y",
+        "entityName": "EnumerationGroupAndMember",
+        "viewSize": 200,
+        "filterByDate": "Y",
+        "orderBy": "sequenceNum"
+      }
+
+      const resp = await UtilService.fetchFulfillmentRejectReasons(payload)
+
+      if(!hasError(resp)) {
+        resp.data.docs.map((reason: any) => {
+          fulfillmentRejectReasons[reason.enumId] = reason
+        })
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Failed to fetch fulfillment reject reasons', err)
+    }
+
+    commit(types.UTIL_FULFILLMENT_REJECT_REASONS_UPDATED, fulfillmentRejectReasons)
+  },
 
   async fetchPartyInformation({ commit, state }, partyIds) {
     let partyInformation = JSON.parse(JSON.stringify(state.partyNames))
