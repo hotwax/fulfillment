@@ -78,7 +78,7 @@ const actions: ActionTree<UserState, RootState> = {
       // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
       const currentFacility = userProfile.facilities[0];
       userProfile.stores = await useUserStore().getEComStores(currentFacility.facilityId);
-      await useUserStore().getPreferredStore('SELECTED_BRAND');
+      await useUserStore().getEComStorePreference('SELECTED_BRAND');
       const preferredStore: any = useUserStore().getCurrentEComStore
       /*  ---- Guard clauses ends here --- */
 
@@ -185,7 +185,7 @@ const actions: ActionTree<UserState, RootState> = {
     const userProfile = JSON.parse(JSON.stringify(state.current as any));
     userProfile.stores = await useUserStore().getEComStores(payload.facility.facilityId);
 
-    await useUserStore().getPreferredStore('SELECTED_BRAND');
+    await useUserStore().getEComStorePreference('SELECTED_BRAND');
     commit(types.USER_INFO_UPDATED, userProfile);
     commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
     this.dispatch('order/clearOrders')

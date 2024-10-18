@@ -32,7 +32,7 @@ import permissionActions from '@/authorization/Actions';
 import { dxpComponents } from '@hotwax/dxp-components';
 import { login, logout, loader } from '@/utils/user';
 import { getConfig, getProductIdentificationPref, initialise, setProductIdentificationPref, setUserLocale, setUserTimeZone,
-  getAvailableTimeZones, getUserPreference, setEComStore, getEComStores } from './adapter';
+  getAvailableTimeZones, getUserPreference, setUserPreference, getEComStores } from './adapter';
 import localeMessages from '@/locales';
 import { addNotification, storeClientRegistrationToken } from '@/utils/firebase';
 
@@ -69,7 +69,7 @@ const app = createApp(App)
     storeClientRegistrationToken,
     getAvailableTimeZones,
     getUserPreference,
-    setEComStore, 
+    setUserPreference, 
     getEComStores
   });
 

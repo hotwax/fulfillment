@@ -1,6 +1,6 @@
   
 import { api, client, getConfig, getNotificationEnumIds, getNotificationUserPrefTypeIds, getProductIdentificationPref, getUserFacilities, hasError, initialise, logout, removeClientRegistrationToken, resetConfig, setProductIdentificationPref, setUserLocale, storeClientRegistrationToken,
-  subscribeTopic, unsubscribeTopic, updateInstanceUrl, updateToken, setUserTimeZone, getAvailableTimeZones, getUserPreference, setEComStore, getEComStores } from '@hotwax/oms-api'
+  subscribeTopic, unsubscribeTopic, updateInstanceUrl, updateToken, setUserTimeZone, getAvailableTimeZones, getUserPreference, setUserPreference, getEComStores } from '@hotwax/oms-api'
 
 export {
   api,
@@ -25,6 +25,6 @@ export {
   setUserTimeZone,
   getAvailableTimeZones,
   getUserPreference,
-  setEComStore, 
+  setUserPreference, 
   getEComStores
 }

@@ -295,9 +295,9 @@ export default defineComponent({
     await this.store.dispatch('user/fetchNotificationPreferences')
   },
   methods: {
-    handleEComStoreUpdate (event: any) {
-      this.store.dispatch('util/findProductStoreShipmentMethCount', event.detail.value)
-      this.store.dispatch('util/getForceScanSetting', event.detail.value)
+    handleEComStoreUpdate(selectedProductStore: any) {
+      this.store.dispatch('util/findProductStoreShipmentMethCount', selectedProductStore?.productStoreId)
+      this.store.dispatch('util/getForceScanSetting', selectedProductStore?.productStoreId)
     },
     async getCurrentFacilityDetails() {
       let resp: any;
@@ -449,7 +449,7 @@ export default defineComponent({
 
       if (this.userProfile){
         await this.store.dispatch('user/setFacility', {
-          'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == event.detail.value)
+          'facility': this.userProfile.facilities.find((facility: any) => facility.facilityId == event.detail.value)
         });
         await this.store.dispatch('user/fetchNotificationPreferences')
         this.store.dispatch('order/clearOrders')
