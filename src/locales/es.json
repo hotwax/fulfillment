@@ -57,7 +57,7 @@
   "Cancel": "Cancelar",
   "Cancelled": "Cancelado",
   "Carrier": "Transportadora",
-  "Carrier:": "Transportadora": {nombre de la transportadora}",
+  "Carrier:": "Transportadora: {carrierName}",
   "Carrier and shipment method association updated successfully.": "Trasportadora y metodo de envio asociado correctamente.",
   "Carrier and shipment methods have been set up successfully.": "Transportadora y metodo de envio han sido condigurados exitosamente.",
   "carrier code": "Codigo de transportadora",
@@ -415,8 +415,7 @@
   "Reject all in progress orders": "Rechazar todos los pedidos en curso",
   "Reject all open orders": "Rechazar todos los pedidos abiertos",
   "Reject entire order": "Rechazar toda la orden",
-  "Reject in progress orders.": "Rechazar { orde
-  rsCount } pedidos en curso.",
+  "Reject in progress orders.": "Rechazar { ordersCount } pedidos en curso.",
   "Reject open orders.": "Rechazar { ordersCount } pedidos abiertos.",
   "Reject order": "Rechazar pedido",
   "Rejected": "Rechazado",
