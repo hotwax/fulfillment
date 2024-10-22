@@ -130,60 +130,35 @@ export default defineComponent({
     },
     async findPickers(pickerIds?: Array<any>) {
       this.isLoading = true;
-
-      let inputFields = {}
+      let query = {}
       this.pickers = []
 
       if (pickerIds?.length) {
-        inputFields = {
-          partyId_value: pickerIds,
-          partyId_op: 'in'
-        }
+        query = `(${pickerIds.map(id => `*${id}*`).join(' OR ')})`;
       } else if (this.queryString.length > 0) {
-        inputFields = {
-          firstName_value: this.queryString,
-          firstName_op: 'contains',
-          firstName_ic: 'Y',
-          firstName_grp: '1',
-          externalId_value: this.queryString,
-          externalId_op: 'contains',
-          externalId_ic: 'Y',
-          externalId_grp: '2',
-          lastName_value: this.queryString,
-          lastName_op: 'contains',
-          lastName_ic: 'Y',
-          lastName_grp: '3',
-          partyId_value: this.queryString,
-          partyId_op: 'contains',
-          partyId_ic: 'Y',
-          partyId_grp: '4',
-          groupName_value: this.queryString,
-          groupName_op: 'contains',
-          groupName_ic: 'Y',
-          groupName_grp: '5',
-          
-        }
+        let keyword = this.queryString.trim().split(' ')
+        query = `(${keyword.map(key => `*${key}*`).join(' OR ')}) OR "${this.queryString}"^100`;
       }
 
       const payload = {
-        inputFields: {
-          ...inputFields,
-          roleTypeIdTo: 'WAREHOUSE_PICKER'
-        },
-        viewSize: 50,
-        entityName: 'PartyRelationshipAndDetail',
-        noConditionFind: 'Y',
-        orderBy: "firstName ASC",
-        filterByDate: "Y",
-        distinct: "Y",
-        fieldList: ["firstName", "groupName", "lastName", "partyId", "externalId"]
+        "json": {
+          "params": {
+            "rows": "50",
+            "q": query,
+            "defType" : "edismax",
+            "qf": "firstName lastName groupName partyId externalId",
+            "sort": "firstName asc"
+          },
+          "filter": ["docType:EMPLOYEE", "WAREHOUSE_PICKER_role:true"]
+        }
       }
 
       try {
         const resp = await UtilService.getAvailablePickers(payload);
         if (resp.status === 200 && !hasError(resp)) {
-          this.pickers = resp.data.docs.map((picker: any) => ({
-            name: picker.groupName ? picker.groupName : picker.firstName + ' ' + picker.lastName,
+          this.pickers = resp.data.response.docs.map((picker: any) => ({
+            name: picker.groupName ? picker.groupName : (picker.firstName || picker.lastName)
+                ? (picker.firstName ? picker.firstName : '') + (picker.lastName ? ' ' + picker.lastName : '') : picker.partyId,           
             id: picker.partyId,
             externalId: picker.externalId
           }))
