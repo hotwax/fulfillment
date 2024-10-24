@@ -130,7 +130,7 @@ export default defineComponent({
     },
     async findPickers(pickerIds?: Array<any>) {
       this.isLoading = true;
-      let partyIdsFilter = [] as any
+      let partyIdsFilter = ""
       let query = "*:*"
       this.pickers = []
 
