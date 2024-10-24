@@ -130,11 +130,12 @@ export default defineComponent({
     },
     async findPickers(pickerIds?: Array<any>) {
       this.isLoading = true;
-      let query = {}
+      let partyIdsFilter = [] as any
+      let query = "*:*"
       this.pickers = []
 
       if (pickerIds?.length) {
-        query = `(${pickerIds.map(id => `*${id}*`).join(' OR ')})`;
+        partyIdsFilter = pickerIds.map(id => `${id}`).join(' OR '); 
       } else if (this.queryString.length > 0) {
         let keyword = this.queryString.trim().split(' ')
         query = `(${keyword.map(key => `*${key}*`).join(' OR ')}) OR "${this.queryString}"^100`;
@@ -149,7 +150,7 @@ export default defineComponent({
             "qf": "firstName lastName groupName partyId externalId",
             "sort": "firstName asc"
           },
-          "filter": ["docType:EMPLOYEE", "WAREHOUSE_PICKER_role:true"]
+          "filter": ["docType:EMPLOYEE", "WAREHOUSE_PICKER_role:true", partyIdsFilter.length ? `partyId:(${partyIdsFilter})` : ""]
         }
       }
 
