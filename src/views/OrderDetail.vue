@@ -507,7 +507,7 @@ export default defineComponent({
       getProductStock: 'stock/getProductStock',
       inProgressOrders: 'order/getInProgressOrders',
       order: "order/getCurrent",
-      rejectReasons: 'util/getRejectReasons',
+      rejectReasonOptions: 'util/getRejectReasonOptions',
       userPreference: 'user/getUserPreference',
       getPartyName: 'util/getPartyName',
       getfacilityTypeDesc: 'util/getFacilityTypeDesc',
@@ -553,7 +553,7 @@ export default defineComponent({
     }
   },
   async ionViewDidEnter() {
-    this.store.dispatch('util/fetchRejectReasons')
+    this.store.dispatch('util/fetchRejectReasonOptions')
     this.category === 'open'
     ? await this.store.dispatch('order/getOpenOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
     : this.category === 'in-progress'
@@ -683,7 +683,7 @@ export default defineComponent({
       }
     },
     getRejectionReasonDescription (rejectionReasonId: string) {
-      return this.rejectReasons?.find((reason: any) => reason.enumId === rejectionReasonId)?.description;
+      return this.rejectReasonOptions?.find((reason: any) => reason.enumId === rejectionReasonId)?.description;
     },
     isEntierOrderRejectionEnabled(order: any) {
       return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
@@ -1342,7 +1342,7 @@ export default defineComponent({
         // This variable is used in messages to display name of first rejected item from the itemsToReject array
         const rejectedItem = itemsToReject[0];
         if (itemsToReject.length === 1) {
-          message = translate('is identified as. This order item will be unassigned from the store and sent to be rebrokered.', { productName: rejectedItem.productName, rejectReason: ((this.rejectReasons.find((rejectReason: {[key: string]: any}) => rejectReason.enumId === rejectedItem.rejectReason)).description).toLowerCase() });
+          message = translate('is identified as. This order item will be unassigned from the store and sent to be rebrokered.', { productName: rejectedItem.productName, rejectReason: ((this.rejectReasonOptions.find((rejectReason: {[key: string]: any}) => rejectReason.enumId === rejectedItem.rejectReason)).description).toLowerCase() });
         } else {
           message = translate(', and other products were identified as unfulfillable. These items will be unassigned from this store and sent to be rebrokered.', { productName: rejectedItem.productName, products: itemsToReject.length - 1, space: '<br /><br />' });
         }
