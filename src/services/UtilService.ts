@@ -1,4 +1,4 @@
-import { api, client, hasError } from '@/adapter';
+import { api, hasError } from '@/adapter';
 import logger from '@/logger';
 import store from '@/store';
 import { isPdf } from '@/utils';
@@ -279,7 +279,7 @@ const getAvailablePickers = async (query: any): Promise <any> => {
 
 const createPicklist = async (query: any): Promise <any> => {
   const baseURL = store.getters['user/getBaseUrl'];
-  return client({
+  return api({
     url: 'createPicklist',
     method: 'POST',
     data: query,

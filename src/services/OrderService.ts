@@ -1,4 +1,4 @@
-import { api, client, hasError } from '@/adapter';
+import { api, hasError } from '@/adapter';
 import { translate } from '@hotwax/dxp-components'
 import logger from '@/logger';
 import { showToast, formatPhoneNumber } from '@/utils';
@@ -304,7 +304,7 @@ const addShipmentBox = async (payload: any): Promise<any> => {
 }
 const shipOrder = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getBaseUrl'];
-  return client({
+  return api({
     url: 'shipOrder',
     method: 'POST',
     data: payload,
