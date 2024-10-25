@@ -26,7 +26,7 @@ import './theme/variables.css';
 import "@hotwax/apps-theme";
 
 import store from './store'
-import permissionPlugin from '@/authorization';
+import permissionPlugin, { Actions, hasPermission } from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
 import { dxpComponents } from '@hotwax/dxp-components';
@@ -51,6 +51,7 @@ const app = createApp(App)
     actions: permissionActions
   })
   .use(dxpComponents, {
+    Actions,
     addNotification,
     defaultImgUrl: require("@/assets/images/defaultImage.png"),
     login,
@@ -67,7 +68,8 @@ const app = createApp(App)
     setUserLocale,
     setUserTimeZone,
     storeClientRegistrationToken,
-    getAvailableTimeZones
+    getAvailableTimeZones,
+    hasPermission
   });
 
 router.isReady().then(() => {
