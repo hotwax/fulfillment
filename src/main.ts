@@ -26,12 +26,12 @@ import './theme/variables.css';
 import "@hotwax/apps-theme";
 
 import store from './store'
-import permissionPlugin from '@/authorization';
+import permissionPlugin, { Actions, hasPermission } from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
 import { dxpComponents } from '@hotwax/dxp-components';
 import { login, logout, loader } from '@/utils/user';
-import { getConfig, getProductIdentificationPref, initialise, setProductIdentificationPref, setUserLocale, setUserTimeZone,
+import { getConfig, fetchGoodIdentificationTypes, getProductIdentificationPref, initialise, setProductIdentificationPref, setUserLocale, setUserTimeZone,
   getAvailableTimeZones } from './adapter';
 import localeMessages from '@/locales';
 import { addNotification, storeClientRegistrationToken } from '@/utils/firebase';
@@ -51,6 +51,7 @@ const app = createApp(App)
     actions: permissionActions
   })
   .use(dxpComponents, {
+    Actions,
     addNotification,
     defaultImgUrl: require("@/assets/images/defaultImage.png"),
     login,
@@ -60,6 +61,7 @@ const app = createApp(App)
     appFirebaseConfig: JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any),
     appFirebaseVapidKey: process.env.VUE_APP_FIREBASE_VAPID_KEY,
     getConfig,
+    fetchGoodIdentificationTypes,
     getProductIdentificationPref,
     initialise,
     setProductIdentificationPref,
@@ -67,7 +69,8 @@ const app = createApp(App)
     setUserLocale,
     setUserTimeZone,
     storeClientRegistrationToken,
-    getAvailableTimeZones
+    getAvailableTimeZones,
+    hasPermission
   });
 
 router.isReady().then(() => {

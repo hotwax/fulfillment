@@ -188,11 +188,12 @@ const actions: ActionTree<UserState, RootState> = {
     emitter.emit('presentLoader', {message: 'Updating facility', backdropDismiss: false})
 
     try {
+      const token = store.getters['user/getUserToken'];
       const userProfile = JSON.parse(JSON.stringify(state.current as any));
-      userProfile.stores = await UserService.getEComStores(undefined, payload.facility);
+      userProfile.stores = await UserService.getEComStores(token, payload.facility);
 
       let preferredStore = userProfile.stores[0];
-      const preferredStoreId =  await UserService.getPreferredStore(undefined);
+      const preferredStoreId =  await UserService.getPreferredStore(token);
 
       if (preferredStoreId) {
         const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
