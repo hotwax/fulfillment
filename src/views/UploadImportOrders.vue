@@ -39,7 +39,7 @@
           </ion-item>
         </ion-list>
 
-        <ion-button :disabled="!content.length" color="medium" @click="save" expand="block">
+        <ion-button :disabled="!content.length" @click="save" expand="block">
           {{ translate("Save") }}
         </ion-button>
 
