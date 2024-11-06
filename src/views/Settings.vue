@@ -163,11 +163,14 @@
               {{ translate("Force scan") }}
             </ion-card-title>
           </ion-card-header>
-          <ion-card-content>
-            {{ translate("Control whether the store requires the force scan during order packing or not.") }}
-          </ion-card-content>
+          <ion-card-content v-html="barcodeContentMessage"></ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_UPDT_FULFILL_FORCE_SCAN_CONFIG)">
             <ion-toggle label-placement="start" :checked="isForceScanEnabled" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
+          </ion-item>
+          <ion-item lines="none">
+            <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="barcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
+              <ion-select-option v-for="identification in barcodeIdentificationOptions" :key="identification" :value="identification" >{{ identification }}</ion-select-option>
+            </ion-select>
           </ion-item>
         </ion-card>
 
@@ -232,14 +235,14 @@ import {
   alertController,
   popoverController
 } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, openOutline, timeOutline } from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { UserService } from '@/services/UserService';
 import { showToast } from '@/utils';
 import { hasError, removeClientRegistrationToken, subscribeTopic, unsubscribeTopic } from '@/adapter'
-import { initialiseFirebaseApp, translate } from '@hotwax/dxp-components';
+import { initialiseFirebaseApp, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 import logger from '@/logger';
 import { Actions, hasPermission } from '@/authorization'
 import { DateTime } from 'luxon';
@@ -286,7 +289,8 @@ export default defineComponent({
       orderLimitType: 'unlimited',
       fulfillmentOrderLimit: "" as number | string,
       facilityGroupDetails: {} as any,
-      isEComInvEnabled: false
+      isEComInvEnabled: false,
+      barcodeContentMessage: translate("Only allow received quantity to be incremented by scanning the barcode of products. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
     };
   },
   computed: {
@@ -304,6 +308,7 @@ export default defineComponent({
       newRejectionApiConfig: 'user/getNewRejectionApiConfig',
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
+      barcodeIdentificationPref: 'util/getBarcodeIdentificationPref'
     })
   },
   async ionViewWillEnter() {
@@ -724,14 +729,20 @@ export default defineComponent({
         "settingValue": value
       }
       await this.store.dispatch('user/updateCollateralRejectionConfig', params)
-    }
+    },
+    setBarcodeIdentificationPref(value: string) {
+      this.store.dispatch('util/setBarcodeIdentificationPref', value)
+    },
   },
   setup() {
     const store = useStore();
     const router = useRouter();
+    const productIdentificationStore = useProductIdentificationStore();
+    let barcodeIdentificationOptions = computed(() => productIdentificationStore.getProductIdentificationOptions)
 
     return {
       Actions,
+      barcodeIdentificationOptions,
       codeWorkingOutline,
       ellipsisVerticalOutline,
       globeOutline,

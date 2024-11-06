@@ -492,6 +492,22 @@ const createForceScanSetting = async (payload: any): Promise<any> => {
   });
 }
 
+const updateBarcodeIdentificationPref = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
+
+const createBarcodeIdentificationPref = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
+
 const getProductStoreSetting = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
@@ -597,6 +613,7 @@ const isEnumExists = async (enumId: string): Promise<any> => {
 
 export const UtilService = {
   activateGiftCard,
+  createBarcodeIdentificationPref,
   createForceScanSetting,
   createPicklist,
   createEnumeration,
@@ -633,5 +650,6 @@ export const UtilService = {
   resetPicker,
   deleteEnumeration,
   updateEnumeration,
+  updateBarcodeIdentificationPref,
   updateForceScanSetting
 }
