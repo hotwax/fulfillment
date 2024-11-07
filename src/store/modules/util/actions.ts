@@ -644,7 +644,7 @@ const actions: ActionTree<UtilState, RootState> = {
     }
 
     // not checking for resp success and fail case as every time we need to update the state with the
-    // default value when creating a scan setting
+    // default value when creating a store setting
     commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, "internalName")
     return fromDate;
   },
