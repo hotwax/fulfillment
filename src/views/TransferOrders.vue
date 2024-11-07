@@ -8,7 +8,7 @@
         <ion-title v-if="!transferOrders.total">{{ transferOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-title v-else>{{ transferOrders.list.length }} {{ translate('of') }} {{ transferOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="transfer-order-filters">
+          <ion-menu-button menu="transfer-order-filters" :disabled="!transferOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
         </ion-buttons>
@@ -46,7 +46,7 @@
       <div v-else class="empty-state">
         <p v-html="getErrorMessage()"></p>
         <ion-button v-if="!transferOrders.query.queryString" size="small" fill="outline" color="medium" @click="showCompletedTransferOrders">
-          <ion-icon slot="end" :icon="checkmarkDone"/>{{ translate("Show completed transfer orders") }}
+          <ion-icon slot="end" :icon="checkmarkDoneOutline"/>{{ translate("Show completed transfer orders") }}
         </ion-button>
       </div>
     </ion-content>
@@ -73,7 +73,7 @@ import {
   IonToolbar, 
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { caretDownOutline, checkmarkDone, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
+import { caretDownOutline, checkmarkDoneOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { translate } from '@hotwax/dxp-components';
@@ -189,7 +189,7 @@ export default defineComponent({
     return{
       Actions,
       caretDownOutline,
-      checkmarkDone,
+      checkmarkDoneOutline,
       cubeOutline,
       optionsOutline,
       pricetagOutline,
