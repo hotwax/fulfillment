@@ -1,4 +1,4 @@
-import { api, client, hasError } from '@/adapter';
+import { api, hasError } from '@/adapter';
 import { translate } from '@hotwax/dxp-components'
 import logger from '@/logger';
 import { showToast, formatPhoneNumber } from '@/utils';
@@ -12,6 +12,15 @@ const fetchOrderHeader = async (params: any): Promise<any> => {
     params
   })
 }
+
+const fetchOrderAttribute = async (params: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params
+  })
+}
+
 const fetchOrderItems = async (orderId: string): Promise<any> => {
   let viewIndex = 0;
   let orderItems = [] as any, resp;
@@ -154,6 +163,15 @@ const updateShipmentPackageRouteSeg = async (payload: any): Promise<any> => {
     data: payload
   })
 }
+
+const voidShipmentLabel = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/voidShipmentLabel",
+    method: "POST",
+    data: payload
+  })
+}
+
 const updateOrderItemShipGroup = async (payload: any): Promise<any> => {
   return api({
     url: "service/updateOrderItemShipGroup",
@@ -164,29 +182,25 @@ const updateOrderItemShipGroup = async (payload: any): Promise<any> => {
 
 const addTrackingCode = async (payload: any): Promise<any> => {
   try {
-    let resp = await updateShipmentRouteSegment({
+    let resp = await updateShipmentPackageRouteSeg({
       "shipmentId": payload.shipmentId,
       "shipmentRouteSegmentId": payload.shipmentRouteSegmentId,
-      "carrierServiceStatusId": "SHRSCS_CONFIRMED"
-    }) as any;
+      "shipmentPackageSeqId": payload.shipmentPackageSeqId,
+      "trackingCode": payload.trackingCode,
+      "labelImage": "",
+      "labelIntlSignImage": "",
+      "labelHtml": "",
+      "labelImageUrl": "",
+      "internationalInvoiceUrl": ""
+    });
     if (!hasError(resp)) {
-      resp = await updateShipmentPackageRouteSeg({
+      resp = await updateShipmentRouteSegment({
         "shipmentId": payload.shipmentId,
         "shipmentRouteSegmentId": payload.shipmentRouteSegmentId,
-        "shipmentPackageSeqId": payload.shipmentPackageSeqId,
-        "trackingCode": payload.trackingCode
+        "trackingIdNumber": payload.trackingCode,
+        "carrierServiceStatusId": "SHRSCS_ACCEPTED"
       });
-      if (!hasError(resp)) {
-        resp = await updateShipmentRouteSegment({
-          "shipmentId": payload.shipmentId, 
-          "shipmentRouteSegmentId": payload.shipmentRouteSegmentId,
-          "trackingIdNumber": payload.trackingCode,
-          "carrierServiceStatusId": "SHRSCS_ACCEPTED"
-        });
-        if (hasError(resp)) {
-          throw resp.data;
-        }
-      } else {
+      if (hasError(resp)) {
         throw resp.data;
       }
     } else {
@@ -209,6 +223,14 @@ const findOpenOrders = async (query: any): Promise<any> => {
 const findCompletedOrders = async (query: any): Promise<any> => {
   return api({
     // TODO: We can replace this with any API
+    url: "solr-query",
+    method: "post",
+    data: query
+  });
+}
+
+const findOrderInvoicingInfo = async (query: any): Promise<any> => {
+  return api({
     url: "solr-query",
     method: "post",
     data: query
@@ -282,7 +304,7 @@ const addShipmentBox = async (payload: any): Promise<any> => {
 }
 const shipOrder = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getBaseUrl'];
-  return client({
+  return api({
     url: 'shipOrder',
     method: 'POST',
     data: payload,
@@ -347,17 +369,28 @@ const fetchShipments = async (picklistBinIds: Array<string>, orderIds: Array<str
   return shipments;
 }
 
-const fetchShipmentPackages = async (shipmentIds: Array<string>): Promise<any> => {
+const fetchShipmentPackages = async (shipmentIds: Array<string>, isTrackingRequired = false): Promise<any> => {
   let shipmentPackages = [];
+  let trackingCodeFilters = {};
+
+  if(!isTrackingRequired) {
+    trackingCodeFilters = {
+      "trackingCode_op": "empty",
+      "trackingCode_grp": "1",
+      "carrierServiceStatusId": "SHRSCS_VOIDED",
+      "carrierServiceStatusId_grp": "2"
+    }
+  }
+
   const params = {
     "entityName": "ShipmentPackageRouteSegDetail",
     "inputFields": {
       "shipmentId": shipmentIds,
       "shipmentId_op": "in",
-      "trackingCode_op": "empty",
-      "shipmentItemSeqId_op": "not-empty"
+      "shipmentItemSeqId_op": "not-empty",
+      ...trackingCodeFilters
     },
-    "fieldList": ["shipmentId", "shipmentRouteSegmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "isTrackingRequired"],
+    "fieldList": ["shipmentId", "shipmentRouteSegmentId", "shipmentPackageSeqId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "isTrackingRequired", "primaryShipGroupSeqId", "labelImageUrl", "carrierServiceStatusId"],
     "viewSize": 250,  // maximum records we could have
     "distinct": "Y"
   }
@@ -371,6 +404,13 @@ const fetchShipmentPackages = async (shipmentIds: Array<string>): Promise<any> =
 
     if (!hasError(resp)) {
       shipmentPackages = resp?.data.docs;
+      shipmentPackages.map((shipmentPackage: any) => {
+        if(shipmentPackage.carrierServiceStatusId === "SHRSCS_VOIDED") {
+          shipmentPackage.trackingCode = ""
+          shipmentPackage.labelImageUrl = ""
+          shipmentPackage.internationalInvoiceUrl = ""
+        }
+      })
     } else if (!resp?.data.error || (resp.data.error && resp.data.error !== "No record found")) {
       return Promise.reject(resp?.data.error);
     }
@@ -628,13 +668,46 @@ const printPicklist = async (picklistId: string): Promise<any> => {
   }
 }
 
+const printTransferOrder = async (orderId: string): Promise<any> => {
+  try {
+    // Get packing slip from the server
+    const resp: any = await api({
+      method: 'get',
+      url: 'TransferOrder.pdf',
+      params: {
+        orderId: orderId
+      },
+      responseType: "blob"
+    })
+
+    if (!resp || resp.status !== 200 || hasError(resp)) {
+      throw resp.data
+    }
+
+    // Generate local file URL for the blob received
+    const pdfUrl = window.URL.createObjectURL(resp.data);
+    // Open the file in new tab
+    try {
+      (window as any).open(pdfUrl, "_blank").focus();
+    }
+    catch {
+      showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'picklist'}), { icon: cogOutline });
+    }
+
+  } catch (err) {
+    showToast(translate('Failed to print picklist'))
+    logger.error("Failed to load picklist", err)
+  }
+}
+
 const retryShippingLabel = async (shipmentIds: Array<string>, forceRateShop = false): Promise<any> => {
   return api({
     method: 'POST',
     url: 'retryShippingLabel',  // TODO: update the api
     data: {
       shipmentIds,
-      forceRateShop: forceRateShop ? 'Y' : 'N'
+      forceRateShop: forceRateShop ? 'Y' : 'N',
+      generateLabel: "Y" // This is needed to generate label after the new changes in backend related to auto generation of label.
     }
   })
 }
@@ -728,6 +801,7 @@ const fetchOrderPaymentPreferences = async (orderId: any): Promise<any> => {
       "orderId": orderId,
     },
     "fieldList": ["orderId", "paymentMethodTypeId", "statusId"],
+    "orderBy": "createdDate DESC",
     "distinct": "Y"
   }
 
@@ -819,6 +893,7 @@ export const OrderService = {
   bulkShipOrders,
   createOutboundTransferShipment,
   fetchAdditionalShipGroupForOrder,
+  fetchOrderAttribute,
   fetchOrderHeader,
   fetchOrderItems,
   fetchShipmentCarrierDetail,
@@ -829,6 +904,7 @@ export const OrderService = {
   fetchShippedQuantity,
   fetchTrackingCodes,
   findCompletedOrders,
+  findOrderInvoicingInfo,
   findInProgressOrders,
   findTransferOrders,
   findOpenOrders,
@@ -840,6 +916,7 @@ export const OrderService = {
   printPicklist,
   printShippingLabel,
   printShippingLabelAndPackingSlip,
+  printTransferOrder,
   rejectFulfillmentReadyOrderItem,
   rejectOrderItem,
   retryShippingLabel,
@@ -854,5 +931,6 @@ export const OrderService = {
   fetchOrderItemShipGroup,
   fetchShippingAddress,
   fetchOrderPaymentPreferences,
-  getShippingPhoneNumber
+  getShippingPhoneNumber,
+  voidShipmentLabel
 }

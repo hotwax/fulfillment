@@ -1,4 +1,4 @@
-import { api, client, hasError } from '@/adapter';
+import { api, hasError } from '@/adapter';
 import logger from '@/logger';
 import store from '@/store';
 import { isPdf } from '@/utils';
@@ -85,8 +85,8 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
       "shipmentId": shipmentIds,
       "shipmentId_op": "in"
     },
-    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentRouteSegmentId", "shipmentMethodTypeId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "picklistBinId", "isTrackingRequired", "trackingCode", "internationalInvoiceUrl", "labelImageUrl"],
-    "viewSize": shipmentIds.length,
+    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentRouteSegmentId", "shipmentMethodTypeId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "picklistBinId", "isTrackingRequired", "trackingCode", "internationalInvoiceUrl", "labelImageUrl", "carrierServiceStatusId"],
+    "viewSize": 250, //max size perform find support, need to update this logic to fetch the paginated detail
     "distinct": "Y"
   }
 
@@ -101,6 +101,11 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
       shipmentPackages = resp.data.docs.reduce((shipmentForOrders: any, shipmentPackage: any) => {
         // creating key in this pattern as the same order can have multiple picklist bin and in that we need to find to which picklist bin shipment is associated
         const key = `${shipmentPackage.primaryOrderId}_${shipmentPackage.picklistBinId}`
+        if(shipmentPackage.carrierServiceStatusId === "SHRSCS_VOIDED") {
+            shipmentPackage.trackingCode = ""
+            shipmentPackage.labelImageUrl = ""
+            shipmentPackage.internationalInvoiceUrl = ""
+        }
         if (shipmentPackage.labelImageUrl && isPdf(shipmentPackage.labelImageUrl)) {
           shipmentPackage.labelPdfUrl = shipmentPackage.labelImageUrl;
         }
@@ -120,6 +125,53 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
 
   return shipmentPackages;
 }
+
+const findShipmentPackageContents = async (shipmentIds: Array<string>): Promise<any> => {
+  let viewIndex = 0;
+  let shipmentPackageContents: any[] = [];
+  let shipmentPackageContentInfo: { [key: string]: any[] } = {}; 
+  let resp;
+
+  try {
+    do {
+      resp = await api({
+        url: "performFind",
+        method: "get",
+        params: {
+          "entityName": "ShipmentPackageAndContent",
+          "inputFields": {
+            "shipmentId": shipmentIds,
+            "shipmentId_op": "in"
+          },
+          "fieldList": ["shipmentId", "shipmentItemSeqId", "shipmentPackageSeqId", "packageName", "quantity"],
+          viewIndex,
+          "viewSize": 250,
+          "distinct": "Y"
+        }
+      }) as any;
+
+      if (!hasError(resp) && resp.data.count) {
+        shipmentPackageContents = shipmentPackageContents.concat(resp.data.docs);
+        viewIndex++;
+      } else {
+        throw resp;
+      }
+    } while (resp.data.docs.length >= 250);
+  } catch (error) {
+    logger.error(error);
+  }
+
+  shipmentPackageContentInfo = shipmentPackageContents.reduce((contents: any, shipmentPackageContent: any) => {
+    if (contents[shipmentPackageContent.shipmentId]) {
+      contents[shipmentPackageContent.shipmentId].push(shipmentPackageContent);
+    } else {
+      contents[shipmentPackageContent.shipmentId] = [shipmentPackageContent];
+    }
+    return contents;
+  }, {});
+
+  return shipmentPackageContentInfo;
+};
 
 
 const findCarrierPartyIdsForShipment = async(shipmentIds: Array<string>): Promise<any> => {
@@ -208,7 +260,7 @@ const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<a
       "shipmentId_op": "in"
     },
     "fieldList": ["shipmentItemSeqId", "orderItemSeqId", "orderId", "shipmentId", "productId"],
-    "viewSize": shipmentIds.length * 5, // TODO: check what should be the viewSize here
+    "viewSize": 250, // TODO: Need to fetch all data paginated
     "distinct": "Y"
   }
 
@@ -266,16 +318,15 @@ const fetchRejectReasons = async(query: any): Promise<any> => {
 
 const getAvailablePickers = async (query: any): Promise <any> => {
   return api({
-    url: 'performFind',
-    method: 'get',
-    params: query,
-    cache: true
+    url: "solr-query",
+    method: "post",
+    data: query,
   })
 }
 
 const createPicklist = async (query: any): Promise <any> => {
   const baseURL = store.getters['user/getBaseUrl'];
-  return client({
+  return api({
     url: 'createPicklist',
     method: 'POST',
     data: query,
@@ -449,6 +500,76 @@ const getProductStoreSetting = async (payload: any): Promise<any> => {
   });
 }
 
+const fetchGiftCardItemPriceInfo = async (payload: any): Promise<any> => {
+  // Todo: find a better alternative for fetching unitPrice and currency together
+  let resp = {} as any;
+  const itemPriceInfo = {} as any;
+
+  const params = {
+    inputFields: {
+      orderId: payload.orderId,
+      orderItemSeqId: payload.orderItemSeqId
+    },
+    entityName: "OrderItem",
+    fieldList: ["unitPrice"],
+    viewSize: 1
+  }
+
+  try {
+    resp = await api({
+      url: "performFind",
+      method: "post",
+      data: params
+    });
+
+    if(!hasError(resp)) {
+      itemPriceInfo.unitPrice = resp.data.docs[0].unitPrice
+
+      resp = await api({
+        url: "performFind",
+        method: "post",
+        data: {
+          inputFields: {
+            orderId: payload.orderId,
+            orderItemSeqId: payload.orderItemSeqId
+          },
+          entityName: "OrderHeader",
+          fieldList: ["currencyUom"],
+          viewSize: 1
+        }
+      });
+
+      if(!hasError(resp)) {
+        itemPriceInfo.currencyUom = resp.data.docs[0].currencyUom
+      } else {
+        throw resp.data;
+      }
+    } else {
+      throw resp.data;
+    }
+  } catch(error: any) {
+    logger.error(error);
+  }
+
+  return itemPriceInfo;
+}
+
+const fetchGiftCardFulfillmentInfo = async (payload: any): Promise<any> => {
+  return await api({
+    url: 'performFind',
+    method: 'POST',
+    data: payload
+  }) as any
+}
+
+const activateGiftCard = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createGcFulFillmentRecord",
+    method: "post",
+    data: payload
+  });
+}
+
 const isEnumExists = async (enumId: string): Promise<any> => {
   try {
     const resp = await api({
@@ -475,6 +596,7 @@ const isEnumExists = async (enumId: string): Promise<any> => {
 }
 
 export const UtilService = {
+  activateGiftCard,
   createForceScanSetting,
   createPicklist,
   createEnumeration,
@@ -483,6 +605,8 @@ export const UtilService = {
   fetchEnumeration,
   fetchFacilities,
   fetchFacilityTypeInformation,
+  fetchGiftCardFulfillmentInfo,
+  fetchGiftCardItemPriceInfo,
   fetchPartyInformation,
   fetchPicklistInformation,
   fetchProductStores,
@@ -501,6 +625,7 @@ export const UtilService = {
   findShipmentIdsForOrders,
   findShipmentItemInformation,
   findShipmentPackages,
+  findShipmentPackageContents,
   fetchTransferOrderFacets,
   getAvailablePickers,
   getProductStoreSetting,

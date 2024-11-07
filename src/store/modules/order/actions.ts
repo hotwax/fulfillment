@@ -11,7 +11,7 @@ import logger from '@/logger'
 import { getOrderCategory, removeKitComponents } from '@/utils/order'
 
 const actions: ActionTree<OrderState, RootState> = {
-  async fetchInProgressOrdersAdditionalInformation({ commit, state }, payload = { viewIndex: 0 }) {
+  async fetchInProgressOrdersAdditionalInformation({ commit, dispatch, state }, payload = { viewIndex: 0 }) {
     // getting all the orders from state
     const cachedOrders = JSON.parse(JSON.stringify(state.inProgress.list)); // maintaining cachedOrders as to prepare the orders payload
     let inProgressOrders = JSON.parse(JSON.stringify(state.inProgress.list)); // maintaining inProgreesOrders as update the orders information once information in fetched
@@ -38,7 +38,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
       // TODO: handle case when shipmentIds is empty
       // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
-      const [shipmentPackagesByOrderInformationAndPicklistBin, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
+      const [shipmentPackagesByOrderInformationAndPicklistBin, shipmentPackageContents, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentPackageContents(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
 
       // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
       const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
@@ -88,8 +88,8 @@ const actions: ActionTree<OrderState, RootState> = {
             item.shipmentId = shipment.shipmentId
             item.shipmentItemSeqId = shipment.shipmentItemSeqId
           }
-
-          item.selectedBox = shipmentPackagesByOrderAndPicklistBin[`${item.orderId}_${item.picklistBinId}`]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+          
+          item.selectedBox = shipmentPackageContents[`${item.shipmentId}`].find((shipmentPackageContent: any) => shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId)?.packageName
         })
 
         const orderItem = order.items[0];
@@ -141,11 +141,13 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('Failed to fetch shipmentIds for orders', err)
     }
 
+    inProgressOrders = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: false, currentOrders: inProgressOrders })
+
     // updating the state with the updated orders information
     commit(types.ORDER_INPROGRESS_UPDATED, { orders: inProgressOrders, total: state.inProgress.total })
   },
 
-  async fetchCompletedOrdersAdditionalInformation({ commit, state }) {
+  async fetchCompletedOrdersAdditionalInformation({ commit, dispatch, state }) {
     // getting all the orders from state
     const cachedOrders = JSON.parse(JSON.stringify(state.completed.list)); // maintaining cachedOrders as to prepare the orders payload
     let completedOrders = JSON.parse(JSON.stringify(state.completed.list)); // maintaining completedOrders as update the orders information once information in fetched
@@ -212,7 +214,7 @@ const actions: ActionTree<OrderState, RootState> = {
         }, []);
 
         // If there is any shipment package with missing tracking code, retry shipping label
-        const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.some((shipmentPackage:any) => shipmentPackage.trackingCode === null) : false;
+        const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.some((shipmentPackage:any) => shipmentPackage.trackingCode === null || shipmentPackage.trackingCode === '') : false;
 
         return {
           ...order,
@@ -232,8 +234,74 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('Failed to fetch shipmentIds for orders', err)
     }
 
+    completedOrders = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: false, currentOrders: completedOrders })
+
     // updating the state with the updated orders information
     commit(types.ORDER_COMPLETED_UPDATED, { list: completedOrders, total: state.completed.total })
+  },
+
+  async fetchGiftCardActivationDetails({ commit, state }, { isDetailsPage, currentOrders }) {
+    const orders = JSON.parse(JSON.stringify(currentOrders));
+    const orderIds = [] as any;
+    let giftCardActivations = [] as any;
+
+    if(isDetailsPage) {
+      orderIds.push(orders[0].orderId);
+    } else {
+      orders.map((order: any) => {
+        order.items.map((item: any) => {
+          if(item.productTypeId === 'GIFT_CARD' && !orderIds.includes(item.orderId)) {
+            orderIds.push(item.orderId);
+          }
+        })
+      })
+    }
+
+    if(!orderIds.length) return orders;
+
+    try {
+      const resp = await UtilService.fetchGiftCardFulfillmentInfo({
+        entityName: "GiftCardFulfillment",
+        inputFields: {
+          orderId: orderIds,
+          orderId_op: "in"
+        },
+        fieldList: ["amount", "cardNumber", "fulfillmentDate", "orderId", "orderItemSeqId"],
+        viewSize: 250
+      })
+
+      if(!hasError(resp)) {
+        giftCardActivations = resp.data.docs
+      } else {
+        throw resp.data
+      }
+    } catch(error) {
+      logger.error(error)
+    }
+
+    if(giftCardActivations.length) {
+      if(isDetailsPage) {
+        orders[0].items.map((item: any) => {
+          const activationRecord = giftCardActivations.find((card: any) => card.orderId === item.orderId && card.orderItemSeqId === item.orderItemSeqId)
+          if(activationRecord?.cardNumber) {
+            item.isGCActivated = true;
+            item.gcInfo = activationRecord
+          }
+        })
+      } else {
+        orders.map((order: any) => {
+          order.items.map((item: any) => {
+            const activationRecord = giftCardActivations.find((card: any) => card.orderId === item.orderId && card.orderItemSeqId === item.orderItemSeqId)
+            if(activationRecord?.cardNumber) {
+              item.isGCActivated = true;
+              item.gcInfo = activationRecord
+            }
+          })
+        })
+      }
+    }
+
+    return isDetailsPage ? orders[0] : orders
   },
 
   // get in-progress orders
@@ -579,17 +647,26 @@ const actions: ActionTree<OrderState, RootState> = {
       const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? shipmentPackageValues.some((shipmentPackage:any) => !shipmentPackage.trackingCode) : false;
 
       const updateShipmentPackages = (order:any) => {
-        order.shipmentPackages.forEach((shipmentPackage:any) => {
+
+        const updatedShipmentPackages = order.shipmentPackages.reduce((updatedShipmentPackages: any[], shipmentPackage: any) => {
           const key = `${shipmentPackage.shipmentId}-${shipmentPackage.shipmentPackageSeqId}`;
           const updatedShipmentPackage = shipmentPackagesMap[key];
+        
+          // Only add the shipment package if updatedShipmentPackage exists
           if (updatedShipmentPackage) {
-            shipmentPackage.trackingCode = updatedShipmentPackage.trackingCode;
-            shipmentPackage.labelPdfUrl = updatedShipmentPackage.labelPdfUrl;
-            shipmentPackage.shipmentMethodTypeId = updatedShipmentPackage.shipmentMethodTypeId;
-            shipmentPackage.carrierPartyId = updatedShipmentPackage.carrierPartyId;
-            shipmentPackage.missingLabelImage = missingLabelImage;
+            const newShipmentPackage = { ...shipmentPackage };
+            newShipmentPackage.trackingCode = updatedShipmentPackage.trackingCode;
+            newShipmentPackage.labelPdfUrl = updatedShipmentPackage.labelPdfUrl;
+            newShipmentPackage.shipmentMethodTypeId = updatedShipmentPackage.shipmentMethodTypeId;
+            newShipmentPackage.carrierPartyId = updatedShipmentPackage.carrierPartyId;
+            newShipmentPackage.missingLabelImage = missingLabelImage;
+            updatedShipmentPackages.push(newShipmentPackage);
           }
-        });
+        
+          return updatedShipmentPackages;
+        }, []);
+        
+        order.shipmentPackages = updatedShipmentPackages
         order.trackingCode = order.shipmentPackages?.[0]?.trackingCode
         order.missingLabelImage = missingLabelImage
       };
@@ -903,7 +980,7 @@ const actions: ActionTree<OrderState, RootState> = {
         shipGroups = resp.data.grouped.shipGroupSeqId.groups
 
         // creating the key as orders as the product information action accept only the orders as a param
-        this.dispatch('product/getProductInformation', { orders: shipGroups })
+        await this.dispatch('product/getProductInformation', { orders: shipGroups })
       } else {
         throw resp.data
       }
@@ -993,6 +1070,8 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('Something went wrong', err)
     }
 
+    current = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: true, currentOrders: [current] });
+
     dispatch('updateCurrent', current)
   },
 
@@ -1013,7 +1092,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
       // TODO: handle case when shipmentIds is empty
       // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
-      const [shipmentPackagesByOrderInformationAndPicklistBin, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
+      const [shipmentPackagesByOrderInformationAndPicklistBin, shipmentPackageContents, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentPackageContents(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
 
       // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
       const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
@@ -1063,7 +1142,7 @@ const actions: ActionTree<OrderState, RootState> = {
           item.shipmentItemSeqId = shipment.shipmentItemSeqId
         }
 
-        item.selectedBox = shipmentPackagesByOrderAndPicklistBin[`${item.orderId}_${item.picklistBinId}`]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+        item.selectedBox = shipmentPackageContents[`${item.shipmentId}`].find((shipmentPackageContent: any) => shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId)?.packageName
       })
 
       const orderItem = current.items[0];
@@ -1110,6 +1189,8 @@ const actions: ActionTree<OrderState, RootState> = {
       current.hasMissingPackageInfo = true;
       logger.error('Something went wrong', err)
     }
+
+    current = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: true, currentOrders: [current]});
 
     // updating the state with the updated orders information
     await dispatch('updateCurrent', current)
@@ -1158,7 +1239,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
       return reservedShipGroup ? {
         ...shipGroup,
-        items: reservedShipGroupForOrder.doclist.docs,
+        items: removeKitComponents({ items: reservedShipGroupForOrder.doclist.docs }),
         carrierPartyId: reservedShipGroup.carrierPartyId,
         shipmentId: reservedShipGroup.shipmentId,
         category: getOrderCategory(reservedShipGroupForOrder.doclist.docs[0])
@@ -1196,6 +1277,74 @@ const actions: ActionTree<OrderState, RootState> = {
     commit(types.ORDER_CURRENT_UPDATED, order)
 
     return shipGroups;
+  },
+
+  async updateCurrentItemGCActivationDetails({ commit, state }, { item, category, isDetailsPage }) {
+    let gcInfo = {};
+    let isGCActivated = false;
+
+    try {
+      const resp = await UtilService.fetchGiftCardFulfillmentInfo({
+        entityName: "GiftCardFulfillment",
+        inputFields: {
+          orderId: item.orderId,
+          orderItemSeqId: item.orderItemSeqId
+        },
+        fieldList: ["amount", "cardNumber", "fulfillmentDate", "orderId", "orderItemSeqId"]
+      })
+
+      if(!hasError(resp)) {
+        isGCActivated = true;
+        gcInfo = resp.data.docs[0];
+      } else {
+        throw resp.data
+      }
+    } catch(error) {
+      logger.error(error)
+    }
+
+    if(!isGCActivated) return;
+
+    const orders = JSON.parse(JSON.stringify(category === "in-progress" ? state.inProgress.list : state.completed.list));
+
+    if(isDetailsPage) {
+      const order = JSON.parse(JSON.stringify(state.current));
+
+      order.items?.map((currentItem: any) => {
+        if(currentItem.orderId === item.orderId && currentItem.orderItemSeqId === item.orderItemSeqId) {
+          currentItem.isGCActivated = true;
+          currentItem.gcInfo = gcInfo
+        }
+      })
+
+      orders.map((currentOrder: any) => {
+        if(currentOrder.orderId === order.orderId) currentOrder.items = order.items
+      })
+
+      if(category === "in-progress") {
+        commit(types.ORDER_INPROGRESS_UPDATED, { orders, total: state.inProgress.total })
+      } else {
+        commit(types.ORDER_COMPLETED_UPDATED, { list: orders, total: state.completed.total })
+      }
+
+      commit(types.ORDER_CURRENT_UPDATED, order)
+      return;
+    }
+
+    orders.map((order: any) => {
+      order.items.map((currentItem: any) => {
+        if(currentItem.orderId === item.orderId && currentItem.orderItemSeqId === item.orderItemSeqId) {
+          currentItem.isGCActivated = true;
+          currentItem.gcInfo = gcInfo;
+        }
+      })
+    })
+
+    if(category === "in-progress") {
+      commit(types.ORDER_INPROGRESS_UPDATED, { orders, total: state.inProgress.total })
+    } else {
+      commit(types.ORDER_COMPLETED_UPDATED, { list: orders, total: state.completed.total })
+    }
   },
 
   // TODO clear current on logout

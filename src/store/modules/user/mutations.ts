@@ -63,11 +63,20 @@ const mutations: MutationTree <UserState> = {
     [types.USER_ALL_NOTIFICATION_PREFS_UPDATED] (state, payload) {
         state.allNotificationPrefs = payload
     },
+    [types.USER_NEW_REJECTION_API_CONFIG_UPDATED] (state, payload) {
+        state.newRejectionApiConfig = payload
+    },
     [types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED] (state, payload) {
         state.partialOrderRejectionConfig = payload
     },
     [types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED] (state, payload) {
         state.collateralRejectionConfig = payload
+    },
+    [types.USER_DISABLE_SHIP_NOW_CONFIG_UPDATED] (state, payload) {
+        state.isShipNowDisabled = payload
+    },
+    [types.USER_DISABLE_UNPACK_CONFIG_UPDATED] (state, payload) {
+        state.isUnpackDisabled = payload
     }
 }
 export default mutations;

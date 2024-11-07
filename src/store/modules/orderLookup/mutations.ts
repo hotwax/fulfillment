@@ -29,6 +29,9 @@ const mutations: MutationTree <OrderLookupState> = {
   [types.ORDERLOOKUP_STATUS_OPTIONS_UPDATED] (state, payload) {
     state.orderStatuses = payload
   },
+  [types.ORDERLOOKUP_CARRIER_TRACKING_URLS_UPDATED] (state, payload) {
+    state.carriersTrackingInfo = payload
+  },
   [types.ORDERLOOKUP_CLEARED] (state) {
     state.list = {
       orders: [],

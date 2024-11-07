@@ -5,7 +5,7 @@
     <ion-header :translucent="true">
       <ion-menu-button menu="start" slot="start" />
       <ion-toolbar>
-        <ion-back-button default-href="/" slot="start" />
+        
         <ion-title>{{ translate("Orders") }}</ion-title>
         <ion-buttons slot="end">
           <ion-menu-button menu="orderLookup-filter">
@@ -119,7 +119,7 @@
 
 <script lang="ts">
 import {
-  IonBackButton,
+  
   IonBadge,
   IonButtons,
   IonChip,
@@ -165,7 +165,7 @@ export default defineComponent ({
   name: 'OrderLookup',
   components: {
     Image,
-    IonBackButton,
+    
     IonBadge,
     IonButtons,
     IonChip,

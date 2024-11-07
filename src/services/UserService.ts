@@ -85,12 +85,12 @@ const recycleOutstandingOrders = async(payload: any): Promise<any> => {
   })
 }
 
-const getEComStores = async (token: any, facilityId: any): Promise<any> => {
+const getEComStores = async (token: any,  facility: any): Promise<any> => {
   try {
     const params = {
       "inputFields": {
         "storeName_op": "not-empty",
-        facilityId
+        facilityId: facility.facilityId
       },
       "fieldList": ["productStoreId", "storeName"],
       "entityName": "ProductStoreFacilityDetail",
@@ -110,12 +110,21 @@ const getEComStores = async (token: any, facilityId: any): Promise<any> => {
       }
     });
     if (hasError(resp)) {
-      return Promise.reject(resp.data);
+      // Following promise reject pattern as OMS api, to show error message on the login page.
+      return Promise.reject({
+        code: 'error',
+        message: `Failed to fetch product stores for ${facility.facilityName} facility.`,
+        serverResponse: resp.data
+      })
     } else {
       return Promise.resolve(resp.data.docs);
     }
   } catch(error: any) {
-    return Promise.reject(error)
+    return Promise.reject({
+      code: 'error',
+      message: 'Something went wrong',
+      serverResponse: error
+    })
   }
 }
 
@@ -333,6 +342,30 @@ const isEnumExists = async (enumId: string): Promise<any> => {
   }
 }
 
+const getNewRejectionApiConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: payload,
+  });
+}
+
+const getDisableShipNowConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: payload,
+  });
+}
+
+const getDisableUnpackConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: payload,
+  });
+}
+
 const createPartialOrderRejectionConfig = async (payload: any): Promise<any> => {
   return api({
     url: "service/createProductStoreSetting",
@@ -381,12 +414,15 @@ export const UserService = {
     deleteFieldMapping,
     login,
     getCollateralRejectionConfig,
+    getDisableShipNowConfig,
+    getDisableUnpackConfig,
     getEComStores,
     getFacilityDetails,
     getFacilityOrderCount,
     getFieldMappings,
     getFacilityGroupDetails,
     getFacilityGroupAndMemberDetails,
+    getNewRejectionApiConfig,
     getPartialOrderRejectionConfig,
     getUserProfile,
     getPreferredStore,

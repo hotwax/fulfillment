@@ -64,11 +64,20 @@ const getters: GetterTree <UserState, RootState> = {
     getAllNotificationPrefs(state) {
         return state.allNotificationPrefs
     },
+    getNewRejectionApiConfig(state) {
+        return  state.newRejectionApiConfig;
+    },
     getPartialOrderRejectionConfig(state) {
         return  state.partialOrderRejectionConfig;
     },
     getCollateralRejectionConfig(state) {
         return  state.collateralRejectionConfig;
     },
+    isShipNowDisabled(state) {
+        return state.isShipNowDisabled;
+    },
+    isUnpackDisabled(state) {
+        return state.isUnpackDisabled;
+    }
 }
 export default getters;

@@ -57,6 +57,7 @@
   import { mapGetters, useStore } from "vuex";
   import { translate } from '@hotwax/dxp-components';
 
+  import { DateTime } from 'luxon';
   import { useRouter } from 'vue-router';
   import { showToast } from '@/utils';
   import emitter from "@/event-bus";
@@ -191,7 +192,9 @@
           if (shipmentMethod.isChecked) {
             resp = await CarrierService.removeCarrierShipmentMethod(payload)
 
-            if (hasError(resp)) {
+            if (!hasError(resp)) {
+              await this.removeProductStoreShipmentMethods(shipmentMethod.shipmentMethodTypeId)
+            } else {
               throw resp.data;
             }
 
@@ -225,6 +228,38 @@
           }
         } catch(err) {
           showToast(translate("Failed to update carrier and shipment method association."))
+          logger.error(err)
+        }
+      },
+      async removeProductStoreShipmentMethods(shipmentMethodTypeId: string) {
+        try {
+          let productStoreShipmentMethods = this.currentCarrier.productStoreShipmentMethods ? JSON.parse(JSON.stringify(this.currentCarrier.productStoreShipmentMethods)) : {}
+
+          if (productStoreShipmentMethods) {
+            const methods = Object.values(productStoreShipmentMethods).flatMap((store:any) => Object.values(store));
+            const methodsToRemove = methods.filter((productStoreShipmentMethod:any) => productStoreShipmentMethod.shipmentMethodTypeId === shipmentMethodTypeId)
+
+            const responses = await Promise.allSettled(methodsToRemove.map((productStoreShipmentMethod: any) => {
+              const removePromise = CarrierService.removeProductStoreShipmentMethod({
+                productStoreShipMethId: productStoreShipmentMethod.productStoreShipMethId,
+                thruDate: DateTime.now().toMillis(),
+              });
+
+              // Delete the entry after calling the service
+              delete productStoreShipmentMethods[productStoreShipmentMethod.productStoreId][productStoreShipmentMethod.shipmentMethodTypeId];
+
+              // Return the promise
+              return removePromise;
+            }));
+
+            const hasFailedResponse = responses.some((response: any) => response.status === 'rejected')
+            if (hasFailedResponse) {
+              logger.error('Failed to update some product store shipment method association(s).')
+            }
+            await this.store.dispatch('carrier/updateCurrentCarrierProductStoreShipmentMethods', productStoreShipmentMethods)
+            await this.store.dispatch('carrier/checkAssociatedProductStoreShipmentMethods')
+          }
+        } catch (err) {
           logger.error(err)
         }
       },
