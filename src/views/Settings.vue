@@ -290,7 +290,7 @@ export default defineComponent({
       fulfillmentOrderLimit: "" as number | string,
       facilityGroupDetails: {} as any,
       isEComInvEnabled: false,
-      barcodeContentMessage: translate("Only allow received quantity to be incremented by scanning the barcode of products. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
+      barcodeContentMessage: translate("Only allow shipped quantity to be incremented by scanning the barcode of products. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
     };
   },
   computed: {

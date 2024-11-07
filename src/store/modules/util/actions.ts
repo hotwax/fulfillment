@@ -604,7 +604,7 @@ const actions: ActionTree<UtilState, RootState> = {
         const respValue = resp.data.docs[0].settingValue
         commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, respValue)
       } else {
-        dispatch("cretaBarcodeIdentificationPref");
+        dispatch("createBarcodeIdentificationPref");
       }
     } catch(err) {
       console.error(err)
@@ -612,7 +612,7 @@ const actions: ActionTree<UtilState, RootState> = {
     }
   },
 
-  async cretaBarcodeIdentificationPref({ commit }) {
+  async createBarcodeIdentificationPref({ commit }) {
     const ecomStore = store.getters['user/getCurrentEComStore'];
     const fromDate = Date.now()
 
