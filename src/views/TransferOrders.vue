@@ -45,7 +45,7 @@
       </div>
       <div v-else class="empty-state">
         <p v-html="getErrorMessage()"></p>
-        <ion-button v-if="!transferOrders.query.queryString" size="small" fill="outline" color="medium" @click="showCompletedTransferOrders">
+        <ion-button v-if="!transferOrders.query.queryString && hasCompletedTransferOrders" size="small" fill="outline" color="medium" @click="showCompletedTransferOrders">
           <ion-icon slot="end" :icon="checkmarkDoneOutline"/>{{ translate("Show completed transfer orders") }}
         </ion-button>
       </div>
@@ -113,7 +113,8 @@ export default defineComponent({
     return {
       shipmentMethods: [] as Array<any>,
       searchedQuery: '',
-      isScrollingEnabled: false
+      isScrollingEnabled: false,
+      hasCompletedTransferOrders: true
     }
   },
   async ionViewWillEnter() {
@@ -122,7 +123,11 @@ export default defineComponent({
   },
   methods: {
     getErrorMessage() {
-      return this.searchedQuery === '' ? translate("doesn't have any transfer orders right now.", { facilityName: this.currentFacility.facilityName }) : translate( "No results found for .", { searchedQuery: this.searchedQuery })
+      if (this.searchedQuery === '') {
+        return this.hasCompletedTransferOrders ? translate("doesn't have any open transfer orders right now.", { facilityName: this.currentFacility.facilityName }) : translate("doesn't have any transfer orders right now.", { facilityName: this.currentFacility.facilityName });
+      } else {
+        return translate("No results found for .", { searchedQuery: this.searchedQuery });
+      }
     },
     enableScrolling() {
       const parentElement = (this as any).$refs.contentRef.$el
@@ -154,6 +159,7 @@ export default defineComponent({
       transferOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       transferOrdersQuery.selectedStatuses = ["ORDER_COMPLETED"]
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
+      this.hasCompletedTransferOrders = this.transferOrders.list.some((order: any) => order.orderStatusId === "ORDER_COMPLETED");
     },
     async updateQueryString(queryString: string) {
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
