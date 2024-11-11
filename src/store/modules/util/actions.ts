@@ -55,6 +55,7 @@ const actions: ActionTree<UtilState, RootState> = {
         "inputFields": {
           "enumerationGroupId": "FF_REJ_RSN_GRP"
         },
+        // We shouldn't fetch description here, as description contains EnumGroup description which we don't wanna show on UI.
         "fieldList": ["enumerationGroupId", "enumId", "fromDate", "sequenceNum", "enumDescription", "enumName"],
         "distinct": "Y",
         "entityName": "EnumerationGroupAndMember",

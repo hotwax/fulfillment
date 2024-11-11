@@ -27,7 +27,7 @@
               </div>
 
               <div class="tablet">
-                <ion-toggle :checked="fulfillmentRejectReasons[reason.enumId]" @ionChange="updateFulfillmentRejectReasonAssocStatus($event, reason)" />
+                <ion-toggle :checked="fulfillmentRejectReasons[reason.enumId]" @click.prevent="updateFulfillmentRejectReasonAssocStatus($event, reason)" />
               </div>
 
               <ion-reorder />
@@ -67,6 +67,7 @@ import {
   IonReorder,
   IonReorderGroup,
   IonTitle,
+  IonToggle,
   IonToolbar,
   alertController,
   modalController,
@@ -101,6 +102,7 @@ export default defineComponent({
     IonReorder,
     IonReorderGroup,
     IonTitle,
+    IonToggle,
     IonToolbar,
   },
   data() {
@@ -251,7 +253,7 @@ export default defineComponent({
     },
 
     async updateFulfillmentRejectReasonAssocStatus(event: any, reason: any) {
-      event.stopPropagation();
+      event.stopImmediatePropagation();
       let resp;
 
       const payload = {
