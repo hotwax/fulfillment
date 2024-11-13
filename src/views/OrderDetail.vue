@@ -683,7 +683,8 @@ export default defineComponent({
       }
     },
     getRejectionReasonDescription (rejectionReasonId: string) {
-      return this.rejectReasonOptions?.find((reason: any) => reason.enumId === rejectionReasonId)?.description;
+      const reason = this.rejectReasonOptions?.find((reason: any) => reason.enumId === rejectionReasonId)
+      return reason?.description ? reason.description : reason?.enumDescription;
     },
     isEntierOrderRejectionEnabled(order: any) {
       return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
