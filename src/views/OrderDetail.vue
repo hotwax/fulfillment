@@ -684,7 +684,7 @@ export default defineComponent({
     },
     getRejectionReasonDescription (rejectionReasonId: string) {
       const reason = this.rejectReasonOptions?.find((reason: any) => reason.enumId === rejectionReasonId)
-      return reason?.description ? reason.description : reason?.enumDescription;
+      return reason?.description ? reason.description : reason?.enumDescription ? reason.enumDescription : reason.enumId;
     },
     isEntierOrderRejectionEnabled(order: any) {
       return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
