@@ -44,6 +44,9 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   isForceScanEnabled(state) {
     return state.isForceScanEnabled
+  },
+  getBarcodeIdentificationPref(state) {
+    return state.barcodeIdentificationPref
   }
 }
 export default getters;

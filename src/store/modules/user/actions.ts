@@ -105,6 +105,7 @@ const actions: ActionTree<UserState, RootState> = {
       await dispatch("fetchAllNotificationPrefs");
       this.dispatch('util/findProductStoreShipmentMethCount')
       this.dispatch('util/getForceScanSetting', preferredStore.productStoreId);
+      this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
       await dispatch('getNewRejectionApiConfig')
       await dispatch('getPartialOrderRejectionConfig')
       await dispatch('getCollateralRejectionConfig')
@@ -157,6 +158,7 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch("orderLookup/clearOrderLookup")
     this.dispatch('user/clearNotificationState')
     this.dispatch('util/updateForceScanStatus', false)
+    this.dispatch('util/updateBarcodeIdentificationPref', "internalName")
     this.dispatch('user/clearPartialOrderRejectionConfig')
     this.dispatch('user/clearCollateralRejectionConfig')
     this.dispatch('transferorder/clearTransferOrdersList')
@@ -205,6 +207,8 @@ const actions: ActionTree<UserState, RootState> = {
       this.dispatch('order/clearOrders')
       await dispatch('getDisableShipNowConfig')
       await dispatch('getDisableUnpackConfig')
+      this.dispatch('util/getForceScanSetting', preferredStore.productStoreId)
+      this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
     } catch(error: any) {
       logger.error(error);
       showToast(error?.message ? error.message : translate("Something went wrong"))
@@ -246,6 +250,7 @@ const actions: ActionTree<UserState, RootState> = {
     await dispatch('getDisableUnpackConfig')
     this.dispatch('util/findProductStoreShipmentMethCount')
     this.dispatch('util/getForceScanSetting', payload.eComStore.productStoreId)
+    this.dispatch('util/fetchBarcodeIdentificationPref', payload.eComStore.productStoreId);
   },
 
   setUserPreference({ commit }, payload){

@@ -13,4 +13,5 @@ export default interface UtilState {
   facilities: any;
   shipmentGatewayConfigs: any;
   isForceScanEnabled: boolean;
+  barcodeIdentificationPref: string;
 }
