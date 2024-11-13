@@ -38,6 +38,53 @@ const actions: ActionTree<UtilState, RootState> = {
 
     commit(types.UTIL_REJECT_REASONS_UPDATED, rejectReasons)
   },
+  
+  async fetchRejectReasonOptions({ commit, dispatch, state }) {
+    const permissions = store.getters['user/getUserPermissions'];
+
+    const isAdminUser = permissions.some((permission: any) => permission.action === "APP_STOREFULFILLMENT_ADMIN")
+    const isApiSuccess = isAdminUser ? await dispatch("fetchRejectReasons") : await dispatch("fetchFulfillmentRejectReasons")
+
+    commit(types.UTIL_REJECT_REASON_OPTIONS_UPDATED, ((!isAdminUser && isApiSuccess) ? Object.values(state.fulfillmentRejectReasons) : state.rejectReasons ));
+  },
+
+  async fetchFulfillmentRejectReasons({ commit, dispatch }) {
+    let isApiSuccess = true;
+    const fulfillmentRejectReasons  = {}  as any;
+    try {
+      const payload = {
+        "inputFields": {
+          "enumerationGroupId": "FF_REJ_RSN_GRP"
+        },
+        // We shouldn't fetch description here, as description contains EnumGroup description which we don't wanna show on UI.
+        "fieldList": ["enumerationGroupId", "enumId", "fromDate", "sequenceNum", "enumDescription", "enumName"],
+        "distinct": "Y",
+        "entityName": "EnumerationGroupAndMember",
+        "viewSize": 200,
+        "filterByDate": "Y",
+        "orderBy": "sequenceNum"
+      }
+
+      const resp = await UtilService.fetchFulfillmentRejectReasons(payload)
+
+      if(!hasError(resp)) {
+        resp.data.docs.map((reason: any) => {
+          fulfillmentRejectReasons[reason.enumId] = reason
+        })
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Failed to fetch fulfillment reject reasons', err)
+      // Fetching all rejection reasons if the api fails due to no entity found.
+      // Todo: remove this once all the oms are updated.
+      await dispatch("fetchRejectReasons");
+      isApiSuccess = false;
+    }
+
+    commit(types.UTIL_FULFILLMENT_REJECT_REASONS_UPDATED, fulfillmentRejectReasons)
+    return isApiSuccess
+  },
 
   async fetchPartyInformation({ commit, state }, partyIds) {
     let partyInformation = JSON.parse(JSON.stringify(state.partyNames))
