@@ -155,6 +155,7 @@ export default defineComponent({
       } else {
         showToast(translate((currentItem.productSku ? "Product is already received:" : "Scanned item is not present within the shipment:"), { itemName: payload }))
       }
+      this.queryString = ''
     },
     areAllItemsSelected() {
       return !this.orderItems.some((item: any) => !item.isChecked)
