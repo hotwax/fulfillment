@@ -43,12 +43,13 @@ const actions: ActionTree<UtilState, RootState> = {
     const permissions = store.getters['user/getUserPermissions'];
 
     const isAdminUser = permissions.some((permission: any) => permission.action === "APP_STOREFULFILLMENT_ADMIN")
-    isAdminUser ? await dispatch("fetchRejectReasons") : await dispatch("fetchFulfillmentRejectReasons")
+    const isApiSuccess = isAdminUser ? await dispatch("fetchRejectReasons") : await dispatch("fetchFulfillmentRejectReasons")
 
-    commit(types.UTIL_REJECT_REASON_OPTIONS_UPDATED, (isAdminUser ? state.rejectReasons : Object.values(state.fulfillmentRejectReasons)));
+    commit(types.UTIL_REJECT_REASON_OPTIONS_UPDATED, ((!isAdminUser && isApiSuccess) ? Object.values(state.fulfillmentRejectReasons) : state.rejectReasons ));
   },
 
-  async fetchFulfillmentRejectReasons({ commit }) {
+  async fetchFulfillmentRejectReasons({ commit, dispatch }) {
+    let isApiSuccess = true;
     const fulfillmentRejectReasons  = {}  as any;
     try {
       const payload = {
@@ -75,9 +76,14 @@ const actions: ActionTree<UtilState, RootState> = {
       }
     } catch (err) {
       logger.error('Failed to fetch fulfillment reject reasons', err)
+      // Fetching all rejection reasons if the api fails due to no entity found.
+      // Todo: remove this once all the oms are updated.
+      await dispatch("fetchRejectReasons");
+      isApiSuccess = false;
     }
 
     commit(types.UTIL_FULFILLMENT_REJECT_REASONS_UPDATED, fulfillmentRejectReasons)
+    return isApiSuccess
   },
 
   async fetchPartyInformation({ commit, state }, partyIds) {
