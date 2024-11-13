@@ -50,6 +50,9 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   getRejectReasonOptions(state) {
     return state.rejectReasonOptions
+  },
+  getBarcodeIdentificationPref(state) {
+    return state.barcodeIdentificationPref
   }
 }
 export default getters;

@@ -1,4 +1,4 @@
-import { api, client, hasError } from '@/adapter';
+import { api, hasError } from '@/adapter';
 import logger from '@/logger';
 import store from '@/store';
 import { isPdf } from '@/utils';
@@ -260,7 +260,7 @@ const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<a
       "shipmentId_op": "in"
     },
     "fieldList": ["shipmentItemSeqId", "orderItemSeqId", "orderId", "shipmentId", "productId"],
-    "viewSize": shipmentIds.length * 5, // TODO: check what should be the viewSize here
+    "viewSize": 250, // TODO: Need to fetch all data paginated
     "distinct": "Y"
   }
 
@@ -326,7 +326,7 @@ const getAvailablePickers = async (query: any): Promise <any> => {
 
 const createPicklist = async (query: any): Promise <any> => {
   const baseURL = store.getters['user/getBaseUrl'];
-  return client({
+  return api({
     url: 'createPicklist',
     method: 'POST',
     data: query,
@@ -492,6 +492,22 @@ const createForceScanSetting = async (payload: any): Promise<any> => {
   });
 }
 
+const updateBarcodeIdentificationPref = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
+
+const createBarcodeIdentificationPref = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
+
 const getProductStoreSetting = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
@@ -621,6 +637,7 @@ const isEnumExists = async (enumId: string): Promise<any> => {
 
 export const UtilService = {
   activateGiftCard,
+  createBarcodeIdentificationPref,
   createEnumerationGroupMember,
   createForceScanSetting,
   createPicklist,
@@ -659,6 +676,7 @@ export const UtilService = {
   resetPicker,
   deleteEnumeration,
   updateEnumeration,
+  updateBarcodeIdentificationPref,
   updateEnumerationGroupMember,
   updateForceScanSetting
 }

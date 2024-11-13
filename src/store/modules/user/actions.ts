@@ -105,6 +105,7 @@ const actions: ActionTree<UserState, RootState> = {
       await dispatch("fetchAllNotificationPrefs");
       this.dispatch('util/findProductStoreShipmentMethCount')
       this.dispatch('util/getForceScanSetting', preferredStore.productStoreId);
+      this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
       await dispatch('getNewRejectionApiConfig')
       await dispatch('getPartialOrderRejectionConfig')
       await dispatch('getCollateralRejectionConfig')
@@ -157,6 +158,7 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch("orderLookup/clearOrderLookup")
     this.dispatch('user/clearNotificationState')
     this.dispatch('util/updateForceScanStatus', false)
+    this.dispatch('util/updateBarcodeIdentificationPref', "internalName")
     this.dispatch('user/clearPartialOrderRejectionConfig')
     this.dispatch('user/clearCollateralRejectionConfig')
     this.dispatch('transferorder/clearTransferOrdersList')
@@ -188,11 +190,12 @@ const actions: ActionTree<UserState, RootState> = {
     emitter.emit('presentLoader', {message: 'Updating facility', backdropDismiss: false})
 
     try {
+      const token = store.getters['user/getUserToken'];
       const userProfile = JSON.parse(JSON.stringify(state.current as any));
-      userProfile.stores = await UserService.getEComStores(undefined, payload.facility);
+      userProfile.stores = await UserService.getEComStores(token, payload.facility);
 
       let preferredStore = userProfile.stores[0];
-      const preferredStoreId =  await UserService.getPreferredStore(undefined);
+      const preferredStoreId =  await UserService.getPreferredStore(token);
 
       if (preferredStoreId) {
         const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
@@ -204,6 +207,8 @@ const actions: ActionTree<UserState, RootState> = {
       this.dispatch('order/clearOrders')
       await dispatch('getDisableShipNowConfig')
       await dispatch('getDisableUnpackConfig')
+      this.dispatch('util/getForceScanSetting', preferredStore.productStoreId)
+      this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
     } catch(error: any) {
       logger.error(error);
       showToast(error?.message ? error.message : translate("Something went wrong"))
@@ -245,6 +250,7 @@ const actions: ActionTree<UserState, RootState> = {
     await dispatch('getDisableUnpackConfig')
     this.dispatch('util/findProductStoreShipmentMethCount')
     this.dispatch('util/getForceScanSetting', payload.eComStore.productStoreId)
+    this.dispatch('util/fetchBarcodeIdentificationPref', payload.eComStore.productStoreId);
   },
 
   setUserPreference({ commit }, payload){

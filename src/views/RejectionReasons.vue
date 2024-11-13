@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title @click="saveReasonsOrder()">{{ translate("Rejection reasons") }}</ion-title>
+        <ion-title>{{ translate("Rejection reasons") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 

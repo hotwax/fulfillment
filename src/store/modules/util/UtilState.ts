@@ -15,4 +15,5 @@ export default interface UtilState {
   isForceScanEnabled: boolean;
   fulfillmentRejectReasons: any;
   rejectReasonOptions: any;
+  barcodeIdentificationPref: string;
 }
