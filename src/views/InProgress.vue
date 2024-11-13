@@ -389,7 +389,8 @@ export default defineComponent({
   },
   methods: {
     getRejectionReasonDescription (rejectionReasonId: string) {
-      return this.rejectReasonOptions?.find((reason: any) => reason.enumId === rejectionReasonId)?.description;
+      const reason = this.rejectReasonOptions?.find((reason: any) => reason.enumId === rejectionReasonId)
+      return reason?.description ? reason.description : reason?.enumDescription;
     },
     async openRejectReasonPopover(ev: Event, item: any, order: any) {
       const reportIssuePopover = await popoverController.create({
