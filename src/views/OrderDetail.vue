@@ -1135,6 +1135,7 @@ export default defineComponent({
         if(!hasError(resp)) {
           showToast(translate('Box added successfully'))
           await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
+          this.store.dispatch('order/updateInProgressOrder', this.order);
         } else {
           throw resp.data
         }
