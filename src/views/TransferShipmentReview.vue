@@ -45,7 +45,7 @@
         </main>
   
         <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-          <ion-fab-button :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || (currentShipment.isTrackingRequired &&  !trackingCode)" @click="confirmShip()">
+          <ion-fab-button :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !Object.keys(currentShipment).length || (currentShipment.isTrackingRequired &&  !trackingCode?.trim())" @click="confirmShip()">
             <ion-icon :icon="sendOutline" />
           </ion-fab-button>
         </ion-fab>
@@ -201,15 +201,16 @@
           return;
         }
 
+        await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
         currentShipment.isGeneratingShippingLabel = true;
-        let shippingLabelPdfUrls = currentShipment.shipmentPackages
+        let shippingLabelPdfUrls = this.currentShipment.shipmentPackages
           ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
           .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
         
 
-        if (!currentShipment.trackingCode) {
+        if (!this.currentShipment.trackingCode) {
           //regenerate shipping label if missing tracking code
-          const resp = await OrderService.retryShippingLabel([currentShipment.shipmentId])
+          const resp = await OrderService.retryShippingLabel([this.currentShipment.shipmentId])
           if (!hasError(resp)) {
             this.showLabelError = false;
             showToast(translate("Shipping Label generated successfully"))
@@ -220,8 +221,7 @@
                 ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
                 .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
 
-            await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
-            await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
+            await OrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
           } else {
             this.showLabelError = true;
             showToast(translate("Failed to generate shipping label"))
@@ -229,7 +229,7 @@
         } else {
           this.showLabelError = false;
           //print shipping label if label already exists
-          await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
+          await OrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
         }
 
         currentShipment.isGeneratingShippingLabel = false;

@@ -439,6 +439,8 @@ const actions: ActionTree<CarrierState, RootState> = {
           "inputFields": {
             "roleTypeId": "CARRIER",
             "productStoreId": this.state.user.currentEComStore.productStoreId,
+            "shipmentMethodTypeId": "STOREPICKUP",
+            "shipmentMethodTypeId_op": "notEqual"
           },
           "fieldList": ["productStoreShipMethId", "productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "shipmentGatewayConfigId", "isTrackingRequired", "sequenceNumber", "description", "fromDate"],
           "noConditionFind": "Y",

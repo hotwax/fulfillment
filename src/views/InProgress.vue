@@ -105,28 +105,26 @@
 
                 <div class="desktop-only" v-if="!order.shipmentPackages && !order.hasMissingInfo">
                   <ion-item lines="none">
-                    <ion-skeleton-text animated style="width: 50%;"/>
+                    <ion-skeleton-text animated />
                   </ion-item>
                 </div>
 
-                <div class="desktop-only ion-text-center" v-else-if="order.shipmentPackages">
+                <div class="desktop-only ion-text-center" v-else>
                   <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
-                  
-                  <div v-if="order.shipmentPackages && order.shipmentPackages.length">
-                    
+                  <div>
                     <template v-if="item.rejectReason">
-                      <ion-chip outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
+                      <ion-chip :disabled="order.hasMissingInfo" outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
                         <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
                         <ion-icon :icon="closeCircleOutline" />
                       </ion-chip>
                     </template>
                     <template v-else-if="useNewRejectionApi() && isEntierOrderRejectionEnabled(order)">
-                      <ion-chip outline color="danger">
+                      <ion-chip :disabled="order.hasMissingInfo" outline color="danger">
                         <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject entire order')}}</ion-label>
                       </ion-chip>
                     </template>
                     <template v-else>
-                      <ion-chip outline @click="openShipmentBoxPopover($event, item, item.orderItemSeqId, order)">
+                      <ion-chip :disabled="order.hasMissingInfo || !order.shipmentPackages || order.shipmentPackages.length === 0" outline @click="openShipmentBoxPopover($event, item, item.orderItemSeqId, order)">
                         {{ `Box ${item.selectedBox}` }}
                         <ion-icon :icon="caretDownOutline" />
                       </ion-chip>
@@ -134,19 +132,20 @@
                   </div>
                 </div>
 
+                <!--Adding checks to avoid any operations if order has missing info, mostly when after packing Solr is not updaing immediately-->
                 <div class="product-metadata">
                   <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
-                  <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
+                  <ion-button :disabled="order.hasMissingInfo" color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
                     <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline"/>
                   </ion-button>
-                  <ion-button color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
+                  <ion-button :disabled="order.hasMissingInfo" color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
                     <ion-icon slot="icon-only" :icon="trashBinOutline"/>
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button color="medium" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                  <ion-button :disabled="order.hasMissingInfo" color="medium" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
                 </div>
@@ -359,7 +358,7 @@ export default defineComponent({
     ...mapGetters({
       inProgressOrders: 'order/getInProgressOrders',
       getProduct: 'product/getProduct',
-      rejectReasons: 'util/getRejectReasons',
+      rejectReasonOptions: 'util/getRejectReasonOptions',
       currentEComStore: 'user/getCurrentEComStore',
       userPreference: 'user/getUserPreference',
       boxTypeDesc: 'util/getShipmentBoxDesc',
@@ -389,7 +388,8 @@ export default defineComponent({
   },
   methods: {
     getRejectionReasonDescription (rejectionReasonId: string) {
-      return this.rejectReasons?.find((reason: any) => reason.enumId === rejectionReasonId)?.description;
+      const reason = this.rejectReasonOptions?.find((reason: any) => reason.enumId === rejectionReasonId)
+      return reason?.description ? reason.description : reason?.enumDescription ? reason.enumDescription : reason?.enumId;
     },
     async openRejectReasonPopover(ev: Event, item: any, order: any) {
       const reportIssuePopover = await popoverController.create({
@@ -692,7 +692,7 @@ export default defineComponent({
         // This variable is used in messages to display name of first rejected item from the itemsToReject array
         const rejectedItem = itemsToReject[0];
         if (itemsToReject.length === 1) {
-          message = translate('is identified as. This order item will be unassigned from the store and sent to be rebrokered.', { productName: rejectedItem.productName, rejectReason: ((this.rejectReasons.find((rejectReason: {[key: string]: any}) => rejectReason.enumId === rejectedItem.rejectReason)).description).toLowerCase() });
+          message = translate('is identified as. This order item will be unassigned from the store and sent to be rebrokered.', { productName: rejectedItem.productName, rejectReason: ((this.rejectReasonOptions.find((rejectReason: {[key: string]: any}) => rejectReason.enumId === rejectedItem.rejectReason)).description).toLowerCase() });
         } else {
           message = translate(', and other products were identified as unfulfillable. These items will be unassigned from this store and sent to be rebrokered.', { productName: rejectedItem.productName, products: itemsToReject.length - 1, space: '<br /><br />' });
         }
@@ -779,7 +779,7 @@ export default defineComponent({
           }
         } else {
           prefix = 'rtp'
-          form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
+          form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId + "-" + shipmentPackage.shipmentPackageSeqId)
           form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
           form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
           form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
@@ -848,6 +848,7 @@ export default defineComponent({
             order.items = items
 
             await this.store.dispatch('order/updateInProgressOrder', order)
+            await this.store.dispatch('order/updateShipmentPackageDetail', order)
           }
           showToast(translate('Order updated successfully'))
         } else {
@@ -1288,8 +1289,10 @@ export default defineComponent({
 
       modal.onDidDismiss().then((result: any) => {
         if(result.data?.moveToNext) {
-          if(this.isForceScanEnabled) this.scanOrder(order);
-          else this.packOrder(order);
+          const inProgressOrders = this.getInProgressOrders()
+          const updatedOrder = inProgressOrders.find((currentOrder: any) => currentOrder.orderId === order.orderId);
+          if(this.isForceScanEnabled) this.scanOrder(updatedOrder);
+          else this.packOrder(updatedOrder);
         }
       })
 
@@ -1312,7 +1315,7 @@ export default defineComponent({
     }
   },
   async mounted () {
-    this.store.dispatch('util/fetchRejectReasons')
+    this.store.dispatch('util/fetchRejectReasonOptions')
     await Promise.all([this.fetchPickersInformation(), this.initialiseOrderQuery()])
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },

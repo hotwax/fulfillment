@@ -98,6 +98,7 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       getProduct: 'product/getProduct',
+      barcodeIdentifier: 'util/getBarcodeIdentificationPref'
     }),
   },
   data() {
@@ -133,8 +134,9 @@ export default defineComponent({
 
       let currentItem = {} as any;
       const item = this.orderItems.find((orderItem: any) => {
-        if(orderItem.productSku === payload) currentItem = orderItem
-        return orderItem.productSku === payload && !orderItem.isChecked;
+        const itemVal = getProductIdentificationValue(this.barcodeIdentifier, this.getProduct(orderItem.productId)) ? getProductIdentificationValue(this.barcodeIdentifier, this.getProduct(orderItem.productId)) : this.getProduct(orderItem.productId)?.internalName
+        if(itemVal === payload) currentItem = orderItem;
+        return itemVal === payload && !orderItem.isChecked;
       });
 
       if(item) {
@@ -153,6 +155,7 @@ export default defineComponent({
       } else {
         showToast(translate((currentItem.productSku ? "Product is already received:" : "Scanned item is not present within the shipment:"), { itemName: payload }))
       }
+      this.queryString = ''
     },
     areAllItemsSelected() {
       return !this.orderItems.some((item: any) => !item.isChecked)

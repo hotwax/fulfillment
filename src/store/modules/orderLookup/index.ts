@@ -31,7 +31,8 @@ const orderLookupModule: Module<OrderLookupState, RootState> = {
     channels: [],
     productStores: [],
     facilities: [],
-    orderStatuses: []
+    orderStatuses: [],
+    carriersTrackingInfo: {}
   },
   getters,
   actions,

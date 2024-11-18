@@ -44,7 +44,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
       // TODO: handle case when shipmentIds is empty
       // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
-      const [shipmentPackagesByOrderInformationAndPicklistBin, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
+      const [shipmentPackagesByOrderInformationAndPicklistBin, shipmentPackageContents, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentPackageContents(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
 
       // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
       const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
@@ -94,8 +94,8 @@ const actions: ActionTree<OrderState, RootState> = {
             item.shipmentId = shipment.shipmentId
             item.shipmentItemSeqId = shipment.shipmentItemSeqId
           }
-
-          item.selectedBox = shipmentPackagesByOrderAndPicklistBin[`${item.orderId}_${item.picklistBinId}`]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+          
+          item.selectedBox = shipmentPackageContents[`${item.shipmentId}`].find((shipmentPackageContent: any) => shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId)?.packageName
         })
 
         const orderItem = order.items[0];
@@ -221,7 +221,7 @@ const actions: ActionTree<OrderState, RootState> = {
         }, []);
 
         // If there is any shipment package with missing tracking code, retry shipping label
-        const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.some((shipmentPackage:any) => shipmentPackage.trackingCode === null) : false;
+        const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? currentShipmentPackages.some((shipmentPackage:any) => shipmentPackage.trackingCode === null || shipmentPackage.trackingCode === '') : false;
 
         return {
           ...order,
@@ -657,17 +657,26 @@ const actions: ActionTree<OrderState, RootState> = {
       const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? shipmentPackageValues.some((shipmentPackage:any) => !shipmentPackage.trackingCode) : false;
 
       const updateShipmentPackages = (order:any) => {
-        order.shipmentPackages.forEach((shipmentPackage:any) => {
+
+        const updatedShipmentPackages = order.shipmentPackages.reduce((updatedShipmentPackages: any[], shipmentPackage: any) => {
           const key = `${shipmentPackage.shipmentId}-${shipmentPackage.shipmentPackageSeqId}`;
           const updatedShipmentPackage = shipmentPackagesMap[key];
+        
+          // Only add the shipment package if updatedShipmentPackage exists
           if (updatedShipmentPackage) {
-            shipmentPackage.trackingCode = updatedShipmentPackage.trackingCode;
-            shipmentPackage.labelPdfUrl = updatedShipmentPackage.labelPdfUrl;
-            shipmentPackage.shipmentMethodTypeId = updatedShipmentPackage.shipmentMethodTypeId;
-            shipmentPackage.carrierPartyId = updatedShipmentPackage.carrierPartyId;
-            shipmentPackage.missingLabelImage = missingLabelImage;
+            const newShipmentPackage = { ...shipmentPackage };
+            newShipmentPackage.trackingCode = updatedShipmentPackage.trackingCode;
+            newShipmentPackage.labelPdfUrl = updatedShipmentPackage.labelPdfUrl;
+            newShipmentPackage.shipmentMethodTypeId = updatedShipmentPackage.shipmentMethodTypeId;
+            newShipmentPackage.carrierPartyId = updatedShipmentPackage.carrierPartyId;
+            newShipmentPackage.missingLabelImage = missingLabelImage;
+            updatedShipmentPackages.push(newShipmentPackage);
           }
-        });
+        
+          return updatedShipmentPackages;
+        }, []);
+        
+        order.shipmentPackages = updatedShipmentPackages
         order.trackingCode = order.shipmentPackages?.[0]?.trackingCode
         order.missingLabelImage = missingLabelImage
       };
@@ -984,7 +993,7 @@ const actions: ActionTree<OrderState, RootState> = {
         shipGroups = resp.data.grouped.shipGroupSeqId.groups
 
         // creating the key as orders as the product information action accept only the orders as a param
-        this.dispatch('product/getProductInformation', { orders: shipGroups })
+        await this.dispatch('product/getProductInformation', { orders: shipGroups })
       } else {
         throw resp.data
       }
@@ -1097,7 +1106,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
       // TODO: handle case when shipmentIds is empty
       // https://stackoverflow.com/questions/28066429/promise-all-order-of-resolved-values
-      const [shipmentPackagesByOrderInformationAndPicklistBin, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
+      const [shipmentPackagesByOrderInformationAndPicklistBin, shipmentPackageContents, itemInformationByOrderInformation, carrierPartyIdsByShipmentInformation] = await Promise.all([UtilService.findShipmentPackages(orderShipmentIds), UtilService.findShipmentPackageContents(orderShipmentIds), UtilService.findShipmentItemInformation(orderShipmentIds), UtilService.findCarrierPartyIdsForShipment(orderShipmentIds)])
 
       // TODO: try fetching the carrierPartyIds when fetching packages information, as ShipmentPackageRouteSegDetail entity contain carrierPartyIds as well
       const carrierPartyIds = [...new Set(Object.values(carrierPartyIdsByShipmentInformation).map((carrierPartyIds: any) => carrierPartyIds.map((carrier: any) => carrier.carrierPartyId)).flat())]
@@ -1147,7 +1156,7 @@ const actions: ActionTree<OrderState, RootState> = {
           item.shipmentItemSeqId = shipment.shipmentItemSeqId
         }
 
-        item.selectedBox = shipmentPackagesByOrderAndPicklistBin[`${item.orderId}_${item.picklistBinId}`]?.find((shipmentPackage: any) => shipmentPackage.shipmentId === item.shipmentId)?.packageName
+        item.selectedBox = shipmentPackageContents[`${item.shipmentId}`].find((shipmentPackageContent: any) => shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId)?.packageName
       })
 
       const orderItem = current.items[0];
@@ -1244,7 +1253,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
       return reservedShipGroup ? {
         ...shipGroup,
-        items: reservedShipGroupForOrder.doclist.docs,
+        items: removeKitComponents({ items: reservedShipGroupForOrder.doclist.docs }),
         carrierPartyId: reservedShipGroup.carrierPartyId,
         shipmentId: reservedShipGroup.shipmentId,
         category: getOrderCategory(reservedShipGroupForOrder.doclist.docs[0])

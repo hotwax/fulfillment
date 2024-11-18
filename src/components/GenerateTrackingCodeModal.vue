@@ -22,9 +22,19 @@
         </ion-select>
       </ion-item>
       <ion-item>
-        <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
-          <ion-select-option v-for="method in carrierMethods" :key="method.productStoreShipMethId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
-        </ion-select>
+        <template v-if="carrierMethods && carrierMethods.length > 0">
+          <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
+            <ion-select-option v-for="method in carrierMethods" :key="method.productStoreShipMethId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
+          </ion-select>
+        </template>
+        <template v-else>
+          <ion-label>
+            {{ translate('No shipment methods linked to', {carrierName: getCarrierName()}) }}
+          </ion-label>
+          <ion-button @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
+            <ion-icon slot="icon-only" :icon="informationCircleOutline" />
+          </ion-button>
+        </template>
       </ion-item>
       <ion-item>
         <ion-input :label="translate('Tracking code')" :placeholder="translate('enter code')" v-model="trackingCode" />
@@ -37,10 +47,15 @@
         </ion-button>
       </ion-item>
     </ion-list>
+
+    <div class="empty-state" v-if="isGeneratingShippingLabel">
+      <ion-spinner name="crescent" />
+      <ion-label>{{ translate("Generating label") }}</ion-label>
+    </div>
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="isTrackingRequired ? !shipmentMethodTypeId: false" @click="confirmSave()">
+    <ion-fab-button :disabled="isGeneratingShippingLabel ? true : !shipmentMethodTypeId" @click="confirmSave()">
       <ion-icon :icon="isForceScanEnabled ? barcodeOutline : saveOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -61,12 +76,13 @@ import {
   IonList,
   IonSelect,
   IonSelectOption,
+  IonSpinner,
   IonTitle,
   IonToolbar,
   modalController,
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { barcodeOutline, closeOutline, copyOutline, openOutline, saveOutline } from "ionicons/icons";
+import { barcodeOutline, closeOutline, copyOutline, informationCircleOutline, openOutline, saveOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
 import { mapGetters, useStore } from "vuex";
 import { OrderService } from '@/services/OrderService';
@@ -90,6 +106,7 @@ export default defineComponent({
     IonList,
     IonSelect,
     IonSelectOption,
+    IonSpinner,
     IonTitle,
     IonToolbar,
   },
@@ -125,6 +142,9 @@ export default defineComponent({
     closeModal(payload = {}) {
       modalController.dismiss({ dismissed: true, ...payload });
     },
+    openShippingMethodDocumentReference() {
+      window.open('https://docs.hotwax.co/documents/v/system-admins/fulfillment/shipping-methods/carrier-and-shipment-methods', '_blank');
+    },
     isTrackingRequiredForAnyShipmentPackage() {
       return this.order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
     },
@@ -138,12 +158,6 @@ export default defineComponent({
     async confirmSave() {
       let order = this.order
       let isRegenerated = false as any;
-
-      // if the request to print shipping label is not yet completed, then clicking multiple times on the button
-      // should not do anything
-      if(this.isGeneratingShippingLabel) {
-        return;
-      }
 
       this.isGeneratingShippingLabel = true;
 
@@ -288,6 +302,7 @@ export default defineComponent({
       barcodeOutline,
       closeOutline,
       copyOutline,
+      informationCircleOutline,
       openOutline,
       saveOutline,
       store,

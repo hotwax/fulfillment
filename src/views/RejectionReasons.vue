@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title @click="saveReasonsOrder()">{{ translate("Rejection reasons") }}</ion-title>
+        <ion-title>{{ translate("Rejection reasons") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -25,7 +25,11 @@
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </div>
-  
+
+              <div class="tablet">
+                <ion-toggle :checked="fulfillmentRejectReasons[reason.enumId]" @click.prevent="updateFulfillmentRejectReasonAssocStatus($event, reason)" />
+              </div>
+
               <ion-reorder />
   
               <ion-button fill="clear" color="medium" @click="openRejectionReasonActionsPopover($event, reason)">
@@ -63,6 +67,7 @@ import {
   IonReorder,
   IonReorderGroup,
   IonTitle,
+  IonToggle,
   IonToolbar,
   alertController,
   modalController,
@@ -77,6 +82,9 @@ import VarianceTypeActionsPopover from '@/components/VarianceTypeActionsPopover.
 import { mapGetters, useStore } from 'vuex';
 import { UtilService } from '@/services/UtilService';
 import { showToast } from '@/utils';
+import { DateTime } from 'luxon';
+import { hasError } from '@hotwax/oms-api';
+import logger from '@/logger';
 
 export default defineComponent({
   name: 'RejectionReasons',
@@ -94,11 +102,12 @@ export default defineComponent({
     IonReorder,
     IonReorderGroup,
     IonTitle,
+    IonToggle,
     IonToolbar,
   },
   data() {
     return {
-      filteredReasons: [],
+      filteredReasons: [] as any,
       toast: null as any
     }
   },
@@ -106,10 +115,11 @@ export default defineComponent({
     ...mapGetters({
       rejectReasons: 'util/getRejectReasons',
       rejectReasonEnumTypes: 'util/getRejectReasonEnumTypes',
+      fulfillmentRejectReasons: 'util/getFulfillmentRejectReasons'
     })
   },
   async ionViewWillEnter() {
-    await Promise.all([this.store.dispatch('util/fetchRejectReasons'), this.store.dispatch('util/fetchRejectReasonEnumTypes')])
+    await Promise.all([this.store.dispatch('util/fetchRejectReasons'), this.store.dispatch('util/fetchFulfillmentRejectReasons'), this.store.dispatch('util/fetchRejectReasonEnumTypes')])
     this.filteredReasons = this.rejectReasons ? JSON.parse(JSON.stringify(this.rejectReasons)) : []
   },
   async beforeRouteLeave() {
@@ -240,7 +250,42 @@ export default defineComponent({
       } else {
         showToast(translate("Sequence for rejection reasons updated successfully."))
       }
-    }
+    },
+
+    async updateFulfillmentRejectReasonAssocStatus(event: any, reason: any) {
+      event.stopImmediatePropagation();
+      let resp;
+
+      const payload = {
+        enumerationId: reason.enumId,
+        enumerationGroupId: "FF_REJ_RSN_GRP",
+        sequenceNum: reason.sequenceNum
+      }
+
+      try {
+        if(this.fulfillmentRejectReasons[reason.enumId]?.fromDate) {
+          resp = await UtilService.updateEnumerationGroupMember({
+            ...payload,
+            fromDate: this.fulfillmentRejectReasons[reason.enumId]?.fromDate,
+            thruDate: DateTime.now().toMillis()
+          })
+        } else {
+          resp = await UtilService.createEnumerationGroupMember({
+            ...payload,
+            fromDate: DateTime.now().toMillis()
+          })
+        }
+  
+        if(!hasError(resp)) {
+          await this.store.dispatch("util/fetchFulfillmentRejectReasons");
+        } else {
+          throw resp.data;
+        }
+      } catch(error: any) {
+        logger.error(error);
+        showToast(translate("Failed to update reason association with fulfillment group."))
+      }
+    },
   },
   setup() {
     const store = useStore()
@@ -258,7 +303,7 @@ export default defineComponent({
 
 <style scoped>
 .list-item {
-  --columns-desktop: 4;
+  --columns-desktop: 5;
 }
 
 .list-item:hover {

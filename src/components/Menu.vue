@@ -46,7 +46,7 @@ import {
 } from "@ionic/vue";
 import { computed, defineComponent } from "vue";
 import { mapGetters } from "vuex";
-import { arrowBackOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline } from "ionicons/icons";
+import { arrowBackOutline, backspaceOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline } from "ionicons/icons";
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 import { hasPermission } from "@/authorization";
@@ -115,6 +115,15 @@ export default defineComponent({
         }
       },
       {
+        title: "Rejections",
+        url: "/rejections",
+        iosIcon: backspaceOutline,
+        mdIcon: backspaceOutline,
+        meta: {
+          permissionId: "APP_REJECTIONS_VIEW"
+        }
+      },
+      {
         title: "Transfer Orders",
         url: "/transfer-orders",
         iosIcon: arrowBackOutline,
@@ -179,6 +188,7 @@ export default defineComponent({
 
     return {
       appPages,
+      backspaceOutline,
       checkmarkDoneOutline,
       currentFacility,
       hasPermission,
