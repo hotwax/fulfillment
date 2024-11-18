@@ -1,4 +1,4 @@
-import { translate } from '@hotwax/dxp-components';
+import { translate, useUserStore } from '@hotwax/dxp-components';
 import store from '@/store';
 import { JsonToCsvOption } from '@/types';
 import { Plugins } from '@capacitor/core';
@@ -217,6 +217,11 @@ const dateOrdinalSuffix = {
   23: 'rd'
 } as any
 
+const getCurrentFacilityId = () => {
+  const currentFacility: any = useUserStore().getCurrentFacility;
+  return currentFacility?.facilityId
+}
+
 function getDateWithOrdinalSuffix(time: any) {
   if (!time) return "-";
   const dateTime = DateTime.fromMillis(time);
@@ -224,5 +229,4 @@ function getDateWithOrdinalSuffix(time: any) {
   return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 
-
-export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getColorByDesc, getDateWithOrdinalSuffix, getFeature, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, parseCsv, jsonToCsv }
+export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getColorByDesc, getDateWithOrdinalSuffix, getFeature, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, parseCsv, jsonToCsv }

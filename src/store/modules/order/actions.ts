@@ -7,14 +7,9 @@ import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
-import { useUserStore } from '@hotwax/dxp-components'
 import logger from '@/logger'
 import { getOrderCategory, removeKitComponents } from '@/utils/order'
-
-const getCurrentFacilityId = () => {
-  const currentFacility: any = useUserStore().getCurrentFacility;
-  return currentFacility?.facilityId
-}
+import { getCurrentFacilityId } from '@/utils'
 
 const actions: ActionTree<OrderState, RootState> = {
   async fetchInProgressOrdersAdditionalInformation({ commit, dispatch, state }, payload = { viewIndex: 0 }) {

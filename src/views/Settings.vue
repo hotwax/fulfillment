@@ -38,7 +38,7 @@
 
       <section>
         <DxpOmsInstanceNavigator />
-        <DxpFacilitySwitcher @updateFacility="handleFacilityUpdate()"/>
+        <DxpFacilitySwitcher @updateFacility="updateFacility()"/>
 
         <ion-card>
           <ion-card-header>
@@ -448,11 +448,11 @@ export default defineComponent({
       const result = await popover.onDidDismiss();
       // Note: here result.data returns 0 in some cases that's why it is compared with 'undefined'.
       if(result.data != undefined && result.data !== this.fulfillmentOrderLimit){
-        await this.updateFacility(result.data)
+        await this.updateFacilityMaximumOrderLimit(result.data)
         this.updateOrderLimitType()
       }
     },
-    async handleFacilityUpdate() {
+    async updateFacility() {
       await this.store.dispatch('user/fetchNotificationPreferences')
       this.store.dispatch('order/clearOrders')
       this.getCurrentFacilityDetails();
@@ -462,7 +462,7 @@ export default defineComponent({
     async timeZoneUpdated(tzId: string) {
       await this.store.dispatch("user/setUserTimeZone", tzId)
     },
-    async updateFacility(maximumOrderLimit: number | string) {
+    async updateFacilityMaximumOrderLimit(maximumOrderLimit: number | string) {
       let resp;
 
       try {

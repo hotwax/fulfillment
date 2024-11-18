@@ -71,7 +71,7 @@ const actions: ActionTree<UserState, RootState> = {
 
       // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
       const currentFacility: any = useUserStore().getCurrentFacility
-      userProfile.stores = await UserService.getEComStores(token, currentFacility?);
+      userProfile.stores = await UserService.getEComStores(token, currentFacility?.facilityId);
 
       let preferredStore = userProfile.stores[0]
 

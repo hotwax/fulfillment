@@ -8,14 +8,9 @@ import * as types from './mutation-types'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import logger from '@/logger'
 import { getProductIdentificationValue, translate, useUserStore } from '@hotwax/dxp-components'
-import { showToast } from "@/utils";
+import { showToast, getCurrentFacilityId } from "@/utils";
 import { UtilService } from '@/services/UtilService'
 import store from "@/store";
-
-const getCurrentFacilityId = () => {
-  const currentFacility: any = useUserStore().getCurrentFacility;
-  return currentFacility?.facilityId
-}
 
 const actions: ActionTree<TransferOrderState, RootState> = {
 
