@@ -4,7 +4,7 @@ import RootState from '@/store/RootState'
 import store from '@/store';
 import UserState from './UserState'
 import * as types from './mutation-types'
-import { showToast } from '@/utils'
+import { showToast, getCurrentFacilityId } from '@/utils'
 import { hasError } from '@/adapter'
 import { translate } from '@hotwax/dxp-components'
 import { DateTime, Settings } from 'luxon';
@@ -71,7 +71,7 @@ const actions: ActionTree<UserState, RootState> = {
 
       // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
       const currentFacility: any = useUserStore().getCurrentFacility
-      userProfile.stores = await UserService.getEComStores(token, currentFacility?.facilityId);
+      userProfile.stores = await UserService.getEComStores(token, currentFacility);
 
       let preferredStore = userProfile.stores[0]
 
@@ -658,8 +658,7 @@ const actions: ActionTree<UserState, RootState> = {
 
   async fetchNotificationPreferences({ commit, state }) {
     let resp = {} as any
-    const currentFacility: any = useUserStore().getCurrentFacility
-    const facilityId = currentFacility?.facilityId
+
     let notificationPreferences = [], enumerationResp = [], userPrefIds = [] as any
     try {
       resp = await getNotificationEnumIds(process.env.VUE_APP_NOTIF_ENUM_TYPE_ID as any)
@@ -673,7 +672,7 @@ const actions: ActionTree<UserState, RootState> = {
       // data and getNotificationUserPrefTypeIds fails or returns empty response (all disbaled)
       if (enumerationResp.length) {
         notificationPreferences = enumerationResp.reduce((notifactionPref: any, pref: any) => {
-          const userPrefTypeIdToSearch = generateTopicName(facilityId, pref.enumId)
+          const userPrefTypeIdToSearch = generateTopicName(getCurrentFacilityId(), pref.enumId)
           notifactionPref.push({ ...pref, isEnabled: userPrefIds.includes(userPrefTypeIdToSearch) })
           return notifactionPref
         }, [])

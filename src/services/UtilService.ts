@@ -1,8 +1,7 @@
 import { api, hasError } from '@/adapter';
 import logger from '@/logger';
 import store from '@/store';
-import { isPdf } from '@/utils';
-import { useUserStore } from '@hotwax/dxp-components'
+import { isPdf, getCurrentFacilityId } from '@/utils';
 
 const fetchShipmentMethods = async (query: any): Promise <any>  => {
   return api({
@@ -30,8 +29,6 @@ const fetchPicklistInformation = async (query: any): Promise <any>  => {
 
 const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: Array<string>, statusId = ["SHIPMENT_APPROVED", "SHIPMENT_INPUT"]): Promise<any> => {
   let shipmentIdsForOrders = {};
-  const currentFacility: any = useUserStore().getCurrentFacility
-  const facilityId = currentFacility?.facilityId
 
   const params = {
     "entityName": "Shipment",
@@ -40,7 +37,7 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
       "primaryOrderId_op": "in",
       "picklistBinId": picklistBinIds,
       "picklistBinId_op": "in",
-      "originFacilityId": facilityId,
+      "originFacilityId": getCurrentFacilityId(),
       "statusId": statusId,
       "statusId_op": "in"
     },

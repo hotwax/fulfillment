@@ -7,7 +7,7 @@ import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import logger from '@/logger'
-import { getProductIdentificationValue, translate, useUserStore } from '@hotwax/dxp-components'
+import { getProductIdentificationValue, translate } from '@hotwax/dxp-components'
 import { showToast, getCurrentFacilityId } from "@/utils";
 import { UtilService } from '@/services/UtilService'
 import store from "@/store";
@@ -18,7 +18,6 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     emitter.emit('presentLoader');
     let resp;
     const transferOrderQuery = JSON.parse(JSON.stringify(state.transferOrder.query))
-    const currentFacilityId = getCurrentFacilityId();
 
     const params = {
       ...payload,
@@ -30,7 +29,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       sort: payload.sort ? payload.sort : "orderDate asc",
       filters: {
         orderTypeId: { value: 'TRANSFER_ORDER' },
-        facilityId: { value: escapeSolrSpecialChars(currentFacilityId) },
+        facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
       }
     }
