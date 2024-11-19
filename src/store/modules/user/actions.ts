@@ -182,7 +182,7 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    * update current facility information
    */
-  async setFacility ({ commit, dispatch, state }, payload) {
+  async setFacility ({ commit, dispatch, state }, facility) {
     // On slow api response, setFacility takes long to update facility in state.
     // Hence displaying loader to not allowing user to navigate to orders page to avoid wrong results.
     emitter.emit('presentLoader', {message: 'Updating facility', backdropDismiss: false})
@@ -190,7 +190,7 @@ const actions: ActionTree<UserState, RootState> = {
     try {
       const token = store.getters['user/getUserToken'];
       const userProfile = JSON.parse(JSON.stringify(state.current as any));
-      userProfile.stores = await UserService.getEComStores(token, payload.facility);
+      userProfile.stores = await UserService.getEComStores(token, facility);
 
       let preferredStore = userProfile.stores[0];
       const preferredStoreId =  await UserService.getPreferredStore(token);
@@ -200,7 +200,6 @@ const actions: ActionTree<UserState, RootState> = {
         store && (preferredStore = store)
       }
       commit(types.USER_INFO_UPDATED, userProfile);
-      commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
       commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
       this.dispatch('order/clearOrders')
       await dispatch('getDisableShipNowConfig')
