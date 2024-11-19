@@ -38,7 +38,7 @@
 
       <section>
         <DxpOmsInstanceNavigator />
-        <DxpFacilitySwitcher @updateFacility="updateFacility()"/>
+        <DxpFacilitySwitcher @updateFacility="updateFacility($event)"/>
 
         <ion-card>
           <ion-card-header>
@@ -452,9 +452,9 @@ export default defineComponent({
         this.updateOrderLimitType()
       }
     },
-    async updateFacility() {
+    async updateFacility(facility: any) {
+      await this.store.dispatch('user/setFacility', facility);
       await this.store.dispatch('user/fetchNotificationPreferences')
-      this.store.dispatch('order/clearOrders')
       this.getCurrentFacilityDetails();
       this.getFacilityOrderCount();
       this.getEcomInvStatus();
