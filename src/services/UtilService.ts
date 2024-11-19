@@ -1,7 +1,7 @@
 import { api, hasError } from '@/adapter';
 import logger from '@/logger';
 import store from '@/store';
-import { isPdf } from '@/utils';
+import { isPdf, getCurrentFacilityId } from '@/utils';
 
 const fetchShipmentMethods = async (query: any): Promise <any>  => {
   return api({
@@ -37,7 +37,7 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
       "primaryOrderId_op": "in",
       "picklistBinId": picklistBinIds,
       "picklistBinId_op": "in",
-      "originFacilityId": store.state.user.currentFacility.facilityId,
+      "originFacilityId": getCurrentFacilityId(),
       "statusId": statusId,
       "statusId_op": "in"
     },

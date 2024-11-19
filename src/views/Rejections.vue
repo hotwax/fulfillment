@@ -241,8 +241,7 @@ export default defineComponent({
     ...mapGetters({
       rejectionStats: 'rejection/getRejectedStats',
       getProduct: 'product/getProduct',
-      rejectedOrders: 'rejection/getRejectedOrders',
-      currentFacility: 'user/getCurrentFacility',
+      rejectedOrders: 'rejection/getRejectedOrders'
     })
   },
   async ionViewWillEnter() {
@@ -327,8 +326,10 @@ export default defineComponent({
   },
   setup() {
     const store = useStore()
+    const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
 
 
     return {
@@ -344,6 +345,7 @@ export default defineComponent({
       productIdentificationPref,
       store,
       translate,
+      currentFacility
     }
   }
 });

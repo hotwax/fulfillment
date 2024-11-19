@@ -46,14 +46,14 @@ import {
   IonTitle,
   IonToolbar
 } from "@ionic/vue";
-import { defineComponent } from "vue";
+import { defineComponent, computed } from "vue";
 import { albumsOutline, banOutline, barChartOutline, calendarNumberOutline, checkmarkDoneOutline, closeOutline, filterOutline, iceCreamOutline, libraryOutline, pulseOutline, settings, shirtOutline, ticketOutline } from "ionicons/icons";
 import { mapGetters, useStore } from 'vuex'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper';
 import { UtilService } from '@/services/UtilService';
 import { hasError } from '@/adapter';
 import logger from '@/logger';
-import { translate } from '@hotwax/dxp-components';
+import { translate, useUserStore } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: "TransferOrderFilters",
@@ -77,7 +77,6 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      currentFacility: 'user/getCurrentFacility',
       transferOrders: 'transferorder/getTransferOrders',
       getStatusDesc: 'util/getStatusDesc',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
@@ -126,7 +125,7 @@ export default defineComponent({
         filters: {
           '-orderStatusId': { value: 'ORDER_CREATED' },
           orderTypeId: { value: 'TRANSFER_ORDER' },
-          facilityId: { value: escapeSolrSpecialChars(this.currentFacility.facilityId) },
+          facilityId: { value: escapeSolrSpecialChars(this.currentFacility?.facilityId) },
           productStoreId: { value: this.currentEComStore.productStoreId }
         },
         facet: {
@@ -172,7 +171,9 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
-    
+    const userStore = useUserStore()
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
+
     return {
       albumsOutline,
       banOutline,
@@ -180,6 +181,7 @@ export default defineComponent({
       calendarNumberOutline,
       checkmarkDoneOutline,
       closeOutline,
+      currentFacility,
       filterOutline,
       iceCreamOutline,
       libraryOutline,
