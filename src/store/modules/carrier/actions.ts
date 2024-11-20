@@ -7,7 +7,7 @@ import * as types from './mutation-types'
 import logger from '@/logger'
 import store from '@/store';
 import { translate } from '@hotwax/dxp-components';
-import { showToast, isValidCarrierCode, isValidDeliveryDays } from '@/utils';
+import { showToast, isValidCarrierCode, isValidDeliveryDays, getCurrentFacilityId } from '@/utils';
   
 
 const actions: ActionTree<CarrierState, RootState> = {
@@ -358,14 +358,14 @@ const actions: ActionTree<CarrierState, RootState> = {
   async fetchFacilityCarriers({ state, commit }, payload) {
     let facilityCarriers  = [] as any;
     let viewIndex = 0, resp, docCount = 0;
-    
+
     try {
       do {
         const params = {
           "entityName": "FacilityAndParty",
           "inputFields": {
             "roleTypeId": "CARRIER",
-            "facilityId": this.state.user.currentFacility.facilityId
+            "facilityId": getCurrentFacilityId()
           },
           "fieldList": ["facilityId", "partyId", "firstName", "lastName", "groupName", "roleTypeId", "fromDate"],
           "noConditionFind": "Y",

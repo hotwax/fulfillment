@@ -193,7 +193,6 @@ export default defineComponent ({
     ...mapGetters({
       ordersList: 'orderLookup/getOrders',
       getProduct: 'product/getProduct',
-      currentFacilityId: 'user/getCurrentFacility',
       getProductStock: 'stock/getProductStock',
       isScrollable: 'orderLookup/isScrollable',
       query: 'orderLookup/getOrderQuery',

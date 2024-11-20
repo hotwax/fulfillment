@@ -217,9 +217,7 @@
       ...mapGetters({
         currentOrder: 'transferorder/getCurrent',
         getStatusDesc: 'util/getStatusDesc',
-        user: 'user/getCurrentFacility',
         getProduct: 'product/getProduct',
-        currentFacility: 'user/getCurrentFacility',
         productIdentificationPref: 'user/getProductIdentificationPref',
         productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
         getShipmentMethodDesc: 'util/getShipmentMethodDesc',

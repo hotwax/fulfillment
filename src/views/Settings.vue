@@ -38,6 +38,7 @@
 
       <section>
         <DxpOmsInstanceNavigator />
+        <DxpFacilitySwitcher @updateFacility="updateFacility($event)"/>
 
         <ion-card>
           <ion-card-header>
@@ -57,23 +58,6 @@
             </ion-select>
           </ion-item>
         </ion-card>
-
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>
-              {{ translate("Facility") }}
-            </ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            {{ translate('Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.') }}
-          </ion-card-content>
-          <ion-item lines="none">
-            <ion-select :label="translate('Select facility')" interface="popover" :value="currentFacility?.facilityId" @ionChange="setFacility($event)">
-              <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.facilityName }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-        </ion-card>
-
         <ion-card>
           <ion-card-header>
             <ion-card-title>
@@ -163,11 +147,14 @@
               {{ translate("Force scan") }}
             </ion-card-title>
           </ion-card-header>
-          <ion-card-content>
-            {{ translate("Control whether the store requires the force scan during order packing or not.") }}
-          </ion-card-content>
+          <ion-card-content v-html="barcodeContentMessage"></ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_UPDT_FULFILL_FORCE_SCAN_CONFIG)">
             <ion-toggle label-placement="start" :checked="isForceScanEnabled" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
+          </ion-item>
+          <ion-item lines="none">
+            <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="barcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
+              <ion-select-option v-for="identification in barcodeIdentificationOptions" :key="identification" :value="identification" >{{ identification }}</ion-select-option>
+            </ion-select>
           </ion-item>
         </ion-card>
 
@@ -232,14 +219,14 @@ import {
   alertController,
   popoverController
 } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, openOutline, timeOutline } from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { UserService } from '@/services/UserService';
 import { showToast } from '@/utils';
 import { hasError, removeClientRegistrationToken, subscribeTopic, unsubscribeTopic } from '@/adapter'
-import { initialiseFirebaseApp, translate } from '@hotwax/dxp-components';
+import { initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import logger from '@/logger';
 import { Actions, hasPermission } from '@/authorization'
 import { DateTime } from 'luxon';
@@ -286,13 +273,13 @@ export default defineComponent({
       orderLimitType: 'unlimited',
       fulfillmentOrderLimit: "" as number | string,
       facilityGroupDetails: {} as any,
-      isEComInvEnabled: false
+      isEComInvEnabled: false,
+      barcodeContentMessage: translate("Only allow shipped quantity to be incremented by scanning the barcode of products. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
     };
   },
   computed: {
     ...mapGetters({
       userProfile: 'user/getUserProfile',
-      currentFacility: 'user/getCurrentFacility',
       instanceUrl: 'user/getInstanceUrl',
       currentEComStore: 'user/getCurrentEComStore',
       userPreference: 'user/getUserPreference',
@@ -304,6 +291,7 @@ export default defineComponent({
       newRejectionApiConfig: 'user/getNewRejectionApiConfig',
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
+      barcodeIdentificationPref: 'util/getBarcodeIdentificationPref'
     })
   },
   async ionViewWillEnter() {
@@ -328,7 +316,7 @@ export default defineComponent({
         resp = await UserService.getFacilityDetails({
           "entityName": "Facility",
           "inputFields": {
-            "facilityId": this.currentFacility.facilityId
+            "facilityId": this.currentFacility?.facilityId
           },
           "viewSize": 1,
           "fieldList": ["maximumOrderLimit", "facilityId"]
@@ -354,7 +342,7 @@ export default defineComponent({
         resp = await UserService.getFacilityOrderCount({
           "entityName": "FacilityOrderCount",
           "inputFields": {
-            "facilityId": this.currentFacility.facilityId,
+            "facilityId": this.currentFacility?.facilityId,
             "entryDate": DateTime.now().toFormat('yyyy-MM-dd'),
           },
           "viewSize": 1,
@@ -402,7 +390,7 @@ export default defineComponent({
           resp = await UserService.getFacilityGroupAndMemberDetails({
             "entityName": "FacilityGroupAndMember",
             "inputFields": {
-              "facilityId": this.currentFacility.facilityId,
+              "facilityId": this.currentFacility?.facilityId,
               "facilityGroupId": this.facilityGroupDetails.facilityGroupId
             },
             "fieldList": ["facilityId", "fromDate"],
@@ -460,36 +448,26 @@ export default defineComponent({
       const result = await popover.onDidDismiss();
       // Note: here result.data returns 0 in some cases that's why it is compared with 'undefined'.
       if(result.data != undefined && result.data !== this.fulfillmentOrderLimit){
-        await this.updateFacility(result.data)
+        await this.updateFacilityMaximumOrderLimit(result.data)
         this.updateOrderLimitType()
       }
     },
-    async setFacility (event: any) {
-      // not updating the facility when an empty value is given (on logout)
-      if (!event.detail.value) {
-        return;
-      }
-
-      if (this.userProfile){
-        await this.store.dispatch('user/setFacility', {
-          'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == event.detail.value)
-        });
-        await this.store.dispatch('user/fetchNotificationPreferences')
-        this.store.dispatch('order/clearOrders')
-        this.getCurrentFacilityDetails();
-        this.getFacilityOrderCount();
-        this.getEcomInvStatus();
-      }
+    async updateFacility(facility: any) {
+      await this.store.dispatch('user/setFacility', facility);
+      await this.store.dispatch('user/fetchNotificationPreferences')
+      this.getCurrentFacilityDetails();
+      this.getFacilityOrderCount();
+      this.getEcomInvStatus();
     },
     async timeZoneUpdated(tzId: string) {
       await this.store.dispatch("user/setUserTimeZone", tzId)
     },
-    async updateFacility(maximumOrderLimit: number | string) {
+    async updateFacilityMaximumOrderLimit(maximumOrderLimit: number | string) {
       let resp;
 
       try {
         resp = await UserService.updateFacility({
-          "facilityId": this.currentFacility.facilityId,
+          "facilityId": this.currentFacility?.facilityId,
           maximumOrderLimit
         })
 
@@ -508,7 +486,7 @@ export default defineComponent({
       let resp;
       try {
         resp = await UserService.updateFacilityToGroup({
-          "facilityId": this.currentFacility.facilityId,
+          "facilityId": this.currentFacility?.facilityId,
           "facilityGroupId": this.facilityGroupDetails.facilityGroupId,
           "fromDate": this.facilityGroupDetails.fromDate,
           "thruDate": DateTime.now().toMillis()
@@ -529,7 +507,7 @@ export default defineComponent({
       let resp;
       try {
         resp = await UserService.addFacilityToGroup({
-          "facilityId": this.currentFacility.facilityId,
+          "facilityId": this.currentFacility?.facilityId,
           "facilityGroupId": this.facilityGroupDetails.facilityGroupId
         })
 
@@ -553,7 +531,7 @@ export default defineComponent({
       const message = 'Are you sure you want to perform this action?'
 
       const alert = await alertController.create({
-        header: translate(header, { facilityName: this.currentFacility.facilityName }),
+        header: translate(header, { facilityName: this.currentFacility?.facilityName }),
         message: translate(message),
         buttons: [{
           text: translate('Cancel'),
@@ -609,7 +587,7 @@ export default defineComponent({
         }
 
         emitter.emit('presentLoader',  { backdropDismiss: false })
-        const facilityId = (this.currentFacility as any).facilityId
+        const facilityId = this.currentFacility?.facilityId
         const topicName = generateTopicName(facilityId, enumId)
 
         const notificationPref = this.notificationPrefs.find((pref: any) => pref.enumId === enumId)
@@ -724,15 +702,24 @@ export default defineComponent({
         "settingValue": value
       }
       await this.store.dispatch('user/updateCollateralRejectionConfig', params)
-    }
+    },
+    setBarcodeIdentificationPref(value: string) {
+      this.store.dispatch('util/setBarcodeIdentificationPref', value)
+    },
   },
   setup() {
     const store = useStore();
     const router = useRouter();
+    const userStore = useUserStore()
+    const productIdentificationStore = useProductIdentificationStore();
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
+    let barcodeIdentificationOptions = computed(() => productIdentificationStore.getProductIdentificationOptions)
 
     return {
       Actions,
+      barcodeIdentificationOptions,
       codeWorkingOutline,
+      currentFacility,
       ellipsisVerticalOutline,
       globeOutline,
       openOutline,

@@ -72,7 +72,7 @@
   } from '@ionic/vue';
   import { computed, defineComponent } from 'vue';
   import { closeOutline, cloudDownloadOutline} from 'ionicons/icons';
-  import { getProductIdentificationValue,  translate, useProductIdentificationStore } from '@hotwax/dxp-components';
+  import { getProductIdentificationValue,  translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
   import { mapGetters, useStore } from 'vuex';
   import { escapeSolrSpecialChars, prepareSolrQuery } from '@/utils/solrHelper'
   import { RejectionService } from '@/services/RejectionService'
@@ -136,8 +136,7 @@
     computed: {
       ...mapGetters({
         getProduct: 'product/getProduct',
-        rejectedOrders: 'rejection/getRejectedOrders',
-        currentFacility: 'user/getCurrentFacility',
+        rejectedOrders: 'rejection/getRejectedOrders'
       })
     },
     methods: {
@@ -297,8 +296,10 @@
     },
     setup() {
       const store = useStore()
+      const userStore = useUserStore()
       const productIdentificationStore = useProductIdentificationStore();
       let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+      let currentFacility: any = computed(() => userStore.getCurrentFacility) 
   
   
       return {
@@ -308,6 +309,7 @@
         productIdentificationPref,
         store,
         translate,
+        currentFacility
       }
     }
   });

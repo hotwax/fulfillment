@@ -443,7 +443,7 @@ import {
   trashBinOutline,
   ribbonOutline
 } from 'ionicons/icons';
-import { getProductIdentificationValue, translate, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, translate, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
@@ -501,13 +501,12 @@ export default defineComponent({
     ...mapGetters({
       boxTypeDesc: 'util/getShipmentBoxDesc',
       completedOrders: 'order/getCompletedOrders',
-      currentFacility: 'user/getCurrentFacility',
       currentEComStore: 'user/getCurrentEComStore',
       getProduct: 'product/getProduct',
       getProductStock: 'stock/getProductStock',
       inProgressOrders: 'order/getInProgressOrders',
       order: "order/getCurrent",
-      rejectReasons: 'util/getRejectReasons',
+      rejectReasonOptions: 'util/getRejectReasonOptions',
       userPreference: 'user/getUserPreference',
       getPartyName: 'util/getPartyName',
       getfacilityTypeDesc: 'util/getFacilityTypeDesc',
@@ -553,7 +552,7 @@ export default defineComponent({
     }
   },
   async ionViewDidEnter() {
-    this.store.dispatch('util/fetchRejectReasons')
+    this.store.dispatch('util/fetchRejectReasonOptions')
     this.category === 'open'
     ? await this.store.dispatch('order/getOpenOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
     : this.category === 'in-progress'
@@ -683,7 +682,8 @@ export default defineComponent({
       }
     },
     getRejectionReasonDescription (rejectionReasonId: string) {
-      return this.rejectReasons?.find((reason: any) => reason.enumId === rejectionReasonId)?.description;
+      const reason = this.rejectReasonOptions?.find((reason: any) => reason.enumId === rejectionReasonId)
+      return reason?.description ? reason.description : reason?.enumDescription ? reason.enumDescription : reason?.enumId;
     },
     isEntierOrderRejectionEnabled(order: any) {
       return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
@@ -852,7 +852,7 @@ export default defineComponent({
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           '-fulfillmentStatus': { value: 'Rejected' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility.facilityId },
+          facilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId }
         },
         facet: {
@@ -1134,6 +1134,7 @@ export default defineComponent({
         if(!hasError(resp)) {
           showToast(translate('Box added successfully'))
           await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
+          this.store.dispatch('order/updateInProgressOrder', this.order);
         } else {
           throw resp.data
         }
@@ -1226,7 +1227,7 @@ export default defineComponent({
     async updateOrder(order: any, updateParameter?: string) {
       const form = new FormData()
 
-      form.append('facilityId', this.currentFacility.facilityId)
+      form.append('facilityId', this.currentFacility?.facilityId)
       form.append('orderId', order.orderId)
 
       order.shipmentIds?.map((shipmentId: string) => {
@@ -1285,7 +1286,7 @@ export default defineComponent({
         if (rejectedOrderItems.length > 0) {
           resp = await OrderService.rejectFulfillmentReadyOrderItem({
             data: {
-              facilityId : this.currentFacility.facilityId,
+              facilityId : this.currentFacility?.facilityId,
               rejectEntireShipment: this.isEntierOrderRejectionEnabled(order) ? "Y" : "N",
               rejectAllRelatedShipment: this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
               defaultReason: this.rejectEntireOrderReasonId, //default reason for items for which reason is not selected but rejecting due to entire order rejection config.
@@ -1342,7 +1343,7 @@ export default defineComponent({
         // This variable is used in messages to display name of first rejected item from the itemsToReject array
         const rejectedItem = itemsToReject[0];
         if (itemsToReject.length === 1) {
-          message = translate('is identified as. This order item will be unassigned from the store and sent to be rebrokered.', { productName: rejectedItem.productName, rejectReason: ((this.rejectReasons.find((rejectReason: {[key: string]: any}) => rejectReason.enumId === rejectedItem.rejectReason)).description).toLowerCase() });
+          message = translate('is identified as. This order item will be unassigned from the store and sent to be rebrokered.', { productName: rejectedItem.productName, rejectReason: ((this.rejectReasonOptions.find((rejectReason: {[key: string]: any}) => rejectReason.enumId === rejectedItem.rejectReason)).description).toLowerCase() });
         } else {
           message = translate(', and other products were identified as unfulfillable. These items will be unassigned from this store and sent to be rebrokered.', { productName: rejectedItem.productName, products: itemsToReject.length - 1, space: '<br /><br />' });
         }
@@ -1445,7 +1446,7 @@ export default defineComponent({
         filters: {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility.facilityId },
+          facilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId }
         },
         facet: {
@@ -1486,7 +1487,7 @@ export default defineComponent({
         filters: {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility.facilityId },
+          facilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId },
         },
         facet: {
@@ -1698,8 +1699,10 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const router = useRouter();
+    const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
 
     return {
       addOutline,
@@ -1712,6 +1715,7 @@ export default defineComponent({
       closeCircleOutline,
       copyToClipboard,
       cubeOutline,
+      currentFacility,
       documentTextOutline,
       ellipsisVerticalOutline,
       fileTrayOutline,

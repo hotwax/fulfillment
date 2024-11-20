@@ -1,7 +1,7 @@
 import { api, hasError } from '@/adapter';
 import logger from '@/logger';
 import store from '@/store';
-import { isPdf } from '@/utils';
+import { isPdf, getCurrentFacilityId } from '@/utils';
 
 const fetchShipmentMethods = async (query: any): Promise <any>  => {
   return api({
@@ -37,7 +37,7 @@ const findShipmentIdsForOrders = async(picklistBinIds: Array<string>, orderIds: 
       "primaryOrderId_op": "in",
       "picklistBinId": picklistBinIds,
       "picklistBinId_op": "in",
-      "originFacilityId": store.state.user.currentFacility.facilityId,
+      "originFacilityId": getCurrentFacilityId(),
       "statusId": statusId,
       "statusId_op": "in"
     },
@@ -492,6 +492,22 @@ const createForceScanSetting = async (payload: any): Promise<any> => {
   });
 }
 
+const updateBarcodeIdentificationPref = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
+
+const createBarcodeIdentificationPref = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
+
 const getProductStoreSetting = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
@@ -570,6 +586,30 @@ const activateGiftCard = async (payload: any): Promise<any> => {
   });
 }
 
+const fetchFulfillmentRejectReasons = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "post",
+    data: payload
+  });
+}
+
+const createEnumerationGroupMember = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createEnumerationGroupMember",
+    method: "post",
+    data: payload
+  });
+}
+
+const updateEnumerationGroupMember = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateEnumerationGroupMember",
+    method: "post",
+    data: payload
+  });
+}
+
 const isEnumExists = async (enumId: string): Promise<any> => {
   try {
     const resp = await api({
@@ -597,6 +637,8 @@ const isEnumExists = async (enumId: string): Promise<any> => {
 
 export const UtilService = {
   activateGiftCard,
+  createBarcodeIdentificationPref,
+  createEnumerationGroupMember,
   createForceScanSetting,
   createPicklist,
   createEnumeration,
@@ -605,6 +647,7 @@ export const UtilService = {
   fetchEnumeration,
   fetchFacilities,
   fetchFacilityTypeInformation,
+  fetchFulfillmentRejectReasons,
   fetchGiftCardFulfillmentInfo,
   fetchGiftCardItemPriceInfo,
   fetchPartyInformation,
@@ -633,5 +676,7 @@ export const UtilService = {
   resetPicker,
   deleteEnumeration,
   updateEnumeration,
+  updateBarcodeIdentificationPref,
+  updateEnumerationGroupMember,
   updateForceScanSetting
 }

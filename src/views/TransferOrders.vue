@@ -72,11 +72,11 @@ import {
   IonTitle, 
   IonToolbar, 
 } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import { defineComponent, computed } from 'vue';
 import { caretDownOutline, checkmarkDoneOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import { translate } from '@hotwax/dxp-components';
+import { translate, useUserStore } from '@hotwax/dxp-components';
 import { Actions } from '@/authorization'
 import TransferOrderFilters from '@/components/TransferOrderFilters.vue'
 
@@ -103,7 +103,6 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      currentFacility: 'user/getCurrentFacility',
       transferOrders: 'transferorder/getTransferOrders',
       currentEComStore: 'user/getCurrentEComStore',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
@@ -123,7 +122,7 @@ export default defineComponent({
   },
   methods: {
     getErrorMessage() {
-      if (this.searchedQuery === '') {
+      if(this.searchedQuery === '') {
         return this.hasCompletedTransferOrders ? translate("doesn't have any open transfer orders right now.", { facilityName: this.currentFacility.facilityName }) : translate("doesn't have any transfer orders right now.", { facilityName: this.currentFacility.facilityName });
       } else {
         return translate("No results found for .", { searchedQuery: this.searchedQuery });
@@ -191,12 +190,15 @@ export default defineComponent({
   setup() {
     const router = useRouter();
     const store = useStore();
+    const userStore = useUserStore()
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
 
     return{
       Actions,
       caretDownOutline,
       checkmarkDoneOutline,
       cubeOutline,
+      currentFacility,
       optionsOutline,
       pricetagOutline,
       printOutline,

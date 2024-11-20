@@ -7,8 +7,8 @@ import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import logger from '@/logger'
-import { getProductIdentificationValue, useProductIdentificationStore, translate } from '@hotwax/dxp-components'
-import { showToast } from "@/utils";
+import { getProductIdentificationValue, translate } from '@hotwax/dxp-components'
+import { showToast, getCurrentFacilityId } from "@/utils";
 import { UtilService } from '@/services/UtilService'
 import store from "@/store";
 
@@ -29,7 +29,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       sort: payload.sort ? payload.sort : "orderDate asc",
       filters: {
         orderTypeId: { value: 'TRANSFER_ORDER' },
-        facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
+        facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
         productStoreId: { value: this.state.user.currentEComStore.productStoreId }
       }
     }
@@ -154,7 +154,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         "shipmentTypeId": "OUT_TRANSFER",
         orderId: payload.orderId,
         "shipGroupSeqId": payload.shipGroupSeqId,
-        "originFacilityId": this.state.user.currentFacility.facilityId,
+        "originFacilityId": getCurrentFacilityId(),
         "destinationFacilityId": payload.orderFacilityId,
         "items": eligibleItems,
         "packages": [{
@@ -280,11 +280,10 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     // When there exists multiple line item for a single product, then may arise discrepancy in scanning
     // since some items might be completed and some pending. Hence searching is done with status check.
     const getProduct = store.getters['product/getProduct'];
-    const productIdentificationStore = useProductIdentificationStore()
-    const productIdentificationPref = productIdentificationStore.getProductIdentificationPref.primaryId
+    const barcodeIdentifier = store.getters['util/getBarcodeIdentificationPref'];
 
     const item = state.current.items.find((orderItem: any) => {
-      const itemVal = getProductIdentificationValue(productIdentificationPref, getProduct(orderItem.productId)) ? getProductIdentificationValue(productIdentificationPref, getProduct(orderItem.productId)) : orderItem.internalName;
+      const itemVal = getProductIdentificationValue(barcodeIdentifier, getProduct(orderItem.productId)) ? getProductIdentificationValue(barcodeIdentifier, getProduct(orderItem.productId)) : getProduct(orderItem.productId)?.internalName;
       return itemVal === payload && orderItem.statusId !== 'ITEM_COMPLETED' && orderItem.statusId !== 'ITEM_REJECTED' && orderItem.statusId !== 'ITEM_CANCELLED';
     })
     if(item){

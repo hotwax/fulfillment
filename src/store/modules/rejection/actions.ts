@@ -7,6 +7,7 @@ import * as types from './mutation-types'
 import { escapeSolrSpecialChars, prepareSolrQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
+import { getCurrentFacilityId } from '@/utils'
 
 const actions: ActionTree<RejectionState, RootState> = {
   async fetchRejectionStats({ commit, state }) {
@@ -25,7 +26,7 @@ const actions: ActionTree<RejectionState, RootState> = {
         viewSize: '0',  // passed viewSize as 0 to not fetch any data
         filters: {
           rejectedAt_dt: {value: rejectionPeriodFilter},
-          rejectedFrom_txt_en: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
+          rejectedFrom_txt_en: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
         },
         facet: {
           "total":"unique(orderId_s)",
@@ -101,7 +102,7 @@ const actions: ActionTree<RejectionState, RootState> = {
     
 
     const filters = {
-      rejectedFrom_txt_en: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
+      rejectedFrom_txt_en: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
     } as any
 
     //when user search the rejected results are not bound to time duration
