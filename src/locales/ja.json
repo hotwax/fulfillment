@@ -13,6 +13,7 @@
   "doesn't have any orders in progress right now.": "{facilityName}には現在進行中の注文はありません。",
   "doesn't have any transfer orders right now.": "{facilityName}には現在転送注文はありません。",
   "doesn't have any outstanding orders right now.": "{facilityName}には現在未処理の注文はありません。",
+  "doesn't have any open transfer orders right now.": "{facilityName} doesn't have any open transfer orders right now.",
   "Add Box": "ボックスを追加",
   "Add custom field": "カスタムフィールドを追加",
   "Add tracking code manually": "Add tracking code manually",

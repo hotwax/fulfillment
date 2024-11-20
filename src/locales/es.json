@@ -12,6 +12,7 @@
   "doesn't have any orders in progress right now.": "{facilityName} no tiene ningún pedido en curso en este momento.",
   "doesn't have any outstanding orders right now.": "{facilityName} no tiene ningún pedido pendiente en este momento.",
   "doesn't have any transfer orders right now.": "{facilityName} no tiene ninguna orden de transferencia en este momento.",
+  "doesn't have any open transfer orders right now.": "{facilityName} doesn't have any open transfer orders right now.",
   "Add Box": "Agregar Caja",
   "Add custom field": "Agregar campo personalizado",
   "Add tracking code manually": "agregar el cosdigo de seguimiento manualmente", 
