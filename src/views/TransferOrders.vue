@@ -122,7 +122,7 @@ export default defineComponent({
   },
   methods: {
     getErrorMessage() {
-      if(this.searchedQuery === '') {
+      if(!this.searchedQuery) {
         return this.hasCompletedTransferOrders ? translate("doesn't have any open transfer orders right now.", { facilityName: this.currentFacility.facilityName }) : translate("doesn't have any transfer orders right now.", { facilityName: this.currentFacility.facilityName });
       } else {
         return translate("No results found for .", { searchedQuery: this.searchedQuery });
