@@ -554,6 +554,7 @@
   "Shopify ID": "ID de Shopify",
   "Show label error": "Show label error",
   "Show order items": "Mostrar artículos del pedido",
+  "Show completed transfer orders": "Show completed transfer orders",
   "Single variance": "Variante unica",
   "Some of the mapping fields are missing in the CSV: ": "Algunos de los campos de mapeo faltan en el CSV: {missingFields}",
   "Something went wrong": "Algo salió mal",

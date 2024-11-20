@@ -165,7 +165,7 @@ export default defineComponent({
 
       transferOrdersQuery.viewIndex = 0
       transferOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      transferOrdersQuery.queryString = queryString
+      transferOrdersQuery.queryString = queryString.trim()
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
       this.searchedQuery = queryString;
     },

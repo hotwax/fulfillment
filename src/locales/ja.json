@@ -554,6 +554,7 @@
   "Shopify ID": "Shopify ID",
   "Show label error": "ラベルエラーを表示",
   "Show order items": "注文アイテムを表示",
+  "Show completed transfer orders": "Show completed transfer orders",
   "Single variance": "単一変動",
   "Some of the mapping fields are missing in the CSV: ": "CSV内のいくつかのマッピングフィールドが欠落しています: {missingFields}",
   "Something went wrong while fetching order details, please check the orderId and try again.": "注文詳細の取得中にエラーが発生しました。注文IDを確認して再試行してください。",
