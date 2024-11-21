@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <TransferOrderFilters menu-id="transfer-order-filters" content-id="transfer-order-filters" :queryString="transferOrders.query.queryString" />
+    <TransferOrderFilters menu-id="transfer-order-filters" content-id="transfer-order-filters" :queryString="transferOrders.query.queryString" :shipmentMethods="shipmentMethods" :statuses="statuses"/>
     
     <ion-header :translucent="true">
       <ion-toolbar>
@@ -78,6 +78,10 @@ import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { translate, useUserStore } from '@hotwax/dxp-components';
 import { Actions } from '@/authorization'
+import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper';
+import { UtilService } from '@/services/UtilService';
+import { hasError } from '@/adapter';
+import logger from '@/logger';
 import TransferOrderFilters from '@/components/TransferOrderFilters.vue'
 
 export default defineComponent({
@@ -111,14 +115,19 @@ export default defineComponent({
   data () {
     return {
       shipmentMethods: [] as Array<any>,
+      statuses: [] as Array<any>,
       searchedQuery: '',
       isScrollingEnabled: false,
-      hasCompletedTransferOrders: true
+      hasCompletedTransferOrders: true,
+      transferOrderCount: 0
     }
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
-    await this.initialiseTransferOrderQuery();
+    await this.fetchFilters(); 
+    if(this.transferOrderCount) { 
+      await this.initialiseTransferOrderQuery();
+    }
   },
   methods: {
     getErrorMessage() {
@@ -156,7 +165,7 @@ export default defineComponent({
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
       transferOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       transferOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      transferOrdersQuery.selectedStatuses = ["ORDER_COMPLETED"]
+      transferOrdersQuery.selectedStatuses = ["ORDER_COMPLETED", "ORDER_APPROVED"]
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
       this.hasCompletedTransferOrders = this.transferOrders.list.some((order: any) => order.orderStatusId === "ORDER_COMPLETED");
     },
@@ -168,6 +177,61 @@ export default defineComponent({
       transferOrdersQuery.queryString = queryString.trim()
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
       this.searchedQuery = queryString;
+    },
+    async fetchFilters() {
+      let resp: any;
+      const payload = prepareOrderQuery({
+        docType: "ORDER",
+        queryFields: 'orderId',
+        viewSize: '0',  // passed viewSize as 0 to not fetch any data
+        filters: {
+          '-orderStatusId': { value: 'ORDER_CREATED' },
+          orderTypeId: { value: 'TRANSFER_ORDER' },
+          facilityId: { value: escapeSolrSpecialChars(this.currentFacility?.facilityId) },
+          productStoreId: { value: this.currentEComStore.productStoreId }
+        },
+        facet: {
+          "shipmentMethodTypeIdFacet":{
+            "excludeTags":"shipmentMethodTypeIdFilter",
+            "field":"shipmentMethodTypeId",
+            "mincount":1,
+            "limit":-1,
+            "sort":"index",
+            "type":"terms",
+            "facet": {
+              "ordersCount": "unique(orderId)"
+            }
+          },
+          "orderStatusIdFacet":{
+            "excludeTags":"orderStatusIdFilter",
+            "field":"orderStatusId",
+            "mincount":1,
+            "limit":-1,
+            "sort":"index",
+            "type":"terms",
+            "facet": {
+              "ordersCount": "unique(orderId)"
+            }
+          }
+        }
+      })
+
+      try {
+        resp = await UtilService.fetchTransferOrderFacets(payload);
+        if(resp.status == 200 && !hasError(resp)) {
+          this.transferOrderCount = resp.data.facets?.count
+          if(this.transferOrderCount) {
+            this.shipmentMethods = resp.data.facets.shipmentMethodTypeIdFacet.buckets;
+            this.statuses = resp.data.facets.orderStatusIdFacet.buckets;
+            this.store.dispatch('util/fetchShipmentMethodTypeDesc', this.shipmentMethods.map((shipmentMethod: any) => shipmentMethod.val));
+            this.store.dispatch('util/fetchStatusDesc', this.statuses.map((status: any) => status.val));
+          }
+        } else {
+          throw resp.data;
+        }
+      } catch(err) {
+        logger.error('Failed to fetch transfer order filters.', err)
+      }
     },
     async initialiseTransferOrderQuery() {
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
