@@ -165,7 +165,7 @@ export default defineComponent({
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
       transferOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       transferOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      transferOrdersQuery.selectedStatuses = ["ORDER_COMPLETED", "ORDER_APPROVED"]
+      transferOrdersQuery.selectedStatuses = ["ORDER_COMPLETED"]
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
       this.hasCompletedTransferOrders = this.transferOrders.list.some((order: any) => order.orderStatusId === "ORDER_COMPLETED");
     },
