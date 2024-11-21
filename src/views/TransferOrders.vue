@@ -8,7 +8,7 @@
         <ion-title v-if="!transferOrders.total">{{ transferOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-title v-else>{{ transferOrders.list.length }} {{ translate('of') }} {{ transferOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="transfer-order-filters" :disabled="!transferOrders.total">
+          <ion-menu-button menu="transfer-order-filters" :disabled="!transferOrderCount">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
         </ion-buttons>
