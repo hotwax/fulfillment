@@ -73,18 +73,31 @@ const actions: ActionTree<RejectionState, RootState> = {
             }
             const resp = await UtilService.fetchRejectReasons(payload)
 
-            if (!hasError(resp) && resp.data.count > 0) {
+            const sampleData = [{
+              description: "Inactive store",
+              enumId: "INACTIVE_STOR",
+              enumName: "Inactive store",
+              enumTypeId: "REPORT_NO_VAR",
+              sequenceNum: 1
+            }]
+
+            console.log('usedReasons', usedReasons);
+
+            // if (!hasError(resp)) {
               const reasonCountDetail = usedReasons.reduce((reasonDetail: any, reason: any) => {
                 reasonDetail[reason.val.trim().toUpperCase()] = reason;
                 return reasonDetail;
               }, {});
-              usedRejectionReasons = resp.data.docs
+
+              console.log('reasonCountDetail', reasonCountDetail)
+
+              usedRejectionReasons = sampleData
               usedRejectionReasons.map((rejectionReason: any) => {
                 rejectionReason.count = reasonCountDetail[rejectionReason.enumId]?.count
               })
-            } else {
-              throw resp.data
-            }
+            // } else {
+            //   throw resp.data
+            // }
           }
         } else {
           throw resp.data;

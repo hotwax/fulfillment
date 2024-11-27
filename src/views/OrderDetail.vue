@@ -312,6 +312,8 @@
               </ion-label>
             </ion-item>
           </ion-card>
+
+          <Component :is="dynamicComponent" :category="category" :order="order" :userProfile="userProfile" />
         </div>
         
         <h4 class="ion-padding-top ion-padding-start" v-if="order.shipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
@@ -418,7 +420,7 @@ import {
   modalController,
   popoverController
 } from "@ionic/vue";
-import { computed, defineComponent } from "vue";
+import { computed, defineAsyncComponent, defineComponent, shallowRef } from "vue";
 import { mapGetters, useStore } from "vuex";
 import { useRouter } from 'vue-router'
 import {
@@ -466,6 +468,7 @@ import ShippingLabelActionPopover from '@/components/ShippingLabelActionPopover.
 import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
 import TrackingCodeModal from '@/components/TrackingCodeModal.vue';
 import GiftCardActivationModal from '@/components/GiftCardActivationModal.vue';
+import { init, loadRemote } from '@module-federation/runtime';
 
 export default defineComponent({
   name: "OrderDetail",
@@ -521,7 +524,8 @@ export default defineComponent({
       facilityCarriers: 'carrier/getFacilityCarriers',
       userProfile: 'user/getUserProfile',
       isShipNowDisabled: 'user/isShipNowDisabled',
-      isUnpackDisabled: 'user/isUnpackDisabled'
+      isUnpackDisabled: 'user/isUnpackDisabled',
+      instanceUrl: "user/getInstanceUrl"
     })
   },
   data() {
@@ -548,7 +552,8 @@ export default defineComponent({
       carrierPartyId: "",
       carrierMethods:[] as any,
       isUpdatingCarrierDetail: false,
-      orderInvoicingInfo: {} as any
+      orderInvoicingInfo: {} as any,
+      dynamicComponent: "" as any
     }
   },
   async ionViewDidEnter() {
@@ -569,7 +574,56 @@ export default defineComponent({
     // Fetching shipment label errors 
     await this.fetchShipmentLabelError()
   },
+  async mounted() {
+    await init({
+      name: 'fulfillment',
+      remotes: [
+        {
+          name: 'fulfillment_module_federation',
+          entry: 'http://localhost:8100/remoteEntry.js',
+        },
+      ],
+      shared: {
+        vue: { shareConfig: { requiredVersion: '^3.2.26', singleton: true, eager: true } },
+        "vue-logger-plugin": { shareConfig: { requiredVersion: '^2.2.3', singleton: true, eager: true } },
+        "vue-router": { shareConfig: { requiredVersion: '^4.0.12', singleton: true, eager: true } },
+        vuex: { shareConfig: { requiredVersion: '^4.0.1', singleton: true, eager: true } },
+        "vuex-persistedstate": { shareConfig: { requiredVersion: '^4.0.0-beta.3', singleton: true, eager: true } },
+        "@ionic/core": { shareConfig: { requiredVersion: '^7.6.0', singleton: true, eager: true } },
+        "@ionic/vue": { shareConfig: { requiredVersion: '^7.6.0', singleton: true, eager: true } },
+        "@ionic/vue-router": { shareConfig: { requiredVersion: '^7.6.0', singleton: true, eager: true } },
+        "@hotwax/app-version-info": { shareConfig: { requiredVersion: '^1.0.0', singleton: true, eager: true } },
+        "@hotwax/apps-theme": { shareConfig: { requiredVersion: '^1.2.6', singleton: true, eager: true } },
+        "@hotwax/dxp-components": { shareConfig: { requiredVersion: '^1.16.0', singleton: true, eager: true } },
+        "@hotwax/oms-api": { shareConfig: { requiredVersion: '^1.16.0', singleton: true, eager: true } },
+      },
+    });
+
+    if(this.instanceUrl.includes("adoc")) {
+      await this.useDynamicImport({ module: "kreweOrderInvoice", instance: "fulfillment_module_federation" })
+    }
+
+    console.log("======registerRemoteModule=====");
+    // const remoteModule = await import('fulfillment_module_federation/');  // <-- Import from remote app
+    // this.store.registerModule('invoice', remoteModule.default);  // Register with Vuex store
+  },
   methods: {
+    async useDynamicImport({ module, instance }: any) {
+      if (!module || !instance) return;
+
+      // const loadComponent = async () => {
+      //   try {
+      //     const { default: Component } = await loadRemote(`${instance}/${module}`) as any;
+      //     console.log("Component", Component)
+      //     this.dynamicComponent = await shallowRef(defineAsyncComponent(() => import(Component)));
+      //   } catch (error) {
+      //     console.error(`Error loading remote module ${instance}/${module}:`, error);
+      //   }
+      // };
+
+      this.dynamicComponent = await shallowRef(defineAsyncComponent(() => import("fulfillment_module_federation/kreweOrderInvoice")));
+      // await loadComponent();
+    },
     async fetchShipmentLabelError() {
       const shipmentIds = this.order?.shipmentIds?.length > 0 ? this.order?.shipmentIds : this.order.shipments?.map((shipment: any) => shipment.shipmentId);
       if (shipmentIds && shipmentIds.length > 0) {
