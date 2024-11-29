@@ -73,12 +73,11 @@ const actions: ActionTree<RejectionState, RootState> = {
             }
             const resp = await UtilService.fetchRejectReasons(payload)
 
-            if (!hasError(resp)) {
+            if (!hasError(resp) && resp.data.count > 0) {
               const reasonCountDetail = usedReasons.reduce((reasonDetail: any, reason: any) => {
                 reasonDetail[reason.val.trim().toUpperCase()] = reason;
                 return reasonDetail;
               }, {});
-
               usedRejectionReasons = resp.data.docs
               usedRejectionReasons.map((rejectionReason: any) => {
                 rejectionReason.count = reasonCountDetail[rejectionReason.enumId]?.count

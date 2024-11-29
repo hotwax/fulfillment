@@ -4,7 +4,7 @@
   "private": true,
   "description": "An Ionic project",
   "scripts": {
-    "devDerve": "vue-cli-service serve --mode=development",
+    "devServe": "vue-cli-service serve --mode=development",
     "prodServe": "vue-cli-service serve --mode=production",
     "prodBuild": "vue-cli-service build --mode=production",
     "devBuild": "vue-cli-service build --mode=development",
