@@ -1,4 +1,4 @@
-const ModuleFederationPlugin = require("webpack/lib/container/ModuleFederationPlugin");
+const ModuleFederationPlugin = require('@module-federation/enhanced').ModuleFederationPlugin;
 const path = require('path')
 require("@hotwax/app-version-info")
 module.exports = {
@@ -11,7 +11,6 @@ module.exports = {
     plugins: [
       new ModuleFederationPlugin({
         name: "fulfillment",
-        filename: "remoteEntry.js",
         shared: {
           vue: { singleton: true, eager: true },
           "vue-logger-plugin": { singleton: true, eager: true },

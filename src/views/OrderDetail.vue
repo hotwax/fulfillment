@@ -285,35 +285,7 @@
             </ion-item>
           </ion-card>
 
-          <ion-card v-if="hasPermission(Actions.APP_INVOICING_STATUS_VIEW) && (category === 'completed') && orderInvoicingInfo.id">
-            <ion-card-header>
-              <ion-card-title>
-                {{ translate("Order Invoicing Status") }}
-              </ion-card-title>
-            </ion-card-header>
-
-            <ion-item v-if="orderInvoicingInfo.invoicingFacility?.facilityId">
-              <ion-label>
-                {{ orderInvoicingInfo.invoicingFacility?.facilityName ? orderInvoicingInfo.invoicingFacility.facilityName : orderInvoicingInfo.invoicingFacility.facilityId }}
-                <p>{{ translate("Invoicing facility") }}</p>
-              </ion-label>
-            </ion-item>
-
-            <ion-item v-if="orderInvoicingInfo.invoicingConfirmationDate">
-              <ion-label>
-                <p class="overline">{{ getInvoicingConfirmationDate(orderInvoicingInfo.invoicingConfirmationDate) }}</p>
-                {{ translate("Retail Pro invoicing confirmed") }}
-              </ion-label>
-            </ion-item>
-            <ion-item lines="none">
-              <ion-label>
-                <p class="overline">{{ formatUtcDate(orderInvoicingInfo.createdDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
-                {{ getOrderInvoicingMessage() }}
-              </ion-label>
-            </ion-item>
-          </ion-card>
-
-          <Component :is="dynamicComponent" :category="category" :order="order" :userProfile="userProfile" />
+          <Component v-if="hasPermission(Actions.APP_INVOICING_STATUS_VIEW)" :is="dynamicComponent" :category="category" :order="order" :userProfile="userProfile" />
         </div>
         
         <h4 class="ion-padding-top ion-padding-start" v-if="order.shipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
@@ -468,7 +440,7 @@ import ShippingLabelActionPopover from '@/components/ShippingLabelActionPopover.
 import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
 import TrackingCodeModal from '@/components/TrackingCodeModal.vue';
 import GiftCardActivationModal from '@/components/GiftCardActivationModal.vue';
-import { init, loadRemote } from '@module-federation/runtime';
+import { useDynamicImport } from "@/utils/moduleFederation";
 
 export default defineComponent({
   name: "OrderDetail",
@@ -575,55 +547,10 @@ export default defineComponent({
     await this.fetchShipmentLabelError()
   },
   async mounted() {
-    await init({
-      name: 'fulfillment',
-      remotes: [
-        {
-          name: 'fulfillment_module_federation',
-          entry: 'http://localhost:8100/remoteEntry.js',
-        },
-      ],
-      shared: {
-        vue: { shareConfig: { requiredVersion: '^3.2.26', singleton: true, eager: true } },
-        "vue-logger-plugin": { shareConfig: { requiredVersion: '^2.2.3', singleton: true, eager: true } },
-        "vue-router": { shareConfig: { requiredVersion: '^4.0.12', singleton: true, eager: true } },
-        vuex: { shareConfig: { requiredVersion: '^4.0.1', singleton: true, eager: true } },
-        "vuex-persistedstate": { shareConfig: { requiredVersion: '^4.0.0-beta.3', singleton: true, eager: true } },
-        "@ionic/core": { shareConfig: { requiredVersion: '^7.6.0', singleton: true, eager: true } },
-        "@ionic/vue": { shareConfig: { requiredVersion: '^7.6.0', singleton: true, eager: true } },
-        "@ionic/vue-router": { shareConfig: { requiredVersion: '^7.6.0', singleton: true, eager: true } },
-        "@hotwax/app-version-info": { shareConfig: { requiredVersion: '^1.0.0', singleton: true, eager: true } },
-        "@hotwax/apps-theme": { shareConfig: { requiredVersion: '^1.2.6', singleton: true, eager: true } },
-        "@hotwax/dxp-components": { shareConfig: { requiredVersion: '^1.16.0', singleton: true, eager: true } },
-        "@hotwax/oms-api": { shareConfig: { requiredVersion: '^1.16.0', singleton: true, eager: true } },
-      },
-    });
-
-    if(this.instanceUrl.includes("adoc")) {
-      await this.useDynamicImport({ module: "kreweOrderInvoice", instance: "fulfillment_module_federation" })
-    }
-
-    console.log("======registerRemoteModule=====");
-    // const remoteModule = await import('fulfillment_module_federation/');  // <-- Import from remote app
-    // this.store.registerModule('invoice', remoteModule.default);  // Register with Vuex store
+    const instance = this.instanceUrl.split("-")[0]
+    this.dynamicComponent = await useDynamicImport({ module: `${instance}_OrderInvoice`, scope: "fulfillment_module_federation" })
   },
   methods: {
-    async useDynamicImport({ module, instance }: any) {
-      if (!module || !instance) return;
-
-      // const loadComponent = async () => {
-      //   try {
-      //     const { default: Component } = await loadRemote(`${instance}/${module}`) as any;
-      //     console.log("Component", Component)
-      //     this.dynamicComponent = await shallowRef(defineAsyncComponent(() => import(Component)));
-      //   } catch (error) {
-      //     console.error(`Error loading remote module ${instance}/${module}:`, error);
-      //   }
-      // };
-
-      this.dynamicComponent = await shallowRef(defineAsyncComponent(() => import("fulfillment_module_federation/kreweOrderInvoice")));
-      // await loadComponent();
-    },
     async fetchShipmentLabelError() {
       const shipmentIds = this.order?.shipmentIds?.length > 0 ? this.order?.shipmentIds : this.order.shipments?.map((shipment: any) => shipment.shipmentId);
       if (shipmentIds && shipmentIds.length > 0) {

@@ -19,6 +19,7 @@ import { useRouter } from 'vue-router';
 import { Settings } from 'luxon'
 import { translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 import logger from '@/logger'
+import { init, loadRemote } from '@module-federation/runtime';
 
 export default defineComponent({
   name: 'App',
@@ -111,6 +112,16 @@ export default defineComponent({
     })
   },
   async mounted() {
+    init({
+      name: "fulfillment",
+      remotes: [
+        {
+          name: "fulfillment_module_federation",
+          entry: process.env.VUE_APP_REMOTE_ENTRY as string,
+        }
+      ],
+    });
+
     this.loader = await loadingController
       .create({
         message: translate("Click the backdrop to dismiss."),
