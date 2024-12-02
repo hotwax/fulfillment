@@ -5,4 +5,4 @@ declare module '*.vue' {
 }
 
 
-declare module "fulfillment_module_federation/*";
+declare module "fulfillment_extensions/*";

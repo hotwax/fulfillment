@@ -285,7 +285,7 @@
             </ion-item>
           </ion-card>
 
-          <Component v-if="hasPermission(Actions.APP_INVOICING_STATUS_VIEW)" :is="dynamicComponent" :category="category" :order="order" :userProfile="userProfile" />
+          <Component v-if="hasPermission(Actions.APP_INVOICING_STATUS_VIEW)" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfile" />
         </div>
         
         <h4 class="ion-padding-top ion-padding-start" v-if="order.shipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
@@ -525,7 +525,7 @@ export default defineComponent({
       carrierMethods:[] as any,
       isUpdatingCarrierDetail: false,
       orderInvoicingInfo: {} as any,
-      dynamicComponent: "" as any
+      orderInvoiceExt: "" as any
     }
   },
   async ionViewDidEnter() {
@@ -548,7 +548,7 @@ export default defineComponent({
   },
   async mounted() {
     const instance = this.instanceUrl.split("-")[0]
-    this.dynamicComponent = await useDynamicImport({ module: `${instance}_OrderInvoice`, scope: "fulfillment_module_federation" })
+    this.orderInvoiceExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderInvoice`})
   },
   methods: {
     async fetchShipmentLabelError() {

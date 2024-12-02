@@ -116,7 +116,7 @@ export default defineComponent({
       name: "fulfillment",
       remotes: [
         {
-          name: "fulfillment_module_federation",
+          name: "fulfillment_extensions",
           entry: process.env.VUE_APP_REMOTE_ENTRY as string,
         }
       ],
