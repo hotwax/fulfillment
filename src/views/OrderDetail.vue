@@ -285,33 +285,7 @@
             </ion-item>
           </ion-card>
 
-          <ion-card v-if="hasPermission(Actions.APP_INVOICING_STATUS_VIEW) && (category === 'completed') && orderInvoicingInfo.id">
-            <ion-card-header>
-              <ion-card-title>
-                {{ translate("Order Invoicing Status") }}
-              </ion-card-title>
-            </ion-card-header>
-
-            <ion-item v-if="orderInvoicingInfo.invoicingFacility?.facilityId">
-              <ion-label>
-                {{ orderInvoicingInfo.invoicingFacility?.facilityName ? orderInvoicingInfo.invoicingFacility.facilityName : orderInvoicingInfo.invoicingFacility.facilityId }}
-                <p>{{ translate("Invoicing facility") }}</p>
-              </ion-label>
-            </ion-item>
-
-            <ion-item v-if="orderInvoicingInfo.invoicingConfirmationDate">
-              <ion-label>
-                <p class="overline">{{ getInvoicingConfirmationDate(orderInvoicingInfo.invoicingConfirmationDate) }}</p>
-                {{ translate("Retail Pro invoicing confirmed") }}
-              </ion-label>
-            </ion-item>
-            <ion-item lines="none">
-              <ion-label>
-                <p class="overline">{{ formatUtcDate(orderInvoicingInfo.createdDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
-                {{ getOrderInvoicingMessage() }}
-              </ion-label>
-            </ion-item>
-          </ion-card>
+          <Component v-if="hasPermission(Actions.APP_INVOICING_STATUS_VIEW)" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfile" />
         </div>
         
         <h4 class="ion-padding-top ion-padding-start" v-if="order.shipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
@@ -418,7 +392,7 @@ import {
   modalController,
   popoverController
 } from "@ionic/vue";
-import { computed, defineComponent } from "vue";
+import { computed, defineAsyncComponent, defineComponent, shallowRef } from "vue";
 import { mapGetters, useStore } from "vuex";
 import { useRouter } from 'vue-router'
 import {
@@ -466,6 +440,7 @@ import ShippingLabelActionPopover from '@/components/ShippingLabelActionPopover.
 import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
 import TrackingCodeModal from '@/components/TrackingCodeModal.vue';
 import GiftCardActivationModal from '@/components/GiftCardActivationModal.vue';
+import { useDynamicImport } from "@/utils/moduleFederation";
 
 export default defineComponent({
   name: "OrderDetail",
@@ -521,7 +496,8 @@ export default defineComponent({
       facilityCarriers: 'carrier/getFacilityCarriers',
       userProfile: 'user/getUserProfile',
       isShipNowDisabled: 'user/isShipNowDisabled',
-      isUnpackDisabled: 'user/isUnpackDisabled'
+      isUnpackDisabled: 'user/isUnpackDisabled',
+      instanceUrl: "user/getInstanceUrl"
     })
   },
   data() {
@@ -548,7 +524,8 @@ export default defineComponent({
       carrierPartyId: "",
       carrierMethods:[] as any,
       isUpdatingCarrierDetail: false,
-      orderInvoicingInfo: {} as any
+      orderInvoicingInfo: {} as any,
+      orderInvoiceExt: "" as any
     }
   },
   async ionViewDidEnter() {
@@ -568,6 +545,10 @@ export default defineComponent({
     
     // Fetching shipment label errors 
     await this.fetchShipmentLabelError()
+  },
+  async mounted() {
+    const instance = this.instanceUrl.split("-")[0]
+    this.orderInvoiceExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderInvoice`})
   },
   methods: {
     async fetchShipmentLabelError() {
