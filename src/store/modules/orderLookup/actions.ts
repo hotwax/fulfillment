@@ -124,6 +124,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
     })
 
     commit(types.ORDERLOOKUP_CARRIER_TRACKING_URLS_UPDATED, carriersTrackingInfo);
+    return carriersTrackingInfo;
   },
 
   async getOrderDetails({ commit, dispatch }, orderId) {
@@ -394,7 +395,13 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       }
       order["shipGroups"] = shipGroups
       
-      dispatch("fetchCarriersTrackingInfo", Array.from(new Set(carrierPartyIds)));
+      const carrierInfo = await dispatch("fetchCarriersTrackingInfo", Array.from(new Set(carrierPartyIds)));
+
+      Object.keys(order["shipGroups"]).map((shipGroupId: any) => {
+        const shipGroup = order["shipGroups"][shipGroupId]
+        shipGroup.map((item: any) => item["carrierPartyName"] = carrierInfo[item.carrierPartyId]?.carrierName || "")
+      })
+
       this.dispatch("util/fetchShipmentMethodTypeDesc", shipmentMethodIds)
 
       order["shipGroupFulfillmentStatus"] = {}

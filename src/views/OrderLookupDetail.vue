@@ -179,10 +179,11 @@
                   <ion-label class="ion-text-wrap">{{ translate("Municipio") }}</ion-label>
                   <ion-label slot="end">{{ order.orderAttributes.municipio || "-" }}</ion-label>
                 </ion-item>
-                <ion-item lines="none">
+                <ion-item>
                   <ion-label class="ion-text-wrap">{{ translate("Invoicing facility") }}</ion-label>
                   <ion-label class="ion-text-wrap" slot="end">{{ (invoicingFacility.facilityName ? invoicingFacility.facilityName : invoicingFacility.facilityId) || '-'  }}</ion-label>
                 </ion-item>
+                <Component :is="additionalDetailItemExt" :order="order" :invoicingFacilityId="invoicingFacility.facilityId"/>
               </ion-list>
             </ion-card>
           </div>
@@ -290,6 +291,7 @@ import OrderLookupLabelActionsPopover from '@/components/OrderLookupLabelActions
 import { hasError } from "@hotwax/oms-api";
 import logger from "@/logger";
 import { OrderService } from "@/services/OrderService";
+import { useDynamicImport } from "@/utils/moduleFederation";
 
 export default defineComponent({
   name: "OrderLookupDetail",
@@ -320,7 +322,8 @@ export default defineComponent({
       itemStatuses: JSON.parse(process.env.VUE_APP_ITEM_STATUS as any),
       isFetchingStock: false,
       isFetchingOrderInfo: false,
-      invoicingFacility: {} as any
+      invoicingFacility: {} as any,
+      additionalDetailItemExt: "" as any
     }
   },
   computed: {
@@ -333,12 +336,16 @@ export default defineComponent({
       getShipmentMethodDesc: "util/getShipmentMethodDesc",
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
       userProfile: 'user/getUserProfile',
+      getPartyName: 'util/getPartyName',
+      instanceUrl: "user/getInstanceUrl"
     })
   },
   async ionViewWillEnter() {
     this.isFetchingOrderInfo = true
     await this.store.dispatch("orderLookup/getOrderDetails", this.orderId)
     await this.fetchOrderInvoicingFacility()
+    const instance = this.instanceUrl.split("-")[0]
+    this.additionalDetailItemExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_AdditionalDetailItem`})
     this.isFetchingOrderInfo = false
   },
   methods: {
