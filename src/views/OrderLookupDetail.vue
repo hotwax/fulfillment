@@ -336,7 +336,6 @@ export default defineComponent({
       getShipmentMethodDesc: "util/getShipmentMethodDesc",
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
       userProfile: 'user/getUserProfile',
-      getPartyName: 'util/getPartyName',
       instanceUrl: "user/getInstanceUrl"
     })
   },
