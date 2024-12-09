@@ -44,7 +44,7 @@
         </div>
         <div class="results">
           <ion-button :disabled="isShipNowDisabled || !hasAnyPackedShipment() || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
-          <ion-card class="order" v-for="(order, index) in getCompletedOrders()" :key="index">
+          <ion-card class="order" v-for="(order, index) in completedOrdersList" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
@@ -256,7 +256,8 @@ export default defineComponent({
       shipmentMethods: [] as Array<any>,
       carrierPartyIds: [] as Array<any>,
       searchedQuery: '',
-      isScrollingEnabled: false
+      isScrollingEnabled: false,
+      completedOrdersList: [] as any
     }
   },
   computed: {
@@ -275,6 +276,7 @@ export default defineComponent({
   async mounted() {
     await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
     emitter.on('updateOrderQuery', this.updateOrderQuery)
+    this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
   },
   unmounted() {
     this.store.dispatch('order/clearCompletedOrders')
@@ -304,9 +306,6 @@ export default defineComponent({
       const updatedOrder = this.completedOrders.list.find((order: any) =>  order.orderId === orderItem.orderId && order.picklistBinId === orderItem.picklistBinId);
       const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
       updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
-    },
-    getCompletedOrders() {
-      return JSON.parse(JSON.stringify(this.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
     },
     enableScrolling() {
       const parentElement = (this as any).$refs.contentRef.$el
