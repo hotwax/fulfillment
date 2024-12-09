@@ -344,7 +344,7 @@ export default defineComponent({
     await this.store.dispatch("orderLookup/getOrderDetails", this.orderId)
     await this.fetchOrderInvoicingFacility()
     const instance = this.instanceUrl.split("-")[0]
-    this.additionalDetailItemExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_AdditionalDetailItem`})
+    this.additionalDetailItemExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderLookupAdditionalDetailItem`})
     this.isFetchingOrderInfo = false
   },
   methods: {
