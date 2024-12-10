@@ -593,7 +593,6 @@ export default defineComponent({
         component: ShippingLabelActionPopover,
         componentProps: {
           currentOrder: currentOrder,
-          isVoidLabelDisabled: (this.category === "completed" && !this.hasPackedShipments(currentOrder))
         },
         event: ev,
         showBackdrop: false
