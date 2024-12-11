@@ -1652,7 +1652,7 @@ export default defineComponent({
 
       modal.onDidDismiss().then((result: any) => {
         if(result.data?.packOrder) {
-          this.packOrder(order);
+          this.packOrder(this.order);
         }
       })
 
@@ -1666,8 +1666,8 @@ export default defineComponent({
 
       modal.onDidDismiss().then((result: any) => {
         if(result.data?.moveToNext) {
-          if(this.isForceScanEnabled) this.scanOrder(order);
-          else this.packOrder(order);
+          if(this.isForceScanEnabled) this.scanOrder(this.order);
+          else this.packOrder(this.order);
         }
       })
 
