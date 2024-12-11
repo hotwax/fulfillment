@@ -28,7 +28,6 @@ import { documentOutline, openOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
 import { mapGetters, useStore } from "vuex";
 import { OrderService } from '@/services/OrderService';
-import { isPdf } from '@/utils'
 
 export default defineComponent({
   name: "OrderLookupLabelActionsPopover",
@@ -53,7 +52,7 @@ export default defineComponent({
 
       shipmentPackages.map((shipmentPackage: any) => {
         shipmentIds.push(shipmentPackage.shipmentId)
-        this.isPdf(shipmentPackage.labelImageUrl) && shippingLabelPdfUrls.push(shipmentPackage.labelImageUrl)
+        shippingLabelPdfUrls.push(shipmentPackage.labelImageUrl)
       })
 
       await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
@@ -72,7 +71,6 @@ export default defineComponent({
 
     return {
       documentOutline,
-      isPdf,
       openOutline,
       store,
       translate
