@@ -1082,7 +1082,7 @@ export default defineComponent({
       const shipmentIds = order.shipmentIds ? order.shipmentIds : order.shipmentPackages?.reduce((uniqueIds: any[], shipmentPackage: any) => {
         if(!uniqueIds.includes(shipmentPackage.shipmentId)) uniqueIds.push(shipmentPackage.shipmentId);
         return uniqueIds;
-      }, []);;
+      }, []);
       const shippingLabelPdfUrls = order.shipmentPackages
           ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
           .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
