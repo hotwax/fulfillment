@@ -61,16 +61,20 @@
         popoverController.dismiss()
       },
       async voidShippingLabel(order: any) {
+        const shipmentIds = [] as any;
         let resp = {} as any;
         try {
           for (const shipmentPackage of order.shipmentPackages) {
-            resp = await OrderService.voidShipmentLabel({
-              "shipmentId": shipmentPackage.shipmentId,
-              "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId
-            })
-
-            if(hasError(resp)) {
-              throw resp.data;
+            if(!shipmentIds.includes(shipmentPackage.shipmentId)) {
+              resp = await OrderService.voidShipmentLabel({
+                "shipmentId": shipmentPackage.shipmentId,
+                "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId
+              })
+  
+              if(hasError(resp)) {
+                throw resp.data;
+              }
+              shipmentIds.push(shipmentPackage.shipmentId);
             }
           }
           showToast(translate("Shipping label voided successfully."))

@@ -637,7 +637,10 @@ export default defineComponent({
       // Getting all the shipmentIds from shipmentPackages for which label is missing
       const shipmentIds = order.shipmentPackages
           ?.filter((shipmentPackage: any) => !shipmentPackage.trackingCode)
-          .map((shipmentPackage: any) => shipmentPackage.shipmentId);
+          .reduce((uniqueIds: any[], shipmentPackage: any) => {
+            if(!uniqueIds.includes(shipmentPackage.shipmentId)) uniqueIds.push(shipmentPackage.shipmentId);
+            return uniqueIds;
+          }, []);
 
       // Don't make any api call when we does not have any shipmentIds for order
       if(!shipmentIds?.length) {
