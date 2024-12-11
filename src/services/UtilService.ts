@@ -1,7 +1,6 @@
 import { api, hasError } from '@/adapter';
 import logger from '@/logger';
 import store from '@/store';
-import { isPdf } from '@/utils';
 
 const fetchShipmentMethods = async (query: any): Promise <any>  => {
   return api({
@@ -106,7 +105,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
             shipmentPackage.labelImageUrl = ""
             shipmentPackage.internationalInvoiceUrl = ""
         }
-        if (shipmentPackage.labelImageUrl && isPdf(shipmentPackage.labelImageUrl)) {
+        if (shipmentPackage.labelImageUrl) {
           shipmentPackage.labelPdfUrl = shipmentPackage.labelImageUrl;
         }
         if(shipmentForOrders[key]) {
