@@ -479,7 +479,7 @@ export default defineComponent({
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore?.productStoreId }
+          productStoreId: { value: this.currentEComStore.productStoreId }
         },
         facet: {
           "shipmentMethodFacet": {
@@ -520,7 +520,7 @@ export default defineComponent({
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore?.productStoreId },
+          productStoreId: { value: this.currentEComStore.productStoreId },
         },
         facet: {
           manifestContentIdFacet: {

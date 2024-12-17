@@ -916,7 +916,7 @@ export default defineComponent({
           '-fulfillmentStatus': { value: 'Rejected' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore?.productStoreId }
+          productStoreId: { value: this.currentEComStore.productStoreId }
         },
         facet: {
           picklistFacet: {
@@ -1192,7 +1192,7 @@ export default defineComponent({
             try {
               resp = await UserService.recycleInProgressOrders({
                 "facilityId": this.currentFacility?.facilityId,
-                "productStoreId": this.currentEComStore?.productStoreId,
+                "productStoreId": this.currentEComStore.productStoreId,
                 "reasonId": "INACTIVE_STORE"
               })
 

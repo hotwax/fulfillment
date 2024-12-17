@@ -317,7 +317,7 @@ export default defineComponent({
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
           facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore?.productStoreId }
+          productStoreId: { value: this.currentEComStore.productStoreId }
         },
         facet: {
           "shipmentMethodTypeIdFacet":{
@@ -385,7 +385,7 @@ export default defineComponent({
             try {
               resp = await UserService.recycleOutstandingOrders({
                 "facilityId": this.currentFacility?.facilityId,
-                "productStoreId": this.currentEComStore?.productStoreId,
+                "productStoreId": this.currentEComStore.productStoreId,
                 "reasonId": "INACTIVE_STORE"
               })
 

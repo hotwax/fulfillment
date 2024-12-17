@@ -46,7 +46,7 @@ import {
   IonTitle,
   IonToolbar
 } from "@ionic/vue";
-import { computed, defineComponent } from "vue";
+import { defineComponent, computed } from "vue";
 import { albumsOutline, banOutline, barChartOutline, calendarNumberOutline, checkmarkDoneOutline, closeOutline, filterOutline, iceCreamOutline, libraryOutline, pulseOutline, settings, shirtOutline, ticketOutline } from "ionicons/icons";
 import { mapGetters, useStore } from 'vuex'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper';
@@ -124,8 +124,8 @@ export default defineComponent({
         filters: {
           '-orderStatusId': { value: 'ORDER_CREATED' },
           orderTypeId: { value: 'TRANSFER_ORDER' },
-          facilityId: { value: escapeSolrSpecialChars(this.currentFacility.facilityId) },
-          productStoreId: { value: this.currentEComStore?.productStoreId }
+          facilityId: { value: escapeSolrSpecialChars(this.currentFacility?.facilityId) },
+          productStoreId: { value: this.currentEComStore.productStoreId }
         },
         facet: {
           "shipmentMethodTypeIdFacet":{
