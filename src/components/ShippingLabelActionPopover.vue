@@ -6,7 +6,7 @@
           {{ translate("View Label") }}
           <ion-icon slot="end" :icon="documentOutline" />
         </ion-item>
-        <ion-item button lines="none" @click="voidShippingLabel(currentOrder)">
+        <ion-item button lines="none" :disabled="isVoidLabelDisabled" @click="voidShippingLabel(currentOrder)">
           {{ translate("Void Label") }}
           <ion-icon slot="end" :icon="trashOutline" />
         </ion-item>
@@ -41,7 +41,7 @@
       IonList,
       IonListHeader
     },
-    props: ['currentOrder'],
+    props: ['currentOrder', 'isVoidLabelDisabled'],
     computed: {
       ...mapGetters({
         facilityProductStores: 'facility/getFacilityProductStores',
@@ -63,31 +63,16 @@
         let resp = {} as any;
         try {
           for (const shipmentPackage of order.shipmentPackages) {
-            resp = await OrderService.updateShipmentPackageRouteSeg({
+            resp = await OrderService.voidShipmentLabel({
               "shipmentId": shipmentPackage.shipmentId,
-              "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-              "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
-              "trackingCode": "",
-              "labelImage": "",
-              "labelIntlSignImage": "",
-              "labelHtml": "",
-              "labelImageUrl": "",
-              "internationalInvoiceUrl": ""
-            });
-            if (!hasError(resp)) {
-              resp = await OrderService.updateShipmentRouteSegment({
-                "shipmentId": shipmentPackage.shipmentId,
-                "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-                "carrierServiceStatusId": "SHRSCS_VOIDED",
-                "trackingIdNumber": ""
-              }) as any;
-              if (hasError(resp)) {
-                throw resp.data;             
-              }
-            } else {
+              "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId
+            })
+
+            if(hasError(resp)) {
               throw resp.data;
             }
           }
+          showToast(translate("Shipping label voided successfully."))
           //fetching updated shipment packages
           await this.store.dispatch('order/updateShipmentPackageDetail', order) 
         } catch (err) {

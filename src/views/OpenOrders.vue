@@ -218,7 +218,6 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      currentFacility: 'user/getCurrentFacility',
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
@@ -240,7 +239,7 @@ export default defineComponent({
   },
   methods: {
     getErrorMessage() {
-      return this.searchedQuery === '' ? translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility.facilityName }) : translate( "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+      return this.searchedQuery === '' ? translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility?.facilityName }) : translate( "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
     },
     viewNotifications() {
       this.store.dispatch('user/setUnreadNotificationsStatus', false)
@@ -317,8 +316,8 @@ export default defineComponent({
           '-fulfillmentStatus': { value: 'Cancelled' },
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
-          facilityId: { value: this.currentFacility.facilityId },
-          productStoreId: { value: this.currentEComStore.value?.productStoreId }
+          facilityId: { value: this.currentFacility?.facilityId },
+          productStoreId: { value: this.currentEComStore?.productStoreId }
         },
         facet: {
           "shipmentMethodTypeIdFacet":{
@@ -385,8 +384,8 @@ export default defineComponent({
 
             try {
               resp = await UserService.recycleOutstandingOrders({
-                "facilityId": this.currentFacility.facilityId,
-                "productStoreId": this.currentEComStore.value?.productStoreId,
+                "facilityId": this.currentFacility?.facilityId,
+                "productStoreId": this.currentEComStore?.productStoreId,
                 "reasonId": "INACTIVE_STORE"
               })
 
@@ -434,6 +433,7 @@ export default defineComponent({
     const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
     let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
 
     return{
@@ -442,6 +442,7 @@ export default defineComponent({
       chevronUpOutline,
       cubeOutline,
       currentEComStore,
+      currentFacility,
       formatUtcDate,
       getFeature,
       getProductIdentificationValue,

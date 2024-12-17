@@ -11,7 +11,6 @@ const userModule: Module<UserState, RootState> = {
       token: '',
       permissions: [],
       current: {},
-      currentFacility: {},
       instanceUrl: '',
       preference: {
         printShippingLabel: false,
@@ -33,8 +32,11 @@ const userModule: Module<UserState, RootState> = {
       firebaseDeviceId: '',
       hasUnreadNotifications: true,
       allNotificationPrefs: [],
+      newRejectionApiConfig: {},
       partialOrderRejectionConfig: {},
-      collateralRejectionConfig: {}
+      collateralRejectionConfig: {},
+      isShipNowDisabled: false,
+      isUnpackDisabled: false
     },
     getters,
     actions,

@@ -19,6 +19,7 @@ import { useRouter } from 'vue-router';
 import { Settings } from 'luxon'
 import { translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import logger from '@/logger'
+import { init, loadRemote } from '@module-federation/runtime';
 
 export default defineComponent({
   name: 'App',
@@ -111,6 +112,16 @@ export default defineComponent({
     })
   },
   async mounted() {
+    init({
+      name: "fulfillment",
+      remotes: [
+        {
+          name: "fulfillment_extensions",
+          entry: process.env.VUE_APP_REMOTE_ENTRY as string,
+        }
+      ],
+    });
+
     this.loader = await loadingController
       .create({
         message: translate("Click the backdrop to dismiss."),
@@ -128,7 +139,7 @@ export default defineComponent({
     }
 
     // need to discuss this case 
-    // await useUserStore().getEComStores('');
+    // await useUserStore().getEComStoresByFacility('');
     // await useUserStore().getPreferredStore('SELECTED_BRAND');
     const currentEComStore: any = useUserStore().getCurrentEComStore;
     // If fetching identifier without checking token then on login the app stucks in a loop, as the mounted hook runs before

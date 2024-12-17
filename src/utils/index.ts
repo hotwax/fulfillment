@@ -1,4 +1,4 @@
-import { translate } from '@hotwax/dxp-components';
+import { translate, useUserStore } from '@hotwax/dxp-components';
 import store from '@/store';
 import { JsonToCsvOption } from '@/types';
 import { Plugins } from '@capacitor/core';
@@ -176,7 +176,8 @@ const isValidCarrierCode = (trackingCode : any) => {
 }
 
 const  isPdf = (url: any) => {
-  return url && url.toLowerCase().endsWith('.pdf');
+  const pdfUrlPattern = /\.pdf(\?.*)?$/;
+  return url && pdfUrlPattern.test(url.toLowerCase());
 }
 
 const currentSymbol: any = {
@@ -206,5 +207,31 @@ const getColorByDesc = (desc: string) => ({
   "default": "medium"
 } as any)[desc]
 
+const dateOrdinalSuffix = {
+  1: 'st',
+  21: 'st',
+  31: 'st',
+  2: 'nd',
+  22: 'nd',
+  3: 'rd',
+  23: 'rd'
+} as any
 
-export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getColorByDesc, getFeature, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, parseCsv, jsonToCsv }
+const getCurrentFacilityId = () => {
+  const currentFacility: any = useUserStore().getCurrentFacility;
+  return currentFacility?.facilityId
+}
+
+const getProductStoreId = () => {
+  const currentEComStore: any = useUserStore().getCurrentEComStore;
+  return currentEComStore.productStoreId
+};
+
+function getDateWithOrdinalSuffix(time: any) {
+  if (!time) return "-";
+  const dateTime = DateTime.fromMillis(time);
+  const suffix = dateOrdinalSuffix[dateTime.day] || "th"
+  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
+}
+
+export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getFeature, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, parseCsv, jsonToCsv }

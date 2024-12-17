@@ -7,14 +7,14 @@ import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import logger from '@/logger'
-import { shopifyImgContext, translate, useUserStore } from '@hotwax/dxp-components'
-import { showToast } from "@/utils";
+import { getProductIdentificationValue, translate } from '@hotwax/dxp-components'
+import { showToast, getCurrentFacilityId, getProductStoreId } from "@/utils";
 import { UtilService } from '@/services/UtilService'
+import store from "@/store";
 
 const actions: ActionTree<TransferOrderState, RootState> = {
 
   async findTransferOrders ({ commit, state }, payload = {}) {
-    const currentEComStore: any = useUserStore().getCurrentEComStore;
     emitter.emit('presentLoader');
     let resp;
     const transferOrderQuery = JSON.parse(JSON.stringify(state.transferOrder.query))
@@ -29,8 +29,8 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       sort: payload.sort ? payload.sort : "orderDate asc",
       filters: {
         orderTypeId: { value: 'TRANSFER_ORDER' },
-        facilityId: { value: escapeSolrSpecialChars(this.state.user.currentFacility.facilityId) },
-        productStoreId: { value: currentEComStore.productStoreId }
+        facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
+        productStoreId: { value: getProductStoreId() }
       }
     }
 
@@ -154,7 +154,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         "shipmentTypeId": "OUT_TRANSFER",
         orderId: payload.orderId,
         "shipGroupSeqId": payload.shipGroupSeqId,
-        "originFacilityId": this.state.user.currentFacility.facilityId,
+        "originFacilityId": getCurrentFacilityId(),
         "destinationFacilityId": payload.orderFacilityId,
         "items": eligibleItems,
         "packages": [{
@@ -279,7 +279,13 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   async updateOrderProductCount({ commit, state }, payload ) {
     // When there exists multiple line item for a single product, then may arise discrepancy in scanning
     // since some items might be completed and some pending. Hence searching is done with status check.
-    const item = state.current.items.find((item: any) => (item.internalName === payload && item.statusId !== 'ITEM_COMPLETED' && item.statusId !== 'ITEM_REJECTED'));
+    const getProduct = store.getters['product/getProduct'];
+    const barcodeIdentifier = store.getters['util/getBarcodeIdentificationPref'];
+
+    const item = state.current.items.find((orderItem: any) => {
+      const itemVal = getProductIdentificationValue(barcodeIdentifier, getProduct(orderItem.productId)) ? getProductIdentificationValue(barcodeIdentifier, getProduct(orderItem.productId)) : getProduct(orderItem.productId)?.internalName;
+      return itemVal === payload && orderItem.statusId !== 'ITEM_COMPLETED' && orderItem.statusId !== 'ITEM_REJECTED' && orderItem.statusId !== 'ITEM_CANCELLED';
+    })
     if(item){
       item.pickedQuantity = parseInt(item.pickedQuantity) + 1;
       commit(types.ORDER_CURRENT_UPDATED, state.current )

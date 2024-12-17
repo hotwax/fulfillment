@@ -7,7 +7,7 @@ import * as types from './mutation-types'
 import logger from '@/logger'
 import store from '@/store';
 import { translate, useUserStore } from '@hotwax/dxp-components';
-import { showToast, isValidCarrierCode, isValidDeliveryDays } from '@/utils';
+import { showToast, isValidCarrierCode, isValidDeliveryDays, getCurrentFacilityId, getProductStoreId } from '@/utils';
   
 
 const actions: ActionTree<CarrierState, RootState> = {
@@ -358,14 +358,14 @@ const actions: ActionTree<CarrierState, RootState> = {
   async fetchFacilityCarriers({ state, commit }, payload) {
     let facilityCarriers  = [] as any;
     let viewIndex = 0, resp, docCount = 0;
-    
+
     try {
       do {
         const params = {
           "entityName": "FacilityAndParty",
           "inputFields": {
             "roleTypeId": "CARRIER",
-            "facilityId": this.state.user.currentFacility.facilityId
+            "facilityId": getCurrentFacilityId()
           },
           "fieldList": ["facilityId", "partyId", "firstName", "lastName", "groupName", "roleTypeId", "fromDate"],
           "noConditionFind": "Y",
@@ -427,7 +427,6 @@ const actions: ActionTree<CarrierState, RootState> = {
     commit(types.CARRIER_FACILITY_CARRIERS_UPDATED, facilityCarriers)
   },
   async fetchProductStoreShipmentMeths({ state, commit }) {
-    const currentEComStore: any = useUserStore().getCurrentEComStore;
     let productStoreShipmentMethods  = [] as any;
     let viewIndex = 0, resp;
     
@@ -437,7 +436,9 @@ const actions: ActionTree<CarrierState, RootState> = {
           "entityName": "ProductStoreShipmentMethView",
           "inputFields": {
             "roleTypeId": "CARRIER",
-            "productStoreId": currentEComStore.productStoreId,
+            "productStoreId": getProductStoreId(),
+            "shipmentMethodTypeId": "STOREPICKUP",
+            "shipmentMethodTypeId_op": "notEqual"
           },
           "fieldList": ["productStoreShipMethId", "productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "shipmentGatewayConfigId", "isTrackingRequired", "sequenceNumber", "description", "fromDate"],
           "noConditionFind": "Y",

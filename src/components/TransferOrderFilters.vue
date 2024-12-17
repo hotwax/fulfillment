@@ -77,7 +77,6 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      currentFacility: 'user/getCurrentFacility',
       transferOrders: 'transferorder/getTransferOrders',
       getStatusDesc: 'util/getStatusDesc',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
@@ -126,7 +125,7 @@ export default defineComponent({
           '-orderStatusId': { value: 'ORDER_CREATED' },
           orderTypeId: { value: 'TRANSFER_ORDER' },
           facilityId: { value: escapeSolrSpecialChars(this.currentFacility.facilityId) },
-          productStoreId: { value: this.currentEComStore.value?.productStoreId }
+          productStoreId: { value: this.currentEComStore?.productStoreId }
         },
         facet: {
           "shipmentMethodTypeIdFacet":{
@@ -172,8 +171,9 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const userStore = useUserStore()
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
     let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
-
+    
     return {
       albumsOutline,
       banOutline,
@@ -181,6 +181,7 @@ export default defineComponent({
       calendarNumberOutline,
       checkmarkDoneOutline,
       closeOutline,
+      currentFacility,
       currentEComStore,
       filterOutline,
       iceCreamOutline,

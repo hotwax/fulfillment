@@ -8,7 +8,7 @@
         <ion-title v-if="!transferOrders.total">{{ transferOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-title v-else>{{ transferOrders.list.length }} {{ translate('of') }} {{ transferOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="transfer-order-filters">
+          <ion-menu-button menu="transfer-order-filters" :disabled="!transferOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
         </ion-buttons>
@@ -45,6 +45,9 @@
       </div>
       <div v-else class="empty-state">
         <p v-html="getErrorMessage()"></p>
+        <ion-button v-if="!transferOrders.query.queryString && hasCompletedTransferOrders" size="small" fill="outline" color="medium" @click="showCompletedTransferOrders">
+          <ion-icon slot="end" :icon="checkmarkDoneOutline"/>{{ translate("Show completed transfer orders") }}
+        </ion-button>
       </div>
     </ion-content>
   </ion-page>
@@ -53,6 +56,7 @@
 <script lang="ts">
 import { 
   IonBadge,
+  IonButton,
   IonButtons,
   IonIcon,
   IonContent, 
@@ -68,11 +72,11 @@ import {
   IonTitle, 
   IonToolbar, 
 } from '@ionic/vue';
-import { defineComponent } from 'vue';
-import { caretDownOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
+import { defineComponent, computed } from 'vue';
+import { caretDownOutline, checkmarkDoneOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import { translate } from '@hotwax/dxp-components';
+import { translate, useUserStore } from '@hotwax/dxp-components';
 import { Actions } from '@/authorization'
 import TransferOrderFilters from '@/components/TransferOrderFilters.vue'
 
@@ -80,6 +84,7 @@ export default defineComponent({
   name: 'TransferOrders',
   components: {
     IonBadge,
+    IonButton,
     IonButtons,
     IonIcon,  
     IonContent,
@@ -98,7 +103,6 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      currentFacility: 'user/getCurrentFacility',
       transferOrders: 'transferorder/getTransferOrders',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
     })
@@ -107,7 +111,8 @@ export default defineComponent({
     return {
       shipmentMethods: [] as Array<any>,
       searchedQuery: '',
-      isScrollingEnabled: false
+      isScrollingEnabled: false,
+      hasCompletedTransferOrders: true
     }
   },
   async ionViewWillEnter() {
@@ -116,7 +121,11 @@ export default defineComponent({
   },
   methods: {
     getErrorMessage() {
-      return this.searchedQuery === '' ? translate("doesn't have any transfer orders right now.", { facilityName: this.currentFacility.facilityName }) : translate( "No results found for .", { searchedQuery: this.searchedQuery })
+      if(!this.searchedQuery) {
+        return this.hasCompletedTransferOrders ? translate("doesn't have any open transfer orders right now.", { facilityName: this.currentFacility.facilityName }) : translate("doesn't have any transfer orders right now.", { facilityName: this.currentFacility.facilityName });
+      } else {
+        return translate("No results found for .", { searchedQuery: this.searchedQuery });
+      }
     },
     enableScrolling() {
       const parentElement = (this as any).$refs.contentRef.$el
@@ -142,12 +151,20 @@ export default defineComponent({
     isTransferOrdersScrollable() {
       return this.transferOrders.list?.length > 0 && this.transferOrders.list?.length < this.transferOrders.total
     },
+    async showCompletedTransferOrders() {
+      const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
+      transferOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
+      transferOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      transferOrdersQuery.selectedStatuses = ["ORDER_COMPLETED"]
+      await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
+      this.hasCompletedTransferOrders = this.transferOrders.list.some((order: any) => order.orderStatusId === "ORDER_COMPLETED");
+    },
     async updateQueryString(queryString: string) {
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
 
       transferOrdersQuery.viewIndex = 0
       transferOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      transferOrdersQuery.queryString = queryString
+      transferOrdersQuery.queryString = queryString.trim()
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
       this.searchedQuery = queryString;
     },
@@ -172,11 +189,15 @@ export default defineComponent({
   setup() {
     const router = useRouter();
     const store = useStore();
+    const userStore = useUserStore()
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
 
     return{
       Actions,
       caretDownOutline,
+      checkmarkDoneOutline,
       cubeOutline,
+      currentFacility,
       optionsOutline,
       pricetagOutline,
       printOutline,

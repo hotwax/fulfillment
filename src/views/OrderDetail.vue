@@ -88,22 +88,22 @@
               </ion-item>
             </div>
 
-            <div v-if="category === 'in-progress'" class="desktop-only" >
+            <div v-if="category === 'in-progress'" class="desktop-only ion-text-center" >
               <template v-if="item.rejectReason">
-                <ion-chip outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
+                <ion-chip :disabled="order.hasMissingInfo" outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
                   <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
                   <ion-icon :icon="closeCircleOutline" />
                 </ion-chip>
               </template>
-              <template v-else-if="isEntierOrderRejectionEnabled(order)">
-                <ion-chip outline color="danger">
+              <template v-else-if="useNewRejectionApi() && isEntierOrderRejectionEnabled(order)">
+                <ion-chip :disabled="order.hasMissingInfo" outline color="danger">
                   <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject entire order')}}</ion-label>
                 </ion-chip>
               </template>
               <template v-else>
-                <ion-chip outline @click="openShipmentBoxPopover($event, item, order)">
+                <ion-chip :disabled="order.hasMissingInfo" outline @click="openShipmentBoxPopover($event, item, order)">
                   <ion-icon :icon="fileTrayOutline" />
-                  {{ `Box ${item.selectedBox}` }} 
+                  {{ `Box ${item.selectedBox || ''}` }} 
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </template>
@@ -113,14 +113,15 @@
             <div v-else></div>
 
             <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
+             <!--Adding checks to avoid any operations if order has missing info, mostly when after packing Solr is not updaing immediately-->
             <div class="product-metadata">
               <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-              <ion-button color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+              <ion-button :disabled="order.hasMissingInfo" color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
                 {{ translate('Check stock') }}
                 <ion-icon slot="end" :icon="cubeOutline"/>
               </ion-button>
               <!-- TODO make functional -->
-              <ion-button v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
+              <ion-button :disabled="order.hasMissingInfo" v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
                 {{ translate('Report an issue') }}
                 <ion-icon slot="end" :icon="trashBinOutline"/>
               </ion-button>
@@ -128,6 +129,10 @@
                 {{ translate('Components') }}
                 <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                 <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
+              </ion-button>
+              <ion-button :disabled="order.hasMissingInfo" v-if="item.productTypeId === 'GIFT_CARD'" fill="clear" color="medium" size="small" @click="openGiftCardActivationModal(item)">
+                {{ translate('Gift card') }}
+                <ion-icon color="medium" slot="end" :icon="item.isGCActivated ? gift : giftOutline"/>
               </ion-button>
             </div>
             </div>
@@ -140,9 +145,9 @@
                   <ion-label>
                     <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
                     {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
-                    <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
                     <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
+                  <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.rejectedComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
                 </ion-item>
               </ion-card>
             </div>
@@ -150,7 +155,7 @@
           
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
-              <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="isForceScanEnabled ? scanOrder(order) :packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+              <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) :packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -159,7 +164,7 @@
 
           <div v-else-if="category === 'completed'" class="mobile-only">
             <ion-item>
-              <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
+              <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -170,7 +175,7 @@
             <!-- positive -->
             <div>
               <template v-if="category === 'in-progress'">
-                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click="isForceScanEnabled ? scanOrder(order) : packOrder(order)">
+                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">
                   <ion-icon slot="start" :icon="personAddOutline" />
                   {{ translate("Pack order") }}
                 </ion-button>
@@ -185,7 +190,7 @@
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Shipped") }}
                 </ion-button>
-                <ion-button v-else :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
+                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Ship order") }}
                 </ion-button>
@@ -197,7 +202,7 @@
             </div>
             <!-- negative -->
             <div class="desktop-only" v-if="category === 'completed'">
-              <ion-button :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+              <ion-button :disabled="isUnpackDisabled || !hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
             </div>
           </div>
         </ion-card>
@@ -239,34 +244,48 @@
               </ion-select>
             </ion-item>
             <ion-item>
-              <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
-                <ion-select-option v-for="method in carrierMethods" :key="method.productStoreShipMethId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
-              </ion-select>
+              <template v-if="carrierMethods && carrierMethods.length > 0">
+                <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
+                  <ion-select-option v-for="method in carrierMethods" :key="method.productStoreShipMethId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
+                </ion-select>
+              </template>
+              <template v-else-if="!isUpdatingCarrierDetail">
+                <ion-label>
+                  {{ translate('No shipment methods linked to', {carrierName: getCarrierName(carrierPartyId)}) }}
+                </ion-label>
+                <ion-button @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
+                  <ion-icon slot="icon-only" :icon="informationCircleOutline" />
+                </ion-button>
+              </template>
             </ion-item>
             <template v-if="order.missingLabelImage">
-              <ion-button :disabled="!shipmentMethodTypeId" fill="outline" expand="block" @click.stop="regenerateShippingLabel(order)">
-                {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
-                <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
-              </ion-button>
-              <ion-button :disabled="!shipmentMethodTypeId || !carrierPartyId" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
-                {{ translate("Add tracking code manually") }}
-              </ion-button>
+              <template v-if="category === 'completed'">
+                <ion-button :disabled="!shipmentMethodTypeId || !hasPackedShipments(order)" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
+                  {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
+                  <ion-spinner color="primary" slot="end" data-spinner-size="medium" v-if="order.isGeneratingShippingLabel" name="crescent" />
+                </ion-button>
+                <ion-button :disabled="!shipmentMethodTypeId || !carrierPartyId || !hasPackedShipments(order)" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
+                  {{ translate("Add tracking code manually") }}
+                </ion-button>
+              </template>
               <ion-item lines="none" v-if="shipmentLabelErrorMessages">
                 <ion-label class="ion-text-wrap">
                   {{ shipmentLabelErrorMessages }}
                 </ion-label>
               </ion-item>
             </template>
-            <ion-item v-else>
+            <ion-item v-else-if="order.trackingCode">
               <ion-label>
                 {{ order.trackingCode }}
                 <p>{{ translate("tracking code") }}</p>
               </ion-label>        
-              <ion-button slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, order)">
+              <ion-button :disabled="order.hasMissingInfo" slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, order)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
           </ion-card>
+
+          <Component v-if="hasPermission(Actions.APP_INVOICING_STATUS_VIEW)" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfile" />
         </div>
         
         <h4 class="ion-padding-top ion-padding-start" v-if="order.shipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
@@ -353,6 +372,7 @@ import {
   IonCardHeader,
   IonCardSubtitle,
   IonCardTitle,
+  IonCheckbox,
   IonChip,
   IonContent,
   IonHeader,
@@ -372,7 +392,7 @@ import {
   modalController,
   popoverController
 } from "@ionic/vue";
-import { computed, defineComponent } from "vue";
+import { computed, defineAsyncComponent, defineComponent, shallowRef } from "vue";
 import { mapGetters, useStore } from "vuex";
 import { useRouter } from 'vue-router'
 import {
@@ -387,6 +407,9 @@ import {
   documentTextOutline,
   ellipsisVerticalOutline,
   fileTrayOutline,
+  gift,
+  giftOutline,
+  informationCircleOutline,
   listOutline,
   locateOutline,
   personAddOutline,
@@ -404,7 +427,7 @@ import { hasError } from "@/adapter";
 import logger from '@/logger';
 import { UtilService } from "@/services/UtilService";
 import { DateTime } from 'luxon';
-import { prepareOrderQuery } from '@/utils/solrHelper';
+import { prepareOrderQuery, prepareSolrQuery } from '@/utils/solrHelper';
 import Popover from '@/views/ShippingPopover.vue'
 import PackagingPopover from "@/views/PackagingPopover.vue";
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
@@ -414,7 +437,10 @@ import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
 import { isKit } from '@/utils/order'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import ShippingLabelActionPopover from '@/components/ShippingLabelActionPopover.vue';
+import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
 import TrackingCodeModal from '@/components/TrackingCodeModal.vue';
+import GiftCardActivationModal from '@/components/GiftCardActivationModal.vue';
+import { useDynamicImport } from "@/utils/moduleFederation";
 
 export default defineComponent({
   name: "OrderDetail",
@@ -425,6 +451,7 @@ export default defineComponent({
     IonBadge,
     IonButton,
     IonCard,
+    IonCheckbox,
     IonChip,
     IonCardHeader,
     IonCardSubtitle,
@@ -449,23 +476,27 @@ export default defineComponent({
     ...mapGetters({
       boxTypeDesc: 'util/getShipmentBoxDesc',
       completedOrders: 'order/getCompletedOrders',
-      currentFacility: 'user/getCurrentFacility',
       getProduct: 'product/getProduct',
       getProductStock: 'stock/getProductStock',
       inProgressOrders: 'order/getInProgressOrders',
       order: "order/getCurrent",
-      rejectReasons: 'util/getRejectReasons',
+      rejectReasonOptions: 'util/getRejectReasonOptions',
       userPreference: 'user/getUserPreference',
       getPartyName: 'util/getPartyName',
       getfacilityTypeDesc: 'util/getFacilityTypeDesc',
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
       getStatusDesc: 'util/getStatusDesc',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
+      newRejectionApiConfig: 'user/getNewRejectionApiConfig',
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
       isForceScanEnabled: 'util/isForceScanEnabled',
       productStoreShipmentMethods: 'carrier/getProductStoreShipmentMethods',
       facilityCarriers: 'carrier/getFacilityCarriers',
+      userProfile: 'user/getUserProfile',
+      isShipNowDisabled: 'user/isShipNowDisabled',
+      isUnpackDisabled: 'user/isUnpackDisabled',
+      instanceUrl: "user/getInstanceUrl"
     })
   },
   data() {
@@ -490,18 +521,20 @@ export default defineComponent({
       shipmentLabelErrorMessages: "",
       shipmentMethodTypeId: "",
       carrierPartyId: "",
-      carrierMethods:[] as any
+      carrierMethods:[] as any,
+      isUpdatingCarrierDetail: false,
+      orderInvoicingInfo: {} as any,
+      orderInvoiceExt: "" as any
     }
   },
   async ionViewDidEnter() {
-    this.store.dispatch('util/fetchRejectReasons')
+    this.store.dispatch('util/fetchRejectReasonOptions')
     this.category === 'open'
     ? await this.store.dispatch('order/getOpenOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
     : this.category === 'in-progress'
     ? await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
     : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
-    
-    await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths')]);
+    await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths'), this.fetchOrderInvoicingStatus()]);
     if (this.facilityCarriers) {
       const shipmentPackage = this.order.shipmentPackages?.[0];
       this.carrierPartyId = shipmentPackage?.carrierPartyId ? shipmentPackage?.carrierPartyId : this.facilityCarriers[0].partyId;
@@ -510,13 +543,27 @@ export default defineComponent({
     }
     
     // Fetching shipment label errors 
-    const shipmentIds = this.order?.shipmentIds?.length > 0 ? this.order?.shipmentIds : this.order.shipments?.map((shipment: any) => shipment.shipmentId);
-    if (shipmentIds && shipmentIds.length > 0) {
-      const labelErrors = await OrderService.fetchShipmentLabelError(shipmentIds);
-      this.shipmentLabelErrorMessages = labelErrors.join(', ');
-    }
+    await this.fetchShipmentLabelError()
+  },
+  async mounted() {
+    const instance = this.instanceUrl.split("-")[0]
+    this.orderInvoiceExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderInvoice`})
   },
   methods: {
+    async fetchShipmentLabelError() {
+      const shipmentIds = this.order?.shipmentIds?.length > 0 ? this.order?.shipmentIds : this.order.shipments?.map((shipment: any) => shipment.shipmentId);
+      if (shipmentIds && shipmentIds.length > 0) {
+        const labelErrors = await OrderService.fetchShipmentLabelError(shipmentIds);
+        this.shipmentLabelErrorMessages = labelErrors.join(', ');
+      }
+    },
+    getCarrierName(carrierPartyId: string) {
+      const selectedCarrier = this.facilityCarriers.find((carrier: any) => carrier.partyId === carrierPartyId)
+      return selectedCarrier && selectedCarrier.groupName ? selectedCarrier.groupName : carrierPartyId
+    },
+    openShippingMethodDocumentReference() {
+      window.open('https://docs.hotwax.co/documents/v/system-admins/fulfillment/shipping-methods/carrier-and-shipment-methods', '_blank');
+    },
     async getProductStoreShipmentMethods(carrierPartyId: string) { 
       return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId) || [];
     },
@@ -524,7 +571,8 @@ export default defineComponent({
       const popover = await popoverController.create({
         component: ShippingLabelActionPopover,
         componentProps: {
-          currentOrder: currentOrder
+          currentOrder: currentOrder,
+          isVoidLabelDisabled: (this.category === "completed" && !this.hasPackedShipments(currentOrder))
         },
         event: ev,
         showBackdrop: false
@@ -535,6 +583,7 @@ export default defineComponent({
     async updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMethodTypeId: string) {
       let resp;
       try {
+        this.isUpdatingCarrierDetail = true;
         const carrierShipmentMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
         shipmentMethodTypeId = shipmentMethodTypeId ? shipmentMethodTypeId : carrierShipmentMethods?.[0]?.shipmentMethodTypeId;
 
@@ -554,11 +603,28 @@ export default defineComponent({
               "shipmentMethodTypeId": shipmentMethodTypeId ? shipmentMethodTypeId : ""
             }) as any;
             if (!hasError(resp)) {
+              //on changing the shipment carrier/method, voiding the gatewayMessage and gatewayStatus
+              if (this.shipmentLabelErrorMessages) {
+                resp = await OrderService.updateShipmentPackageRouteSeg({
+                  "shipmentId": shipmentPackage.shipmentId,
+                  "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
+                  "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
+                  "gatewayMessage": "",
+                  "gatewayStatus": ""
+                }) as any;
+                if (!hasError(resp)) {
+                  this.shipmentLabelErrorMessages = ""
+                } else {
+                  throw resp.data
+                }
+              }
+
               this.shipmentMethodTypeId = shipmentMethodTypeId
               showToast(translate("Shipment method detail updated successfully."))
               //fetching updated shipment packages
               await this.store.dispatch('order/updateShipmentPackageDetail', this.order) 
               this.carrierMethods = carrierShipmentMethods;
+              this.isUpdatingCarrierDetail = false;
             } else {
               throw resp.data;
             }
@@ -567,12 +633,18 @@ export default defineComponent({
           throw resp.data;
         }
       } catch (err) {
+        this.isUpdatingCarrierDetail = false;
         this.carrierPartyId = this.order.shipmentPackages?.[0].carrierPartyId;
         this.shipmentMethodTypeId = this.order.shipmentPackages?.[0].shipmentMethodTypeId;
 
         logger.error('Failed to update carrier and method', err);
         showToast(translate("Failed to update shipment method detail."));
       }
+    },
+    updateCarrierShipmentDetails(carrierPartyId: string, shipmentMethodTypeId: string) {
+      this.carrierPartyId = carrierPartyId
+      this.shipmentMethodTypeId = shipmentMethodTypeId
+      this.shipmentLabelErrorMessages = ""
     },
     async fetchKitComponent(orderItem: any, isOtherShipment = false ) {
       await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
@@ -590,10 +662,14 @@ export default defineComponent({
       }
     },
     getRejectionReasonDescription (rejectionReasonId: string) {
-      return this.rejectReasons?.find((reason: any) => reason.enumId === rejectionReasonId)?.description;
+      const reason = this.rejectReasonOptions?.find((reason: any) => reason.enumId === rejectionReasonId)
+      return reason?.description ? reason.description : reason?.enumDescription ? reason.enumDescription : reason?.enumId;
     },
     isEntierOrderRejectionEnabled(order: any) {
       return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
+    },
+    useNewRejectionApi() {
+      return this.newRejectionApiConfig && this.newRejectionApiConfig.settingValue && JSON.parse(this.newRejectionApiConfig.settingValue)
     },
     async printPicklist (order: any) {
       await OrderService.printPicklist(order.picklistId)
@@ -756,8 +832,8 @@ export default defineComponent({
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           '-fulfillmentStatus': { value: 'Rejected' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility.facilityId },
-          productStoreId: { value: this.currentEComStore.value?.productStoreId }
+          facilityId: { value: this.currentFacility?.facilityId },
+          productStoreId: { value: this.currentEComStore?.productStoreId }
         },
         facet: {
           picklistFacet: {
@@ -883,13 +959,30 @@ export default defineComponent({
     },
     async removeRejectionReason(ev: Event, item: any, order: any) {
       delete item["rejectReason"];
+      delete item["rejectedComponents"];
+
       item.rejectReason = "";
         order.items.map((orderItem: any) => {
           if(orderItem.orderItemSeqId === item.orderItemSeqId) {
             delete orderItem["rejectReason"];
+            delete orderItem["rejectedComponents"];
           }
         })
         order.hasRejectedItem = order.items.some((item:any) => item.rejectReason);
+    },
+    rejectKitComponent(order: any, item: any, componentProductId: string) {
+      let rejectedComponents = item.rejectedComponents ? item.rejectedComponents : []
+      if (rejectedComponents.includes(componentProductId)) {
+        rejectedComponents = rejectedComponents.filter((rejectedComponent: any) => rejectedComponent !== componentProductId)
+      } else {
+        rejectedComponents.push(componentProductId);
+      }
+      item.rejectedComponents = rejectedComponents;
+      order.items.map((orderItem: any) => {
+        if (orderItem.orderItemSeqId === item.orderItemSeqId) {
+          orderItem.rejectedComponents = rejectedComponents;
+        }
+      })
     },
     async assignPickers() {
       const assignPickerModal = await modalController.create({
@@ -970,6 +1063,7 @@ export default defineComponent({
         order.isGeneratingShippingLabel = false
       } else {
         showToast(translate("Failed to generate shipping label"))
+        this.fetchShipmentLabelError()
       }
     },
     async shippingPopover(ev: Event) {
@@ -1020,6 +1114,7 @@ export default defineComponent({
         if(!hasError(resp)) {
           showToast(translate('Box added successfully'))
           await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
+          this.store.dispatch('order/updateInProgressOrder', this.order);
         } else {
           throw resp.data
         }
@@ -1112,7 +1207,7 @@ export default defineComponent({
     async updateOrder(order: any, updateParameter?: string) {
       const form = new FormData()
 
-      form.append('facilityId', this.currentFacility.facilityId)
+      form.append('facilityId', this.currentFacility?.facilityId)
       form.append('orderId', order.orderId)
 
       order.shipmentIds?.map((shipmentId: string) => {
@@ -1133,18 +1228,30 @@ export default defineComponent({
       items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
         
+        let prefix = 'rtp'
+
         // reject the item only when item is having a rejection reason
         if(updateParameter === 'report' && item.rejectReason) {
-          rejectedOrderItems.push({
-            "shipmentId": item.shipmentId,
-            "shipmentItemSeqId": item.shipmentItemSeqId,
-            "reason": item.rejectReason
-          })
-          //prefix = 'rej'
-          //form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
+          if (this.useNewRejectionApi()) {
+            rejectedOrderItems.push({
+              "shipmentId": item.shipmentId,
+              "shipmentItemSeqId": item.shipmentItemSeqId,
+              "reason": item.rejectReason,
+              "rejectedComponents": item.rejectedComponents
+            })
+          } else {
+            prefix = 'rej'
+            form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
+            form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
+            form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
+            if (item.rejectedComponents && item.rejectedComponents.length > 0) {
+              form.append(`${prefix}_rejectedComponents_${index}`, JSON.stringify({"productIds": item.rejectedComponents}))
+            }
+            form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
+          }
         } else {
-          const prefix = 'rtp'
-          form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId)
+          prefix = 'rtp'
+          form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId + "-" + shipmentPackage.shipmentPackageSeqId)
           form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
           form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
           form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
@@ -1159,7 +1266,7 @@ export default defineComponent({
         if (rejectedOrderItems.length > 0) {
           resp = await OrderService.rejectFulfillmentReadyOrderItem({
             data: {
-              facilityId : this.currentFacility.facilityId,
+              facilityId : this.currentFacility?.facilityId,
               rejectEntireShipment: this.isEntierOrderRejectionEnabled(order) ? "Y" : "N",
               rejectAllRelatedShipment: this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
               defaultReason: this.rejectEntireOrderReasonId, //default reason for items for which reason is not selected but rejecting due to entire order rejection config.
@@ -1169,7 +1276,7 @@ export default defineComponent({
         }
 
         //Run this logic only when entire order rejection is disabled. This logic will now be used only to update shipment boxes, not to reject items.
-        if (!this.isEntierOrderRejectionEnabled(order)) {
+        if (!this.useNewRejectionApi() || !this.isEntierOrderRejectionEnabled(order)) {
           resp = await OrderService.updateOrder({
             headers: {
               'Content-Type': 'multipart/form-data;'
@@ -1193,6 +1300,7 @@ export default defineComponent({
 
           order.isModified = false;
           await this.store.dispatch('order/updateInProgressOrder', order)
+          await this.store.dispatch('order/updateShipmentPackageDetail', order)
           showToast(translate('Order updated successfully'))
           return Promise.resolve(order);
         } else {
@@ -1215,7 +1323,7 @@ export default defineComponent({
         // This variable is used in messages to display name of first rejected item from the itemsToReject array
         const rejectedItem = itemsToReject[0];
         if (itemsToReject.length === 1) {
-          message = translate('is identified as. This order item will be unassigned from the store and sent to be rebrokered.', { productName: rejectedItem.productName, rejectReason: ((this.rejectReasons.find((rejectReason: {[key: string]: any}) => rejectReason.enumId === rejectedItem.rejectReason)).description).toLowerCase() });
+          message = translate('is identified as. This order item will be unassigned from the store and sent to be rebrokered.', { productName: rejectedItem.productName, rejectReason: ((this.rejectReasonOptions.find((rejectReason: {[key: string]: any}) => rejectReason.enumId === rejectedItem.rejectReason)).description).toLowerCase() });
         } else {
           message = translate(', and other products were identified as unfulfillable. These items will be unassigned from this store and sent to be rebrokered.', { productName: rejectedItem.productName, products: itemsToReject.length - 1, space: '<br /><br />' });
         }
@@ -1250,7 +1358,7 @@ export default defineComponent({
               await this.updateOrder(order, 'report').then(async () => {
                 // redirect user to inProgress list page only when the order has a single item, and the user initiated report action on the same
                 // update the current order only when order contains multiple items in it.
-                if(order.items.length === 1 || this.isEntierOrderRejectionEnabled(order)) {
+                if(order.items.length === 1 ||  (this.useNewRejectionApi() && this.isEntierOrderRejectionEnabled(order))) {
                   this.router.push('/in-progress')
                 } else {
                   await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
@@ -1318,8 +1426,8 @@ export default defineComponent({
         filters: {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility.facilityId },
-          productStoreId: { value: this.currentEComStore.value?.productStoreId }
+          facilityId: { value: this.currentFacility?.facilityId },
+          productStoreId: { value: this.currentEComStore?.productStoreId }
         },
         facet: {
           "shipmentMethodFacet": {
@@ -1359,8 +1467,8 @@ export default defineComponent({
         filters: {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility.facilityId },
-          productStoreId: { value: this.currentEComStore.value?.productStoreId },
+          facilityId: { value: this.currentFacility?.facilityId },
+          productStoreId: { value: this.currentEComStore?.productStoreId },
         },
         facet: {
           manifestContentIdFacet: {
@@ -1389,6 +1497,83 @@ export default defineComponent({
       } catch(err) {
         logger.error('Failed to fetch carrierPartyIds', err)
       }
+    },
+    async fetchOrderInvoicingStatus() {
+      let orderInvoicingInfo = {} as any, resp;
+      const params = {
+        viewSize: 1,
+        sort: "createdDate_dt desc",
+        filters: {
+          id: { value: this.order.orderName }
+        },
+        docType: "ORDER_TO_INVOICE_API",
+        coreName: "logInsights"
+      }
+
+      const orderInvoicingQueryPayload = prepareSolrQuery(params)
+
+      try {
+        resp = await OrderService.findOrderInvoicingInfo(orderInvoicingQueryPayload);
+
+        if(!hasError(resp) && resp.data?.response?.docs?.length) {
+          const response = resp.data.response.docs[0];
+
+          const request = Object.keys(response.request_txt_en).length ? JSON.parse(response.request_txt_en) : {}
+          const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === request.InvoicingStore)
+
+          orderInvoicingInfo = {
+            id: response.id,
+            createdDate: response.createdDate_dt,
+            response : Object.keys(response.response_txt_en).length ? JSON.parse(response.response_txt_en) : {},
+            status: response.status_txt_en,
+            statusCode: response.statusCode_txt_en,
+            invoicingFacility
+          }
+
+          const params = {
+            entityName: "OrderAttribute",
+            inputFields: {
+              orderId: this.order.orderId,
+              attrName: "retailProStatus"
+            }
+          }
+
+          resp = await OrderService.fetchOrderAttribute(params);
+          if(!hasError(resp)) {
+            if(resp.data?.docs[0]?.attrValue === "Invoiced") {
+              orderInvoicingInfo["invoicingConfirmationDate"] = resp.data?.docs[0]?.lastUpdatedStamp
+            }
+          } else {
+            throw resp.data;
+          }
+        } else {
+          throw resp.data;
+        }
+      } catch(error: any) {
+        logger.error(error);
+      }
+
+      this.orderInvoicingInfo = orderInvoicingInfo
+    },
+    getOrderInvoicingMessage() {
+      let message = "";
+      let isMessageRequired = false;
+
+      if(this.orderInvoicingInfo.status === "success") {
+        message = "Successfully sent to Retail Pro Server. This order will be completed once the invoicing is done in Retail Pro."
+      } else {
+        if(!this.orderInvoicingInfo.statusCode && !Object.keys(this.orderInvoicingInfo.response).length) {
+          message = "Failed to send to Retail Pro Server due to connection issues with Retail Pro, please try again."
+        } else {
+          message = "Failed to send to Retail Pro Server due to the following error, please contact support:."
+          isMessageRequired = true;
+        }
+      }
+
+      return isMessageRequired ? translate(message, { message: this.orderInvoicingInfo.response.Message }) : translate(message);
+    },
+    getInvoicingConfirmationDate(date: any) {
+      return DateTime.fromMillis(date).setZone(this.userProfile.userTimeZone).toFormat('dd MMMM yyyy t a ZZZZ')
     },
     async printPackingSlip(order: any) {
       // if the request to print packing slip is not yet completed, then clicking multiple times on the button
@@ -1453,6 +1638,21 @@ export default defineComponent({
 
       modal.present();
     },
+    async generateTrackingCodeForPacking(order: any) {
+      const modal = await modalController.create({
+        component: GenerateTrackingCodeModal,
+        componentProps: { order, updateCarrierShipmentDetails: this.updateCarrierShipmentDetails, shipmentLabelErrorMessages: this.shipmentLabelErrorMessages, fetchShipmentLabelError: this.fetchShipmentLabelError }
+      })
+
+      modal.onDidDismiss().then((result: any) => {
+        if(result.data?.moveToNext) {
+          if(this.isForceScanEnabled) this.scanOrder(order);
+          else this.packOrder(order);
+        }
+      })
+
+      modal.present();
+    },
     async openTrackingCodeModal() {
       const addTrackingCodeModal = await modalController.create({
         component: TrackingCodeModal,
@@ -1461,6 +1661,20 @@ export default defineComponent({
 
       return addTrackingCodeModal.present();
     },
+    async openGiftCardActivationModal(item: any) {
+      const modal = await modalController.create({
+        component: GiftCardActivationModal,
+        componentProps: { item }
+      })
+
+      modal.onDidDismiss().then((result: any) => {
+        if(result.data?.isGCActivated) {
+          this.store.dispatch("order/updateCurrentItemGCActivationDetails", { item, category: this.category, isDetailsPage: true })
+        }
+      })
+
+      modal.present();
+    }
   },
   setup() {
     const store = useStore();
@@ -1468,6 +1682,7 @@ export default defineComponent({
     const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
     let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
 
     return {
@@ -1482,14 +1697,18 @@ export default defineComponent({
       copyToClipboard,
       cubeOutline,
       currentEComStore,
+      currentFacility,
       documentTextOutline,
       ellipsisVerticalOutline,
       fileTrayOutline,
       formatUtcDate,
       getFeature,
       getProductIdentificationValue,
+      gift,
+      giftOutline,
       hasPermission,
       isKit,
+      informationCircleOutline,
       listOutline,
       locateOutline,
       personAddOutline,

@@ -46,11 +46,11 @@ import {
 } from "@ionic/vue";
 import { computed, defineComponent } from "vue";
 import { mapGetters } from "vuex";
-import { arrowBackOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline } from "ionicons/icons";
+import { arrowBackOutline, backspaceOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline } from "ionicons/icons";
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 import { hasPermission } from "@/authorization";
-import { translate } from '@hotwax/dxp-components';
+import { translate, useUserStore } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: "Menu",
@@ -70,7 +70,6 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       isUserAuthenticated: 'user/isUserAuthenticated',
-      currentFacility: 'user/getCurrentFacility',
     })
   },
   methods: {
@@ -81,6 +80,8 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const router = useRouter();
+    const userStore = useUserStore()
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
 
     const appPages = [
       {
@@ -111,6 +112,15 @@ export default defineComponent({
         childRoutes: ["/completed/"],
         meta: {
           permissionId: "APP_COMPLETED_ORDERS_VIEW"
+        }
+      },
+      {
+        title: "Rejections",
+        url: "/rejections",
+        iosIcon: backspaceOutline,
+        mdIcon: backspaceOutline,
+        meta: {
+          permissionId: "APP_REJECTIONS_VIEW"
         }
       },
       {
@@ -178,7 +188,9 @@ export default defineComponent({
 
     return {
       appPages,
+      backspaceOutline,
       checkmarkDoneOutline,
+      currentFacility,
       hasPermission,
       arrowBackOutline,
       mailUnreadOutline,

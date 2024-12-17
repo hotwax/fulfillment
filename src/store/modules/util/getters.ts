@@ -41,6 +41,15 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   isForceScanEnabled(state) {
     return state.isForceScanEnabled
+  },
+  getFulfillmentRejectReasons(state) {
+    return state.fulfillmentRejectReasons
+  },
+  getRejectReasonOptions(state) {
+    return state.rejectReasonOptions
+  },
+  getBarcodeIdentificationPref(state) {
+    return state.barcodeIdentificationPref
   }
 }
 export default getters;

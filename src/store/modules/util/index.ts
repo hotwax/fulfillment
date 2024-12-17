@@ -20,7 +20,10 @@ const utilModule: Module<UtilState, RootState> = {
     enumerations: {},
     facilities: [],
     shipmentGatewayConfigs: [],
-    isForceScanEnabled: false
+    isForceScanEnabled: false,
+    fulfillmentRejectReasons: {},
+    rejectReasonOptions: [],
+    barcodeIdentificationPref: "internalName"
   },
   getters,
   actions,

@@ -117,6 +117,10 @@
       <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED'">
         <ion-toolbar>
           <ion-buttons slot="end">
+            <ion-button  color="primary" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="printTransferOrder()">
+              <ion-icon :icon="printOutline" />
+              {{ translate('Picklist') }}   
+            </ion-button>
             <ion-button  color="primary" fill="solid" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment()" @click="confirmCreateShipment">
               <ion-spinner v-if="isCreatingShipment" slot="start" name="crescent" />
               {{ translate('Create shipment') }}   
@@ -153,7 +157,7 @@
     modalController,
   } from '@ionic/vue';
   import { computed, defineComponent } from 'vue';
-  import { add, checkmarkDone, barcodeOutline, pricetagOutline } from 'ionicons/icons';
+  import { add, checkmarkDone, barcodeOutline, pricetagOutline, printOutline } from 'ionicons/icons';
   import { mapGetters, useStore } from "vuex";
   import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 
@@ -213,15 +217,16 @@
       ...mapGetters({
         currentOrder: 'transferorder/getCurrent',
         getStatusDesc: 'util/getStatusDesc',
-        user: 'user/getCurrentFacility',
         getProduct: 'product/getProduct',
-        currentFacility: 'user/getCurrentFacility',
         productIdentificationPref: 'user/getProductIdentificationPref',
         productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
         getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       }),
     },
     methods: {
+      async printTransferOrder() {
+        await OrderService.printTransferOrder(this.currentOrder.orderId)
+      },
       getItemCount() {
         return this.currentOrder?.items?.reduce((totalItems:any, item:any) => totalItems + (item.orderedQuantity || 0), 0);
 
@@ -233,7 +238,7 @@
         if (orderType === 'completed') {
           return this.currentOrder?.items?.filter((item: any) => item.statusId === 'ITEM_COMPLETED')
         } else {
-          return this.currentOrder?.items?.filter((item: any) => item.statusId !== 'ITEM_COMPLETED' && item.statusId !== 'ITEM_REJECTED')
+          return this.currentOrder?.items?.filter((item: any) => item.statusId !== 'ITEM_COMPLETED' && item.statusId !== 'ITEM_CANCELLED' && item.statusId !== 'ITEM_REJECTED')
         }
       },
       getShipments(shipmentType: string) {
@@ -403,6 +408,7 @@
         getProductIdentificationValue,
         hasPermission,
         pricetagOutline,
+        printOutline,
         productIdentificationPref,
         showToast,
         store,

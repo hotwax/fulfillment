@@ -102,6 +102,7 @@ const removeKitComponents = (order: any) => {
   order.items.forEach((item:any) => {
     const product = store.getters['product/getProduct'](item.productId);
     if ((product && product.productTypeId === "MARKETING_PKG_PICK") || !kitItemSeqIds.has(item.orderItemSeqId)) {
+      item["productTypeId"] = product.productTypeId
       itemsWithoutKitComponents.push(item)
     }
   })
