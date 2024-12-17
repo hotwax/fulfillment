@@ -41,7 +41,6 @@ export default defineComponent({
       instanceUrl: 'user/getInstanceUrl',
       userProfile: 'user/getUserProfile',
       locale: 'user/getLocale',
-      currentFacility: 'user/getCurrentFacility',
     })
   },
   methods: {

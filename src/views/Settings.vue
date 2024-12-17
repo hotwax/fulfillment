@@ -39,7 +39,7 @@
       <section>
         <DxpOmsInstanceNavigator />
         <DxpFacilitySwitcher @updateFacility="updateFacility($event)"/>
-        <DxpProductStoreSelector @updateEcomStore="updateEcomStore($event)"/>
+        <DxpProductStoreSelector @updateEComStore="updateEComStore($event)"/>
 
         <ion-card>
           <ion-card-header>
@@ -289,7 +289,7 @@ export default defineComponent({
     await this.store.dispatch('user/fetchNotificationPreferences')
   },
   methods: {
-    updateEcomStore(selectedProductStore: any) {
+    updateEComStore(selectedProductStore: any) {
       this.store.dispatch('user/setEComStore', selectedProductStore?.productStoreId)
     },
     useNewRejectionApi() {
