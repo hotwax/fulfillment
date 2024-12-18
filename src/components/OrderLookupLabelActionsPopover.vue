@@ -54,7 +54,7 @@ export default defineComponent({
         if(!shipmentIds.includes(shipmentPackage.shipmentId)) {
           shipmentIds.push(shipmentPackage.shipmentId)
         }
-        shippingLabelPdfUrls.push(shipmentPackage.labelImageUrl)
+        shipmentPackage.labelImageUrl && shippingLabelPdfUrls.push(shipmentPackage.labelImageUrl)
       })
 
       await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
