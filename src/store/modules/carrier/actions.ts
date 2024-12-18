@@ -6,7 +6,7 @@ import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import logger from '@/logger'
 import store from '@/store';
-import { translate, useUserStore } from '@hotwax/dxp-components';
+import { translate } from '@hotwax/dxp-components';
 import { showToast, isValidCarrierCode, isValidDeliveryDays, getCurrentFacilityId, getProductStoreId } from '@/utils';
   
 
@@ -184,7 +184,7 @@ const actions: ActionTree<CarrierState, RootState> = {
     const currentCarrier = state.current;
     const carrierShipmentMethods = currentCarrier.shipmentMethods
     const carrierProductStoreShipmentMethods = currentCarrier.productStoreShipmentMethods
-    const productStores = useUserStore().getProductStores;
+    const productStores = store.getters['util/getProductStores'];
     const carrierShipmentMethodsByProductStore = {} as any;
     const productStoreShipmentMethodFields = ["description", "productStoreId", "isTrackingRequired", "shipmentGatewayConfigId", "productStoreShipMethId"]
 

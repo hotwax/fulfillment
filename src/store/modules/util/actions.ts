@@ -340,7 +340,7 @@ const actions: ActionTree<UtilState, RootState> = {
     return statusDesc;
   },
 
-  async findProductStoreShipmentMethCount({ commit }, eComStoreId) {
+  async findProductStoreShipmentMethCount({ commit }) {
     let productStoreShipmentMethCount = 0
     const params = {
       "entityName": "ProductStoreShipmentMeth",
@@ -348,7 +348,7 @@ const actions: ActionTree<UtilState, RootState> = {
         "partyId": "_NA_",
         "partyId_op": "notEqual",
         "roleTypeId": "CARRIER",
-        "productStoreId": eComStoreId
+        "productStoreId": getProductStoreId()
       },
       "fieldList": ['roleTypeId', "partyId"],
       "viewSize": 1
@@ -466,6 +466,27 @@ const actions: ActionTree<UtilState, RootState> = {
     }
     commit(types.UTIL_FACILITIES_UPDATED, facilities)
   },
+
+  async fetchProductStores({ commit }) {
+    let stores  = [];
+    try {
+      const payload = {
+        "entityName": "ProductStore",
+        "noConditionFind": "Y",
+        "viewSize": 250 // keeping view size 100 as considering that we will have max 100 product stores
+      }
+
+      const resp = await UtilService.fetchProductStores(payload)
+      if (!hasError(resp) && resp.data.count > 0) {
+        stores = resp.data.docs
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Failed to fetch product stores', err)
+    }
+    commit(types.UTIL_PRODUCT_STORES_UPDATED, stores)
+  },  
 
   async fetchShipmentGatewayConfigs({ commit }) {
     let configs  = {};

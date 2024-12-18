@@ -19,6 +19,7 @@ const utilModule: Module<UtilState, RootState> = {
     rejectReasonEnumTypes: [],
     enumerations: {},
     facilities: [],
+    productStores: [],
     shipmentGatewayConfigs: [],
     isForceScanEnabled: false,
     fulfillmentRejectReasons: {},
