@@ -367,11 +367,12 @@ const actions: ActionTree<CarrierState, RootState> = {
             "roleTypeId": "CARRIER",
             "facilityId": getCurrentFacilityId()
           },
-          "fieldList": ["facilityId", "partyId", "firstName", "lastName", "groupName", "roleTypeId", "fromDate"],
+          "fieldList": ["facilityId", "partyId", "firstName", "lastName", "groupName", "roleTypeId"],
           "noConditionFind": "Y",
           "viewIndex": viewIndex,
           "viewSize": 250,
-          "filterByDate": "Y"
+          "filterByDate": "Y",
+          "distinct": "Y"
         }
   
         resp = await CarrierService.fetchCarrierFacilities(params)
@@ -440,11 +441,12 @@ const actions: ActionTree<CarrierState, RootState> = {
             "shipmentMethodTypeId": "STOREPICKUP",
             "shipmentMethodTypeId_op": "notEqual"
           },
-          "fieldList": ["productStoreShipMethId", "productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "shipmentGatewayConfigId", "isTrackingRequired", "sequenceNumber", "description", "fromDate"],
+          "fieldList": ["productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "description"],
           "noConditionFind": "Y",
           "viewIndex": viewIndex,
           "viewSize": 250,
-          "filterByDate": "Y"
+          "filterByDate": "Y",
+          "distinct": "Y"
         }
   
         resp = await CarrierService.fetchProductStoreShipmentMethods(params)
