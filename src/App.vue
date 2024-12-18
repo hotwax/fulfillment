@@ -137,13 +137,10 @@ export default defineComponent({
       Settings.defaultZone = this.userProfile.userTimeZone;
     }
 
-    // need to discuss this case 
-    // await useUserStore().getEComStoresByFacility('');
-    // await useUserStore().getPreferredStore('SELECTED_BRAND');
     const currentEComStore: any = useUserStore().getCurrentEComStore;
     // If fetching identifier without checking token then on login the app stucks in a loop, as the mounted hook runs before
     // token is available which results in api failure as unauthenticated, thus making logout call and then login call again and so on.
-    if(this.userToken) {
+    if(this.userToken && currentEComStore?.productStoreId) {
       // Get product identification from api using dxp-component
       await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId)
         .catch((error) => logger.error(error));
