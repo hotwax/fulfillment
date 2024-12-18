@@ -52,7 +52,7 @@ export default defineComponent({
 
       shipmentPackages.map((shipmentPackage: any) => {
         shipmentIds.push(shipmentPackage.shipmentId)
-        shippingLabelPdfUrls.push(shipmentPackage.labelImageUrl)
+        shipmentPackage.labelImageUrl && shippingLabelPdfUrls.push(shipmentPackage.labelImageUrl)
       })
 
       await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
