@@ -486,7 +486,7 @@ const actions: ActionTree<UtilState, RootState> = {
       logger.error('Failed to fetch product stores', err)
     }
     commit(types.UTIL_PRODUCT_STORES_UPDATED, stores)
-  },  
+  },
 
   async fetchShipmentGatewayConfigs({ commit }) {
     let configs  = {};
