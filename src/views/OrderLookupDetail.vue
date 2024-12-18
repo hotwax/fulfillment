@@ -112,7 +112,7 @@
                 <ion-list>
                   <ion-item>
                     <ion-label class="ion-text-wrap">{{ translate("Brand") }}</ion-label>
-                    <ion-label class="ion-text-wrap" slot="end">{{ currentEcomStore.storeName || "-" }}</ion-label>
+                    <ion-label class="ion-text-wrap" slot="end">{{ currentEComStore.storeName || "-" }}</ion-label>
                   </ion-item>
                   <ion-item lines="none">
                     <ion-label class="ion-text-wrap">{{ translate("Channel") }}</ion-label>
@@ -280,8 +280,8 @@ import {
   IonToolbar,
   popoverController
 } from "@ionic/vue";
-import { defineComponent } from "vue";
-import { translate } from '@hotwax/dxp-components';
+import { computed, defineComponent } from "vue";
+import { translate, useUserStore } from '@hotwax/dxp-components';
 import { cubeOutline, golfOutline, callOutline, cashOutline, closeCircleOutline, ellipsisVerticalOutline, informationCircleOutline, ribbonOutline, mailOutline, ticketOutline, timeOutline, pulseOutline, storefrontOutline, sunnyOutline, checkmarkDoneOutline, downloadOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { DateTime } from "luxon";
@@ -329,7 +329,6 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       order: "orderLookup/getCurrentOrder",
-      currentEcomStore: "user/getCurrentEComStore",
       getProduct: "product/getProduct",
       getProductStock: "stock/getProductStock",
       getStatusDesc: "util/getStatusDesc",
@@ -413,6 +412,8 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const userStore = useUserStore()
+    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
 
     return {
       callOutline,
@@ -420,6 +421,7 @@ export default defineComponent({
       checkmarkDoneOutline,
       closeCircleOutline,
       cubeOutline,
+      currentEComStore,
       downloadOutline,
       ellipsisVerticalOutline,
       formatCurrency,

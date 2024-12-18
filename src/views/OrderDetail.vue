@@ -476,7 +476,6 @@ export default defineComponent({
     ...mapGetters({
       boxTypeDesc: 'util/getShipmentBoxDesc',
       completedOrders: 'order/getCompletedOrders',
-      currentEComStore: 'user/getCurrentEComStore',
       getProduct: 'product/getProduct',
       getProductStock: 'stock/getProductStock',
       inProgressOrders: 'order/getInProgressOrders',
@@ -1683,6 +1682,7 @@ export default defineComponent({
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
     let currentFacility: any = computed(() => userStore.getCurrentFacility) 
+    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
 
     return {
       addOutline,
@@ -1695,6 +1695,7 @@ export default defineComponent({
       closeCircleOutline,
       copyToClipboard,
       cubeOutline,
+      currentEComStore,
       currentFacility,
       documentTextOutline,
       ellipsisVerticalOutline,

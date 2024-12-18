@@ -7,7 +7,7 @@ import * as types from './mutation-types'
 import logger from '@/logger'
 import store from '@/store';
 import { translate } from '@hotwax/dxp-components';
-import { showToast, isValidCarrierCode, isValidDeliveryDays, getCurrentFacilityId } from '@/utils';
+import { showToast, isValidCarrierCode, isValidDeliveryDays, getCurrentFacilityId, getProductStoreId } from '@/utils';
   
 
 const actions: ActionTree<CarrierState, RootState> = {
@@ -437,7 +437,7 @@ const actions: ActionTree<CarrierState, RootState> = {
           "entityName": "ProductStoreShipmentMethView",
           "inputFields": {
             "roleTypeId": "CARRIER",
-            "productStoreId": this.state.user.currentEComStore.productStoreId,
+            "productStoreId": getProductStoreId(),
             "shipmentMethodTypeId": "STOREPICKUP",
             "shipmentMethodTypeId_op": "notEqual"
           },

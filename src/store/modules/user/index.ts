@@ -12,7 +12,6 @@ const userModule: Module<UserState, RootState> = {
       permissions: [],
       current: {},
       instanceUrl: '',
-      currentEComStore: {},
       preference: {
         printShippingLabel: false,
         printPackingSlip: false

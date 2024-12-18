@@ -80,7 +80,6 @@ export default defineComponent({
       transferOrders: 'transferorder/getTransferOrders',
       getStatusDesc: 'util/getStatusDesc',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
-      currentEComStore: 'user/getCurrentEComStore',
     })
   },
   async mounted() {
@@ -173,7 +172,8 @@ export default defineComponent({
     const store = useStore();
     const userStore = useUserStore()
     let currentFacility: any = computed(() => userStore.getCurrentFacility) 
-
+    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
+    
     return {
       albumsOutline,
       banOutline,
@@ -182,6 +182,7 @@ export default defineComponent({
       checkmarkDoneOutline,
       closeOutline,
       currentFacility,
+      currentEComStore,
       filterOutline,
       iceCreamOutline,
       libraryOutline,

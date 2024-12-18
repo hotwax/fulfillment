@@ -220,7 +220,6 @@ export default defineComponent({
     ...mapGetters({
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
-      currentEComStore: 'user/getCurrentEComStore',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       getProductStock: 'stock/getProductStock',
       notifications: 'user/getNotifications',
@@ -435,12 +434,14 @@ export default defineComponent({
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
     let currentFacility: any = computed(() => userStore.getCurrentFacility) 
+    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
 
     return{
       Actions,
       caretDownOutline,
       chevronUpOutline,
       cubeOutline,
+      currentEComStore,
       currentFacility,
       formatUtcDate,
       getFeature,

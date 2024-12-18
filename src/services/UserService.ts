@@ -85,49 +85,6 @@ const recycleOutstandingOrders = async(payload: any): Promise<any> => {
   })
 }
 
-const getEComStores = async (token: any,  facility: any): Promise<any> => {
-  try {
-    const params = {
-      "inputFields": {
-        "storeName_op": "not-empty",
-        facilityId: facility.facilityId
-      },
-      "fieldList": ["productStoreId", "storeName"],
-      "entityName": "ProductStoreFacilityDetail",
-      "distinct": "Y",
-      "noConditionFind": "Y",
-      "filterByDate": 'Y',
-    }
-    const baseURL = store.getters['user/getBaseUrl'];
-    const resp = await client({
-      url: "performFind",
-      method: "get",
-      baseURL,
-      params,
-      headers: {
-        Authorization:  'Bearer ' + token,
-        'Content-Type': 'application/json'
-      }
-    });
-    if (hasError(resp)) {
-      // Following promise reject pattern as OMS api, to show error message on the login page.
-      return Promise.reject({
-        code: 'error',
-        message: `Failed to fetch product stores for ${facility.facilityName} facility.`,
-        serverResponse: resp.data
-      })
-    } else {
-      return Promise.resolve(resp.data.docs);
-    }
-  } catch(error: any) {
-    return Promise.reject({
-      code: 'error',
-      message: 'Something went wrong',
-      serverResponse: error
-    })
-  }
-}
-
 const getPreferredStore = async (token: any): Promise<any> => {
   const baseURL = store.getters['user/getBaseUrl'];
   try {
@@ -416,7 +373,6 @@ export const UserService = {
     getCollateralRejectionConfig,
     getDisableShipNowConfig,
     getDisableUnpackConfig,
-    getEComStores,
     getFacilityDetails,
     getFacilityOrderCount,
     getFieldMappings,

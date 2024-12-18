@@ -4,7 +4,7 @@ import RootState from '@/store/RootState'
 import store from '@/store';
 import UserState from './UserState'
 import * as types from './mutation-types'
-import { showToast, getCurrentFacilityId } from '@/utils'
+import { showToast, getCurrentFacilityId, getProductStoreId } from '@/utils'
 import { hasError } from '@/adapter'
 import { translate } from '@hotwax/dxp-components'
 import { DateTime, Settings } from 'luxon';
@@ -71,15 +71,9 @@ const actions: ActionTree<UserState, RootState> = {
 
       // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
       const currentFacility: any = useUserStore().getCurrentFacility
-      userProfile.stores = await UserService.getEComStores(token, currentFacility);
-
-      let preferredStore = userProfile.stores[0]
-
-      const preferredStoreId =  await UserService.getPreferredStore(token);
-      if (preferredStoreId) {
-        const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
-        store && (preferredStore = store)
-      }
+      userProfile.stores = await useUserStore().getEComStoresByFacility(currentFacility.facilityId);
+      await useUserStore().getEComStorePreference('SELECTED_BRAND');
+      const preferredStore: any = useUserStore().getCurrentEComStore
       /*  ---- Guard clauses ends here --- */
 
       setPermissions(appPermissions);
@@ -91,13 +85,12 @@ const actions: ActionTree<UserState, RootState> = {
       dispatch('getFieldMappings')
 
       // TODO user single mutation
-      commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
       commit(types.USER_INFO_UPDATED, userProfile);
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       commit(types.USER_TOKEN_CHANGED, { newToken: token })
 
       // Get product identification from api using dxp-component
-      await useProductIdentificationStore().getIdentificationPref(preferredStoreId ? preferredStoreId : preferredStore.productStoreId)
+      await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
         .catch((error) => logger.error(error));
 
       await dispatch("fetchAllNotificationPrefs");
@@ -188,19 +181,12 @@ const actions: ActionTree<UserState, RootState> = {
     emitter.emit('presentLoader', {message: 'Updating facility', backdropDismiss: false})
 
     try {
-      const token = store.getters['user/getUserToken'];
       const userProfile = JSON.parse(JSON.stringify(state.current as any));
-      userProfile.stores = await UserService.getEComStores(token, facility);
+      userProfile.stores = await useUserStore().getEComStoresByFacility(facility.facilityId);
+      await useUserStore().getEComStorePreference('SELECTED_BRAND');
+      const preferredStore: any = useUserStore().getCurrentEComStore
 
-      let preferredStore = userProfile.stores[0];
-      const preferredStoreId =  await UserService.getPreferredStore(token);
-
-      if (preferredStoreId) {
-        const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
-        store && (preferredStore = store)
-      }
       commit(types.USER_INFO_UPDATED, userProfile);
-      commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
       this.dispatch('order/clearOrders')
       await dispatch('getDisableShipNowConfig')
       await dispatch('getDisableUnpackConfig')
@@ -232,22 +218,16 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    *  update current eComStore information
   */
-  async setEComStore({ commit, dispatch }, payload) {
-    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, payload.eComStore);
-    await UserService.setUserPreference({
-      'userPrefTypeId': 'SELECTED_BRAND',
-      'userPrefValue': payload.eComStore.productStoreId
-    });
-
+  async setEComStore({ commit, dispatch }, productStoreId) {
     // Get product identification from api using dxp-component
-    await useProductIdentificationStore().getIdentificationPref(payload.eComStore.productStoreId)
+    await useProductIdentificationStore().getIdentificationPref(productStoreId)
       .catch((error) => logger.error(error));
 
     await dispatch('getDisableShipNowConfig')
     await dispatch('getDisableUnpackConfig')
-    this.dispatch('util/findProductStoreShipmentMethCount')
-    this.dispatch('util/getForceScanSetting', payload.eComStore.productStoreId)
-    this.dispatch('util/fetchBarcodeIdentificationPref', payload.eComStore.productStoreId);
+    this.dispatch('util/findProductStoreShipmentMethCount');
+    this.dispatch('util/getForceScanSetting', productStoreId)
+    this.dispatch('util/fetchBarcodeIdentificationPref', productStoreId);
   },
 
   setUserPreference({ commit }, payload){
@@ -431,7 +411,7 @@ const actions: ActionTree<UserState, RootState> = {
     let config = {};
     const params = {
       "inputFields": {
-        "productStoreId": this.state.user.currentEComStore.productStoreId,
+        "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "FF_USE_NEW_REJ_API"
       },
       "filterByDate": 'Y',
@@ -457,7 +437,7 @@ const actions: ActionTree<UserState, RootState> = {
     let isShipNowDisabled = false;
     const params = {
       "inputFields": {
-        "productStoreId": this.state.user.currentEComStore.productStoreId,
+        "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "DISABLE_SHIPNOW"
       },
       "filterByDate": 'Y',
@@ -484,7 +464,7 @@ const actions: ActionTree<UserState, RootState> = {
     let isUnpackDisabled = false;
     const params = {
       "inputFields": {
-        "productStoreId": this.state.user.currentEComStore.productStoreId,
+        "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "DISABLE_UNPACK"
       },
       "filterByDate": 'Y',
@@ -527,7 +507,7 @@ const actions: ActionTree<UserState, RootState> = {
         //Create Product Store Setting
         payload = {
           ...payload, 
-          "productStoreId": this.state.user.currentEComStore.productStoreId,
+          "productStoreId": getProductStoreId(),
           "settingTypeEnumId": "FULFILL_PART_ODR_REJ",
           "fromDate": DateTime.now().toMillis()
         }
@@ -571,7 +551,7 @@ const actions: ActionTree<UserState, RootState> = {
         //Create Product Store Setting
         payload = {
           ...payload, 
-          "productStoreId": this.state.user.currentEComStore.productStoreId,
+          "productStoreId": getProductStoreId(),
           "settingTypeEnumId": "FF_COLLATERAL_REJ",
           "fromDate": DateTime.now().toMillis()
         }
@@ -598,7 +578,7 @@ const actions: ActionTree<UserState, RootState> = {
     let config = {};
     const params = {
       "inputFields": {
-        "productStoreId": this.state.user.currentEComStore.productStoreId,
+        "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "FULFILL_PART_ODR_REJ"
       },
       "filterByDate": 'Y',
@@ -623,7 +603,7 @@ const actions: ActionTree<UserState, RootState> = {
     let config = {};
     const params = {
       "inputFields": {
-        "productStoreId": this.state.user.currentEComStore.productStoreId,
+        "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "FF_COLLATERAL_REJ"
       },
       "filterByDate": 'Y',

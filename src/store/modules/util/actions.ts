@@ -6,7 +6,7 @@ import { UtilService } from '@/services/UtilService'
 import { hasError } from '@/adapter'
 import logger from '@/logger'
 import store from '@/store';
-import { showToast } from '@/utils'
+import { showToast, getProductStoreId } from '@/utils'
 import { translate } from '@hotwax/dxp-components'
 
 const actions: ActionTree<UtilState, RootState> = {
@@ -348,7 +348,7 @@ const actions: ActionTree<UtilState, RootState> = {
         "partyId": "_NA_",
         "partyId_op": "notEqual",
         "roleTypeId": "CARRIER",
-        "productStoreId": this.state.user.currentEComStore.productStoreId
+        "productStoreId": getProductStoreId()
       },
       "fieldList": ['roleTypeId', "partyId"],
       "viewSize": 1
@@ -539,7 +539,6 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   async createForceScanSetting({ commit }) {
-    const ecomStore = store.getters['user/getCurrentEComStore'];
     const fromDate = Date.now()
 
     try {
@@ -559,7 +558,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
       const params = {
         fromDate,
-        "productStoreId": ecomStore.productStoreId,
+        "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "FULFILL_FORCE_SCAN",
         "settingValue": "false"
       }
@@ -577,7 +576,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async setForceScanSetting({ commit, dispatch, state }, value) {
     let prefValue = state.isForceScanEnabled
-    const eComStoreId = store.getters['user/getCurrentEComStore'].productStoreId;
+    const eComStoreId: any = getProductStoreId();
 
     // when selecting none as ecom store, not updating the pref as it's not possible to save pref with empty productStoreId
     if(!eComStoreId) {
@@ -660,7 +659,6 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   async createBarcodeIdentificationPref({ commit }) {
-    const ecomStore = store.getters['user/getCurrentEComStore'];
     const fromDate = Date.now()
 
     try {
@@ -680,7 +678,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
       const params = {
         fromDate,
-        "productStoreId": ecomStore.productStoreId,
+        "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "BARCODE_IDEN_PREF",
         "settingValue": "internalName"
       }  
@@ -698,7 +696,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async setBarcodeIdentificationPref({ commit, dispatch, state }, value) {
     let prefValue = state.barcodeIdentificationPref
-    const eComStoreId = store.getters['user/getCurrentEComStore'].productStoreId;
+    const eComStoreId = getProductStoreId()
 
     // when selecting none as ecom store, not updating the pref as it's not possible to save pref with empty productStoreId
     if(!eComStoreId) {

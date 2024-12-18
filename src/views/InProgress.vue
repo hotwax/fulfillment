@@ -296,11 +296,10 @@ import { mapGetters, useStore } from 'vuex';
 import { copyToClipboard, formatUtcDate, getFeature, jsonToCsv, showToast } from '@/utils';
 import { isKit } from '@/utils/order'
 import { hasError } from '@/adapter';
-import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue';
 import { OrderService } from '@/services/OrderService';
 import emitter from '@/event-bus';
-import { translate, useUserStore } from '@hotwax/dxp-components';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import { UtilService } from '@/services/UtilService';
 import { DateTime } from 'luxon';
@@ -359,7 +358,6 @@ export default defineComponent({
       inProgressOrders: 'order/getInProgressOrders',
       getProduct: 'product/getProduct',
       rejectReasonOptions: 'util/getRejectReasonOptions',
-      currentEComStore: 'user/getCurrentEComStore',
       userPreference: 'user/getUserPreference',
       boxTypeDesc: 'util/getShipmentBoxDesc',
       getProductStock: 'stock/getProductStock',
@@ -1329,6 +1327,7 @@ export default defineComponent({
     const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
     let currentFacility: any = computed(() => userStore.getCurrentFacility) 
 
     return {
@@ -1341,6 +1340,7 @@ export default defineComponent({
       checkmarkDoneOutline,
       closeCircleOutline,
       cubeOutline,
+      currentEComStore,
       currentFacility,
       ellipsisVerticalOutline,
       fileTrayOutline,

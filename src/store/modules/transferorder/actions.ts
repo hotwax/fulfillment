@@ -8,7 +8,7 @@ import * as types from './mutation-types'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import logger from '@/logger'
 import { getProductIdentificationValue, translate } from '@hotwax/dxp-components'
-import { showToast, getCurrentFacilityId } from "@/utils";
+import { showToast, getCurrentFacilityId, getProductStoreId } from "@/utils";
 import { UtilService } from '@/services/UtilService'
 import store from "@/store";
 
@@ -30,7 +30,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       filters: {
         orderTypeId: { value: 'TRANSFER_ORDER' },
         facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
-        productStoreId: { value: this.state.user.currentEComStore.productStoreId }
+        productStoreId: { value: getProductStoreId() }
       }
     }
 
