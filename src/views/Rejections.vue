@@ -110,8 +110,7 @@
             </ion-label>
           </div>
         </div>
-        <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-line-item">
-          <div class="rejected-order-item">
+        <div v-for="item in order.items" :key="item.orderItemSeqId" class="list-item order-item">
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
@@ -123,37 +122,22 @@
                 </ion-label>
               </ion-item>
             </div>
-            <div>
-              <ion-item lines="none">
-                <ion-label>
-                  {{ formatUtcDate(item.rejectedAt, 'dd MMMM yyyy t a ZZZZ')}}
-                  <p>{{ translate('rejected time') }}</p>
-                </ion-label>
-              </ion-item>
-            </div>
-            <div>
-              <ion-item lines="none">
-                <ion-label lines="none">
-                  {{ item.availableToPromise}}
-                  <p>{{ translate('ATP') }}</p>
-                </ion-label>
-              </ion-item>
-            </div>
-            <div>
-              <ion-item lines="none">
-                <ion-label>
-                  {{ item.rejectionReasonDesc }}
-                  <p>{{ translate('rejection reason') }}</p>
-                </ion-label>
-              </ion-item>
-            </div>
-            <div>
-              <ion-chip outline>
-                <ion-icon :icon="personCircleOutline" />
-                <ion-label>{{ item.rejectedBy }}</ion-label>
-              </ion-chip>
-            </div>
-          </div>
+            <ion-label>
+              {{ formatUtcDate(item.rejectedAt, 'dd MMMM yyyy t a ZZZZ')}}
+              <p>{{ translate('rejected time') }}</p>
+            </ion-label>
+            <ion-label lines="none">
+              {{ item.availableToPromise}}
+              <p>{{ translate('ATP') }}</p>
+            </ion-label>
+            <ion-label>
+              {{ item.rejectionReasonDesc }}
+              <p>{{ translate('rejection reason') }}</p>
+            </ion-label>
+            <ion-chip outline>
+              <ion-icon :icon="personCircleOutline" />
+              <ion-label>{{ item.rejectedBy }}</ion-label>
+            </ion-chip>
         </div>
       </ion-card>
       <ion-infinite-scroll @ionInfinite="loadMoreRejectedOrders($event)" threshold="100px"  v-show="isRejectedOrdersScrollable()" ref="infiniteScrollRef">
@@ -370,12 +354,10 @@ export default defineComponent({
   margin-bottom: var(--spacer-lg);
   align-items: center;
 }
-.rejected-order-item {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  align-items: center;
-  padding: var(--spacer-xs) 0;
+.list-item.order-item {
+  --columns-desktop: 5;
 }
+
 .searchbar{
   padding-top: 0;
 }
