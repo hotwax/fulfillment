@@ -49,10 +49,6 @@ import {
 import { defineComponent, computed } from "vue";
 import { albumsOutline, banOutline, barChartOutline, calendarNumberOutline, checkmarkDoneOutline, closeOutline, filterOutline, iceCreamOutline, libraryOutline, pulseOutline, settings, shirtOutline, ticketOutline } from "ionicons/icons";
 import { mapGetters, useStore } from 'vuex'
-import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper';
-import { UtilService } from '@/services/UtilService';
-import { hasError } from '@/adapter';
-import logger from '@/logger';
 import { translate, useUserStore } from '@hotwax/dxp-components';
 
 export default defineComponent({
@@ -68,22 +64,13 @@ export default defineComponent({
     IonTitle,
     IonToolbar
   },
-  props: ["queryString"],
-  data () {
-    return {
-      shipmentMethods: [] as Array<any>,
-      statuses: [] as Array<any>
-    }
-  },
+  props: ["queryString", "shipmentMethods", "statuses"],
   computed: {
     ...mapGetters({
       transferOrders: 'transferorder/getTransferOrders',
       getStatusDesc: 'util/getStatusDesc',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
     })
-  },
-  async mounted() {
-    await this.fetchFilters();
   },
   unmounted() {
     this.store.dispatch('transferorder/clearTransferOrderFilters');
@@ -114,58 +101,6 @@ export default defineComponent({
 
       transferOrdersQuery.viewIndex = 0;
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
-    },
-    async fetchFilters() {
-      let resp: any;
-      const payload = prepareOrderQuery({
-        docType: "ORDER",
-        queryFields: 'orderId',
-        viewSize: '0',  // passed viewSize as 0 to not fetch any data
-        filters: {
-          '-orderStatusId': { value: 'ORDER_CREATED' },
-          orderTypeId: { value: 'TRANSFER_ORDER' },
-          facilityId: { value: escapeSolrSpecialChars(this.currentFacility?.facilityId) },
-          productStoreId: { value: this.currentEComStore.productStoreId }
-        },
-        facet: {
-          "shipmentMethodTypeIdFacet":{
-            "excludeTags":"shipmentMethodTypeIdFilter",
-            "field":"shipmentMethodTypeId",
-            "mincount":1,
-            "limit":-1,
-            "sort":"index",
-            "type":"terms",
-            "facet": {
-              "ordersCount": "unique(orderId)"
-            }
-          },
-          "orderStatusIdFacet":{
-            "excludeTags":"orderStatusIdFilter",
-            "field":"orderStatusId",
-            "mincount":1,
-            "limit":-1,
-            "sort":"index",
-            "type":"terms",
-            "facet": {
-              "ordersCount": "unique(orderId)"
-            }
-          }
-        }
-      })
-
-      try {
-        resp = await UtilService.fetchTransferOrderFacets(payload);
-        if (resp.status == 200 && !hasError(resp) && resp.data.facets?.count > 0) {
-          this.shipmentMethods = resp.data.facets.shipmentMethodTypeIdFacet.buckets
-          this.statuses = resp.data.facets.orderStatusIdFacet.buckets
-          this.store.dispatch('util/fetchShipmentMethodTypeDesc', this.shipmentMethods.map((shipmentMethod: any) => shipmentMethod.val))
-          this.store.dispatch('util/fetchStatusDesc', this.statuses.map((status: any) => status.val))
-        } else {
-          throw resp.data;
-        }
-      } catch(err) {
-        logger.error('Failed to fetch transfer order filters.', err)
-      }
     },
   },
   setup() {
