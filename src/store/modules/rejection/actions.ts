@@ -31,7 +31,7 @@ const actions: ActionTree<RejectionState, RootState> = {
         facet: {
           "total":"unique(orderId_s)",
           "rejectionReasonIdFacet":{
-            "field":"rejectionReasonId_txt_en",
+            "field":"rejectionReasonId_s",
             "mincount":1,
             "limit":-1,
             "sort":"index",
@@ -114,7 +114,7 @@ const actions: ActionTree<RejectionState, RootState> = {
       filters.rejectedAt_dt = {value: rejectionPeriodFilter}
     }
     if (rejectedOrderQuery.rejectionReasons.length) {
-      filters.rejectionReasonId_txt_en = {value: rejectedOrderQuery.rejectionReasons}
+      filters.rejectionReasonId_s = {value: rejectedOrderQuery.rejectionReasons}
     }
 
     const query = prepareSolrQuery({

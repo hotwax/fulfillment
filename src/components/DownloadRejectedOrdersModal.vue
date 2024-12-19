@@ -213,7 +213,7 @@
           filters.rejectedAt_dt = {value: rejectionPeriodFilter}
         }
         if (rejectedOrderQuery.rejectionReasons.length) {
-          filters.rejectionReasonId_txt_en = {value: rejectedOrderQuery.rejectionReasons}
+          filters.rejectionReasonId_s = {value: rejectedOrderQuery.rejectionReasons}
         }
 
         const query = prepareSolrQuery({
