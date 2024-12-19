@@ -1041,7 +1041,10 @@ export default defineComponent({
       // Getting all the shipmentIds from shipmentPackages for which label is missing
       const shipmentIds = order.shipmentPackages
           ?.filter((shipmentPackage: any) => !shipmentPackage.trackingCode)
-          .map((shipmentPackage: any) => shipmentPackage.shipmentId);
+          .reduce((uniqueIds: any[], shipmentPackage: any) => {
+            if(!uniqueIds.includes(shipmentPackage.shipmentId)) uniqueIds.push(shipmentPackage.shipmentId);
+            return uniqueIds;
+          }, []);
 
       if(!shipmentIds?.length) {
         showToast(translate("Failed to generate shipping label"))
@@ -1075,7 +1078,10 @@ export default defineComponent({
       return popover.present();
     },
     async printShippingLabel(order: any) {
-      const shipmentIds = order.shipmentIds ? order.shipmentIds : order.shipmentPackages?.map((shipmentPackage: any) => shipmentPackage.shipmentId);
+      const shipmentIds = order.shipmentIds ? order.shipmentIds : order.shipmentPackages?.reduce((uniqueIds: any[], shipmentPackage: any) => {
+        if(!uniqueIds.includes(shipmentPackage.shipmentId)) uniqueIds.push(shipmentPackage.shipmentId);
+        return uniqueIds;
+      }, []);
       const shippingLabelPdfUrls = order.shipmentPackages
           ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
           .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);

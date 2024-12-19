@@ -51,7 +51,9 @@ export default defineComponent({
       const shippingLabelPdfUrls = [] as any;
 
       shipmentPackages.map((shipmentPackage: any) => {
-        shipmentIds.push(shipmentPackage.shipmentId)
+        if(!shipmentIds.includes(shipmentPackage.shipmentId)) {
+          shipmentIds.push(shipmentPackage.shipmentId)
+        }
         shipmentPackage.labelImageUrl && shippingLabelPdfUrls.push(shipmentPackage.labelImageUrl)
       })
 
