@@ -106,7 +106,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       })
 
       if(!hasError(resp)) {
-        resp.data.docs.map((doc: any) => {
+        resp.data.docs?.map((doc: any) => {
           systemProperties[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue
         })
       } else {
@@ -337,7 +337,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       const productIds: Array<string> = []
       const shipmentMethodIds: Array<string> = []
 
-      const orderRouteSegmentInfo = orderRouteSegment.status === "fulfilled" && orderRouteSegment.value.data.docs.length > 0 ? orderRouteSegment.value.data.docs.reduce((orderSegmentInfo: any, routeSegment: any) => {
+      const orderRouteSegmentInfo = orderRouteSegment.status === "fulfilled" && orderRouteSegment.value.data.docs?.length > 0 ? orderRouteSegment.value.data.docs.reduce((orderSegmentInfo: any, routeSegment: any) => {
         if(orderSegmentInfo[routeSegment.shipGroupSeqId]) orderSegmentInfo[routeSegment.shipGroupSeqId].push(routeSegment)
         else orderSegmentInfo[routeSegment.shipGroupSeqId] = [routeSegment]
         return orderSegmentInfo
@@ -374,7 +374,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       const carrierPartyIds = [] as any;
 
       if(orderShipGroups.status === "fulfilled" && !hasError(orderShipGroups.value) && orderShipGroups.value.data.count > 0) {
-        shipGroups = orderShipGroups.value.data.docs.reduce((shipGroups: any, shipGroup: any) => {
+        shipGroups = orderShipGroups.value.data.docs?.reduce((shipGroups: any, shipGroup: any) => {
           productIds.push(shipGroup.productId)
           shipGroup.shipmentMethodTypeId && shipmentMethodIds.includes(shipGroup.shipmentMethodTypeId) ? '' : shipmentMethodIds.push(shipGroup.shipmentMethodTypeId)
           shipGroup.shipGroupSeqId && shipGroupSeqIds.includes(shipGroup.shipGroupSeqId) ? '' : shipGroupSeqIds.push(shipGroup.shipGroupSeqId)
