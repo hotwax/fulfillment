@@ -280,6 +280,13 @@ export default defineComponent({
     this.store.dispatch('order/clearCompletedOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
+  watch: {
+    'completedOrders.list': {
+      handler() {
+        this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
+      },
+    }
+  },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
   },
