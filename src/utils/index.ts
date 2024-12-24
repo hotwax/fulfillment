@@ -187,7 +187,7 @@ const currentSymbol: any = {
 }
 
 const formatCurrency = (amount: any, code: string) => {
-  return `${currentSymbol[code] || code} ${amount}`
+  return `${currentSymbol[code] || code} ${amount || 0}`
 }
 
 const getColorByDesc = (desc: string) => ({
