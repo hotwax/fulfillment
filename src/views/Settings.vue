@@ -38,8 +38,8 @@
 
       <section>
         <DxpOmsInstanceNavigator />
-        <DxpFacilitySwitcher @updateFacility="updateFacility($event)"/>
         <DxpProductStoreSelector @updateEComStore="updateEComStore($event)"/>
+        <DxpFacilitySwitcher @updateFacility="updateFacility($event)"/>
 
         <ion-card>
           <ion-card-header>
