@@ -168,6 +168,19 @@
             <ion-toggle label-placement="start" :checked="'true' === collateralRejectionConfig.settingValue" @click.prevent="confirmCollateralRejection(collateralRejectionConfig, $event)">{{ translate("Auto reject related items") }}</ion-toggle>
           </ion-item>
         </ion-card>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Affect QOH on rejection") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate('Adjust the QOH along with ATP on rejection.') }}
+          </ion-card-content>
+          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_AFFECT_QOH_CONFIG_UPDATE)">
+            <ion-toggle label-placement="start" :checked="'true' === affectQohConfig.settingValue" @click.prevent="confirmAffectQohConfig(affectQohConfig, $event)">{{ translate("Affect QOH") }}</ion-toggle>
+          </ion-item>
+        </ion-card>
         </template>
       </section>
     </ion-content>
@@ -273,6 +286,7 @@ export default defineComponent({
       newRejectionApiConfig: 'user/getNewRejectionApiConfig',
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
+      affectQohConfig: 'user/getAffectQohConfig',
       barcodeIdentificationPref: 'util/getBarcodeIdentificationPref'
     })
   },
@@ -676,6 +690,39 @@ export default defineComponent({
         "settingValue": value
       }
       await this.store.dispatch('user/updateCollateralRejectionConfig', params)
+    },
+    async confirmAffectQohConfig(config: any, event: any) {
+      event.stopImmediatePropagation();
+
+      const isChecked = !event.target.checked;
+      const message = translate("Are you sure you want to perform this action?");
+      const header = isChecked ? translate('Affect QOH on rejection') : translate('Do not affect QOH on rejection')
+
+      const alert = await alertController.create({
+        header,
+        message,
+        buttons: [
+          {
+            text: translate("Cancel"),
+            role: "cancel"
+          },
+          {
+            text: translate("Confirm"),
+            handler: async () => {
+              alertController.dismiss()
+              await this.updateAffectQohConfig(config, !event.target.checked)
+            }
+          }
+        ],
+      });
+      return alert.present();
+    },
+    async updateAffectQohConfig(config: any, value: any) {
+      const params = {
+        ...config,
+        "settingValue": value
+      }
+      await this.store.dispatch('user/updateAffectQohConfig', params)
     },
     setBarcodeIdentificationPref(value: string) {
       this.store.dispatch('util/setBarcodeIdentificationPref', value)
