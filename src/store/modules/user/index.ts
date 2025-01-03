@@ -35,6 +35,7 @@ const userModule: Module<UserState, RootState> = {
       newRejectionApiConfig: {},
       partialOrderRejectionConfig: {},
       collateralRejectionConfig: {},
+      affectQohConfig: {},
       isShipNowDisabled: false,
       isUnpackDisabled: false
     },

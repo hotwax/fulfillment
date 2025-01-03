@@ -67,6 +67,9 @@ const getters: GetterTree <UserState, RootState> = {
     getCollateralRejectionConfig(state) {
         return  state.collateralRejectionConfig;
     },
+    getAffectQohConfig(state) {
+        return  state.affectQohConfig;
+    },
     isShipNowDisabled(state) {
         return state.isShipNowDisabled;
     },

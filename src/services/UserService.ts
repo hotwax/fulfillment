@@ -360,16 +360,39 @@ const updateCollateralRejectionConfig = async (payload: any): Promise<any> => {
     data: payload
   });
 }
+const getAffectQohConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: payload,
+  });
+}
+const createAffectQohConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
+const updateAffectQohConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
 
 
 export const UserService = {
     addFacilityToGroup,
+    createAffectQohConfig,
     createCollateralRejectionConfig,
     createEnumeration,
     createFieldMapping,
     createPartialOrderRejectionConfig,
     deleteFieldMapping,
     login,
+    getAffectQohConfig,
     getCollateralRejectionConfig,
     getDisableShipNowConfig,
     getDisableUnpackConfig,
@@ -387,6 +410,7 @@ export const UserService = {
     recycleOutstandingOrders,
     setUserPreference,
     getUserPermissions,
+    updateAffectQohConfig,
     updateFacility,
     updateFacilityToGroup,
     updateFieldMapping,
