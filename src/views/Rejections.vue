@@ -110,7 +110,7 @@
             </ion-label>
           </div>
         </div>
-        <div v-for="item in order.items" :key="item.orderItemSeqId" class="list-item order-item">
+        <div v-for="item in order.items" :key="item.orderItemSeqId" class="list-item">
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
@@ -354,7 +354,7 @@ export default defineComponent({
   margin-bottom: var(--spacer-lg);
   align-items: center;
 }
-.list-item.order-item {
+.list-item {
   --columns-desktop: 5;
 }
 
