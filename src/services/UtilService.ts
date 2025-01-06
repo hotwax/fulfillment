@@ -635,6 +635,38 @@ const isEnumExists = async (enumId: string): Promise<any> => {
   }
 }
 
+const getCODOrderRemainingTotal = async(payload: any): Promise<any> => {
+  return api({
+    url: "service/getCODOrderRemainingTotal",
+    method: "post",
+    data: payload
+  })
+}
+
+const fetchOrderAdjustments = async(payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "post",
+    data: payload
+  })
+}
+
+const fetchOrderPayment = async(payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "post",
+    data: payload
+  })
+}
+
+const fetchAdjustmentTypeDescription = async(payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "post",
+    data: payload
+  })
+}
+
 export const UtilService = {
   activateGiftCard,
   createBarcodeIdentificationPref,
@@ -642,6 +674,7 @@ export const UtilService = {
   createForceScanSetting,
   createPicklist,
   createEnumeration,
+  fetchAdjustmentTypeDescription,
   fetchCarrierPartyIds,
   fetchDefaultShipmentBox,
   fetchEnumeration,
@@ -650,6 +683,7 @@ export const UtilService = {
   fetchFulfillmentRejectReasons,
   fetchGiftCardFulfillmentInfo,
   fetchGiftCardItemPriceInfo,
+  fetchOrderAdjustments,
   fetchPartyInformation,
   fetchPicklistInformation,
   fetchProductStores,
@@ -664,6 +698,7 @@ export const UtilService = {
   fetchShipmentRouteSegmentInformation,
   findCarrierPartyIdsForShipment,
   findCarrierShipmentBoxType,
+  fetchOrderPayment,
   findProductStoreShipmentMethCount,
   findShipmentIdsForOrders,
   findShipmentItemInformation,
@@ -671,6 +706,7 @@ export const UtilService = {
   findShipmentPackageContents,
   fetchTransferOrderFacets,
   getAvailablePickers,
+  getCODOrderRemainingTotal,
   getProductStoreSetting,
   isEnumExists,
   resetPicker,
