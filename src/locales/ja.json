@@ -366,6 +366,7 @@
   "Order Invoicing Status": "Order Invoicing Status",
   "Order item sequence ID": "Order item sequence ID",
   "Order Lookup": "注文検索",
+  "Order level charges like shipping fees and taxes are being credited on this label becuase it is the first shipment of this order.": "Order level charges like shipping fees and taxes are being credited on this label becuase it is the first shipment of this order.",
   "Order Name": "注文名",
   "Order packed successfully": "注文が正常に梱包されました",
   "Order packed successfully. Document generation in process": "注文が正常に梱包されました。ドキュメント生成中",

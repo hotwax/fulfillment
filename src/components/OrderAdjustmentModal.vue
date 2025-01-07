@@ -10,41 +10,42 @@
     </ion-toolbar>
   </ion-header>
 
-  <ion-content class="ion-padding">
-    <div>
-      <ion-list>
-        <ion-item v-if="shipmentSubtotal">
-          <ion-label>{{ translate("Shipment subtotal") }}</ion-label>
-          <ion-note slot="end">{{ currency }} {{ shipmentSubtotal }}</ion-note>
-        </ion-item>
-        <ion-accordion-group v-if="orderAdjustments.length">
-          <ion-accordion value="adjustment">
-            <ion-item slot="header" color="light" lines="full">
-              <ion-label>{{ translate("Order adjustments") }}</ion-label>
-              <ion-note slot="end">{{ currency }} {{ orderHeaderAdjustmentTotal }}</ion-note>
+  <ion-content>
+    <ion-item class="ion-margin-top" lines="none">
+      <ion-label>{{ translate("Order level charges like shipping fees and taxes are being credited on this label becuase it is the first shipment of this order.") }}</ion-label>
+    </ion-item>
+    <ion-list>
+      <ion-item v-if="shipmentSubtotal">
+        <ion-label>{{ translate("Shipment subtotal") }}</ion-label>
+        <ion-note slot="end">{{ currency }} {{ shipmentSubtotal }}</ion-note>
+      </ion-item>
+      <ion-accordion-group v-if="orderAdjustments.length">
+        <ion-accordion value="adjustment">
+          <ion-item slot="header" color="light" lines="full">
+            <ion-label>{{ translate("Order adjustments") }}</ion-label>
+            <ion-note slot="end">{{ currency }} {{ orderHeaderAdjustmentTotal }}</ion-note>
+          </ion-item>
+          <div slot="content">
+            <ion-item v-for="adjustment in orderAdjustments" :key="adjustment">
+              <ion-label>{{ orderAdjustmentTypeDesc[adjustment.orderAdjustmentTypeId] ?? adjustment.orderAdjustmentTypeId }}</ion-label>
+              <ion-note slot="end">{{ currency }} {{ adjustment.amount }}</ion-note>
             </ion-item>
-            <div slot="content">
-              <ion-item v-for="adjustment in orderAdjustments" :key="adjustment">
-                <ion-label>{{ orderAdjustmentTypeDesc[adjustment.orderAdjustmentTypeId] ?? adjustment.orderAdjustmentTypeId }}</ion-label>
-                <ion-note slot="end">{{ currency }} {{ adjustment.amount }}</ion-note>
-              </ion-item>
-            </div>
-          </ion-accordion>
-        </ion-accordion-group>
-        <ion-item v-if="shipmentTotal">
-          <ion-label>{{ translate("Shipment total") }}</ion-label>
-          <ion-note slot="end">{{ currency }} {{ shipmentTotal }}</ion-note>
-        </ion-item>
-        <ion-item v-if="otherShipmentTotal">
-          <ion-label>{{ translate("Other shipment totals") }}</ion-label>
-          <ion-note slot="end">{{ currency }} {{ otherShipmentTotal }}</ion-note>
-        </ion-item>
-        <ion-item v-if="grandTotal">
-          <ion-label>{{ translate("Order total") }}</ion-label>
-          <ion-note slot="end">{{ currency }} {{ grandTotal }}</ion-note>
-        </ion-item>
-      </ion-list>
-    </div>
+          </div>
+        </ion-accordion>
+      </ion-accordion-group>
+      <ion-item v-if="shipmentTotal">
+        <ion-label>{{ translate("Shipment total") }}</ion-label>
+        <ion-note slot="end">{{ currency }} {{ shipmentTotal }}</ion-note>
+      </ion-item>
+      <ion-item v-if="otherShipmentTotal">
+        <ion-label>{{ translate("Other shipment totals") }}</ion-label>
+        <ion-note slot="end">{{ currency }} {{ otherShipmentTotal }}</ion-note>
+      </ion-item>
+      <ion-item v-if="grandTotal">
+        <ion-label>{{ translate("Order total") }}</ion-label>
+        <ion-note slot="end">{{ currency }} {{ grandTotal }}</ion-note>
+      </ion-item>
+    </ion-list>
   </ion-content>
 </template>
 

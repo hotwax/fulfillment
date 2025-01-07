@@ -365,6 +365,7 @@
   "Order Invoicing Status": "Estado de facturación de la orden ",
   "Order item sequence ID": "Order item sequence ID",
   "Order Lookup": "Búsqueda de pedidos",
+  "Order level charges like shipping fees and taxes are being credited on this label becuase it is the first shipment of this order.": "Order level charges like shipping fees and taxes are being credited on this label becuase it is the first shipment of this order.",
   "Order Name": "ID de pedido",
   "Order packed successfully": "Pedido empacado exitosamente",
   "Order packed successfully. Document generation in process": "Pedido empacado con éxito. Proceso de generación de documentos en curso",
