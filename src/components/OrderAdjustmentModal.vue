@@ -13,11 +13,11 @@
   <ion-content class="ion-padding">
     <div>
       <ion-list>
-        <ion-item>
+        <ion-item v-if="shipmentSubtotal">
           <ion-label>{{ translate("Shipment subtotal") }}</ion-label>
           <ion-note slot="end">{{ currency }} {{ shipmentSubtotal }}</ion-note>
         </ion-item>
-        <ion-accordion-group>
+        <ion-accordion-group v-if="orderAdjustments.length">
           <ion-accordion value="adjustment">
             <ion-item slot="header" color="light" lines="full">
               <ion-label>{{ translate("Order adjustments") }}</ion-label>
@@ -25,13 +25,13 @@
             </ion-item>
             <div slot="content">
               <ion-item v-for="adjustment in orderAdjustments" :key="adjustment">
-                <ion-label>{{ orderAdjustmentTypeDesc[adjustment.orderAdjustmentTypeId] }}</ion-label>
+                <ion-label>{{ orderAdjustmentTypeDesc[adjustment.orderAdjustmentTypeId] ?? adjustment.orderAdjustmentTypeId }}</ion-label>
                 <ion-note slot="end">{{ currency }} {{ adjustment.amount }}</ion-note>
               </ion-item>
             </div>
           </ion-accordion>
         </ion-accordion-group>
-        <ion-item>
+        <ion-item v-if="shipmentTotal">
           <ion-label>{{ translate("Shipment total") }}</ion-label>
           <ion-note slot="end">{{ currency }} {{ shipmentTotal }}</ion-note>
         </ion-item>
@@ -39,7 +39,7 @@
           <ion-label>{{ translate("Other shipment totals") }}</ion-label>
           <ion-note slot="end">{{ currency }} {{ otherShipmentTotal }}</ion-note>
         </ion-item>
-        <ion-item>
+        <ion-item v-if="grandTotal">
           <ion-label>{{ translate("Order total") }}</ion-label>
           <ion-note slot="end">{{ currency }} {{ grandTotal }}</ion-note>
         </ion-item>
@@ -56,16 +56,17 @@ import {
   IonButton,
   IonContent,
   IonHeader,
+  IonNote,
   IonIcon,
   IonTitle,
   IonToolbar,
   IonItem,
+  IonLabel,
   IonList,
   modalController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { close, save, saveOutline } from "ionicons/icons";
-import { useStore, mapGetters } from "vuex";
+import { close } from "ionicons/icons";
 import { translate } from '@hotwax/dxp-components'
 import logger from "@/logger";
 import { UtilService } from "@/services/UtilService";
@@ -80,8 +81,10 @@ export default defineComponent({
     IonButton,
     IonContent,
     IonHeader,
+    IonNote,
     IonIcon,
     IonItem,
+    IonLabel,
     IonList,
     IonTitle,
     IonToolbar
@@ -110,14 +113,14 @@ export default defineComponent({
     // Getting seqIds as need to add item level adjustment to specific shipment total
     this.orderItemSeqIds = this.order.items.map((item: any) => item.orderItemSeqId)
 
-    await this.fetchOrderPayment();
+    await this.fetchOrderShipGroupInfo();
     await this.fetchAdjustmentTypeDescription();
     this.shipmentTotal = this.shipmentSubtotal + this.orderHeaderAdjustmentTotal
   },
   methods: {
-    async fetchOrderPayment() {
+    async fetchOrderShipGroupInfo() {
       try {
-        const resp = await UtilService.fetchOrderPayment({
+        const resp = await UtilService.fetchOrderShipGroupInfo({
           inputFields: {
             orderId: this.orderId
           },
@@ -152,7 +155,7 @@ export default defineComponent({
           })
         }
       } catch(err) {
-        logger.error("Failed to fetch order payment info", err)
+        logger.error("Failed to fetch ship group info for order", err)
       }
     },
     async fetchAdjustmentTypeDescription() {
@@ -174,7 +177,7 @@ export default defineComponent({
           }, {})
         }
       } catch(err) {
-        logger.error("Failed to fetch order payment info", err)
+        logger.error("Failed to fetch adjustment type descriptions", err)
       }
     },
     closeModal() {
@@ -182,12 +185,8 @@ export default defineComponent({
     },
   },
   setup() {
-    const store = useStore();
     return {
       close,
-      save,
-      saveOutline,
-      store,
       translate
     };
   }

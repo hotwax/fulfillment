@@ -247,7 +247,7 @@
               <ion-icon slot="end" color="success" :icon="cashOutline" />
             </ion-item>
             <ion-item button v-else-if="isCODPaymentPending" @click="openOrderAdjustmentInfo">
-              <ion-label>{{ translate("This shipping label will not include order level charges") }}</ion-label>
+              <ion-label>{{ translate("This shipping label will not include order level charges.") }}</ion-label>
               <ion-icon slot="end" :icon="cashOutline" />
             </ion-item>
             <ion-item>
@@ -572,7 +572,6 @@ export default defineComponent({
 
     if(isCODPayment) {
       this.fetchCODPaymentInfo();
-      this.fetchOrderAdjustments();
     }
   },
   async mounted() {
@@ -1718,6 +1717,7 @@ export default defineComponent({
 
         if(!hasError(resp) && resp.data?.total) {
           this.isCODPaymentPending = true
+          this.fetchOrderAdjustments();
         }
       } catch(err) {
         logger.error(err);

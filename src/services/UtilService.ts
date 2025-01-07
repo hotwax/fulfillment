@@ -667,6 +667,14 @@ const fetchAdjustmentTypeDescription = async(payload: any): Promise<any> => {
   })
 }
 
+const fetchOrderShipGroupInfo = async(payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "post",
+    data: payload
+  })
+}
+
 export const UtilService = {
   activateGiftCard,
   createBarcodeIdentificationPref,
@@ -684,6 +692,7 @@ export const UtilService = {
   fetchGiftCardFulfillmentInfo,
   fetchGiftCardItemPriceInfo,
   fetchOrderAdjustments,
+  fetchOrderShipGroupInfo,
   fetchPartyInformation,
   fetchPicklistInformation,
   fetchProductStores,
