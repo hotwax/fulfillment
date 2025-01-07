@@ -94,7 +94,8 @@ export default defineComponent({
       orderAdjustmentTypeDesc: {} as any,
       otherShipmentTotal: 0,
       shipmentSubtotal: 0,
-      shipmentTotal: 0
+      shipmentTotal: 0,
+      orderItemSeqIds: [] as Array<string>
     }
   },
   props: ["order", "orderId", "orderAdjustments", "orderHeaderAdjustmentTotal", "adjustmentsByGroup"],
@@ -105,6 +106,9 @@ export default defineComponent({
     this.orderAdjustments.map((adjustment: any) => {
       this.orderAdjustmentTypeIds.push(adjustment.orderAdjustmentTypeId)
     })
+
+    // Getting seqIds as need to add item level adjustment to specific shipment total
+    this.orderItemSeqIds = this.order.items.map((item: any) => item.orderItemSeqId)
 
     await this.fetchOrderPayment();
     await this.fetchAdjustmentTypeDescription();
@@ -119,7 +123,6 @@ export default defineComponent({
           },
           entityName: "OrderHeaderItemAndShipGroup",
           viewSize: 50,
-          distinct: "Y",
           fieldList: ["orderId", "grandTotal", "currencyUom", "unitPrice", "shipGroupSeqId"]
         })
 
@@ -134,13 +137,18 @@ export default defineComponent({
             }
           })
 
-          Object.entries(this.adjustmentsByGroup).map(([seqId, adjustmentAmount]: any) => {
-            // If we have adjustment with _NA_ group then adding them in the current shipment total
-            if(seqId !== this.order.shipGroupSeqId && seqId !== "_NA_") {
-              this.otherShipmentTotal += adjustmentAmount
-            } else {
-              this.shipmentSubtotal += adjustmentAmount
-            }
+          Object.entries(this.adjustmentsByGroup).map(([seqId, adjustments]: any) => {
+            adjustments.map((adjustment: any) => {
+              if(seqId === this.order.shipGroupSeqId) {
+                this.shipmentSubtotal += adjustment.amount
+              } else if(seqId !== "_NA_") {
+                this.otherShipmentTotal += adjustment.amount
+              } else if(this.orderItemSeqIds.includes(adjustment.orderItemSeqId)) {
+                this.shipmentSubtotal += adjustment.amount
+              } else {
+                this.otherShipmentTotal += adjustment.amount
+              }
+            })
           })
         }
       } catch(err) {
