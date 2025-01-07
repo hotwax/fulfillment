@@ -100,6 +100,7 @@ const actions: ActionTree<UserState, RootState> = {
       await dispatch('getNewRejectionApiConfig')
       await dispatch('getPartialOrderRejectionConfig')
       await dispatch('getCollateralRejectionConfig')
+      await dispatch('getAffectQohConfig')
       await dispatch('getDisableShipNowConfig')
       await dispatch('getDisableUnpackConfig')
     
@@ -623,6 +624,62 @@ const actions: ActionTree<UserState, RootState> = {
       logger.error(err);
     } 
     commit(types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED, config);   
+  },
+
+  async updateAffectQohConfig ({ dispatch }, payload) {  
+    let resp = {} as any;
+    try {
+      if (!payload.fromDate) {
+        //Create Product Store Setting
+        payload = {
+          ...payload, 
+          "productStoreId": getProductStoreId(),
+          "settingTypeEnumId": "AFFECT_QOH_ON_REJ",
+          "fromDate": DateTime.now().toMillis()
+        }
+        resp = await UserService.createAffectQohConfig(payload) as any
+      } else {
+        //Update Product Store Setting
+        resp = await UserService.updateAffectQohConfig(payload) as any
+      }
+
+      if (!hasError(resp)) {
+        showToast(translate('Configuration updated'))
+      } else {
+        showToast(translate('Failed to update configuration'))
+      }
+    } catch(err) {
+      showToast(translate('Failed to update configuration'))
+      logger.error(err)
+    }
+
+    // Fetch the updated configuration
+    await dispatch("getAffectQohConfig");
+  },
+  async getAffectQohConfig ({ commit }) {
+    let config = {};
+    const params = {
+      "inputFields": {
+        "productStoreId": getProductStoreId(),
+        "settingTypeEnumId": "AFFECT_QOH_ON_REJ"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "viewSize": 1
+    } as any
+
+    try {
+      const resp = await UserService.getAffectQohConfig(params)
+      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
+        config = resp.data?.docs[0];
+      } else {
+        logger.error('Failed to fetch affect QOH configuration');
+      }
+    } catch (err) {
+      logger.error(err);
+    } 
+    commit(types.USER_AFFECT_QOH_CONFIG_UPDATED, config);   
   },
 
   addNotification({ state, commit }, payload) {
