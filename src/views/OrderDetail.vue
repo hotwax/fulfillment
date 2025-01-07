@@ -1735,6 +1735,7 @@ export default defineComponent({
         if(!hasError(resp) && resp.data?.count) {
           this.orderHeaderAdjustmentTotal = 0
           this.orderAdjustments = resp.data.docs.filter((adjustment: any) => {
+            // Considered that the adjustment will not be made at shipGroup level
             if((adjustment.orderItemSeqId === "_NA_" || !adjustment.orderItemSeqId) && !adjustment.billingShipmentId) {
               this.orderHeaderAdjustmentTotal += adjustment.amount
               return true;
