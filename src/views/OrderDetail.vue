@@ -644,9 +644,10 @@ export default defineComponent({
         showToast(translate("Failed to update shipment method detail."));
       }
     },
-    updateCarrierShipmentDetails(carrierPartyId: string, shipmentMethodTypeId: string) {
+    async updateCarrierShipmentDetails(carrierPartyId: string, shipmentMethodTypeId: string) {
       this.carrierPartyId = carrierPartyId
       this.shipmentMethodTypeId = shipmentMethodTypeId
+      this.carrierMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
       this.shipmentLabelErrorMessages = ""
     },
     async fetchKitComponent(orderItem: any, isOtherShipment = false ) {
