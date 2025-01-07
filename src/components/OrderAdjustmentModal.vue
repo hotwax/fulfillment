@@ -21,7 +21,7 @@
           <ion-accordion value="adjustment">
             <ion-item slot="header" color="light" lines="full">
               <ion-label>{{ translate("Order adjustments") }}</ion-label>
-              <ion-note slot="end">{{ currency }} {{ adjustmentTotal }}</ion-note>
+              <ion-note slot="end">{{ currency }} {{ orderHeaderAdjustmentTotal }}</ion-note>
             </ion-item>
             <div slot="content">
               <ion-item v-for="adjustment in orderAdjustments" :key="adjustment">
@@ -35,13 +35,13 @@
           <ion-label>{{ translate("Shipment total") }}</ion-label>
           <ion-note slot="end">{{ currency }} {{ shipmentTotal }}</ion-note>
         </ion-item>
-        <ion-item>
+        <ion-item v-if="otherShipmentTotal">
           <ion-label>{{ translate("Other shipment totals") }}</ion-label>
           <ion-note slot="end">{{ currency }} {{ otherShipmentTotal }}</ion-note>
         </ion-item>
         <ion-item>
           <ion-label>{{ translate("Order total") }}</ion-label>
-          <ion-note slot="end">{{ grandTotal }}</ion-note>
+          <ion-note slot="end">{{ currency }} {{ grandTotal }}</ion-note>
         </ion-item>
       </ion-list>
     </div>
@@ -90,7 +90,6 @@ export default defineComponent({
     return {
       grandTotal: "",
       currency: "",
-      adjustmentTotal: "",
       orderAdjustmentTypeIds: [] as any,
       orderAdjustmentTypeDesc: {} as any,
       otherShipmentTotal: 0,
@@ -98,18 +97,18 @@ export default defineComponent({
       shipmentTotal: 0
     }
   },
-  props: ["order", "orderId", "orderAdjustments"],
+  props: ["order", "orderId", "orderAdjustments", "orderHeaderAdjustmentTotal", "adjustmentsByGroup"],
   async mounted() {
-    let total = 0;
+    // When calculating total we are not honoring the adjustments added directly on shipGroup level
+    // as in the currently flow its assumed that there is no way to add adjustment at shipGroup level
+    // If in the future we have such a support then the logic to calculate subtotal and total needs to be updated
     this.orderAdjustments.map((adjustment: any) => {
       this.orderAdjustmentTypeIds.push(adjustment.orderAdjustmentTypeId)
-      total += adjustment.amount
     })
-    
-    this.adjustmentTotal = this.currency + " " + total
+
     await this.fetchOrderPayment();
     await this.fetchAdjustmentTypeDescription();
-    this.shipmentTotal = this.shipmentSubtotal + total
+    this.shipmentTotal = this.shipmentSubtotal + this.orderHeaderAdjustmentTotal
   },
   methods: {
     async fetchOrderPayment() {
@@ -121,17 +120,26 @@ export default defineComponent({
           entityName: "OrderHeaderItemAndShipGroup",
           viewSize: 50,
           distinct: "Y",
-          fieldList: ["orderId", "remainingSubTotal", "grandTotal", "currencyUom", "unitPrice", "shipGroupSeqId"]
+          fieldList: ["orderId", "grandTotal", "currencyUom", "unitPrice", "shipGroupSeqId"]
         })
 
         if(!hasError(resp) && resp.data?.count) {
-          this.grandTotal = resp.data.docs[0].currencyUom + " " + resp.data.docs[0].grandTotal
+          this.grandTotal = resp.data.docs[0].grandTotal
           this.currency = resp.data.docs[0].currencyUom
           resp.data.docs.map((group: any) => {
             if (group.shipGroupSeqId != this.order.shipGroupSeqId) {
               this.otherShipmentTotal += group.unitPrice
             } else {
               this.shipmentSubtotal += group.unitPrice
+            }
+          })
+
+          Object.entries(this.adjustmentsByGroup).map(([seqId, adjustmentAmount]: any) => {
+            // If we have adjustment with _NA_ group then adding them in the current shipment total
+            if(seqId !== this.order.shipGroupSeqId && seqId !== "_NA_") {
+              this.otherShipmentTotal += adjustmentAmount
+            } else {
+              this.shipmentSubtotal += adjustmentAmount
             }
           })
         }

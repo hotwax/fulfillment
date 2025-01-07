@@ -541,7 +541,9 @@ export default defineComponent({
       orderInvoiceExt: "" as any,
       isCODPaymentPending: false,
       isOrderAdjustmentPending: false,
-      orderAdjustments: []
+      orderAdjustments: [],
+      orderHeaderAdjustmentTotal: 0,
+      adjustmentsByGroup: {} as any
     }
   },
   async ionViewDidEnter() {
@@ -1724,18 +1726,22 @@ export default defineComponent({
       try {
         const resp = await UtilService.fetchOrderAdjustments({
           inputFields: {
-            orderId: this.orderId,
-            orderItemSeqId_fld0_value: "_NA_",
-            orderItemSeqId_fld0_grp: "1",
-            orderItemSeqId_fld0_op: "equals",
-            orderItemSeqId_fld1_grp: "2",
-            orderItemSeqId_fld1_op: "empty"
+            orderId: this.orderId
           },
           entityName: "OrderAdjustment",
           viewSize: 50
         })
         if(!hasError(resp) && resp.data?.count) {
-          this.orderAdjustments = resp.data.docs
+          this.orderHeaderAdjustmentTotal = 0
+          this.orderAdjustments = resp.data.docs.filter((adjustment: any) => {
+            if(adjustment.orderItemSeqId === "_NA_" || !adjustment.orderItemSeqId) {
+              this.orderHeaderAdjustmentTotal += adjustment.amount
+              return true;
+            } else {
+              this.adjustmentsByGroup[adjustment.shipGroupSeqId] ? (this.adjustmentsByGroup[adjustment.shipGroupSeqId] += adjustment.amount) : (this.adjustmentsByGroup[adjustment.shipGroupSeqId] = adjustment.amount)
+              return false;
+            }
+          })
           this.isOrderAdjustmentPending = resp.data.docs.some((adjustment: any) => !adjustment.billingShipmentId)
         }
       } catch(err) {
@@ -1768,7 +1774,9 @@ export default defineComponent({
           componentProps: {
             order: this.order,
             orderId: this.orderId,
-            orderAdjustments: this.orderAdjustments
+            orderAdjustments: this.orderAdjustments,
+            orderHeaderAdjustmentTotal: this.orderHeaderAdjustmentTotal,
+            adjustmentsByGroup: this.adjustmentsByGroup
           }
         })
 
