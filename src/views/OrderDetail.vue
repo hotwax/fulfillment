@@ -568,7 +568,7 @@ export default defineComponent({
     this.isCODPaymentPending = false
     this.isOrderAdjustmentPending = false
 
-    const isCODPayment = this.order?.orderPaymentPreferences.some((paymentPref: any) => paymentPref.paymentMethodTypeId === "EXT_SHOP_CASH_ON_DEL")
+    const isCODPayment = this.order?.orderPaymentPreferences?.some((paymentPref: any) => paymentPref.paymentMethodTypeId === "EXT_SHOP_CASH_ON_DEL")
 
     if(isCODPayment) {
       this.fetchCODPaymentInfo();
