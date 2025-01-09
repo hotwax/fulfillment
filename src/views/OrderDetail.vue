@@ -1730,6 +1730,7 @@ export default defineComponent({
             orderId: this.orderId
           },
           entityName: "OrderAdjustment",
+          fieldList: ["orderAdjustmentId", "orderAdjustmentTypeId", "orderId", "orderItemSeqId", "shipGroupSeqId", "amount", "billingShipmentId"],
           viewSize: 50
         })
         if(!hasError(resp) && resp.data?.count) {

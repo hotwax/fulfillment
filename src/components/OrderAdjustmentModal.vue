@@ -145,7 +145,7 @@ export default defineComponent({
             adjustments.map((adjustment: any) => {
               if(seqId === this.order.shipGroupSeqId) {
                 this.shipmentSubtotal += adjustment.amount
-              } else if(seqId !== "_NA_") {
+              } else if(seqId && seqId !== "_NA_") {
                 this.otherShipmentTotal += adjustment.amount
               } else if(this.orderItemSeqIds.includes(adjustment.orderItemSeqId)) {
                 this.shipmentSubtotal += adjustment.amount
