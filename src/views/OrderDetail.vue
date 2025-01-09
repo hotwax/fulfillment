@@ -583,6 +583,7 @@ export default defineComponent({
     async updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMethodTypeId: string) {
       let resp;
       try {
+        emitter.emit("presentLoader");
         this.isUpdatingCarrierDetail = true;
         const carrierShipmentMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
         shipmentMethodTypeId = shipmentMethodTypeId ? shipmentMethodTypeId : carrierShipmentMethods?.[0]?.shipmentMethodTypeId;
@@ -620,6 +621,7 @@ export default defineComponent({
               }
 
               this.shipmentMethodTypeId = shipmentMethodTypeId
+              emitter.emit("dismissLoader");
               showToast(translate("Shipment method detail updated successfully."))
               //fetching updated shipment packages
               await this.store.dispatch('order/updateShipmentPackageDetail', this.order) 
@@ -637,13 +639,15 @@ export default defineComponent({
         this.carrierPartyId = this.order.shipmentPackages?.[0].carrierPartyId;
         this.shipmentMethodTypeId = this.order.shipmentPackages?.[0].shipmentMethodTypeId;
 
+        emitter.emit("dismissLoader");
         logger.error('Failed to update carrier and method', err);
         showToast(translate("Failed to update shipment method detail."));
       }
     },
-    updateCarrierShipmentDetails(carrierPartyId: string, shipmentMethodTypeId: string) {
+    async updateCarrierShipmentDetails(carrierPartyId: string, shipmentMethodTypeId: string) {
       this.carrierPartyId = carrierPartyId
       this.shipmentMethodTypeId = shipmentMethodTypeId
+      this.carrierMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
       this.shipmentLabelErrorMessages = ""
     },
     async fetchKitComponent(orderItem: any, isOtherShipment = false ) {
