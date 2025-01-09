@@ -238,6 +238,18 @@
                 {{ translate('Shipment method') }}
               </ion-card-title>
             </ion-card-header>
+            <ion-item v-if="isCODPaymentPending">
+              <ion-label>{{ translate("Cash on delivery order") }}</ion-label>
+              <ion-icon slot="end" color="success" :icon="checkmarkCircleOutline" />
+            </ion-item>
+            <ion-item button v-if="isOrderAdjustmentPending" @click="openOrderAdjustmentInfo">
+              <ion-label>{{ translate("This shipping label will include order level charges because it is the first label.") }}</ion-label>
+              <ion-icon slot="end" color="success" :icon="cashOutline" />
+            </ion-item>
+            <ion-item button v-else-if="isCODPaymentPending" @click="openOrderAdjustmentInfo">
+              <ion-label>{{ translate("This shipping label will not include order level charges.") }}</ion-label>
+              <ion-icon slot="end" :icon="cashOutline" />
+            </ion-item>
             <ion-item>
               <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')">
                 <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
@@ -415,7 +427,8 @@ import {
   personAddOutline,
   pricetagOutline,
   trashBinOutline,
-  ribbonOutline
+  ribbonOutline,
+  checkmarkCircleOutline
 } from 'ionicons/icons';
 import { getProductIdentificationValue, translate, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
@@ -441,6 +454,7 @@ import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vu
 import TrackingCodeModal from '@/components/TrackingCodeModal.vue';
 import GiftCardActivationModal from '@/components/GiftCardActivationModal.vue';
 import { useDynamicImport } from "@/utils/moduleFederation";
+import OrderAdjustmentModal from "@/components/OrderAdjustmentModal.vue";
 
 export default defineComponent({
   name: "OrderDetail",
@@ -525,7 +539,13 @@ export default defineComponent({
       carrierMethods:[] as any,
       isUpdatingCarrierDetail: false,
       orderInvoicingInfo: {} as any,
-      orderInvoiceExt: "" as any
+      orderInvoiceExt: "" as any,
+      isCODPaymentPending: false,
+      isOrderAdjustmentPending: false,
+      orderAdjustments: [],
+      orderHeaderAdjustmentTotal: 0,
+      adjustmentsByGroup: {} as any,
+      orderAdjustmentShipmentId: ""
     }
   },
   async ionViewDidEnter() {
@@ -545,6 +565,15 @@ export default defineComponent({
     
     // Fetching shipment label errors 
     await this.fetchShipmentLabelError()
+
+    this.isCODPaymentPending = false
+    this.isOrderAdjustmentPending = false
+
+    const isCODPayment = this.order?.orderPaymentPreferences?.some((paymentPref: any) => paymentPref.paymentMethodTypeId === "EXT_SHOP_CASH_ON_DEL")
+
+    if(isCODPayment) {
+      this.fetchCODPaymentInfo();
+    }
   },
   async mounted() {
     const instance = this.instanceUrl.split("-")[0]
@@ -1685,7 +1714,101 @@ export default defineComponent({
       })
 
       modal.present();
-    }
+    },
+    async fetchCODPaymentInfo() {
+      try {
+        const resp = await UtilService.getCODOrderRemainingTotal({
+          orderId: this.orderId
+        })
+
+        if(!hasError(resp) && resp.data?.total) {
+          this.isCODPaymentPending = true
+          this.fetchOrderAdjustments();
+        }
+      } catch(err) {
+        logger.error(err);
+      }
+    },
+    async fetchOrderAdjustments() {
+      try {
+        const resp = await UtilService.fetchOrderAdjustments({
+          inputFields: {
+            orderId: this.orderId
+          },
+          entityName: "OrderAdjustment",
+          fieldList: ["orderAdjustmentId", "orderAdjustmentTypeId", "orderId", "orderItemSeqId", "shipGroupSeqId", "amount", "billingShipmentId"],
+          viewSize: 50
+        })
+        if(!hasError(resp) && resp.data?.count) {
+          this.orderHeaderAdjustmentTotal = 0
+          this.orderAdjustments = resp.data.docs.filter((adjustment: any) => {
+            // Considered that the adjustment will not be made at shipGroup level
+            if((adjustment.orderItemSeqId === "_NA_" || !adjustment.orderItemSeqId) && !adjustment.billingShipmentId) {
+              this.orderHeaderAdjustmentTotal += adjustment.amount
+              return true;
+            } else {
+              this.adjustmentsByGroup[adjustment.shipGroupSeqId] ? (this.adjustmentsByGroup[adjustment.shipGroupSeqId].push(adjustment)) : (this.adjustmentsByGroup[adjustment.shipGroupSeqId] = [adjustment])
+              return false;
+            }
+          })
+          this.isOrderAdjustmentPending = resp.data.docs.some((adjustment: any) => !adjustment.billingShipmentId)
+
+          if(!this.isOrderAdjustmentPending) {
+            const adjustment = resp.data.docs.find((adjustment: any) => adjustment.billingShipmentId)
+            this.orderAdjustmentShipmentId = adjustment.billingShipmentId
+          }
+        }
+      } catch(err) {
+        logger.error(err);
+      }
+    },
+    async openOrderAdjustmentInfo() {
+      if(this.isCODPaymentPending && !this.isOrderAdjustmentPending) {
+        let message = "Order level charges like shipping fees and taxes were already charged to the customer on the first label generated for this order."
+        let facilityName = ""
+        let trackingCode = ""
+        let buttons = [
+          {
+            text: translate("Dismiss"),
+            role: "cancel"
+          }
+        ] as any
+
+        if(this.orderAdjustmentShipmentId) {
+          const shipGroup = this.order.shipGroups.find((group: any) => group.shipmentId == this.orderAdjustmentShipmentId)
+          facilityName = shipGroup.facilityName || shipGroup.facilityId
+          trackingCode = shipGroup.trackingCode
+          message += "Label was generated by facility with tracking code"
+          buttons.push({
+            text: translate("Copy tracking code"),
+            handler: () => {
+              copyToClipboard(trackingCode, "Copied to clipboard")
+            }
+          })
+        }
+
+        const alert = await alertController.create({
+          message: translate(message, { space: "<br/><br/>", facilityName, trackingCode }),
+          header: translate("COD calculation"),
+          buttons
+        })
+
+        return alert.present();
+      } else {
+        const modal = await modalController.create({
+          component: OrderAdjustmentModal,
+          componentProps: {
+            order: this.order,
+            orderId: this.orderId,
+            orderAdjustments: this.orderAdjustments,
+            orderHeaderAdjustmentTotal: this.orderHeaderAdjustmentTotal,
+            adjustmentsByGroup: this.adjustmentsByGroup
+          }
+        })
+
+        return modal.present();
+      }
+    },
   },
   setup() {
     const store = useStore();
@@ -1703,6 +1826,7 @@ export default defineComponent({
       bagCheckOutline,
       cashOutline,
       caretDownOutline,
+      checkmarkCircleOutline,
       chevronUpOutline,
       closeCircleOutline,
       copyToClipboard,
