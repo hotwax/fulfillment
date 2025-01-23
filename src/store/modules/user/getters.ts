@@ -33,6 +33,13 @@ const getters: GetterTree <UserState, RootState> = {
     getPwaState(state) {
         return state.pwaState;
     },
+    getMaargBaseUrl (state) {
+        const url = state.omsRedirectionInfo.url
+        return url.startsWith('http') ? url.includes('/rest/s1/admin') ? url : `${url}/rest/s1/admin/` : `https://${url}.hotwax.io/rest/s1/admin/`;
+    },
+    getOmsRedirectionInfo(state) {
+        return state.omsRedirectionInfo
+    },
     getNotifications(state) {
         return state.notifications.sort((a: any, b: any) => b.time - a.time)
     },
