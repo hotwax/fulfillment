@@ -20,6 +20,10 @@ const userModule: Module<UserState, RootState> = {
         updateExists: false,
         registration: null,
       },
+      omsRedirectionInfo: {
+        url: "",
+        token: ""
+      },
       fieldMappings: {},
       currentMapping: {
         id: '',

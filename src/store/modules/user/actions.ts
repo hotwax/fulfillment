@@ -23,7 +23,7 @@ const actions: ActionTree<UserState, RootState> = {
  */
   async login ({ commit, dispatch }, payload) {
     try {
-      const {token, oms} = payload;
+      const {token, oms, omsRedirectionUrl} = payload;
       dispatch("setUserInstanceUrl", oms);
 
       // Getting the permissions list from server
@@ -80,6 +80,20 @@ const actions: ActionTree<UserState, RootState> = {
       if (userProfile.userTimeZone) {
         Settings.defaultZone = userProfile.userTimeZone;
       }
+      
+      if(omsRedirectionUrl) {
+        const api_key = await UserService.moquiLogin(omsRedirectionUrl, token)
+        if(api_key) {
+          dispatch("setOmsRedirectionInfo", { url: omsRedirectionUrl, token: api_key })
+        } else {
+          showToast(translate("Some of the app functionality will not work due to missing configuration."))
+          logger.error("Some of the app functionality will not work due to missing configuration.");
+        }
+      } else {
+        showToast(translate("Some of the app functionality will not work due to missing configuration."))
+        logger.error("Some of the app functionality will not work due to missing configuration.")
+      }
+
       updateToken(token)
 
       dispatch('getFieldMappings')
@@ -406,6 +420,9 @@ const actions: ActionTree<UserState, RootState> = {
   
   updatePwaState({ commit }, payload) {
     commit(types.USER_PWA_STATE_UPDATED, payload);
+  },
+  setOmsRedirectionInfo({ commit }, payload) {
+    commit(types.USER_OMS_REDIRECTION_INFO_UPDATED, payload)
   },
 
   async getNewRejectionApiConfig ({ commit }) {
