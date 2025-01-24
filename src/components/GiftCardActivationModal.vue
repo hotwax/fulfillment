@@ -160,7 +160,7 @@ export default defineComponent({
       }
     },
     getCreatedDateTime() {
-      return DateTime.fromMillis(this.item.gcInfo.fulfillmentDate).toFormat("dd MMMM yyyy t a ZZZZ");
+      return DateTime.fromMillis(this.item.gcInfo.fulfillmentDate).toFormat("dd MMMM yyyy hh:mm a ZZZZ");
     }
   },
   setup() {

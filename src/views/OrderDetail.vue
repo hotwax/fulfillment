@@ -36,7 +36,7 @@
             <div class="order-primary-info">
               <ion-label>
                 <strong>{{ order.customerName }}</strong>
-                <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
               </ion-label>
             </div>
             <div class="order-tags">
@@ -49,7 +49,7 @@
             <div class="order-metadata">
               <ion-label>
                 {{ order.shipmentMethodTypeDesc }}
-                <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
               </ion-label>
             </div>
           </div>
@@ -1613,7 +1613,7 @@ export default defineComponent({
       return isMessageRequired ? translate(message, { message: this.orderInvoicingInfo.response.Message }) : translate(message);
     },
     getInvoicingConfirmationDate(date: any) {
-      return DateTime.fromMillis(date).setZone(this.userProfile.userTimeZone).toFormat('dd MMMM yyyy t a ZZZZ')
+      return DateTime.fromMillis(date).setZone(this.userProfile.userTimeZone).toFormat('dd MMMM yyyy hh:mm a ZZZZ')
     },
     async printPackingSlip(order: any) {
       // if the request to print packing slip is not yet completed, then clicking multiple times on the button

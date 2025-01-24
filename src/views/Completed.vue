@@ -49,7 +49,7 @@
               <div class="order-primary-info">
                 <ion-label>
                   <strong>{{ order.customerName }}</strong>
-                  <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                  <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
                 </ion-label>
               </div>
 
@@ -64,7 +64,7 @@
               <div class="order-metadata">
                 <ion-label>
                   {{ order.shipmentMethodTypeDesc }}
-                  <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                  <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
                   <p v-if="order.trackingCode">{{ translate("Tracking Code") }} {{ order.trackingCode }}</p>
                 </ion-label>
               </div>
