@@ -87,16 +87,16 @@ export default defineComponent({
     if(route.name === 'OpenOrders') {
       title = 'Picklist Size'
       // TODO: check if we can use a single getter to get the data, currently when trying that the values are not reactive
-      viewSize = computed(() => store.getters['order/getOpenOrders'].query.viewSize)
-      total = computed(() => store.getters['order/getOpenOrders'].total)
+      viewSize = computed(() => store.getters['maargorder/getOpenOrders'].query.viewSize)
+      total = computed(() => store.getters['maargorder/getOpenOrders'].total)
     } else if(route.name === 'InProgress') {
       // TODO: check if we can use a single getter to get the data, currently when trying that the values are not reactive
-      viewSize = computed(() => store.getters['order/getInProgressOrders'].query.viewSize)
-      total = computed(() => store.getters['order/getInProgressOrders'].total)
+      viewSize = computed(() => store.getters['maargorder/getInProgressOrders'].query.viewSize)
+      total = computed(() => store.getters['maargorder/getInProgressOrders'].total)
     } else if(route.name === 'Completed') {
       // TODO: check if we can use a single getter to get the data, currently when trying that the values are not reactive
-      viewSize = computed(() => store.getters['order/getCompletedOrders'].query.viewSize)
-      total = computed(() => store.getters['order/getCompletedOrders'].total)
+      viewSize = computed(() => store.getters['maargorder/getCompletedOrders'].query.viewSize)
+      total = computed(() => store.getters['maargorder/getCompletedOrders'].total)
     }
 
     return {
