@@ -90,13 +90,13 @@ const actions: ActionTree<OrderState, RootState> = {
             item.shipmentItemSeqId = shipment.shipmentItemSeqId
           }
           
-          item.selectedBox = shipmentPackageContents[`${item.shipmentId}`].find((shipmentPackageContent: any) => shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId)?.packageName
+          item.selectedBox = shipmentPackageContents[`${item.shipmentId}`]?.find((shipmentPackageContent: any) => shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId)?.packageName
         })
 
         const orderItem = order.items[0];
-        const carrierPartyIds = [...new Set(orderShipmentIds.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())];
+        const carrierPartyIds = [...new Set(orderShipmentIds?.map((id: any) => carrierPartyIdsByShipment[id]?.map((carrierParty: any) => carrierParty.carrierPartyId)).flat())];
 
-        const shipmentBoxTypeByCarrierParty = carrierPartyIds.reduce((shipmentBoxType: any, carrierPartyId: any) => {
+        const shipmentBoxTypeByCarrierParty = carrierPartyIds?.reduce((shipmentBoxType: any, carrierPartyId: any) => {
           if (shipmentBoxType[carrierPartyId]) {
             shipmentBoxType[carrierPartyId].push(carrierShipmentBoxType[carrierPartyId])
           } else {
@@ -106,15 +106,15 @@ const actions: ActionTree<OrderState, RootState> = {
           return shipmentBoxType
         }, {});
 
-        const shipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].map((shipmentPackage: any) => {
+        const shipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`]?.map((shipmentPackage: any) => {
           return {
             ...shipmentPackage,
             shipmentBoxTypes: shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] ? shipmentBoxTypeByCarrierParty[shipmentPackage.carrierPartyId] : []
           }
         });
 
-        const currentShipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`].reduce((currentShipmentPackages: any, shipment: any) => {
-          currentShipmentPackages.push(...orderShipmentPackages.filter((shipmentPackage: any) => shipmentPackage.shipmentId === shipment.shipmentId));
+        const currentShipmentPackages = shipmentPackagesByOrderAndPicklistBin[`${orderItem.orderId}_${orderItem.picklistBinId}`]?.reduce((currentShipmentPackages: any, shipment: any) => {
+          currentShipmentPackages.push(...orderShipmentPackages?.filter((shipmentPackage: any) => shipmentPackage.shipmentId === shipment.shipmentId));
           return currentShipmentPackages;
         }, []);
 
