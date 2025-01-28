@@ -97,7 +97,7 @@
               </template>
               <template v-else-if="useNewRejectionApi() && isEntierOrderRejectionEnabled(order)">
                 <ion-chip :disabled="order.hasMissingInfo" outline color="danger">
-                  <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject entire order')}}</ion-label>
+                  <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject to avoid order split (no variance)')}}</ion-label>
                 </ion-chip>
               </template>
               <template v-else>
@@ -532,7 +532,7 @@ export default defineComponent({
         'PAYMENT_REFUNDED': 'warning',
         'PAYMENT_SETTLED': ''
       } as any,
-      rejectEntireOrderReasonId: 'REJECT_ENTIRE_ORDER',
+      rejectEntireOrderReasonId: "REJ_AVOID_ORD_SPLIT",
       shipmentLabelErrorMessages: "",
       shipmentMethodTypeId: "",
       carrierPartyId: "",
