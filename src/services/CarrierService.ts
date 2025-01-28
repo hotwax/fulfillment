@@ -167,6 +167,14 @@ const ensurePartyRole = async (payload: any): Promise <any> => {
   });
 }
 
+const fetchCarrierTrackingUrls = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "POST",
+    data: payload,
+  })
+}
+
 export const CarrierService = {
   addCarrierShipmentMethod,
   addCarrierToFacility,
@@ -177,6 +185,7 @@ export const CarrierService = {
   fetchCarriers,
   fetchCarrierFacilities,
   fetchCarrierShipmentMethods,
+  fetchCarrierTrackingUrls,
   fetchProductStoreShipmentMethods,
   fetchShipmentMethodTypes,
   removeCarrierFromFacility,

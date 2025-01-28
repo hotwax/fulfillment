@@ -8,6 +8,9 @@ import * as types from "./mutation-types"
 import { showToast } from "@/utils";
 import { translate } from "@hotwax/dxp-components";
 import logger from "@/logger";
+import { OrderService } from "@/services/OrderService";
+import { CarrierService } from "@/services/CarrierService";
+import store from "@/store";
 
 const actions: ActionTree<OrderLookupState, RootState> = {
   async findOrders({ commit, state }, params) {
@@ -83,7 +86,48 @@ const actions: ActionTree<OrderLookupState, RootState> = {
     return resp;
   },
 
-  async getOrderDetails({ commit }, orderId) {
+  async fetchCarriersTrackingInfo({ commit }, carrierPartyIds) {
+    const carriersTrackingInfo = {} as any;
+    const systemProperties = {} as any;
+
+    await this.dispatch('util/fetchPartyInformation', carrierPartyIds);
+
+    try {
+      const resp = await CarrierService.fetchCarrierTrackingUrls({
+        "entityName": "SystemProperty",
+        "inputFields": {
+          "systemResourceId": carrierPartyIds,
+          "systemResourceId_op": "in",
+          "systemResourceId_ic": "Y",
+          "systemPropertyId": "%trackingUrl%",
+          "systemPropertyId_op": "like"
+        },
+        "fieldList": ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
+      })
+
+      if(!hasError(resp)) {
+        resp.data.docs?.map((doc: any) => {
+          systemProperties[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue
+        })
+      } else {
+        throw resp.data;
+      }
+    } catch(error: any) {
+      logger.error(error);
+    }
+
+    carrierPartyIds.map((partyId: any) => {
+      carriersTrackingInfo[partyId] = {
+        carrierName: store.getters["util/getPartyName"](partyId),
+        trackingUrl: systemProperties[partyId.toUpperCase()] ? systemProperties[partyId.toUpperCase()] : ""
+      }
+    })
+
+    commit(types.ORDERLOOKUP_CARRIER_TRACKING_URLS_UPDATED, carriersTrackingInfo);
+    return carriersTrackingInfo;
+  },
+
+  async getOrderDetails({ commit, dispatch }, orderId) {
     let order = {} as any;
 
     try {
@@ -142,6 +186,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
           statusId: "PAYMENT_CANCELLED",
           statusId_op: "notEqual"
         },
+        orderBy: "createdDate DESC",
         viewSize: 50,
         fieldList: ["paymentMethodTypeId", "maxAmount", "statusId"],
         entityName: "OrderPaymentPreference"
@@ -151,9 +196,18 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         },
         viewSize: 50,
         entityName: "OrderItemShipGroupAndFacility"
+      }, {
+        inputFields: {
+          orderId,
+          shipmentStatusId: "SHIPMENT_INPUT",
+          shipmentStatusId_op: "notEqual"
+        },
+        fieldList: ["orderId", "shipGroupSeqId", "shipmentId", "trackingIdNumber"],
+        viewSize: 50,
+        entityName: "OrderShipmentAndRouteSegment"
       }]
 
-      const [orderHeader, orderContactMech, orderIdentifications, orderAttributes, orderBrokeringInfo, orderStatusInfo, orderPaymentPreference, orderShipGroups] = await Promise.allSettled(apiPayload.map((payload: any) => OrderLookupService.performFind(payload)))
+      const [orderHeader, orderContactMech, orderIdentifications, orderAttributes, orderBrokeringInfo, orderStatusInfo, orderPaymentPreference, orderShipGroups, orderRouteSegment] = await Promise.allSettled(apiPayload.map((payload: any) => OrderLookupService.performFind(payload)))
 
       if(orderHeader.status === "fulfilled" && !hasError(orderHeader.value) && orderHeader.value.data.count > 0) {
         order = orderHeader.value.data.docs[0]
@@ -283,8 +337,44 @@ const actions: ActionTree<OrderLookupState, RootState> = {
       const productIds: Array<string> = []
       const shipmentMethodIds: Array<string> = []
 
+      const orderRouteSegmentInfo = orderRouteSegment.status === "fulfilled" && orderRouteSegment.value.data.docs?.length > 0 ? orderRouteSegment.value.data.docs.reduce((orderSegmentInfo: any, routeSegment: any) => {
+        if(orderSegmentInfo[routeSegment.shipGroupSeqId]) orderSegmentInfo[routeSegment.shipGroupSeqId].push(routeSegment)
+        else orderSegmentInfo[routeSegment.shipGroupSeqId] = [routeSegment]
+        return orderSegmentInfo
+      }, {}) : []
+
+      let orderShipmentPackages = [] as any
+      const shipmentIds = Object.values(orderRouteSegmentInfo).flatMap((routes: any) => routes.map((route: any) => route.shipmentId));
+
+      try {
+        orderShipmentPackages = await OrderService.fetchShipmentPackages(shipmentIds, true);
+      } catch(error: any) {
+        logger.error(error)
+      }
+
+      const shipmentPackages = orderShipmentPackages.reduce((shipment: any, shipmentPackage: any) => {
+        const key = shipmentPackage.primaryShipGroupSeqId;
+        if (!shipment[key]) {
+          shipment[key] = [];
+        }
+        shipment[key].push(shipmentPackage);
+        return shipment;
+      }, {});
+
+      Object.values(orderRouteSegmentInfo).map((segments: any) => {
+        segments.map((segment: any) => {
+          const currentPackage = orderShipmentPackages.find((shipmentPackage: any) => shipmentPackage.shipmentId === segment.shipmentId)
+          if(currentPackage && currentPackage.carrierServiceStatusId === "SHRSCS_VOIDED") {
+            segment.trackingIdNumber = ""
+          }
+        })
+      })
+
+      order["shipmentPackages"] = shipmentPackages;
+      const carrierPartyIds = [] as any;
+
       if(orderShipGroups.status === "fulfilled" && !hasError(orderShipGroups.value) && orderShipGroups.value.data.count > 0) {
-        shipGroups = orderShipGroups.value.data.docs.reduce((shipGroups: any, shipGroup: any) => {
+        shipGroups = orderShipGroups.value.data.docs?.reduce((shipGroups: any, shipGroup: any) => {
           productIds.push(shipGroup.productId)
           shipGroup.shipmentMethodTypeId && shipmentMethodIds.includes(shipGroup.shipmentMethodTypeId) ? '' : shipmentMethodIds.push(shipGroup.shipmentMethodTypeId)
           shipGroup.shipGroupSeqId && shipGroupSeqIds.includes(shipGroup.shipGroupSeqId) ? '' : shipGroupSeqIds.push(shipGroup.shipGroupSeqId)
@@ -292,12 +382,26 @@ const actions: ActionTree<OrderLookupState, RootState> = {
           if(shipGroups[shipGroup.shipGroupSeqId]) {
             shipGroups[shipGroup.shipGroupSeqId].push(shipGroup)
           } else {
-            shipGroups[shipGroup.shipGroupSeqId] = [shipGroup]
+            shipGroups[shipGroup.shipGroupSeqId] = [{
+              ...shipGroup,
+              trackingIdNumber: orderRouteSegmentInfo[shipGroup.shipGroupSeqId]?.length ? orderRouteSegmentInfo[shipGroup.shipGroupSeqId][0].trackingIdNumber : ""
+            }]
           }
+
+          if(shipGroup.carrierPartyId) carrierPartyIds.push(shipGroup.carrierPartyId);
+
           return shipGroups;
         }, {})
       }
       order["shipGroups"] = shipGroups
+      
+      const carrierInfo = await dispatch("fetchCarriersTrackingInfo", Array.from(new Set(carrierPartyIds)));
+
+      Object.keys(order["shipGroups"]).map((shipGroupId: any) => {
+        const shipGroup = order["shipGroups"][shipGroupId]
+        shipGroup.map((item: any) => item["carrierPartyName"] = carrierInfo[item.carrierPartyId]?.carrierName || "")
+      })
+
       this.dispatch("util/fetchShipmentMethodTypeDesc", shipmentMethodIds)
 
       order["shipGroupFulfillmentStatus"] = {}

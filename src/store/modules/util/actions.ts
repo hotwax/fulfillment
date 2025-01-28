@@ -6,7 +6,7 @@ import { UtilService } from '@/services/UtilService'
 import { hasError } from '@/adapter'
 import logger from '@/logger'
 import store from '@/store';
-import { showToast } from '@/utils'
+import { showToast, getProductStoreId } from '@/utils'
 import { translate } from '@hotwax/dxp-components'
 
 const actions: ActionTree<UtilState, RootState> = {
@@ -37,6 +37,53 @@ const actions: ActionTree<UtilState, RootState> = {
     }
 
     commit(types.UTIL_REJECT_REASONS_UPDATED, rejectReasons)
+  },
+  
+  async fetchRejectReasonOptions({ commit, dispatch, state }) {
+    const permissions = store.getters['user/getUserPermissions'];
+
+    const isAdminUser = permissions.some((permission: any) => permission.action === "APP_STOREFULFILLMENT_ADMIN")
+    const isApiSuccess = isAdminUser ? await dispatch("fetchRejectReasons") : await dispatch("fetchFulfillmentRejectReasons")
+
+    commit(types.UTIL_REJECT_REASON_OPTIONS_UPDATED, ((!isAdminUser && isApiSuccess) ? Object.values(state.fulfillmentRejectReasons) : state.rejectReasons ));
+  },
+
+  async fetchFulfillmentRejectReasons({ commit, dispatch }) {
+    let isApiSuccess = true;
+    const fulfillmentRejectReasons  = {}  as any;
+    try {
+      const payload = {
+        "inputFields": {
+          "enumerationGroupId": "FF_REJ_RSN_GRP"
+        },
+        // We shouldn't fetch description here, as description contains EnumGroup description which we don't wanna show on UI.
+        "fieldList": ["enumerationGroupId", "enumId", "fromDate", "sequenceNum", "enumDescription", "enumName"],
+        "distinct": "Y",
+        "entityName": "EnumerationGroupAndMember",
+        "viewSize": 200,
+        "filterByDate": "Y",
+        "orderBy": "sequenceNum"
+      }
+
+      const resp = await UtilService.fetchFulfillmentRejectReasons(payload)
+
+      if(!hasError(resp)) {
+        resp.data.docs.map((reason: any) => {
+          fulfillmentRejectReasons[reason.enumId] = reason
+        })
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Failed to fetch fulfillment reject reasons', err)
+      // Fetching all rejection reasons if the api fails due to no entity found.
+      // Todo: remove this once all the oms are updated.
+      await dispatch("fetchRejectReasons");
+      isApiSuccess = false;
+    }
+
+    commit(types.UTIL_FULFILLMENT_REJECT_REASONS_UPDATED, fulfillmentRejectReasons)
+    return isApiSuccess
   },
 
   async fetchPartyInformation({ commit, state }, partyIds) {
@@ -301,7 +348,7 @@ const actions: ActionTree<UtilState, RootState> = {
         "partyId": "_NA_",
         "partyId_op": "notEqual",
         "roleTypeId": "CARRIER",
-        "productStoreId": this.state.user.currentEComStore.productStoreId
+        "productStoreId": getProductStoreId()
       },
       "fieldList": ['roleTypeId', "partyId"],
       "viewSize": 1
@@ -492,7 +539,6 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   async createForceScanSetting({ commit }) {
-    const ecomStore = store.getters['user/getCurrentEComStore'];
     const fromDate = Date.now()
 
     try {
@@ -512,7 +558,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
       const params = {
         fromDate,
-        "productStoreId": ecomStore.productStoreId,
+        "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "FULFILL_FORCE_SCAN",
         "settingValue": "false"
       }
@@ -530,7 +576,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async setForceScanSetting({ commit, dispatch, state }, value) {
     let prefValue = state.isForceScanEnabled
-    const eComStoreId = store.getters['user/getCurrentEComStore'].productStoreId;
+    const eComStoreId: any = getProductStoreId();
 
     // when selecting none as ecom store, not updating the pref as it's not possible to save pref with empty productStoreId
     if(!eComStoreId) {
@@ -585,9 +631,133 @@ const actions: ActionTree<UtilState, RootState> = {
     }
     commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
   },
+
+  async fetchBarcodeIdentificationPref({ commit, dispatch }, eComStoreId) {
+    const payload = {
+      "inputFields": {
+        "productStoreId": eComStoreId,
+        "settingTypeEnumId": "BARCODE_IDEN_PREF"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["settingValue", "fromDate"],
+      "viewSize": 1
+    }
+
+    try {
+      const resp = await UtilService.getProductStoreSetting(payload) as any
+      if(!hasError(resp)) {
+        const respValue = resp.data.docs[0].settingValue
+        commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, respValue)
+      } else {
+        dispatch("createBarcodeIdentificationPref");
+      }
+    } catch(err) {
+      console.error(err)
+      commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, "internalName")
+    }
+  },
+
+  async createBarcodeIdentificationPref({ commit }) {
+    const fromDate = Date.now()
+
+    try {
+      if(!await UtilService.isEnumExists("BARCODE_IDEN_PREF")) {
+        const resp = await UtilService.createEnumeration({
+          "enumId": "BARCODE_IDEN_PREF",
+          "enumTypeId": "PROD_STR_STNG",
+          "description": "Identification preference to be used for scanning items.",
+          "enumName": "Barcode Identification Preference",
+          "enumCode": "BARCODE_IDEN_PREF"
+        })
+
+        if(hasError(resp)) {
+          throw resp.data;
+        }
+      }
+
+      const params = {
+        fromDate,
+        "productStoreId": getProductStoreId(),
+        "settingTypeEnumId": "BARCODE_IDEN_PREF",
+        "settingValue": "internalName"
+      }  
+
+      await UtilService.createBarcodeIdentificationPref(params) as any
+    } catch(err) {
+      console.error(err)
+    }
+
+    // not checking for resp success and fail case as every time we need to update the state with the
+    // default value when creating a store setting
+    commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, "internalName")
+    return fromDate;
+  },
+
+  async setBarcodeIdentificationPref({ commit, dispatch, state }, value) {
+    let prefValue = state.barcodeIdentificationPref
+    const eComStoreId = getProductStoreId()
+
+    // when selecting none as ecom store, not updating the pref as it's not possible to save pref with empty productStoreId
+    if(!eComStoreId) {
+      showToast(translate("Unable to update barcode identification preference since no product store config found."))
+      commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, prefValue)
+      return;
+    }
+
+    let fromDate;
+
+    try {
+      const resp = await UtilService.getProductStoreSetting({
+        "inputFields": {
+          "productStoreId": eComStoreId,
+          "settingTypeEnumId": "BARCODE_IDEN_PREF"
+        },
+        "filterByDate": 'Y',
+        "entityName": "ProductStoreSetting",
+        "fieldList": ["fromDate"],
+        "viewSize": 1
+      }) as any
+      if(!hasError(resp)) {
+        fromDate = resp.data.docs[0]?.fromDate
+      }
+    } catch(err) {
+      console.error(err)
+    }
+
+    if(!fromDate) {
+      fromDate = await dispatch("createBarcodeIdentificationPref");
+    }
+
+    const params = {
+      "fromDate": fromDate,
+      "productStoreId": eComStoreId,
+      "settingTypeEnumId": "BARCODE_IDEN_PREF",
+      "settingValue": value
+    }
+
+    try {
+      const resp = await UtilService.updateBarcodeIdentificationPref(params) as any
+
+      if((!hasError(resp))) {
+        showToast(translate("Barcode identification preference updated successfully."))
+        prefValue = value
+      } else {
+        throw resp.data;
+      }
+    } catch(err) {
+      showToast(translate("Failed to update barcode identification preference."))
+      console.error(err)
+    }
+    commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, prefValue)
+  },
   
   async updateForceScanStatus({ commit }, payload) { 
     commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, payload)
+  },
+
+  async updateBarcodeIdentificationPref({ commit }, payload) { 
+    commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, payload)
   }
 }
 

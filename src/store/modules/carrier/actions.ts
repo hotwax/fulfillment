@@ -7,7 +7,7 @@ import * as types from './mutation-types'
 import logger from '@/logger'
 import store from '@/store';
 import { translate } from '@hotwax/dxp-components';
-import { showToast, isValidCarrierCode, isValidDeliveryDays } from '@/utils';
+import { showToast, isValidCarrierCode, isValidDeliveryDays, getCurrentFacilityId, getProductStoreId } from '@/utils';
   
 
 const actions: ActionTree<CarrierState, RootState> = {
@@ -358,20 +358,21 @@ const actions: ActionTree<CarrierState, RootState> = {
   async fetchFacilityCarriers({ state, commit }, payload) {
     let facilityCarriers  = [] as any;
     let viewIndex = 0, resp, docCount = 0;
-    
+
     try {
       do {
         const params = {
           "entityName": "FacilityAndParty",
           "inputFields": {
             "roleTypeId": "CARRIER",
-            "facilityId": this.state.user.currentFacility.facilityId
+            "facilityId": getCurrentFacilityId()
           },
-          "fieldList": ["facilityId", "partyId", "firstName", "lastName", "groupName", "roleTypeId", "fromDate"],
+          "fieldList": ["facilityId", "partyId", "firstName", "lastName", "groupName", "roleTypeId"],
           "noConditionFind": "Y",
           "viewIndex": viewIndex,
           "viewSize": 250,
-          "filterByDate": "Y"
+          "filterByDate": "Y",
+          "distinct": "Y"
         }
   
         resp = await CarrierService.fetchCarrierFacilities(params)
@@ -391,6 +392,39 @@ const actions: ActionTree<CarrierState, RootState> = {
       facilityCarriers = [...facilityCarriers, {"partyId": "_NA_", "groupName": "Default", "roleTypeId": "CARRIER"}]
     }
 
+    const carrierIds = facilityCarriers.map((carrier: any) => carrier.partyId)
+    const systemProperties = {} as any;
+
+    try {
+      resp = await CarrierService.fetchCarrierTrackingUrls({
+        "entityName": "SystemProperty",
+        "inputFields": {
+          "systemResourceId": carrierIds,
+          "systemResourceId_op": "in",
+          "systemResourceId_ic": "Y",
+          "systemPropertyId": "%trackingUrl%",
+          "systemPropertyId_op": "like"
+        },
+        "fieldList": ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
+      })
+
+      if(!hasError(resp)) {
+        resp.data.docs.map((doc: any) => {
+          systemProperties[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue
+        })
+      } else {
+        throw resp.data;
+      }
+    } catch(error: any) {
+      logger.error(error);
+    }
+
+    if(Object.keys(systemProperties).length) {
+      facilityCarriers.map((carrier: any) => {
+        carrier.trackingUrl = systemProperties[carrier.partyId.toUpperCase()]
+      })
+    }
+
     commit(types.CARRIER_FACILITY_CARRIERS_UPDATED, facilityCarriers)
   },
   async fetchProductStoreShipmentMeths({ state, commit }) {
@@ -403,13 +437,16 @@ const actions: ActionTree<CarrierState, RootState> = {
           "entityName": "ProductStoreShipmentMethView",
           "inputFields": {
             "roleTypeId": "CARRIER",
-            "productStoreId": this.state.user.currentEComStore.productStoreId,
+            "productStoreId": getProductStoreId(),
+            "shipmentMethodTypeId": "STOREPICKUP",
+            "shipmentMethodTypeId_op": "notEqual"
           },
-          "fieldList": ["productStoreShipMethId", "productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "shipmentGatewayConfigId", "isTrackingRequired", "sequenceNumber", "description", "fromDate"],
+          "fieldList": ["productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "description"],
           "noConditionFind": "Y",
           "viewIndex": viewIndex,
           "viewSize": 250,
-          "filterByDate": "Y"
+          "filterByDate": "Y",
+          "distinct": "Y"
         }
   
         resp = await CarrierService.fetchProductStoreShipmentMethods(params)

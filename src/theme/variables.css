@@ -345,6 +345,7 @@ img {
 .product-metadata {
   margin-inline-start: auto;
   padding-inline-end: var(--spacer-sm);
+  text-align: end;
 }
 
 .actions {

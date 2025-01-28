@@ -14,8 +14,8 @@
           </ion-label>
         </ion-item>
         <ion-item button v-for="(shipmentMethod, index) in shipmentMethods" :key="index" @click="applyFilter(shipmentMethod.val, 'shipment-method')">
-          <ion-checkbox slot="end" :checked="transferOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)">
-            <ion-label>{{ translate(getShipmentMethodDesc(shipmentMethod.val)) }}</ion-label>
+          <ion-checkbox label-placement="start" :checked="transferOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)">
+            {{ translate(getShipmentMethodDesc(shipmentMethod.val)) }}
           </ion-checkbox>
         </ion-item>
 
@@ -25,8 +25,8 @@
           </ion-label>
         </ion-item>
         <ion-item button v-for="(status, index) in statuses" :key="index" @click="applyFilter(status.val, 'status')">
-          <ion-checkbox slot="end" :checked="transferOrders.query.selectedStatuses.includes(status.val)">
-            <ion-label>{{ translate(getStatusDesc(status.val)) }}</ion-label>
+          <ion-checkbox label-placement="start" :checked="transferOrders.query.selectedStatuses.includes(status.val)">
+            {{ translate(getStatusDesc(status.val)) }}
           </ion-checkbox>
         </ion-item>
       </ion-list>
@@ -46,14 +46,10 @@ import {
   IonTitle,
   IonToolbar
 } from "@ionic/vue";
-import { defineComponent } from "vue";
+import { defineComponent, computed } from "vue";
 import { albumsOutline, banOutline, barChartOutline, calendarNumberOutline, checkmarkDoneOutline, closeOutline, filterOutline, iceCreamOutline, libraryOutline, pulseOutline, settings, shirtOutline, ticketOutline } from "ionicons/icons";
 import { mapGetters, useStore } from 'vuex'
-import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper';
-import { UtilService } from '@/services/UtilService';
-import { hasError } from '@/adapter';
-import logger from '@/logger';
-import { translate } from '@hotwax/dxp-components';
+import { translate, useUserStore } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: "TransferOrderFilters",
@@ -68,24 +64,13 @@ export default defineComponent({
     IonTitle,
     IonToolbar
   },
-  props: ["queryString"],
-  data () {
-    return {
-      shipmentMethods: [] as Array<any>,
-      statuses: [] as Array<any>
-    }
-  },
+  props: ["queryString", "shipmentMethods", "statuses"],
   computed: {
     ...mapGetters({
-      currentFacility: 'user/getCurrentFacility',
       transferOrders: 'transferorder/getTransferOrders',
       getStatusDesc: 'util/getStatusDesc',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
-      currentEComStore: 'user/getCurrentEComStore',
     })
-  },
-  async mounted() {
-    await this.fetchFilters();
   },
   unmounted() {
     this.store.dispatch('transferorder/clearTransferOrderFilters');
@@ -113,63 +98,16 @@ export default defineComponent({
         }
         transferOrdersQuery.selectedStatuses = selectedStatuses
       }
-      await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
-    },
-    async fetchFilters() {
-      let resp: any;
-      const payload = prepareOrderQuery({
-        docType: "ORDER",
-        queryFields: 'orderId',
-        viewSize: '0',  // passed viewSize as 0 to not fetch any data
-        filters: {
-          '-orderStatusId': { value: 'ORDER_CREATED' },
-          orderTypeId: { value: 'TRANSFER_ORDER' },
-          facilityId: { value: escapeSolrSpecialChars(this.currentFacility.facilityId) },
-          productStoreId: { value: this.currentEComStore.productStoreId }
-        },
-        facet: {
-          "shipmentMethodTypeIdFacet":{
-            "excludeTags":"shipmentMethodTypeIdFilter",
-            "field":"shipmentMethodTypeId",
-            "mincount":1,
-            "limit":-1,
-            "sort":"index",
-            "type":"terms",
-            "facet": {
-              "ordersCount": "unique(orderId)"
-            }
-          },
-          "orderStatusIdFacet":{
-            "excludeTags":"orderStatusIdFilter",
-            "field":"orderStatusId",
-            "mincount":1,
-            "limit":-1,
-            "sort":"index",
-            "type":"terms",
-            "facet": {
-              "ordersCount": "unique(orderId)"
-            }
-          }
-        }
-      })
 
-      try {
-        resp = await UtilService.fetchTransferOrderFacets(payload);
-        if (resp.status == 200 && !hasError(resp) && resp.data.facets?.count > 0) {
-          this.shipmentMethods = resp.data.facets.shipmentMethodTypeIdFacet.buckets
-          this.statuses = resp.data.facets.orderStatusIdFacet.buckets
-          this.store.dispatch('util/fetchShipmentMethodTypeDesc', this.shipmentMethods.map((shipmentMethod: any) => shipmentMethod.val))
-          this.store.dispatch('util/fetchStatusDesc', this.statuses.map((status: any) => status.val))
-        } else {
-          throw resp.data;
-        }
-      } catch(err) {
-        logger.error('Failed to fetch transfer order filters.', err)
-      }
+      transferOrdersQuery.viewIndex = 0;
+      await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
     },
   },
   setup() {
     const store = useStore();
+    const userStore = useUserStore()
+    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
+    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
     
     return {
       albumsOutline,
@@ -178,6 +116,8 @@ export default defineComponent({
       calendarNumberOutline,
       checkmarkDoneOutline,
       closeOutline,
+      currentFacility,
+      currentEComStore,
       filterOutline,
       iceCreamOutline,
       libraryOutline,

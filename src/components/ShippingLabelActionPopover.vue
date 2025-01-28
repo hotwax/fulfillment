@@ -61,33 +61,23 @@
         popoverController.dismiss()
       },
       async voidShippingLabel(order: any) {
+        const shipmentIds = [] as any;
         let resp = {} as any;
         try {
           for (const shipmentPackage of order.shipmentPackages) {
-            resp = await OrderService.updateShipmentPackageRouteSeg({
-              "shipmentId": shipmentPackage.shipmentId,
-              "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-              "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
-              "trackingCode": "",
-              "labelImage": "",
-              "labelHtml": ""
-
-            });
-            if (!hasError(resp)) {
-              resp = await OrderService.updateShipmentRouteSegment({
+            if(!shipmentIds.includes(shipmentPackage.shipmentId)) {
+              resp = await OrderService.voidShipmentLabel({
                 "shipmentId": shipmentPackage.shipmentId,
-                "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-                "carrierServiceStatusId": "SHRSCS_VOIDED",
-                "trackingIdNumber": "",
-                "labelImageUrl": ""
-              }) as any;
-              if (hasError(resp)) {
-                throw resp.data;             
+                "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId
+              })
+  
+              if(hasError(resp)) {
+                throw resp.data;
               }
-            } else {
-              throw resp.data;
+              shipmentIds.push(shipmentPackage.shipmentId);
             }
           }
+          showToast(translate("Shipping label voided successfully."))
           //fetching updated shipment packages
           await this.store.dispatch('order/updateShipmentPackageDetail', order) 
         } catch (err) {

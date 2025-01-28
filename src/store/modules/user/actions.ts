@@ -4,7 +4,7 @@ import RootState from '@/store/RootState'
 import store from '@/store';
 import UserState from './UserState'
 import * as types from './mutation-types'
-import { showToast } from '@/utils'
+import { showToast, getCurrentFacilityId, getProductStoreId } from '@/utils'
 import { hasError } from '@/adapter'
 import { translate } from '@hotwax/dxp-components'
 import { DateTime, Settings } from 'luxon';
@@ -56,9 +56,8 @@ const actions: ActionTree<UserState, RootState> = {
       
       //fetching user facilities
       const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_STOREFULFILLMENT_ADMIN" );
-      const baseURL = store.getters['user/getBaseUrl'];
-      const facilities = await getUserFacilities(token, baseURL, userProfile?.partyId, "OMS_FULFILLMENT", isAdminUser);
-
+      const facilities = await useUserStore().getUserFacilities(userProfile?.partyId, "OMS_FULFILLMENT", isAdminUser)
+      await useUserStore().getFacilityPreference('SELECTED_FACILITY')
 
       if (!facilities.length) throw 'Unable to login. User is not assocaited with any facility'
 
@@ -71,16 +70,10 @@ const actions: ActionTree<UserState, RootState> = {
       }, []);
 
       // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
-      const currentFacility = userProfile.facilities[0];
-      userProfile.stores = await UserService.getEComStores(token, currentFacility.facilityId);
-
-      let preferredStore = userProfile.stores[0]
-
-      const preferredStoreId =  await UserService.getPreferredStore(token);
-      if (preferredStoreId) {
-        const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
-        store && (preferredStore = store)
-      }
+      const currentFacility: any = useUserStore().getCurrentFacility
+      userProfile.stores = await useUserStore().getEComStoresByFacility(currentFacility.facilityId);
+      await useUserStore().getEComStorePreference('SELECTED_BRAND');
+      const preferredStore: any = useUserStore().getCurrentEComStore
       /*  ---- Guard clauses ends here --- */
 
       setPermissions(appPermissions);
@@ -92,21 +85,24 @@ const actions: ActionTree<UserState, RootState> = {
       dispatch('getFieldMappings')
 
       // TODO user single mutation
-      commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
-      commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
       commit(types.USER_INFO_UPDATED, userProfile);
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       commit(types.USER_TOKEN_CHANGED, { newToken: token })
 
       // Get product identification from api using dxp-component
-      await useProductIdentificationStore().getIdentificationPref(preferredStoreId ? preferredStoreId : preferredStore.productStoreId)
+      await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
         .catch((error) => logger.error(error));
 
       await dispatch("fetchAllNotificationPrefs");
       this.dispatch('util/findProductStoreShipmentMethCount')
       this.dispatch('util/getForceScanSetting', preferredStore.productStoreId);
-      await dispatch('user/getPartialOrderRejectionConfig')
-      await dispatch('user/getCollateralRejectionConfig')
+      this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
+      await dispatch('getNewRejectionApiConfig')
+      await dispatch('getPartialOrderRejectionConfig')
+      await dispatch('getCollateralRejectionConfig')
+      await dispatch('getAffectQohConfig')
+      await dispatch('getDisableShipNowConfig')
+      await dispatch('getDisableUnpackConfig')
     
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
@@ -154,8 +150,13 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch("orderLookup/clearOrderLookup")
     this.dispatch('user/clearNotificationState')
     this.dispatch('util/updateForceScanStatus', false)
+    this.dispatch('util/updateBarcodeIdentificationPref', "internalName")
     this.dispatch('user/clearPartialOrderRejectionConfig')
     this.dispatch('user/clearCollateralRejectionConfig')
+    this.dispatch('transferorder/clearTransferOrdersList')
+    this.dispatch('transferorder/clearTransferOrderFilters')
+    this.dispatch('transferorder/clearCurrentTransferOrder')
+    this.dispatch('transferorder/clearCurrentTransferShipment')
     resetConfig();
     resetPermissions();
 
@@ -175,25 +176,27 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    * update current facility information
    */
-  async setFacility ({ commit, state }, payload) {
+  async setFacility ({ commit, dispatch, state }, facility) {
     // On slow api response, setFacility takes long to update facility in state.
     // Hence displaying loader to not allowing user to navigate to orders page to avoid wrong results.
     emitter.emit('presentLoader', {message: 'Updating facility', backdropDismiss: false})
 
-    const userProfile = JSON.parse(JSON.stringify(state.current as any));
-    userProfile.stores = await UserService.getEComStores(undefined, payload.facility.facilityId);
+    try {
+      const userProfile = JSON.parse(JSON.stringify(state.current as any));
+      userProfile.stores = await useUserStore().getEComStoresByFacility(facility.facilityId);
+      await useUserStore().getEComStorePreference('SELECTED_BRAND');
+      const preferredStore: any = useUserStore().getCurrentEComStore
 
-    let preferredStore = userProfile.stores[0];
-    const preferredStoreId =  await UserService.getPreferredStore(undefined);
-
-    if (preferredStoreId) {
-      const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
-      store && (preferredStore = store)
+      commit(types.USER_INFO_UPDATED, userProfile);
+      this.dispatch('order/clearOrders')
+      await dispatch('getDisableShipNowConfig')
+      await dispatch('getDisableUnpackConfig')
+      this.dispatch('util/getForceScanSetting', preferredStore.productStoreId)
+      this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
+    } catch(error: any) {
+      logger.error(error);
+      showToast(error?.message ? error.message : translate("Something went wrong"))
     }
-    commit(types.USER_INFO_UPDATED, userProfile);
-    commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
-    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
-    this.dispatch('order/clearOrders')
 
     emitter.emit('dismissLoader')
   },
@@ -216,19 +219,16 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    *  update current eComStore information
   */
-  async setEComStore({ commit }, payload) {
-    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, payload.eComStore);
-    await UserService.setUserPreference({
-      'userPrefTypeId': 'SELECTED_BRAND',
-      'userPrefValue': payload.eComStore.productStoreId
-    });
-
+  async setEComStore({ commit, dispatch }, productStoreId) {
     // Get product identification from api using dxp-component
-    await useProductIdentificationStore().getIdentificationPref(payload.eComStore.productStoreId)
+    await useProductIdentificationStore().getIdentificationPref(productStoreId)
       .catch((error) => logger.error(error));
 
-    this.dispatch('util/findProductStoreShipmentMethCount')
-    this.dispatch('util/getForceScanSetting', payload.ecomStore.productStoreId)
+    await dispatch('getDisableShipNowConfig')
+    await dispatch('getDisableUnpackConfig')
+    this.dispatch('util/findProductStoreShipmentMethCount');
+    this.dispatch('util/getForceScanSetting', productStoreId)
+    this.dispatch('util/fetchBarcodeIdentificationPref', productStoreId);
   },
 
   setUserPreference({ commit }, payload){
@@ -408,6 +408,85 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_PWA_STATE_UPDATED, payload);
   },
 
+  async getNewRejectionApiConfig ({ commit }) {
+    let config = {};
+    const params = {
+      "inputFields": {
+        "productStoreId": getProductStoreId(),
+        "settingTypeEnumId": "FF_USE_NEW_REJ_API"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "viewSize": 1
+    } as any
+
+    try {
+      const resp = await UserService.getNewRejectionApiConfig(params)
+      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
+        config = resp.data?.docs[0];
+      } else {
+        logger.error('Failed to fetch new rejection API configuration');
+      }
+    } catch (err) {
+      logger.error(err);
+    } 
+    commit(types.USER_NEW_REJECTION_API_CONFIG_UPDATED, config);   
+  },
+
+  async getDisableShipNowConfig ({ commit }) {
+    let isShipNowDisabled = false;
+    const params = {
+      "inputFields": {
+        "productStoreId": getProductStoreId(),
+        "settingTypeEnumId": "DISABLE_SHIPNOW"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["settingTypeEnumId", "settingValue"],
+      "viewSize": 1
+    } as any
+
+    try { 
+      const resp = await UserService.getDisableShipNowConfig(params)
+
+      if (!hasError(resp)) {
+        isShipNowDisabled = resp.data?.docs[0]?.settingValue === "true";
+      } else {
+        logger.error('Failed to fetch disable ship now config.');
+      }
+    } catch (err) {
+      logger.error(err);
+    }
+    commit(types.USER_DISABLE_SHIP_NOW_CONFIG_UPDATED, isShipNowDisabled);
+  },
+
+  async getDisableUnpackConfig ({ commit }) {
+    let isUnpackDisabled = false;
+    const params = {
+      "inputFields": {
+        "productStoreId": getProductStoreId(),
+        "settingTypeEnumId": "DISABLE_UNPACK"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["settingTypeEnumId", "settingValue"],
+      "viewSize": 1
+    } as any
+
+    try {
+      const resp = await UserService.getDisableUnpackConfig(params)
+
+      if (!hasError(resp)) {
+        isUnpackDisabled = resp.data?.docs[0]?.settingValue === "true";
+      } else {
+        logger.error('Failed to fetch disable unpack config.');
+      }
+    } catch (err) {
+      logger.error(err);
+    }
+    commit(types.USER_DISABLE_UNPACK_CONFIG_UPDATED, isUnpackDisabled);
+  },
   async updatePartialOrderRejectionConfig ({ dispatch }, payload) {  
     let resp = {} as any;
     try {
@@ -429,7 +508,7 @@ const actions: ActionTree<UserState, RootState> = {
         //Create Product Store Setting
         payload = {
           ...payload, 
-          "productStoreId": this.state.user.currentEComStore.productStoreId,
+          "productStoreId": getProductStoreId(),
           "settingTypeEnumId": "FULFILL_PART_ODR_REJ",
           "fromDate": DateTime.now().toMillis()
         }
@@ -473,7 +552,7 @@ const actions: ActionTree<UserState, RootState> = {
         //Create Product Store Setting
         payload = {
           ...payload, 
-          "productStoreId": this.state.user.currentEComStore.productStoreId,
+          "productStoreId": getProductStoreId(),
           "settingTypeEnumId": "FF_COLLATERAL_REJ",
           "fromDate": DateTime.now().toMillis()
         }
@@ -500,7 +579,7 @@ const actions: ActionTree<UserState, RootState> = {
     let config = {};
     const params = {
       "inputFields": {
-        "productStoreId": this.state.user.currentEComStore.productStoreId,
+        "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "FULFILL_PART_ODR_REJ"
       },
       "filterByDate": 'Y',
@@ -525,7 +604,7 @@ const actions: ActionTree<UserState, RootState> = {
     let config = {};
     const params = {
       "inputFields": {
-        "productStoreId": this.state.user.currentEComStore.productStoreId,
+        "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "FF_COLLATERAL_REJ"
       },
       "filterByDate": 'Y',
@@ -547,6 +626,62 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED, config);   
   },
 
+  async updateAffectQohConfig ({ dispatch }, payload) {  
+    let resp = {} as any;
+    try {
+      if (!payload.fromDate) {
+        //Create Product Store Setting
+        payload = {
+          ...payload, 
+          "productStoreId": getProductStoreId(),
+          "settingTypeEnumId": "AFFECT_QOH_ON_REJ",
+          "fromDate": DateTime.now().toMillis()
+        }
+        resp = await UserService.createAffectQohConfig(payload) as any
+      } else {
+        //Update Product Store Setting
+        resp = await UserService.updateAffectQohConfig(payload) as any
+      }
+
+      if (!hasError(resp)) {
+        showToast(translate('Configuration updated'))
+      } else {
+        showToast(translate('Failed to update configuration'))
+      }
+    } catch(err) {
+      showToast(translate('Failed to update configuration'))
+      logger.error(err)
+    }
+
+    // Fetch the updated configuration
+    await dispatch("getAffectQohConfig");
+  },
+  async getAffectQohConfig ({ commit }) {
+    let config = {};
+    const params = {
+      "inputFields": {
+        "productStoreId": getProductStoreId(),
+        "settingTypeEnumId": "AFFECT_QOH_ON_REJ"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "viewSize": 1
+    } as any
+
+    try {
+      const resp = await UserService.getAffectQohConfig(params)
+      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
+        config = resp.data?.docs[0];
+      } else {
+        logger.error('Failed to fetch affect QOH configuration');
+      }
+    } catch (err) {
+      logger.error(err);
+    } 
+    commit(types.USER_AFFECT_QOH_CONFIG_UPDATED, config);   
+  },
+
   addNotification({ state, commit }, payload) {
     const notifications = JSON.parse(JSON.stringify(state.notifications))
     notifications.push({ ...payload.notification, time: DateTime.now().toMillis() })
@@ -559,7 +694,7 @@ const actions: ActionTree<UserState, RootState> = {
 
   async fetchNotificationPreferences({ commit, state }) {
     let resp = {} as any
-    const facilityId = (state.currentFacility as any).facilityId
+
     let notificationPreferences = [], enumerationResp = [], userPrefIds = [] as any
     try {
       resp = await getNotificationEnumIds(process.env.VUE_APP_NOTIF_ENUM_TYPE_ID as any)
@@ -573,7 +708,7 @@ const actions: ActionTree<UserState, RootState> = {
       // data and getNotificationUserPrefTypeIds fails or returns empty response (all disbaled)
       if (enumerationResp.length) {
         notificationPreferences = enumerationResp.reduce((notifactionPref: any, pref: any) => {
-          const userPrefTypeIdToSearch = generateTopicName(facilityId, pref.enumId)
+          const userPrefTypeIdToSearch = generateTopicName(getCurrentFacilityId(), pref.enumId)
           notifactionPref.push({ ...pref, isEnabled: userPrefIds.includes(userPrefTypeIdToSearch) })
           return notifactionPref
         }, [])

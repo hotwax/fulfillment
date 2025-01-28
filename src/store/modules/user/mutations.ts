@@ -9,22 +9,14 @@ const mutations: MutationTree <UserState> = {
     [types.USER_END_SESSION] (state) {
       state.token = ''
       state.current = {},
-      state.currentFacility = {}
-      state.currentEComStore = {}
       state.permissions = [],
       state.allNotificationPrefs = []
     },
     [types.USER_INFO_UPDATED] (state, payload) {
         state.current = { ...state.current,  ...payload}
     },
-    [types.USER_CURRENT_FACILITY_UPDATED] (state, payload) {
-        state.currentFacility = payload;
-    },
     [types.USER_INSTANCE_URL_UPDATED] (state, payload) {
         state.instanceUrl = payload;
-    },
-    [types.USER_CURRENT_ECOM_STORE_UPDATED](state, payload) {
-        state.currentEComStore = payload;
     },
     [types.USER_PREFERENCE_UPDATED] (state, payload) {
         state.preference = {...state.preference, ...payload};
@@ -63,11 +55,23 @@ const mutations: MutationTree <UserState> = {
     [types.USER_ALL_NOTIFICATION_PREFS_UPDATED] (state, payload) {
         state.allNotificationPrefs = payload
     },
+    [types.USER_NEW_REJECTION_API_CONFIG_UPDATED] (state, payload) {
+        state.newRejectionApiConfig = payload
+    },
     [types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED] (state, payload) {
         state.partialOrderRejectionConfig = payload
     },
     [types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED] (state, payload) {
         state.collateralRejectionConfig = payload
+    },
+    [types.USER_AFFECT_QOH_CONFIG_UPDATED] (state, payload) {
+        state.affectQohConfig = payload
+    },
+    [types.USER_DISABLE_SHIP_NOW_CONFIG_UPDATED] (state, payload) {
+        state.isShipNowDisabled = payload
+    },
+    [types.USER_DISABLE_UNPACK_CONFIG_UPDATED] (state, payload) {
+        state.isUnpackDisabled = payload
     }
 }
 export default mutations;

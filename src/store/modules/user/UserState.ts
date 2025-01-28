@@ -3,9 +3,7 @@ export default interface UserState {
     current: any;
     permissions: any;
     pwaState: any;
-    currentFacility: object;
     instanceUrl: string;
-    currentEComStore: object;
     preference: {
         printShippingLabel: boolean,
         printPackingSlip: boolean
@@ -22,6 +20,10 @@ export default interface UserState {
     firebaseDeviceId: string;
     hasUnreadNotifications: boolean;
     allNotificationPrefs: any;
+    newRejectionApiConfig: any;
     partialOrderRejectionConfig: any;
     collateralRejectionConfig: any;
+    affectQohConfig: any;
+    isShipNowDisabled: boolean;
+    isUnpackDisabled: boolean;
 }

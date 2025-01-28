@@ -112,11 +112,11 @@
                 <ion-list>
                   <ion-item>
                     <ion-label class="ion-text-wrap">{{ translate("Brand") }}</ion-label>
-                    <ion-label class="ion-text-wrap">{{ currentEcomStore.storeName || "-" }}</ion-label>
+                    <ion-label class="ion-text-wrap" slot="end">{{ currentEComStore.storeName || "-" }}</ion-label>
                   </ion-item>
                   <ion-item lines="none">
                     <ion-label class="ion-text-wrap">{{ translate("Channel") }}</ion-label>
-                    <ion-label class="ion-text-wrap">{{ order.salesChannel || "-" }}</ion-label>
+                    <ion-label class="ion-text-wrap" slot="end">{{ order.salesChannel || "-" }}</ion-label>
                   </ion-item>
                 </ion-list>
               </ion-card>
@@ -126,14 +126,17 @@
                   <ion-card-title>{{ translate("Payment") }}</ion-card-title>
                 </ion-card-header>
                 <div v-if="order.orderPayments?.length">
-                  <ion-list v-for="orderPayment in order.orderPayments" :key="orderPayment">
+                  <ion-list v-for="(orderPayment, index) in order.orderPayments" :key="index">
                     <ion-item lines="none">
                       <ion-label class="ion-text-wrap">
                         <p class="overline">{{ orderPayment.methodTypeId }}</p>
                         <ion-label>{{ translate(getPaymentMethodDesc(orderPayment.methodTypeId)) || orderPayment.methodTypeId }}</ion-label>
                         <ion-note :color="getColorByDesc(getStatusDesc(orderPayment.paymentStatus))">{{ translate(getStatusDesc(orderPayment.paymentStatus)) }}</ion-note>
                       </ion-label>
-                      <p slot="end">{{ formatCurrency(orderPayment.amount, order.currencyUom) }}</p>
+                      <div slot="end" class="ion-text-end">
+                        <ion-badge v-if="order.orderPayments.length > 1 && index === 0" color="dark">{{ translate("Latest") }}</ion-badge>
+                        <ion-label slot="end">{{ formatCurrency(orderPayment.amount, order.currencyUom) }}</ion-label>
+                      </div>
                     </ion-item>
                   </ion-list>
                 </div>
@@ -172,10 +175,15 @@
                   <ion-label class="ion-text-wrap">{{ translate("Customer ID") }}</ion-label>
                   <ion-label slot="end">{{ order.orderAttributes.customerid || "-" }}</ion-label>
                 </ion-item>
-                <ion-item lines="none">
-                  <ion-label class="ion-text-wrap">{{ translate("Muncipio") }}</ion-label>
+                <ion-item>
+                  <ion-label class="ion-text-wrap">{{ translate("Municipio") }}</ion-label>
                   <ion-label slot="end">{{ order.orderAttributes.municipio || "-" }}</ion-label>
                 </ion-item>
+                <ion-item>
+                  <ion-label class="ion-text-wrap">{{ translate("Invoicing facility") }}</ion-label>
+                  <ion-label class="ion-text-wrap" slot="end">{{ (invoicingFacility.facilityName ? invoicingFacility.facilityName : invoicingFacility.facilityId) || '-'  }}</ion-label>
+                </ion-item>
+                <Component :is="additionalDetailItemExt" :order="order" :invoicingFacilityId="invoicingFacility.facilityId"/>
               </ion-list>
             </ion-card>
           </div>
@@ -190,6 +198,10 @@
                   <h1>{{ shipGroups[0].facilityName || shipGroups[0].facilityId }}</h1>
                   <p v-if="shipGroups[0].facilityId !== '_NA_'">{{ getShipmentMethodDesc(shipGroups[0].shipmentMethodTypeId) || shipGroups[0].shipmentMethodTypeId }}</p>
                 </ion-label>
+                <ion-label slot="end" v-if="shipGroups[0].trackingIdNumber">{{ translate("Tracking Code") }}{{ ":" }} {{ shipGroups[0].trackingIdNumber }}</ion-label>
+                <ion-button :disabled="order.hasMissingInfo" slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, shipGroups[0])" v-if="shipGroups[0].trackingIdNumber">
+                  <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+                </ion-button>
               </ion-item>
     
               <div class="product-card">
@@ -265,14 +277,21 @@ import {
   IonSpinner,
   IonThumbnail,
   IonTitle,
-  IonToolbar
+  IonToolbar,
+  popoverController
 } from "@ionic/vue";
-import { defineComponent } from "vue";
-import { translate } from '@hotwax/dxp-components';
-import { cubeOutline, golfOutline, callOutline, cashOutline, informationCircleOutline, ribbonOutline, mailOutline, ticketOutline, timeOutline, pulseOutline, storefrontOutline, sunnyOutline, checkmarkDoneOutline, downloadOutline } from "ionicons/icons";
+import { computed, defineComponent } from "vue";
+import { translate, useUserStore } from '@hotwax/dxp-components';
+import { cubeOutline, golfOutline, callOutline, cashOutline, closeCircleOutline, ellipsisVerticalOutline, informationCircleOutline, ribbonOutline, mailOutline, ticketOutline, timeOutline, pulseOutline, storefrontOutline, sunnyOutline, checkmarkDoneOutline, downloadOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { DateTime } from "luxon";
 import { formatCurrency, getColorByDesc } from "@/utils"
+import { prepareSolrQuery } from '@/utils/solrHelper';
+import OrderLookupLabelActionsPopover from '@/components/OrderLookupLabelActionsPopover.vue';
+import { hasError } from "@hotwax/oms-api";
+import logger from "@/logger";
+import { OrderService } from "@/services/OrderService";
+import { useDynamicImport } from "@/utils/moduleFederation";
 
 export default defineComponent({
   name: "OrderLookupDetail",
@@ -302,23 +321,29 @@ export default defineComponent({
       orderStatuses: JSON.parse(process.env.VUE_APP_ORDER_STATUS as any),
       itemStatuses: JSON.parse(process.env.VUE_APP_ITEM_STATUS as any),
       isFetchingStock: false,
-      isFetchingOrderInfo: false
+      isFetchingOrderInfo: false,
+      invoicingFacility: {} as any,
+      additionalDetailItemExt: "" as any
     }
   },
   computed: {
     ...mapGetters({
       order: "orderLookup/getCurrentOrder",
-      currentEcomStore: "user/getCurrentEComStore",
       getProduct: "product/getProduct",
       getProductStock: "stock/getProductStock",
       getStatusDesc: "util/getStatusDesc",
       getShipmentMethodDesc: "util/getShipmentMethodDesc",
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
+      userProfile: 'user/getUserProfile',
+      instanceUrl: "user/getInstanceUrl"
     })
   },
   async ionViewWillEnter() {
     this.isFetchingOrderInfo = true
     await this.store.dispatch("orderLookup/getOrderDetails", this.orderId)
+    await this.fetchOrderInvoicingFacility()
+    const instance = this.instanceUrl.split("-")[0]
+    this.additionalDetailItemExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderLookupAdditionalDetailItem`})
     this.isFetchingOrderInfo = false
   },
   methods: {
@@ -341,16 +366,64 @@ export default defineComponent({
       await this.store.dispatch('stock/fetchStock', { productId, facilityId })
       this.isFetchingStock = false
     },
+    async shippingLabelActionPopover(ev: Event, shipGroup: any) {
+      const popover = await popoverController.create({
+        component: OrderLookupLabelActionsPopover,
+        componentProps: {
+          currentOrder: this.order,
+          shipGroupSeqId: shipGroup.shipGroupSeqId,
+          carrierPartyId: shipGroup.carrierPartyId
+        },
+        event: ev,
+        showBackdrop: false
+      });
+
+      return popover.present()
+    },
+    async fetchOrderInvoicingFacility() {
+      const params = {
+        viewSize: 1,
+        sort: "createdDate_dt desc",
+        filters: {
+          id: { value: this.order.orderName }
+        },
+        docType: "ORDER_TO_INVOICE_API",
+        coreName: "logInsights"
+      }
+
+      const orderInvoicingQueryPayload = prepareSolrQuery(params)
+
+      try {
+        const resp = await OrderService.findOrderInvoicingInfo(orderInvoicingQueryPayload);
+
+        if(!hasError(resp) && resp.data?.response?.docs?.length) {
+          const response = resp.data.response.docs[0];
+
+          const request = Object.keys(response.request_txt_en).length ? JSON.parse(response.request_txt_en) : {}
+          const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === request.InvoicingStore)
+          if(invoicingFacility) {
+            this.invoicingFacility = invoicingFacility
+          }
+        }
+      } catch(error: any) {
+        logger.error(error);
+      }
+    }
   },
   setup() {
     const store = useStore();
+    const userStore = useUserStore()
+    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
 
     return {
       callOutline,
       cashOutline,
       checkmarkDoneOutline,
+      closeCircleOutline,
       cubeOutline,
+      currentEComStore,
       downloadOutline,
+      ellipsisVerticalOutline,
       formatCurrency,
       getColorByDesc,
       golfOutline,

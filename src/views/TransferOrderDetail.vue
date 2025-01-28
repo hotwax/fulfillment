@@ -117,6 +117,10 @@
       <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED'">
         <ion-toolbar>
           <ion-buttons slot="end">
+            <ion-button  color="primary" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="printTransferOrder()">
+              <ion-icon :icon="printOutline" />
+              {{ translate('Picklist') }}   
+            </ion-button>
             <ion-button  color="primary" fill="solid" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment()" @click="confirmCreateShipment">
               <ion-spinner v-if="isCreatingShipment" slot="start" name="crescent" />
               {{ translate('Create shipment') }}   
@@ -153,7 +157,7 @@
     modalController,
   } from '@ionic/vue';
   import { computed, defineComponent } from 'vue';
-  import { add, checkmarkDone, barcodeOutline, pricetagOutline } from 'ionicons/icons';
+  import { add, checkmarkDone, barcodeOutline, pricetagOutline, printOutline } from 'ionicons/icons';
   import { mapGetters, useStore } from "vuex";
   import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 
@@ -213,15 +217,16 @@
       ...mapGetters({
         currentOrder: 'transferorder/getCurrent',
         getStatusDesc: 'util/getStatusDesc',
-        user: 'user/getCurrentFacility',
         getProduct: 'product/getProduct',
-        currentFacility: 'user/getCurrentFacility',
         productIdentificationPref: 'user/getProductIdentificationPref',
         productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
         getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       }),
     },
     methods: {
+      async printTransferOrder() {
+        await OrderService.printTransferOrder(this.currentOrder.orderId)
+      },
       getItemCount() {
         return this.currentOrder?.items?.reduce((totalItems:any, item:any) => totalItems + (item.orderedQuantity || 0), 0);
 
@@ -233,7 +238,7 @@
         if (orderType === 'completed') {
           return this.currentOrder?.items?.filter((item: any) => item.statusId === 'ITEM_COMPLETED')
         } else {
-          return this.currentOrder?.items?.filter((item: any) => item.statusId !== 'ITEM_COMPLETED' && item.statusId !== 'ITEM_REJECTED')
+          return this.currentOrder?.items?.filter((item: any) => item.statusId !== 'ITEM_COMPLETED' && item.statusId !== 'ITEM_CANCELLED' && item.statusId !== 'ITEM_REJECTED')
         }
       },
       getShipments(shipmentType: string) {
@@ -295,15 +300,21 @@
           showToast(translate("Scanned item is already completed:", { itemName: payload }))
         }
         else if (result.isProductFound) {
-          showToast(translate("Scanned successfully.", { itemName: payload }))
-          this.lastScannedId = payload
-          // Highlight specific element
-          const scannedElement = document.getElementById(payload);
-          scannedElement && (scannedElement.scrollIntoView());
-          // Scanned product should get un-highlighted after 3s for better experience hence adding setTimeOut
-          setTimeout(() => {
-            this.lastScannedId = ''
-          }, 3000)
+          const item = result.orderItem
+          const shippedQuantity = this.getShippedQuantity(item)
+          if(item.pickedQuantity > item.orderedQuantity - shippedQuantity) {
+            showToast(translate('The picked quantity cannot exceed the ordered quantity.') + " " + translate("already shipped.", {shippedQuantity: shippedQuantity}))
+          } else {
+            showToast(translate("Scanned successfully.", { itemName: payload }))
+            this.lastScannedId = payload
+            // Highlight specific element
+            const scannedElement = document.getElementById(payload);
+            scannedElement && (scannedElement.scrollIntoView());
+            // Scanned product should get un-highlighted after 3s for better experience hence adding setTimeOut
+            setTimeout(() => {
+              this.lastScannedId = ''
+            }, 3000)
+          }
         } else {
           showToast(translate("Scanned item is not present within the order:", { itemName: payload }));
         }
@@ -375,6 +386,12 @@
         currentShipment.isGeneratingShippingLabel = false;
       }
     }, 
+    ionViewDidLeave() {
+      const routeTo = this.router.currentRoute;
+      if (routeTo.value.name !== 'Transfer Orders') {
+        this.store.dispatch('transferorder/clearTransferOrderFilters');
+      }
+    },
     setup() {
       const store = useStore(); 
       const router = useRouter();
@@ -391,6 +408,7 @@
         getProductIdentificationValue,
         hasPermission,
         pricetagOutline,
+        printOutline,
         productIdentificationPref,
         showToast,
         store,

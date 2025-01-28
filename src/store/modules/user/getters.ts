@@ -18,9 +18,6 @@ const getters: GetterTree <UserState, RootState> = {
     getUserProfile (state) {
         return state.current
     },
-    getCurrentFacility (state){
-        return state.currentFacility
-    },
     getInstanceUrl (state) {
         const baseUrl = process.env.VUE_APP_BASE_URL;
         return baseUrl ? baseUrl : state.instanceUrl;
@@ -29,9 +26,6 @@ const getters: GetterTree <UserState, RootState> = {
         let baseURL = process.env.VUE_APP_BASE_URL;
         if (!baseURL) baseURL = state.instanceUrl;
         return baseURL.startsWith('http') ? baseURL.includes('/api') ? baseURL : `${baseURL}/api/` : `https://${baseURL}.hotwax.io/api/`;
-    },
-    getCurrentEComStore(state) {
-        return state.currentEComStore
     },
     getUserPreference(state) {
         return state.preference
@@ -64,11 +58,23 @@ const getters: GetterTree <UserState, RootState> = {
     getAllNotificationPrefs(state) {
         return state.allNotificationPrefs
     },
+    getNewRejectionApiConfig(state) {
+        return  state.newRejectionApiConfig;
+    },
     getPartialOrderRejectionConfig(state) {
         return  state.partialOrderRejectionConfig;
     },
     getCollateralRejectionConfig(state) {
         return  state.collateralRejectionConfig;
     },
+    getAffectQohConfig(state) {
+        return  state.affectQohConfig;
+    },
+    isShipNowDisabled(state) {
+        return state.isShipNowDisabled;
+    },
+    isUnpackDisabled(state) {
+        return state.isUnpackDisabled;
+    }
 }
 export default getters;
