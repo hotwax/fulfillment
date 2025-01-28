@@ -87,7 +87,10 @@ const actions: ActionTree<OrderState, RootState> = {
   async updateOpenQuery({ commit, dispatch }, payload) {
       commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
       await dispatch('findOpenOrders');
-    },
+  },
+  async clearOpenOrders({ commit }) {
+      commit(types.ORDER_OPEN_CLEARED)
+  }
 }
 
 export default actions;
