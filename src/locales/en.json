@@ -452,7 +452,7 @@
   "Reject all": "Reject all",
   "Reject all in progress orders": "Reject all in progress orders",
   "Reject all open orders": "Reject all open orders",
-  "Reject entire order": "Reject entire order",
+  "Reject to avoid order split (no variance)": "Reject to avoid order split (no variance)",
   "Reject in progress orders.": "Reject { ordersCount } in progress orders.",
   "Reject open orders.": "Reject { ordersCount } open orders.",
   "Reject order": "Reject order",
