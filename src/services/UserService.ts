@@ -13,7 +13,7 @@ const login = async (username: string, password: string): Promise <any> => {
   });
 }
 const moquiLogin = async (omsRedirectionUrl: string, token: string): Promise <any> => {
-  const baseURL = omsRedirectionUrl.startsWith('http') ? omsRedirectionUrl.includes('/rest/s1/admin') ? omsRedirectionUrl : `${omsRedirectionUrl}/rest/s1/admin/` : `https://${omsRedirectionUrl}.hotwax.io/rest/s1/admin/`;
+  const baseURL = omsRedirectionUrl.startsWith('http') ? omsRedirectionUrl.includes('/rest/s1/poorti') ? omsRedirectionUrl : `${omsRedirectionUrl}/rest/s1/poorti/` : `https://${omsRedirectionUrl}.hotwax.io/rest/s1/poorti/`;
   let api_key = ""
 
   try {
