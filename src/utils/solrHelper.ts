@@ -15,7 +15,7 @@ const prepareOrderQuery = (params: any) => {
         "q.op": "AND",
         "start": viewIndex * viewSize
       },
-      "query":"(*:*)",
+      "query":"*:*",
       "filter": [`docType: ${params.docType ? params.docType : 'OISGIR'}`]
     }
   } as any
@@ -71,7 +71,7 @@ const prepareSolrQuery = (params: any) => {
         "start": viewIndex * viewSize,
         ...groupParams
       },
-      "query":"(*:*)",
+      "query":"*:*",
       "filter": [`docType: ${params.docType ? params.docType : 'OISGIR'}`]
     }
   } as any

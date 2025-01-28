@@ -106,13 +106,7 @@ const recycleInProgressOrders = async(payload: any): Promise<any> => {
   })
 }
 
-const recycleOutstandingOrders = async(payload: any): Promise<any> => {
-  return api({
-    url: "service/bulkRejectStoreOutstandingOrders",
-    method: "post",
-    data: payload
-  })
-}
+
 
 const getPreferredStore = async (token: any): Promise<any> => {
   const baseURL = store.getters['user/getBaseUrl'];
@@ -437,7 +431,6 @@ export const UserService = {
     isEnumExists,
     moquiLogin,
     recycleInProgressOrders,
-    recycleOutstandingOrders,
     setUserPreference,
     getUserPermissions,
     updateAffectQohConfig,

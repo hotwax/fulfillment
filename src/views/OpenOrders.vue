@@ -58,7 +58,7 @@
 
               <div class="order-metadata">
                 <ion-label>
-                  {{ order.shipmentMethodTypeDesc }}
+                  {{ order.shipmentMethodTypeId }}
                   <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
                 </ion-label>
               </div>
@@ -177,7 +177,7 @@ import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationS
 import { formatUtcDate, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
-import { prepareOrderQuery } from '@/utils/solrHelper';
+import { prepareSolrQuery } from '@/utils/solrHelper';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import emitter from '@/event-bus';
 import logger from '@/logger';
@@ -186,6 +186,7 @@ import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import { isKit } from '@/utils/order'
+import { MaargOrderService } from '@/services/MaargOrderService'
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -218,7 +219,7 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      openOrders: 'order/getOpenOrders',
+      openOrders: 'maargorder/getOpenOrders',
       getProduct: 'product/getProduct',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       getProductStock: 'stock/getProductStock',
@@ -266,7 +267,7 @@ export default defineComponent({
       }
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
       openOrdersQuery.viewIndex++;
-      await this.store.dispatch('order/updateOpenOrderIndex', { ...openOrdersQuery })
+      await this.store.dispatch('maargorder/updateOpenOrderIndex', { ...openOrdersQuery })
       event.target.complete();
     },
     isOpenOrdersScrollable() {
@@ -287,7 +288,7 @@ export default defineComponent({
       openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       openOrdersQuery.selectedShipmentMethods = selectedShipmentMethods
 
-      this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
+      this.store.dispatch('maargorder/updateOpenQuery', { ...openOrdersQuery })
     },
     async fetchKitComponents(orderItem: any) {
       this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
@@ -306,14 +307,13 @@ export default defineComponent({
     async fetchShipmentMethods() {
       let resp: any;
 
-      const payload = prepareOrderQuery({
-        queryFields: 'orderId',
+      const payload = prepareSolrQuery({
+        docType: 'ORDER',
         viewSize: '0',  // passed viewSize as 0 to not fetch any data
+        isGroupingRequired: false,
         filters: {
-          quantityNotAvailable: { value: 0 },
-          isPicked: { value: 'N' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          '-fulfillmentStatus': { value: 'Cancelled' },
+          'fulfillmentStatus': { value: 'created' },
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
           facilityId: { value: this.currentFacility?.facilityId },
@@ -351,20 +351,20 @@ export default defineComponent({
 
       openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       openOrdersQuery.queryString = queryString
-      await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
+      await this.store.dispatch('maargorder/updateOpenQuery', { ...openOrdersQuery })
       this.searchedQuery = queryString;
     },
     async updateOrderQuery(size: any) {
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
 
       openOrdersQuery.viewSize = size
-      await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
+      await this.store.dispatch('maargorder/updateOpenQuery', { ...openOrdersQuery })
     },
     async initialiseOrderQuery() {
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
       openOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
+      await this.store.dispatch('maargorder/updateOpenQuery', { ...openOrdersQuery })
     },
     async recycleOutstandingOrders() {
       const alert = await alertController.create({
@@ -383,7 +383,7 @@ export default defineComponent({
             let resp;
 
             try {
-              resp = await UserService.recycleOutstandingOrders({
+              resp = await MaargOrderService.recycleOutstandingOrders({
                 "facilityId": this.currentFacility?.facilityId,
                 "productStoreId": this.currentEComStore.productStoreId,
                 "reasonId": "INACTIVE_STORE"
@@ -425,7 +425,7 @@ export default defineComponent({
     await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
   },
   unmounted() {
-    this.store.dispatch('order/clearOpenOrders');
+    this.store.dispatch('maargorder/clearOpenOrders');
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   setup() {
