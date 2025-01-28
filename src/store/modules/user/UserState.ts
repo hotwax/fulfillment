@@ -3,6 +3,10 @@ export default interface UserState {
     current: any;
     permissions: any;
     pwaState: any;
+    omsRedirectionInfo: {
+        url: string;
+        token: string;
+    }
     instanceUrl: string;
     preference: {
         printShippingLabel: boolean,
