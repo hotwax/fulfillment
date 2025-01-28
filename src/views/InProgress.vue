@@ -1392,4 +1392,3 @@ ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-te
   grid-template-columns: repeat(3, 1fr);
 }
 </style>
-
