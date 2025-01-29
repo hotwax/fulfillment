@@ -108,8 +108,7 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       transferOrders: 'transferorder/getTransferOrders',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
-      currentEComStore: 'user/getCurrentEComStore'
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
     })
   },
   data () {
@@ -188,7 +187,7 @@ export default defineComponent({
           '-orderStatusId': { value: 'ORDER_CREATED' },
           orderTypeId: { value: 'TRANSFER_ORDER' },
           facilityId: { value: escapeSolrSpecialChars(this.currentFacility?.facilityId) },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore?.productStoreId }
         },
         facet: {
           "shipmentMethodTypeIdFacet":{
@@ -255,13 +254,15 @@ export default defineComponent({
     const router = useRouter();
     const store = useStore();
     const userStore = useUserStore()
-    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
+    let currentFacility: any = computed(() => userStore.getCurrentFacility)
+    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
 
     return{
       Actions,
       caretDownOutline,
       checkmarkDoneOutline,
       cubeOutline,
+      currentEComStore,
       currentFacility,
       optionsOutline,
       pricetagOutline,
