@@ -21,8 +21,9 @@
               <ion-item>
                 <ion-label>{{ currentShipment.totalQuantityPicked }} {{ translate("items picked") }}</ion-label>
                 <ion-button expand="block" fill="outline" @click="generateShippingLabel(currentShipment)">
-                  <ion-icon slot="start" :icon="documentTextOutline" />{{ currentShipment.trackingCode ? translate("Regenerate Shipping Label") : translate("Generate shipping label") }}
-                  <ion-spinner color="primary" slot="start" v-if="currentShipment.isGeneratingShippingLabel" name="crescent" />
+                  <ion-icon slot="start" :icon="documentTextOutline" />
+                  {{ currentShipment.trackingCode ? translate("Regenerate Shipping Label") : translate("Generate shipping label") }}
+                  <ion-spinner color="primary" slot="end" v-if="isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
               </ion-item>
               <ion-item>
@@ -159,7 +160,8 @@
         isShipped: false,
         trackingCode: '',
         shipmentItems: [] as any,
-        showLabelError: false
+        showLabelError: false,
+        isGeneratingShippingLabel: false
       }
     },
     computed: {
@@ -197,12 +199,12 @@
 
         // if the request to print shipping label is not yet completed, then clicking multiple times on the button
         // should not do anything
-        if (currentShipment.isGeneratingShippingLabel) {
+        if (this.isGeneratingShippingLabel) {
           return;
         }
 
         await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
-        currentShipment.isGeneratingShippingLabel = true;
+        this.isGeneratingShippingLabel = true;
         let shippingLabelPdfUrls = this.currentShipment.shipmentPackages
           ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
           .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
@@ -232,7 +234,7 @@
           await OrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
         }
 
-        currentShipment.isGeneratingShippingLabel = false;
+        this.isGeneratingShippingLabel = false;
       },
       async transferShipmentActionsPopover(ev: Event) {
         const popover = await popoverController.create({
