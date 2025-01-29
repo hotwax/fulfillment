@@ -35,14 +35,12 @@ const actions: ActionTree<RejectionState, RootState> = {
             "field":"rejectionReasonId_s",
             "mincount":1,
             "limit":-1,
-            "sort":"index",
             "type":"terms",
           },
           "prodductIdFacet":{
             "field":"productId_s",
             "mincount":1,
             "limit":-1,
-            "sort":"index",
             "type":"terms",
           }
         }
@@ -81,8 +79,15 @@ const actions: ActionTree<RejectionState, RootState> = {
               }, {});
               usedRejectionReasons = resp.data.docs
               await store.dispatch("util/updateRejectReasons", usedRejectionReasons)
-              usedRejectionReasons.map((rejectionReason: any) => {
-                rejectionReason.count = reasonCountDetail[rejectionReason.enumId]?.count
+
+              // Added this logic as we need to display the rejections on UI in desc order of count
+              // If directly looping over the resp, it does not persist the rejections order on the basis of count
+              usedRejectionReasons = Object.keys(reasonCountDetail).map((rejectionReasonId: any) => {
+                const reason = usedRejectionReasons.find((reason: any) => reason.enumId === rejectionReasonId)
+                return {
+                  ...reason,
+                  count: reasonCountDetail[rejectionReasonId]?.count
+                }
               })
             } else {
               throw resp.data
