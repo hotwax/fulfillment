@@ -92,7 +92,7 @@
 
   
   export default defineComponent({
-    name: "ShipmentDetails",
+    name: "TransferShipmentReview",
     components: {
       IonBackButton,
       IonButton,

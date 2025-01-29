@@ -117,8 +117,8 @@
       <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED'">
         <ion-toolbar>
           <ion-buttons slot="end">
-            <ion-button  color="primary" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="printTransferOrder()">
-              <ion-icon :icon="printOutline" />
+            <ion-button color="primary" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="printTransferOrder()">
+              <ion-icon slot="start" :icon="printOutline" />
               {{ translate('Picklist') }}   
             </ion-button>
             <ion-button  color="primary" fill="solid" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment()" @click="confirmCreateShipment">
@@ -174,7 +174,7 @@
 
   
   export default defineComponent({
-    name: "ShipmentDetails",
+    name: "TransferOrderDetail",
     components: {
       IonBadge,
       IonBackButton,
