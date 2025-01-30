@@ -263,7 +263,7 @@ export default defineComponent({
     ...mapGetters({
       completedOrders: 'order/getCompletedOrders',
       getProduct: 'product/getProduct',
-      getPartyName: 'util/getPartyName',
+      getPartyName: 'party/getPartyName',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       getProductStock: 'stock/getProductStock',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
@@ -549,7 +549,7 @@ export default defineComponent({
 
         if(resp.status == 200 && !hasError(resp)) {
           this.carrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
-          this.store.dispatch('util/fetchPartyInformation', this.carrierPartyIds.map((carrierPartyId) => carrierPartyId.val.split('/')[0]))
+          this.store.dispatch('party/fetchPartyInformation', this.carrierPartyIds.map((carrierPartyId) => carrierPartyId.val.split('/')[0]))
         } else {
           throw resp.data
         }

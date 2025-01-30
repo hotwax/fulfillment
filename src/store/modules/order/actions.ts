@@ -1261,7 +1261,7 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     try {
-      this.dispatch('util/fetchPartyInformation', carrierPartyIds)
+      this.dispatch('party/fetchPartyInformation', carrierPartyIds)
       const shipmentTrackingCodes = await OrderService.fetchTrackingCodes(shipmentIds)
 
       shipGroups.find((shipGroup: any) => {

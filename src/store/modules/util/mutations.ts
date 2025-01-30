@@ -6,9 +6,6 @@ const mutations: MutationTree <UtilState> = {
   [types.UTIL_REJECT_REASONS_UPDATED] (state, payload) {
     state.rejectReasons = payload
   },
-  [types.UTIL_PARTY_NAMES_UPDATED] (state, payload) {
-    state.partyNames = payload
-  },
   [types.UTIL_SHIPMENT_METHODS_UPDATED] (state, payload) {
     state.shipmentMethodTypeDesc = payload
   },
