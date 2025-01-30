@@ -1,2 +1,2 @@
-import { SN_UTIL } from "../util/mutation-types"
-export const UTIL_PARTY_NAMES_UPDATED = SN_UTIL + '/PARTY_NAMES_UPDATED'
+export const SN_PARTY = 'party'
+export const PARTY_NAMES_UPDATED = SN_PARTY + '/PARTY_NAMES_UPDATED'

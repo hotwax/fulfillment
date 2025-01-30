@@ -46,7 +46,7 @@ const actions: ActionTree<PartyState, RootState> = {
           ...partyResp
         }
 
-        commit(types.UTIL_PARTY_NAMES_UPDATED, partyInformation)
+        commit(types.PARTY_NAMES_UPDATED, partyInformation)
       } else {
         throw resp.data
       }

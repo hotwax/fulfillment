@@ -9,5 +9,5 @@ const fetchPartyInformation = async (query: any): Promise <any>  => {
 }
 
 export const PartyService = {
-    fetchPartyInformation
+  fetchPartyInformation
 }
