@@ -191,6 +191,11 @@ const actions: ActionTree<UserState, RootState> = {
       this.dispatch('order/clearOrders')
       await dispatch('getDisableShipNowConfig')
       await dispatch('getDisableUnpackConfig')
+      await dispatch('getNewRejectionApiConfig')
+      await dispatch('getPartialOrderRejectionConfig')
+      await dispatch('getCollateralRejectionConfig')
+      await dispatch('getAffectQohConfig')
+      this.dispatch('util/findProductStoreShipmentMethCount');
       this.dispatch('util/getForceScanSetting', preferredStore.productStoreId)
       this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
     } catch(error: any) {
@@ -226,6 +231,10 @@ const actions: ActionTree<UserState, RootState> = {
 
     await dispatch('getDisableShipNowConfig')
     await dispatch('getDisableUnpackConfig')
+    await dispatch('getNewRejectionApiConfig')
+    await dispatch('getPartialOrderRejectionConfig')
+    await dispatch('getCollateralRejectionConfig')
+    await dispatch('getAffectQohConfig')
     this.dispatch('util/findProductStoreShipmentMethCount');
     this.dispatch('util/getForceScanSetting', productStoreId)
     this.dispatch('util/fetchBarcodeIdentificationPref', productStoreId);
