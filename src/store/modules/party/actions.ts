@@ -7,7 +7,7 @@ import logger from '@/logger'
 import { hasError } from '@/adapter'
 
 const actions: ActionTree<PartyState, RootState> = {
-    async fetchPartyInformation({ commit, state }, partyIds) {
+  async fetchPartyInformation({ commit, state }, partyIds) {
     let partyInformation = JSON.parse(JSON.stringify(state.partyNames))
     const cachedPartyIds = Object.keys(partyInformation);
     const ids = partyIds.filter((partyId: string) => !cachedPartyIds.includes(partyId))

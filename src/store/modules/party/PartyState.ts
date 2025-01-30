@@ -1,3 +1,3 @@
 export default interface PartyState {
-    partyNames: any
+  partyNames: any
 }
