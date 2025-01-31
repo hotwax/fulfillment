@@ -4,7 +4,7 @@ import RootState from "@/store/RootState";
 
 const getters: GetterTree<PartyState, RootState> = {
   getPartyName: (state) => (partyId: string) => {
-      return state.partyNames[partyId] ? state.partyNames[partyId] : ''
+    return state.partyNames[partyId] ? state.partyNames[partyId] : ''
   }
 }
 
