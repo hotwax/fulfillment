@@ -187,9 +187,9 @@ const actions: ActionTree<UserState, RootState> = {
       userProfile.stores = await useUserStore().getEComStoresByFacility(facility.facilityId);
       await useUserStore().getEComStorePreference('SELECTED_BRAND');
       const preferredStore: any = useUserStore().getCurrentEComStore
+      commit(types.USER_INFO_UPDATED, userProfile);
 
       if(previousEComStoreId !== preferredStore.productStoreId) {
-        commit(types.USER_INFO_UPDATED, userProfile);
         this.dispatch('order/clearOrders')
         await dispatch('getDisableShipNowConfig')
         await dispatch('getDisableUnpackConfig')
