@@ -79,10 +79,7 @@
           
       <div class="rejection-search">
         <ion-searchbar class="searchbar" :placeholder="translate('Search orders')" v-model="queryString" @keyup.enter="updateQueryString($event.target.value)"/>
-        <ion-label>
-          {{ rejectedOrders.total }} {{translate("rejections") }}
-        </ion-label>
-        
+        <div></div>
         <ion-button :disabled="!rejectedOrders.list.length" expand="block" fill="outline" @click="downloadRejections()" class="ion-margin-end">
           <ion-icon slot="end" :icon="cloudDownloadOutline" />{{ translate("Download rejections") }}
         </ion-button>
@@ -360,7 +357,9 @@ export default defineComponent({
 
 .searchbar{
   padding-top: 0;
+  padding-bottom: 0;
 }
+
 ion-card-header {
   display: flex;
   flex-direction: row;
