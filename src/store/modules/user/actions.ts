@@ -182,22 +182,25 @@ const actions: ActionTree<UserState, RootState> = {
     emitter.emit('presentLoader', {message: 'Updating facility', backdropDismiss: false})
 
     try {
+      const previousEComStoreId = getProductStoreId()
       const userProfile = JSON.parse(JSON.stringify(state.current as any));
       userProfile.stores = await useUserStore().getEComStoresByFacility(facility.facilityId);
       await useUserStore().getEComStorePreference('SELECTED_BRAND');
       const preferredStore: any = useUserStore().getCurrentEComStore
 
-      commit(types.USER_INFO_UPDATED, userProfile);
-      this.dispatch('order/clearOrders')
-      await dispatch('getDisableShipNowConfig')
-      await dispatch('getDisableUnpackConfig')
-      await dispatch('getNewRejectionApiConfig')
-      await dispatch('getPartialOrderRejectionConfig')
-      await dispatch('getCollateralRejectionConfig')
-      await dispatch('getAffectQohConfig')
-      this.dispatch('util/findProductStoreShipmentMethCount');
-      this.dispatch('util/getForceScanSetting', preferredStore.productStoreId)
-      this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
+      if(previousEComStoreId !== preferredStore.productStoreId) {
+        commit(types.USER_INFO_UPDATED, userProfile);
+        this.dispatch('order/clearOrders')
+        await dispatch('getDisableShipNowConfig')
+        await dispatch('getDisableUnpackConfig')
+        await dispatch('getNewRejectionApiConfig')
+        await dispatch('getPartialOrderRejectionConfig')
+        await dispatch('getCollateralRejectionConfig')
+        await dispatch('getAffectQohConfig')
+        this.dispatch('util/findProductStoreShipmentMethCount');
+        this.dispatch('util/getForceScanSetting', preferredStore.productStoreId)
+        this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
+      }
     } catch(error: any) {
       logger.error(error);
       showToast(error?.message ? error.message : translate("Something went wrong"))
