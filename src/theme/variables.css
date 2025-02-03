@@ -407,13 +407,10 @@ img {
   min-width: 9ch;
 }
 
-.kit-label {
+div:has(> .kit-badge) {
   display: flex;
   align-items: center;
-}
-
-.kit-label > ion-badge {
-  margin-left: 8px;
+  gap: var(--spacer-xs);
 }
 
 @media (min-width: 991px) {
