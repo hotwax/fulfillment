@@ -57,6 +57,43 @@ const fetchOrderItems = async (orderId: string): Promise<any> => {
   return orderItems
 }
 
+const fetchRejectedOrderItems = async (orderId: string): Promise<any> => {
+  let viewIndex = 0;
+  let orderItems = [] as any, resp;
+
+  try {
+    do {
+      resp = await api({
+        url: "performFind",
+        method: "get",
+        params : {
+          "entityName": "OrderItemAndShipGroup",
+          "inputFields": {
+            "orderId": orderId,
+            "facilityId": "REJECTED_ITM_PARKING"  // When rejecting order items they will be moved to mentioned parking
+          },
+          "fieldList": ["orderId", "orderItemSeqId", "productId", "shipGroupSeqId", "facilityId"],
+          "viewIndex": viewIndex,
+          "viewSize": 250,  // maximum records we could have
+          "distinct": "Y",
+          "noConditionFind": "Y"
+        }
+      }) as any;
+
+      if (!hasError(resp) && resp.data.count) {
+        orderItems = orderItems.concat(resp.data.docs)
+        viewIndex++;
+      } else {
+        throw resp.data;
+      }
+    }
+    while (resp.data.docs.length >= 250);
+  } catch (error) {
+    logger.error(error);
+  }
+  return orderItems
+}
+
 const fetchShippedQuantity = async (orderId: string): Promise<any> => {
   let docCount = 0;
   let shippedItemQuantitySum = [] as any
@@ -887,6 +924,23 @@ const getShippingPhoneNumber = async (orderId: string): Promise<any> => {
   return phoneNumber
 }
 
+const fetchRejectReasons = async(query: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get", // TODO: cache this api request
+    params: query,
+    cache: true
+  })
+}
+
+const rejectOrderItems = async (payload: any): Promise <any> => {
+  return api({
+    url: "rejectOrderItems",
+    method: "post",
+    data: payload
+  });
+}
+
 export const OrderService = {
   addShipmentBox,
   addTrackingCode,
@@ -896,6 +950,8 @@ export const OrderService = {
   fetchOrderAttribute,
   fetchOrderHeader,
   fetchOrderItems,
+  fetchRejectedOrderItems,
+  fetchRejectReasons,
   fetchShipmentCarrierDetail,
   fetchShipmentItems,
   fetchShipments,
@@ -919,6 +975,7 @@ export const OrderService = {
   printTransferOrder,
   rejectFulfillmentReadyOrderItem,
   rejectOrderItem,
+  rejectOrderItems,
   retryShippingLabel,
   shipOrder,
   unpackOrder,
