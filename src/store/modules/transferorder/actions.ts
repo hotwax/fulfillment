@@ -108,8 +108,6 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         orderDetail.rejectedItems = orderItems?.filter((item: any) => rejectedItemsSeqId.includes(item.orderItemSeqId))
         orderDetail.items = orderItems?.filter((item: any) => !rejectedItemsSeqId.includes(item.orderItemSeqId))
 
-        console.log('orderDetail.rejectedItems', orderDetail.rejectedItems)
-
         if (orderDetail?.items?.length > 0) {
           orderDetail.items.forEach((item: any) => {
             item.pickedQuantity = 0;

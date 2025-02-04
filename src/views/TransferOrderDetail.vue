@@ -36,11 +36,14 @@
             <ion-segment-button value="completed">
               <ion-label>{{ translate("Completed") }}</ion-label>
             </ion-segment-button>
+            <ion-segment-button value="rejected">
+              <ion-label>{{ translate("Rejected") }}</ion-label>
+            </ion-segment-button>
           </ion-segment>
           <div class="segments" v-if="currentOrder">
             <template v-if="selectedSegment === 'open'">
               <template v-if="getTOItems('open')?.length > 0">
-                <TransferOrderItem v-for="item in getTOItems('open')" :key="item.orderItemSeqId" :itemDetail="item" :class="item.internalName === lastScannedId ? 'scanned-item' : '' " :id="item.internalName"/>
+                <TransferOrderItem v-for="item in getTOItems('open')" :key="item.orderItemSeqId" :itemDetail="item" :class="item.internalName === lastScannedId ? 'scanned-item' : '' " :id="item.internalName" isRejectionSupported="true"/>
               </template>
               <template v-else>
                 <div class="empty-state">
@@ -48,7 +51,7 @@
                 </div>
               </template>
             </template>
-            <template v-else>
+            <template v-else-if="selectedSegment === 'completed'">
               <template v-if="getShipments('shipped')?.length > 0">
                 <ion-card class="order" v-for="(shipment, index) in getShipments('shipped')" :key="index">
                   <div class="order-header">
@@ -111,12 +114,48 @@
                 </div>
               </template>
             </template>
+            <template v-else>
+              <template v-if="currentOrder.rejectedItems?.length > 0">
+                <ion-card v-for="item in currentOrder.rejectedItems" :key="item.orderItemSeqId">
+                  <div class="product">
+                    <div class="product-info">
+                      <ion-item lines="none">
+                        <ion-thumbnail slot="start">
+                          <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                        </ion-thumbnail>
+                        <ion-label>
+                          <ion-label class="ion-text-wrap">
+                            <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                            {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
+                            <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                          </ion-label>
+                        </ion-label>
+                      </ion-item>
+                    </div>
+                    <div class="product-metadata">
+                      <ion-item lines="none">
+                        <ion-badge color="medium" slot="end">{{ item.quantity }} {{ translate("ordered") }}</ion-badge>
+                      </ion-item>
+                    </div>
+                  </div>
+                </ion-card>
+              </template>
+              <template v-else>
+                <div class="empty-state">
+                  <p>{{ translate('No data available') }}</p>
+                </div>
+              </template>
+            </template>
           </div>
         </main>
       </ion-content>
       <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED'">
         <ion-toolbar>
           <ion-buttons slot="end">
+            <ion-button v-show="areItemsEligibleForRejection && selectedSegment === 'open'" color="danger" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="rejectItems()">
+              <ion-icon slot="start" :icon="trashOutline" />
+              {{ translate("Reject Items") }}
+            </ion-button>
             <ion-button color="primary" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="printTransferOrder()">
               <ion-icon slot="start" :icon="printOutline" />
               {{ translate('Picklist') }}   
@@ -157,7 +196,7 @@
     modalController,
   } from '@ionic/vue';
   import { computed, defineComponent } from 'vue';
-  import { add, checkmarkDone, barcodeOutline, pricetagOutline, printOutline } from 'ionicons/icons';
+  import { add, checkmarkDone, barcodeOutline, pricetagOutline, printOutline, trashOutline } from 'ionicons/icons';
   import { mapGetters, useStore } from "vuex";
   import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 
@@ -171,6 +210,7 @@
   import TransferOrderItem from '@/components/TransferOrderItem.vue'
   import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
   import emitter from "@/event-bus";
+  import logger from '@/logger';
 
   
   export default defineComponent({
@@ -204,13 +244,16 @@
         queryString: '',
         selectedSegment: 'open',
         isCreatingShipment: false,
-        lastScannedId: ''
+        lastScannedId: '',
+        rejectedItemsSeqId: [] as Array<string>
       }
     },
     async ionViewWillEnter() {
       emitter.emit('presentLoader');
       await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
       await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.$route.params.orderId });
+      await this.store.dispatch("transferorder/fetchRejectReasons");
+      this.rejectedItemsSeqId = this.currentOrder.rejectedItems?.map((item: any) => item.orderItemSeqId)
       emitter.emit('dismissLoader');
     },
     computed: {
@@ -222,6 +265,9 @@
         productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
         getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       }),
+      areItemsEligibleForRejection() {
+        return this.currentOrder.items?.some((item: any) => item.rejectReasonId);
+      }
     },
     methods: {
       async printTransferOrder() {
@@ -384,6 +430,53 @@
         }
 
         currentShipment.isGeneratingShippingLabel = false;
+      },
+      async rejectItems() {
+        emitter.emit("presentLoader")
+        const payload = {
+          orderId: this.currentOrder.orderId,
+          items: []
+        } as any
+
+        const itemsToReject = this.currentOrder.items.filter((item: any) => item.rejectReasonId)
+
+        itemsToReject.map((item: any) => {
+          payload.items.push({
+            rejectReason: item.rejectReasonId,
+            facilityId: this.currentOrder.facilityId,
+            orderItemSeqId: item.orderItemSeqId,
+            shipmentMethodTypeId: this.currentOrder.shipmentMethodTypeId,
+            quantity: parseInt(item.quantity),
+            naFacilityId: "REJECTED_ITM_PARKING"
+          })
+        })
+
+        try {
+          const resp = await OrderService.rejectOrderItems({ payload });
+
+          if(!hasError(resp) && resp.data?.rejectedItemsList.length) {
+            const rejectedItemsSeqId = resp.data?.rejectedItemsList.map((item: any) => item.orderItemSeqId)
+            const rejectedItems = [] as Array<any>
+            const orderItems = this.currentOrder.items.filter((item: any) => {
+              if(rejectedItemsSeqId.includes(item.orderItemSeqId)) {
+                rejectedItems.push(item)
+                return false;
+              }
+              return true;
+            })
+            this.currentOrder.items = orderItems
+            this.currentOrder.rejectedItems = rejectedItems
+            await this.store.dispatch("transferorder/updateCurrentTransferOrder", this.currentOrder)
+            showToast(translate("Order items are rejected"))
+          } else {
+            throw resp;
+          }
+        } catch(err) {
+          logger.error(err);
+          showToast(translate("Failed to reject order items"))
+        }
+
+        emitter.emit("dismissLoader")
       }
     }, 
     ionViewDidLeave() {
@@ -413,7 +506,8 @@
         showToast,
         store,
         router,
-        translate
+        translate,
+        trashOutline
       };
     },
   });
@@ -431,6 +525,10 @@
       Done this because currently ion-item inside ion-card is not inheriting highlighted background property.
     */
     outline: 2px solid var( --ion-color-medium-tint);
+  }
+
+  ion-thumbnail {
+    cursor: pointer;
   }
   </style>
   
