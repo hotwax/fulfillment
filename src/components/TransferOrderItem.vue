@@ -34,7 +34,19 @@
         <ion-progress-bar :color="getProgressBarColor(item)" :value="getPickedToOrderedFraction(item)" />
       </div>
 
-      <div class="to-item-history">
+      <div class="to-item-history" v-if="isRejectionSupported && !getShippedQuantity(item)">
+        <ion-chip outline v-if="!item.rejectReasonId" @click="openRejectReasonPopover($event, item)">
+          <ion-label>{{ translate("Report an issue") }}</ion-label>
+          <ion-icon :icon="caretDownOutline"/>
+        </ion-chip>
+        <ion-chip outline color="danger" v-else @click="openRejectReasonPopover($event, item)">
+          <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason(item)"/>
+          <ion-label>{{ getRejectionReasonDescription(item.rejectReasonId) }}</ion-label>
+          <ion-icon :icon="caretDownOutline"/>
+        </ion-chip>
+      </div>
+
+      <div class="to-item-history" v-else>
         <ion-chip outline @click="shippedHistory(item.productId)">
           <ion-icon :icon="checkmarkDone"/>
           <ion-label> {{ getShippedQuantity(item) }} {{ translate("shipped") }} </ion-label>
@@ -60,9 +72,10 @@ import {
   IonProgressBar,
   IonThumbnail,
   modalController,
+  popoverController,
 } from '@ionic/vue';
 import { computed, defineComponent } from 'vue';
-import { add, checkmarkDone, barcodeOutline } from 'ionicons/icons';
+import { add, caretDownOutline, checkmarkDone, closeCircleOutline, barcodeOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 
@@ -70,6 +83,7 @@ import { useRouter } from 'vue-router';
 import { Actions } from '@/authorization'
 import { getFeature } from '@/utils';
 import ShippedHistoryModal from '@/components/ShippedHistoryModal.vue'
+import ReportIssuePopover from './ReportIssuePopover.vue';
 
 
 export default defineComponent({
@@ -86,7 +100,9 @@ export default defineComponent({
     IonThumbnail,
     DxpShopifyImg,
   },
-  props: ["itemDetail"],
+  // As we are using the same component on detail and review page, thus defined prop isRejectionSupported
+  // for handing the case to enable rejection functionality
+  props: ["itemDetail", "isRejectionSupported"],
   data() {
     return {
       pickedQuantity: this.itemDetail.pickedQuantity,
@@ -98,6 +114,7 @@ export default defineComponent({
       currentOrder: 'transferorder/getCurrent',
       getProduct: 'product/getProduct',
       isForceScanEnabled: 'util/isForceScanEnabled',
+      rejectReasons: "transferorder/getRejectReasons"
     }),
   },
   methods: {
@@ -159,7 +176,33 @@ export default defineComponent({
     },
     getErrorText(item: any) {
       return translate('The picked quantity cannot exceed the ordered quantity.') + " " + (this.getShippedQuantity(item) > 0 ? translate("already shipped.", {shippedQuantity: this.getShippedQuantity(item)}): '')
-    }
+    },
+    async openRejectReasonPopover(ev: Event, item: any) {
+      const reportIssuePopover = await popoverController.create({
+        component: ReportIssuePopover,
+        componentProps: { rejectReasons: this.rejectReasons },
+        event: ev,
+        translucent: true,
+        showBackdrop: false,
+      });
+
+      reportIssuePopover.present();
+
+      const result = await reportIssuePopover.onDidDismiss();
+
+      if(result.data) {
+        item.rejectReasonId = result.data
+        await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
+      }
+    },
+    async removeRejectionReason(item: any) {
+      delete item["rejectReasonId"];
+      await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
+    },
+    getRejectionReasonDescription(rejectionReasonId: string) {
+      const reason = this.rejectReasons?.find((reason: any) => reason.enumId === rejectionReasonId)
+      return reason?.description ? reason.description : reason?.enumDescription ? reason.enumDescription : reason?.enumId;
+    },
   }, 
   setup() {
     const store = useStore(); 
@@ -172,7 +215,9 @@ export default defineComponent({
       Actions,
       add,
       barcodeOutline,
+      caretDownOutline,
       checkmarkDone,
+      closeCircleOutline,
       getFeature,
       getProductIdentificationValue,
       productIdentificationPref,
