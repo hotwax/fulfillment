@@ -34,6 +34,9 @@ const mutations: MutationTree <TransferOrderState> = {
   },
   [types.ORDER_CURRENT_CLEARED](state) {
     state.current = {}
+  },
+  [types.ORDER_REJECT_REASONS_UPDATED](state, payload) {
+    state.rejectReasons = payload
   }
 }
 export default mutations;

@@ -101,7 +101,15 @@ const actions: ActionTree<TransferOrderState, RootState> = {
          orderDetail = resp.data.docs?.[0];
          
         //fetch order items
-        orderDetail.items = await OrderService.fetchOrderItems(payload.orderId);
+        const orderItems = await OrderService.fetchOrderItems(payload.orderId);
+        const rejectedItems = await OrderService.fetchRejectedOrderItems(payload.orderId);
+
+        const rejectedItemsSeqId = rejectedItems?.map((item: any) => item.orderItemSeqId)
+        orderDetail.rejectedItems = orderItems?.filter((item: any) => rejectedItemsSeqId.includes(item.orderItemSeqId))
+        orderDetail.items = orderItems?.filter((item: any) => !rejectedItemsSeqId.includes(item.orderItemSeqId))
+
+        console.log('orderDetail.rejectedItems', orderDetail.rejectedItems)
+
         if (orderDetail?.items?.length > 0) {
           orderDetail.items.forEach((item: any) => {
             item.pickedQuantity = 0;
@@ -117,7 +125,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           orderDetail.shippedQuantityInfo = shippedQuantityInfo;
 
           //fetch product details
-          const productIds = [...new Set(orderDetail.items.map((item:any) => item.productId))];
+          const productIds = [...new Set(orderItems.map((item:any) => item.productId))];
   
           const batchSize = 250;
           const productIdBatches = [];
@@ -321,6 +329,65 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   },
   async clearCurrentTransferShipment({ commit }) {
     commit(types.ORDER_CURRENT_SHIPMENT_CLEARED)
+  },
+  async fetchRejectReasons({ commit }) {
+    let rejectReasons = [];
+
+    const permissions = store.getters["user/getUserPermissions"];
+    const isAdminUser = permissions.some((permission: any) => permission.action === "APP_STOREFULFILLMENT_ADMIN")
+
+    if(isAdminUser) {
+      try {
+        const payload = {
+          inputFields: {
+            parentEnumTypeId: ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
+            parentEnumTypeId_op: "in"
+          },
+          fieldList: ["description", "enumId", "enumName", "enumTypeId", "sequenceNum"],
+          distinct: "Y",
+          entityName: "EnumTypeChildAndEnum",
+          viewSize: 20, // keeping view size 20 as considering that we will have max 20 reasons
+          orderBy: "sequenceNum"
+        }
+
+        const resp = await OrderService.fetchRejectReasons(payload)
+
+        if(!hasError(resp) && resp.data.count > 0) {
+          rejectReasons = resp.data.docs
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        logger.error("Failed to fetch reject reasons", err)
+      }
+    } else {
+      try {
+        const payload = {
+          inputFields: {
+            enumerationGroupId: "TO_REJ_RSN_GRP"
+          },
+          // We shouldn't fetch description here, as description contains EnumGroup description which we don't wanna show on UI.
+          fieldList: ["enumerationGroupId", "enumId", "fromDate", "sequenceNum", "enumDescription", "enumName"],
+          distinct: "Y",
+          entityName: "EnumerationGroupAndMember",
+          viewSize: 200,
+          filterByDate: "Y",
+          orderBy: "sequenceNum"
+        }
+
+        const resp = await OrderService.fetchRejectReasons(payload)
+
+        if(!hasError(resp) && resp?.data.docs.length > 0) {
+          rejectReasons = resp.data.docs
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        logger.error("Failed to fetch fulfillment reject reasons", err)
+      }
+    }
+
+    commit(types.ORDER_REJECT_REASONS_UPDATED, rejectReasons)
   }
 }
 
