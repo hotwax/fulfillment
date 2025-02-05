@@ -123,21 +123,21 @@ const fetchOrderItemRejectionInfo = async(orderItems: Array<any>, orderId: strin
     if(!hasError(resp) && resp?.data?.response?.docs?.length > 0) {
       const rejectionReasons = store.getters["transferorder/getRejectReasons"]
 
-      const items = resp?.data?.response?.docs.reduce((items: any, item: any) => {
-        items[item.productId_s] = item
+      const items = orderItems.reduce((items: any, item: any) => {
+        items[item.productId] = item
         return items;
       }, {})
-      rejectedItemsInfo = orderItems.map((item: any) => ({
-        ...item,
-        orderId: items[item.productId].orderId_s,
-        orderItemSeqId: items[item.productId].orderItemSeqId_s,
-        itemDescription: items[item.productId].itemDescription_txt_en,
-        rejectedBy: items[item.productId].rejectedBy_txt_en,
-        rejectedAt: items[item.productId].rejectedAt_dt,
-        rejectionReasonId: items[item.productId].rejectionReasonId_txt_en,
-        rejectionReasonDesc: rejectionReasons?.find((reason: any) => reason.enumId === items[item.productId].rejectionReasonId_txt_en)?.description || items[item.productId].rejectionReasonId_txt_en,
-        brokeredAt: items[item.productId].brokeredAt_dt,
-        brokeredBy: items[item.productId].brokeredBy_txt_en
+      rejectedItemsInfo = resp?.data?.response?.docs.map((item: any) => ({
+        ...items[item.productId_s],
+        orderId: item.orderId_s,
+        orderItemSeqId: item.orderItemSeqId_s,
+        itemDescription: item.itemDescription_txt_en,
+        rejectedBy: item.rejectedBy_txt_en,
+        rejectedAt: item.rejectedAt_dt,
+        rejectionReasonId: item.rejectionReasonId_txt_en,
+        rejectionReasonDesc: rejectionReasons?.find((reason: any) => reason.enumId === item.rejectionReasonId_txt_en)?.description || item.rejectionReasonId_txt_en,
+        brokeredAt: item.brokeredAt_dt,
+        brokeredBy: item.brokeredBy_txt_en
       }))
     } else {
       throw resp.data;
