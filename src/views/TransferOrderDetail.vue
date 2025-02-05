@@ -158,10 +158,10 @@
           </div>
         </main>
       </ion-content>
-      <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED'">
+      <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment === 'open'">
         <ion-toolbar>
           <ion-buttons slot="end">
-            <ion-button v-show="areItemsEligibleForRejection && selectedSegment === 'open'" color="danger" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="rejectItems()">
+            <ion-button v-show="areItemsEligibleForRejection" color="danger" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="rejectItems()">
               <ion-icon slot="start" :icon="trashOutline" />
               {{ translate("Reject Items") }}
             </ion-button>
@@ -253,8 +253,7 @@
         queryString: '',
         selectedSegment: 'open',
         isCreatingShipment: false,
-        lastScannedId: '',
-        rejectedItemsSeqId: [] as Array<string>
+        lastScannedId: ''
       }
     },
     async ionViewWillEnter() {
@@ -262,7 +261,6 @@
       await this.store.dispatch("transferorder/fetchRejectReasons");
       await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
       await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.$route.params.orderId });
-      this.rejectedItemsSeqId = this.currentOrder.rejectedItems?.map((item: any) => item.orderItemSeqId)
       emitter.emit('dismissLoader');
     },
     computed: {
@@ -464,18 +462,7 @@
           const resp = await OrderService.rejectOrderItems({ payload });
 
           if(!hasError(resp) && resp.data?.rejectedItemsList.length) {
-            const rejectedItemsSeqId = resp.data?.rejectedItemsList.map((item: any) => item.orderItemSeqId)
-            const rejectedItems = [] as Array<any>
-            const orderItems = this.currentOrder.items.filter((item: any) => {
-              if(rejectedItemsSeqId.includes(item.orderItemSeqId)) {
-                rejectedItems.push(item)
-                return false;
-              }
-              return true;
-            })
-            this.currentOrder.items = orderItems
-            this.currentOrder.rejectedItems = rejectedItems
-            await this.store.dispatch("transferorder/updateCurrentTransferOrder", this.currentOrder)
+            await this.store.dispatch("transferorder/fetchTransferOrderDetail", { orderId: this.$route.params.orderId })
             showToast(translate("Order items are rejected"))
           } else {
             throw resp;
