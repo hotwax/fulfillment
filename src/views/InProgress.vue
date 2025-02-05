@@ -95,8 +95,10 @@
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
-                      <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                      <div>
+                        {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
+                        <ion-badge color="dark" class="kit-badge" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                      </div>
                       <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                     </ion-label>
                     
@@ -120,7 +122,7 @@
                     </template>
                     <template v-else-if="isEntierOrderRejectionEnabled(order)">
                       <ion-chip :disabled="order.hasMissingInfo" outline color="danger">
-                        <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject entire order')}}</ion-label>
+                        <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject to avoid order split (no variance)')}}</ion-label>
                       </ion-chip>
                     </template>
                     <template v-else>
@@ -379,7 +381,7 @@ export default defineComponent({
       selectedPicklistId: '',
       isScrollingEnabled: false,
       isRejecting: false,
-      rejectEntireOrderReasonId: 'REJECT_ENTIRE_ORDER',
+      rejectEntireOrderReasonId: "REJ_AVOID_ORD_SPLIT",
     }
   },
   async ionViewWillEnter() {

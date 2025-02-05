@@ -407,6 +407,12 @@ img {
   min-width: 9ch;
 }
 
+div:has(> .kit-badge) {
+  display: flex;
+  align-items: center;
+  gap: var(--spacer-xs);
+}
+
 @media (min-width: 991px) {
   /* shipment card desktop layout start */
   ion-searchbar.searchbar {

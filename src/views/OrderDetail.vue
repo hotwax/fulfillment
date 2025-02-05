@@ -81,8 +81,10 @@
                 </ion-thumbnail>
                 <ion-label>
                   <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                  {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                  <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                  <div>
+                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                    <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                  </div>
                   <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                 </ion-label>
               </ion-item>
@@ -97,7 +99,7 @@
               </template>
               <template v-else-if="useNewRejectionApi() && isEntierOrderRejectionEnabled(order)">
                 <ion-chip :disabled="order.hasMissingInfo" outline color="danger">
-                  <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject entire order')}}</ion-label>
+                  <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject to avoid order split (no variance)')}}</ion-label>
                 </ion-chip>
               </template>
               <template v-else>
@@ -115,7 +117,7 @@
             <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
              <!--Adding checks to avoid any operations if order has missing info, mostly when after packing Solr is not updaing immediately-->
             <div class="product-metadata">
-              <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+              <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal" class="ion-padding-end">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
               <ion-button :disabled="order.hasMissingInfo" color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
                 {{ translate('Check stock') }}
                 <ion-icon slot="end" :icon="cubeOutline"/>
@@ -127,8 +129,8 @@
               </ion-button>
               <ion-button v-if="isKit(item)" fill="clear" color="medium" size="small" @click.stop="fetchKitComponent(item)">
                 {{ translate('Components') }}
-                <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
-                <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
+                <ion-icon v-if="item.showKitComponents" color="medium" slot="end" :icon="chevronUpOutline"/>
+                <ion-icon v-else color="medium" slot="end" :icon="listOutline"/>
               </ion-button>
               <ion-button :disabled="order.hasMissingInfo" v-if="item.productTypeId === 'GIFT_CARD'" fill="clear" color="medium" size="small" @click="openGiftCardActivationModal(item)">
                 {{ translate('Gift card') }}
@@ -144,7 +146,10 @@
                   </ion-thumbnail>
                   <ion-label>
                     <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
-                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                    <div>
+                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                      <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                    </div>
                     <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                   <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.rejectedComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
@@ -332,8 +337,10 @@
               </ion-thumbnail>
               <ion-label>
                 <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                <div>
+                  {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                  <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                </div>
               </ion-label>
               
               <div class="other-shipment-actions">
@@ -533,7 +540,7 @@ export default defineComponent({
         'PAYMENT_REFUNDED': 'warning',
         'PAYMENT_SETTLED': ''
       } as any,
-      rejectEntireOrderReasonId: 'REJECT_ENTIRE_ORDER',
+      rejectEntireOrderReasonId: "REJ_AVOID_ORD_SPLIT",
       shipmentLabelErrorMessages: "",
       shipmentMethodTypeId: "",
       carrierPartyId: "",
@@ -1896,6 +1903,12 @@ ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-te
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.product-metadata {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
 }
 
 .shipgroup-details {

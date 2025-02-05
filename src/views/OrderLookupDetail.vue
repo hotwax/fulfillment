@@ -112,7 +112,7 @@
                 <ion-list>
                   <ion-item>
                     <ion-label class="ion-text-wrap">{{ translate("Brand") }}</ion-label>
-                    <ion-label class="ion-text-wrap" slot="end">{{ currentEComStore.storeName || "-" }}</ion-label>
+                    <ion-label class="ion-text-wrap" slot="end">{{ getProductStoreName(order.productStoreId) || "-" }}</ion-label>
                   </ion-item>
                   <ion-item lines="none">
                     <ion-label class="ion-text-wrap">{{ translate("Channel") }}</ion-label>
@@ -335,12 +335,14 @@ export default defineComponent({
       getShipmentMethodDesc: "util/getShipmentMethodDesc",
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
       userProfile: 'user/getUserProfile',
-      instanceUrl: "user/getInstanceUrl"
+      instanceUrl: "user/getInstanceUrl",
+      productStores: "util/getProductStores",
     })
   },
   async ionViewWillEnter() {
     this.isFetchingOrderInfo = true
     await this.store.dispatch("orderLookup/getOrderDetails", this.orderId)
+    await this.store.dispatch("util/fetchProductStores")
     await this.fetchOrderInvoicingFacility()
     const instance = this.instanceUrl.split("-")[0]
     this.additionalDetailItemExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderLookupAdditionalDetailItem`})
@@ -408,12 +410,14 @@ export default defineComponent({
       } catch(error: any) {
         logger.error(error);
       }
+    },
+    getProductStoreName(productStoreId: string) {
+      return this.productStores.find((store: any) => store.productStoreId === productStoreId)?.storeName || productStoreId
     }
   },
   setup() {
     const store = useStore();
     const userStore = useUserStore()
-    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
 
     return {
       callOutline,
@@ -421,7 +425,6 @@ export default defineComponent({
       checkmarkDoneOutline,
       closeCircleOutline,
       cubeOutline,
-      currentEComStore,
       downloadOutline,
       ellipsisVerticalOutline,
       formatCurrency,
