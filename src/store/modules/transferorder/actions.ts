@@ -121,7 +121,13 @@ const actions: ActionTree<TransferOrderState, RootState> = {
             shippedQuantityInfo[doc.orderItemSeqId] = doc.shippedQuantity;
           });
           orderDetail.shippedQuantityInfo = shippedQuantityInfo;
+        }
 
+        if(orderDetail?.rejectedItems?.length) {
+          orderDetail.rejectedItems = await OrderService.fetchOrderItemRejectionInfo(orderDetail.rejectedItems, orderDetail.orderId)
+        }
+
+        if(orderItems?.length) {
           //fetch product details
           const productIds = [...new Set(orderItems.map((item:any) => item.productId))];
   
@@ -132,6 +138,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           }
           await Promise.all([productIdBatches.map((productIds) => this.dispatch('product/fetchProducts', { productIds })), this.dispatch('util/fetchStatusDesc', [orderDetail.statusId])])
         }
+
         commit(types.ORDER_CURRENT_UPDATED, orderDetail)
       } else {
         throw resp.data;

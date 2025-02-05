@@ -4,6 +4,7 @@ import logger from '@/logger';
 import { showToast, formatPhoneNumber } from '@/utils';
 import store from '@/store';
 import { cogOutline } from 'ionicons/icons';
+import { prepareSolrQuery } from '@/utils/solrHelper';
 
 const fetchOrderHeader = async (params: any): Promise<any> => {
   return await api({
@@ -92,6 +93,61 @@ const fetchRejectedOrderItems = async (orderId: string): Promise<any> => {
     logger.error(error);
   }
   return orderItems
+}
+
+const fetchOrderItemRejectionInfo = async(orderItems: Array<any>, orderId: string): Promise<any> => {
+  let rejectedItemsInfo = [] as Array<any>;
+  const rejectedItemIds = orderItems.map((item: any) => item.productId);
+
+  const filters = {
+    productId_s: { value: rejectedItemIds },
+    orderId_s: { value: orderId }
+  }
+
+  const query = prepareSolrQuery({
+    coreName: "logInsights",
+    docType: "FULFILLMENT_REJECTION",
+    viewIndex: 0,
+    viewSize: rejectedItemIds.length,
+    sort: 'rejectedAt_dt desc',
+    filters
+  })
+
+  try {
+    const resp = await api({
+      url: "solr-query",
+      method: "post",
+      data: query
+    }) as any;
+
+    if(!hasError(resp) && resp?.data?.response?.docs?.length > 0) {
+      const rejectionReasons = store.getters["transferorder/getRejectReasons"]
+
+      const items = resp?.data?.response?.docs.reduce((items: any, item: any) => {
+        items[item.productId_s] = item
+        return items;
+      }, {})
+      rejectedItemsInfo = orderItems.map((item: any) => ({
+        ...item,
+        orderId: items[item.productId].orderId_s,
+        orderItemSeqId: items[item.productId].orderItemSeqId_s,
+        itemDescription: items[item.productId].itemDescription_txt_en,
+        rejectedBy: items[item.productId].rejectedBy_txt_en,
+        rejectedAt: items[item.productId].rejectedAt_dt,
+        rejectionReasonId: items[item.productId].rejectionReasonId_txt_en,
+        rejectionReasonDesc: rejectionReasons?.find((reason: any) => reason.enumId === items[item.productId].rejectionReasonId_txt_en)?.description || items[item.productId].rejectionReasonId_txt_en,
+        brokeredAt: items[item.productId].brokeredAt_dt,
+        brokeredBy: items[item.productId].brokeredBy_txt_en
+      }))
+    } else {
+      throw resp.data;
+    }
+  } catch(err) {
+    logger.error("Rejection information not found for items")
+    return orderItems;
+  }
+
+  return rejectedItemsInfo;
 }
 
 const fetchShippedQuantity = async (orderId: string): Promise<any> => {
@@ -949,6 +1005,7 @@ export const OrderService = {
   fetchAdditionalShipGroupForOrder,
   fetchOrderAttribute,
   fetchOrderHeader,
+  fetchOrderItemRejectionInfo,
   fetchOrderItems,
   fetchRejectedOrderItems,
   fetchRejectReasons,

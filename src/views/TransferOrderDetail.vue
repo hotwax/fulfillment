@@ -117,26 +117,35 @@
             <template v-else>
               <template v-if="currentOrder.rejectedItems?.length > 0">
                 <ion-card v-for="item in currentOrder.rejectedItems" :key="item.orderItemSeqId">
-                  <div class="product">
+                  <div class="list-item">
                     <div class="product-info">
                       <ion-item lines="none">
                         <ion-thumbnail slot="start">
                           <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                         </ion-thumbnail>
-                        <ion-label>
-                          <ion-label class="ion-text-wrap">
-                            <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                            {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
-                            <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
-                          </ion-label>
+                        <ion-label class="ion-text-wrap">
+                          <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                          {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
+                          <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                         </ion-label>
                       </ion-item>
                     </div>
-                    <div class="product-metadata">
-                      <ion-item lines="none">
-                        <ion-badge color="medium" slot="end">{{ item.quantity }} {{ translate("ordered") }}</ion-badge>
-                      </ion-item>
-                    </div>
+                    <ion-label>
+                      {{ formatUtcDate(item.rejectedAt, "dd MMMM yyyy hh:mm a ZZZZ")}}
+                      <p>{{ translate("rejected time") }}</p>
+                    </ion-label>
+                    <ion-label>
+                      {{ item.quantity }}
+                      <p>{{ translate("ordered") }}</p>
+                    </ion-label>
+                    <ion-label>
+                      {{ item.rejectionReasonDesc }}
+                      <p>{{ translate("rejection reason") }}</p>
+                    </ion-label>
+                    <ion-chip outline>
+                      <ion-icon :icon="personCircleOutline" />
+                      <ion-label>{{ item.rejectedBy }}</ion-label>
+                    </ion-chip>
                   </div>
                 </ion-card>
               </template>
@@ -196,7 +205,7 @@
     modalController,
   } from '@ionic/vue';
   import { computed, defineComponent } from 'vue';
-  import { add, checkmarkDone, barcodeOutline, pricetagOutline, printOutline, trashOutline } from 'ionicons/icons';
+  import { add, checkmarkDone, barcodeOutline, personCircleOutline, pricetagOutline, printOutline, trashOutline } from 'ionicons/icons';
   import { mapGetters, useStore } from "vuex";
   import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 
@@ -204,7 +213,7 @@
   import Scanner from "@/components/Scanner.vue";
   import { Actions, hasPermission } from '@/authorization'
   import { DateTime } from 'luxon';
-  import { getFeature, showToast } from '@/utils';
+  import { formatUtcDate, getFeature, showToast } from '@/utils';
   import { hasError } from '@/adapter';
   import { OrderService } from '@/services/OrderService'
   import TransferOrderItem from '@/components/TransferOrderItem.vue'
@@ -250,9 +259,9 @@
     },
     async ionViewWillEnter() {
       emitter.emit('presentLoader');
+      await this.store.dispatch("transferorder/fetchRejectReasons");
       await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
       await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.$route.params.orderId });
-      await this.store.dispatch("transferorder/fetchRejectReasons");
       this.rejectedItemsSeqId = this.currentOrder.rejectedItems?.map((item: any) => item.orderItemSeqId)
       emitter.emit('dismissLoader');
     },
@@ -497,9 +506,11 @@
         add,
         barcodeOutline,
         checkmarkDone,
+        formatUtcDate,
         getFeature,
         getProductIdentificationValue,
         hasPermission,
+        personCircleOutline,
         pricetagOutline,
         printOutline,
         productIdentificationPref,
@@ -529,6 +540,10 @@
 
   ion-thumbnail {
     cursor: pointer;
+  }
+
+  .list-item {
+    --columns-desktop: 5;
   }
   </style>
   
