@@ -53,6 +53,9 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   getBarcodeIdentificationPref(state) {
     return state.barcodeIdentificationPref
+  },
+  getCarrierShipmentBoxTypes(state) {
+    return state.carrierShipmentBoxTypes
   }
 }
 export default getters;

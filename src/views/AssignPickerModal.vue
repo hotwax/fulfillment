@@ -147,11 +147,15 @@ export default defineComponent({
         });
       }
 
+      
       const payload = {
         facilityId: this.currentFacility?.facilityId,
         shipmentMethodTypeId: orderItems[0]?.shipmentMethodTypeId,
         statusId: "PICKITEM_PENDING",
-        pickers: this.selectedPickers?.map(picker => picker.id) || [],
+        pickers: this.selectedPickers?.map(selectedPicker => ({
+          partyId: selectedPicker.id,
+          roleTypeId: "WAREHOUSE_PICKER"
+        })) || [],
         orderItems: orderItems.map(({ orderId, orderItemSeqId, shipGroupSeqId, productId, quantity }) => ({
           orderId,
           orderItemSeqId,

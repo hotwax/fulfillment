@@ -76,8 +76,10 @@ import { close, closeCircle, saveOutline } from "ionicons/icons";
 import { useStore } from "vuex";
 import { hasError, showToast } from '@/utils';
 import logger from "@/logger"
-import { UtilService } from "@/services/UtilService";
+import { MaargOrderService } from "@/services/MaargOrderService"
+import { UtilService } from "@/services/UtilService"
 import { translate } from '@hotwax/dxp-components'
+import { DateTime } from 'luxon';
 
 export default defineComponent({
   name: "EditPickersModal",
@@ -203,9 +205,30 @@ export default defineComponent({
       }).filter((id: any) => id)
 
       try {
-        const resp = await UtilService.resetPicker({
-          pickerIds,
-          picklistId: this.selectedPicklist.id
+        //Removing pickers that were unselected
+        let roles = this.selectedPicklist.roles
+        .map((role:any) => {
+          if (!pickerIds.includes(role.partyId)) {
+            return { ...role, thruDate: DateTime.now().toMillis() };
+          }
+          return role;
+        });
+
+        //Adding the newly selected pickers
+        pickerIds.forEach((pickerId: any) => {
+          if (!roles.some((role: any) => role.partyId === pickerId)) {
+            roles.push({
+              picklistId: this.selectedPicklist.picklistId,
+              partyId: pickerId,
+              roleTypeId: "WAREHOUSE_PICKER",
+              fromDate: DateTime.now().toMillis()
+            });
+          }
+        });
+
+        const resp = await MaargOrderService.resetPicker({ 
+          picklistId: this.selectedPicklist.picklistId,
+          roles
         });
         if (resp.status === 200 && !hasError(resp)) {
           showToast(translate("Pickers successfully replaced in the picklist with the new selections."))
@@ -213,6 +236,7 @@ export default defineComponent({
           // upading the UI due to solr issue
           this.editedPicklist = {
             ...this.selectedPicklist,
+            roles: roles.filter((role: any) => !role.thruDate),//only keeping active pickers
             pickerIds,
             pickersName: pickersNameArray.join(', ')
           }

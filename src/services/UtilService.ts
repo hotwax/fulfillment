@@ -1,4 +1,4 @@
-import { api, hasError } from '@/adapter';
+import { api, client, hasError } from '@/adapter';
 import logger from '@/logger';
 import store from '@/store';
 import { getCurrentFacilityId } from '@/utils';
@@ -212,43 +212,20 @@ const findCarrierPartyIdsForShipment = async(shipmentIds: Array<string>): Promis
   return carrierPartyIdsByShipment;
 }
 
-const findCarrierShipmentBoxType = async(carrierPartyIds: Array<string>): Promise<any> => {
-  let shipmentBoxType = {}
-  const params = {
-    "entityName": "CarrierShipmentBoxType",
-    "inputFields": {
-      "partyId": carrierPartyIds,
-      "partyId_op": "in"
-    },
-    "fieldList": ["shipmentBoxTypeId", "partyId"],
-    "viewSize": carrierPartyIds.length * 10,  // considering that one carrierPartyId will have maximum of 10 box type
-  }
+const fetchCarrierShipmentBoxTypes = async(params: any): Promise<any> => {
+    const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+    const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  try {
-    const resp = await api({
-      url: "performFind",
-      method: "get",
-      params,
-      cache: true
-    })
-
-    if(resp?.status == 200 && !hasError(resp) && resp.data.count) {
-      shipmentBoxType = resp.data.docs.reduce((shipmentBoxTypes: any, boxType: any) => {
-        if(shipmentBoxTypes[boxType.partyId]) {
-          shipmentBoxTypes[boxType.partyId].push(boxType.shipmentBoxTypeId)
-        } else {
-          shipmentBoxTypes[boxType.partyId] = [boxType.shipmentBoxTypeId]
-        }
-        return shipmentBoxTypes
-      }, {})
-    } else {
-      throw resp?.data
-    }
-  } catch(err) {
-    logger.error('Failed to fetch carrier shipment box type information', err)
-  }
-
-  return shipmentBoxType;
+    return client({
+      url: "/poorti/carrierShipmentBoxTypes",
+      method: "GET",
+      baseURL,
+      headers: {
+        "api_key": omsRedirectionInfo.token,
+        "Content-Type": "application/json"
+      },
+      params
+    });
 }
 
 const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<any> => {
@@ -291,29 +268,51 @@ const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<a
 }
 
 const fetchShipmentRouteSegmentInformation = async(query: any) : Promise<any> => {
-  return api({
-    url: "performFind",
-    method: "get",
-    params: query
-  })
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/poorti/shipmentPackageRouteSegDetails`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params: query,
+  });
 }
 
 const fetchDefaultShipmentBox = async(query: any) : Promise<any> => {
-  return api({
-    url: "performFind",
-    method: "get",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/admin/systemProperties`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     params: query,
-    cache: true
-  })
+  });
 }
 
 const fetchRejectReasons = async(query: any): Promise<any> => {
-  return api({
-    url: "performFind",
-    method: "get", // TODO: cache this api request
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/admin/enums`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     params: query,
-    cache: true
-  })
+  });
 }
 
 const getAvailablePickers = async (query: any): Promise <any> => {
@@ -365,14 +364,6 @@ const fetchShipmentBoxTypeDesc = async (query: any): Promise <any>  => {
     method: "get",
     params: query
   });
-}
-
-const resetPicker = async (payload: any): Promise<any> => {
-  return api({
-    url: "/service/resetPicker",
-    method: "post",
-    data: payload
-  })
 }
 
 const fetchFacilityTypeInformation = async (query: any): Promise <any>  => {
@@ -587,26 +578,50 @@ const activateGiftCard = async (payload: any): Promise<any> => {
 }
 
 const fetchFulfillmentRejectReasons = async (payload: any): Promise<any> => {
-  return api({
-    url: "performFind",
-    method: "post",
-    data: payload
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/admin/enumGroups/${payload.enumerationGroupId}/members`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params: payload,
   });
 }
 
 const createEnumerationGroupMember = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/createEnumerationGroupMember",
-    method: "post",
-    data: payload
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/admin/enumGroups/${payload.enumerationGroupId}/members`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload,
   });
 }
 
 const updateEnumerationGroupMember = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/updateEnumerationGroupMember",
-    method: "post",
-    data: payload
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/admin/enumGroups/${payload.enumerationGroupId}/members`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload,
   });
 }
 
@@ -706,7 +721,7 @@ export const UtilService = {
   fetchStatusDesc,
   fetchShipmentRouteSegmentInformation,
   findCarrierPartyIdsForShipment,
-  findCarrierShipmentBoxType,
+  fetchCarrierShipmentBoxTypes,
   fetchOrderPayment,
   findProductStoreShipmentMethCount,
   findShipmentIdsForOrders,
@@ -718,7 +733,6 @@ export const UtilService = {
   getCODOrderRemainingTotal,
   getProductStoreSetting,
   isEnumExists,
-  resetPicker,
   deleteEnumeration,
   updateEnumeration,
   updateBarcodeIdentificationPref,

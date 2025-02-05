@@ -61,7 +61,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
       carrierShipmentBoxType = {
         ...carrierShipmentBoxType,
-        ...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
+        //...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
       }
 
       const orderShipmentPackages = this.state.util.productStoreShipmentMethCount > 0 ? await OrderService.fetchShipmentPackages(orderShipmentIds) : [];
@@ -1115,7 +1115,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
       carrierShipmentBoxType = {
         ...carrierShipmentBoxType,
-        ...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
+        //...await UtilService.findCarrierShipmentBoxType(carrierPartyIds)
       }
 
       const orderShipmentPackages = this.state.util.productStoreShipmentMethCount > 0 ? await OrderService.fetchShipmentPackages(orderShipmentIds) : [];

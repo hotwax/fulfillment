@@ -84,12 +84,84 @@ const actions: ActionTree<OrderState, RootState> = {
     emitter.emit('dismissLoader');
     return resp;
   },
+
+  async findInProgressOrders ({ commit, dispatch, state }, payload = {}) {
+    emitter.emit('presentLoader');
+    let resp;
+    let orders = [];
+    let total = 0;
+
+    const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
+
+    try {
+      const params = {
+        ...payload,
+        keyword: inProgressQuery.queryString,
+        pageSize: inProgressQuery.viewSize,
+        orderBy: 'orderDate',
+        statusId: 'SHIPMENT_APPROVED',
+        shipmentTypeId: 'SALES_SHIPMENT', 
+        facilityId: getCurrentFacilityId(),
+        productStoreId: getProductStoreId(),
+      }
+
+      // preparing filters separately those are based on some condition
+      if (inProgressQuery.selectedPicklist) {
+        params.picklistId = inProgressQuery.selectedPicklist
+      }
+
+      resp = await MaargOrderService.findInProgressOrders(params);
+      if (!hasError(resp)) {
+        total = resp.data.shipmentCount
+        orders = resp.data.shipments
+
+        const productIds = [
+          ...new Set(orders.flatMap((order:any) => order.items.map((item:any) => item.productId)))
+        ];
+
+        // TODO get only product visible
+        await this.dispatch('product/fetchProducts', { productIds })
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('No inProgress orders found', err)
+    }
+
+    inProgressQuery.viewSize = total
+
+    commit(types.ORDER_INPROGRESS_QUERY_UPDATED, { ...inProgressQuery })
+    commit(types.ORDER_INPROGRESS_UPDATED, {orders, total})
+
+    emitter.emit('dismissLoader');
+    return resp;
+  },
+  updateInProgressOrder ({ commit, state }, updatedOrder) {
+    const orders = state.inProgress.list.map((order: any) => {
+      if (updatedOrder.shipmentId === order.shipmentId) {
+        return {
+          ...order,
+          ...updatedOrder
+        };
+      }
+      return order;
+    })
+
+    commit(types.ORDER_INPROGRESS_UPDATED, {orders, total: state.inProgress.total})
+  },
   async updateOpenQuery({ commit, dispatch }, payload) {
       commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
       await dispatch('findOpenOrders');
   },
   async clearOpenOrders({ commit }) {
       commit(types.ORDER_OPEN_CLEARED)
+  },
+  async clearInProgressOrders({ commit }) {
+      commit(types.ORDER_INPROGRESS_CLEARED)
+  },
+  async updateInProgressQuery({ commit, dispatch }, payload) {
+      commit(types.ORDER_INPROGRESS_QUERY_UPDATED, payload)
+      await dispatch('findInProgressOrders');
   }
 }
 

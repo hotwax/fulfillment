@@ -14,21 +14,15 @@ const actions: ActionTree<UtilState, RootState> = {
     let rejectReasons  = [];
     try {
       const payload = {
-        "inputFields": {
-          "parentEnumTypeId": ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
-          "parentEnumTypeId_op": "in"
-        },
-        "fieldList": ["description", "enumId", "enumName", "enumTypeId", "sequenceNum"],
-        "distinct": "Y",
-        "entityName": "EnumTypeChildAndEnum",
-        "viewSize": 20, // keeping view size 20 as considering that we will have max 20 reasons
-        "orderBy": "sequenceNum"
+        parentTypeId: ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
+        parentTypeId_op: "in",
+        pageSize: 20, // keeping view size 20 as considering that we will have max 20 reasons
+        orderBy: "sequenceNum"
       }
 
       const resp = await UtilService.fetchRejectReasons(payload)
-
-      if(!hasError(resp) && resp.data.count > 0) {
-        rejectReasons = resp.data.docs
+      if(!hasError(resp)) {
+        rejectReasons = resp.data
       } else {
         throw resp.data
       }
@@ -53,16 +47,9 @@ const actions: ActionTree<UtilState, RootState> = {
     const fulfillmentRejectReasons  = {}  as any;
     try {
       const payload = {
-        "inputFields": {
-          "enumerationGroupId": "FF_REJ_RSN_GRP"
-        },
-        // We shouldn't fetch description here, as description contains EnumGroup description which we don't wanna show on UI.
-        "fieldList": ["enumerationGroupId", "enumId", "fromDate", "sequenceNum", "enumDescription", "enumName"],
-        "distinct": "Y",
-        "entityName": "EnumerationGroupAndMember",
-        "viewSize": 200,
-        "filterByDate": "Y",
-        "orderBy": "sequenceNum"
+        enumerationGroupId: "FF_REJ_RSN_GRP",
+        pageSize: 200,
+        orderBy: "sequenceNum"
       }
 
       const resp = await UtilService.fetchFulfillmentRejectReasons(payload)
@@ -134,6 +121,32 @@ const actions: ActionTree<UtilState, RootState> = {
     }
 
     return partyInformation;
+  },
+
+  async fetchCarrierShipmentBoxTypes({ commit, state }) {
+    try {
+      const resp = await UtilService.fetchCarrierShipmentBoxTypes({
+        pageIndex: 0,
+        pageSize: 100, //considerting there won't be more than 100 carrier shipment box types
+        fieldsToSelect: ["shipmentBoxTypeId", "partyId"]
+      });
+
+      if (!hasError(resp)) {
+        const shipmentBoxTypeDetail = resp.data.reduce((shipmentBoxTypes: any, carrierShipmentBoxType: any) => {
+          if (shipmentBoxTypes[carrierShipmentBoxType.partyId]) {
+            shipmentBoxTypes[carrierShipmentBoxType.partyId].push(carrierShipmentBoxType.shipmentBoxTypeId)
+          } else {
+            shipmentBoxTypes[carrierShipmentBoxType.partyId] = [carrierShipmentBoxType.shipmentBoxTypeId]
+          }
+          return shipmentBoxTypes
+        }, {})
+        commit(types.UTIL_CARRIER_SHIPMENT_BOX_TYPES_UPDATED, shipmentBoxTypeDetail)
+      } else {
+        throw resp.data;
+      }
+    } catch(err) {
+      logger.error('Failed to fetch carrier shipment box type information', err)
+    }
   },
 
   async fetchShipmentMethodTypeDesc({ commit, state }, shipmentIds) {

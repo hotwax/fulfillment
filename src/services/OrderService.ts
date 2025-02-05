@@ -295,13 +295,6 @@ const rejectOrderItem = async (payload: any): Promise<any> => {
   });
 }
 
-const addShipmentBox = async (payload: any): Promise<any> => {
-  return api({
-    url: "addShipmentPackage",
-    method: "post",
-    data: payload
-  });
-}
 const shipOrder = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getBaseUrl'];
   return api({
@@ -888,7 +881,6 @@ const getShippingPhoneNumber = async (orderId: string): Promise<any> => {
 }
 
 export const OrderService = {
-  addShipmentBox,
   addTrackingCode,
   bulkShipOrders,
   createOutboundTransferShipment,

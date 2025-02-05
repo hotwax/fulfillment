@@ -52,7 +52,7 @@
               <div class="order-primary-info">
                 <ion-label>
                   <strong>{{ order.customerName }}</strong>
-                  <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+                  <p>{{ translate("Ordered") }} {{ getTime(order.orderDate) }}</p>
                 </ion-label>
               </div>
 
@@ -67,7 +67,7 @@
               <div class="order-metadata">
                 <ion-label>
                   {{ order.shipmentMethodTypeDesc }}
-                  <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+                  <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ getTime(order.reservedDatetime) }}</p>
                 </ion-label>
               </div>
             </div>
@@ -80,13 +80,13 @@
               <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
               <ion-row>
                 <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
-                  {{ `Box ${shipmentPackage?.packageName}` }} {{ shipmentPackage.shipmentBoxTypes.length ? `| ${boxTypeDesc(getShipmentPackageType(shipmentPackage))}` : '' }}
+                  {{ `Box ${shipmentPackage?.packageName}` }} {{ getShipmentBoxTypes(order.carrierPartyId).length ? `| ${boxTypeDesc(getShipmentPackageType(order, shipmentPackage))}` : '' }}
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </ion-row>
             </div>
 
-            <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-line-item">
+            <div v-for="item in order.items" :key="item.shipmentItemSeqId" class="order-line-item">
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
@@ -118,7 +118,7 @@
                         <ion-icon :icon="closeCircleOutline" />
                       </ion-chip>
                     </template>
-                    <template v-else-if="useNewRejectionApi() && isEntierOrderRejectionEnabled(order)">
+                    <template v-else-if="isEntierOrderRejectionEnabled(order)">
                       <ion-chip :disabled="order.hasMissingInfo" outline color="danger">
                         <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject entire order')}}</ion-label>
                       </ion-chip>
@@ -304,7 +304,6 @@ import { prepareOrderQuery } from '@/utils/solrHelper';
 import { UtilService } from '@/services/UtilService';
 import { DateTime } from 'luxon';
 import logger from '@/logger';
-import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
 import EditPickersModal from '@/components/EditPickersModal.vue';
 import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
@@ -317,6 +316,7 @@ import { useAuthStore } from '@hotwax/dxp-components'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
+import { MaargOrderService } from '@/services/MaargOrderService';
 
 
 export default defineComponent({
@@ -355,7 +355,7 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      inProgressOrders: 'order/getInProgressOrders',
+      inProgressOrders: 'maargorder/getInProgressOrders',
       getProduct: 'product/getProduct',
       rejectReasonOptions: 'util/getRejectReasonOptions',
       userPreference: 'user/getUserPreference',
@@ -365,7 +365,8 @@ export default defineComponent({
       newRejectionApiConfig: 'user/getNewRejectionApiConfig',
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
-      affectQohConfig: 'user/getAffectQohConfig'
+      affectQohConfig: 'user/getAffectQohConfig',
+      carrierShipmentBoxTypes: 'util/getCarrierShipmentBoxTypes'
     }),
   },
   data() {
@@ -383,9 +384,12 @@ export default defineComponent({
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
-    await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths')]);
+    await Promise.all([this.store.dispatch('util/fetchCarrierShipmentBoxTypes'), this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths')]);
   },
   methods: {
+    getTime(time: any) {
+      return DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED);
+    },
     getRejectionReasonDescription (rejectionReasonId: string) {
       const reason = this.rejectReasonOptions?.find((reason: any) => reason.enumId === rejectionReasonId)
       return reason?.description ? reason.description : reason?.enumDescription ? reason.enumDescription : reason?.enumId;
@@ -426,7 +430,7 @@ export default defineComponent({
           }
         })
         order.hasRejectedItem = order.items.some((item:any) => item.rejectReason);
-      this.store.dispatch('order/updateInProgressOrder', order)
+      this.store.dispatch('maargorder/updateInProgressOrder', order)
     },
 
     async openShipmentBoxPopover(ev: Event, item: any, orderItemSeqId: number, order: any) {
@@ -488,15 +492,14 @@ export default defineComponent({
             role: 'confirm',
             handler: async (data) => {
               const params = {
-                'picklistBinId': order.picklistBinId,
-                'orderId': order.orderId
+                'shipmentId': order.shipmentId,
               }
 
               emitter.emit('presentLoader');
               let toast: any;
-              const shipmentIds: Array<any> = [...new Set(order.items.map((item: any) => item.shipmentId))]
+              const shipmentIds = [order.shipmentId]
               try {
-                const resp = await OrderService.packOrder(params);
+                const resp = await MaargOrderService.packOrder(params);
                 if (hasError(resp)) {
                   throw resp.data
                 }
@@ -507,25 +510,33 @@ export default defineComponent({
                   toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
                   toast.present()
 
-                  const shippingLabelPdfUrls = order.shipmentPackages
-                      ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
-                      .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+                  const shippingLabelPdfUrls: string[] = Array.from(
+                    new Set(
+                      (order.shipmentPackageRouteSegDetail ?? [])
+                        .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+                        .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+                    )
+                  );
 
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
                     if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
-                      await OrderService.printPackingSlip(shipmentIds)
-                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                      await MaargOrderService.printPackingSlip(shipmentIds)
+                      await MaargOrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
                     } else {
-                    await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                    await MaargOrderService.printShippingLabelAndPackingSlip(shipmentIds)
                     }
                   } else if (data.includes('printPackingSlip')) {
-                    await OrderService.printPackingSlip(shipmentIds)
+                    await MaargOrderService.printPackingSlip(shipmentIds)
                   } else if (data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                    await MaargOrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
                   }
 
-                  if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
-                    await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
+                  const internationalInvoiceUrls = order.shipmentPackageRouteSegDetail
+                      ?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl)
+                      .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) || [];
+
+                  if (internationalInvoiceUrls.length > 0) {
+                    await MaargOrderService.printCustomDocuments(internationalInvoiceUrls);
                   }
 
                   toast.dismiss()
@@ -575,43 +586,32 @@ export default defineComponent({
             handler: async (data) => {
               emitter.emit('presentLoader');
               let orderList = JSON.parse(JSON.stringify(this.inProgressOrders.list))
-              // fetch related shipmentIds when missing
-              if (this.isInProgressOrderScrollable()) {
-                const remainingOrderIndex = (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any);
-                const shipmentIdsForOrders = await this.fetchOrderShipmentIds(orderList.slice(remainingOrderIndex));
-                orderList = orderList.map((order: any) => {
-                  // if for an order shipment information is not available then returning the same order information again
-                  if(shipmentIdsForOrders[order.orderId]) {
-                    order.shipmentIds = shipmentIdsForOrders[order.orderId];
-                  }
-                  return order;
-                });
-              }
 
               let toast: any;
               // Considering only unique shipment IDs
               // TODO check reason for redundant shipment IDs
-              const shipmentIds = orderList.map((order: any) => [...new Set(order.items.map((item: any) => item.shipmentId).flat())]).flat() as Array<string>
-              const internationalInvoiceUrls = orderList
-              .map((order: any) =>
-                [...new Set(order.shipmentPackages
-                  .map((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl)
-                  .filter((url: string | null) => url !== null)
-                )]
-              )
-              .flat() as Array<string>;
+              const shipmentIds = orderList.map((order: any) => order.shipmentId)
 
-              const shippingLabelPdfUrls = orderList
-              .map((order: any) =>
-                [...new Set(order.shipmentPackages
-                  .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
-                  .filter((url: string | null) => url !== null)
-                )]
-              )
-              .flat() as Array<string>;
+              const internationalInvoiceUrls: string[] = Array.from(
+                new Set(
+                  orderList
+                    .flatMap((order: any) => order.shipmentPackageRouteSegDetail ?? []) // Flatten all shipments
+                    .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) // Filter shipments with invoice URL
+                    .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) // Extract URLs
+                )
+              );
+
+              const shippingLabelPdfUrls: string[] = Array.from(
+                new Set(
+                  orderList
+                    .flatMap((order: any) => order.shipmentPackageRouteSegDetail ?? []) // Flatten all shipments
+                    .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl) // Filter shipments with label image URL
+                    .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl) // Extract URLs
+                )
+              );
 
               try {
-                const resp = await OrderService.packOrders({
+                const resp = await MaargOrderService.packOrders({
                   shipmentIds
                 });
                 if (hasError(resp)) {
@@ -627,18 +627,18 @@ export default defineComponent({
                   toast.present()
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
                     if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
-                      await OrderService.printPackingSlip(shipmentIds)
-                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                      await MaargOrderService.printPackingSlip(shipmentIds)
+                      await MaargOrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
                     } else {
-                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                      await MaargOrderService.printShippingLabelAndPackingSlip(shipmentIds)
                     }
                   } else if (data.includes('printPackingSlip')) {
-                    await OrderService.printPackingSlip(shipmentIds)
+                    await MaargOrderService.printPackingSlip(shipmentIds)
                   } else if (data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                    await MaargOrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
                   }
                   //print custom documents like international invoice 
-                  await OrderService.printCustomDocuments(internationalInvoiceUrls);
+                  await MaargOrderService.printCustomDocuments(internationalInvoiceUrls);
 
                   toast.dismiss()
                 } else {
@@ -659,27 +659,7 @@ export default defineComponent({
         });
       return alert.present();
     },
-    async fetchOrderShipmentIds(orderList: any) {
-      // Implemented logic to fetch in batches
-      const batchSize = 50;
-      const clonedOrderList = JSON.parse(JSON.stringify(orderList));
-      const requestParams = [];
-      while(clonedOrderList.length) {
-        const picklistBinIds: Array<string> = [];
-        const orderIds: Array<string> = [];
-        // splitting the orders in batches to fetch the additional orders information
-        const orders = clonedOrderList.splice(0, batchSize);
-
-        orders.map((order: any) => {
-          picklistBinIds.push(order.picklistBinId)
-          orderIds.push(order.orderId)
-        })
-        requestParams.push({ picklistBinIds, orderIds })
-      }
-      // TODO Handle error case
-      const shipmentIdResps = await Promise.all(requestParams.map((params) => UtilService.findShipmentIdsForOrders(params.picklistBinIds, params.orderIds)))
-      return Object.assign({}, ...shipmentIdResps)
-    },
+    
     async reportIssue(order: any, itemsToReject: any) {
       // finding is there any item that is `out of stock` as we need to display the message accordingly
       const outOfStockItem = itemsToReject.find((item: any) => item.rejectReason === 'NOT_IN_STOCK')
@@ -876,7 +856,7 @@ export default defineComponent({
         }
       })
       order.hasRejectedItem = true
-      this.store.dispatch('order/updateInProgressOrder', order)
+      this.store.dispatch('maargorder/updateInProgressOrder', order)
     },
     rejectKitComponent(order: any, item: any, componentProductId: string) {
       let rejectedComponents = item.rejectedComponents ? item.rejectedComponents : []
@@ -907,97 +887,52 @@ export default defineComponent({
         }
       })
       order.isModified = true;
-      this.store.dispatch('order/updateInProgressOrder', order)
+      this.store.dispatch('maargorder/updateInProgressOrder', order)
     },
     async fetchPickersInformation() {
-
-      const orderQueryPayload = prepareOrderQuery({
-        viewSize: '0',  // passing viewSize as 0 as we don't need any data
-        groupBy: 'picklistBinId',
-        filters: {
-          picklistItemStatusId: { value: 'PICKITEM_PENDING' },
-          '-fulfillmentStatus': { value: 'Rejected' },
-          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
-        },
-        facet: {
-          picklistFacet: {
-            excludeTags: 'picklistIdFilter',
-            field: 'picklistId',
-            mincount: 1,
-            limit: -1,
-            sort: 'index',
-            type: 'terms',
-            facet: {
-              pickerFacet: {
-                excludeTags: 'pickersFilter',
-                field: 'pickers',
-                mincount: 1,
-                limit: -1,
-                sort: 'index',
-                type: 'terms'
-              }
-            }
-          }
-        }
-      })
-
-      let resp;
-
+      const payload = {
+          shipmentMethodTypeId: 'STOREPICKUP',
+          shipmentMethodTypeId_not: 'Y',
+          shipmentMethodTypeId_op: 'equals',
+          facilityId: this.currentFacility?.facilityId,
+          statusId: 'PICKLIST_ASSIGNED',
+          pageIndex: 0,
+          pageSize: 50
+      }
       try {
-        resp = await OrderService.findInProgressOrders(orderQueryPayload);
-        if (resp.status === 200 && !hasError(resp) && resp.data.facets?.count > 0) {
-          const buckets = resp.data.facets.picklistFacet.buckets
+        const resp = await MaargOrderService.fetchPicklists(payload);
+        if(!hasError(resp)) {
 
-          const picklistIds = buckets.map((bucket: any) => bucket.val)
+          this.picklists = resp.data.map((picklist: any) => {
+            picklist.roles = picklist.roles.filter((role: any) => !role.thruDate)
 
-          const payload = {
-            inputFields: {
-              picklistId: picklistIds,
-              picklistId_op: "in"
-            },
-            entityName: 'Picklist',
-            noConditionFind: 'Y',
-            viewSize: picklistIds.length
-          }
-
-          const picklistResp = await UtilService.fetchPicklistInformation(payload);
-
-          if(picklistResp.status == 200 && !hasError(picklistResp) && picklistResp.data.count > 0) {
-            this.picklists = picklistResp.data.docs.reduce((picklists: any, picklist: any) => {
-              const pickersInformation = buckets.find((bucket: any) => picklist.picklistId == bucket.val)
-
-              if(pickersInformation.count == 0) {
-                return picklists;
-              }
-
-              const pickerIds = [] as Array<string> 
-              // if firstName is not found then adding default name `System Generated`
-              const pickersName = pickersInformation.pickerFacet.buckets.length ?
-                pickersInformation.pickerFacet.buckets.reduce((pickers: Array<string>, picker: any) => {
-                  const val = picker.val.split('/') // having picker val in format 10001/FirstName LastName, split will change it into [pickerId, FirstName LastName]
-                  pickerIds.push(val[0]) // storing pickerIds for usage in edit pickers modal
-                  pickers.push(val[1].split(' ')[0]) // having val[0] as 'firstname lastname', we only need to display firstName
-                  return pickers
-                }, []) : ['System Generated']
-
-              picklists.push({
-                id: picklist.picklistId,
-                pickersName: pickersName.join(', '),
-                pickerIds,
-                date: DateTime.fromMillis(picklist.picklistDate).toLocaleString(DateTime.TIME_SIMPLE),
-                isGeneratingPicklist: false  // used to display the spinner on the button when trying to generate picklist
+            let pickersName = (picklist?.roles ?? [])
+              .map((role:any) => {
+                if (role?.person) {
+                  return `${role.person.firstName} ${role.person.lastName}`;
+                } else if (role?.partyGroup) {
+                  return role.partyGroup.groupName;
+                }
+                return null;
               })
+              .filter(Boolean)
+              .join(", ") ?? ""; 
 
-              return picklists
-            }, [])
-          }
+            let pickerIds = (picklist?.roles ?? []).map((role:any) => role?.partyId) ?? [];
+
+            return {
+              ...picklist,
+              id: picklist.picklistId,
+              pickersName,
+              pickerIds,
+              date: picklist.picklistDate ? DateTime.fromMillis(picklist?.picklistDate).toLocaleString(DateTime.TIME_SIMPLE) : null,
+            };
+          });
         } else {
           throw resp.data
         }
-      } catch (err) {
-        logger.error('No picklist facets found', err)
+      } catch(err) {
+        logger.error('Failed to fetch picklists', err)
       }
     },
     getPicklist(id: string) {
@@ -1035,25 +970,23 @@ export default defineComponent({
       inProgressOrdersQuery.selectedPicklist = id
       inProgressOrdersQuery.viewIndex = 0
 
-      this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
+      this.store.dispatch('maargorder/updateInProgressQuery', { ...inProgressOrdersQuery })
     },
     async fetchShipmentRouteSegmentInformation(shipmentIds: Array<string>) {
       const payload = {
-        "inputFields": {
-          "carrierPartyId": "_NA_",
-          "carrierPartyId_op": "notEqual",
-          "shipmentId": shipmentIds,
-          "shipmentId_op": "in"
-        },
-        "entityName": "ShipmentRouteSegment",
-        "fieldList": ["carrierPartyId", "shipmentMethodTypeId"]
+        carrierPartyId: "_NA_",
+        carrierPartyId_op: "notEqual",
+        shipmentId: shipmentIds,
+        shipmentId_op: "in",
+        fieldsToSelect: ["carrierPartyId", "shipmentMethodTypeId"],
+        pageSize: 1
       }
 
       try {
         const resp = await UtilService.fetchShipmentRouteSegmentInformation(payload)
 
-        if(!hasError(resp) && resp.data.count) {
-          return resp.data.docs[0]
+        if(!hasError(resp)) {
+          return resp.data?.[0]
         } else {
           throw resp.data
         }
@@ -1068,16 +1001,14 @@ export default defineComponent({
 
       try {
         const resp = await UtilService.fetchDefaultShipmentBox({
-          "entityName": "SystemProperty",
-          "inputFields": {
-            "systemResourceId": "shipment",
-            "systemPropertyId": "shipment.default.boxtype"
-          },
-          "fieldList": ["systemPropertyValue", "systemResourceId"]
+          systemResourceId: "shipment",
+          systemPropertyId: "shipment.default.boxtype",
+          fieldsToSelect: ["systemPropertyValue", "systemResourceId"],
+          pageSize: 1
         })
 
-        if(!hasError(resp) && resp.data.count) {
-          defaultBoxType = resp.data.docs[0].systemPropertyValue
+        if(!hasError(resp)) {
+          defaultBoxType = resp.data?.[0].systemPropertyValue
         } else {
           throw resp.data
         }
@@ -1097,7 +1028,7 @@ export default defineComponent({
       }
 
       const params = {
-        picklistBinId: order.groupValue,
+        shipmentId: order.shipmentId,
         shipmentBoxTypeId: this.defaultShipmentBoxType
       } as any
 
@@ -1105,7 +1036,7 @@ export default defineComponent({
       shipmentMethodTypeId && (params['shipmentMethodTypeId'] = shipmentMethodTypeId)
 
       try {
-        const resp = await OrderService.addShipmentBox(params)
+        const resp = await MaargOrderService.addShipmentBox(params)
 
         if(!hasError(resp)) {
           showToast(translate('Box added successfully'))
@@ -1120,19 +1051,26 @@ export default defineComponent({
       }
       this.addingBoxForOrderIds.splice(this.addingBoxForOrderIds.indexOf(order.orderId), 1)
     },
-    getShipmentPackageType(shipmentPackage: any) {
+    getShipmentPackageType(order: any, shipmentPackage: any) {
       let packageType = '';
-      if(shipmentPackage.shipmentBoxTypes.length){
-        packageType = shipmentPackage.shipmentBoxTypes.find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId) ? shipmentPackage.shipmentBoxTypes.find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId) : shipmentPackage.shipmentBoxTypes[0];
+      const shipmentBoxTypes = this.getShipmentBoxTypes(order.carrierPartyId);
+      if (shipmentBoxTypes.length){
+        const currentBoxType = shipmentBoxTypes.find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId)
+        packageType = currentBoxType ?? shipmentBoxTypes[0];
       }
       return packageType;
+    },
+    getShipmentBoxTypes(carrierPartyId: string) {
+      console.log("=====carrierPartyId=====", carrierPartyId)
+      console.log("=====this.carrierShipmentBoxTypes====", this.carrierShipmentBoxTypes)
+      return this.carrierShipmentBoxTypes[carrierPartyId];
     },
     async updateQueryString(queryString: string) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
 
       inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       inProgressOrdersQuery.queryString = queryString
-      await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
+      await this.store.dispatch('maargorder/updateInProgressQuery', { ...inProgressOrdersQuery })
       this.searchedQuery = queryString;
     },
     async updateOrderQuery(size?: any, queryString?: any) {
@@ -1141,20 +1079,21 @@ export default defineComponent({
       size && (inProgressOrdersQuery.viewSize = size)
       queryString && (inProgressOrdersQuery.queryString = '')
       inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
-      await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
+      await this.store.dispatch('maargorder/updateInProgressQuery', { ...inProgressOrdersQuery })
     },
     async initialiseOrderQuery() {
       await this.updateOrderQuery(process.env.VUE_APP_VIEW_SIZE, '')
     },
     async printPicklist(picklist: any) {
       picklist.isGeneratingPicklist = true;
-      await OrderService.printPicklist(picklist.id)
+      await MaargOrderService.printPicklist(picklist.id)
       picklist.isGeneratingPicklist = false;
     },
     async updateShipmentBoxType(shipmentPackage: any, order: any, ev: CustomEvent) {
 
       // Don't open popover when not having shipmentBoxTypes available
-      if(!shipmentPackage.shipmentBoxTypes.length) {
+      const shipmentBoxTypes = this.getShipmentBoxTypes(order.carrierPartyId)
+      if(!shipmentBoxTypes.length) {
         logger.error('Failed to fetch shipment box types')
         return;
       }
@@ -1163,7 +1102,7 @@ export default defineComponent({
         component: ShipmentBoxTypePopover,
         event: ev,
         showBackdrop: false,
-        componentProps: { shipmentPackage }
+        componentProps: { shipmentBoxTypes }
       });
 
       popover.present();
@@ -1173,7 +1112,7 @@ export default defineComponent({
       if(result.data && shipmentPackage.shipmentBoxTypeId !== result.data) {
         shipmentPackage.shipmentBoxTypeId = result.data;
         order.isModified = true;
-        this.store.dispatch('order/updateInProgressOrder', order);
+        this.store.dispatch('maargorder/updateInProgressOrder', order);
       }
     },
     async recycleInProgressOrders() {
@@ -1193,7 +1132,7 @@ export default defineComponent({
             let resp;
 
             try {
-              resp = await UserService.recycleInProgressOrders({
+              resp = await MaargOrderService.recycleInProgressOrders({
                 "facilityId": this.currentFacility?.facilityId,
                 "productStoreId": this.currentEComStore.productStoreId,
                 "reasonId": "INACTIVE_STORE"

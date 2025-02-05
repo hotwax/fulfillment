@@ -13,7 +13,7 @@ const login = async (username: string, password: string): Promise <any> => {
   });
 }
 const moquiLogin = async (omsRedirectionUrl: string, token: string): Promise <any> => {
-  const baseURL = omsRedirectionUrl.startsWith('http') ? omsRedirectionUrl.includes('/rest/s1/poorti') ? omsRedirectionUrl : `${omsRedirectionUrl}/rest/s1/poorti/` : `https://${omsRedirectionUrl}.hotwax.io/rest/s1/poorti/`;
+  const baseURL = omsRedirectionUrl.startsWith('http') ? omsRedirectionUrl.includes('/rest/s1/admin') ? omsRedirectionUrl : `${omsRedirectionUrl}/rest/s1/admin/` : `https://${omsRedirectionUrl}.hotwax.io/rest/s1/admin/`;
   let api_key = ""
 
   try {
@@ -98,21 +98,7 @@ const getFacilityGroupAndMemberDetails = async (payload: any): Promise<any> => {
   })
 }
 
-const recycleInProgressOrders = async(payload: any): Promise<any> => {
-  return api({
-    url: "service/bulkRejectStoreInProgressOrders",
-    method: "post",
-    data: payload
-  })
-}
 
-const recycleOutstandingOrders = async(payload: any): Promise<any> => {
-  return api({
-    url: "service/bulkRejectStoreOutstandingOrders",
-    method: "post",
-    data: payload
-  })
-}
 
 const getPreferredStore = async (token: any): Promise<any> => {
   const baseURL = store.getters['user/getBaseUrl'];
@@ -436,8 +422,6 @@ export const UserService = {
     getPreferredStore,
     isEnumExists,
     moquiLogin,
-    recycleInProgressOrders,
-    recycleOutstandingOrders,
     setUserPreference,
     getUserPermissions,
     updateAffectQohConfig,

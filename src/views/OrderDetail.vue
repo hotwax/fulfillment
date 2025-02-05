@@ -436,6 +436,7 @@ import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import emitter from '@/event-bus';
 import { OrderService } from "@/services/OrderService";
+import { MaargOrderService } from "@/services/MaargOrderService"
 import { hasError } from "@/adapter";
 import logger from '@/logger';
 import { UtilService } from "@/services/UtilService";
@@ -1148,7 +1149,7 @@ export default defineComponent({
       shipmentMethodTypeId && (params['shipmentMethodTypeId'] = shipmentMethodTypeId)
 
       try {
-        const resp = await OrderService.addShipmentBox(params)
+        const resp = await MaargOrderService.addShipmentBox(params)
 
         if(!hasError(resp)) {
           showToast(translate('Box added successfully'))
