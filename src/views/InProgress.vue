@@ -189,8 +189,7 @@
 
             <div class="actions">
               <div>
-                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click.stop="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack") }}</ion-button>
-                <ion-button :disabled="order.hasMissingInfo" fill="outline" @click.stop="save(order)">{{ translate("Save") }}</ion-button>
+                <ion-button  @click.stop="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack") }}</ion-button>
               </div>
 
               <div class="desktop-only">
@@ -364,7 +363,6 @@ export default defineComponent({
       boxTypeDesc: 'util/getShipmentBoxDesc',
       getProductStock: 'stock/getProductStock',
       isForceScanEnabled: 'util/isForceScanEnabled',
-      newRejectionApiConfig: 'user/getNewRejectionApiConfig',
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
       affectQohConfig: 'user/getAffectQohConfig',
@@ -469,6 +467,14 @@ export default defineComponent({
       return popover.present();
     },
     async packOrder(order: any) {
+      if (order.hasRejectedItem) {
+        const itemsToReject = order.items.filter((item: any) => item.rejectReason)
+        this.reportIssue(order, itemsToReject);
+        return;
+      }
+      this.confirmPackOrder(order);
+    },
+    async confirmPackOrder(order: any, updateParameter?: string) {
       const confirmPackOrder = await alertController
         .create({
           header: translate("Pack order"),
@@ -493,14 +499,19 @@ export default defineComponent({
             text: translate("Pack"),
             role: 'confirm',
             handler: async (data) => {
-              const params = {
-                'shipmentId': order.shipmentId,
-              }
 
               emitter.emit('presentLoader');
               let toast: any;
               const shipmentIds = [order.shipmentId]
               try {
+                const updatedOrderDetail = this.getUpdatedOrderDetail(order, updateParameter) as any
+                const params = {
+                  shipmentId: order.shipmentId,
+                  orderId: order.primaryOrderId,
+                  facilityId: order.originFacilityId,
+                  rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
+                  shipmentPackageContents: updatedOrderDetail.shipmentPackageContents
+                }
                 const resp = await MaargOrderService.packOrder(params);
                 if (hasError(resp)) {
                   throw resp.data
@@ -592,7 +603,19 @@ export default defineComponent({
               let toast: any;
               // Considering only unique shipment IDs
               // TODO check reason for redundant shipment IDs
-              const shipmentIds = orderList.map((order: any) => order.shipmentId)
+              const shipments = [] as any
+              orderList.forEach((order: any) => {
+                const updatedOrderDetail = this.getUpdatedOrderDetail(order) as any
+                shipments.push({
+                  shipmentId: order.shipmentId,
+                  orderId: order.primaryOrderId,
+                  facilityId: order.orgiginFacilityId,
+                  rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
+                  shipmentPackageContents: updatedOrderDetail.shipmentPackageContents,
+
+                })
+              })
+              const shipmentIds = shipments.map((shipment: any) => shipment.shipmentId)
 
               const internationalInvoiceUrls: string[] = Array.from(
                 new Set(
@@ -614,7 +637,7 @@ export default defineComponent({
 
               try {
                 const resp = await MaargOrderService.packOrders({
-                  shipmentIds
+                  shipments
                 });
                 if (hasError(resp)) {
                   throw resp.data
@@ -706,7 +729,7 @@ export default defineComponent({
             text: translate("Report"),
             role: 'confirm',
             handler: async() => {
-              await this.updateOrder(order, "report");
+              await this.confirmPackOrder(order, "report");
             }
           }]
         });
@@ -716,139 +739,38 @@ export default defineComponent({
     async findInProgressOrders () {
       await this.store.dispatch('order/findInProgressOrders')
     },
-    async updateOrder(order: any, updateParameter?: string) {
-      const form = new FormData()
-
-      form.append('facilityId', this.currentFacility?.facilityId)
-      form.append('orderId', order.orderId)
-
-      order.shipmentIds.map((shipmentId: string) => {
-        form.append('shipmentIds', shipmentId)
-      })
-
+    async getUpdatedOrderDetail(order: any, updateParameter?: string) {
       const items = JSON.parse(JSON.stringify(order.items));
-
-      // creating updated data for shipment packages
-      order.shipmentPackages.map((shipmentPackage: any, index: number) => {
-        form.append(`box_shipmentId_${index}`, shipmentPackage.shipmentId)
-        form.append(`${index}_box_rowSubmit_`, ''+index)
-        form.append(`box_shipmentBoxTypeId_${index}`, shipmentPackage.shipmentBoxTypeId)
-      })
-
+      
       // creating updated data for items
       const rejectedOrderItems = [] as any;
+      const shipmentPackageContents = [] as any;
       items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
-
-        let prefix = 'rtp'
         if (updateParameter === 'report' && item.rejectReason) {
-          if (this.useNewRejectionApi()) {
-            rejectedOrderItems.push({
-              "shipmentId": item.shipmentId,
-              "shipmentItemSeqId": item.shipmentItemSeqId,
-              "reason": item.rejectReason,
-              "rejectedComponents": item.rejectedComponents
-            })
-          } else {
-            prefix = 'rej'
-            form.append(`${prefix}_rejectionReason_${index}`, item.rejectReason)
-            form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
-            form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
-            if (item.rejectedComponents && item.rejectedComponents.length > 0) {
-              form.append(`${prefix}_rejectedComponents_${index}`, JSON.stringify({"productIds": item.rejectedComponents}))
-            }
-            form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
-          }
+          rejectedOrderItems.push({
+            "orderId": item.orderId,
+            "orderItemSeqId": item.orderItemSeqId,
+            "shipmentId": item.shipmentId,
+            "shipmentItemSeqId": item.shipmentItemSeqId,
+            "facilityId": this.currentFacility?.facilityId,
+            "rejectToFacilityId": "_NA_",
+            "updateQOH": this.affectQohConfig && this.affectQohConfig?.settingValue ? this.affectQohConfig?.settingValue : false,
+            "maySplit": this.isEntierOrderRejectionEnabled(order) ? "N" : "Y",
+            "cascadeRejectByProduct": this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
+            "rejectionReasonId": item.rejectReason,
+            "rejectedComponents": item.rejectedComponents,
+          })
         } else {
-          prefix = 'rtp'
-          form.append(`${prefix}_newShipmentId_${index}`, shipmentPackage.shipmentId + "-" + shipmentPackage.shipmentPackageSeqId)
-          form.append(`${prefix}_shipmentId_${index}`, item.shipmentId)
-          form.append(`${prefix}_shipmentItemSeqId_${index}`, item.shipmentItemSeqId)
-          form.append(`${index}_${prefix}_rowSubmit_`, ''+index)
-        }
-      })
-      
-      if (this.useNewRejectionApi() && this.isEntierOrderRejectionEnabled(order)) {
-        const shipmentIds = rejectedOrderItems.map((item:any) => item.shipmentId);
-        items.map((item: any) => {
-          if (!shipmentIds.includes(item.shipmentId)) {
-            rejectedOrderItems.push({
-              "shipmentId": item.shipmentId,
-              "shipmentItemSeqId": item.shipmentItemSeqId,
-              "reason": this.rejectEntireOrderReasonId,
-              "rejectedComponents": item.rejectedComponents
-            })
-            shipmentIds.push(item.shipmentId)
-          }
-        })
-      }
-
-      form.append('picklistBinId', order.picklistBinId)
-
-      try {
-        let resp;
-        //Rejection of items will now be handled by the logic below.
-        if (rejectedOrderItems.length > 0) {
-          resp = await OrderService.rejectFulfillmentReadyOrderItem({
-            data: {
-              facilityId : this.currentFacility?.facilityId,
-              rejectEntireShipment: this.isEntierOrderRejectionEnabled(order) ? "Y" : "N",
-              rejectAllRelatedShipment: this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
-              affectQOH: this.affectQohConfig && this.affectQohConfig?.settingValue ? this.affectQohConfig?.settingValue : false,
-              defaultReason: this.rejectEntireOrderReasonId, //default reason for items for which reason is not selected but rejecting due to entire order rejection config.
-              items: rejectedOrderItems
-            }
-          });
-        }
-
-        //Run this logic only when entire order rejection is disabled. This logic will now be used only to update shipment boxes, not to reject items.
-        if (!this.useNewRejectionApi() || !this.isEntierOrderRejectionEnabled(order)) {
-          resp = await OrderService.updateOrder({
-            headers: {
-              'Content-Type': 'multipart/form-data;'
-            },
-            data: form
+          shipmentPackageContents.push({
+            shipmentId: item.shipmentId,
+            shipmentItemSeqId: item.shipmentItemSeqId,
+            shipmentPackageSeqId: shipmentPackage.shipmentPackageSeqId,
+            quantity: item.quantity
           })
         }
-
-        if(!hasError(resp)) {
-          if (order.hasRejectedItem) {
-            this.updateOrderQuery()
-          } else {
-            order.isModified = false;
-
-            // updating the shipment information on item level
-            const itemInformationByOrderResp = await UtilService.findShipmentItemInformation(order.shipmentIds);
-            const itemInformation = itemInformationByOrderResp[order.orderId]
-
-            itemInformation?.map((orderItem: any) => {
-              //Added a check for item.productId === orderItem.productId to identify the correct shipment item. In the case of a kit, the ShipmentItem will be created with the same orderItemSeqId for both the kit and its components.
-              const item = items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId && item.productId === orderItem.productId)
-
-              item.shipmentId = orderItem.shipmentId
-              item.shipmentItemSeqId = orderItem.shipmentItemSeqId
-            })
-            order.items = items
-
-            await this.store.dispatch('order/updateInProgressOrder', order)
-            await this.store.dispatch('order/updateShipmentPackageDetail', order)
-          }
-          showToast(translate('Order updated successfully'))
-        } else {
-          throw resp.data;
-        }
-      } catch (err) {
-        showToast(translate('Failed to update order'))
-        logger.error('Failed to update order', err)
-      }
-    },
-    save(order: any) {
-      if(order.hasRejectedItem) {
-        const itemsToReject = order.items.filter((item: any) => item.rejectReason)
-        this.reportIssue(order, itemsToReject);
-        return;
-      }
-      this.updateOrder(order);
+      })
+      return {rejectedOrderItems, shipmentPackageContents}
     },
     updateRejectReason(updatedReason: string, item: any, order: any) {
       item.rejectReason = updatedReason;
@@ -878,9 +800,7 @@ export default defineComponent({
     isEntierOrderRejectionEnabled(order: any) {
       return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
     },
-    useNewRejectionApi() {
-      return this.newRejectionApiConfig && this.newRejectionApiConfig.settingValue && JSON.parse(this.newRejectionApiConfig.settingValue)
-    },
+    
     updateBox(updatedBox: string, item: any, order: any) {
       item.selectedBox = updatedBox;
       order.items.map((orderItem: any) => {
@@ -1063,8 +983,6 @@ export default defineComponent({
       return packageType;
     },
     getShipmentBoxTypes(carrierPartyId: string) {
-      console.log("=====carrierPartyId=====", carrierPartyId)
-      console.log("=====this.carrierShipmentBoxTypes====", this.carrierShipmentBoxTypes)
       return this.carrierShipmentBoxTypes[carrierPartyId];
     },
     async updateQueryString(queryString: string) {
