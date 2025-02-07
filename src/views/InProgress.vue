@@ -878,7 +878,7 @@ export default defineComponent({
       }
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
       inProgressOrdersQuery.viewIndex++;
-      await this.store.dispatch('order/updateInProgressIndex', { ...inProgressOrdersQuery })
+      await this.store.dispatch('maargorder/updateInProgressIndex', { ...inProgressOrdersQuery })
       event.target.complete();
     },
     isInProgressOrderScrollable() {

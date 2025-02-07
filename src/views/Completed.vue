@@ -43,13 +43,13 @@
           </ion-item>
         </div>
         <div class="results">
-          <ion-button :disabled="isShipNowDisabled || !hasAnyPackedShipment() || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
+          <ion-button :disabled="isShipNowDisabled || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
           <ion-card class="order" v-for="(order, index) in completedOrdersList" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
                   <strong>{{ order.customerName }}</strong>
-                  <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+                  <p>{{ translate("Ordered") }} {{ getTime(order.orderDate) }}</p>
                 </ion-label>
               </div>
 
@@ -65,12 +65,12 @@
                 <ion-label>
                   {{ order.shipmentMethodTypeDesc }}
                   <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
-                  <p v-if="order.trackingCode">{{ translate("Tracking Code") }} {{ order.trackingCode }}</p>
+                  <p v-if="order.trackingIdNumber">{{ translate("Tracking Code") }} {{ order.trackingIdNumber }}</p>
                 </ion-label>
               </div>
             </div>
 
-            <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-line-item">
+            <div v-for="item in order.items" :key="item.shipmentItemSeqId" class="order-line-item">
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
@@ -128,7 +128,7 @@
             <!-- TODO: implement functionality to mobile view -->
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
+                <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingIdNumber) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -139,7 +139,7 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
-                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingIdNumber) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate("Regenerate Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
@@ -161,7 +161,7 @@
         </div>
       </div>
       <ion-fab v-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button :disabled="!hasAnyPackedShipment() || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click="bulkShipOrders()">
+        <ion-fab-button :disabled="hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click="bulkShipOrders()">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -214,13 +214,14 @@ import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import emitter from '@/event-bus';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
-import { OrderService } from '@/services/OrderService';
+import { MaargOrderService } from '@/services/MaargOrderService';
 import logger from '@/logger';
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import { isKit } from '@/utils/order'
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
+import { DateTime } from 'luxon';
 
 export default defineComponent({
   name: 'Completed',
@@ -263,7 +264,7 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      completedOrders: 'order/getCompletedOrders',
+      completedOrders: 'maargorder/getCompletedOrders',
       getProduct: 'product/getProduct',
       getPartyName: 'util/getPartyName',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
@@ -279,7 +280,7 @@ export default defineComponent({
     this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
   },
   unmounted() {
-    this.store.dispatch('order/clearCompletedOrders')
+    this.store.dispatch('maargorder/clearCompletedOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   watch: {
@@ -293,13 +294,11 @@ export default defineComponent({
     this.isScrollingEnabled = false;
   },
   methods: {
+    getTime(time: any) {
+      return DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED);
+    },
     getErrorMessage() {
       return this.searchedQuery === '' ? translate("doesn't have any completed orders right now.", { facilityName: this.currentFacility?.facilityName }) : translate( "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
-    },
-    hasAnyPackedShipment(): boolean {
-      return this.completedOrders.list.some((order: any) => {
-        return order.shipments && order.shipments.some((shipment: any) => shipment.statusId === "SHIPMENT_PACKED");
-      })
     },
     hasAnyMissingInfo(): boolean {
       return this.completedOrders.list.some((order: any) => {
@@ -332,7 +331,7 @@ export default defineComponent({
       }
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
       completedOrdersQuery.viewIndex++;
-      await this.store.dispatch('order/updateCompletedOrderIndex', { ...completedOrdersQuery })
+      await this.store.dispatch('maargorder/updateCompletedOrderIndex', { ...completedOrdersQuery })
       event.target.complete();
     },
     isCompletedOrderScrollable() {
@@ -342,46 +341,24 @@ export default defineComponent({
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
       completedOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+      await this.store.dispatch('maargorder/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async updateOrderQuery(size: any) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
 
       completedOrdersQuery.viewSize = size
-      await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+      await this.store.dispatch('maargorder/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async shipOrder(order: any) {
 
-      const packedShipments = order.shipments.filter((shipment: any) => shipment.statusId === "SHIPMENT_PACKED");
-      
-      if (packedShipments.length === 0) {
-        showToast(translate('There are no packed shipments. Failed to ship order.'))
-        return;
-      }
-      const shipmentIds = new Set();
-      let index = 0;
-
-      const payload = packedShipments.reduce((formData: any, shipment: any) => {
-
-        if (!shipmentIds.has(shipment.shipmentId)) {
-          formData.append('shipmentId_o_' + index, shipment.shipmentId)
-          formData.append('statusId_o_' + index, "SHIPMENT_SHIPPED")
-          formData.append('shipmentTypeId_o_' + index, shipment.shipmentTypeId)
-          formData.append('_rowSubmit_o_' + index, "Y")
-          index++;
-        }
-
-        return formData;
-      }, new FormData())
-
       try {
-        const resp = await OrderService.shipOrder(payload)
+        const resp = await MaargOrderService.shipOrder({shipmentId: order.shipmentId})
 
         if(!hasError(resp)) {
           showToast(translate('Order shipped successfully'))
           // TODO: handle the case of data not updated correctly
           const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
-          await Promise.all([this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery }), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+          await Promise.all([this.store.dispatch('maargorder/updateCompletedQuery', { ...completedOrdersQuery }), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
         } else {
           throw resp.data
         }
@@ -391,9 +368,7 @@ export default defineComponent({
       }
     },
     async bulkShipOrders() {
-      const packedOrdersCount = this.completedOrders.list.filter((order: any) => {
-        return this.hasPackedShipments(order);
-      }).length;
+      const packedOrdersCount = this.completedOrders.count;
       const shipOrderAlert = await alertController
         .create({
            header: translate("Ship orders"),
@@ -410,7 +385,7 @@ export default defineComponent({
               let trackingRequiredAndMissingCodeOrders: any
               if (trackingRequiredOrders.length) {
                 // filtering and excluding orders having missing label image with tracking required
-                trackingRequiredAndMissingCodeOrders = trackingRequiredOrders.filter((order: any) => !order.trackingCode).map((order: any) => order.orderId)
+                trackingRequiredAndMissingCodeOrders = trackingRequiredOrders.filter((order: any) => !order.trackingIdNumber).map((order: any) => order.orderId)
                 if (trackingRequiredAndMissingCodeOrders.length) {
                   orderList = orderList.filter((order: any) => !trackingRequiredAndMissingCodeOrders.includes(order.orderId))
                 }
@@ -421,32 +396,10 @@ export default defineComponent({
                 return;
               }
 
-              let shipmentIds = orderList.reduce((shipmentIds: any, order: any) => {
-                if (order.shipments) {
-                  order.shipments.reduce((shipmentIds: any, shipment: any) => {
-                    if (shipment.statusId === "SHIPMENT_PACKED") {
-                      shipmentIds.push(shipment.shipmentId)
-                    }
-                    return shipmentIds;
-                  }, shipmentIds) 
-                }
-                return shipmentIds;
-              }, []);
-
-              // Considering only unique shipment IDs
-              // TODO check reason for redundant shipment IDs
-              shipmentIds = [...new Set(shipmentIds)] as Array<string>;
-
-              if (shipmentIds.length === 0) {
-                showToast(translate("No packed shipments to ship for these orders"))
-                return;
-              }
-              const payload = {
-                shipmentId: shipmentIds
-              }
+              let shipmentIds = orderList.map((order: any) =>  order.shipmentId)
 
               try {
-                const resp = await OrderService.bulkShipOrders(payload)
+                const resp = await MaargOrderService.bulkShipOrders({shipmentIds})
 
                 if (resp.status == 200 && !hasError(resp)) {
                   !trackingRequiredAndMissingCodeOrders.length
@@ -454,7 +407,7 @@ export default defineComponent({
                     : showToast(translate('out of cannot be shipped due to missing tracking codes.', { remainingOrders: trackingRequiredAndMissingCodeOrders.length, totalOrders: packedOrdersCount }))
                   // TODO: handle the case of data not updated correctly
                   const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
-                  await Promise.all([this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery }), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+                  await Promise.all([this.store.dispatch('maargorder/updateCompletedQuery', { ...completedOrdersQuery }), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
                   throw resp.data
                 }
@@ -480,12 +433,12 @@ export default defineComponent({
 
     async fetchShipmentMethods() {
       const payload = prepareOrderQuery({
-        viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
-        groupBy: 'picklistBinId',
-        sort: 'orderDate asc',
-        defType: "edismax",
+        docType: 'ORDER',
+        viewSize: '0',  // passed viewSize as 0 to not fetch any data
+        isGroupingRequired: false,
         filters: {
-          picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
+          orderTypeId: { value: 'SALES_ORDER' },
+          fulfillmentStatus: { value: 'Completed' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId }
@@ -521,20 +474,20 @@ export default defineComponent({
     },
     async fetchCarrierPartyIds() {
       const payload = prepareOrderQuery({
-        viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
-        groupBy: 'picklistBinId',
-        sort: 'orderDate asc',
-        defType: "edismax",
+        docType: 'ORDER',
+        viewSize: '0',  // passed viewSize as 0 to not fetch any data
+        isGroupingRequired: false,
         filters: {
-          picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
+          orderTypeId: { value: 'SALES_ORDER' },
+          fulfillmentStatus: { value: 'Completed' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId },
         },
         facet: {
           manifestContentIdFacet: {
-            "excludeTags": "manifestContentIdFilter",
-            "field": "manifestContentId",
+            "excludeTags": "carrierPartyIdFilter",
+            "field": "carrierPartyId",
             "mincount": 1,
             "limit": -1,
             "sort": "index",
@@ -564,7 +517,7 @@ export default defineComponent({
 
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       completedOrdersQuery.queryString = queryString
-      await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+      await this.store.dispatch('maargorder/updateCompletedQuery', { ...completedOrdersQuery })
       this.searchedQuery = queryString;
     },
     async updateSelectedShipmentMethods (method: string) {
@@ -582,7 +535,7 @@ export default defineComponent({
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       completedOrdersQuery.selectedShipmentMethods = selectedShipmentMethods
 
-      this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+      this.store.dispatch('maargorder/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async updateSelectedCarrierPartyIds (carrierPartyId: string) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
@@ -599,7 +552,7 @@ export default defineComponent({
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       completedOrdersQuery.selectedCarrierPartyIds = selectedCarrierPartyIds
 
-      this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+      this.store.dispatch('maargorder/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async unpackOrder(order: any) {
       const unpackOrderAlert = await alertController
@@ -612,18 +565,13 @@ export default defineComponent({
           }, {
             text: translate("Unpack"),
             handler: async () => {
-              const payload = {
-                orderId: order.orderId,
-                picklistBinId: order.groupValue
-              }
-
               try {
-                const resp = await OrderService.unpackOrder(payload)
+                const resp = await MaargOrderService.unpackOrder({shipmentId: order.shipmentId})
 
                 if(resp.status == 200 && !hasError(resp)) {
                   showToast(translate('Order unpacked successfully'))
                   // TODO: handle the case of data not updated correctly
-                  await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+                  await Promise.all([this.store.dispatch('maargorder/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
                   throw resp.data
                 }
@@ -638,16 +586,11 @@ export default defineComponent({
     },
     hasPackedShipments(order: any) {
       // TODO check if ternary check is needed or we could handle on UI
-      return order.shipments ? Object.values(order.shipments).some((shipment: any) => shipment.statusId === 'SHIPMENT_PACKED') : {}
+      return order.statusId === 'SHIPMENT_PACKED'
     },
     async retryShippingLabel(order: any) {
       // Getting all the shipmentIds from shipmentPackages for which label is missing
-      const shipmentIds = order.shipmentPackages
-          ?.filter((shipmentPackage: any) => !shipmentPackage.trackingCode)
-          .reduce((uniqueIds: any[], shipmentPackage: any) => {
-            if(!uniqueIds.includes(shipmentPackage.shipmentId)) uniqueIds.push(shipmentPackage.shipmentId);
-            return uniqueIds;
-          }, []);
+      const shipmentIds = [order.shipmentId]
 
       // Don't make any api call when we does not have any shipmentIds for order
       if(!shipmentIds?.length) {
@@ -656,10 +599,10 @@ export default defineComponent({
       }
 
       // TODO Handle error case
-      const resp = await OrderService.retryShippingLabel(shipmentIds)
+      const resp = await MaargOrderService.retryShippingLabel(shipmentIds)
       if (!hasError(resp)) {
         //Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
-        await this.store.dispatch('order/updateShipmentPackageDetail', order)
+        await this.store.dispatch('maargorder/updateShipmentPackageDetail', order)
         order = this.completedOrders.list.find((completedOrder:any) => completedOrder.orderId === order.orderId);
 
         showToast(translate("Shipping Label generated successfully"))
@@ -677,24 +620,35 @@ export default defineComponent({
         return;
       }
 
-      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId)
+      const shipmentIds = [order.shipmentId]
       order.isGeneratingPackingSlip = true;
-      await OrderService.printPackingSlip(shipmentIds);
+      await MaargOrderService.printPackingSlip(shipmentIds);
       order.isGeneratingPackingSlip = false;
     },
     async printShippingLabel(order: any) {
-      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId)
-      const shippingLabelPdfUrls = order.shipmentPackages
-          ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
-          .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+      const shipmentIds = [order.shipmentId]
+
+      const shippingLabelPdfUrls: string[] = Array.from(
+        new Set(
+          (order.shipmentPackageRouteSegDetail ?? [])
+            .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+            .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+        )
+      );
+                  
       if(!shipmentIds?.length) {
         showToast(translate('Failed to generate shipping label'))
         return
       }
 
-      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
-      if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
-        await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
+      await MaargOrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+      
+      const internationalInvoiceUrls = order.shipmentPackageRouteSegDetail
+          ?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl)
+          .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) || [];
+
+      if (internationalInvoiceUrls.length > 0) {
+        await MaargOrderService.printCustomDocuments(internationalInvoiceUrls);
       }
     },
     async regenerateShippingLabel(order: any) {
@@ -735,10 +689,10 @@ export default defineComponent({
       this.store.dispatch('stock/fetchStock', { productId })
     },
     isTrackingRequiredForAnyShipmentPackage(order: any) {
-      return order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
+      return order.shipmentPackageRouteSegDetail?.some((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.isTrackingRequired === 'Y')
     },
     hasAnyShipmentTrackingInfoMissing() {
-      return this.completedOrders.list.some((order: any) => (order.shipmentPackages && (this.isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode)))
+      return this.completedOrders.list.some((order: any) => (order.shipmentPackageRouteSegDetail && (this.isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingIdNumber)))
     },
     async orderActionsPopover(order: any, ev: Event) {
       const popover = await popoverController.create({
@@ -760,7 +714,7 @@ export default defineComponent({
 
       modal.onDidDismiss().then((result: any) => {
         if(result.data?.isGCActivated) {
-          this.store.dispatch("order/updateCurrentItemGCActivationDetails", { item, category: "completed", isDetailsPage: false })
+          this.store.dispatch("maargorder/updateCurrentItemGCActivationDetails", { item, category: "completed", isDetailsPage: false })
         }
       })
 

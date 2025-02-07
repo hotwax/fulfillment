@@ -234,6 +234,22 @@ const findInProgressOrders = async (payload: any): Promise <any>  => {
   });
 }
 
+const findCompletedOrders = async (payload: any): Promise <any>  => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/poorti/shipments`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params: payload
+  });
+}
+
 const fetchPicklists = async (payload: any): Promise <any>  => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -331,11 +347,71 @@ const addShipmentBox = async (payload: any): Promise<any> => {
     data: payload,
   });
 }
+const shipOrder = async (payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/poorti/shipShipment`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload,
+  });
+}
+const bulkShipOrders = async (payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/poorti/shipShipments`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload,
+  });
+}
+
+const unpackOrder = async (payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/poorti/unpack`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload,
+  });
+}
+
+const retryShippingLabel = async (shipmentIds: Array<string>, forceRateShop = false): Promise<any> => {
+  return api({
+    method: 'POST',
+    url: 'retryShippingLabel',  // TODO: update the api
+    data: {
+      shipmentIds,
+      forceRateShop: forceRateShop ? 'Y' : 'N',
+      generateLabel: "Y" // This is needed to generate label after the new changes in backend related to auto generation of label.
+    }
+  })
+}
 
 export const MaargOrderService = {
   addShipmentBox,
+  bulkShipOrders,
   createPicklist,
   fetchPicklists,
+  findCompletedOrders,
   findInProgressOrders,
   findOpenOrders,
   packOrder,
@@ -347,5 +423,8 @@ export const MaargOrderService = {
   printShippingLabelAndPackingSlip,
   recycleOutstandingOrders,
   recycleInProgressOrders,
-  resetPicker
+  resetPicker,
+  retryShippingLabel,
+  shipOrder,
+  unpackOrder
 }

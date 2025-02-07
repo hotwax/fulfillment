@@ -136,6 +136,83 @@ const actions: ActionTree<OrderState, RootState> = {
     emitter.emit('dismissLoader');
     return resp;
   },
+
+  async findCompletedOrders ({ commit, state }, payload = {}) {
+    emitter.emit('presentLoader');
+    let resp;
+    let orders = [];
+    let total = 0;
+
+    const completedOrderQuery = JSON.parse(JSON.stringify(state.completed.query))
+
+    try {
+      const params = {
+        ...payload,
+        keyword: completedOrderQuery.queryString,
+        pageSize: completedOrderQuery.viewSize,
+        orderBy: 'orderDate',
+        statusId: ['SHIPMENT_PACKED', 'SHIPMENT_SHIPPED'],
+        statusId_op: "in",
+        shipmentTypeId: 'SALES_SHIPMENT', 
+        facilityId: getCurrentFacilityId(),
+        productStoreId: getProductStoreId(),
+      }
+
+      // preparing filters separately those are based on some condition
+      if(completedOrderQuery.selectedCarrierPartyIds.length) {
+        params.carrierPartyId = completedOrderQuery.selectedCarrierPartyIds,
+        params.carrierPartyId_op = 'in' 
+      }
+  
+      // only adding shipmentMethods when a method is selected
+      if(completedOrderQuery.selectedShipmentMethods.length) {
+        params.shipmentMethodTypeId = completedOrderQuery.selectedShipmentMethods
+        params.shipmentMethodTypeId_op = "in"
+      }
+
+      resp = await MaargOrderService.findCompletedOrders(params);
+      if (!hasError(resp)) {
+        total = resp.data.shipmentCount
+        orders = resp.data.shipments
+
+        const productIds = [
+          ...new Set(orders.flatMap((order:any) => order.items.map((item:any) => item.productId)))
+        ];
+
+        // TODO get only product visible
+        await this.dispatch('product/fetchProducts', { productIds })
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('No completed orders found', err)
+    }
+
+    completedOrderQuery.viewSize = total
+
+    commit(types.ORDER_COMPLETED_QUERY_UPDATED, { ...completedOrderQuery })
+    commit(types.ORDER_COMPLETED_UPDATED, {list: orders, total})
+  
+
+    emitter.emit('dismissLoader');
+    return resp;
+  },
+  
+  async updateOpenQuery({ commit, dispatch }, payload) {
+      commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
+      await dispatch('findOpenOrders');
+  },
+  async clearOpenOrders({ commit }) {
+      commit(types.ORDER_OPEN_CLEARED)
+  },
+  
+  async updateInProgressQuery({ commit, dispatch }, payload) {
+      commit(types.ORDER_INPROGRESS_QUERY_UPDATED, payload)
+      await dispatch('findInProgressOrders');
+  },
+  async clearInProgressOrders({ commit }) {
+    commit(types.ORDER_INPROGRESS_CLEARED)
+  },
   updateInProgressOrder ({ commit, state }, updatedOrder) {
     const orders = state.inProgress.list.map((order: any) => {
       if (updatedOrder.shipmentId === order.shipmentId) {
@@ -149,20 +226,21 @@ const actions: ActionTree<OrderState, RootState> = {
 
     commit(types.ORDER_INPROGRESS_UPDATED, {orders, total: state.inProgress.total})
   },
-  async updateOpenQuery({ commit, dispatch }, payload) {
-      commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
-      await dispatch('findOpenOrders');
+  async updateCompletedQuery({ commit, dispatch }, payload) {
+    commit(types.ORDER_COMPLETED_QUERY_UPDATED, payload)
+    await dispatch('findCompletedOrders');
   },
-  async clearOpenOrders({ commit }) {
-      commit(types.ORDER_OPEN_CLEARED)
+  async updateInProgressIndex({ commit, dispatch }, payload) {
+    commit(types.ORDER_INPROGRESS_QUERY_UPDATED, payload)
   },
-  async clearInProgressOrders({ commit }) {
-      commit(types.ORDER_INPROGRESS_CLEARED)
+
+  async updateCompletedOrderIndex({ commit }, payload) {
+    commit(types.ORDER_COMPLETED_QUERY_UPDATED, payload)
   },
-  async updateInProgressQuery({ commit, dispatch }, payload) {
-      commit(types.ORDER_INPROGRESS_QUERY_UPDATED, payload)
-      await dispatch('findInProgressOrders');
-  }
+
+  async updateOpenOrderIndex({ commit }, payload) {
+    commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
+  },
 }
 
 export default actions;
