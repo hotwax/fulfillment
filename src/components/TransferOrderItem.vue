@@ -40,7 +40,7 @@
           <ion-label>{{ getRejectionReasonDescription(item.rejectReasonId) }}</ion-label>
           <ion-icon :icon="caretDownOutline"/>
         </ion-chip>
-        <ion-chip outline v-else-if="isAnyItemSelectedForRejection" @click="openRejectReasonPopover($event, item)">
+        <ion-chip outline color="danger" v-else-if="isAnyItemSelectedForRejection" @click="openRejectReasonPopover($event, item)">
           <ion-label>{{ getRejectionReasonDescription(defaultRejectReasonId) }}</ion-label>
           <ion-icon :icon="caretDownOutline"/>
         </ion-chip>
