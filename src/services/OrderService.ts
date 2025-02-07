@@ -58,98 +58,6 @@ const fetchOrderItems = async (orderId: string): Promise<any> => {
   return orderItems
 }
 
-const fetchRejectedOrderItems = async (orderId: string): Promise<any> => {
-  let viewIndex = 0;
-  let orderItems = [] as any, resp;
-
-  try {
-    do {
-      resp = await api({
-        url: "performFind",
-        method: "get",
-        params : {
-          "entityName": "OrderItemAndShipGroup",
-          "inputFields": {
-            "orderId": orderId,
-            "facilityId": "REJECTED_ITM_PARKING"  // When rejecting order items they will be moved to mentioned parking
-          },
-          "fieldList": ["orderId", "orderItemSeqId", "productId", "shipGroupSeqId", "facilityId"],
-          "viewIndex": viewIndex,
-          "viewSize": 250,  // maximum records we could have
-          "distinct": "Y",
-          "noConditionFind": "Y"
-        }
-      }) as any;
-
-      if (!hasError(resp) && resp.data.count) {
-        orderItems = orderItems.concat(resp.data.docs)
-        viewIndex++;
-      } else {
-        throw resp.data;
-      }
-    }
-    while (resp.data.docs.length >= 250);
-  } catch (error) {
-    logger.error(error);
-  }
-  return orderItems
-}
-
-const fetchOrderItemRejectionInfo = async(orderItems: Array<any>, orderId: string): Promise<any> => {
-  let rejectedItemsInfo = [] as Array<any>;
-  const rejectedItemIds = orderItems.map((item: any) => item.productId);
-
-  const filters = {
-    productId_s: { value: rejectedItemIds },
-    orderId_s: { value: orderId }
-  }
-
-  const query = prepareSolrQuery({
-    coreName: "logInsights",
-    docType: "FULFILLMENT_REJECTION",
-    viewIndex: 0,
-    viewSize: rejectedItemIds.length,
-    sort: 'rejectedAt_dt desc',
-    filters
-  })
-
-  try {
-    const resp = await api({
-      url: "solr-query",
-      method: "post",
-      data: query
-    }) as any;
-
-    if(!hasError(resp) && resp?.data?.response?.docs?.length > 0) {
-      const rejectionReasons = store.getters["transferorder/getRejectReasons"]
-
-      const items = orderItems.reduce((items: any, item: any) => {
-        items[item.productId] = item
-        return items;
-      }, {})
-      rejectedItemsInfo = resp?.data?.response?.docs.map((item: any) => ({
-        ...items[item.productId_s],
-        orderId: item.orderId_s,
-        orderItemSeqId: item.orderItemSeqId_s,
-        itemDescription: item.itemDescription_txt_en,
-        rejectedBy: item.rejectedBy_txt_en,
-        rejectedAt: item.rejectedAt_dt,
-        rejectionReasonId: item.rejectionReasonId_txt_en,
-        rejectionReasonDesc: rejectionReasons?.find((reason: any) => reason.enumId === item.rejectionReasonId_txt_en)?.description || item.rejectionReasonId_txt_en,
-        brokeredAt: item.brokeredAt_dt,
-        brokeredBy: item.brokeredBy_txt_en
-      }))
-    } else {
-      throw resp.data;
-    }
-  } catch(err) {
-    logger.error("Rejection information not found for items")
-    return orderItems;
-  }
-
-  return rejectedItemsInfo;
-}
-
 const fetchShippedQuantity = async (orderId: string): Promise<any> => {
   let docCount = 0;
   let shippedItemQuantitySum = [] as any
@@ -1005,9 +913,7 @@ export const OrderService = {
   fetchAdditionalShipGroupForOrder,
   fetchOrderAttribute,
   fetchOrderHeader,
-  fetchOrderItemRejectionInfo,
   fetchOrderItems,
-  fetchRejectedOrderItems,
   fetchRejectReasons,
   fetchShipmentCarrierDetail,
   fetchShipmentItems,

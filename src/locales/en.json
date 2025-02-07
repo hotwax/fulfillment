@@ -206,7 +206,7 @@
   "Failed to send to Retail Pro Server due to the following error, please contact support:.": "Failed to send to Retail Pro Server due to the following error, please contact support: {message}.",
   "Failed to ship order": "Failed to ship order",
   "Failed to reject in progress orders": "Failed to reject in progress orders",
-  "Failed to reject order items": "Failed to reject order items",
+  "Failed to reject order": "Failed to reject order",
   "Failed to reject outstanding orders": "Failed to reject outstanding orders",
   "Failed to remove rejection reason.": "Failed to remove rejection reason.",
   "Failed to update carrier and shipment method association.": "Failed to update carrier and shipment method association.",

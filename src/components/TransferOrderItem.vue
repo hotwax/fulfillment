@@ -34,14 +34,18 @@
         <ion-progress-bar :color="getProgressBarColor(item)" :value="getPickedToOrderedFraction(item)" />
       </div>
 
-      <div class="to-item-history" v-if="isRejectionSupported && !getShippedQuantity(item)">
-        <ion-chip outline v-if="!item.rejectReasonId" @click="openRejectReasonPopover($event, item)">
-          <ion-label>{{ translate("Report an issue") }}</ion-label>
-          <ion-icon :icon="caretDownOutline"/>
-        </ion-chip>
-        <ion-chip outline color="danger" v-else @click="openRejectReasonPopover($event, item)">
+      <div class="to-item-history" v-if="isRejectionSupported && !isAnyItemShipped">
+        <ion-chip outline color="danger" v-if="item.rejectReasonId" @click="openRejectReasonPopover($event, item)">
           <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason(item)"/>
           <ion-label>{{ getRejectionReasonDescription(item.rejectReasonId) }}</ion-label>
+          <ion-icon :icon="caretDownOutline"/>
+        </ion-chip>
+        <ion-chip outline v-else-if="isAnyItemSelectedForRejection" @click="openRejectReasonPopover($event, item)">
+          <ion-label>{{ getRejectionReasonDescription(defaultRejectReasonId) }}</ion-label>
+          <ion-icon :icon="caretDownOutline"/>
+        </ion-chip>
+        <ion-chip outline v-else @click="openRejectReasonPopover($event, item)">
+          <ion-label>{{ translate("Report an issue") }}</ion-label>
           <ion-icon :icon="caretDownOutline"/>
         </ion-chip>
       </div>
@@ -106,7 +110,8 @@ export default defineComponent({
   data() {
     return {
       pickedQuantity: this.itemDetail.pickedQuantity,
-      item: this.itemDetail
+      item: this.itemDetail,
+      defaultRejectReasonId: "NO_VARIANCE_LOG"  // default variance reason, to be used when any other item is selected for rejection
     }
   },
   computed: {
@@ -116,6 +121,12 @@ export default defineComponent({
       isForceScanEnabled: 'util/isForceScanEnabled',
       rejectReasons: "transferorder/getRejectReasons"
     }),
+    isAnyItemSelectedForRejection() {
+      return this.currentOrder.items.some((item: any) => item.rejectReasonId)
+    },
+    isAnyItemShipped() {
+      return !!Object.keys(this.currentOrder?.shippedQuantityInfo)?.length
+    }
   },
   methods: {
     getProgressBarColor(item: any) {

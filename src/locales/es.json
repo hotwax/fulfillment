@@ -203,7 +203,7 @@
   "Failed to send to Retail Pro Server due to the following error, please contact support:.": "Erro al enviar al servidor de Ratail Pro debido al siguiente error, por favor contactar a soporte: {message}.",
   "Failed to ship order": "Error al enviar el pedido",
   "Failed to reject in progress orders": "Error al rechazar pedidos en curso",
-  "Failed to reject order items": "Failed to reject order items",
+  "Failed to reject order": "Failed to reject order",
   "Failed to reject outstanding orders": "Error al rechazar pedidos pendientes",
   "Failed to remove rejection reason.": "Error al eliminar la razon de rechazo.",
   "Failed to update carrier and shipment method association.": "Error al actualizar transportadora y asociación de metodo de envio.",

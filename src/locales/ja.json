@@ -206,7 +206,7 @@
   "Failed to send to Retail Pro Server due to the following error, please contact support:.": "Failed to send to Retail Pro Server due to the following error, please contact support: {message}.",
   "Failed to ship order": "注文の出荷に失敗しました",
   "Failed to reject in progress orders": "進行中の注文の拒否に失敗しました",
-  "Failed to reject order items": "Failed to reject order items",
+  "Failed to reject order": "Failed to reject order",
   "Failed to reject outstanding orders": "未処理の注文の拒否に失敗しました",
   "Failed to remove rejection reason.": "拒否理由の削除に失敗しました。",
   "Failed to update carrier and shipment method association.": "キャリアと出荷方法の関連付けの更新に失敗しました。",

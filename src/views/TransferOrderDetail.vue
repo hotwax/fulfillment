@@ -36,9 +36,6 @@
             <ion-segment-button value="completed">
               <ion-label>{{ translate("Completed") }}</ion-label>
             </ion-segment-button>
-            <ion-segment-button value="rejected">
-              <ion-label>{{ translate("Rejected") }}</ion-label>
-            </ion-segment-button>
           </ion-segment>
           <div class="segments" v-if="currentOrder">
             <template v-if="selectedSegment === 'open'">
@@ -51,7 +48,7 @@
                 </div>
               </template>
             </template>
-            <template v-else-if="selectedSegment === 'completed'">
+            <template v-else>
               <template v-if="getShipments('shipped')?.length > 0">
                 <ion-card class="order" v-for="(shipment, index) in getShipments('shipped')" :key="index">
                   <div class="order-header">
@@ -105,47 +102,6 @@
                       </ion-button>
                       <ion-button v-if="!shipment.trackingIdNumber" fill="outline" @click.stop="showShippingLabelErrorModal(shipment)">{{ translate("Shipping label error") }}</ion-button>
                     </div>
-                  </div>
-                </ion-card>
-              </template>
-              <template v-else>
-                <div class="empty-state">
-                  <p>{{ translate('No data available') }}</p>
-                </div>
-              </template>
-            </template>
-            <template v-else>
-              <template v-if="currentOrder.rejectedItems?.length > 0">
-                <ion-card v-for="item in currentOrder.rejectedItems" :key="item.orderItemSeqId">
-                  <div class="list-item">
-                    <div class="product-info">
-                      <ion-item lines="none">
-                        <ion-thumbnail slot="start">
-                          <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
-                        </ion-thumbnail>
-                        <ion-label class="ion-text-wrap">
-                          <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                          {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
-                          <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
-                        </ion-label>
-                      </ion-item>
-                    </div>
-                    <ion-label>
-                      {{ formatUtcDate(item.rejectedAt, "dd MMMM yyyy hh:mm a ZZZZ")}}
-                      <p>{{ translate("rejected time") }}</p>
-                    </ion-label>
-                    <ion-label>
-                      {{ item.quantity }}
-                      <p>{{ translate("ordered") }}</p>
-                    </ion-label>
-                    <ion-label>
-                      {{ item.rejectionReasonDesc }}
-                      <p>{{ translate("rejection reason") }}</p>
-                    </ion-label>
-                    <ion-chip outline>
-                      <ion-icon :icon="personCircleOutline" />
-                      <ion-label>{{ item.rejectedBy }}</ion-label>
-                    </ion-chip>
                   </div>
                 </ion-card>
               </template>
@@ -213,7 +169,7 @@
   import Scanner from "@/components/Scanner.vue";
   import { Actions, hasPermission } from '@/authorization'
   import { DateTime } from 'luxon';
-  import { formatUtcDate, getFeature, showToast } from '@/utils';
+  import { getFeature, showToast } from '@/utils';
   import { hasError } from '@/adapter';
   import { OrderService } from '@/services/OrderService'
   import TransferOrderItem from '@/components/TransferOrderItem.vue'
@@ -253,7 +209,8 @@
         queryString: '',
         selectedSegment: 'open',
         isCreatingShipment: false,
-        lastScannedId: ''
+        lastScannedId: '',
+        defaultRejectReasonId: "NO_VARIANCE_LOG"  // default variance reason, to be used when any other item is selected for rejection
       }
     },
     async ionViewWillEnter() {
@@ -445,11 +402,9 @@
           items: []
         } as any
 
-        const itemsToReject = this.currentOrder.items.filter((item: any) => item.rejectReasonId)
-
-        itemsToReject.map((item: any) => {
+        this.currentOrder.items.map((item: any) => {
           payload.items.push({
-            rejectReason: item.rejectReasonId,
+            rejectReason: item.rejectReasonId || this.defaultRejectReasonId,
             facilityId: this.currentOrder.facilityId,
             orderItemSeqId: item.orderItemSeqId,
             shipmentMethodTypeId: this.currentOrder.shipmentMethodTypeId,
@@ -462,14 +417,16 @@
           const resp = await OrderService.rejectOrderItems({ payload });
 
           if(!hasError(resp) && resp.data?.rejectedItemsList.length) {
-            await this.store.dispatch("transferorder/fetchTransferOrderDetail", { orderId: this.$route.params.orderId })
-            showToast(translate("Order items are rejected"))
+            showToast(translate("All order items are rejected"))
+            this.$router.replace("/transfer-orders")
           } else {
             throw resp;
           }
         } catch(err) {
           logger.error(err);
-          showToast(translate("Failed to reject order items"))
+          showToast(translate("Failed to reject order"))
+          // If there is any error in rejecting the order, fetch the updated order information
+          await this.store.dispatch("transferorder/fetchTransferOrderDetail", { orderId: this.$route.params.orderId })
         }
 
         emitter.emit("dismissLoader")
@@ -493,7 +450,6 @@
         add,
         barcodeOutline,
         checkmarkDone,
-        formatUtcDate,
         getFeature,
         getProductIdentificationValue,
         hasPermission,
@@ -523,14 +479,6 @@
       Done this because currently ion-item inside ion-card is not inheriting highlighted background property.
     */
     outline: 2px solid var( --ion-color-medium-tint);
-  }
-
-  ion-thumbnail {
-    cursor: pointer;
-  }
-
-  .list-item {
-    --columns-desktop: 5;
   }
   </style>
   

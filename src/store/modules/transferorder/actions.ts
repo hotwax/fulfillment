@@ -101,13 +101,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
          orderDetail = resp.data.docs?.[0];
          
         //fetch order items
-        const orderItems = await OrderService.fetchOrderItems(payload.orderId);
-        const rejectedItems = await OrderService.fetchRejectedOrderItems(payload.orderId);
-
-        const rejectedItemsSeqId = rejectedItems?.map((item: any) => item.orderItemSeqId)
-        orderDetail.rejectedItems = orderItems?.filter((item: any) => rejectedItemsSeqId.includes(item.orderItemSeqId))
-        orderDetail.items = orderItems?.filter((item: any) => !rejectedItemsSeqId.includes(item.orderItemSeqId))
-
+        orderDetail.items = await OrderService.fetchOrderItems(payload.orderId);
         if (orderDetail?.items?.length > 0) {
           orderDetail.items.forEach((item: any) => {
             item.pickedQuantity = 0;
@@ -121,15 +115,9 @@ const actions: ActionTree<TransferOrderState, RootState> = {
             shippedQuantityInfo[doc.orderItemSeqId] = doc.shippedQuantity;
           });
           orderDetail.shippedQuantityInfo = shippedQuantityInfo;
-        }
 
-        if(orderDetail?.rejectedItems?.length) {
-          orderDetail.rejectedItems = await OrderService.fetchOrderItemRejectionInfo(orderDetail.rejectedItems, orderDetail.orderId)
-        }
-
-        if(orderItems?.length) {
           //fetch product details
-          const productIds = [...new Set(orderItems.map((item:any) => item.productId))];
+          const productIds = [...new Set(orderDetail.items.map((item:any) => item.productId))];
   
           const batchSize = 250;
           const productIdBatches = [];
@@ -138,7 +126,6 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           }
           await Promise.all([productIdBatches.map((productIds) => this.dispatch('product/fetchProducts', { productIds })), this.dispatch('util/fetchStatusDesc', [orderDetail.statusId])])
         }
-
         commit(types.ORDER_CURRENT_UPDATED, orderDetail)
       } else {
         throw resp.data;
