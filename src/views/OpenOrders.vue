@@ -24,17 +24,17 @@
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
       <ion-searchbar class="searchbar" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)"/>
+      <div class="filters">
+        <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
+          <ion-checkbox label-placement="end" @ionChange="updateSelectedShipmentMethods(method.val)">
+            <ion-label>
+              {{ getShipmentMethodDesc(method.val) }}
+              <p>{{ method.ordersCount }} {{ translate("orders") }}, {{ method.count }} {{ translate("items") }}</p>
+            </ion-label>
+          </ion-checkbox>
+        </ion-item>
+      </div>
       <div v-if="openOrders.total">
-        <div class="filters">
-          <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
-            <ion-checkbox label-placement="end" @ionChange="updateSelectedShipmentMethods(method.val)">
-              <ion-label>
-                {{ getShipmentMethodDesc(method.val) }}
-                <p>{{ method.ordersCount }} {{ translate("orders") }}, {{ method.count }} {{ translate("items") }}</p>
-              </ion-label>
-            </ion-checkbox>
-          </ion-item>
-        </div>
 
         <div class="results">
           <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picklist") }}</ion-button>
