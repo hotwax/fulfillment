@@ -20,13 +20,6 @@ const userModule: Module<UserState, RootState> = {
         updateExists: false,
         registration: null,
       },
-      fieldMappings: {},
-      currentMapping: {
-        id: '',
-        mappingType: '',
-        name: '',
-        value: {}
-      },
       notifications: [],
       notificationPrefs: [],
       firebaseDeviceId: '',
