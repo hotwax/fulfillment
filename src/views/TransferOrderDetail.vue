@@ -8,7 +8,7 @@
       </ion-header>
   
       <ion-content>
-        <main>
+        <main v-if="currentOrder.orderId">
           <ion-item lines="none">
             <ion-label>
               <p class="overline">{{ currentOrder.orderId }}</p>
@@ -113,6 +113,9 @@
             </template>
           </div>
         </main>
+        <div class="empty-state" v-else>
+          <p>{{ translate('No data available') }}</p>
+        </div>
       </ion-content>
       <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment === 'open'">
         <ion-toolbar>
@@ -216,8 +219,13 @@
     async ionViewWillEnter() {
       emitter.emit('presentLoader');
       await this.store.dispatch("transferorder/fetchRejectReasons");
-      await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
-      await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.$route.params.orderId });
+      try {
+        await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
+        await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.$route.params.orderId });
+      } catch(err) {
+        logger.error(err)
+      }
+
       emitter.emit('dismissLoader');
     },
     computed: {

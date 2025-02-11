@@ -87,11 +87,12 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     let resp;
     try {
       const params = {
-        "entityName": "OrderHeaderAndShipGroups",
+        "entityName": "OrderHeaderItemAndShipGroup",
         "inputFields": {
           "orderId": payload.orderId,
+          "oisgFacilityId": escapeSolrSpecialChars(getCurrentFacilityId())
         },
-        "fieldList": ["orderId", "orderName", "externalId", "orderTypeId", "statusId", "orderDate", "shipGroupSeqId", "facilityId", "orderFacilityId"],
+        "fieldList": ["orderId", "orderName", "externalId", "orderTypeId", "statusId", "orderDate", "shipGroupSeqId", "oisgFacilityId", "orderFacilityId"],
         "viewSize": 1,
         "distinct": "Y"
       }
@@ -99,6 +100,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       resp = await OrderService.fetchOrderHeader(params);
       if (!hasError(resp)) {
          orderDetail = resp.data.docs?.[0];
+         orderDetail["facilityId"] = orderDetail.oisgFacilityId
          
         //fetch order items
         orderDetail.items = await OrderService.fetchOrderItems(payload.orderId);
