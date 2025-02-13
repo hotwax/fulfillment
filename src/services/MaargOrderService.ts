@@ -4,14 +4,88 @@ import { showToast } from '@/utils';
 import { translate } from '@hotwax/dxp-components';
 import logger from '@/logger'
 import { cogOutline } from 'ionicons/icons';
+import { escapeSolrSpecialChars, prepareSolrQuery } from '@/utils/solrHelper'
+import { getCurrentFacilityId, getProductStoreId } from '@/utils'
 
-const findOpenOrders = async (query: any): Promise<any> => {
-  return api({
-    // TODO: We can replace this with any API
-    url: "solr-query",
-    method: "post",
-    data: query
-  });
+const findOpenOrders = async (payload: any): Promise<any> => {
+  const openOrderQuery = payload.openOrderQuery
+  const shipGroupFilter = openOrderQuery.shipGroupFilter
+
+  const params = {
+    docType: 'ORDER',
+    queryString: openOrderQuery.queryString,
+    queryFields: 'productId productName parentProductName orderId orderName customerEmailId customerPartyId customerPartyName  search_orderIdentifications goodIdentifications',
+    viewSize: openOrderQuery.viewSize,
+    sort: payload.sort ? payload.sort : "orderDate asc",
+    filters: {
+      '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+      '-fulfillmentStatus': { value: '[* TO *]' },
+      orderStatusId: { value: 'ORDER_APPROVED' },
+      orderTypeId: { value: 'SALES_ORDER' },
+      facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
+      productStoreId: { value: getProductStoreId() }
+    }
+  } as any
+
+  if (shipGroupFilter && Object.keys(shipGroupFilter).length) {
+    Object.assign(params.filters, shipGroupFilter);
+  }
+
+  if (openOrderQuery.orderId) {
+    params.filters['orderId'] = { value:  openOrderQuery.orderId }
+  }
+  if (openOrderQuery.groupBy) {
+    params.isGroupingRequired = true
+    params.groupBy = openOrderQuery.groupBy
+  } else {
+    params.isGroupingRequired = true
+    params.groupBy = "orderId"
+    payload.groupBy = "orderId"
+  }
+
+  // only adding shipmentMethods when a method is selected
+  if(openOrderQuery.selectedShipmentMethods.length) {
+    params.filters['shipmentMethodTypeId'] = { value: openOrderQuery.selectedShipmentMethods, op: 'OR' }
+  }
+
+  const orderQueryPayload = prepareSolrQuery(params)
+  let orders = [], total = 0, resp;
+
+  try {
+    console.log("===========orderQueryPayload=", orderQueryPayload)
+    resp = await api({
+      url: "solr-query",
+      method: "post",
+      data: orderQueryPayload
+    }) as any;
+    if (!hasError(resp) && resp.data.grouped[payload.groupBy]?.matches > 0) {
+      total = resp.data.grouped[payload.groupBy].ngroups
+      orders = resp.data.grouped[payload.groupBy].groups
+
+      orders = orders.map((order: any) => {
+        const orderItem = order.doclist.docs[0];
+
+        return {
+          category: 'open',
+          customerId: orderItem.customerPartyId,
+          customerName: orderItem.customerPartyName,
+          orderId: orderItem.orderId,
+          orderDate: orderItem.orderDate,
+          orderName: orderItem.orderName,
+          groupValue: order.groupValue,
+          items: order.doclist.docs,
+          shipGroupSeqId: orderItem.shipGroupSeqId,
+          shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
+          reservedDatetime: orderItem.reservedDatetime
+        }
+      })
+    } else {
+      throw resp.data
+    }
+  } catch (err) {
+    logger.error('No outstanding orders found', err)
+  }
+  return { orders, total }
 }
 
 const createPicklist = async (payload: any): Promise <any>  => {
@@ -218,36 +292,80 @@ const recycleOutstandingOrders = async(payload: any): Promise<any> => {
   });
 }
 
-const findInProgressOrders = async (payload: any): Promise <any>  => {
+const findShipments = async (query: any): Promise <any>  => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
+  const productStoreShipmentMethCount = store.getters['util/getProductStoreShipmentMethCount'];
+  
+  let orders = [], total = 0;
 
-  return client({
-    url: `/poorti/shipments`,
-    method: "GET",
-    baseURL,
-    headers: {
-      "api_key": omsRedirectionInfo.token,
-      "Content-Type": "application/json"
-    },
-    params: payload
-  });
-}
+  try {
+    const params = {
+      keyword: query.queryString,
+      pageSize: query.viewSize,
+      orderBy: 'orderDate',
+      shipmentTypeId: 'SALES_SHIPMENT', 
+      facilityId: getCurrentFacilityId(),
+      productStoreId: getProductStoreId(),
+    } as any
+    
+    if (query.statusId) {
+      params.statusId = query.statusId
+      if (Array.isArray(query.statusId)) {
+        params.statusId_op = "in"
+      }
+    }
+    if (query.orderId) {
+      params.orderId = query.orderId
+    }
+    if (query.shipmentId) {
+      params.shipmentId = query.shipmentId
+      query.shipmentId_op && (params.shipmentId_op = query.shipmentId_op);
+      query.shipmentId_not && (params.shipmentId_not = query.shipmentId_not);
+    }
+    // preparing filters separately those are based on some condition
+    if (query.selectedPicklist) {
+      params.picklistId = query.selectedPicklist
+    }
 
-const findCompletedOrders = async (payload: any): Promise <any>  => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+    if(query.selectedCarrierPartyIds && query.selectedCarrierPartyIds.length) {
+      params.carrierPartyId = query.selectedCarrierPartyIds,
+      params.carrierPartyId_op = 'in' 
+    }
 
-  return client({
-    url: `/poorti/shipments`,
-    method: "GET",
-    baseURL,
-    headers: {
-      "api_key": omsRedirectionInfo.token,
-      "Content-Type": "application/json"
-    },
-    params: payload
-  });
+    // only adding shipmentMethods when a method is selected
+    if(query.selectedShipmentMethods && query.selectedShipmentMethods.length) {
+      params.shipmentMethodTypeId = query.selectedShipmentMethods
+      params.shipmentMethodTypeId_op = "in"
+    }
+
+    const resp = await client({
+      url: `/poorti/shipments`,
+      method: "GET",
+      baseURL,
+      headers: {
+        "api_key": omsRedirectionInfo.token,
+        "Content-Type": "application/json"
+      },
+      params
+    }) as any;
+    if (!hasError(resp)) {
+      total = resp.data.shipmentCount
+      orders = resp.data.shipments.map((shipment: any) => {
+        const missingLabelImage = productStoreShipmentMethCount > 0 ? shipment.shipmentPackageRouteSegDetail.some((shipmentPackageRouteSeg: any) => !shipmentPackageRouteSeg.trackingCode) : false;
+        return {
+          ...shipment,
+          missingLabelImage,
+          trackingCode: shipment.shipmentPackageRouteSegDetail[0]?.trackingCode || null,
+        };
+      });
+    } else {
+      throw resp.data
+    }
+  } catch (err) {
+    logger.error('No inProgress orders found', err)
+  }
+  return { orders, total }
 }
 
 const fetchPicklists = async (payload: any): Promise <any>  => {
@@ -395,25 +513,149 @@ const unpackOrder = async (payload: any): Promise<any> => {
 }
 
 const retryShippingLabel = async (shipmentIds: Array<string>, forceRateShop = false): Promise<any> => {
-  return api({
-    method: 'POST',
-    url: 'retryShippingLabel',  // TODO: update the api
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/poorti/retryShippingLabel`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     data: {
       shipmentIds,
       forceRateShop: forceRateShop ? 'Y' : 'N',
       generateLabel: "Y" // This is needed to generate label after the new changes in backend related to auto generation of label.
+    },
+  });
+}
+const fetchOrderAttributes = async (params: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/orders/${params.orderId}/attributes`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params,
+  });
+}
+
+const fetchShipmentLabelError = async (shipmentId: string): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+  let shipmentLabelError = []
+
+  try {
+    const resp = await client({
+      url: `/poorti/shipmentPackageRouteSegDetails`,
+      method: "GET",
+      baseURL,
+      headers: {
+        "api_key": omsRedirectionInfo.token,
+        "Content-Type": "application/json"
+      },
+      params: { shipmentId, fieldsToSelect: ["shipmentId", "gatewayMessage"], distinct: true },
+    });
+
+    if (hasError(resp)) {
+      throw resp.data;
     }
-  })
+    shipmentLabelError = resp.data.map((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.gatewayMessage);
+  } catch (err) {
+    logger.error('Failed to fetch shipment label error', err)
+  }
+  return shipmentLabelError;
+}
+
+const fetchShipmentPackageRouteSegDetails = async (shipmentId: string): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await client({
+    url: `/poorti/shipmentPackageRouteSegDetails`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params: { shipmentId },
+  });
+}
+
+const voidShipmentLabel = async (payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await client({
+    url: `/poorti/voidShipmentLabel`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload,
+  });
+}
+
+const updateOrderShippingMethod = async (payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await client({
+    url: `/poorti/updateOrderShippingMethod`, //should handle the update of OISG, SRG, SPRG if needed
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload,
+  });
+}
+const findOrderInvoicingInfo = async (query: any): Promise<any> => {
+  return api({
+    url: "solr-query",
+    method: "post",
+    data: query
+  });
+}
+
+const fetchOrderDetail = async (orderId: string): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await client({
+    url: `/oms/orders/${orderId}`, //should handle the update of OISG, SRG, SPRG if needed
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+  });
 }
 
 export const MaargOrderService = {
   addShipmentBox,
   bulkShipOrders,
   createPicklist,
+  fetchOrderAttributes,
+  fetchOrderDetail,
   fetchPicklists,
-  findCompletedOrders,
-  findInProgressOrders,
+  fetchShipmentLabelError,
+  fetchShipmentPackageRouteSegDetails,
   findOpenOrders,
+  findOrderInvoicingInfo,
+  findShipments,
   packOrder,
   packOrders,
   printCustomDocuments,
@@ -426,5 +668,7 @@ export const MaargOrderService = {
   resetPicker,
   retryShippingLabel,
   shipOrder,
-  unpackOrder
+  unpackOrder,
+  updateOrderShippingMethod,
+  voidShipmentLabel
 }

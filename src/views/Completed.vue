@@ -589,14 +589,8 @@ export default defineComponent({
       return order.statusId === 'SHIPMENT_PACKED'
     },
     async retryShippingLabel(order: any) {
-      // Getting all the shipmentIds from shipmentPackages for which label is missing
-      const shipmentIds = [order.shipmentId]
-
-      // Don't make any api call when we does not have any shipmentIds for order
-      if(!shipmentIds?.length) {
-        showToast(translate("Failed to generate shipping label"))
-        return;
-      }
+      //considering if any of the shipment package has missingLabel, retry label for the complete shipment 
+      const shipmentIds = [order.shipmentId] 
 
       // TODO Handle error case
       const resp = await MaargOrderService.retryShippingLabel(shipmentIds)

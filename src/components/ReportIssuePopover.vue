@@ -31,7 +31,6 @@ export default defineComponent({
       rejectReasonOptions: 'util/getRejectReasonOptions'
     })
   },
-  props: ["shipmentPackages"],
   methods: {
     closePopover() {
       popoverController.dismiss();

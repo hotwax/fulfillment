@@ -26,10 +26,9 @@
   import { defineComponent } from "vue";
   import { documentOutline, trashOutline } from "ionicons/icons";
   import { translate } from "@hotwax/dxp-components";
-  import { mapGetters, useStore } from "vuex";
-  import { OrderService } from '@/services/OrderService';
+  import { useStore } from "vuex";
+  import { MaargOrderService } from '@/services/MaargOrderService';
   import { showToast } from '@/utils'
-  import { hasError } from "@/adapter";
   import logger from '@/logger';
   
   export default defineComponent({
@@ -42,44 +41,31 @@
       IonListHeader
     },
     props: ['currentOrder'],
-    computed: {
-      ...mapGetters({
-        facilityProductStores: 'facility/getFacilityProductStores',
-        getProductStore: 'util/getProductStore',
-        productStores: 'util/getProductStores',
-        shopifyShopIdForProductStore: 'util/getShopifyShopIdForProductStore',
-        current: 'facility/getCurrent'
-      })
-    },
     methods: {
       async printShippingLabel(order: any) {
-        const shipmentIds = order?.shipmentIds?.length > 0 ? order?.shipmentIds : order.shipments?.map((shipment: any) => shipment.shipmentId);
-        const shippingLabelPdfUrls = order.shipmentPackages
-            ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
-            .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
-        await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+        const shipmentIds = [order.shipmentId];
+        const shippingLabelPdfUrls: string[] = Array.from(
+          new Set(
+            (order.shipmentPackageRouteSegDetail ?? [])
+              .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+              .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+          )
+        );
+
+        await MaargOrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
         popoverController.dismiss()
       },
       async voidShippingLabel(order: any) {
-        const shipmentIds = [] as any;
         let resp = {} as any;
         try {
-          for (const shipmentPackage of order.shipmentPackages) {
-            if(!shipmentIds.includes(shipmentPackage.shipmentId)) {
-              resp = await OrderService.voidShipmentLabel({
-                "shipmentId": shipmentPackage.shipmentId,
-                "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId
-              })
-  
-              if(hasError(resp)) {
-                throw resp.data;
-              }
-              shipmentIds.push(shipmentPackage.shipmentId);
-            }
-          }
+          resp = await MaargOrderService.voidShipmentLabel({
+            "shipmentId": order.shipmentId,
+            "shipmentRouteSegmentId": order.shipmentRouteSegmentId
+          })
+          
           showToast(translate("Shipping label voided successfully."))
           //fetching updated shipment packages
-          await this.store.dispatch('order/updateShipmentPackageDetail', order) 
+          await this.store.dispatch('maargorder/updateShipmentPackageDetail', order) 
         } catch (err) {
           logger.error('Failed to void shipping label', err);
           showToast(translate("Failed to void shipping label"));

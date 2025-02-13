@@ -705,39 +705,6 @@ const retryShippingLabel = async (shipmentIds: Array<string>, forceRateShop = fa
   })
 }
 
-const fetchShipmentLabelError = async (shipmentIds: Array<string>): Promise<any> => {
-  let shipmentLabelError = [];
-  const params = {
-    "entityName": "ShipmentPackageRouteSeg",
-    "inputFields": {
-      "shipmentId": shipmentIds,
-      "shipmentId_op": "in",
-      "gatewayMessage": null,
-      "gatewayMessage_op": "notEqual",
-      "gatewayStatus": "error", 
-      "gatewayStatus_op": "equals"
-    },
-    "fieldList": ["shipmentId", "gatewayMessage"],
-    "viewSize": 20,
-  }
-
-  try {
-    const resp: any = await api({
-      url: "performFind",
-      method: "get",
-      params
-    })
-
-    if (resp.status !== 200 || hasError(resp)) {
-      throw resp.data;
-    }
-    shipmentLabelError = resp.data.docs.map((doc: any) => doc.gatewayMessage);
-  } catch (err) {
-    logger.error('Failed to fetch shipment label error', err)
-  }
-  return shipmentLabelError;
-}
-
 const findOrderShipGroup = async (query: any): Promise<any> => {
   return api({
     // TODO: We can replace this with any API
@@ -919,7 +886,6 @@ export const OrderService = {
   updateShipment,
   updateShipmentPackageRouteSeg,
   updateShipmentRouteSegment,
-  fetchShipmentLabelError,
   fetchOrderItemShipGroup,
   fetchShippingAddress,
   fetchOrderPaymentPreferences,

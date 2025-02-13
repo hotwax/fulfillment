@@ -118,8 +118,18 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/:category/order-detail/:orderId/:shipGroupSeqId',
+    path: '/:category/order-detail/:orderId',
     name: 'OrderDetail',
+    component: OrderDetail,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_ORDER_DETAIL_VIEW"
+    }
+  },
+  {
+    path: '/:category/order-detail/:orderId/:shipmentId',
+    name: 'ShipmentDetail',
     component: OrderDetail,
     beforeEnter: authGuard,
     props: true,
