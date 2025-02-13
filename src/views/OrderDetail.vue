@@ -36,7 +36,7 @@
             <div class="order-primary-info">
               <ion-label>
                 <strong>{{ order.customerName }}</strong>
-                <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+                <p>{{ translate("Ordered") }} {{ category === 'open' ? formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') : getTime(order.orderDate) }}</p>
               </ion-label>
             </div>
             <div class="order-tags">
@@ -48,7 +48,7 @@
 
             <div class="order-metadata">
               <ion-label>
-                {{ order.shipmentMethodTypeDesc }}
+                {{ order.shipmentMethodTypeId }}
                 <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
               </ion-label>
             </div>
@@ -587,6 +587,9 @@ export default defineComponent({
     this.orderInvoiceExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderInvoice`})
   },
   methods: {
+    getTime(time: any) {
+      return DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED);
+    },
     async fetchShipmentLabelError() {
       const shipmentId = this.order?.shipmentId
       const labelErrors = await MaargOrderService.fetchShipmentLabelError(shipmentId);

@@ -66,7 +66,7 @@
 
               <div class="order-metadata">
                 <ion-label>
-                  {{ order.shipmentMethodTypeDesc }}
+                  {{ getShipmentMethodDesc(order.shipmentMethodTypeId) }}
                   <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ getTime(order.reservedDatetime) }}</p>
                 </ion-label>
               </div>
@@ -294,7 +294,7 @@ import {
 } from 'ionicons/icons'
 import PackagingPopover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
-import { copyToClipboard, formatUtcDate, getFeature, jsonToCsv, showToast } from '@/utils';
+import { copyToClipboard, getFeature, jsonToCsv, showToast } from '@/utils';
 import { isKit } from '@/utils/order'
 import { hasError } from '@/adapter';
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
@@ -366,7 +366,8 @@ export default defineComponent({
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
       affectQohConfig: 'user/getAffectQohConfig',
-      carrierShipmentBoxTypes: 'util/getCarrierShipmentBoxTypes'
+      carrierShipmentBoxTypes: 'util/getCarrierShipmentBoxTypes',
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
     }),
   },
   data() {
@@ -1206,7 +1207,6 @@ export default defineComponent({
       currentFacility,
       ellipsisVerticalOutline,
       fileTrayOutline,
-      formatUtcDate,
       getFeature,
       getProductIdentificationValue,
       gift,

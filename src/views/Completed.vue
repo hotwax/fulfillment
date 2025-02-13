@@ -63,8 +63,8 @@
 
               <div class="order-metadata">
                 <ion-label>
-                  {{ order.shipmentMethodTypeDesc }}
-                  <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+                  {{ getShipmentMethodDesc(order.shipmentMethodTypeId) }}
+                  <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ getTime(order.reservedDatetime) }}</p>
                   <p v-if="order.trackingIdNumber">{{ translate("Tracking Code") }} {{ order.trackingIdNumber }}</p>
                 </ion-label>
               </div>
@@ -207,7 +207,7 @@ import { caretDownOutline, chevronUpOutline, cubeOutline, printOutline, download
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
-import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
+import { copyToClipboard, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter'
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import { UtilService } from '@/services/UtilService';
@@ -735,7 +735,6 @@ export default defineComponent({
       currentFacility,
       downloadOutline,
       ellipsisVerticalOutline,
-      formatUtcDate,
       getFeature,
       getProductIdentificationValue,
       gift,
