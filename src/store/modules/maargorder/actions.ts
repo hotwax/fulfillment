@@ -31,16 +31,22 @@ const actions: ActionTree<OrderState, RootState> = {
 
   async findInProgressOrders ({ commit, dispatch, state }) {
     emitter.emit('presentLoader');
+    let orders = [];
 
     const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
     inProgressQuery.statusId = "SHIPMENT_APPROVED"
     const resp = await MaargOrderService.findShipments(inProgressQuery);
+    orders = (resp.orders || []).map((order: any) => ({
+      ...order,
+      category: 'in-progress'
+    }))
     
-    const productIds = [
-      ...new Set(resp.orders.flatMap((order:any) => order.items.map((item:any) => item.productId)))
-    ];
+    const productIds = [...new Set(orders.flatMap((order:any) => order.items.map((item:any) => item.productId)))];
+    const shipmentMethodTypeIds = [...new Set(orders.map((order:any) => order.shipmentMethodTypeId))];
+
     this.dispatch('product/fetchProducts', { productIds })
-    const orders = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: false, currentOrders: resp.orders})
+    this.dispatch('util/fetchShipmentMethodTypeDesc', shipmentMethodTypeIds);
+    orders = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: false, currentOrders: orders})
     inProgressQuery.viewSize = resp.total
 
     commit(types.ORDER_INPROGRESS_QUERY_UPDATED, { ...inProgressQuery })
@@ -56,12 +62,17 @@ const actions: ActionTree<OrderState, RootState> = {
     const completedOrderQuery = JSON.parse(JSON.stringify(state.completed.query))
     completedOrderQuery.statusId = ['SHIPMENT_PACKED', 'SHIPMENT_SHIPPED']
     const resp = await MaargOrderService.findShipments(completedOrderQuery);
+    orders = (resp.orders || []).map((order: any) => ({
+      ...order,
+      category: 'completed'
+    }))
     
-    const productIds = [
-      ...new Set(resp.orders.flatMap((order:any) => order.items.map((item:any) => item.productId)))
-    ];
-    await this.dispatch('product/fetchProducts', { productIds })
-    orders = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: false, currentOrders: resp.orders});
+    const productIds = [...new Set(orders.flatMap((order:any) => order.items.map((item:any) => item.productId)))];
+    const shipmentMethodTypeIds = [...new Set(orders.map((order:any) => order.shipmentMethodTypeId))];
+
+    this.dispatch('product/fetchProducts', { productIds })
+    this.dispatch('util/fetchShipmentMethodTypeDesc', shipmentMethodTypeIds);
+    orders = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: false, currentOrders: orders});
     completedOrderQuery.viewSize = resp.total
 
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, { ...completedOrderQuery })
@@ -96,6 +107,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const productIds = order.items.map((item: any) => item.productId)
     this.dispatch('product/fetchProducts', { productIds })
+    this.dispatch('util/fetchShipmentMethodTypeDesc', [order.shipmentMethodTypeId]);
     
     dispatch('updateCurrent', order)
     emitter.emit('dismissLoader');
@@ -131,8 +143,11 @@ const actions: ActionTree<OrderState, RootState> = {
     const resp = await MaargOrderService.findShipments(inProgressQuery);
 
     order = resp.orders[0];
+    order.category = 'in-progress'
+
     const productIds = order.items.map((item:any) => item.productId)
     this.dispatch('product/fetchProducts', { productIds })
+    this.dispatch('util/fetchShipmentMethodTypeDesc', [order.shipmentMethodTypeId]);
     order = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: true, currentOrders: [order]});
 
     await dispatch('updateCurrent', order)
@@ -163,9 +178,11 @@ const actions: ActionTree<OrderState, RootState> = {
     
     const resp = await MaargOrderService.findShipments(completedOrderQuery);
     order = resp?.orders[0]
+    order.category = 'completed'
 
     const productIds = order.items.map((item:any) => item.productId)
     this.dispatch('product/fetchProducts', { productIds })
+    this.dispatch('util/fetchShipmentMethodTypeDesc', [order.shipmentMethodTypeId]);
     order = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: true, currentOrders: [order]});
     await dispatch('updateCurrent', order)
     emitter.emit('dismissLoader');

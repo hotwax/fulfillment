@@ -350,11 +350,19 @@ const fetchPartyInformation = async (query: any): Promise <any>  => {
   });
 }
 
-const fetchShipmentMethodTypeDesc = async (query: any): Promise <any>  => {
-  return api({
-    url: "performFind",
-    method: "get",
-    params: query
+const fetchShipmentMethodTypeDesc = async (payload: any): Promise <any>  => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/shippingGateways/shipmentMethodTypes`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params: payload,
   });
 }
 

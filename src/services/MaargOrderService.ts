@@ -52,7 +52,6 @@ const findOpenOrders = async (payload: any): Promise<any> => {
   let orders = [], total = 0, resp;
 
   try {
-    console.log("===========orderQueryPayload=", orderQueryPayload)
     resp = await api({
       url: "solr-query",
       method: "post",

@@ -151,7 +151,7 @@ export default defineComponent({
       const payload = {
         facilityId: this.currentFacility?.facilityId,
         shipmentMethodTypeId: orderItems[0]?.shipmentMethodTypeId,
-        statusId: "PICKITEM_PENDING",
+        statusId: "PICKITEM_ASSIGNED",
         pickers: this.selectedPickers?.map(selectedPicker => ({
           partyId: selectedPicker.id,
           roleTypeId: "WAREHOUSE_PICKER"

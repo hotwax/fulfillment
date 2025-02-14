@@ -48,7 +48,7 @@
 
             <div class="order-metadata">
               <ion-label>
-                {{ order.shipmentMethodTypeId }}
+                {{ getShipmentMethodDesc(order.shipmentMethodTypeId) }}
                 <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
               </ion-label>
             </div>
@@ -236,7 +236,7 @@
             </ion-item>
           </ion-card>
 
-          <ion-card v-if="['PICKITEM_PENDING', 'PICKITEM_PICKED', 'PICKITEM_COMPLETED'].includes(order?.items[0]?.picklistItemStatusId)">
+          <ion-card v-if="['in-progress', 'completed'].includes(order.category)">
             <ion-card-header>
               <ion-card-title>
                 {{ translate('Shipment method') }}
@@ -304,7 +304,7 @@
           <Component v-if="hasPermission(Actions.APP_INVOICING_STATUS_VIEW)" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfile" />
         </div>
         
-        <h4 class="ion-padding-top ion-padding-start" v-if="order.shipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
+        <h4 class="ion-padding-top ion-padding-start" v-if="order.otherShipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
         <div class="shipgroup-details">
           <ion-card v-for="shipGroup in order.otherShipGroups" :key="shipGroup.shipmentId">
             <ion-card-header>
@@ -517,7 +517,8 @@ export default defineComponent({
       isShipNowDisabled: 'user/isShipNowDisabled',
       isUnpackDisabled: 'user/isUnpackDisabled',
       instanceUrl: "user/getInstanceUrl",
-      carrierShipmentBoxTypes: 'util/getCarrierShipmentBoxTypes'
+      carrierShipmentBoxTypes: 'util/getCarrierShipmentBoxTypes',
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
     })
   },
   data() {

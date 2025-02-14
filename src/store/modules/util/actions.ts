@@ -158,20 +158,17 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const payload = {
-        "inputFields": {
-          "shipmentMethodTypeId": ids,
-          "shipmentMethodTypeId_op": "in"
-        },
-        "fieldList": ["shipmentMethodTypeId", "description"],
-        "entityName": "ShipmentMethodType",
-        "viewSize": ids.length
+        shipmentMethodTypeId: ids,
+        shipmentMethodTypeId_op: "in",
+        fieldsToSelect: ["shipmentMethodTypeId", "description"],
+        pageSize: ids.length
       }
 
       const resp = await UtilService.fetchShipmentMethodTypeDesc(payload);
 
       if(!hasError(resp)) {
         const shipmentMethodResp = {} as any
-        resp.data.docs.map((shipmentMethodInformation: any) => {
+        resp.data.map((shipmentMethodInformation: any) => {
           shipmentMethodResp[shipmentMethodInformation.shipmentMethodTypeId] = shipmentMethodInformation.description
         })
 
@@ -289,7 +286,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
       if(!hasError(resp)) {
         const paymentMethodResp = {} as any
-        resp.data.docs.map((paymentMethodType: any) => {
+        resp.data.map((paymentMethodType: any) => {
           paymentMethodResp[paymentMethodType.paymentMethodTypeId] = paymentMethodType.description
         })
 
@@ -327,7 +324,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
       if(!hasError(resp)) {
         const statusResp = {} as any
-        resp.data.docs.map((statusItem: any) => {
+        resp.data.map((statusItem: any) => {
           statusResp[statusItem.statusId] = statusItem.description
         })
 
