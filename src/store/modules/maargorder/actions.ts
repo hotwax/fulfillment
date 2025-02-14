@@ -209,7 +209,7 @@ const actions: ActionTree<OrderState, RootState> = {
       this.dispatch('product/fetchProducts', { productIds })
     }
     
-    currentOrder.shipGroups = otherShipments
+    currentOrder.otherShipGroups = otherShipments
     commit(types.ORDER_CURRENT_UPDATED, currentOrder)
   },
 
@@ -321,12 +321,24 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   async fetchOrderDetail ({ commit, state }) {
-    const order = JSON.parse(JSON.stringify(state.current))
+    let order = JSON.parse(JSON.stringify(state.current))
 
     try {
       const resp = await MaargOrderService.fetchOrderDetail(order.orderId);
       if (!hasError(resp)) {
-        order.detail = resp.data  
+        order = {...order, ...resp.data}  
+        if (order.paymentPreferences.length > 0) {
+          const paymentMethodTypeIds = order?.paymentPreferences.map((orderPaymentPreference: any) => orderPaymentPreference.paymentMethodTypeId);
+          if (paymentMethodTypeIds.length > 0) {
+            this.dispatch('util/fetchPaymentMethodTypeDesc', paymentMethodTypeIds);
+          }
+          
+          const statusIds = order?.paymentPreferences.map((orderPaymentPreference: any) => orderPaymentPreference.statusId);
+          if (statusIds.length > 0) {
+            this.dispatch('util/fetchStatusDesc', statusIds);
+          }
+        }
+
       }
     } catch (err: any) {
       logger.error("Error in fetching order detail for current order", err);

@@ -21,9 +21,9 @@
               <ion-icon :icon="documentTextOutline" />
               <ion-label>{{ translate('Linked picklist') }}: {{ order.picklistBinId }}</ion-label>
             </ion-chip>
-            <ion-chip outline v-if="order?.orderPaymentPreferences?.length > 0" :color="statusColor[order?.orderPaymentPreferences[0]?.statusId]">
+            <ion-chip outline v-if="order?.paymentPreferences?.length > 0" :color="statusColor[order?.paymentPreferences[0]?.statusId]">
               <ion-icon :icon="cashOutline" />
-              <ion-label>{{ translate(getPaymentMethodDesc(order?.orderPaymentPreferences[0]?.paymentMethodTypeId)) }} : {{ translate(getStatusDesc(order?.orderPaymentPreferences[0]?.statusId)) }}</ion-label>
+              <ion-label>{{ translate(getPaymentMethodDesc(order?.paymentPreferences[0]?.paymentMethodTypeId)) }} : {{ translate(getStatusDesc(order?.paymentPreferences[0]?.statusId)) }}</ion-label>
             </ion-chip>
           </div>
           <div class="order-metadata">
@@ -306,7 +306,7 @@
         
         <h4 class="ion-padding-top ion-padding-start" v-if="order.shipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
         <div class="shipgroup-details">
-          <ion-card v-for="shipGroup in order.shipGroups" :key="shipGroup.shipmentId">
+          <ion-card v-for="shipGroup in order.otherShipGroups" :key="shipGroup.shipmentId">
             <ion-card-header>
               <div>
                 <ion-card-subtitle class="overline">{{ getfacilityTypeDesc(shipGroup.facilityTypeId) }}</ion-card-subtitle>
@@ -507,7 +507,6 @@ export default defineComponent({
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
       getStatusDesc: 'util/getStatusDesc',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
-      newRejectionApiConfig: 'user/getNewRejectionApiConfig',
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
       affectQohConfig: 'user/getAffectQohConfig',
@@ -575,12 +574,7 @@ export default defineComponent({
 
     this.isCODPaymentPending = false
     this.isOrderAdjustmentPending = false
-
-    const isCODPayment = this.order?.orderPaymentPreferences?.some((paymentPref: any) => paymentPref.paymentMethodTypeId === "EXT_SHOP_CASH_ON_DEL")
-
-    if(isCODPayment) {
-      this.fetchCODPaymentInfo();
-    }
+    this.fetchCODPaymentInfo();
   },
   async mounted() {
     const instance = this.instanceUrl.split("-")[0]
@@ -681,9 +675,6 @@ export default defineComponent({
     },
     isEntierOrderRejectionEnabled(order: any) {
       return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
-    },
-    useNewRejectionApi() {
-      return this.newRejectionApiConfig && this.newRejectionApiConfig.settingValue && JSON.parse(this.newRejectionApiConfig.settingValue)
     },
     async printPicklist (order: any) {
       await MaargOrderService.printPicklist(order.picklistId)
@@ -1435,13 +1426,9 @@ export default defineComponent({
             attrName: "retailProStatus"
           }
 
-          resp = await MaargOrderService.fetchOrderAttributes(params);
-          if (!hasError(resp)) {
-            if(resp.data[0]?.attrValue === "Invoiced") {
-              orderInvoicingInfo["invoicingConfirmationDate"] = resp.data[0]?.lastUpdatedStamp
-            }
-          } else {
-            throw resp.data;
+          const retailProStatus = this.order.attributes.find((attribute: any) => attribute.attrName === "retailProStatus");
+          if (Object.keys(retailProStatus).length && retailProStatus?.attrValue === "Invoiced") {
+            orderInvoicingInfo["invoicingConfirmationDate"] = retailProStatus?.lastUpdatedStamp
           }
         } else {
           throw resp.data;
@@ -1574,28 +1561,11 @@ export default defineComponent({
     },
     async fetchCODPaymentInfo() {
       try {
-        const resp = await UtilService.getCODOrderRemainingTotal({
-          orderId: this.orderId
-        })
-
-        if(!hasError(resp) && resp.data?.total) {
+        const isPendingCODPayment = this.order?.paymentPreferences?.some((paymentPref: any) => paymentPref.paymentMethodTypeId === "EXT_SHOP_CASH_ON_DEL" && paymentPref.statusId === "PAYMENT_NOT_RECEIVED")
+        if (isPendingCODPayment) {
           this.isCODPaymentPending = true
-          this.fetchOrderAdjustments();
-        }
-      } catch(err) {
-        logger.error(err);
-      }
-    },
-    async fetchOrderAdjustments() {
-      try {
-        const resp = await UtilService.fetchOrderAdjustments({
-          orderId: this.orderId,
-          fieldsToSelect: ["orderAdjustmentId", "orderAdjustmentTypeId", "orderId", "orderItemSeqId", "shipGroupSeqId", "amount", "billingShipmentId"],
-          pageSize: 50
-        })
-        if(!hasError(resp)) {
           this.orderHeaderAdjustmentTotal = 0
-          this.orderAdjustments = resp.data.filter((adjustment: any) => {
+          this.orderAdjustments = this.order?.adjustments.filter((adjustment: any) => {
             // Considered that the adjustment will not be made at shipGroup level
             if((adjustment.orderItemSeqId === "_NA_" || !adjustment.orderItemSeqId) && !adjustment.billingShipmentId) {
               this.orderHeaderAdjustmentTotal += adjustment.amount
@@ -1605,10 +1575,10 @@ export default defineComponent({
               return false;
             }
           })
-          this.isOrderAdjustmentPending = resp.data.some((adjustment: any) => !adjustment.billingShipmentId)
+          this.isOrderAdjustmentPending = this.order?.adjustments.some((adjustment: any) => !adjustment.billingShipmentId)
 
           if(!this.isOrderAdjustmentPending) {
-            const adjustment = resp.data.find((adjustment: any) => adjustment.billingShipmentId)
+            const adjustment = this.order?.adjustments.find((adjustment: any) => adjustment.billingShipmentId)
             this.orderAdjustmentShipmentId = adjustment.billingShipmentId
           }
         }
@@ -1629,7 +1599,7 @@ export default defineComponent({
         ] as any
 
         if(this.orderAdjustmentShipmentId) {
-          const shipGroup = this.order.shipGroups.find((group: any) => group.shipmentId == this.orderAdjustmentShipmentId)
+          const shipGroup = this.order.otherShipGroups.find((group: any) => group.shipmentId == this.orderAdjustmentShipmentId)
           facilityName = shipGroup.facilityName || shipGroup.facilityId
           trackingCode = shipGroup.trackingCode
           message += "Label was generated by facility with tracking code"

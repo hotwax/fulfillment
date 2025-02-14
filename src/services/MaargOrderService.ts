@@ -531,21 +531,6 @@ const retryShippingLabel = async (shipmentIds: Array<string>, forceRateShop = fa
     },
   });
 }
-const fetchOrderAttributes = async (params: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return client({
-    url: `/oms/orders/${params.orderId}/attributes`,
-    method: "GET",
-    baseURL,
-    headers: {
-      "api_key": omsRedirectionInfo.token,
-      "Content-Type": "application/json"
-    },
-    params,
-  });
-}
 
 const fetchShipmentLabelError = async (shipmentId: string): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
@@ -648,7 +633,6 @@ export const MaargOrderService = {
   addShipmentBox,
   bulkShipOrders,
   createPicklist,
-  fetchOrderAttributes,
   fetchOrderDetail,
   fetchPicklists,
   fetchShipmentLabelError,

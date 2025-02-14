@@ -279,13 +279,10 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const payload = {
-        "inputFields": {
-          "paymentMethodTypeId": ids,
-          "paymentMethodTypeId_op": "in"
-        },
-        "fieldList": ["paymentMethodTypeId", "description"],
-        "entityName": "PaymentMethodType",
-        "viewSize": ids.length
+        paymentMethodTypeId: ids,
+        paymentMethodTypeId_op: "in",
+        fieldsToSelect: ["paymentMethodTypeId", "description"],
+        pageSize: ids.length
       }
 
       const resp = await UtilService.fetchPaymentMethodTypeDesc(payload);
@@ -320,13 +317,10 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const payload = {
-        "inputFields": {
-          "statusId": ids,
-          "statusId_op": "in"
-        },
-        "fieldList": ["statusId", "description"],
-        "entityName": "StatusItem",
-        "viewSize": ids.length
+        statusId: ids,
+        statusId_op: "in",
+        fieldsToSelect: ["statusId", "description"],
+        viewSize: ids.length
       }
 
       const resp = await UtilService.fetchStatusDesc(payload);
