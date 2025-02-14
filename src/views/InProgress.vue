@@ -545,9 +545,13 @@ export default defineComponent({
                     await MaargOrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
                   }
 
-                  const internationalInvoiceUrls = order.shipmentPackageRouteSegDetail
-                      ?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl)
-                      .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) || [];
+                  const internationalInvoiceUrls: string[] = Array.from(
+                    new Set(
+                      order.shipmentPackageRouteSegDetail
+                        ?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl)
+                        .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) || []
+                    )
+                  );
 
                   if (internationalInvoiceUrls.length > 0) {
                     await MaargOrderService.printCustomDocuments(internationalInvoiceUrls);
@@ -895,30 +899,6 @@ export default defineComponent({
 
       this.store.dispatch('maargorder/updateInProgressQuery', { ...inProgressOrdersQuery })
     },
-    async fetchShipmentRouteSegmentInformation(shipmentIds: Array<string>) {
-      const payload = {
-        carrierPartyId: "_NA_",
-        carrierPartyId_op: "notEqual",
-        shipmentId: shipmentIds,
-        shipmentId_op: "in",
-        fieldsToSelect: ["carrierPartyId", "shipmentMethodTypeId"],
-        pageSize: 1
-      }
-
-      try {
-        const resp = await UtilService.fetchShipmentRouteSegmentInformation(payload)
-
-        if(!hasError(resp)) {
-          return resp.data?.[0]
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        logger.error('Failed to fetch shipment route segment information', err)
-      }
-
-      return {};
-    },
     async fetchDefaultShipmentBox() {
       let defaultBoxType = 'YOURPACKNG'
 
@@ -944,7 +924,7 @@ export default defineComponent({
     async addShipmentBox(order: any) {
       this.addingBoxForOrderIds.push(order.orderId)
 
-      const { carrierPartyId, shipmentMethodTypeId } = await this.fetchShipmentRouteSegmentInformation(order.shipmentIds)
+      const { carrierPartyId, shipmentMethodTypeId } = order
       
       if(!this.defaultShipmentBoxType) {
         this.defaultShipmentBoxType = await this.fetchDefaultShipmentBox();

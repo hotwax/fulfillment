@@ -267,22 +267,6 @@ const findShipmentItemInformation = async(shipmentIds: Array<string>): Promise<a
   return shipmentItemsInformation;
 }
 
-const fetchShipmentRouteSegmentInformation = async(query: any) : Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return client({
-    url: `/poorti/shipmentPackageRouteSegDetails`,
-    method: "GET",
-    baseURL,
-    headers: {
-      "api_key": omsRedirectionInfo.token,
-      "Content-Type": "application/json"
-    },
-    params: query,
-  });
-}
-
 const fetchDefaultShipmentBox = async(query: any) : Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -742,7 +726,6 @@ export const UtilService = {
   fetchShipmentMethodTypeDesc,
   fetchPaymentMethodTypeDesc,
   fetchStatusDesc,
-  fetchShipmentRouteSegmentInformation,
   findCarrierPartyIdsForShipment,
   fetchCarrierShipmentBoxTypes,
   fetchOrderPayment,

@@ -1049,13 +1049,22 @@ export default defineComponent({
       return popover.present();
     },
     async printShippingLabel(order: any) {
-      const shipmentIds = order.shipmentIds ? order.shipmentIds : order.shipmentPackages?.reduce((uniqueIds: any[], shipmentPackage: any) => {
-        if(!uniqueIds.includes(shipmentPackage.shipmentId)) uniqueIds.push(shipmentPackage.shipmentId);
-        return uniqueIds;
-      }, []);
-      const shippingLabelPdfUrls = order.shipmentPackages
-          ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
-          .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+      const shipmentIds = [order.shipmentId];
+      const shippingLabelPdfUrls: string[] = Array.from(
+        new Set(
+          (order.shipmentPackageRouteSegDetail ?? [])
+            .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+            .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+        )
+      );
+
+      const internationalInvoiceUrls: string[] = Array.from(
+        new Set(
+          order.shipmentPackageRouteSegDetail
+            ?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl)
+            .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) || []
+        )
+      );
 
       if(!shipmentIds?.length) {
         showToast(translate('Failed to generate shipping label'))
@@ -1063,14 +1072,14 @@ export default defineComponent({
       }
 
       await MaargOrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
-      if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
-        await MaargOrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
+      if (internationalInvoiceUrls.length) {
+        await MaargOrderService.printCustomDocuments([internationalInvoiceUrls[0]]);
       }
     },
     async addShipmentBox(order: any) {
       this.addingBoxForOrderIds.push(order.orderId)
 
-      const { carrierPartyId, shipmentMethodTypeId } = await this.fetchShipmentRouteSegmentInformation(order.shipmentIds)
+      const { carrierPartyId, shipmentMethodTypeId } = order
       
       if(!this.defaultShipmentBoxType) {
         this.defaultShipmentBoxType = await this.fetchDefaultShipmentBox();
@@ -1099,30 +1108,6 @@ export default defineComponent({
         logger.error('Failed to add box', err)
       }
       this.addingBoxForOrderIds.splice(this.addingBoxForOrderIds.indexOf(order.orderId), 1)
-    },
-    async fetchShipmentRouteSegmentInformation(shipmentIds: Array<string>) {
-      const payload = {
-        carrierPartyId: "_NA_",
-        carrierPartyId_op: "notEqual",
-        shipmentId: shipmentIds,
-        shipmentId_op: "in",
-        fieldsToSelect: ["carrierPartyId", "shipmentMethodTypeId"],
-        pageSize: 1
-      }
-
-      try {
-        const resp = await UtilService.fetchShipmentRouteSegmentInformation(payload)
-
-        if(!hasError(resp)) {
-          return resp.data?.[0]
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        logger.error('Failed to fetch shipment route segment information', err)
-      }
-
-      return {};
     },
     async updateShipmentBoxType(shipmentPackage: any, order: any, ev: CustomEvent) {
       // Don't open popover when not having shipmentBoxTypes available
@@ -1267,127 +1252,21 @@ export default defineComponent({
       return order.shipments ? Object.values(order.shipments).some((shipment: any) => shipment.statusId === 'SHIPMENT_PACKED') : {}
     },
     async shipOrder(order: any) {
-      const packedShipments = order.shipments.filter((shipment: any) => shipment.statusId === "SHIPMENT_PACKED");
-
-      if (packedShipments.length === 0) {
-        showToast(translate('There are no packed shipments. Failed to ship order.'))
-        return;
-      }
-      const shipmentIds = new Set();
-      let index = 0;
-
-      const payload = packedShipments.reduce((formData: any, shipment: any) => {
-
-        if (!shipmentIds.has(shipment.shipmentId)) {
-          formData.append('shipmentId_o_' + index, shipment.shipmentId)
-          formData.append('statusId_o_' + index, "SHIPMENT_SHIPPED")
-          formData.append('shipmentTypeId_o_' + index, shipment.shipmentTypeId)
-          formData.append('_rowSubmit_o_' + index, "Y")
-          index++;
-        }
-
-        return formData;
-      }, new FormData())
-
       try {
-        const resp = await MaargOrderService.shipOrder(payload)
+        const resp = await MaargOrderService.shipOrder({shipmentId: order.shipmentId})
 
         if (!hasError(resp)) {
           showToast(translate('Order shipped successfully'))
 
           // updating order locally after ship action is success, as solr takes some time to update
-          order.shipments?.map((shipment: any) => {
-            if(shipment.shipmentId === order.shipmentId) shipment.statusId = 'SHIPMENT_SHIPPED'
-          })
+          order.statusId = 'SHIPMENT_SHIPPED'
           this.store.dispatch('order/updateCurrent', order)
-
         } else {
           throw resp.data
         }
       } catch (err) {
         logger.error('Failed to ship order', err)
         showToast(translate('Failed to ship order'))
-      }
-    },
-    async fetchShipmentMethods() {
-      const payload = prepareOrderQuery({
-        viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
-        groupBy: 'picklistBinId',
-        sort: 'orderDate asc',
-        defType: "edismax",
-        filters: {
-          picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
-          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
-        },
-        facet: {
-          "shipmentMethodFacet": {
-            "excludeTags": "shipmentMethodTypeIdFilter",
-            "field": "shipmentMethodTypeId",
-            "mincount": 1,
-            "limit": -1,
-            "sort": "index",
-            "type": "terms",
-            "facet": {
-              "groups": "unique(orderId)",
-              "itemCount": "sum(itemQuantity)"
-            }
-          }
-        }
-      })
-
-      try {
-        const resp = await UtilService.fetchShipmentMethods(payload)
-
-        if(resp.status == 200 && !hasError(resp)) {
-          this.shipmentMethods = resp.data.facets.shipmentMethodFacet.buckets
-          this.store.dispatch('util/fetchShipmentMethodTypeDesc', this.shipmentMethods.map((shipmentMethod: any) => shipmentMethod.val))
-        } else {
-          throw resp.data
-        }
-      } catch(err) {
-        logger.error('Failed to fetch shipment methods', err)
-      }
-    },
-    async fetchCarrierPartyIds() {
-      const payload = prepareOrderQuery({
-        viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
-        groupBy: 'picklistBinId',
-        sort: 'orderDate asc',
-        defType: "edismax",
-        filters: {
-          picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
-          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId },
-        },
-        facet: {
-          manifestContentIdFacet: {
-            "excludeTags": "manifestContentIdFilter",
-            "field": "manifestContentId",
-            "mincount": 1,
-            "limit": -1,
-            "sort": "index",
-            "type": "terms",
-            "facet": {
-              "groups": "unique(picklistBinId)"
-            }
-          }
-        }
-      })
-
-      try {
-        const resp = await UtilService.fetchCarrierPartyIds(payload)
-
-        if(resp.status == 200 && !hasError(resp)) {
-          this.carrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
-          this.store.dispatch('util/fetchPartyInformation', this.carrierPartyIds.map((carrierPartyId) => carrierPartyId.val.split('/')[0]))
-        } else {
-          throw resp.data
-        }
-      } catch(err) {
-        logger.error('Failed to fetch carrierPartyIds', err)
       }
     },
     async fetchOrderInvoicingStatus() {
@@ -1467,9 +1346,8 @@ export default defineComponent({
         return;
       }
 
-      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId)
       order.isGeneratingPackingSlip = true;
-      await MaargOrderService.printPackingSlip(shipmentIds);
+      await MaargOrderService.printPackingSlip([order.shipmentId]);
       order.isGeneratingPackingSlip = false;
     },
     async unpackOrder(order: any) {
@@ -1483,13 +1361,8 @@ export default defineComponent({
           }, {
             text: translate("Unpack"),
             handler: async () => {
-              const payload = {
-                orderId: order.orderId,
-                picklistBinId: order.groupValue
-              }
-
               try {
-                const resp = await MaargOrderService.unpackOrder(payload)
+                const resp = await MaargOrderService.unpackOrder({shipmentId: order.shipmentId})
 
                 if(resp.status == 200 && !hasError(resp)) {
                   showToast(translate('Order unpacked successfully'))
@@ -1507,7 +1380,7 @@ export default defineComponent({
       return unpackOrderAlert.present();
     },
     isTrackingRequiredForAnyShipmentPackage(order: any) {
-      return order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
+      return order.shipmentPackageRouteSegDetail?.some((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.isTrackingRequired === 'Y')
     },
     async scanOrder(order: any) {
       const modal = await modalController.create({

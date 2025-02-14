@@ -47,7 +47,6 @@ const actions: ActionTree<OrderState, RootState> = {
     this.dispatch('product/fetchProducts', { productIds })
     this.dispatch('util/fetchShipmentMethodTypeDesc', shipmentMethodTypeIds);
     orders = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: false, currentOrders: orders})
-    inProgressQuery.viewSize = resp.total
 
     commit(types.ORDER_INPROGRESS_QUERY_UPDATED, { ...inProgressQuery })
     commit(types.ORDER_INPROGRESS_UPDATED, { orders, total: resp.total })
@@ -73,7 +72,6 @@ const actions: ActionTree<OrderState, RootState> = {
     this.dispatch('product/fetchProducts', { productIds })
     this.dispatch('util/fetchShipmentMethodTypeDesc', shipmentMethodTypeIds);
     orders = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: false, currentOrders: orders});
-    completedOrderQuery.viewSize = resp.total
 
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, { ...completedOrderQuery })
     commit(types.ORDER_COMPLETED_UPDATED, {list: orders, total: resp.total})
@@ -343,7 +341,13 @@ const actions: ActionTree<OrderState, RootState> = {
     try {
       const resp = await MaargOrderService.fetchOrderDetail(order.orderId);
       if (!hasError(resp)) {
-        order = {...order, ...resp.data}  
+        order = {
+          ...order,
+          paymentPreferences: resp.data.paymentPreferences,
+          adjustments: resp.data.adjustments,
+          attributes: resp.data.attributes,
+          contactMechs: resp.contactMechs
+        }  
         if (order.paymentPreferences.length > 0) {
           const paymentMethodTypeIds = order?.paymentPreferences.map((orderPaymentPreference: any) => orderPaymentPreference.paymentMethodTypeId);
           if (paymentMethodTypeIds.length > 0) {
