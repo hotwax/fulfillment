@@ -1770,8 +1770,8 @@ export default defineComponent({
         ] as any
 
         if(this.orderAdjustmentShipmentId) {
-          // Added optional chaining on shipGroup and default empty object, as found that shipmentId is added on adjustment but orderShipGroups are not found
-          // In that case, the UI breaks.
+          // Added optional chaining on shipGroup and default empty object, as in some case found that shipmentId is added on adjustment but orderShipGroups are not found
+          // thus, the UI breaks.
           const shipGroup = this.order.shipGroups?.find((group: any) => group.shipmentId == this.orderAdjustmentShipmentId) || {}
           facilityName = shipGroup.facilityName || shipGroup.facilityId
           trackingCode = shipGroup.trackingCode
