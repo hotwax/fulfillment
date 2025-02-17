@@ -329,15 +329,15 @@ const fetchShipments = async (picklistBinIds: Array<string>, orderIds: Array<str
   const params = {
     "entityName": "Shipment",
     "inputFields": {
-      "primaryOrderId": orderIds,
-      "primaryOrderId_op": "in",
+      "orderId": orderIds,
+      "orderId_op": "in",
       "picklistBinId": picklistBinIds,
       "picklistBinId_op": "in",
       "originFacilityId": originFacilityId,
       "statusId": statusId,
       "statusId_op": "in"
     },
-    "fieldList": ["primaryOrderId", "picklistBinId", "shipmentId", "shipmentMethodTypeId", "statusId", "shipmentTypeId"],
+    "fieldList": ["orderId", "picklistBinId", "shipmentId", "shipmentMethodTypeId", "statusId", "shipmentTypeId"],
     "viewSize": 250,  // maximum records we could have
     "distinct": "Y"
   }

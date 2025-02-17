@@ -508,7 +508,7 @@ export default defineComponent({
                 const updatedOrderDetail = this.getUpdatedOrderDetail(order, updateParameter) as any
                 const params = {
                   shipmentId: order.shipmentId,
-                  orderId: order.primaryOrderId,
+                  orderId: order.orderId,
                   facilityId: order.originFacilityId,
                   rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
                   shipmentPackageContents: updatedOrderDetail.shipmentPackageContents
@@ -613,7 +613,7 @@ export default defineComponent({
                 const updatedOrderDetail = this.getUpdatedOrderDetail(order) as any
                 shipments.push({
                   shipmentId: order.shipmentId,
-                  orderId: order.primaryOrderId,
+                  orderId: order.orderId,
                   facilityId: order.orgiginFacilityId,
                   rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
                   shipmentPackageContents: updatedOrderDetail.shipmentPackageContents,

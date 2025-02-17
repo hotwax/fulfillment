@@ -149,21 +149,22 @@ const actions: ActionTree<UtilState, RootState> = {
     }
   },
 
-  async fetchShipmentMethodTypeDesc({ commit, state }, shipmentIds) {
+  async fetchShipmentMethodTypeDesc({ commit, state }, shipmentMethodTypeIds) {
     let shipmentMethodTypeDesc = JSON.parse(JSON.stringify(state.shipmentMethodTypeDesc))
-    const cachedShipmentMethodIds = Object.keys(shipmentMethodTypeDesc);
-    const ids = shipmentIds.filter((shipmentId: string) => !cachedShipmentMethodIds.includes(shipmentId))
+    const cachedShipmentMethodTypeIds = Object.keys(shipmentMethodTypeDesc);
+    const ids = shipmentMethodTypeIds.filter((shipmentMethodTypeId: string) => !cachedShipmentMethodTypeIds.includes(shipmentMethodTypeId))
 
     if(!ids.length) return shipmentMethodTypeDesc;
 
     try {
+      
       const payload = {
         shipmentMethodTypeId: ids,
         shipmentMethodTypeId_op: "in",
         fieldsToSelect: ["shipmentMethodTypeId", "description"],
         pageSize: ids.length
       }
-
+      
       const resp = await UtilService.fetchShipmentMethodTypeDesc(payload);
 
       if(!hasError(resp)) {
