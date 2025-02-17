@@ -635,14 +635,6 @@ const isEnumExists = async (enumId: string): Promise<any> => {
   }
 }
 
-const getCODOrderRemainingTotal = async(payload: any): Promise<any> => {
-  return api({
-    url: "service/getCODOrderRemainingTotal",
-    method: "post",
-    data: payload
-  })
-}
-
 const fetchOrderAdjustments = async(payload: any): Promise<any> => {
   return api({
     url: "performFind",
@@ -715,7 +707,6 @@ export const UtilService = {
   findShipmentPackageContents,
   fetchTransferOrderFacets,
   getAvailablePickers,
-  getCODOrderRemainingTotal,
   getProductStoreSetting,
   isEnumExists,
   resetPicker,
