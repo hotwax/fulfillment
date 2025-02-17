@@ -24,13 +24,6 @@ const userModule: Module<UserState, RootState> = {
         url: "",
         token: ""
       },
-      fieldMappings: {},
-      currentMapping: {
-        id: '',
-        mappingType: '',
-        name: '',
-        value: {}
-      },
       notifications: [],
       notificationPrefs: [],
       firebaseDeviceId: '',

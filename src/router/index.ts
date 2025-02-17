@@ -8,9 +8,6 @@ import RejectionReasons from '@/views/RejectionReasons.vue';
 import Carriers from '@/views/Carriers.vue'
 import CarrierDetail from '@/views/CarrierDetail.vue'
 import store from '@/store'
-import Exim from "@/views/Exim.vue"
-import UploadImportOrders from "@/views/UploadImportOrders.vue"
-import DownloadPackedOrders from "@/views/DownloadPackedOrders.vue"
 import OrderDetail from "@/views/OrderDetail.vue"
 import TransferOrders from "@/views/TransferOrders.vue"
 import TransferOrderDetail from "@/views/TransferOrderDetail.vue"
@@ -29,7 +26,6 @@ declare module 'vue-router' {
     permissionId?: string;
   }
 }
-import SavedMappings from "@/views/SavedMappings.vue"
 import { useAuthStore, DxpLogin } from '@hotwax/dxp-components'
 import { loader } from '@/utils/user';
 import OrderLookup from '@/views/OrderLookup.vue';
@@ -129,7 +125,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/:category/order-detail/:orderId/:shipmentId',
-    name: 'ShipmentDetail',
+    name: 'OrderShipmentDetail',
     component: OrderDetail,
     beforeEnter: authGuard,
     props: true,
@@ -138,43 +134,10 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: "/exim",
-    name: "EXIM",
-    component: Exim,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_EXIM_VIEW"
-    }
-  },
-  {
-    path: "/upload-import-orders",
-    name: "UploadImportOrders",
-    component: UploadImportOrders,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_UPLOAD_IMPORT_ORDERS_VIEW"
-    }
-  },
-  {
-    path: "/download-packed-orders",
-    name: "DownloadPackedOrders",
-    component: DownloadPackedOrders,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_DOWNLOAD_PACKED_ORDERS_VIEW"
-    }
-  },
-  {
     path: '/login',
     name: 'Login',
     component: DxpLogin,
     beforeEnter: loginGuard
-  },
-  {
-    path: "/saved-mappings",
-    name: "SavedMappings",
-    component: SavedMappings,
-    beforeEnter: authGuard
   },
   {
     path: "/settings",

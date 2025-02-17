@@ -242,37 +242,6 @@ const setUserPreference = async (payload: any): Promise<any> => {
   });
 }
 
-const createFieldMapping = async (payload: any): Promise <any> => {
-  return api({
-    url: "/service/createDataManagerMapping",
-    method: "POST",
-    data: payload
-  });
-}
-
-const updateFieldMapping = async (payload: any): Promise <any> => {
-  return api({
-    url: "/service/updateDataManagerMapping",
-    method: "POST",
-    data: payload
-  });
-}
-
-const deleteFieldMapping = async (payload: any): Promise <any> => {
-  return api({
-    url: "/service/deleteDataManagerMapping",
-    method: "POST",
-    data: payload
-  });
-}
-
-const getFieldMappings = async (payload: any): Promise <any> => {
-  return api({
-    url: "/performFind",
-    method: "POST",
-    data: payload
-  });
-}
 const getPartialOrderRejectionConfig = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
@@ -403,9 +372,7 @@ export const UserService = {
     createAffectQohConfig,
     createCollateralRejectionConfig,
     createEnumeration,
-    createFieldMapping,
     createPartialOrderRejectionConfig,
-    deleteFieldMapping,
     login,
     getAffectQohConfig,
     getCollateralRejectionConfig,
@@ -413,7 +380,6 @@ export const UserService = {
     getDisableUnpackConfig,
     getFacilityDetails,
     getFacilityOrderCount,
-    getFieldMappings,
     getFacilityGroupDetails,
     getFacilityGroupAndMemberDetails,
     getNewRejectionApiConfig,
@@ -427,7 +393,6 @@ export const UserService = {
     updateAffectQohConfig,
     updateFacility,
     updateFacilityToGroup,
-    updateFieldMapping,
     updateCollateralRejectionConfig,
     updatePartialOrderRejectionConfig
 }

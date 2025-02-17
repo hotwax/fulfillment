@@ -17,33 +17,33 @@
     <ion-list>
       <ion-item v-if="shipmentSubtotal">
         <ion-label>{{ translate("Shipment subtotal") }}</ion-label>
-        <ion-note slot="end">{{ currency }} {{ shipmentSubtotal }}</ion-note>
+        <ion-note slot="end">{{ currency }} {{ shipmentSubtotal.toFixed(2) }}</ion-note>
       </ion-item>
       <ion-accordion-group v-if="orderAdjustments.length">
         <ion-accordion value="adjustment">
           <ion-item slot="header" color="light" lines="full">
             <ion-label>{{ translate("Order adjustments") }}</ion-label>
-            <ion-note slot="end">{{ currency }} {{ orderHeaderAdjustmentTotal }}</ion-note>
+            <ion-note slot="end">{{ currency }} {{ orderHeaderAdjustmentTotal?.toFixed(2) }}</ion-note>
           </ion-item>
           <div slot="content">
             <ion-item v-for="adjustment in orderAdjustments" :key="adjustment">
               <ion-label>{{ orderAdjustmentTypeDesc[adjustment.orderAdjustmentTypeId] ?? adjustment.orderAdjustmentTypeId }}</ion-label>
-              <ion-note slot="end">{{ currency }} {{ adjustment.amount }}</ion-note>
+              <ion-note slot="end">{{ currency }} {{ adjustment.amount.toFixed(2) }}</ion-note>
             </ion-item>
           </div>
         </ion-accordion>
       </ion-accordion-group>
       <ion-item v-if="shipmentTotal">
         <ion-label>{{ translate("Shipment total") }}</ion-label>
-        <ion-note slot="end">{{ currency }} {{ shipmentTotal }}</ion-note>
+        <ion-note slot="end">{{ currency }} {{ shipmentTotal.toFixed(2) }}</ion-note>
       </ion-item>
       <ion-item v-if="otherShipmentTotal">
         <ion-label>{{ translate("Other shipment totals") }}</ion-label>
-        <ion-note slot="end">{{ currency }} {{ otherShipmentTotal }}</ion-note>
+        <ion-note slot="end">{{ currency }} {{ otherShipmentTotal.toFixed(2) }}</ion-note>
       </ion-item>
       <ion-item v-if="grandTotal">
         <ion-label>{{ translate("Order total") }}</ion-label>
-        <ion-note slot="end">{{ currency }} {{ grandTotal }}</ion-note>
+        <ion-note slot="end">{{ currency }} {{ grandTotal.toFixed(2) }}</ion-note>
       </ion-item>
     </ion-list>
   </ion-content>
@@ -92,7 +92,7 @@ export default defineComponent({
   },
   data() {
     return {
-      grandTotal: "",
+      grandTotal: 0,
       currency: "",
       orderAdjustmentTypeIds: [] as any,
       orderAdjustmentTypeDesc: {} as any,
