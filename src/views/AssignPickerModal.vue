@@ -104,7 +104,7 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      openOrders: 'order/getOpenOrders'
+      openOrders: 'maargorder/getOpenOrders'
     })
   },
   data () {

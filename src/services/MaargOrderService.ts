@@ -351,11 +351,11 @@ const findShipments = async (query: any): Promise <any>  => {
     if (!hasError(resp)) {
       total = resp.data.shipmentCount
       orders = resp.data.shipments.map((shipment: any) => {
-        const missingLabelImage = productStoreShipmentMethCount > 0 ? shipment.shipmentPackageRouteSegDetail.some((shipmentPackageRouteSeg: any) => !shipmentPackageRouteSeg.trackingCode) : false;
+        const missingLabelImage = productStoreShipmentMethCount > 0 ? shipment.shipmentPackageRouteSegments.some((shipmentPackageRouteSeg: any) => !shipmentPackageRouteSeg.trackingCode) : false;
         return {
           ...shipment,
           missingLabelImage,
-          trackingCode: shipment.shipmentPackageRouteSegDetail[0]?.trackingCode || null,
+          trackingCode: shipment.shipmentPackageRouteSegments[0]?.trackingCode || null,
         };
       });
     } else {
@@ -628,8 +628,25 @@ const fetchOrderDetail = async (orderId: string): Promise<any> => {
   });
 }
 
+const addTrackingCode = async (payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await client({
+    url: `/poorti/shipments/${payload.shipmentId}/trackingCodes`, //should handle the update of OISG, SRG, SPRG if needed
+    method: "PUT",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
 export const MaargOrderService = {
   addShipmentBox,
+  addTrackingCode,
   bulkShipOrders,
   createPicklist,
   fetchOrderDetail,

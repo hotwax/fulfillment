@@ -423,7 +423,7 @@ export default defineComponent({
       }
 
       this.store.dispatch('user/logout', { isUserUnauthorised: false }).then((redirectionUrl) => {
-        this.store.dispatch('order/clearOrders')
+        this.store.dispatch('maargorder/clearOrders')
 
         // if not having redirection url then redirect the user to launchpad
         if(!redirectionUrl) {

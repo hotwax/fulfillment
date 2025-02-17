@@ -418,7 +418,7 @@ export default defineComponent({
       const updatedOrder = this.inProgressOrders.list.find((order: any) => order.orderId === orderItem.orderId && order.picklistBinId === orderItem.picklistBinId);
       const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
       updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
-      this.store.dispatch('order/updateInProgressOrder', updatedOrder)
+      this.store.dispatch('maargorder/updateInProgressOrder', updatedOrder)
     },
     async removeRejectionReason(ev: Event, item: any, order: any) {
       delete item["rejectReason"];
@@ -526,7 +526,7 @@ export default defineComponent({
 
                   const shippingLabelPdfUrls: string[] = Array.from(
                     new Set(
-                      (order.shipmentPackageRouteSegDetail ?? [])
+                      (order.shipmentPackageRouteSegments ?? [])
                         .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
                         .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
                     )
@@ -547,7 +547,7 @@ export default defineComponent({
 
                   const internationalInvoiceUrls: string[] = Array.from(
                     new Set(
-                      order.shipmentPackageRouteSegDetail
+                      order.shipmentPackageRouteSegments
                         ?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl)
                         .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) || []
                     )
@@ -625,7 +625,7 @@ export default defineComponent({
               const internationalInvoiceUrls: string[] = Array.from(
                 new Set(
                   orderList
-                    .flatMap((order: any) => order.shipmentPackageRouteSegDetail ?? []) // Flatten all shipments
+                    .flatMap((order: any) => order.shipmentPackageRouteSegments ?? []) // Flatten all shipments
                     .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) // Filter shipments with invoice URL
                     .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) // Extract URLs
                 )
@@ -634,7 +634,7 @@ export default defineComponent({
               const shippingLabelPdfUrls: string[] = Array.from(
                 new Set(
                   orderList
-                    .flatMap((order: any) => order.shipmentPackageRouteSegDetail ?? []) // Flatten all shipments
+                    .flatMap((order: any) => order.shipmentPackageRouteSegments ?? []) // Flatten all shipments
                     .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl) // Filter shipments with label image URL
                     .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl) // Extract URLs
                 )
@@ -742,7 +742,7 @@ export default defineComponent({
       return alert.present();
     },
     async findInProgressOrders () {
-      await this.store.dispatch('order/findInProgressOrders')
+      await this.store.dispatch('maargorder/findInProgressOrders')
     },
     async getUpdatedOrderDetail(order: any, updateParameter?: string) {
       const items = JSON.parse(JSON.stringify(order.items));
@@ -800,7 +800,7 @@ export default defineComponent({
           orderItem.rejectedComponents = rejectedComponents;
         }
       })
-      this.store.dispatch('order/updateInProgressOrder', order)
+      this.store.dispatch('maargorder/updateInProgressOrder', order)
     },
     isEntierOrderRejectionEnabled(order: any) {
       return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
@@ -1161,7 +1161,7 @@ export default defineComponent({
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
   unmounted() {
-    this.store.dispatch('order/clearInProgressOrders')
+    this.store.dispatch('maargorder/clearInProgressOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   setup() {

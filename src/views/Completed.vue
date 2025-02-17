@@ -624,7 +624,7 @@ export default defineComponent({
 
       const shippingLabelPdfUrls: string[] = Array.from(
         new Set(
-          (order.shipmentPackageRouteSegDetail ?? [])
+          (order.shipmentPackageRouteSegments ?? [])
             .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
             .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
         )
@@ -637,7 +637,7 @@ export default defineComponent({
 
       await MaargOrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
       
-      const internationalInvoiceUrls = order.shipmentPackageRouteSegDetail
+      const internationalInvoiceUrls = order.shipmentPackageRouteSegments
           ?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl)
           .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) || [];
 
@@ -683,10 +683,10 @@ export default defineComponent({
       this.store.dispatch('stock/fetchStock', { productId })
     },
     isTrackingRequiredForAnyShipmentPackage(order: any) {
-      return order.shipmentPackageRouteSegDetail?.some((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.isTrackingRequired === 'Y')
+      return order.isTrackingRequired === 'Y'
     },
     hasAnyShipmentTrackingInfoMissing() {
-      return this.completedOrders.list.some((order: any) => (order.shipmentPackageRouteSegDetail && (this.isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingIdNumber)))
+      return this.completedOrders.list.some((order: any) => (order.shipmentPackageRouteSegments && (this.isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingIdNumber)))
     },
     async orderActionsPopover(order: any, ev: Event) {
       const popover = await popoverController.create({

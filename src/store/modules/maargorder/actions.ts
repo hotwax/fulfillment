@@ -419,6 +419,12 @@ const actions: ActionTree<OrderState, RootState> = {
     await dispatch('fetchShipGroupForOrder');
     await dispatch('fetchPaymentDetail');
     await dispatch('getShippingPhoneNumber');*/
+  },
+  async clearOrders ({ commit }) {
+    commit(types.ORDER_INPROGRESS_CLEARED)
+    commit(types.ORDER_OPEN_CLEARED)
+    commit(types.ORDER_COMPLETED_CLEARED)
+    commit(types.ORDER_CURRENT_UPDATED, {})
   }
 }
 

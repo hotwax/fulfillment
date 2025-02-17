@@ -791,7 +791,7 @@ export default defineComponent({
               const shipmentIds = [order.shipmentId]
               const shippingLabelPdfUrls: string[] = Array.from(
                   new Set(
-                    (order.shipmentPackageRouteSegDetail ?? [])
+                    (order.shipmentPackageRouteSegments ?? [])
                       .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
                       .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
                   )
@@ -1052,7 +1052,7 @@ export default defineComponent({
       const shipmentIds = [order.shipmentId];
       const shippingLabelPdfUrls: string[] = Array.from(
         new Set(
-          (order.shipmentPackageRouteSegDetail ?? [])
+          (order.shipmentPackageRouteSegments ?? [])
             .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
             .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
         )
@@ -1060,7 +1060,7 @@ export default defineComponent({
 
       const internationalInvoiceUrls: string[] = Array.from(
         new Set(
-          order.shipmentPackageRouteSegDetail
+          order.shipmentPackageRouteSegments
             ?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl)
             .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) || []
         )
@@ -1260,7 +1260,7 @@ export default defineComponent({
 
           // updating order locally after ship action is success, as solr takes some time to update
           order.statusId = 'SHIPMENT_SHIPPED'
-          this.store.dispatch('order/updateCurrent', order)
+          this.store.dispatch('maargorder/updateCurrent', order)
         } else {
           throw resp.data
         }
@@ -1380,7 +1380,7 @@ export default defineComponent({
       return unpackOrderAlert.present();
     },
     isTrackingRequiredForAnyShipmentPackage(order: any) {
-      return order.shipmentPackageRouteSegDetail?.some((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.isTrackingRequired === 'Y')
+      return order.isTrackingRequired === 'Y'
     },
     async scanOrder(order: any) {
       const modal = await modalController.create({

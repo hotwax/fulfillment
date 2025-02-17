@@ -46,7 +46,7 @@
         const shipmentIds = [order.shipmentId];
         const shippingLabelPdfUrls: string[] = Array.from(
           new Set(
-            (order.shipmentPackageRouteSegDetail ?? [])
+            (order.shipmentPackageRouteSegments ?? [])
               .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
               .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
           )

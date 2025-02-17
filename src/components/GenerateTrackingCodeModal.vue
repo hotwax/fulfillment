@@ -85,7 +85,7 @@ import { defineComponent } from "vue";
 import { barcodeOutline, closeOutline, copyOutline, informationCircleOutline, openOutline, saveOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
 import { mapGetters, useStore } from "vuex";
-import { OrderService } from '@/services/OrderService';
+import { MaargOrderService } from '@/services/MaargOrderService';
 import logger from "@/logger";
 import { showToast } from "@/utils";
 import { hasError } from "@/adapter";
@@ -146,7 +146,7 @@ export default defineComponent({
       window.open('https://docs.hotwax.co/documents/v/system-admins/fulfillment/shipping-methods/carrier-and-shipment-methods', '_blank');
     },
     isTrackingRequiredForAnyShipmentPackage() {
-      return this.order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
+      return this.order.isTrackingRequired === 'Y'
     },
     async getProductStoreShipmentMethods(carrierPartyId: string) { 
       return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId) || [];
@@ -169,12 +169,12 @@ export default defineComponent({
 
       if(this.trackingCode.trim()) {
         isRegenerated = await this.addTrackingCode(order);
-      } else if(this.shipmentMethodTypeId) {
+      } else if(this.shipmentMethodTypeId && order.missingLabelImage) {
         isRegenerated = await this.regenerateShippingLabel(order)
       }
 
       //fetching updated shipment packages
-      await this.store.dispatch('order/updateShipmentPackageDetail', order)
+      await this.store.dispatch('maargorder/updateShipmentPackageDetail', order)
 
       if(isRegenerated || !this.isTrackingRequired) {
         this.closeModal({ moveToNext: true });
@@ -184,13 +184,11 @@ export default defineComponent({
     },
     async addTrackingCode(order: any) {
       try {
-        for (const shipmentPackage of order.shipmentPackages) {
-          await OrderService.addTrackingCode({
-            "shipmentId": shipmentPackage.shipmentId,
-            "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-            "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
-            "trackingCode": this.trackingCode.trim()
-          });
+        const resp = await MaargOrderService.addTrackingCode({shipmentId: this.order.shipmentId, trackingCode: this.trackingCode.trim()})
+        if (!hasError(resp)) {
+          showToast(translate("Tracking code added successfully."));
+        } else {
+          throw resp.data
         }
       } catch (error: any) {
         logger.error('Failed to add tracking code', error);
@@ -207,20 +205,15 @@ export default defineComponent({
       }
 
       // Getting all the shipmentIds from shipmentPackages for which label is missing
-      const shipmentIds = order.shipmentPackages
-        ?.filter((shipmentPackage: any) => !shipmentPackage.trackingCode)
-        .reduce((uniqueIds: any[], shipmentPackage: any) => {
-          if(!uniqueIds.includes(shipmentPackage.shipmentId)) uniqueIds.push(shipmentPackage.shipmentId);
-          return uniqueIds;
-        }, []);
+      const shipmentIds = [order.shipmentId]
 
-      if(!shipmentIds?.length) {
+      if (!shipmentIds.length) {
         showToast(translate("Failed to generate shipping label"))
         return false;
       }
 
       try {
-        const resp = await OrderService.retryShippingLabel(shipmentIds)
+        const resp = await MaargOrderService.retryShippingLabel(shipmentIds)
         if(hasError(resp)) {
           throw resp.data;
         }
@@ -257,34 +250,8 @@ export default defineComponent({
           carrierPartyId
         }
 
-        resp = await OrderService.updateOrderItemShipGroup(params)
-        if(!hasError(resp)) {
-          for (const shipmentPackage of this.order.shipmentPackages) {
-            resp = await OrderService.updateShipmentRouteSegment({
-              "shipmentId": shipmentPackage.shipmentId,
-              "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-              "carrierPartyId": carrierPartyId,
-              "shipmentMethodTypeId" : shipmentMethodTypeId ? shipmentMethodTypeId : "",
-            }) as any;
-            if(!hasError(resp)) {
-              //on changing the shipment carrier/method, voiding the gatewayMessage and gatewayStatus
-              if (this.shipmentLabelErrorMessages) {
-                resp = await OrderService.updateShipmentPackageRouteSeg({
-                  "shipmentId": shipmentPackage.shipmentId,
-                  "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-                  "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
-                  "gatewayMessage": "",
-                  "gatewayStatus": ""
-                }) as any;
-                if (hasError(resp)) {
-                  throw resp.data
-                }
-              }
-            } else {
-              throw resp.data
-            }
-          }
-        } else {
+        resp = await MaargOrderService.updateOrderShippingMethod(params)
+        if (hasError(resp)) {
           throw resp.data;
         }
       } catch(error: any) {
