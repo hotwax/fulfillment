@@ -14,5 +14,6 @@ export default interface TransferOrderState {
   shipment: {
     current: any,
     list: any
-  }
+  },
+  rejectReasons: Array<any>;
 }

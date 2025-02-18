@@ -23,7 +23,8 @@ const orderModule: Module<TransferOrderState, RootState> = {
     shipment:{
       current: {},
       list: []
-    }
+    },
+    rejectReasons: []
   },
   getters,
   actions,

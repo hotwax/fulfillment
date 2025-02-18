@@ -8,7 +8,7 @@
       </ion-header>
   
       <ion-content>
-        <main>
+        <main v-if="currentOrder.orderId">
           <ion-item lines="none">
             <ion-label>
               <p class="overline">{{ currentOrder.orderId }}</p>
@@ -40,7 +40,7 @@
           <div class="segments" v-if="currentOrder">
             <template v-if="selectedSegment === 'open'">
               <template v-if="getTOItems('open')?.length > 0">
-                <TransferOrderItem v-for="item in getTOItems('open')" :key="item.orderItemSeqId" :itemDetail="item" :class="item.internalName === lastScannedId ? 'scanned-item' : '' " :id="item.internalName"/>
+                <TransferOrderItem v-for="item in getTOItems('open')" :key="item.orderItemSeqId" :itemDetail="item" :class="item.internalName === lastScannedId ? 'scanned-item' : '' " :id="item.internalName" isRejectionSupported="true"/>
               </template>
               <template v-else>
                 <div class="empty-state">
@@ -113,10 +113,17 @@
             </template>
           </div>
         </main>
+        <div class="empty-state" v-else>
+          <p>{{ translate('No data available') }}</p>
+        </div>
       </ion-content>
-      <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED'">
+      <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment === 'open'">
         <ion-toolbar>
           <ion-buttons slot="end">
+            <ion-button v-show="areItemsEligibleForRejection" color="danger" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="rejectItems()">
+              <ion-icon slot="start" :icon="trashOutline" />
+              {{ translate("Reject Items") }}
+            </ion-button>
             <ion-button color="primary" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="printTransferOrder()">
               <ion-icon slot="start" :icon="printOutline" />
               {{ translate('Picklist') }}   
@@ -157,7 +164,7 @@
     modalController,
   } from '@ionic/vue';
   import { computed, defineComponent } from 'vue';
-  import { add, checkmarkDone, barcodeOutline, pricetagOutline, printOutline } from 'ionicons/icons';
+  import { add, checkmarkDone, barcodeOutline, personCircleOutline, pricetagOutline, printOutline, trashOutline } from 'ionicons/icons';
   import { mapGetters, useStore } from "vuex";
   import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 
@@ -171,6 +178,7 @@
   import TransferOrderItem from '@/components/TransferOrderItem.vue'
   import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
   import emitter from "@/event-bus";
+  import logger from '@/logger';
 
   
   export default defineComponent({
@@ -204,13 +212,20 @@
         queryString: '',
         selectedSegment: 'open',
         isCreatingShipment: false,
-        lastScannedId: ''
+        lastScannedId: '',
+        defaultRejectReasonId: "NO_VARIANCE_LOG"  // default variance reason, to be used when any other item is selected for rejection
       }
     },
     async ionViewWillEnter() {
       emitter.emit('presentLoader');
-      await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
-      await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.$route.params.orderId });
+      await this.store.dispatch("transferorder/fetchRejectReasons");
+      try {
+        await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
+        await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.$route.params.orderId });
+      } catch(err) {
+        logger.error(err)
+      }
+
       emitter.emit('dismissLoader');
     },
     computed: {
@@ -222,6 +237,9 @@
         productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
         getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       }),
+      areItemsEligibleForRejection() {
+        return this.currentOrder.items?.some((item: any) => item.rejectReasonId);
+      }
     },
     methods: {
       async printTransferOrder() {
@@ -384,6 +402,55 @@
         }
 
         currentShipment.isGeneratingShippingLabel = false;
+      },
+      async rejectItems() {
+        const alert = await alertController.create({
+          header: translate("Reject transfer order"),
+          message: translate("Rejecting a transfer order will remove it from your facility. Your inventory levels will not be affected from this rejection.", { space: "<br/><br/>" }),
+          buttons: [{
+            text: translate("Cancel"),
+            role: 'cancel',
+          }, {
+            text: translate("Reject"),
+            handler: async() => {
+              emitter.emit("presentLoader")
+              const payload = {
+                orderId: this.currentOrder.orderId,
+                items: []
+              } as any
+
+              this.currentOrder.items.map((item: any) => {
+                payload.items.push({
+                  rejectReason: item.rejectReasonId || this.defaultRejectReasonId,
+                  facilityId: this.currentOrder.facilityId,
+                  orderItemSeqId: item.orderItemSeqId,
+                  shipmentMethodTypeId: this.currentOrder.shipmentMethodTypeId,
+                  quantity: parseInt(item.quantity),
+                  naFacilityId: "REJECTED_ITM_PARKING"
+                })
+              })
+
+              try {
+                const resp = await OrderService.rejectOrderItems({ payload });
+
+                if(!hasError(resp) && resp.data?.rejectedItemsList.length) {
+                  showToast(translate("All order items are rejected"))
+                  this.$router.replace("/transfer-orders")
+                } else {
+                  throw resp;
+                }
+              } catch(err) {
+                logger.error(err);
+                showToast(translate("Failed to reject order"))
+                // If there is any error in rejecting the order, fetch the updated order information
+                await this.store.dispatch("transferorder/fetchTransferOrderDetail", { orderId: this.$route.params.orderId })
+              }
+
+              emitter.emit("dismissLoader")
+            }
+          }]
+        });
+        return alert.present();
       }
     }, 
     ionViewDidLeave() {
@@ -407,13 +474,15 @@
         getFeature,
         getProductIdentificationValue,
         hasPermission,
+        personCircleOutline,
         pricetagOutline,
         printOutline,
         productIdentificationPref,
         showToast,
         store,
         router,
-        translate
+        translate,
+        trashOutline
       };
     },
   });

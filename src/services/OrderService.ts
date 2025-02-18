@@ -4,6 +4,7 @@ import logger from '@/logger';
 import { showToast, formatPhoneNumber } from '@/utils';
 import store from '@/store';
 import { cogOutline } from 'ionicons/icons';
+import { prepareSolrQuery } from '@/utils/solrHelper';
 
 const fetchOrderHeader = async (params: any): Promise<any> => {
   return await api({
@@ -887,6 +888,23 @@ const getShippingPhoneNumber = async (orderId: string): Promise<any> => {
   return phoneNumber
 }
 
+const fetchRejectReasons = async(query: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get", // TODO: cache this api request
+    params: query,
+    cache: true
+  })
+}
+
+const rejectOrderItems = async (payload: any): Promise <any> => {
+  return api({
+    url: "rejectOrderItems",
+    method: "post",
+    data: payload
+  });
+}
+
 export const OrderService = {
   addShipmentBox,
   addTrackingCode,
@@ -896,6 +914,7 @@ export const OrderService = {
   fetchOrderAttribute,
   fetchOrderHeader,
   fetchOrderItems,
+  fetchRejectReasons,
   fetchShipmentCarrierDetail,
   fetchShipmentItems,
   fetchShipments,
@@ -919,6 +938,7 @@ export const OrderService = {
   printTransferOrder,
   rejectFulfillmentReadyOrderItem,
   rejectOrderItem,
+  rejectOrderItems,
   retryShippingLabel,
   shipOrder,
   unpackOrder,
