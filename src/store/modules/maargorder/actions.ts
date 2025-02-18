@@ -66,7 +66,7 @@ const actions: ActionTree<OrderState, RootState> = {
     let orders = [];
 
     const completedOrderQuery = JSON.parse(JSON.stringify(state.completed.query))
-    completedOrderQuery.statusId = ['SHIPMENT_PACKED', 'SHIPMENT_SHIPPED']
+    completedOrderQuery.statusId = ['SHIPMENT_PACKED']
     const resp = await MaargOrderService.findShipments(completedOrderQuery);
     orders = (resp.orders || []).map((order: any) => ({
       ...order,
@@ -366,7 +366,6 @@ const actions: ActionTree<OrderState, RootState> = {
             this.dispatch('util/fetchStatusDesc', statusIds);
           }
         }
-
       }
     } catch (err: any) {
       logger.error("Error in fetching order detail for current order", err);

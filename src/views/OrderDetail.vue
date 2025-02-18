@@ -60,7 +60,7 @@
               <ion-skeleton-text animated />
             </div>
             <div class="box-type desktop-only" v-else-if="order.shipmentPackages">
-              <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />
+              <ion-button :disabled="addingBoxForShipmentIds.includes(order.orderId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />
                 {{ translate("Add Box") }}
               </ion-button>
               <ion-row>
@@ -526,7 +526,7 @@ export default defineComponent({
       carrierPartyIds: [] as Array<any>,
       shipmentMethods: [] as Array<any>,
       picklists: [] as any,
-      addingBoxForOrderIds: [] as any,
+      addingBoxForShipmentIds: [] as any,
       defaultShipmentBoxType: '',
       itemsIssueSegmentSelected: [] as any,
       statusColor: {
@@ -1020,11 +1020,7 @@ export default defineComponent({
       await this.store.dispatch('maargorder/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async retryShippingLabel(order: any) {
-      //considering if any of the shipment package has missingLabel, retry label for the complete shipment 
-      const shipmentIds = [order.shipmentId]
-
-      // TODO Handle error case
-      const resp = await MaargOrderService.retryShippingLabel(shipmentIds)
+      const resp = await MaargOrderService.retryShippingLabel(order.shipmentId)
       if (!hasError(resp)) {
         //Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
         await this.store.dispatch('maargorder/updateShipmentPackageDetail', order) 
@@ -1078,7 +1074,7 @@ export default defineComponent({
       }
     },
     async addShipmentBox(order: any) {
-      this.addingBoxForOrderIds.push(order.orderId)
+      this.addingBoxForShipmentIds.push(order.shipmentId)
 
       const { carrierPartyId, shipmentMethodTypeId } = order
       
@@ -1108,7 +1104,7 @@ export default defineComponent({
         showToast(translate('Failed to add box'))
         logger.error('Failed to add box', err)
       }
-      this.addingBoxForOrderIds.splice(this.addingBoxForOrderIds.indexOf(order.orderId), 1)
+      this.addingBoxForShipmentIds.splice(this.addingBoxForShipmentIds.indexOf(order.shipmentId), 1)
     },
     async updateShipmentBoxType(shipmentPackage: any, order: any, ev: CustomEvent) {
       // Don't open popover when not having shipmentBoxTypes available
@@ -1177,7 +1173,7 @@ export default defineComponent({
         const itemsToRejectNotInStock = itemsToReject.filter((item: any) => item.rejectReason === 'NOT_IN_STOCK');
         
         // TODO: ordersCount is not correct as current we are identifying orders count by only checking items visible on UI and not other orders        
-        const ordersCount = this.inProgressOrders.list.map((inProgressOrder: any) => inProgressOrder.items.filter((item: any) => itemsToRejectNotInStock.some((outOfStockItem: any) => outOfStockItem.productSku === item.productSku) && item.orderId !== order.orderId))?.filter((item: any) => item.length).length;
+        const ordersCount = this.inProgressOrders.list.map((inProgressOrder: any) => inProgressOrder.items.filter((item: any) => itemsToRejectNotInStock.some((outOfStockItem: any) => outOfStockItem.productSku === item.productSku) && item.shipmentId !== order.shipmentId))?.filter((item: any) => item.length).length;
 
         if (itemsToReject.length === 1 && ordersCount) {
           message = translate("is identified as unfulfillable. other containing this product will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })

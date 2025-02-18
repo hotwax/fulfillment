@@ -380,14 +380,15 @@ export default defineComponent({
             text: translate("Ship"),
             handler: async () => {
               let orderList = JSON.parse(JSON.stringify(this.completedOrders.list))
+              orderList = orderList.filter((order: any) =>  order.statusId === 'SHIPMENT_PACKED')
               // orders with tracking required and missing label must be excluded
               const trackingRequiredOrders = orderList.filter((order: any) => this.isTrackingRequiredForAnyShipmentPackage(order))
               let trackingRequiredAndMissingCodeOrders: any
               if (trackingRequiredOrders.length) {
                 // filtering and excluding orders having missing label image with tracking required
-                trackingRequiredAndMissingCodeOrders = trackingRequiredOrders.filter((order: any) => !order.trackingIdNumber).map((order: any) => order.orderId)
+                trackingRequiredAndMissingCodeOrders = trackingRequiredOrders.filter((order: any) => !order.trackingIdNumber).map((order: any) => order.shipmentId)
                 if (trackingRequiredAndMissingCodeOrders.length) {
-                  orderList = orderList.filter((order: any) => !trackingRequiredAndMissingCodeOrders.includes(order.orderId))
+                  orderList = orderList.filter((order: any) => !trackingRequiredAndMissingCodeOrders.includes(order.shipmentId))
                 }
               }
 
@@ -590,15 +591,12 @@ export default defineComponent({
       return order.statusId === 'SHIPMENT_PACKED'
     },
     async retryShippingLabel(order: any) {
-      //considering if any of the shipment package has missingLabel, retry label for the complete shipment 
-      const shipmentIds = [order.shipmentId] 
-
       // TODO Handle error case
-      const resp = await MaargOrderService.retryShippingLabel(shipmentIds)
+      const resp = await MaargOrderService.retryShippingLabel(order.shipmentId)
       if (!hasError(resp)) {
         //Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
         await this.store.dispatch('maargorder/updateShipmentPackageDetail', order)
-        order = this.completedOrders.list.find((completedOrder:any) => completedOrder.orderId === order.orderId);
+        order = this.completedOrders.list.find((completedOrder:any) => completedOrder.shipmentId === order.shipmentId);
 
         showToast(translate("Shipping Label generated successfully"))
         await this.printShippingLabel(order)

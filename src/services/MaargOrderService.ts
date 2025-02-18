@@ -407,7 +407,7 @@ const packOrder = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/poorti/packShipment`,
+    url: `/poorti/shipments/${payload.shipmentId}/pack`,
     method: "POST",
     baseURL,
     headers: {
@@ -423,7 +423,7 @@ const packOrders = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/poorti/packShipments`,
+    url: `/poorti/shipments/bulkPack`,
     method: "POST",
     baseURL,
     headers: {
@@ -470,7 +470,7 @@ const shipOrder = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/poorti/shipShipment`,
+    url: `/poorti/shipments/${payload.shipmentId}/ship`,
     method: "POST",
     baseURL,
     headers: {
@@ -485,7 +485,7 @@ const bulkShipOrders = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/poorti/shipShipments`,
+    url: `/poorti/shipments/bulkShip`,
     method: "POST",
     baseURL,
     headers: {
@@ -501,7 +501,7 @@ const unpackOrder = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/poorti/unpack`,
+    url: `/poorti/shipments/${payload.shipmentId}/unpack`,
     method: "POST",
     baseURL,
     headers: {
@@ -512,20 +512,20 @@ const unpackOrder = async (payload: any): Promise<any> => {
   });
 }
 
-const retryShippingLabel = async (shipmentIds: Array<string>, forceRateShop = false): Promise<any> => {
+const retryShippingLabel = async (shipmentId: string, forceRateShop = false): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/poorti/retryShippingLabel`,
-    method: "POST",
+    url: `/poorti/shipments/${shipmentId}/shippingLabels`,
+    method: "get",
     baseURL,
     headers: {
       "api_key": omsRedirectionInfo.token,
       "Content-Type": "application/json"
     },
-    data: {
-      shipmentIds,
+    params: {
+      shipmentId,
       forceRateShop: forceRateShop ? 'Y' : 'N',
       generateLabel: "Y" // This is needed to generate label after the new changes in backend related to auto generation of label.
     },
@@ -538,7 +538,6 @@ const fetchShipmentLabelError = async (shipmentId: string): Promise<any> => {
   let shipmentLabelError = []
 
   try {
-    console.log("=========shipmentId=", shipmentId);
     const payload = {
       shipmentId,
       fieldsToSelect: ["shipmentId", "gatewayMessage"],

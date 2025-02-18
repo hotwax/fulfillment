@@ -77,7 +77,7 @@
               <ion-skeleton-text animated />
             </div>
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
-              <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
+              <ion-button :disabled="addingBoxForShipmentIds.includes(order.shipmentId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
               <ion-row>
                 <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
                   {{ `Box ${shipmentPackage?.packageName}` }} {{ getShipmentBoxTypes(order.carrierPartyId).length ? `| ${boxTypeDesc(getShipmentPackageType(order, shipmentPackage))}` : '' }}
@@ -376,7 +376,7 @@ export default defineComponent({
       defaultShipmentBoxType: '',
       orderBoxes: [] as any,
       searchedQuery: '',
-      addingBoxForOrderIds: [] as any,
+      addingBoxForShipmentIds: [] as any,
       selectedPicklistId: '',
       isScrollingEnabled: false,
       isRejecting: false,
@@ -711,7 +711,7 @@ export default defineComponent({
         const itemsToRejectNotInStock = itemsToReject.filter((item: any) => item.rejectReason === 'NOT_IN_STOCK');
         
         // TODO: ordersCount is not correct as current we are identifying orders count by only checking items visible on UI and not other orders        
-        const ordersCount = this.inProgressOrders.list.map((inProgressOrder: any) => inProgressOrder.items.filter((item: any) => itemsToRejectNotInStock.some((outOfStockItem: any) => outOfStockItem.productSku === item.productSku) && item.orderId !== order.orderId))?.filter((item: any) => item.length).length;
+        const ordersCount = this.inProgressOrders.list.map((inProgressOrder: any) => inProgressOrder.items.filter((item: any) => itemsToRejectNotInStock.some((outOfStockItem: any) => outOfStockItem.productSku === item.productSku) && item.shipmentId !== order.shipmentId))?.filter((item: any) => item.length).length;
 
         if (itemsToReject.length === 1 && ordersCount) {
           message = translate("is identified as unfulfillable. other containing this product will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
@@ -922,7 +922,7 @@ export default defineComponent({
       return defaultBoxType;
     },
     async addShipmentBox(order: any) {
-      this.addingBoxForOrderIds.push(order.orderId)
+      this.addingBoxForShipmentIds.push(order.shipmentId)
 
       const { carrierPartyId, shipmentMethodTypeId } = order
       
@@ -952,7 +952,7 @@ export default defineComponent({
         showToast(translate('Failed to add box'))
         logger.error('Failed to add box', err)
       }
-      this.addingBoxForOrderIds.splice(this.addingBoxForOrderIds.indexOf(order.orderId), 1)
+      this.addingBoxForShipmentIds.splice(this.addingBoxForShipmentIds.indexOf(order.shipmentId), 1)
     },
     getShipmentPackageType(order: any, shipmentPackage: any) {
       let packageType = '';

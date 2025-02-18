@@ -160,13 +160,15 @@ export default defineComponent({
 
       this.isGeneratingShippingLabel = true;
 
-      const isUpdated = await this.updateCarrierAndShippingMethod(this.carrierPartyId, this.shipmentMethodTypeId)
-      if(!isUpdated) {
-        showToast(translate("Failed to update shipment method detail."));
-        return;
+      if (order.carrierPartyId !== this.carrierPartyId || order.shipmentMethodTypeId !== this.shipmentMethodTypeId) {
+        const isUpdated = await this.updateCarrierAndShippingMethod(this.carrierPartyId, this.shipmentMethodTypeId)
+        if (!isUpdated) {
+          showToast(translate("Failed to update shipment method detail."));
+          return;
+        }
       }
 
-      if(this.trackingCode.trim()) {
+      if (this.trackingCode.trim()) {
         isRegenerated = await this.addTrackingCode(order);
       } else if(this.shipmentMethodTypeId && order.missingLabelImage) {
         isRegenerated = await this.regenerateShippingLabel(order)
@@ -203,16 +205,8 @@ export default defineComponent({
         return false;
       }
 
-      // Getting all the shipmentIds from shipmentPackages for which label is missing
-      const shipmentIds = [order.shipmentId]
-
-      if (!shipmentIds.length) {
-        showToast(translate("Failed to generate shipping label"))
-        return false;
-      }
-
       try {
-        const resp = await MaargOrderService.retryShippingLabel(shipmentIds)
+        const resp = await MaargOrderService.retryShippingLabel(order.shipmentId)
         if(hasError(resp)) {
           throw resp.data;
         }
