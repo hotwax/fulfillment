@@ -415,19 +415,15 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const payload = {
-        inputFields: {
-          enumId: enumIds,
-          enumId_op: "in"
-        },
-        viewSize: enumIds.length,
-        fieldList: ["enumId", "description"],
-        entityName: "Enumeration",
-        distinct: "Y"
+        enumId: enumIds,
+        enumId_op: "in",
+        pageSize: enumIds.length,
+        fieldsToSelect: ["enumId", "description"],
       }
 
       const resp = await UtilService.fetchEnumeration(payload)
       if (!hasError(resp) && resp.data.count > 0) {
-        enumerations = resp.data.docs.reduce((enums: any, enumeration: any) => {
+        enumerations = resp.data.reduce((enums: any, enumeration: any) => {
           enums[enumeration.enumId] = enumeration.description
           return enums;
         }, enumerations)
@@ -476,14 +472,13 @@ const actions: ActionTree<UtilState, RootState> = {
     let stores  = [];
     try {
       const payload = {
-        "entityName": "ProductStore",
-        "noConditionFind": "Y",
-        "viewSize": 250 // keeping view size 100 as considering that we will have max 100 product stores
+        fieldsToSelect: ['productStoreId', "storeName"],
+        pageSize: 250 // keeping view size 250 as considering that we will have max 250 product stores
       }
 
       const resp = await UtilService.fetchProductStores(payload)
-      if (!hasError(resp) && resp.data.count > 0) {
-        stores = resp.data.docs
+      if (!hasError(resp)) {
+        stores = resp.data
       } else {
         throw resp.data
       }
@@ -519,20 +514,17 @@ const actions: ActionTree<UtilState, RootState> = {
   
   async getForceScanSetting({ commit, dispatch }, eComStoreId) {
     const payload = {
-      "inputFields": {
-        "productStoreId": eComStoreId,
-        "settingTypeEnumId": "FULFILL_FORCE_SCAN"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["settingValue", "fromDate"],
-      "viewSize": 1
+      productStoreId: eComStoreId,
+      settingTypeEnumId: "FULFILL_FORCE_SCAN",
+      fieldsToSelect: ["settingValue", "fromDate", "thruDate"],
+      pageSize: 1
     }
 
     try {
       const resp = await UtilService.getProductStoreSetting(payload) as any
       if(!hasError(resp)) {
-        const respValue = resp.data.docs[0].settingValue === "true"
+        const storeSettings = resp.data?.filter((setting: any) =>  !setting.thruDate)
+        const respValue = storeSettings[0].settingValue === "true"
         commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, respValue)
       } else {
         dispatch('createForceScanSetting');
@@ -594,17 +586,13 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const resp = await UtilService.getProductStoreSetting({
-        "inputFields": {
-          "productStoreId": eComStoreId,
-          "settingTypeEnumId": "FULFILL_FORCE_SCAN"
-        },
-        "filterByDate": 'Y',
-        "entityName": "ProductStoreSetting",
-        "fieldList": ["fromDate"],
-        "viewSize": 1
+          productStoreId: eComStoreId,
+          settingTypeEnumId: "FULFILL_FORCE_SCAN",
+          fieldsToSelect: ["fromDate"],
+          pageSize: 1
       }) as any
       if(!hasError(resp)) {
-        fromDate = resp.data.docs[0]?.fromDate
+        fromDate = resp.data[0]?.fromDate
       }
     } catch(err) {
       console.error(err)
@@ -639,20 +627,16 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async fetchBarcodeIdentificationPref({ commit, dispatch }, eComStoreId) {
     const payload = {
-      "inputFields": {
-        "productStoreId": eComStoreId,
-        "settingTypeEnumId": "BARCODE_IDEN_PREF"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["settingValue", "fromDate"],
-      "viewSize": 1
+      productStoreId: eComStoreId,
+      settingTypeEnumId: "BARCODE_IDEN_PREF",
+      fieldToSelect: ["settingValue", "fromDate"],
+      pageSize: 1
     }
 
     try {
       const resp = await UtilService.getProductStoreSetting(payload) as any
       if(!hasError(resp)) {
-        const respValue = resp.data.docs[0].settingValue
+        const respValue = resp.data[0].settingValue
         commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, respValue)
       } else {
         dispatch("createBarcodeIdentificationPref");

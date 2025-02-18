@@ -653,11 +653,71 @@ const addTrackingCode = async (payload: any): Promise<any> => {
   });
 }
 
+const fetchGiftCardItemPriceInfo = async (payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const currentOrder = store.getters['maargorder/getCurrent'];
+  
+  let resp = {} as any;
+  const itemPriceInfo = {} as any;
+
+  try {
+    if (currentOrder && Object.keys(currentOrder).length) {
+      itemPriceInfo.currencyUom = currentOrder.currencyUom
+    } else {
+      resp = await fetchOrderDetail(payload.orderId);
+      if (!hasError(resp)) {
+        itemPriceInfo.currencyUom = resp.data.currencyUom
+      } else {
+        throw resp.data
+      }
+    }
+
+    resp = await client({
+      url: "/oms/orders/${payload.orderId}/items/${payload.orderItemSeqId}",
+      method: "GET",
+      baseURL,
+      headers: {
+        "api_key": omsRedirectionInfo.token,
+        "Content-Type": "application/json"
+      },
+      params: {fieldsToSelect: ["unitPrice"]}
+    });
+    if (!hasError(resp)) {
+      itemPriceInfo.unitPrice = resp.data.docs[0].unitPrice
+    } else {
+      throw resp.data
+    }
+  } catch(error: any) {
+    logger.error(error);
+  }
+
+  return itemPriceInfo;
+}
+
+const activateGiftCard = async (payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/poorti/giftCardFulfillments`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload,
+  });
+}
+
 export const MaargOrderService = {
+  activateGiftCard,
   addShipmentBox,
   addTrackingCode,
   bulkShipOrders,
   createPicklist,
+  fetchGiftCardItemPriceInfo,
   fetchOrderDetail,
   fetchPicklists,
   fetchShipmentLabelError,

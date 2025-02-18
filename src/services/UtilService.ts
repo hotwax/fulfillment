@@ -463,30 +463,50 @@ const deleteEnumeration = async (payload: any): Promise<any> => {
 }
 
 const fetchEnumeration = async (query: any): Promise <any> => {
-  return api({
-    url: "performFind",
-    method: "get",
-    params: query,
-    cache: true
-  })
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/admin/enums`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+  });
 }
 
 const fetchProductStores = async (payload: any): Promise<any> => {
-  return api({
-    url: "performFind",
-    method: "POST",
-    data: payload,
-    cache: true
-  })
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/productStores`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params: payload
+  });
 }
 
 const fetchFacilities = async (payload: any): Promise<any> => {
-  return api({
-    url: "performFind",
-    method: "POST",
-    data: payload,
-    cache: true
-  })
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: "/oms/facilities",
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params: payload
+  });
 }
 
 const fetchShipmentGatewayConfigs = async (payload: any): Promise<any> => {
@@ -499,97 +519,83 @@ const fetchShipmentGatewayConfigs = async (payload: any): Promise<any> => {
 }
 
 const updateForceScanSetting = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/updateProductStoreSetting",
-    method: "post",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: "/oms/productStores/${params.productStoreId}/settings",
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     data: payload
   });
 }
 
 const createForceScanSetting = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/createProductStoreSetting",
-    method: "post",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: "/oms/productStores/${params.productStoreId}/settings",
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     data: payload
   });
 }
 
 const updateBarcodeIdentificationPref = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/updateProductStoreSetting",
-    method: "post",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: "/oms/productStores/${params.productStoreId}/settings",
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     data: payload
   });
 }
 
 const createBarcodeIdentificationPref = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/createProductStoreSetting",
-    method: "post",
-    data: payload
-  });
-}
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
 
-const getProductStoreSetting = async (payload: any): Promise<any> => {
-  return api({
-    url: "performFind",
-    method: "post",
-    data: payload
-  });
-}
-
-const fetchGiftCardItemPriceInfo = async (payload: any): Promise<any> => {
-  // Todo: find a better alternative for fetching unitPrice and currency together
-  let resp = {} as any;
-  const itemPriceInfo = {} as any;
-
-  const params = {
-    inputFields: {
-      orderId: payload.orderId,
-      orderItemSeqId: payload.orderItemSeqId
+  return client({
+    url: "/oms/productStores/${params.productStoreId}/settings",
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
     },
-    entityName: "OrderItem",
-    fieldList: ["unitPrice"],
-    viewSize: 1
-  }
+    data: payload
+  });
+}
 
-  try {
-    resp = await api({
-      url: "performFind",
-      method: "post",
-      data: params
-    });
+const getProductStoreSetting = async (params: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
 
-    if(!hasError(resp)) {
-      itemPriceInfo.unitPrice = resp.data.docs[0].unitPrice
-
-      resp = await api({
-        url: "performFind",
-        method: "post",
-        data: {
-          inputFields: {
-            orderId: payload.orderId,
-            orderItemSeqId: payload.orderItemSeqId
-          },
-          entityName: "OrderHeader",
-          fieldList: ["currencyUom"],
-          viewSize: 1
-        }
-      });
-
-      if(!hasError(resp)) {
-        itemPriceInfo.currencyUom = resp.data.docs[0].currencyUom
-      } else {
-        throw resp.data;
-      }
-    } else {
-      throw resp.data;
-    }
-  } catch(error: any) {
-    logger.error(error);
-  }
-
-  return itemPriceInfo;
+  return client({
+    url: "/oms/productStores/${params.productStoreId}/settings",
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params
+  });
 }
 
 const fetchGiftCardFulfillmentInfo = async (payload: any): Promise<any> => {
@@ -605,22 +611,6 @@ const fetchGiftCardFulfillmentInfo = async (payload: any): Promise<any> => {
       "Content-Type": "application/json"
     },
     params: payload,
-  });
-}
-
-const activateGiftCard = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return client({
-    url: `/poorti/giftCardFulfillments/activate`,
-    method: "GET",
-    baseURL,
-    headers: {
-      "api_key": omsRedirectionInfo.token,
-      "Content-Type": "application/json"
-    },
-    data: payload,
   });
 }
 
@@ -722,7 +712,6 @@ const fetchOrderShipGroupInfo = async(payload: any): Promise<any> => {
 }
 
 export const UtilService = {
-  activateGiftCard,
   createBarcodeIdentificationPref,
   createEnumerationGroupMember,
   createForceScanSetting,
@@ -736,7 +725,6 @@ export const UtilService = {
   fetchFacilityTypeInformation,
   fetchFulfillmentRejectReasons,
   fetchGiftCardFulfillmentInfo,
-  fetchGiftCardItemPriceInfo,
   fetchOrderShipGroupInfo,
   fetchPartyInformation,
   fetchPicklistInformation,
