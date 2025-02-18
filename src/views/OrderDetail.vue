@@ -81,8 +81,10 @@
                 </ion-thumbnail>
                 <ion-label>
                   <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                  {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                  <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                  <div>
+                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                    <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                  </div>
                   <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
                 </ion-label>
               </ion-item>
@@ -115,7 +117,7 @@
             <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
              <!--Adding checks to avoid any operations if order has missing info, mostly when after packing Solr is not updaing immediately-->
             <div class="product-metadata">
-              <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+              <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal" class="ion-padding-end">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
               <ion-button :disabled="order.hasMissingInfo" color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
                 {{ translate('Check stock') }}
                 <ion-icon slot="end" :icon="cubeOutline"/>
@@ -127,8 +129,8 @@
               </ion-button>
               <ion-button v-if="isKit(item)" fill="clear" color="medium" size="small" @click.stop="fetchKitComponent(item)">
                 {{ translate('Components') }}
-                <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
-                <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
+                <ion-icon v-if="item.showKitComponents" color="medium" slot="end" :icon="chevronUpOutline"/>
+                <ion-icon v-else color="medium" slot="end" :icon="listOutline"/>
               </ion-button>
               <ion-button :disabled="order.hasMissingInfo" v-if="item.productTypeId === 'GIFT_CARD'" fill="clear" color="medium" size="small" @click="openGiftCardActivationModal(item)">
                 {{ translate('Gift card') }}
@@ -144,7 +146,10 @@
                   </ion-thumbnail>
                   <ion-label>
                     <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
-                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                    <div>
+                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                      <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                    </div>
                     <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
                   <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.rejectedComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
@@ -332,8 +337,10 @@
               </ion-thumbnail>
               <ion-label>
                 <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                <div>
+                  {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                  <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                </div>
               </ion-label>
               
               <div class="other-shipment-actions">
@@ -569,10 +576,11 @@ export default defineComponent({
     this.isCODPaymentPending = false
     this.isOrderAdjustmentPending = false
 
-    const isCODPayment = this.order?.orderPaymentPreferences?.some((paymentPref: any) => paymentPref.paymentMethodTypeId === "EXT_SHOP_CASH_ON_DEL")
+    const isCODPayment = this.order?.orderPaymentPreferences?.some((paymentPref: any) => paymentPref.paymentMethodTypeId === "EXT_SHOP_CASH_ON_DEL" && paymentPref.statusId === "PAYMENT_NOT_RECEIVED")
 
     if(isCODPayment) {
-      this.fetchCODPaymentInfo();
+      this.isCODPaymentPending = true
+      this.fetchOrderAdjustments();
     }
   },
   async mounted() {
@@ -1716,20 +1724,6 @@ export default defineComponent({
 
       modal.present();
     },
-    async fetchCODPaymentInfo() {
-      try {
-        const resp = await UtilService.getCODOrderRemainingTotal({
-          orderId: this.orderId
-        })
-
-        if(!hasError(resp) && resp.data?.total) {
-          this.isCODPaymentPending = true
-          this.fetchOrderAdjustments();
-        }
-      } catch(err) {
-        logger.error(err);
-      }
-    },
     async fetchOrderAdjustments() {
       try {
         const resp = await UtilService.fetchOrderAdjustments({
@@ -1776,16 +1770,22 @@ export default defineComponent({
         ] as any
 
         if(this.orderAdjustmentShipmentId) {
-          const shipGroup = this.order.shipGroups.find((group: any) => group.shipmentId == this.orderAdjustmentShipmentId)
+          // Added optional chaining on shipGroup and default empty object, as in some case found that shipmentId is added on adjustment but orderShipGroups are not found
+          // thus, the UI breaks.
+          const shipGroup = this.order.shipGroups?.find((group: any) => group.shipmentId == this.orderAdjustmentShipmentId) || {}
           facilityName = shipGroup.facilityName || shipGroup.facilityId
           trackingCode = shipGroup.trackingCode
-          message += "Label was generated by facility with tracking code"
-          buttons.push({
-            text: translate("Copy tracking code"),
-            handler: () => {
-              copyToClipboard(trackingCode, "Copied to clipboard")
-            }
-          })
+
+          // As mentioned above, if shipGroup is not found we won't have facility and trackingCode, thus not displaying the second para in that case.
+          if(trackingCode) {
+            message += "Label was generated by facility with tracking code"
+            buttons.push({
+              text: translate("Copy tracking code"),
+              handler: () => {
+                copyToClipboard(trackingCode, "Copied to clipboard")
+              }
+            })
+          }
         }
 
         const alert = await alertController.create({
@@ -1895,6 +1895,12 @@ ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-te
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.product-metadata {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
 }
 
 .shipgroup-details {

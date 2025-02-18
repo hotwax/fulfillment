@@ -2,7 +2,7 @@
     <ion-page>
       <ion-header>
         <ion-toolbar>
-          <ion-back-button default-href="/tabs/users" slot="start"></ion-back-button>
+          <ion-back-button default-href="/carriers" slot="start"></ion-back-button>
           <ion-title>{{ translate("Create carrier") }}</ion-title>
         </ion-toolbar>
       </ion-header>

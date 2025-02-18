@@ -40,7 +40,7 @@
         <ion-input :label="translate('Tracking code')" :placeholder="translate('enter code')" v-model="trackingCode" />
       </ion-item>
       <ion-item>
-        <ion-label>{{ translate("Tracking URL:", { trackingUrl: generateTrackingUrl() }) }}</ion-label>
+        <ion-label>{{ generateTrackingUrl() }}</ion-label>
         <ion-button slot="end" fill="clear" size="default" :disabled="!trackingCode.trim() || !getCarrierTrackingUrl()" @click="redirectToTrackingUrl()">
           {{ translate("Test") }}
           <ion-icon :icon="openOutline" slot="end" />
@@ -237,7 +237,7 @@ export default defineComponent({
     },
     generateTrackingUrl() {
       if(this.getCarrierTrackingUrl()) {
-        return this.getCarrierTrackingUrl()?.replace("${trackingNumber}", this.trackingCode)
+        return translate("Tracking URL:", { trackingUrl: this.getCarrierTrackingUrl()?.replace("${trackingNumber}", this.trackingCode) })
       }
       return translate("A tracking URL not configured for", { carrierName: this.getCarrierName() })
     },
