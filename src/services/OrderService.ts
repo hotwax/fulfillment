@@ -552,7 +552,7 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
 
 const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>): Promise<any> => {
   try {
-    let pdfUrls = shippingLabelPdfUrls;
+    let pdfUrls = shippingLabelPdfUrls?.filter((pdfUrl: any) => pdfUrl);
     if (!pdfUrls || pdfUrls.length == 0) {
     // Get packing slip from the server
     const resp: any = await api({
