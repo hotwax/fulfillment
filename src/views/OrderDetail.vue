@@ -791,7 +791,7 @@ export default defineComponent({
               const shipmentIds = [order.shipmentId]
               const shippingLabelPdfUrls: string[] = Array.from(
                   new Set(
-                    (order.shipmentPackageRouteSegments ?? [])
+                    (order.shipmentPackageRouteSegDetails ?? [])
                       .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
                       .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
                   )
@@ -1052,7 +1052,7 @@ export default defineComponent({
       const shipmentIds = [order.shipmentId];
       const shippingLabelPdfUrls: string[] = Array.from(
         new Set(
-          (order.shipmentPackageRouteSegments ?? [])
+          (order.shipmentPackageRouteSegDetails ?? [])
             .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
             .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
         )
@@ -1060,7 +1060,7 @@ export default defineComponent({
 
       const internationalInvoiceUrls: string[] = Array.from(
         new Set(
-          order.shipmentPackageRouteSegments
+          order.shipmentPackageRouteSegDetails
             ?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl)
             .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) || []
         )

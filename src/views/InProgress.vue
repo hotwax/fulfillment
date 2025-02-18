@@ -526,7 +526,7 @@ export default defineComponent({
 
                   const shippingLabelPdfUrls: string[] = Array.from(
                     new Set(
-                      (order.shipmentPackageRouteSegments ?? [])
+                      (order.shipmentPackageRouteSegDetails ?? [])
                         .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
                         .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
                     )
@@ -547,7 +547,7 @@ export default defineComponent({
 
                   const internationalInvoiceUrls: string[] = Array.from(
                     new Set(
-                      order.shipmentPackageRouteSegments
+                      order.shipmentPackageRouteSegDetails
                         ?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl)
                         .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) || []
                     )
@@ -625,7 +625,7 @@ export default defineComponent({
               const internationalInvoiceUrls: string[] = Array.from(
                 new Set(
                   orderList
-                    .flatMap((order: any) => order.shipmentPackageRouteSegments ?? []) // Flatten all shipments
+                    .flatMap((order: any) => order.shipmentPackageRouteSegDetails ?? []) // Flatten all shipments
                     .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) // Filter shipments with invoice URL
                     .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) // Extract URLs
                 )
@@ -634,7 +634,7 @@ export default defineComponent({
               const shippingLabelPdfUrls: string[] = Array.from(
                 new Set(
                   orderList
-                    .flatMap((order: any) => order.shipmentPackageRouteSegments ?? []) // Flatten all shipments
+                    .flatMap((order: any) => order.shipmentPackageRouteSegDetails ?? []) // Flatten all shipments
                     .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl) // Filter shipments with label image URL
                     .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl) // Extract URLs
                 )

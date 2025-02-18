@@ -352,11 +352,11 @@ const findShipments = async (query: any): Promise <any>  => {
     if (!hasError(resp)) {
       total = resp.data.shipmentCount
       orders = resp.data.shipments.map((shipment: any) => {
-        const missingLabelImage = productStoreShipmentMethCount > 0 ? shipment?.shipmentPackageRouteSegments?.some((shipmentPackageRouteSeg: any) => !shipmentPackageRouteSeg.trackingCode) : false;
+        const missingLabelImage = productStoreShipmentMethCount > 0 ? shipment?.shipmentPackageRouteSegDetails?.some((shipmentPackageRouteSeg: any) => !shipmentPackageRouteSeg.trackingCode) : false;
         return {
           ...shipment,
           missingLabelImage,
-          trackingCode: shipment?.shipmentPackageRouteSegments[0]?.trackingCode || null,
+          trackingCode: shipment?.shipmentPackageRouteSegDetails[0]?.trackingCode || null,
         };
       });
     } else {
