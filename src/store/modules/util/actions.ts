@@ -55,7 +55,7 @@ const actions: ActionTree<UtilState, RootState> = {
       const resp = await UtilService.fetchFulfillmentRejectReasons(payload)
 
       if(!hasError(resp)) {
-        resp.data.docs.map((reason: any) => {
+        resp.data.filter((reason: any) => !reason.thruDate).map((reason: any) => {
           fulfillmentRejectReasons[reason.enumId] = reason
         })
       } else {

@@ -416,27 +416,50 @@ const fetchRejectReasonEnumTypes = async (query: any): Promise<any> => {
 }
 
 const createEnumeration = async (payload: any): Promise<any> => {
-  return api({
-    url: "/service/createEnumeration",
-    method: "post",
-    data: payload
-  })
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/admin/enums`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload,
+  });
 }
 
 const updateEnumeration = async (payload: any): Promise<any> => {
-  return api({
-    url: "/service/updateEnumeration",
-    method: "post",
-    data: payload
-  })
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/admin/enums/${payload.enumId}`,
+    method: "PUT",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload,
+  });
 }
 
 const deleteEnumeration = async (payload: any): Promise<any> => {
-  return api({
-    url: "/service/deleteEnumeration",
-    method: "post",
-    data: payload
-  })
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/admin/enums/${payload.enumId}`,
+    method: "DELETE",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+  });
 }
 
 const fetchEnumeration = async (query: any): Promise <any> => {
