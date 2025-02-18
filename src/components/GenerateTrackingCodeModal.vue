@@ -131,11 +131,10 @@ export default defineComponent({
   props: ["order", "updateCarrierShipmentDetails", "shipmentLabelErrorMessages", "fetchShipmentLabelError"],
   async mounted() {
     this.isTrackingRequired = this.isTrackingRequiredForAnyShipmentPackage()
-    if(this.facilityCarriers) {
-      const shipmentPackage = this.order.shipmentPackages?.[0];
-      this.carrierPartyId = shipmentPackage?.carrierPartyId ? shipmentPackage?.carrierPartyId : this.facilityCarriers[0].partyId;
+    if (this.facilityCarriers) {
+      this.carrierPartyId = this.order?.carrierPartyId ? this.order?.carrierPartyId : this.facilityCarriers[0].partyId;
       this.carrierMethods = await this.getProductStoreShipmentMethods(this.carrierPartyId);
-      this.shipmentMethodTypeId = shipmentPackage?.shipmentMethodTypeId;
+      this.shipmentMethodTypeId = this.order?.shipmentMethodTypeId;
     }
   },
   methods: {
@@ -246,6 +245,7 @@ export default defineComponent({
         const params = {
           orderId: this.order.orderId,
           shipGroupSeqId: this.order.shipGroupSeqId,
+          shipmentId: this.order.shipmentId,
           shipmentMethodTypeId : shipmentMethodTypeId ? shipmentMethodTypeId : "",
           carrierPartyId
         }

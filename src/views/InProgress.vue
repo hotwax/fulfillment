@@ -1091,11 +1091,10 @@ export default defineComponent({
     },
     async showShippingLabelErrorModal(order: any) {
       // Getting all the shipment ids
-      const shipmentIds = order.shipmentIds;
       const shippingLabelErrorModal = await modalController.create({
         component: ShippingLabelErrorModal,
         componentProps: {
-          shipmentIds
+          shipmentId : order.shipmentId
         }
       });
       return shippingLabelErrorModal.present();
@@ -1131,7 +1130,7 @@ export default defineComponent({
       modal.onDidDismiss().then((result: any) => {
         if(result.data?.moveToNext) {
           const inProgressOrders = this.getInProgressOrders()
-          const updatedOrder = inProgressOrders.find((currentOrder: any) => currentOrder.orderId === order.orderId);
+          const updatedOrder = inProgressOrders.find((currentOrder: any) => currentOrder.shipmentId === order.shipmentId);
           if(this.isForceScanEnabled) this.scanOrder(updatedOrder);
           else this.packOrder(updatedOrder);
         }

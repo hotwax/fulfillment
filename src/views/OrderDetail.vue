@@ -623,6 +623,7 @@ export default defineComponent({
         const params = {
           orderId: this.order.orderId,
           shipGroupSeqId: this.order.shipGroupSeqId,
+          shipmentId: this.order.shipmentId,
           shipmentMethodTypeId : shipmentMethodTypeId ? shipmentMethodTypeId : "",
           carrierPartyId
         }

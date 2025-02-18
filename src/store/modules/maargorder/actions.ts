@@ -38,8 +38,15 @@ const actions: ActionTree<OrderState, RootState> = {
     const resp = await MaargOrderService.findShipments(inProgressQuery);
     orders = (resp.orders || []).map((order: any) => ({
       ...order,
-      category: 'in-progress'
-    }))
+      category: 'in-progress',
+      items: order.items.map((item: any) => ({
+        ...item,
+        selectedBox: order?.shipmentPackageRouteSegDetails.find(
+          (shipmentPackageContent: any) =>
+            shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId
+        )?.packageName || null,
+      })),
+    }));
     
     const productIds = [...new Set(orders.flatMap((order:any) => order.items.map((item:any) => item.productId)))];
     const shipmentMethodTypeIds = [...new Set(orders.map((order:any) => order.shipmentMethodTypeId))];

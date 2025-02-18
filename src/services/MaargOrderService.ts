@@ -538,6 +538,15 @@ const fetchShipmentLabelError = async (shipmentId: string): Promise<any> => {
   let shipmentLabelError = []
 
   try {
+    console.log("=========shipmentId=", shipmentId);
+    const payload = {
+      shipmentId,
+      fieldsToSelect: ["shipmentId", "gatewayMessage"],
+      getewayMessage_op: 'empty',
+      getewayMessage_not: 'Y'
+
+    }
+
     const resp = await client({
       url: `/poorti/shipmentPackageRouteSegDetails`,
       method: "GET",
@@ -546,7 +555,7 @@ const fetchShipmentLabelError = async (shipmentId: string): Promise<any> => {
         "api_key": omsRedirectionInfo.token,
         "Content-Type": "application/json"
       },
-      params: { shipmentId, fieldsToSelect: ["shipmentId", "gatewayMessage"], distinct: true },
+      params: payload,
     });
 
     if (hasError(resp)) {

@@ -309,7 +309,7 @@ export default defineComponent({
       this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
       
       //update the order in order to toggle kit components section
-      const updatedOrder = this.completedOrders.list.find((order: any) =>  order.orderId === orderItem.orderId && order.picklistBinId === orderItem.picklistBinId);
+      const updatedOrder = this.completedOrders.list.find((order: any) =>  order.shipmentId === orderItem.shipmentId);
       const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
       updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
     },
@@ -453,7 +453,7 @@ export default defineComponent({
             "type": "terms",
             "facet": {
               "groups": "unique(orderId)",
-              "itemCount": "sum(itemQuantity)"
+              "itemCount": "sum(quantity)"
             }
           }
         }
@@ -493,7 +493,7 @@ export default defineComponent({
             "sort": "index",
             "type": "terms",
             "facet": {
-              "groups": "unique(picklistBinId)"
+              "groups": "unique(orderId)"
             }
           }
         }
@@ -501,6 +501,7 @@ export default defineComponent({
 
       try {
         const resp = await UtilService.fetchCarrierPartyIds(payload)
+        
 
         if(resp.status == 200 && !hasError(resp)) {
           this.carrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
