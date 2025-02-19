@@ -171,7 +171,7 @@
         productIdentificationPref: 'user/getProductIdentificationPref',
         productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
         getShipmentMethodDesc: 'util/getShipmentMethodDesc',
-        getPartyName: 'util/getPartyName',
+        getPartyName: 'party/getPartyName',
       }),
     },
     methods: {
