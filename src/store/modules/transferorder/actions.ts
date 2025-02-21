@@ -87,11 +87,12 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     let resp;
     try {
       const params = {
-        "entityName": "OrderHeaderAndShipGroups",
+        "entityName": "OrderHeaderItemAndShipGroup",
         "inputFields": {
           "orderId": payload.orderId,
+          "oisgFacilityId": escapeSolrSpecialChars(getCurrentFacilityId())
         },
-        "fieldList": ["orderId", "orderName", "externalId", "orderTypeId", "statusId", "orderDate", "shipGroupSeqId", "facilityId", "orderFacilityId"],
+        "fieldList": ["orderId", "orderName", "externalId", "orderTypeId", "statusId", "orderDate", "shipGroupSeqId", "oisgFacilityId", "orderFacilityId"],
         "viewSize": 1,
         "distinct": "Y"
       }
@@ -99,6 +100,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       resp = await OrderService.fetchOrderHeader(params);
       if (!hasError(resp)) {
          orderDetail = resp.data.docs?.[0];
+         orderDetail["facilityId"] = orderDetail.oisgFacilityId
          
         //fetch order items
         orderDetail.items = await OrderService.fetchOrderItems(payload.orderId);
@@ -321,6 +323,65 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   },
   async clearCurrentTransferShipment({ commit }) {
     commit(types.ORDER_CURRENT_SHIPMENT_CLEARED)
+  },
+  async fetchRejectReasons({ commit }) {
+    let rejectReasons = [];
+
+    const permissions = store.getters["user/getUserPermissions"];
+    const isAdminUser = permissions.some((permission: any) => permission.action === "APP_STOREFULFILLMENT_ADMIN")
+
+    if(isAdminUser) {
+      try {
+        const payload = {
+          inputFields: {
+            parentEnumTypeId: ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
+            parentEnumTypeId_op: "in"
+          },
+          fieldList: ["description", "enumId", "enumName", "enumTypeId", "sequenceNum"],
+          distinct: "Y",
+          entityName: "EnumTypeChildAndEnum",
+          viewSize: 20, // keeping view size 20 as considering that we will have max 20 reasons
+          orderBy: "sequenceNum"
+        }
+
+        const resp = await OrderService.fetchRejectReasons(payload)
+
+        if(!hasError(resp) && resp.data.count > 0) {
+          rejectReasons = resp.data.docs
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        logger.error("Failed to fetch reject reasons", err)
+      }
+    } else {
+      try {
+        const payload = {
+          inputFields: {
+            enumerationGroupId: "TO_REJ_RSN_GRP"
+          },
+          // We shouldn't fetch description here, as description contains EnumGroup description which we don't wanna show on UI.
+          fieldList: ["enumerationGroupId", "enumId", "fromDate", "sequenceNum", "enumDescription", "enumName"],
+          distinct: "Y",
+          entityName: "EnumerationGroupAndMember",
+          viewSize: 200,
+          filterByDate: "Y",
+          orderBy: "sequenceNum"
+        }
+
+        const resp = await OrderService.fetchRejectReasons(payload)
+
+        if(!hasError(resp) && resp?.data.docs.length > 0) {
+          rejectReasons = resp.data.docs
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        logger.error("Failed to fetch fulfillment reject reasons", err)
+      }
+    }
+
+    commit(types.ORDER_REJECT_REASONS_UPDATED, rejectReasons)
   }
 }
 
