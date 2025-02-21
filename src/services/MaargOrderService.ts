@@ -105,6 +105,7 @@ const createPicklist = async (payload: any): Promise <any>  => {
 
 const printPicklist = async (picklistId: string): Promise <any>  => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
 
   try {
     const resp = await client({
@@ -112,6 +113,7 @@ const printPicklist = async (picklistId: string): Promise <any>  => {
       method: "GET",
       baseURL,
       headers: {
+        "api_key": omsRedirectionInfo.token,
         "Content-Type": "application/json"
       },
       responseType: "blob",
@@ -140,6 +142,7 @@ const printPicklist = async (picklistId: string): Promise <any>  => {
 const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
   try {
     const baseURL = store.getters['user/getMaargBaseUrl'];
+    const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
 
     // Get packing slip from the server
     const resp = await client({
@@ -147,6 +150,7 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
       method: "GET",
       baseURL,
       headers: {
+        "api_key": omsRedirectionInfo.token,
         "Content-Type": "application/json"
       },
       params: {
@@ -179,14 +183,17 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
 const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>): Promise<any> => {
   try {
     const baseURL = store.getters['user/getMaargBaseUrl'];
+    const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+
     let pdfUrls = shippingLabelPdfUrls;
     if (!pdfUrls || pdfUrls.length == 0) {
     // Get packing slip from the server
     const resp = await client({
-      url: "/poorti/ShippingLabel.pdf",
+      url: "/poorti/Label.pdf",
       method: "GET",
       baseURL,
       headers: {
+        "api_key": omsRedirectionInfo.token,
         "Content-Type": "application/json"
       },
       params: {
@@ -243,7 +250,7 @@ const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>): Pro
 
     // Get packing slip from the server
     const resp = await client({
-      url: "/poorti/LabelAndPackingSlip.pdf",
+      url: "/poorti/PackingSlipAndLabel.pdf",
       method: "GET",
       baseURL,
       headers: {
@@ -501,8 +508,8 @@ const unpackOrder = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/poorti/shipments/${payload.shipmentId}/unpack`,
-    method: "POST",
+    url: `/poorti/shipments/${payload.shipmentId}`,
+    method: "PUT",
     baseURL,
     headers: {
       "api_key": omsRedirectionInfo.token,

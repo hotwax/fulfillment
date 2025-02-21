@@ -568,7 +568,7 @@ export default defineComponent({
             text: translate("Unpack"),
             handler: async () => {
               try {
-                const resp = await MaargOrderService.unpackOrder({shipmentId: order.shipmentId})
+                const resp = await MaargOrderService.unpackOrder({shipmentId: order.shipmentId, statusId: 'SHIPMENT_APPROVED'})
 
                 if(resp.status == 200 && !hasError(resp)) {
                   showToast(translate('Order unpacked successfully'))
