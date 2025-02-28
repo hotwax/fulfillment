@@ -170,8 +170,6 @@ export default defineComponent({
 
       if (this.trackingCode.trim()) {
         isRegenerated = await this.addTrackingCode(order);
-      } else if(this.shipmentMethodTypeId && order.missingLabelImage) {
-        isRegenerated = await this.regenerateShippingLabel(order)
       }
 
       //fetching updated shipment packages
@@ -194,26 +192,6 @@ export default defineComponent({
       } catch (error: any) {
         logger.error('Failed to add tracking code', error);
         showToast(translate("Failed to add tracking code."));
-        return false;
-      }
-      return true;
-    },
-    async regenerateShippingLabel(order: any) {
-      // If there are no product store shipment method configured, then not generating the label and displaying an error toast
-      if(this.productStoreShipmentMethCount <= 0) {
-        showToast(translate("Unable to generate shipping label due to missing product store shipping method configuration"))
-        return false;
-      }
-
-      try {
-        const resp = await MaargOrderService.retryShippingLabel(order.shipmentId)
-        if(hasError(resp)) {
-          throw resp.data;
-        }
-      } catch(error: any) {
-        this.fetchShipmentLabelError && this.fetchShipmentLabelError()
-        logger.error(error);
-        showToast(translate("Failed to generate shipping label"))
         return false;
       }
       return true;
