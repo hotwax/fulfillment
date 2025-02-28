@@ -519,7 +519,7 @@ const unpackOrder = async (payload: any): Promise<any> => {
   });
 }
 
-const retryShippingLabel = async (shipmentId: string, forceRateShop = false): Promise<any> => {
+const retryShippingLabel = async (shipmentId: string): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
@@ -530,11 +530,6 @@ const retryShippingLabel = async (shipmentId: string, forceRateShop = false): Pr
     headers: {
       "api_key": omsRedirectionInfo.token,
       "Content-Type": "application/json"
-    },
-    params: {
-      shipmentId,
-      forceRateShop: forceRateShop ? 'Y' : 'N',
-      generateLabel: "Y" // This is needed to generate label after the new changes in backend related to auto generation of label.
     },
   });
 }
@@ -595,7 +590,7 @@ const voidShipmentLabel = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return await client({
-    url: `/poorti/voidShipmentLabel`,
+    url: `/poorti/shipments/${payload.shipmentId}/shippingLabels/void`,
     method: "POST",
     baseURL,
     headers: {
