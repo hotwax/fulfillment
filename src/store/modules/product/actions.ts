@@ -76,20 +76,13 @@ const actions: ActionTree<ProductState, RootState> = {
     let resp;
     try {
       resp = await ProductService.fetchProductComponents({
-        "entityName": "ProductAssoc",
-          "inputFields": {
-            "productId": productId,
-            "productTypeId": "PRODUCT_COMPONENT"
-          },
-          "fieldList": ["productId", "productIdTo", "productAssocTypeId"],
-          "viewIndex": 0,
-          "viewSize": 250,  // maximum records we could have
-          "distinct": "Y",
-          "noConditionFind": "Y",
-          "filterByDate": "Y"
+        productId: productId,
+        productAssocTypeId: "PRODUCT_COMPONENT",
+        thruDate_op: "empty",
+        pageSize: 100,  // maximum records we could have
       })
       if (!hasError(resp)) {
-        const productComponents = resp.data.docs;
+        const productComponents = resp.data;
         const componentProductIds = productComponents.map((productComponent: any) => productComponent.productIdTo);
         await dispatch('fetchProducts', { productIds: componentProductIds })
         
