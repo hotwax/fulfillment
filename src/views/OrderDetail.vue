@@ -225,7 +225,7 @@
                 <p class="ion-text-wrap" v-if="order?.shippingAddress?.address2">{{ order.shippingAddress.address2 }}</p>
                 <p class="ion-text-wrap">{{ order?.shippingAddress?.city ? order.shippingAddress.city + "," : "" }} {{ order.shippingAddress?.postalCode }}</p>
                 <p class="ion-text-wrap">{{ order?.shippingAddress?.stateName ? order.shippingAddress.stateName + "," : "" }} {{ order.shippingAddress?.countryName }}</p>
-                <p class="ion-text-wrap" v-if="order?.contactNumber">{{ order?.contactNumber }}</p>
+                <p class="ion-text-wrap" v-if="order?.telecomNumber?.contactNumber">{{ order?.telecomNumber?.contactNumber }}</p>
               </ion-label>
             </ion-item>
             <ion-item color="light" lines="none" v-if="order?.shippingInstructions">

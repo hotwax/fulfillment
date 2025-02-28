@@ -348,12 +348,15 @@ const actions: ActionTree<OrderState, RootState> = {
     try {
       const resp = await MaargOrderService.fetchOrderDetail(order.orderId);
       if (!hasError(resp)) {
+        
+
         order = {
           ...order,
           paymentPreferences: resp.data.paymentPreferences,
           adjustments: resp.data.adjustments,
           attributes: resp.data.attributes,
-          contactMechs: resp.contactMechs
+          shippingAddress: resp.data.contactMechs?.find((contactMech:any) => contactMech.contactMechPurposeTypeId === "SHIPPING_LOCATION")?.postalAddress,
+          telecomNumber: resp.data.contactMechs?.find((contactMech:any) => contactMech.contactMechPurposeTypeId === "PHONE_SHIPPING")?.telecomNumber,
         }  
         if (order.paymentPreferences.length > 0) {
           const paymentMethodTypeIds = order?.paymentPreferences.map((orderPaymentPreference: any) => orderPaymentPreference.paymentMethodTypeId);
