@@ -503,7 +503,7 @@ export default defineComponent({
       order: "order/getCurrent",
       rejectReasonOptions: 'util/getRejectReasonOptions',
       userPreference: 'user/getUserPreference',
-      getPartyName: 'util/getPartyName',
+      getPartyName: 'party/getPartyName',
       getfacilityTypeDesc: 'util/getFacilityTypeDesc',
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
       getStatusDesc: 'util/getStatusDesc',
@@ -1539,7 +1539,7 @@ export default defineComponent({
 
         if(resp.status == 200 && !hasError(resp)) {
           this.carrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
-          this.store.dispatch('util/fetchPartyInformation', this.carrierPartyIds.map((carrierPartyId) => carrierPartyId.val.split('/')[0]))
+          this.store.dispatch('party/fetchPartyInformation', this.carrierPartyIds.map((carrierPartyId) => carrierPartyId.val.split('/')[0]))
         } else {
           throw resp.data
         }
