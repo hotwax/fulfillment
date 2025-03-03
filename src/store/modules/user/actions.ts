@@ -71,9 +71,15 @@ const actions: ActionTree<UserState, RootState> = {
       }, []);
 
       const facilityId = router.currentRoute.value.query.facilityId
+      let isQueryFacilityFound = false
       if (facilityId) {
         const facility = userProfile.facilities.find((facility: any) => facility.facilityId === facilityId);
-        useUserStore().currentFacility = facility
+        if (facility) {
+          isQueryFacilityFound = true
+          useUserStore().currentFacility = facility
+        } else {
+          showToast(translate("Redirecting to home page due to incorrect information being passed."))
+        }
       }
 
       // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
@@ -110,7 +116,7 @@ const actions: ActionTree<UserState, RootState> = {
       await dispatch('getDisableUnpackConfig')
 
       const orderId = router.currentRoute.value.query.orderId
-      if (orderId) {
+      if (isQueryFacilityFound && orderId) {
         return `/transfer-order-details/${orderId}`;
       }
     } catch (err: any) {
