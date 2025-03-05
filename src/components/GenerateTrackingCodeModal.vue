@@ -183,7 +183,12 @@ export default defineComponent({
     },
     async addTrackingCode(order: any) {
       try {
-        const resp = await MaargOrderService.addTrackingCode({shipmentId: this.order.shipmentId, trackingCode: this.trackingCode.trim()})
+        const shipmentRouteSegmentId = this.order.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
+        const resp = await MaargOrderService.addTrackingCode({
+          shipmentId: this.order.shipmentId,
+          shipmentRouteSegmentId,
+          trackingIdNumber: this.trackingCode.trim()
+        })
         if (!hasError(resp)) {
           showToast(translate("Tracking code added successfully."));
         } else {
@@ -213,16 +218,18 @@ export default defineComponent({
       try{
         const carrierShipmentMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
         shipmentMethodTypeId = shipmentMethodTypeId ? shipmentMethodTypeId : carrierShipmentMethods?.[0]?.shipmentMethodTypeId;
+        const shipmentRouteSegmentId = this.order?.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
 
         const params = {
           orderId: this.order.orderId,
-          shipGroupSeqId: this.order.shipGroupSeqId,
+          shipGroupSeqId: this.order.primaryShipGroupSeqId,
           shipmentId: this.order.shipmentId,
+          shipmentRouteSegmentId,
           shipmentMethodTypeId : shipmentMethodTypeId ? shipmentMethodTypeId : "",
           carrierPartyId
         }
 
-        resp = await MaargOrderService.updateOrderShippingMethod(params)
+        resp = await MaargOrderService.updateShipmentCarrierAndMethod(params)
         if (hasError(resp)) {
           throw resp.data;
         }

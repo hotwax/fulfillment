@@ -303,13 +303,15 @@ const actions: ActionTree<MaargOrderState, RootState> = {
 
     try {
       
-      const resp = MaargOrderService.fetchShipmentPackageRouteSegDetails(payload.shipmentId) as any
+      const resp = await MaargOrderService.fetchShipmentPackageRouteSegDetails(payload.shipmentId) as any
       if (!hasError(resp)) {
         const shipmentPackageRouteSegDetails = resp.data
-        const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? shipmentPackageRouteSegDetails.some((shipmentPackageRouteSeg:any) => shipmentPackageRouteSeg.trackingCode === null || shipmentPackageRouteSeg.trackingCode === '') : false;
+        const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? shipmentPackageRouteSegDetails.some((shipmentPackageRouteSeg:any) => shipmentPackageRouteSeg.trackingCode === undefined || shipmentPackageRouteSeg.trackingCode === null || shipmentPackageRouteSeg.trackingCode === '') : false;
 
         const updateShipmentPackages = (order:any) => {
           order.shipmentPackageRouteSegDetails = shipmentPackageRouteSegDetails
+          order.carrierPartyId = shipmentPackageRouteSegDetails[0]?.carrierPartyId
+          order.shipmentMethodTypeId = shipmentPackageRouteSegDetails[0]?.shipmentMethodTypeId
           order.trackingCode = shipmentPackageRouteSegDetails[0]?.trackingCode
           order.missingLabelImage = missingLabelImage
         };
@@ -414,6 +416,9 @@ const actions: ActionTree<MaargOrderState, RootState> = {
 
   async updateCompletedOrderIndex({ commit }, payload) {
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, payload)
+  },
+  async clearInCompletedOrders({ commit }) {
+    commit(types.ORDER_COMPLETED_CLEARED)
   },
 
   async updateOpenOrderIndex({ commit }, payload) {

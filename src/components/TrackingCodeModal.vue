@@ -57,7 +57,7 @@ import { defineComponent } from "vue";
 import { closeOutline, copyOutline, openOutline, saveOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
 import { mapGetters, useStore } from "vuex";
-import { TransferOrderService } from '@/services/TransferOrderService';
+import { MaargOrderService } from '@/services/MaargOrderService';
 import logger from "@/logger";
 import { hasError, showToast } from "@/utils";
 
@@ -96,7 +96,12 @@ export default defineComponent({
     },
     async saveTrackingCode() {
       try {
-        const resp = await TransferOrderService.addTrackingCode({shipmentId: this.order.shipmentId, trackingCode: this.trackingCode})
+        const shipmentRouteSegmentId = this.order.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
+        const resp = await MaargOrderService.addTrackingCode({
+          shipmentId: this.order.shipmentId,
+          shipmentRouteSegmentId,
+          trackingIdNumber: this.trackingCode
+        })
         if (!hasError(resp)) {
           showToast(translate("Tracking code added successfully."));
           await this.store.dispatch('maargorder/updateShipmentPackageDetail', this.order) 

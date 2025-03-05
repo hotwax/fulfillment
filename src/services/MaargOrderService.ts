@@ -601,13 +601,13 @@ const voidShipmentLabel = async (payload: any): Promise<any> => {
   });
 }
 
-const updateOrderShippingMethod = async (payload: any): Promise<any> => {
+const updateShipmentCarrierAndMethod = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return await client({
-    url: `/poorti/updateOrderShippingMethod`, //should handle the update of OISG, SRG, SPRG if needed
-    method: "POST",
+    url: `/poorti/updateShipmentCarrierAndMethod`, //should handle the update of OISG, SRG, SPRG if needed
+    method: "PUT",
     baseURL,
     headers: {
       "api_key": omsRedirectionInfo.token,
@@ -644,7 +644,7 @@ const addTrackingCode = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return await client({
-    url: `/poorti/shipments/${payload.shipmentId}/trackingCodes`, //should handle the update of OISG, SRG, SPRG if needed
+    url: `/poorti/updateShipmentTracking`,
     method: "PUT",
     baseURL,
     headers: {
@@ -740,6 +740,6 @@ export const MaargOrderService = {
   retryShippingLabel,
   shipOrder,
   unpackOrder,
-  updateOrderShippingMethod,
+  updateShipmentCarrierAndMethod,
   voidShipmentLabel
 }

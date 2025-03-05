@@ -65,7 +65,7 @@
               </ion-button>
               <ion-row>
                 <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
-                  {{ `Box ${shipmentPackage?.packageName}` }} {{ getShipmentBoxTypes(order.carrierPartyId).length ? `| ${boxTypeDesc(getShipmentPackageType(order, shipmentPackage))}` : '' }}
+                  {{ `Box ${shipmentPackage?.packageName}` }} {{ getShipmentBoxTypes(order.carrierPartyId)?.length ? `| ${boxTypeDesc(getShipmentPackageType(order, shipmentPackage))}` : '' }}
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </ion-row>
@@ -117,7 +117,7 @@
             <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
              <!--Adding checks to avoid any operations if order has missing info, mostly when after packing Solr is not updaing immediately-->
             <div class="product-metadata">
-              <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal" class="ion-padding-end">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+              <ion-note v-if="getProductStock(item.productId).qoh" class="ion-padding-end">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
               <ion-button :disabled="order.hasMissingInfo" color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
                 {{ translate('Check stock') }}
                 <ion-icon slot="end" :icon="cubeOutline"/>
@@ -343,7 +343,7 @@
               
               <div class="other-shipment-actions">
                 <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
-                <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).qoh">{{ getProductStock(item.productId, item.facilityId).qoh }} {{ translate('pieces in stock') }}</ion-note>
                 <ion-button slot="end" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
@@ -563,10 +563,10 @@ export default defineComponent({
     : await this.store.dispatch('maargorder/getCompletedOrder', { orderId: this.orderId, shipmentId: this.shipmentId })
     await Promise.all([this.store.dispatch('util/fetchCarrierShipmentBoxTypes'), this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths'), this.fetchOrderInvoicingStatus()]);
     if (this.facilityCarriers) {
-      const shipmentPackage = this.order.shipmentPackages?.[0];
-      this.carrierPartyId = shipmentPackage?.carrierPartyId ? shipmentPackage?.carrierPartyId : this.facilityCarriers[0].partyId;
+      const shipmentPackageRouteSegDetail = this.order.shipmentPackageRouteSegDetails?.[0];
+      this.carrierPartyId = shipmentPackageRouteSegDetail?.carrierPartyId ? shipmentPackageRouteSegDetail?.carrierPartyId : this.facilityCarriers[0].partyId;
       this.carrierMethods = await this.getProductStoreShipmentMethods(this.carrierPartyId);
-      this.shipmentMethodTypeId = shipmentPackage?.shipmentMethodTypeId;
+      this.shipmentMethodTypeId = shipmentPackageRouteSegDetail?.shipmentMethodTypeId;
     }
     
     // Fetching shipment label errors 
@@ -618,15 +618,17 @@ export default defineComponent({
         this.isUpdatingCarrierDetail = true;
         const carrierShipmentMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
         shipmentMethodTypeId = shipmentMethodTypeId ? shipmentMethodTypeId : carrierShipmentMethods?.[0]?.shipmentMethodTypeId;
+        const shipmentRouteSegmentId = this.order?.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
 
         const params = {
           orderId: this.order.orderId,
-          shipGroupSeqId: this.order.shipGroupSeqId,
+          shipGroupSeqId: this.order.primaryShipGroupSeqId,
           shipmentId: this.order.shipmentId,
+          shipmentRouteSegmentId,
           shipmentMethodTypeId : shipmentMethodTypeId ? shipmentMethodTypeId : "",
           carrierPartyId
         }
-        resp = await MaargOrderService.updateOrderShippingMethod(params)
+        resp = await MaargOrderService.updateShipmentCarrierAndMethod(params)
         if (!hasError(resp)) {
           this.shipmentMethodTypeId = shipmentMethodTypeId
           emitter.emit("dismissLoader");
@@ -781,27 +783,26 @@ export default defineComponent({
                 rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
                 shipmentPackageContents: updatedOrderDetail.shipmentPackageContents
               }
-              const resp = await MaargOrderService.packOrder(params);
-              if (hasError(resp)) {
-                throw resp.data
-              }
 
               emitter.emit('presentLoader');
               let toast: any;
               const shipmentIds = [order.shipmentId]
-              const shippingLabelPdfUrls: string[] = Array.from(
-                  new Set(
-                    (order.shipmentPackageRouteSegDetails ?? [])
-                      .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
-                      .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
-                  )
-                );
+              
 
               try {
                 const resp = await MaargOrderService.packOrder(params);
                 if (hasError(resp)) {
                   throw resp.data
                 }
+                await this.store.dispatch('maargorder/updateShipmentPackageDetail', this.order)
+                const shippingLabelPdfUrls: string[] = Array.from(
+                  new Set(
+                    (this.order.shipmentPackageRouteSegDetails ?? [])
+                      .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+                      .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+                  )
+                );
+
                 emitter.emit('dismissLoader');
 
                 if (data.length) {
@@ -822,7 +823,7 @@ export default defineComponent({
                     await MaargOrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
                   }
                   if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
-                    await MaargOrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
+                    await MaargOrderService.printCustomDocuments([order.shipmentPackageRouteSegDetails?.[0].internationalInvoiceUrl]);
                   }
 
                   toast.dismiss()

@@ -60,7 +60,7 @@
         try {
           resp = await MaargOrderService.voidShipmentLabel({
             "shipmentId": order.shipmentId,
-            "shipmentRouteSegmentId": order.shipmentRouteSegmentId
+            "shipmentRouteSegmentId": order.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
           })
           
           showToast(translate("Shipping label voided successfully."))

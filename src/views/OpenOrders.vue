@@ -86,7 +86,7 @@
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
-                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                  <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
                   <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
