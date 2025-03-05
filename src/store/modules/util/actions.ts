@@ -82,20 +82,17 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const payload = {
-        "inputFields": {
-          "partyId": ids,
-          "partyId_op": "in"
-        },
-        "fieldList": ["firstName", "middleName", "lastName", "groupName", "partyId"],
-        "entityName": "PartyNameView",
-        "viewSize": ids.length
+        partyId: ids,
+        partyId_op: "in",
+        fieldsToSelect: ["firstName", "middleName", "lastName", "groupName", "partyId"],
+        pageSize: ids.length
       }
 
       const resp = await UtilService.fetchPartyInformation(payload);
 
-      if(!hasError(resp)) {
+      if (!hasError(resp)) {
         const partyResp = {} as any
-        resp.data.docs.map((partyInformation: any) => {
+        resp.data.map((partyInformation: any) => {
 
           let partyName = ''
           if(partyInformation.groupName) {
@@ -154,7 +151,7 @@ const actions: ActionTree<UtilState, RootState> = {
     const cachedShipmentMethodTypeIds = Object.keys(shipmentMethodTypeDesc);
     const ids = shipmentMethodTypeIds.filter((shipmentMethodTypeId: string) => !cachedShipmentMethodTypeIds.includes(shipmentMethodTypeId))
 
-    if(!ids.length) return shipmentMethodTypeDesc;
+    if (!ids.length) return shipmentMethodTypeDesc;
 
     try {
       
@@ -167,7 +164,7 @@ const actions: ActionTree<UtilState, RootState> = {
       
       const resp = await UtilService.fetchShipmentMethodTypeDesc(payload);
 
-      if(!hasError(resp)) {
+      if (!hasError(resp)) {
         const shipmentMethodResp = {} as any
         resp.data.map((shipmentMethodInformation: any) => {
           shipmentMethodResp[shipmentMethodInformation.shipmentMethodTypeId] = shipmentMethodInformation.description
@@ -422,7 +419,7 @@ const actions: ActionTree<UtilState, RootState> = {
       }
 
       const resp = await UtilService.fetchEnumeration(payload)
-      if (!hasError(resp) && resp.data.count > 0) {
+      if (!hasError(resp)) {
         enumerations = resp.data.reduce((enums: any, enumeration: any) => {
           enums[enumeration.enumId] = enumeration.description
           return enums;

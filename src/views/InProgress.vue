@@ -299,9 +299,7 @@ import { isKit } from '@/utils/order'
 import { hasError } from '@/adapter';
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue';
-import { OrderService } from '@/services/OrderService';
 import emitter from '@/event-bus';
-import { prepareOrderQuery } from '@/utils/solrHelper';
 import { UtilService } from '@/services/UtilService';
 import { DateTime } from 'luxon';
 import logger from '@/logger';

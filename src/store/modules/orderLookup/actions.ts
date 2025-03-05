@@ -9,7 +9,6 @@ import { showToast } from "@/utils";
 import { translate } from "@hotwax/dxp-components";
 import logger from "@/logger";
 import { OrderService } from "@/services/OrderService";
-import { CarrierService } from "@/services/CarrierService";
 import store from "@/store";
 
 const actions: ActionTree<OrderLookupState, RootState> = {
@@ -34,7 +33,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
           order.orderStatusId = order.doclist.docs[0].orderStatusId
           order.orderStatusDesc = order.doclist.docs[0].orderStatusDesc
 
-          order.doclist.docs[0].shipmentMethodTypeId && shipmentMethodTypeIds.push(order.doclist.docs[0].shipmentMethodTypeId)
+          order.doclist.docs[0].shipmentMethodTypeId && !shipmentMethodTypeIds.includes(order.doclist.docs[0].shipmentMethodTypeId) && shipmentMethodTypeIds.push(order.doclist.docs[0].shipmentMethodTypeId)
           return order
         })
 
@@ -93,20 +92,17 @@ const actions: ActionTree<OrderLookupState, RootState> = {
     await this.dispatch('util/fetchPartyInformation', carrierPartyIds);
 
     try {
-      const resp = await CarrierService.fetchCarrierTrackingUrls({
-        "entityName": "SystemProperty",
-        "inputFields": {
-          "systemResourceId": carrierPartyIds,
-          "systemResourceId_op": "in",
-          "systemResourceId_ic": "Y",
-          "systemPropertyId": "%trackingUrl%",
-          "systemPropertyId_op": "like"
-        },
-        "fieldList": ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
+      const resp = await OrderLookupService.fetchCarrierTrackingUrls({
+        "systemResourceId": carrierPartyIds,
+        "systemResourceId_op": "in",
+        "systemResourceId_ic": "Y",
+        "systemPropertyId": "%trackingUrl%",
+        "systemPropertyId_op": "like",
+        "fieldsToSelect": ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
       })
 
-      if(!hasError(resp)) {
-        resp.data.docs?.map((doc: any) => {
+      if (!hasError(resp)) {
+        resp.data?.map((doc: any) => {
           systemProperties[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue
         })
       } else {
@@ -131,191 +127,67 @@ const actions: ActionTree<OrderLookupState, RootState> = {
     let order = {} as any;
 
     try {
-      const apiPayload = [{
-        inputFields: {
-          orderId
-        },
-        viewSize: 50,
-        filterByDate: "Y",
-        entityName: "OrderHeaderAndRoles"
-      }, {
-        inputFields: {
+      const [orderResp, orderFacilityChangeResp, shipmentResp, itemResp] = await Promise.allSettled([
+        OrderLookupService.fetchOrderDetail(orderId), 
+        OrderLookupService.fetchOrderFacilityChange({
           orderId,
-          contactMechPurposeTypeId: ["BILLING_LOCATION", "BILLING_EMAIL", "PHONE_BILLING"],
-          contactMechPurposeTypeId_op: "in"
-        },
-        viewSize: 50,
-        fieldList: ["contactMechPurposeTypeId", "contactMechId"],
-        entityName: "OrderContactMech"
-      }, {
-        inputFields: {
-          orderId
-        },
-        viewSize: 50,
-        filterByDate: "Y",
-        fieldList: ["orderIdentificationTypeId", "orderId", "idValue"],
-        entityName: "OrderIdentification"
-      }, {
-        inputFields: {
+          pageSize: 250,
+          orderByField: "changeDatetime",
+        }),
+        OrderLookupService.findShipments(orderId),
+        OrderLookupService.fetchOrderItems({
           orderId,
-          attrName: ["customerId", "municipio"],
-          attrName_op: "in",
-          attrName_ic: "Y"
-        },
-        viewSize: 50,
-        fieldList: ["attrName", "attrValue"],
-        entityName: "OrderAttribute"
-      }, {
-        inputFields: {
-          orderId
-        },
-        viewSize: 250,
-        orderBy: "changeDatetime",
-        entityName: "OrderFacilityChange"
-      }, {
-        inputFields: {
-          orderId,
-          statusId: ["ORDER_COMPLETED", "ORDER_APPROVED"],
-          statusId_op: "in"
-        },
-        viewSize: 2,
-        entityName: "OrderStatus"
-      }, {
-        inputFields: {
-          orderId,
-          statusId: "PAYMENT_CANCELLED",
-          statusId_op: "notEqual"
-        },
-        orderBy: "createdDate DESC",
-        viewSize: 50,
-        fieldList: ["paymentMethodTypeId", "maxAmount", "statusId"],
-        entityName: "OrderPaymentPreference"
-      }, {
-        inputFields: {
-          orderId
-        },
-        viewSize: 50,
-        entityName: "OrderItemShipGroupAndFacility"
-      }, {
-        inputFields: {
-          orderId,
-          shipmentStatusId: "SHIPMENT_INPUT",
-          shipmentStatusId_op: "notEqual"
-        },
-        fieldList: ["orderId", "shipGroupSeqId", "shipmentId", "trackingIdNumber"],
-        viewSize: 50,
-        entityName: "OrderShipmentAndRouteSegment"
-      }]
+          pageSize: 100 //considering there won't be 100 items in an order
+        })
+      ])
 
-      const [orderHeader, orderContactMech, orderIdentifications, orderAttributes, orderBrokeringInfo, orderStatusInfo, orderPaymentPreference, orderShipGroups, orderRouteSegment] = await Promise.allSettled(apiPayload.map((payload: any) => OrderLookupService.performFind(payload)))
-
-      if(orderHeader.status === "fulfilled" && !hasError(orderHeader.value) && orderHeader.value.data.count > 0) {
-        order = orderHeader.value.data.docs[0]
-
-        if(!order.orderId) {
-          throw "Failed to fetch order information"
-        }
-
+      if (orderResp.status === "fulfilled" && !hasError(orderResp.value)) {
+        order = orderResp.value.data;
         await this.dispatch("util/fetchEnumerations", [order.salesChannelEnumId])
         order.salesChannel = (this.state.util.enumerations as any)[order.salesChannelEnumId] || "-"
 
-        order["billToPartyId"] = orderHeader.value.data.docs.find((info: any) => info.roleTypeId === "BILL_TO_CUSTOMER")?.partyId
+        order["billToPartyId"] = order.roles.find((role: any) => role.roleTypeId === "BILL_TO_CUSTOMER")?.partyId
 
-        const partyInfo = await OrderLookupService.performFind({
-          inputFields: {
-            partyId: order["billToPartyId"]
-          },
-          viewSize: 1,
-          fieldList: ["firstName", "lastName", "groupName"],
-          entityName: "PartyNameView"
+        const partyInfo = await OrderLookupService.fetchPartyInformation({
+          partyId: order["billToPartyId"],
+          pageSize: 1,
+          fieldsToSelect: ["firstName", "lastName", "groupName"]
         })
 
-        if(!hasError(partyInfo) && partyInfo.data.count > 0) {
-          const party = partyInfo.data.docs[0]
+        if(!hasError(partyInfo)) {
+          const party = partyInfo?.data[0]
           order["partyName"] = party.groupName ? party.groupName : `${party.firstName ? party.firstName : ''} ${party.lastName ? party.lastName : ''}`
         }
-      }
-      if(orderContactMech.status === "fulfilled" && !hasError(orderContactMech.value) && orderContactMech.value.data.count > 0) {
-        const orderContactMechTypes: any = orderContactMech.value.data.docs.reduce((contactMechTypes: any, contactMech: any) => {
-          contactMechTypes[contactMech.contactMechPurposeTypeId] = contactMech.contactMechId
 
-          return contactMechTypes;
-        }, {})
+        order["billingAddress"] = order.contactMechs?.find((contactMech:any) => contactMech.contactMechPurposeTypeId === "BILLING_LOCATION")?.postalAddress,
+        order["billingEmail"] = order.contactMechs?.find((contactMech:any) => contactMech.contactMechPurposeTypeId === "BILLING_EMAIL")?.contactMech?.infoString,
+        order["billingPhone"] = order.contactMechs?.find((contactMech:any) => contactMech.contactMechPurposeTypeId === "PHONE_BILLING")?.telecomNumber?.contactNumber,
+        order["shopifyOrderId"] = order.identifications?.find((identification:any) => identification.orderIdentificationTypeId === "SHOPIFY_ORD_ID")?.idValue
 
-        const postalAddress = await OrderLookupService.performFind({
-          inputFields: {
-            contactMechId: Object.keys(orderContactMechTypes).filter((mechType: string) => mechType === "BILLING_LOCATION").map((mechType: string) => orderContactMechTypes[mechType]),
-            contactMechId_op: "in"
-          },
-          viewSize: 20,
-          entityName: "PostalAddressAndGeo"
-        })
-
-        if(!hasError(postalAddress) && postalAddress.data.count > 0) {
-          postalAddress.data.docs.map((address: any) => {
-            if(address.contactMechId === orderContactMechTypes["BILLING_LOCATION"]) {
-              order["billingAddress"] = address
-            }
-          })
-        }
-
-        const customerInfo = await OrderLookupService.performFind({
-          inputFields: {
-            contactMechId: Object.keys(orderContactMechTypes).filter((mechType: string) => mechType === "BILLING_EMAIL" || mechType === "PHONE_BILLING").map((mechType: string) => orderContactMechTypes[mechType]),
-            contactMechId_op: "in"
-          },
-          viewSize: 20,
-          fieldList: ["infoString", "contactMechId", "tnContactNumber"],
-          entityName: "ContactMechDetail"
-        })
-
-        if(!hasError(customerInfo) && customerInfo.data.count > 0) {
-          customerInfo.data.docs.map((info: any) => {
-            if(info.contactMechId === orderContactMechTypes["BILLING_EMAIL"]) {
-              order["billingEmail"] = info.infoString
-            }
-
-            if(info.contactMechId === orderContactMechTypes["PHONE_BILLING"]) {
-              order["billingPhone"] = info.tnContactNumber
-            }
-          })
-        }
-      }
-
-      // Fetching order identifications
-      if(orderIdentifications.status === "fulfilled" && !hasError(orderIdentifications.value) && orderIdentifications.value.data.count > 0) {
-        order["shopifyOrderId"] = orderIdentifications.value.data.docs.find((identification: any) => identification.orderIdentificationTypeId === "SHOPIFY_ORD_ID")?.idValue
-      }
-
-      // Fetching order attributes
-      order["orderAttributes"] = {}
-      if(orderAttributes.status === "fulfilled" && !hasError(orderAttributes.value) && orderAttributes.value.data.count > 0) {
-        orderAttributes.value.data.docs.map((attribute: any) => {
-          // For some attbiutes we get casing difference, like customerId, CustomerId, so adding ic in performFind, but to display it correctly on UI, converting it into lowerCase
+        // Fetching order attributes
+        order["orderAttributes"] = {}
+        order.attributes?.map((attribute:any) => {
           order["orderAttributes"][attribute.attrName.toLowerCase()] = attribute.attrValue
         })
-      }
 
-      // Fetching brokering information for order
-      order["shipGroupFacilityAllocationTime"] = {}
-      if(orderBrokeringInfo.status === "fulfilled" && !hasError(orderBrokeringInfo.value) && orderBrokeringInfo.value.data.count > 0) {
-        order["firstBrokeredDate"] = orderBrokeringInfo.value.data.docs[0].changeDatetime
-        orderBrokeringInfo.value.data.docs.map((brokeringInfo: any) => {
-          order["shipGroupFacilityAllocationTime"][brokeringInfo.shipGroupSeqId] = brokeringInfo.changeDatetime
-        })
-      }
+        // preparing brokering information for order
+        if (orderFacilityChangeResp.status === 'fulfilled' && !hasError(orderFacilityChangeResp.value)) {
+          order["shipGroupFacilityAllocationTime"] = {}
+          order["firstBrokeredDate"] = orderFacilityChangeResp.value.data[0].changeDatetime
+          orderFacilityChangeResp.value.data.map((brokeringInfo: any) => {
+            order["shipGroupFacilityAllocationTime"][brokeringInfo.shipGroupSeqId] = brokeringInfo.changeDatetime
+          })
+        }
 
-      // Fetching brokering information for order
-      if(orderStatusInfo.status === "fulfilled" && !hasError(orderStatusInfo.value) && orderStatusInfo.value.data.count > 0) {
-        order["approvedDate"] = orderStatusInfo.value.data.docs.find((info: any) => info.statusId === "ORDER_APPROVED")?.statusDatetime
-        order["completedDate"] = orderStatusInfo.value.data.docs.find((info: any) => info.statusId === "ORDER_COMPLETED")?.statusDatetime
-      }
+        // preparing brokering information for order
+        order["approvedDate"] = order.statuses.find((status: any) => status.statusId === "ORDER_APPROVED")?.statusDatetime
+        order["completedDate"] = order.statuses.find((status: any) => status.statusId === "ORDER_COMPLETED")?.statusDatetime
 
-      // Fetching payment preference for order
-      if(orderPaymentPreference.status === "fulfilled" && !hasError(orderPaymentPreference.value) && orderPaymentPreference.value.data.count > 0) {
+
+        // preparing payment preference for order
         const paymentMethodTypeIds: Array<string> = [];
         const statusIds: Array<string> = [];
-        order["orderPayments"] = orderPaymentPreference.value.data.docs.map((paymentPreference: any) => {
+        order["orderPayments"] = order.paymentPreferences.map((paymentPreference: any) => {
           paymentMethodTypeIds.push(paymentPreference.paymentMethodTypeId)
           statusIds.push(paymentPreference.statusId)
           return {
@@ -324,109 +196,83 @@ const actions: ActionTree<OrderLookupState, RootState> = {
             paymentStatus: paymentPreference["statusId"]
           }
         })
-
         this.dispatch("util/fetchStatusDesc", statusIds)
 
-        if(paymentMethodTypeIds.length) {
+        if (paymentMethodTypeIds.length) {
           this.dispatch("util/fetchPaymentMethodTypeDesc", paymentMethodTypeIds)
         }
-      }
 
-      const shipGroupSeqIds: Array<string> = [];
-      let shipGroups = {};
-      const productIds: Array<string> = []
-      const shipmentMethodIds: Array<string> = []
-
-      const orderRouteSegmentInfo = orderRouteSegment.status === "fulfilled" && orderRouteSegment.value.data.docs?.length > 0 ? orderRouteSegment.value.data.docs.reduce((orderSegmentInfo: any, routeSegment: any) => {
-        if(orderSegmentInfo[routeSegment.shipGroupSeqId]) orderSegmentInfo[routeSegment.shipGroupSeqId].push(routeSegment)
-        else orderSegmentInfo[routeSegment.shipGroupSeqId] = [routeSegment]
-        return orderSegmentInfo
-      }, {}) : []
-
-      let orderShipmentPackages = [] as any
-      const shipmentIds = Object.values(orderRouteSegmentInfo).flatMap((routes: any) => routes.map((route: any) => route.shipmentId));
-
-      try {
-        orderShipmentPackages = await OrderService.fetchShipmentPackages(shipmentIds, true);
-      } catch(error: any) {
-        logger.error(error)
-      }
-
-      const shipmentPackages = orderShipmentPackages.reduce((shipment: any, shipmentPackage: any) => {
-        const key = shipmentPackage.primaryShipGroupSeqId;
-        if (!shipment[key]) {
-          shipment[key] = [];
+        //removing trackingIdNumber if label is voided
+        let shipments = [] as any
+        if (shipmentResp.status === 'fulfilled' && !hasError(shipmentResp.value)) {
+          shipments = shipmentResp.value.data.shipments
+          shipments.map((shipment: any) => {
+            if (shipment.carrierServiceStatusId === "SHRSCS_VOIDED") {
+              shipment.trackingIdNumber = '';
+            }
+          })
         }
-        shipment[key].push(shipmentPackage);
-        return shipment;
-      }, {});
 
-      Object.values(orderRouteSegmentInfo).map((segments: any) => {
-        segments.map((segment: any) => {
-          const currentPackage = orderShipmentPackages.find((shipmentPackage: any) => shipmentPackage.shipmentId === segment.shipmentId)
-          if(currentPackage && currentPackage.carrierServiceStatusId === "SHRSCS_VOIDED") {
-            segment.trackingIdNumber = ""
-          }
-        })
-      })
+        const facilityIds = order.shipGroups.map((shipGroup: any) => shipGroup.facilityId)
+        const facilityResp = await OrderLookupService.fetchFacilities({facilityId: facilityIds, pageSize: facilityIds.length})
 
-      order["shipmentPackages"] = shipmentPackages;
-      const carrierPartyIds = [] as any;
+        if (itemResp.status === 'fulfilled' && !hasError(itemResp.value)) {
+          const orderItems = itemResp.value.data;
+          const shipGroupsWithItems: any[] = [];
 
-      if(orderShipGroups.status === "fulfilled" && !hasError(orderShipGroups.value) && orderShipGroups.value.data.count > 0) {
-        shipGroups = orderShipGroups.value.data.docs?.reduce((shipGroups: any, shipGroup: any) => {
-          productIds.push(shipGroup.productId)
-          shipGroup.shipmentMethodTypeId && shipmentMethodIds.includes(shipGroup.shipmentMethodTypeId) ? '' : shipmentMethodIds.push(shipGroup.shipmentMethodTypeId)
-          shipGroup.shipGroupSeqId && shipGroupSeqIds.includes(shipGroup.shipGroupSeqId) ? '' : shipGroupSeqIds.push(shipGroup.shipGroupSeqId)
+          order.shipGroups.forEach((shipGroup: any) => {
+            const shipGroupItems = orderItems?.filter((orderItem: any) => orderItem.shipGroupSeqId === shipGroup.shipGroupSeqId);
 
-          if(shipGroups[shipGroup.shipGroupSeqId]) {
-            shipGroups[shipGroup.shipGroupSeqId].push(shipGroup)
-          } else {
-            shipGroups[shipGroup.shipGroupSeqId] = [{
-              ...shipGroup,
-              trackingIdNumber: orderRouteSegmentInfo[shipGroup.shipGroupSeqId]?.length ? orderRouteSegmentInfo[shipGroup.shipGroupSeqId][0].trackingIdNumber : ""
-            }]
-          }
+            if (shipGroupItems && shipGroupItems.length) {
+              const shipGroupFacility = facilityResp?.data?.find((facility: any) => facility.facilityId === shipGroup.facilityId);
 
-          if(shipGroup.carrierPartyId) carrierPartyIds.push(shipGroup.carrierPartyId);
+              const shipGroupShipment = shipments?.find((shipment: any) => shipment.primaryShipGroupSeqId === shipGroup.shipGroupSeqId);
 
-          return shipGroups;
-        }, {})
-      }
-      order["shipGroups"] = shipGroups
-      
-      const carrierInfo = await dispatch("fetchCarriersTrackingInfo", Array.from(new Set(carrierPartyIds)));
+              const fulfillmentStatus =
+                shipGroupShipment?.statusId === "SHIPMENT_APPROVED"
+                  ? "Picking"
+                  : shipGroupShipment?.statusId === "SHIPMENT_PACKED" ||
+                    shipGroupShipment?.statusId === "SHIPMENT_SHIPPED"
+                  ? shipGroupShipment.shipmentMethodTypeId === "STOREPICKUP"
+                    ? "Ready for pickup"
+                    : "Packed"
+                  : "";
 
-      Object.keys(order["shipGroups"]).map((shipGroupId: any) => {
-        const shipGroup = order["shipGroups"][shipGroupId]
-        shipGroup.map((item: any) => item["carrierPartyName"] = carrierInfo[item.carrierPartyId]?.carrierName || "")
-      })
+              shipGroupsWithItems.push({
+                ...shipGroup,
+                items: shipGroupItems,
+                fulfillmentStatus,
+                facilityName: shipGroupFacility?.facilityName,
+                facilityTypeId: shipGroupFacility?.facilityTypeId,
+                shipmentPackageRouteSegDetails: shipGroupShipment?.shipmentPackageRouteSegDetails || [],
+                trackingIdNumber: shipGroupShipment?.trackingIdNumber || "",
+              });
+            }
+          });
+ 
+          order.shipGroups = shipGroupsWithItems;  
+          const productIds =  orderItems.map((orderItem: any) => orderItem.productId);
+          await this.dispatch("product/fetchProducts", { productIds })    
+        }
+        
+        const shipmentMethodTypeIds = [...new Set([
+          ...(order.shipGroups?.map((shipGroup:any) => shipGroup.shipmentMethodTypeId) || []),
+          ...(shipments?.map((shipment:any) => shipment.shipmentMethodTypeId) || [])
+        ])];
+        
+        this.dispatch("util/fetchShipmentMethodTypeDesc", shipmentMethodTypeIds)
 
-      this.dispatch("util/fetchShipmentMethodTypeDesc", shipmentMethodIds)
-
-      order["shipGroupFulfillmentStatus"] = {}
-      const picklistBinInfo = await OrderLookupService.performFind({
-        inputFields: {
-          orderId,
-          shipGroupSeqId: shipGroupSeqIds,
-          shipGroupSeqId_op: "in"
-        },
-        viewSize: 20,
-        fieldList: ["shipGroupSeqId", "itemStatusId"],
-        entityName: "PicklistItemAndBin"
-      })
-
-      if(!hasError(picklistBinInfo) && picklistBinInfo.data.count > 0) {
-        picklistBinInfo.data.docs.map((binInfo: any) => {
-          order["shipGroupFulfillmentStatus"][binInfo.shipGroupSeqId] = (binInfo.itemStatusId === "PICKITEM_PENDING" ? "Picking" : binInfo.itemStatusId === "PICKITEM_PICKED" || binInfo.itemStatusId === "PICKITEM_COMPLETED" ? binInfo.shipmentMethodTypeId === "STOREPICKUP" ? "Ready for pickup" : "Packed" : "")
+        const carrierPartyIds = shipments?.map((shipment: any) => shipment.carrierPartyId);
+        const carrierInfo = await dispatch("fetchCarriersTrackingInfo", Array.from(new Set(carrierPartyIds)));
+        
+        Object.keys(order["shipGroups"]).map((shipGroupId: any) => {
+          const shipGroup = order["shipGroups"][shipGroupId]
+          shipGroup.map((item: any) => item["carrierPartyName"] = carrierInfo[item.carrierPartyId]?.carrierName || "")
         })
       }
-
-      await this.dispatch("product/fetchProducts", { productIds })
     } catch(err) {
       logger.error(err)
     }
-
     commit(types.ORDERLOOKUP_CURRENT_UPDATED, order)
   },
 

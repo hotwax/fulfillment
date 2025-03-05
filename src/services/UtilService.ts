@@ -326,11 +326,19 @@ const fetchCarrierPartyIds = async (query: any): Promise <any>  => {
   });
 }
 
-const fetchPartyInformation = async (query: any): Promise <any>  => {
-  return api({
-    url: "performFind",
-    method: "get",
-    params: query
+const fetchPartyInformation = async (payload: any): Promise <any>  => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/parties`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params: payload,
   });
 }
 
@@ -462,7 +470,7 @@ const deleteEnumeration = async (payload: any): Promise<any> => {
   });
 }
 
-const fetchEnumeration = async (query: any): Promise <any> => {
+const fetchEnumeration = async (payload: any): Promise <any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
@@ -474,6 +482,7 @@ const fetchEnumeration = async (query: any): Promise <any> => {
       "api_key": omsRedirectionInfo.token,
       "Content-Type": "application/json"
     },
+    params: payload
   });
 }
 
