@@ -6,7 +6,6 @@ import RootState from './RootState'
 import createPersistedState from "vuex-persistedstate";
 import userModule from './modules/user';
 import productModule from "./modules/product"
-import orderModule from "./modules/order"
 import maargorderModule from "./modules/maargorder"
 import transferOrderModule from "./modules/transferorder"
 import utilModule from "./modules/util"
@@ -41,7 +40,6 @@ const store = createStore<RootState>({
     modules: { 
         'user': userModule,
         'product': productModule,
-        'order': orderModule,
         'maargorder': maargorderModule,
         'orderLookup': orderLookupModule,
         'util': utilModule,

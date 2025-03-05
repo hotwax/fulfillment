@@ -2,10 +2,10 @@ import actions from './actions'
 import getters from './getters'
 import mutations from './mutations'
 import { Module } from 'vuex'
-import OrderState from './MaargOrderState'
+import MaargOrderState from './MaargOrderState'
 import RootState from '../../RootState'
 
-const orderModule: Module<OrderState, RootState> = {
+const maargorderModule: Module<MaargOrderState, RootState> = {
   namespaced: true,
   state: {
     open: {
@@ -46,4 +46,4 @@ const orderModule: Module<OrderState, RootState> = {
   mutations
 }
 
-export default orderModule;
+export default maargorderModule;

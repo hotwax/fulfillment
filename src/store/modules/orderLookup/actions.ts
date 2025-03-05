@@ -8,7 +8,6 @@ import * as types from "./mutation-types"
 import { showToast } from "@/utils";
 import { translate } from "@hotwax/dxp-components";
 import logger from "@/logger";
-import { OrderService } from "@/services/OrderService";
 import store from "@/store";
 
 const actions: ActionTree<OrderLookupState, RootState> = {

@@ -1,6 +1,6 @@
 import { ActionTree } from 'vuex'
 import RootState from '@/store/RootState'
-import OrderState from './MaargOrderState'
+import MaargOrderState from './MaargOrderState'
 import emitter from '@/event-bus'
 import { MaargOrderService } from '@/services/MaargOrderService'
 import { UtilService } from '@/services/UtilService'
@@ -8,7 +8,7 @@ import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import logger from '@/logger'
 
-const actions: ActionTree<OrderState, RootState> = {
+const actions: ActionTree<MaargOrderState, RootState> = {
 
   // get open orders
   async findOpenOrders ({ commit, state }) {

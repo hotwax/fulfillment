@@ -290,7 +290,7 @@ import { prepareSolrQuery } from '@/utils/solrHelper';
 import OrderLookupLabelActionsPopover from '@/components/OrderLookupLabelActionsPopover.vue';
 import { hasError } from "@hotwax/oms-api";
 import logger from "@/logger";
-import { OrderService } from "@/services/OrderService";
+import { OrderLookupService } from "@/services/OrderLookupService";
 import { useDynamicImport } from "@/utils/moduleFederation";
 
 export default defineComponent({
@@ -395,7 +395,7 @@ export default defineComponent({
       const orderInvoicingQueryPayload = prepareSolrQuery(params)
 
       try {
-        const resp = await OrderService.findOrderInvoicingInfo(orderInvoicingQueryPayload);
+        const resp = await OrderLookupService.findOrderInvoicingInfo(orderInvoicingQueryPayload);
 
         if(!hasError(resp) && resp.data?.response?.docs?.length) {
           const response = resp.data.response.docs[0];

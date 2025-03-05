@@ -1,5 +1,9 @@
-import { api, client } from "@/adapter"
+import { api, client, hasError } from "@/adapter"
 import store from '@/store';
+import logger from '@/logger';
+import { showToast } from '@/utils';
+import { translate } from '@hotwax/dxp-components'
+import { cogOutline } from 'ionicons/icons';
 
 const findOrder = async (payload: any): Promise<any> => {
   return api({
@@ -129,6 +133,60 @@ const fetchFacilities = async (payload: any): Promise <any>  => {
   });
 }
 
+const findOrderInvoicingInfo = async (query: any): Promise<any> => {
+  return api({
+    url: "solr-query",
+    method: "post",
+    data: query
+  });
+}
+
+const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>): Promise<any> => {
+  try {
+    const baseURL = store.getters['user/getMaargBaseUrl'];
+    const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+
+    let pdfUrls = shippingLabelPdfUrls;
+    if (!pdfUrls || pdfUrls.length == 0) {
+    // Get packing slip from the server
+    const resp = await client({
+      url: "/poorti/Label.pdf",
+      method: "GET",
+      baseURL,
+      headers: {
+        "api_key": omsRedirectionInfo.token,
+        "Content-Type": "application/json"
+      },
+      params: {
+        shipmentId: shipmentIds
+      },
+      responseType: "blob"
+    });
+
+    if (!resp || resp.status !== 200 || hasError(resp)) {
+      throw resp.data;
+    }
+
+    // Generate local file URL for the blob received
+    const pdfUrl = window.URL.createObjectURL(resp.data);
+    pdfUrls = [pdfUrl];
+    }
+    // Open the file in new tab
+    pdfUrls.forEach((pdfUrl: string) => {
+    try {
+      (window as any).open(pdfUrl, "_blank").focus();
+    }
+    catch {
+      showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'shipping label'}), { icon: cogOutline });
+    }
+    })
+
+  } catch (err) {
+    showToast(translate('Failed to print shipping label'))
+    logger.error("Failed to load shipping label", err)
+  }
+}
+
 export const OrderLookupService = {
   fetchCarrierTrackingUrls,
   fetchFacilities,
@@ -137,5 +195,7 @@ export const OrderLookupService = {
   fetchOrderFacilityChange,
   fetchOrderItems,
   fetchPartyInformation,
-  findShipments
+  findOrderInvoicingInfo,
+  findShipments,
+  printShippingLabel
 }

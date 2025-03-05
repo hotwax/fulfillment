@@ -1,4 +1,4 @@
-export default interface OrderState {
+export default interface MaargOrderState {
   open: {
     list: any,
     total: number,

@@ -1,10 +1,8 @@
 import { api, hasError } from '@/adapter';
 import { translate } from '@hotwax/dxp-components'
 import logger from '@/logger';
-import { showToast, formatPhoneNumber } from '@/utils';
-import store from '@/store';
+import { showToast } from '@/utils';
 import { cogOutline } from 'ionicons/icons';
-import { prepareSolrQuery } from '@/utils/solrHelper';
 
 
 const findTransferOrders = async (query: any): Promise<any> => {

@@ -27,7 +27,7 @@ import { defineComponent } from "vue";
 import { documentOutline, openOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
 import { mapGetters, useStore } from "vuex";
-import { OrderService } from '@/services/OrderService';
+import { OrderLookupService } from '@/services/OrderLookupService';
 
 export default defineComponent({
   name: "OrderLookupLabelActionsPopover",
@@ -57,7 +57,7 @@ export default defineComponent({
 
       const shipmentIds: string[] = Array.from(new Set (shipmentPackageRouteSegDetails.map((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.shipmentId)))
 
-     await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+     await OrderLookupService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
       popoverController.dismiss()
     },
 

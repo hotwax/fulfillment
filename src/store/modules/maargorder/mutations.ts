@@ -1,8 +1,8 @@
 import { MutationTree } from 'vuex'
-import OrderState from './MaargOrderState'
+import MaargOrderState from './MaargOrderState'
 import * as types from './mutation-types'
 
-const mutations: MutationTree <OrderState> = {
+const mutations: MutationTree <MaargOrderState> = {
   [types.ORDER_OPEN_UPDATED] (state, payload) {
     state.open.list = payload.list;
     state.open.total = payload.total;

@@ -1,8 +1,8 @@
 import { GetterTree } from "vuex";
-import OrderState from "./MaargOrderState";
+import MaargOrderState from "./MaargOrderState";
 import RootState from "../../RootState";
 
-const getters: GetterTree<OrderState, RootState> = {
+const getters: GetterTree<MaargOrderState, RootState> = {
   getOpenOrders (state) {
     return state.open;
   },
