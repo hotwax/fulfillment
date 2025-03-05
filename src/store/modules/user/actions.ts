@@ -15,6 +15,7 @@ import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions,
 import { useAuthStore, useUserStore, useProductIdentificationStore } from '@hotwax/dxp-components'
 import emitter from '@/event-bus'
 import { generateDeviceId, generateTopicName } from '@/utils/firebase'
+import router from '@/router';
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -69,6 +70,18 @@ const actions: ActionTree<UserState, RootState> = {
         return uniqueFacilities
       }, []);
 
+      const facilityId = router.currentRoute.value.query.facilityId
+      let isQueryFacilityFound = false
+      if (facilityId) {
+        const facility = userProfile.facilities.find((facility: any) => facility.facilityId === facilityId);
+        if (facility) {
+          isQueryFacilityFound = true
+          useUserStore().currentFacility = facility
+        } else {
+          showToast(translate("Redirecting to home page due to incorrect information being passed."))
+        }
+      }
+
       // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
       const currentFacility: any = useUserStore().getCurrentFacility
       userProfile.stores = await useUserStore().getEComStoresByFacility(currentFacility.facilityId);
@@ -115,7 +128,11 @@ const actions: ActionTree<UserState, RootState> = {
       await dispatch('getAffectQohConfig')
       await dispatch('getDisableShipNowConfig')
       await dispatch('getDisableUnpackConfig')
-    
+
+      const orderId = router.currentRoute.value.query.orderId
+      if (isQueryFacilityFound && orderId) {
+        return `/transfer-order-details/${orderId}`;
+      }
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
       // TODO Check if handling of specific status codes is required.
