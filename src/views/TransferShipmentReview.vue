@@ -86,7 +86,7 @@
   import { Actions, hasPermission } from '@/authorization'
   import { getFeature, showToast } from '@/utils';
   import { hasError } from '@/adapter'
-  import { OrderService } from '@/services/OrderService'
+  import { TransferOrderService } from '@/services/TransferOrderService'
   import TransferShipmentActionsPopover from '@/components/TransferShipmentActionsPopover.vue'
   import logger from '@/logger';
   import TransferOrderItem from '@/components/TransferOrderItem.vue'
@@ -135,7 +135,7 @@
           {
             text: translate("Discard"),
             handler: async () => {
-              const resp = await OrderService.updateShipment({"shipmentId": this.currentShipment.shipmentId, "statusId": "SHIPMENT_CANCELLED"})
+              const resp = await TransferOrderService.updateShipment({"shipmentId": this.currentShipment.shipmentId, "statusId": "SHIPMENT_CANCELLED"})
               if (!hasError(resp)) {
                 showToast(translate('Shipment is discarded.'));
               }
@@ -212,7 +212,7 @@
 
         if (!this.currentShipment.trackingCode) {
           //regenerate shipping label if missing tracking code
-          const resp = await OrderService.retryShippingLabel([this.currentShipment.shipmentId])
+          const resp = await TransferOrderService.retryShippingLabel([this.currentShipment.shipmentId])
           if (!hasError(resp)) {
             this.showLabelError = false;
             showToast(translate("Shipping Label generated successfully"))
@@ -223,7 +223,7 @@
                 ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
                 .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
 
-            await OrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
+            await TransferOrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
           } else {
             this.showLabelError = true;
             showToast(translate("Failed to generate shipping label"))
@@ -231,7 +231,7 @@
         } else {
           this.showLabelError = false;
           //print shipping label if label already exists
-          await OrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
+          await TransferOrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
         }
 
         this.isGeneratingShippingLabel = false;
@@ -270,7 +270,7 @@
         try {
           const shipmentPackagesWithMissingLabel = this.currentShipment.shipmentPackagesWithMissingLabel;
           if (shipmentPackagesWithMissingLabel.length > 0 && this.trackingCode && this.currentShipment.trackingCode !== this.trackingCode) {
-            await OrderService.addTrackingCode({
+            await TransferOrderService.addTrackingCode({
               "shipmentId": this.currentShipment.shipmentId,
               "shipmentRouteSegmentId": shipmentPackagesWithMissingLabel?.[0].shipmentRouteSegmentId,
               "shipmentPackageSeqId": shipmentPackagesWithMissingLabel?.[0].shipmentPackageSeqId,
@@ -278,9 +278,9 @@
             });
           }
           
-          let resp = await OrderService.updateShipment({"shipmentId": this.currentShipment.shipmentId, "statusId": "SHIPMENT_PACKED"})
+          let resp = await TransferOrderService.updateShipment({"shipmentId": this.currentShipment.shipmentId, "statusId": "SHIPMENT_PACKED"})
           if (!hasError(resp)) {
-            resp = await OrderService.updateShipment({"shipmentId": this.currentShipment.shipmentId, "statusId": "SHIPMENT_SHIPPED"})
+            resp = await TransferOrderService.updateShipment({"shipmentId": this.currentShipment.shipmentId, "statusId": "SHIPMENT_SHIPPED"})
             if (hasError(resp)) {
               throw resp.data;
             }
