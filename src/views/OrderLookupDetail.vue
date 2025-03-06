@@ -199,7 +199,7 @@
                   <p v-if="shipGroup.facilityId !== '_NA_'">{{ getShipmentMethodDesc(shipGroup.shipmentMethodTypeId) || shipGroup.shipmentMethodTypeId }}</p>
                 </ion-label>
                 <ion-label slot="end" v-if="shipGroup.trackingIdNumber">{{ translate("Tracking Code") }}{{ ":" }} {{ shipGroup.trackingIdNumber }}</ion-label>
-                <ion-button :disabled="order.hasMissingInfo" slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, shipGroup)" v-if="shipGroup.trackingIdNumber">
+                <ion-button slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, shipGroup)" v-if="shipGroup.trackingIdNumber">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>

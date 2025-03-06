@@ -55,7 +55,7 @@
           </div>
 
           <div v-if="category === 'in-progress'">
-            <div class="box-type desktop-only" v-if="!order.shipmentPackages && !order.hasMissingInfo">
+            <div class="box-type desktop-only" v-if="!order.shipmentPackages">
               <ion-skeleton-text animated />
               <ion-skeleton-text animated />
             </div>
@@ -92,18 +92,18 @@
 
             <div v-if="category === 'in-progress'" class="desktop-only ion-text-center" >
               <template v-if="item.rejectReason">
-                <ion-chip :disabled="order.hasMissingInfo" outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
+                <ion-chip outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
                   <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
                   <ion-icon :icon="closeCircleOutline" />
                 </ion-chip>
               </template>
               <template v-else-if="isEntierOrderRejectionEnabled(order)">
-                <ion-chip :disabled="order.hasMissingInfo" outline color="danger">
+                <ion-chip outline color="danger">
                   <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject to avoid order split (no variance)')}}</ion-label>
                 </ion-chip>
               </template>
               <template v-else>
-                <ion-chip :disabled="order.hasMissingInfo" outline @click="openShipmentBoxPopover($event, item, order)">
+                <ion-chip outline @click="openShipmentBoxPopover($event, item, order)">
                   <ion-icon :icon="fileTrayOutline" />
                   {{ `Box ${item.selectedBox || ''}` }} 
                   <ion-icon :icon="caretDownOutline" />
@@ -118,12 +118,12 @@
              <!--Adding checks to avoid any operations if order has missing info, mostly when after packing Solr is not updaing immediately-->
             <div class="product-metadata">
               <ion-note v-if="getProductStock(item.productId).qoh" class="ion-padding-end">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-              <ion-button :disabled="order.hasMissingInfo" color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+              <ion-button color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
                 {{ translate('Check stock') }}
                 <ion-icon slot="end" :icon="cubeOutline"/>
               </ion-button>
               <!-- TODO make functional -->
-              <ion-button :disabled="order.hasMissingInfo" v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
+              <ion-button v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
                 {{ translate('Report an issue') }}
                 <ion-icon slot="end" :icon="trashBinOutline"/>
               </ion-button>
@@ -132,7 +132,7 @@
                 <ion-icon v-if="item.showKitComponents" color="medium" slot="end" :icon="chevronUpOutline"/>
                 <ion-icon v-else color="medium" slot="end" :icon="listOutline"/>
               </ion-button>
-              <ion-button :disabled="order.hasMissingInfo" v-if="item.productTypeId === 'GIFT_CARD'" fill="clear" color="medium" size="small" @click="openGiftCardActivationModal(item)">
+              <ion-button v-if="item.productTypeId === 'GIFT_CARD'" fill="clear" color="medium" size="small" @click="openGiftCardActivationModal(item)">
                 {{ translate('Gift card') }}
                 <ion-icon color="medium" slot="end" :icon="item.isGCActivated ? gift : giftOutline"/>
               </ion-button>
@@ -159,7 +159,7 @@
           
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
-              <ion-button fill="clear" :disabled="order.hasMissingInfo" @click="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) :packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+              <ion-button fill="clear" @click="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) :packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -179,7 +179,7 @@
             <!-- positive -->
             <div>
               <template v-if="category === 'in-progress'">
-                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">
+                <ion-button :disabled="order.hasRejectedItem || order.isModified" @click="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">
                   <ion-icon slot="start" :icon="personAddOutline" />
                   {{ translate("Pack order") }}
                 </ion-button>
@@ -294,7 +294,7 @@
                 {{ order.trackingCode }}
                 <p>{{ translate("tracking code") }}</p>
               </ion-label>        
-              <ion-button :disabled="order.hasMissingInfo" slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, order)">
+              <ion-button slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, order)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
