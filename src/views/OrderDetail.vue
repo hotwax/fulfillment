@@ -1082,6 +1082,15 @@ export default defineComponent({
         this.defaultShipmentBoxType = await this.fetchDefaultShipmentBox();
       }
 
+      let packageName = "A";
+      const packageNames = order?.shipmentPackages.
+          filter((shipmentPackage:any) => shipmentPackage.packageName).
+          map((shipmentPackage:any) => shipmentPackage.packageName);
+      if (packageNames && packageNames.length) {
+          packageNames.sort((a:any, b:any) => b.localeCompare(a));
+          packageName = String.fromCharCode(packageNames[0].charCodeAt(0) + 1);
+      }
+
       const params = {
         shipmentId: order.shipmentId,
         shipmentBoxTypeId: this.defaultShipmentBoxType
