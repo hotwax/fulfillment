@@ -1,8 +1,9 @@
-import { api } from '@/adapter';
+import { api, client } from '@/adapter';
 import { translate } from "@hotwax/dxp-components";
 import { showToast } from "@/utils";
 import { hasError } from '@/adapter'
 import logger from '@/logger';
+import store from '@/store';
   
 
 const fetchCarriers = async (params: any): Promise<any> => {
@@ -168,11 +169,19 @@ const ensurePartyRole = async (payload: any): Promise <any> => {
 }
 
 const fetchCarrierTrackingUrls = async (payload: any): Promise<any> => {
-  return api({
-    url: "performFind",
-    method: "POST",
-    data: payload,
-  })
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await client({
+    url: `/admin/systemProperties`, //should handle the update of OISG, SRG, SPRG if needed
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params: payload
+  });
 }
 
 const fetchShipmentGatewayConfigs = async (payload: any): Promise<any> => {

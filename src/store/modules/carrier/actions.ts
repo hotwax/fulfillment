@@ -397,19 +397,15 @@ const actions: ActionTree<CarrierState, RootState> = {
 
     try {
       resp = await CarrierService.fetchCarrierTrackingUrls({
-        "entityName": "SystemProperty",
-        "inputFields": {
-          "systemResourceId": carrierIds,
-          "systemResourceId_op": "in",
-          "systemResourceId_ic": "Y",
-          "systemPropertyId": "%trackingUrl%",
-          "systemPropertyId_op": "like"
-        },
-        "fieldList": ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
+        "systemResourceId": carrierIds,
+        "systemResourceId_op": "in",
+        "systemPropertyId": "%trackingUrl%",
+        "systemPropertyId_op": "like",
+        "fieldsToSelect": ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
       })
 
       if(!hasError(resp)) {
-        resp.data.docs.map((doc: any) => {
+        resp.data.map((doc: any) => {
           systemProperties[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue
         })
       } else {
