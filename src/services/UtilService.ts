@@ -343,6 +343,38 @@ const fetchCarrierPartyIds = async (query: any): Promise <any>  => {
   });
 }
 
+const fetchConfiguredCarrierService = async(query: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
+const generateManifest = async(payload: any): Promise<any> => {
+  return api({
+    url: "generateManifests",
+    method: "POST",
+    data: payload
+  });
+}
+
+const downloadCarrierManifest = async(payload: any): Promise<any> => {
+  return api({
+    url: "downloadCarrierManifest",
+    method: "POST",
+    data: payload
+  });
+}
+
+const fetchManifestsInformation = async(payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "POST",
+    data: payload
+  });
+}
+
 const fetchPartyInformation = async (query: any): Promise <any>  => {
   return api({
     url: "performFind",
@@ -674,6 +706,7 @@ export const UtilService = {
   createForceScanSetting,
   createPicklist,
   createEnumeration,
+  downloadCarrierManifest,
   fetchAdjustmentTypeDescription,
   fetchCarrierPartyIds,
   fetchDefaultShipmentBox,
@@ -683,6 +716,7 @@ export const UtilService = {
   fetchFulfillmentRejectReasons,
   fetchGiftCardFulfillmentInfo,
   fetchGiftCardItemPriceInfo,
+  fetchManifestsInformation,
   fetchOrderAdjustments,
   fetchOrderShipGroupInfo,
   fetchPartyInformation,
@@ -699,6 +733,7 @@ export const UtilService = {
   fetchShipmentRouteSegmentInformation,
   findCarrierPartyIdsForShipment,
   findCarrierShipmentBoxType,
+  fetchConfiguredCarrierService,
   fetchOrderPayment,
   findProductStoreShipmentMethCount,
   findShipmentIdsForOrders,
@@ -706,6 +741,7 @@ export const UtilService = {
   findShipmentPackages,
   findShipmentPackageContents,
   fetchTransferOrderFacets,
+  generateManifest,
   getAvailablePickers,
   getProductStoreSetting,
   isEnumExists,
