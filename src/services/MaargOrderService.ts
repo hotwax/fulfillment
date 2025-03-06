@@ -713,6 +713,22 @@ const activateGiftCard = async (payload: any): Promise<any> => {
   });
 }
 
+const fetchOrderItems = async (payload: any): Promise <any>  => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/orders/${payload.orderId}/items`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params: payload
+  });
+}
+
 export const MaargOrderService = {
   activateGiftCard,
   addShipmentBox,
@@ -721,6 +737,7 @@ export const MaargOrderService = {
   createPicklist,
   fetchGiftCardItemPriceInfo,
   fetchOrderDetail,
+  fetchOrderItems,
   fetchPicklists,
   fetchShipmentLabelError,
   fetchShipmentPackageRouteSegDetails,

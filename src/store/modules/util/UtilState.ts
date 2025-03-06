@@ -11,7 +11,6 @@ export default interface UtilState {
   enumerations: any;
   productStores: any;
   facilities: any;
-  shipmentGatewayConfigs: any;
   isForceScanEnabled: boolean;
   fulfillmentRejectReasons: any;
   rejectReasonOptions: any;

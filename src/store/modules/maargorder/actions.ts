@@ -417,10 +417,10 @@ const actions: ActionTree<MaargOrderState, RootState> = {
   async updateCompletedOrderIndex({ commit }, payload) {
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, payload)
   },
-  async clearInCompletedOrders({ commit }) {
+  async clearCompletedOrders({ commit }) {
     commit(types.ORDER_COMPLETED_CLEARED)
   },
-
+  
   async updateOpenOrderIndex({ commit }, payload) {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
   },

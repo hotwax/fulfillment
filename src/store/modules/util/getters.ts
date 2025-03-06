@@ -42,9 +42,6 @@ const getters: GetterTree <UtilState, RootState> = {
   getFacilities(state) {
     return state.facilities
   },
-  getShipmentGatewayConfigs(state) {
-    return state.shipmentGatewayConfigs
-  },
   isForceScanEnabled(state) {
     return state.isForceScanEnabled
   },

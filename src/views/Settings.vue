@@ -313,19 +313,16 @@ export default defineComponent({
       let resp: any;
       try {        
         resp = await UserService.getFacilityDetails({
-          "entityName": "Facility",
-          "inputFields": {
-            "facilityId": this.currentFacility?.facilityId
-          },
-          "viewSize": 1,
-          "fieldList": ["maximumOrderLimit", "facilityId"]
+          "facilityId": this.currentFacility?.facilityId,
+          "pageSize": 1,
+          "fieldsToSelect": ["maximumOrderLimit", "facilityId"]
         })
 
-        if(!hasError(resp) && resp.data.count) {
+        if(!hasError(resp)) {
           // using index 0 as we will only get a single record
           this.currentFacilityDetails = {
             ...this.currentFacilityDetails,
-            ...resp.data.docs[0]
+            ...resp.data[0]
           }
           this.updateOrderLimitType()
         } else {
@@ -339,17 +336,14 @@ export default defineComponent({
       let resp: any;
       try {
         resp = await UserService.getFacilityOrderCount({
-          "entityName": "FacilityOrderCount",
-          "inputFields": {
-            "facilityId": this.currentFacility?.facilityId,
-            "entryDate": DateTime.now().toFormat('yyyy-MM-dd'),
-          },
-          "viewSize": 1,
-          "fieldList": ["entryDate", "lastOrderCount"],
+          "facilityId": this.currentFacility?.facilityId,
+          "entryDate": DateTime.now().toFormat('yyyy-MM-dd'),
+          "pageSize": 1,
+          "fieldsToSelect": ["entryDate", "lastOrderCount"],
         })
-        if (!hasError(resp) && resp.data.count) {          
+        if (!hasError(resp)) {          
           // using index 0 as we will only get a single record
-          this.currentFacilityDetails.orderCount = resp.data.docs[0].lastOrderCount
+          this.currentFacilityDetails.orderCount = resp.data[0].lastOrderCount
         } else {
           throw resp.data
         }
@@ -375,30 +369,24 @@ export default defineComponent({
         this.facilityGroupDetails = {}
 
         resp = await UserService.getFacilityGroupDetails({
-          "entityName": "FacilityGroup",
-          "inputFields": {
-            "facilityGroupTypeId": 'SHOPIFY_GROUP_FAC'
-          },
-          "fieldList": ["facilityGroupId", "facilityGroupTypeId"],
-          "viewSize": 1,
+          "facilityGroupTypeId": 'SHOPIFY_GROUP_FAC',
+          "fieldsToSelect": ["facilityGroupId", "facilityGroupTypeId"],
+          "pageSize": 1,
         })
 
         if (!hasError(resp)) {
           // using facilityGroupId as a flag for getting data from getFacilityGroupDetails
-          this.facilityGroupDetails.facilityGroupId = resp.data.docs[0].facilityGroupId
+          this.facilityGroupDetails.facilityGroupId = resp.data[0].facilityGroupId
           resp = await UserService.getFacilityGroupAndMemberDetails({
-            "entityName": "FacilityGroupAndMember",
-            "inputFields": {
-              "facilityId": this.currentFacility?.facilityId,
-              "facilityGroupId": this.facilityGroupDetails.facilityGroupId
-            },
-            "fieldList": ["facilityId", "fromDate"],
-            "viewSize": 1,
-            "filterByDate": 'Y'
+            "facilityId": this.currentFacility?.facilityId,
+            "facilityGroupId": this.facilityGroupDetails.facilityGroupId,
+            "fieldsToSelect": ["facilityId", "fromDate"],
+            "pageSize": 1,
+            "thruDate_op": 'empty'
           })
 
           if (!hasError(resp)) {
-            this.facilityGroupDetails = { ...this.facilityGroupDetails, ...resp.data.docs[0] }
+            this.facilityGroupDetails = { ...this.facilityGroupDetails, ...resp.data[0] }
 
             // When getting data from group member enabling the eCom inventory
             this.isEComInvEnabled = true

@@ -359,7 +359,7 @@ const actions: ActionTree<UtilState, RootState> = {
     try {
       const resp = await UtilService.findProductStoreShipmentMethCount(params);
 
-      if(resp?.status == 200 && !hasError(resp) && resp.data.count) {
+      if(!hasError(resp)) {
         productStoreShipmentMethCount = resp.data.count
       } else {
         throw resp?.data
@@ -371,36 +371,6 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_PRODUCT_STORE_SHIPMENT_METH_COUNT_UPDATED, productStoreShipmentMethCount)
   },
   
-  async fetchRejectReasonEnumTypes({ commit, state }) {
-    if(state.rejectReasonEnumTypes.length) {
-      return;
-    }
-
-    let rejectReasonEnumTypes = [] as any;
-
-    try {
-      const payload = {
-        "inputFields": {
-          "parentTypeId": ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
-          "parentTypeId_op": "in"
-        },
-        "fieldList": ["description", "enumTypeId"],
-        "entityName": "EnumerationType",
-        "noConditionFind": "Y"
-      }
-
-      const resp = await UtilService.fetchRejectReasonEnumTypes(payload)
-      if (!hasError(resp) && resp.data.count > 0) {
-        rejectReasonEnumTypes = resp.data.docs
-      } else {
-        throw resp.data
-      }
-    } catch (err) {
-      logger.error(err)
-    }
-    commit(types.UTIL_REJECT_REASON_ENUM_TYPES_UPDATED, rejectReasonEnumTypes)
-  },
-
   async fetchEnumerations({ commit, state }, ids) {
     let enumerations = JSON.parse(JSON.stringify(state.enumerations)) as any
 
@@ -442,20 +412,19 @@ const actions: ActionTree<UtilState, RootState> = {
     let facilities  = [];
     try {
       const payload = {
-        "inputFields": {
-          "parentTypeId": "VIRTUAL_FACILITY",
-          "parentTypeId_op": "notEqual",
-          "facilityTypeId": "VIRTUAL_FACILITY",
-          "facilityTypeId_op": "notEqual"
-        },
-        "entityName": "FacilityAndType",
-        "viewSize": 250 // keeping view size 100 as considering that we will have max 100 facilities
+        "parentTypeId": "VIRTUAL_FACILITY",
+        "parentTypeId_op": "equals",
+        "parentTypeId_not": "Y",
+        "facilityTypeId": "VIRTUAL_FACILITY",
+        "facilityTypeId_op": "equals",
+        "facilityTypeId_not": "Y",
+        "pageSize": 250 // keeping view size 250 as considering that we will have max 100 facilities
       }
 
       const resp = await UtilService.fetchFacilities(payload)
 
-      if (!hasError(resp) && resp.data.count > 0) {
-        facilities = resp.data.docs
+      if (!hasError(resp)) {
+        facilities = resp.data
       } else {
         throw resp.data
       }
@@ -483,30 +452,6 @@ const actions: ActionTree<UtilState, RootState> = {
       logger.error('Failed to fetch product stores', err)
     }
     commit(types.UTIL_PRODUCT_STORES_UPDATED, stores)
-  },
-
-  async fetchShipmentGatewayConfigs({ commit }) {
-    let configs  = {};
-    try {
-      const payload = {
-        "entityName": "ShipmentGatewayConfig",
-        "noConditionFind": "Y",
-        "viewSize": 50 // keeping view size 50 as considering there will not be more than 50 shipment gateway
-      }
-
-      const resp = await UtilService.fetchShipmentGatewayConfigs(payload)
-      if (!hasError(resp) && resp.data.count > 0) {
-        configs = resp.data.docs.reduce((updatedConfigDetail:any, config:any) => {
-          updatedConfigDetail[config.shipmentGatewayConfigId] = config;
-          return updatedConfigDetail;
-        }, {})
-      } else {
-        throw resp.data
-      }
-    } catch (err) {
-      logger.error('Failed to fetch shipment gateway config', err)
-    }
-    commit(types.UTIL_SHIPMENT_GATEWAY_CONFIGS_UPDATED, configs)
   },
   
   async getForceScanSetting({ commit, dispatch }, eComStoreId) {
@@ -590,6 +535,7 @@ const actions: ActionTree<UtilState, RootState> = {
       }) as any
       if(!hasError(resp)) {
         fromDate = resp.data[0]?.fromDate
+        console.log("=======resp==", resp)
       }
     } catch(err) {
       console.error(err)

@@ -20,7 +20,6 @@ const utilModule: Module<UtilState, RootState> = {
     enumerations: {},
     productStores: [],
     facilities: [],
-    shipmentGatewayConfigs: [],
     isForceScanEnabled: false,
     fulfillmentRejectReasons: {},
     rejectReasonOptions: [],

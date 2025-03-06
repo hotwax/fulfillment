@@ -463,6 +463,30 @@ const actions: ActionTree<CarrierState, RootState> = {
     }
     commit(types.CARRIER_STORE_SHIPMENT_METHODS_UPDATED, productStoreShipmentMethods)
   },
+
+  async fetchShipmentGatewayConfigs({ commit }) {
+    let configs  = {};
+    try {
+      const payload = {
+        "entityName": "ShipmentGatewayConfig",
+        "noConditionFind": "Y",
+        "viewSize": 50 // keeping view size 50 as considering there will not be more than 50 shipment gateway
+      }
+
+      const resp = await CarrierService.fetchShipmentGatewayConfigs(payload)
+      if (!hasError(resp) && resp.data.count > 0) {
+        configs = resp.data.docs.reduce((updatedConfigDetail:any, config:any) => {
+          updatedConfigDetail[config.shipmentGatewayConfigId] = config;
+          return updatedConfigDetail;
+        }, {})
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error('Failed to fetch shipment gateway config', err)
+    }
+    commit(types.CARRIER_SHIPMENT_GATEWAY_CONFIGS_UPDATED, configs)
+  },
   
   async updateShipmentMethods({ commit }, payload) {
     commit(types.SHIPMENT_METHODS_UPDATED, payload)

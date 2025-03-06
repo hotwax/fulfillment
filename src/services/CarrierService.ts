@@ -175,6 +175,15 @@ const fetchCarrierTrackingUrls = async (payload: any): Promise<any> => {
   })
 }
 
+const fetchShipmentGatewayConfigs = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "POST",
+    data: payload,
+    cache: true
+  })
+}
+
 export const CarrierService = {
   addCarrierShipmentMethod,
   addCarrierToFacility,
@@ -187,6 +196,7 @@ export const CarrierService = {
   fetchCarrierShipmentMethods,
   fetchCarrierTrackingUrls,
   fetchProductStoreShipmentMethods,
+  fetchShipmentGatewayConfigs,
   fetchShipmentMethodTypes,
   removeCarrierFromFacility,
   removeCarrierShipmentMethod,
