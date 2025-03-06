@@ -288,7 +288,7 @@ const recycleOutstandingOrders = async(payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/poorti/bulkRejectStoreOutstandingOrders`,
+    url: `/poorti/rejectOutstandingOrders`,
     method: "POST",
     baseURL,
     headers: {
@@ -397,7 +397,7 @@ const recycleInProgressOrders = async(payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/poorti/bulkRejectStoreInProgressOrders`,
+    url: `/poorti/rejectInProgressOrders`,
     method: "POST",
     baseURL,
     headers: {
