@@ -80,7 +80,7 @@
               <ion-button :disabled="addingBoxForShipmentIds.includes(order.shipmentId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
               <ion-row>
                 <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
-                  {{ `Box ${shipmentPackage?.packageName}` }} {{ getShipmentBoxTypes(order.carrierPartyId).length ? `| ${boxTypeDesc(getShipmentPackageType(order, shipmentPackage))}` : '' }}
+                  {{ `Box ${shipmentPackage?.packageName}` }} {{ `| ${boxTypeDesc(getShipmentPackageType(order, shipmentPackage))}`}}
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </ion-row>
@@ -963,16 +963,15 @@ export default defineComponent({
       this.addingBoxForShipmentIds.splice(this.addingBoxForShipmentIds.indexOf(order.shipmentId), 1)
     },
     getShipmentPackageType(order: any, shipmentPackage: any) {
-      let packageType = '';
-      const shipmentBoxTypes = this.getShipmentBoxTypes(order.carrierPartyId);
-      if (shipmentBoxTypes.length){
-        const currentBoxType = shipmentBoxTypes.find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId)
-        packageType = currentBoxType ?? shipmentBoxTypes[0];
+      let packageType = shipmentPackage.shipmentBoxTypeId;
+      if (!packageType) {
+        const shipmentBoxTypes = this.getShipmentBoxTypes(order.carrierPartyId);
+        packageType = shipmentBoxTypes[0];
       }
       return packageType;
     },
     getShipmentBoxTypes(carrierPartyId: string) {
-      return this.carrierShipmentBoxTypes[carrierPartyId];
+      return this.carrierShipmentBoxTypes[carrierPartyId] ? this.carrierShipmentBoxTypes[carrierPartyId] : [];
     },
     async updateQueryString(queryString: string) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
@@ -1002,7 +1001,7 @@ export default defineComponent({
 
       // Don't open popover when not having shipmentBoxTypes available
       const shipmentBoxTypes = this.getShipmentBoxTypes(order.carrierPartyId)
-      if(!shipmentBoxTypes.length) {
+      if (!shipmentBoxTypes.length) {
         logger.error('Failed to fetch shipment box types')
         return;
       }

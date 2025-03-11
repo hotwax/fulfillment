@@ -42,7 +42,7 @@
             <div class="order-tags">
               <ion-chip outline>
                 <ion-icon :icon="ribbonOutline" />
-                <ion-label>{{ order.shipGroupSeqId }}</ion-label>
+                <ion-label>{{ order.primaryShipGroupSeqId ? order.primaryShipGroupSeqId : order.shipGroupSeqId }}</ion-label>
               </ion-chip>
             </div>
 
@@ -65,7 +65,7 @@
               </ion-button>
               <ion-row>
                 <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
-                  {{ `Box ${shipmentPackage?.packageName}` }} {{ getShipmentBoxTypes(order.carrierPartyId)?.length ? `| ${boxTypeDesc(getShipmentPackageType(order, shipmentPackage))}` : '' }}
+                  {{ `Box ${shipmentPackage?.packageName}` }} {{ `| ${boxTypeDesc(getShipmentPackageType(order, shipmentPackage))}`}}
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </ion-row>
@@ -978,16 +978,15 @@ export default defineComponent({
       return assignPickerModal.present();
     },
     getShipmentPackageType(order: any, shipmentPackage: any) {
-      let packageType = '';
-      const shipmentBoxTypes = this.getShipmentBoxTypes(order.carrierPartyId);
-      if (shipmentBoxTypes.length){
-        const currentBoxType = shipmentBoxTypes.find((boxType: string) => boxType === shipmentPackage.shipmentBoxTypeId)
-        packageType = currentBoxType ?? shipmentBoxTypes[0];
+      let packageType = shipmentPackage.shipmentBoxTypeId;
+      if (!packageType) {
+        const shipmentBoxTypes = this.getShipmentBoxTypes(order.carrierPartyId);
+        packageType = shipmentBoxTypes[0];
       }
       return packageType;
     },
     getShipmentBoxTypes(carrierPartyId: string) {
-      return this.carrierShipmentBoxTypes[carrierPartyId];
+      return this.carrierShipmentBoxTypes[carrierPartyId] ? this.carrierShipmentBoxTypes[carrierPartyId] : [];
     },
     async regenerateShippingLabel(order: any) {
       // If there are no product store shipment method configured, then not generating the label and displaying an error toast
@@ -1117,7 +1116,8 @@ export default defineComponent({
     },
     async updateShipmentBoxType(shipmentPackage: any, order: any, ev: CustomEvent) {
       // Don't open popover when not having shipmentBoxTypes available
-      if (!shipmentPackage.shipmentBoxTypes.length) {
+      const shipmentBoxTypes = this.getShipmentBoxTypes(order.carrierPartyId)
+      if (!shipmentBoxTypes.length) {
         logger.error('Failed to fetch shipment box types')
         return;
       }
@@ -1126,7 +1126,7 @@ export default defineComponent({
         component: ShipmentBoxTypePopover,
         event: ev,
         showBackdrop: false,
-        componentProps: { shipmentPackage }
+        componentProps: { shipmentBoxTypes }
       });
 
       popover.present();

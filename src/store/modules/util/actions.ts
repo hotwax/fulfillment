@@ -535,7 +535,6 @@ const actions: ActionTree<UtilState, RootState> = {
       }) as any
       if(!hasError(resp)) {
         fromDate = resp.data[0]?.fromDate
-        console.log("=======resp==", resp)
       }
     } catch(err) {
       console.error(err)
