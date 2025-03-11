@@ -315,12 +315,15 @@ export default defineComponent({
         isGroupingRequired: false,
         filters: {
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          '-fulfillmentStatus': { value: '[* TO *]' },
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
           facilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId }
         },
+        solrFilters: [
+          //it should be explicit what is subtracting the first part of your OR statement from
+          "((*:* -fulfillmentStatus: [* TO *]) OR fulfillmentStatus:Created)"
+        ],
         facet: {
           "shipmentMethodTypeIdFacet":{
             "excludeTags":"shipmentMethodTypeIdFilter",

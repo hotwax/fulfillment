@@ -103,6 +103,12 @@ const prepareSolrQuery = (params: any) => {
       }
     })
   }
+  //adding solrFilters to pass solr filter strings directly
+  if (params.solrFilters) {
+    params.solrFilters.forEach((solrFilterString: any) => {
+      payload.json.filter += ` AND ${solrFilterString}`
+    })
+  }
 
   if(params.facet) {
     payload.json['facet'] = params.facet

@@ -19,12 +19,15 @@ const findOpenOrders = async (payload: any): Promise<any> => {
     sort: payload.sort ? payload.sort : "orderDate asc",
     filters: {
       '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-      '-fulfillmentStatus': { value: '[* TO *]' },
       orderStatusId: { value: 'ORDER_APPROVED' },
       orderTypeId: { value: 'SALES_ORDER' },
       facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
       productStoreId: { value: getProductStoreId() }
-    }
+    },
+    solrFilters: [
+      //it should be explicit what is subtracting the first part of your OR statement from
+      "((*:* -fulfillmentStatus: [* TO *]) OR fulfillmentStatus:Created)"
+    ]
   } as any
 
   if (shipGroupFilter && Object.keys(shipGroupFilter).length) {
