@@ -70,7 +70,7 @@ import {
   IonToolbar,
   modalController } from "@ionic/vue";
 import { defineComponent, computed } from "vue";
-import { closeOutline, saveOutline } from "ionicons/icons";
+import { closeOutline, open, saveOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { showToast } from "@/utils";
 import { hasError } from "@/adapter";
@@ -135,15 +135,18 @@ export default defineComponent({
     async printPicklist () {
       emitter.emit("presentLoader")
       let resp;
+      const orderIdsToPick = []
 
       // creating picklist for orders that are currently in the list, means those are currently in the selected viewSize
       const orderItems = []
 
       if(this.order) {
         this.order.items.map((item) => orderItems.push(item))
+        orderIdsToPick.push(this.order.orderId)
       } else {
         this.openOrders.list.map((order) => {
           order.items.map((item) => orderItems.push(item))
+          orderIdsToPick.push(order.orderId)
         });
       }
 
@@ -175,6 +178,15 @@ export default defineComponent({
           await MaargOrderService.printPicklist(resp.data.picklistId)
 
           await this.store.dispatch('maargorder/findOpenOrders')
+          //Removing orders if the solr doc is not updated after picking
+          if (orderIdsToPick.length) {
+            const updatedOpenOrders = this.openOrders?.list.filter(openOrder => !orderIdsToPick.includes(openOrder.orderId))
+            const outdatedOpenOrderCount = this.openOrders.list.reduce((count, openOrder) => 
+              orderIdsToPick.includes(openOrder.orderId) ? count + 1 : count, 0
+            );
+            await this.store.dispatch('maargorder/updateOpenOrderQuery', {...this.openOrders.query, viewSize: updatedOpenOrders.length})
+            await this.store.dispatch('maargorder/updateOpenOrders', {orders: updatedOpenOrders, total: this.openOrders.total - outdatedOpenOrderCount})
+          }
         } else {
           throw resp.data
         }

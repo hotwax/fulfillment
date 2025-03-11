@@ -55,6 +55,7 @@ const actions: ActionTree<MaargOrderState, RootState> = {
     this.dispatch('util/fetchShipmentMethodTypeDesc', shipmentMethodTypeIds);
     orders = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: false, currentOrders: orders})
 
+    inProgressQuery.viewSize = orders?.length
     commit(types.ORDER_INPROGRESS_QUERY_UPDATED, { ...inProgressQuery })
     commit(types.ORDER_INPROGRESS_UPDATED, { orders, total: resp.total })
 
@@ -80,6 +81,7 @@ const actions: ActionTree<MaargOrderState, RootState> = {
     this.dispatch('util/fetchShipmentMethodTypeDesc', shipmentMethodTypeIds);
     orders = await dispatch("fetchGiftCardActivationDetails", { isDetailsPage: false, currentOrders: orders});
 
+    completedOrderQuery.viewSize = orders?.length
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, { ...completedOrderQuery })
     commit(types.ORDER_COMPLETED_UPDATED, {list: orders, total: resp.total})
 
@@ -378,9 +380,15 @@ const actions: ActionTree<MaargOrderState, RootState> = {
     commit(types.ORDER_CURRENT_UPDATED,  order)
   },
 
+  async updateOpenOrders({ commit }, payload) {
+    commit(types.ORDER_OPEN_UPDATED, {list: payload?.orders, total: payload?.total})
+  },
   async updateOpenQuery({ commit, dispatch }, payload) {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
     await dispatch('findOpenOrders');
+  },
+  async updateOpenOrderQuery({ commit, dispatch }, payload) {
+    commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
   },
   async clearOpenOrders({ commit }) {
     commit(types.ORDER_OPEN_CLEARED)

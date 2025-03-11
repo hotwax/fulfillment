@@ -250,6 +250,7 @@ const printCustomDocuments = async (internationalInvoiceUrls: Array<string>): Pr
 const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
   try {
     const baseURL = store.getters['user/getMaargBaseUrl'];
+    const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
 
     // Get packing slip from the server
     const resp = await client({
@@ -257,6 +258,7 @@ const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>): Pro
       method: "GET",
       baseURL,
       headers: {
+        "api_key": omsRedirectionInfo.token,
         "Content-Type": "application/json"
       },
       params: {
