@@ -317,7 +317,7 @@ const findShipments = async (query: any): Promise <any>  => {
       pageSize: query.viewSize,
       orderBy: 'orderDate',
       shipmentTypeId: 'SALES_SHIPMENT', 
-      facilityId: getCurrentFacilityId(),
+      originFacilityId: getCurrentFacilityId(),
       productStoreId: getProductStoreId(),
     } as any
     
