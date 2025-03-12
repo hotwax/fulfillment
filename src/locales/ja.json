@@ -52,6 +52,7 @@
   "Browser TimeZone": "ブラウザのタイムゾーン",
   "Browser time zone": "ブラウザのタイムゾーン",
   "Built: ": "ビルド日時: {builtDateTime}",
+  "Camera access not allowed, please check permissons.": "Camera access not allowed, please check permissons.",
   "Cancel": "キャンセル",
   "Cancelled": "キャンセル済み",
   "Carrier": "配送者",

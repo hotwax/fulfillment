@@ -172,7 +172,7 @@
   import Scanner from "@/components/Scanner.vue";
   import { Actions, hasPermission } from '@/authorization'
   import { DateTime } from 'luxon';
-  import { getFeature, showToast } from '@/utils';
+  import { getFeature, showToast, hasWebcamAccess } from '@/utils';
   import { hasError } from '@/adapter';
   import { OrderService } from '@/services/OrderService'
   import TransferOrderItem from '@/components/TransferOrderItem.vue'
@@ -340,6 +340,10 @@
       },
       
       async scanCode () {
+        if (!(await hasWebcamAccess())) {
+          showToast(translate("Camera access not allowed, please check permissons."));
+          return;
+        } 
         const modal = await modalController
           .create({
             component: Scanner,
