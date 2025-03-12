@@ -321,6 +321,12 @@ const findShipments = async (query: any): Promise <any>  => {
       productStoreId: getProductStoreId(),
     } as any
     
+    if (query.orderStatusId) {
+      params.orderStatusId = query.orderStatusId
+      if (Array.isArray(query.orderStatusId)) {
+        params.orderStatusId_op = "in"
+      }
+    }
     if (query.statusId) {
       params.statusId = query.statusId
       if (Array.isArray(query.statusId)) {

@@ -35,6 +35,7 @@ const actions: ActionTree<MaargOrderState, RootState> = {
 
     const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
     inProgressQuery.statusId = "SHIPMENT_APPROVED"
+    inProgressQuery.orderStatusId = "ORDER_APPROVED"
     const resp = await MaargOrderService.findShipments(inProgressQuery);
     orders = (resp.orders || []).map((order: any) => ({
       ...order,
