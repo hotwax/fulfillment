@@ -74,7 +74,7 @@ import { computed, defineComponent } from "vue";
 import { cameraOutline, closeOutline, copyOutline, saveOutline } from "ionicons/icons";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { mapGetters } from 'vuex';
-import { getFeature, showToast } from "@/utils"
+import { getFeature, showToast, hasWebcamAccess } from "@/utils"
 import Scanner from "@/components/Scanner.vue"
 import { isKit } from '@/utils/order'
 
@@ -119,6 +119,10 @@ export default defineComponent({
       modalController.dismiss({ dismissed: true, ...payload });
     },
     async scan() {
+      if (!(await hasWebcamAccess())) {
+        showToast(translate("Camera access not allowed, please check permissons."));
+        return;
+      } 
       const modal = await modalController.create({
         component: Scanner,
       });
