@@ -152,6 +152,7 @@ export default defineComponent({
 
       
       const payload = {
+        packageName: "A", //default package name
         facilityId: this.currentFacility?.facilityId,
         shipmentMethodTypeId: orderItems[0]?.shipmentMethodTypeId,
         statusId: "PICKLIST_ASSIGNED",
