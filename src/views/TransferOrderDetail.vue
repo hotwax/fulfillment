@@ -73,7 +73,7 @@
                     </div>
                   </div>
 
-                  <div v-for="item in shipment.items" :key="item.shipmentItemSeqId" class="order-item">
+                  <div v-for="item in shipment.items" :key="item.shipmentItemSeqId" class="order-item order-line-item">
                     <div class="product-info">
                       <ion-item lines="none">
                         <ion-thumbnail slot="start">
@@ -172,7 +172,7 @@
   import Scanner from "@/components/Scanner.vue";
   import { Actions, hasPermission } from '@/authorization'
   import { DateTime } from 'luxon';
-  import { getFeature, showToast } from '@/utils';
+  import { getFeature, showToast, hasWebcamAccess } from '@/utils';
   import { hasError } from '@/adapter';
   import { TransferOrderService } from '@/services/TransferOrderService'
   import TransferOrderItem from '@/components/TransferOrderItem.vue'
@@ -340,6 +340,10 @@
       },
       
       async scanCode () {
+        if (!(await hasWebcamAccess())) {
+          showToast(translate("Camera access not allowed, please check permissons."));
+          return;
+        } 
         const modal = await modalController
           .create({
             component: Scanner,
