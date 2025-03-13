@@ -15,7 +15,7 @@ import store from "@/store";
 const actions: ActionTree<TransferOrderState, RootState> = {
 
   async findTransferOrders ({ commit, state }, payload = {}) {
-    emitter.emit('presentLoader');
+    emitter.emit('presentLoader',{ backdropDismiss: false });
     let resp;
     const transferOrderQuery = JSON.parse(JSON.stringify(state.transferOrder.query))
 
