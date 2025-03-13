@@ -12,28 +12,22 @@ import { showToast, isValidCarrierCode, isValidDeliveryDays, getCurrentFacilityI
 
 const actions: ActionTree<CarrierState, RootState> = {
 
-  async fetchCarriers ({ commit }, payload) {
+  async fetchCarriers ({ commit }) {
     let carriers = {} as any;
     let resp;
     try {
       const params = {
-        ...payload,
-        "entityName": "CarrierShipmentMethodCount",
-        "inputFields": {
-          "roleTypeId": "CARRIER",
-          "partyTypeId": "PARTY_GROUP"
-        },
-        "fieldList": ["partyId", "roleTypeId", "groupName", "shipmentMethodCount"],
-        "viewIndex": 0,
-        "viewSize": 250,  // maximum records we could have
-        "distinct": "Y",
-        "noConditionFind": "Y",
-        "orderBy": "groupName"
+        "roleTypeId": "CARRIER",
+        "partyTypeId": "PARTY_GROUP",
+        "fieldsToSelect": ["partyId", "groupName"],
+        "pageIndex": 0,
+        "pageSize": 250,  // maximum records we could have
+        "orderByField": "groupName"
       }
     
       resp = await CarrierService.fetchCarriers(params);
       if (!hasError(resp)) {
-         carriers = {list: resp.data.docs, total: resp.data.count};
+         carriers = {list: resp.data, total: resp.data?.length};
          commit(types.CARRIER_UPDATED, carriers)
       } else {
         throw resp.data;
@@ -47,21 +41,16 @@ const actions: ActionTree<CarrierState, RootState> = {
     let resp;
     try {
       const params = {
-        "entityName": "PartyRoleAndPartyDetail",
-        "inputFields": {
-          "roleTypeId": "CARRIER",
-          "partyId": payload.partyId
-        },
-        "fieldList": ["partyId", "roleTypeId", "firstName", "lastName", "groupName"],
-        "viewIndex": 0,
-        "viewSize": 1,  // maximum records we could have
-        "distinct": "Y",
-        "noConditionFind": "Y"
+        "roleTypeId": "CARRIER",
+        "partyId": payload.partyId,
+        "fieldToSelect": ["partyId", "roleTypeId", "firstName", "lastName", "groupName"],
+        "pageIndex": 0,
+        "pageSize": 1,  // maximum records we could have
       }
     
       resp = await CarrierService.fetchCarriers(params);
       if (!hasError(resp)) {
-        commit(types.CARRIER_CURRENT_UPDATED, resp.data.docs[0])
+        commit(types.CARRIER_CURRENT_UPDATED, resp.data[0])
         await dispatch('fetchCarrierShipmentMethods', { partyId: payload.partyId })
       } else {
         throw resp.data;
@@ -78,24 +67,19 @@ const actions: ActionTree<CarrierState, RootState> = {
 
     try {
       const params = {
-        "entityName": "CarrierShipmentMethod",
-        "inputFields": {
-          "roleTypeId": "CARRIER",
-          "partyId": payload.partyId
-        },
-        "fieldList": ["partyId", "roleTypeId", "shipmentMethodTypeId", "carrierServiceCode", "deliveryDays", "sequenceNumber"],
-        "viewIndex": 0,
-        "viewSize": 250,  // maximum records we could have
-        "distinct": "Y",
-        "noConditionFind": "Y",
-        "orderBy": "sequenceNumber"
+        "roleTypeId": "CARRIER",
+        "partyId": payload.partyId,
+        "fieldsToSelect": ["partyId", "roleTypeId", "shipmentMethodTypeId", "carrierServiceCode", "deliveryDays", "sequenceNumber"],
+        "pageIndex": 0,
+        "pageSize": 250,  // maximum records we could have
+        "orderByField": "sequenceNumber"
       }
     
       resp = await CarrierService.fetchCarrierShipmentMethods(params);
       if (!hasError(resp)) {
         currentCarrier = {
           ...currentCarrier,
-          shipmentMethods: resp.data.docs.reduce((shipmentMethodDetail:any, shipmentMethodType:any) => {
+          shipmentMethods: resp.data.reduce((shipmentMethodDetail:any, shipmentMethodType:any) => {
             shipmentMethodDetail[shipmentMethodType.shipmentMethodTypeId] = shipmentMethodType;
             return shipmentMethodDetail;
           }, {})
@@ -118,21 +102,17 @@ const actions: ActionTree<CarrierState, RootState> = {
     try {
       do {
         const params = {
-          "entityName": "ProductStoreShipmentMethView",
-          "inputFields": {
-            "roleTypeId": "CARRIER",
-            "partyId": payload.partyId
-          },
-          "fieldList": ["productStoreShipMethId", "productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "shipmentGatewayConfigId", "isTrackingRequired", "sequenceNumber", "description", "fromDate"],
-          "noConditionFind": "Y",
-          "viewIndex": viewIndex,
-          "viewSize": 250,
-          "filterByDate": "Y"
+          "roleTypeId": "CARRIER",
+          "partyId": payload.partyId,
+          "fieldsToSelect": ["productStoreShipMethId", "productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "shipmentGatewayConfigId", "isTrackingRequired", "sequenceNumber", "description", "fromDate"],
+          "pageIndex": viewIndex,
+          "pageSize": 250,
+          "thruDate_op": "empty",
         }
   
         resp = await CarrierService.fetchProductStoreShipmentMethods(params)
-        if (!hasError(resp) && resp.data.count) {
-          productStoreShipmentMethods = [...productStoreShipmentMethods, ...resp.data.docs]
+        if (!hasError(resp)) {
+          productStoreShipmentMethods = [...productStoreShipmentMethods, ...resp.data]
           viewIndex++;
         } else {
           throw resp.data
@@ -216,7 +196,6 @@ const actions: ActionTree<CarrierState, RootState> = {
         });
       });
     }
-
     dispatch('updateCarrierShipmentMethodsProductSore', carrierShipmentMethodsByProductStore);
 },
 
@@ -227,15 +206,13 @@ const actions: ActionTree<CarrierState, RootState> = {
     try {
       do {
         const payload = {
-          "entityName": "ShipmentMethodType",
-          "noConditionFind": "Y",
-          "viewIndex": viewIndex,
-          "viewSize": 250
+          "pageIndex": viewIndex,
+          "pageSize": 250
         }
   
         resp = await CarrierService.fetchShipmentMethodTypes(payload)
-        if (!hasError(resp) && resp.data.count) {
-          shipmentMethodTypes = [...shipmentMethodTypes, ...resp.data.docs]
+        if (!hasError(resp)) {
+          shipmentMethodTypes = [...shipmentMethodTypes, ...resp.data]
           viewIndex++;
         } else {
           throw resp.data
@@ -259,22 +236,18 @@ const actions: ActionTree<CarrierState, RootState> = {
     try {
       do {
         const params = {
-          "entityName": "FacilityAndParty",
-          "inputFields": {
-            "roleTypeId": "CARRIER",
-            "partyId": currentCarrier.partyId
-          },
-          "fieldList": ["facilityId", "partyId", "roleTypeId", "fromDate"],
-          "noConditionFind": "Y",
-          "viewIndex": viewIndex,
-          "viewSize": 250,
-          "filterByDate": "Y"
+          "roleTypeId": "CARRIER",
+          "partyId": currentCarrier.partyId,
+          "fieldsToSelect": ["facilityId", "partyId", "roleTypeId", "fromDate"],
+          "pageIndex": viewIndex,
+          "pageSize": 250,
+          "thruDate_op": "empty"
         }
   
         resp = await CarrierService.fetchCarrierFacilities(params)
-        if (!hasError(resp) && resp.data.count) {
-          carrierFacilities = [...carrierFacilities, ...resp.data.docs]
-          docCount = resp.data.docs.length;
+        if (!hasError(resp)) {
+          carrierFacilities = [...carrierFacilities, ...resp.data]
+          docCount = resp.data.length;
           viewIndex++;
         } else {
           docCount = 0
@@ -297,7 +270,6 @@ const actions: ActionTree<CarrierState, RootState> = {
         return facility; // Return the modified facility object
       });
       
-
       currentCarrier = {
         ...currentCarrier,
         facilities: allFacilities?.reduce((facilityDetail:any, facility:any) => {
@@ -362,23 +334,18 @@ const actions: ActionTree<CarrierState, RootState> = {
     try {
       do {
         const params = {
-          "entityName": "FacilityAndParty",
-          "inputFields": {
-            "roleTypeId": "CARRIER",
-            "facilityId": getCurrentFacilityId()
-          },
-          "fieldList": ["facilityId", "partyId", "firstName", "lastName", "groupName", "roleTypeId"],
-          "noConditionFind": "Y",
-          "viewIndex": viewIndex,
-          "viewSize": 250,
-          "filterByDate": "Y",
-          "distinct": "Y"
+          "roleTypeId": "CARRIER",
+          "facilityId": getCurrentFacilityId(),
+          "fieldsToSelect": ["facilityId", "partyId", "firstName", "lastName", "groupName", "roleTypeId"],
+          "pageIndex": viewIndex,
+          "pageSize": 250,
+          "thruDate_op": "empty",
         }
   
         resp = await CarrierService.fetchCarrierFacilities(params)
-        if (!hasError(resp) && resp.data.count) {
-          facilityCarriers = [...facilityCarriers, ...resp.data.docs]
-          docCount = resp.data.docs.length;
+        if (!hasError(resp)) {
+          facilityCarriers = [...facilityCarriers, ...resp.data]
+          docCount = resp.data.length;
           viewIndex++;
         } else {
           docCount = 0
@@ -430,24 +397,20 @@ const actions: ActionTree<CarrierState, RootState> = {
     try {
       do {
         const params = {
-          "entityName": "ProductStoreShipmentMethView",
-          "inputFields": {
-            "roleTypeId": "CARRIER",
-            "productStoreId": getProductStoreId(),
-            "shipmentMethodTypeId": "STOREPICKUP",
-            "shipmentMethodTypeId_op": "notEqual"
-          },
-          "fieldList": ["productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "description"],
-          "noConditionFind": "Y",
-          "viewIndex": viewIndex,
-          "viewSize": 250,
-          "filterByDate": "Y",
-          "distinct": "Y"
+          "roleTypeId": "CARRIER",
+          "productStoreId": getProductStoreId(),
+          "shipmentMethodTypeId": "STOREPICKUP",
+          "shipmentMethodTypeId_op": "equals",
+          "shipmentMethodTypeId_not": "Y",
+          "fieldsToSelect": ["productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "description"],
+          "pageIndex": viewIndex,
+          "pageSize": 250,
+          "thruDate_op": "empty",
         }
   
         resp = await CarrierService.fetchProductStoreShipmentMethods(params)
-        if (!hasError(resp) && resp.data.count) {
-          productStoreShipmentMethods = [...productStoreShipmentMethods, ...resp.data.docs]
+        if (!hasError(resp)) {
+          productStoreShipmentMethods = [...productStoreShipmentMethods, ...resp.data]
           viewIndex++;
         } else {
           throw resp.data
@@ -464,14 +427,12 @@ const actions: ActionTree<CarrierState, RootState> = {
     let configs  = {};
     try {
       const payload = {
-        "entityName": "ShipmentGatewayConfig",
-        "noConditionFind": "Y",
-        "viewSize": 50 // keeping view size 50 as considering there will not be more than 50 shipment gateway
+        "pageSize": 50 // keeping view size 50 as considering there will not be more than 50 shipment gateway
       }
 
       const resp = await CarrierService.fetchShipmentGatewayConfigs(payload)
-      if (!hasError(resp) && resp.data.count > 0) {
-        configs = resp.data.docs.reduce((updatedConfigDetail:any, config:any) => {
+      if (!hasError(resp)) {
+        configs = resp.data.reduce((updatedConfigDetail:any, config:any) => {
           updatedConfigDetail[config.shipmentGatewayConfigId] = config;
           return updatedConfigDetail;
         }, {})
