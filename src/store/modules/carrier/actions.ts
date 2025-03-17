@@ -117,7 +117,7 @@ const actions: ActionTree<CarrierState, RootState> = {
         } else {
           throw resp.data
         }
-      } while (resp.data.docs.length >= 250);
+      } while (resp.data.length >= 250);
 
       currentCarrier = {
         ...currentCarrier,
@@ -217,7 +217,7 @@ const actions: ActionTree<CarrierState, RootState> = {
         } else {
           throw resp.data
         }
-      } while (resp.data.docs.length >= 250);
+      } while (resp.data.length >= 250);
     } catch(error) {
       logger.error(error);
     }

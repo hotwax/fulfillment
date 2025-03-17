@@ -7,7 +7,7 @@ const fetchCarriers = async (params: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/oms/shippingGateways/carrierParties`,
+    url: `/oms/shippingGateways/carrierShipmentMethods/counts`,
     method: "GET",
     baseURL,
     headers: {
@@ -53,7 +53,7 @@ const fetchProductStoreShipmentMethods = async (params: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/oms/productStores/${params.productStoreId}/shipmentMethods`,
+    url: `/oms/shippingGateways/carrierParties/${params.partyId}/productStoreShipmentMethods`,
     method: "GET",
     baseURL,
     headers: {
