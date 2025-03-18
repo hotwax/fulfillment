@@ -573,7 +573,10 @@ const fetchShipmentLabelError = async (shipmentId: string): Promise<any> => {
     if (hasError(resp)) {
       throw resp.data;
     }
-    shipmentLabelError = resp.data.map((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.gatewayMessage);
+    shipmentLabelError = resp.data
+      .filter((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.gatewayMessage)
+      .map((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.gatewayMessage);
+
   } catch (err) {
     logger.error('Failed to fetch shipment label error', err)
   }

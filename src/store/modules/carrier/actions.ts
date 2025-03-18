@@ -408,6 +408,7 @@ const actions: ActionTree<CarrierState, RootState> = {
         }
   
         resp = await CarrierService.fetchProductStoreShipmentMethods(params)
+        console.log("=========resp===", resp)
         if (!hasError(resp)) {
           productStoreShipmentMethods = [...productStoreShipmentMethods, ...resp.data]
           viewIndex++;
