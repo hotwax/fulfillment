@@ -120,8 +120,8 @@ export default defineComponent({
     isPickerSelected(id) {
       return this.selectedPickers.some((picker) => picker.id == id)
     },
-    closeModal(picklistId) {
-      modalController.dismiss({ dismissed: true, value: { picklistId } });
+    closeModal(responseData) {
+      modalController.dismiss({ dismissed: true, value: responseData });
     },
     selectPicker(id) {
       const picker = this.selectedPickers.some((picker) => picker.id == id)
@@ -172,7 +172,7 @@ export default defineComponent({
       try {
         resp = await MaargOrderService.createPicklist(payload);
         if (resp.status === 200 && !hasError(resp)) {
-          this.closeModal(resp.data.picklistId);
+          this.closeModal({picklistId: resp.data.picklistId, shipmentIds: resp.data.shipmentIds});
           showToast(translate('Picklist created successfully'))
 
           // generating picklist after creating a new picklist

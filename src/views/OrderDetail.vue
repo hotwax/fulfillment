@@ -970,8 +970,12 @@ export default defineComponent({
       assignPickerModal.onDidDismiss().then((result: any) => {
         popoverController.dismiss();
         // redirect to in-progress page only when we have picklist created successfully for the order
-        if(result?.data?.value?.picklistId) {
-          this.router.replace(`/in-progress/order-detail/${this.orderId}/${this.shipmentId}`)
+        if(result?.data?.value?.picklistId && result?.data?.value?.shipmentIds && result?.data?.value?.shipmentIds.length) {
+          let newShipmentId = this.shipmentId
+          if (!newShipmentId) {
+            newShipmentId = result?.data?.value?.shipmentIds[0]
+          }
+          this.router.replace(`/in-progress/order-detail/${this.orderId}/${newShipmentId}`)
         }
       });
 
