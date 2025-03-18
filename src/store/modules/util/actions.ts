@@ -195,13 +195,10 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const payload = {
-        "inputFields": {
-          "shipmentBoxTypeId": ids,
-          "shipmentBoxTypeId_op": "in"
-        },
-        "fieldList": ["shipmentBoxTypeId", "description"],
-        "entityName": "ShipmentBoxType",
-        "viewSize": ids.length
+        "shipmentBoxTypeId": ids,
+        "shipmentBoxTypeId_op": "in",
+        "fieldsToSelect": ["shipmentBoxTypeId", "description"],
+        "pageSize": ids.length
       }
 
       const resp = await UtilService.fetchShipmentBoxTypeDesc(payload);
@@ -238,21 +235,16 @@ const actions: ActionTree<UtilState, RootState> = {
     if (!facilityTypeIdFilter.length) return;
 
     const payload = {
-      inputFields: {
-        facilityTypeId: facilityTypeIds,
-        facilityTypeId_op: 'in'
-      },
-      viewSize: facilityTypeIds.length,
-      entityName: 'FacilityType',
-      noConditionFind: 'Y',
-      distinct: "Y",
-      fieldList: ["facilityTypeId", "description"]
+      facilityTypeId: facilityTypeIds,
+      facilityTypeId_op: 'in',
+      pageSize: facilityTypeIds.length,
+      fieldsToSelect: ["facilityTypeId", "description"]
     }
 
     try {
       const resp = await UtilService.fetchFacilityTypeInformation(payload);
 
-      if(!hasError(resp) && resp.data?.docs.length > 0) {
+      if(!hasError(resp) && resp.data?.length > 0) {
         resp.data.docs.map((facilityType: any) => { 
           facilityTypeDesc[facilityType.facilityTypeId] = facilityType['description'] 
         })
@@ -315,7 +307,7 @@ const actions: ActionTree<UtilState, RootState> = {
         statusId: ids,
         statusId_op: "in",
         fieldsToSelect: ["statusId", "description"],
-        viewSize: ids.length
+        pageSize: ids.length
       }
 
       const resp = await UtilService.fetchStatusDesc(payload);
@@ -345,22 +337,20 @@ const actions: ActionTree<UtilState, RootState> = {
   async findProductStoreShipmentMethCount({ commit }) {
     let productStoreShipmentMethCount = 0
     const params = {
-      "entityName": "ProductStoreShipmentMeth",
-      "inputFields": {
-        "partyId": "_NA_",
-        "partyId_op": "notEqual",
-        "roleTypeId": "CARRIER",
-        "productStoreId": getProductStoreId()
-      },
-      "fieldList": ['roleTypeId', "partyId"],
-      "viewSize": 1
+      "partyId": "_NA_",
+      "partyId_op": "equals",
+      "partyId_not": "Y",
+      "roleTypeId": "CARRIER",
+      "productStoreId": getProductStoreId(),
+      "fieldsToSelect": ['roleTypeId', "partyId"],
+      "pageSize": 1
     }
 
     try {
       const resp = await UtilService.findProductStoreShipmentMethCount(params);
 
       if(!hasError(resp)) {
-        productStoreShipmentMethCount = resp.data.count
+        productStoreShipmentMethCount = resp.data[0]?.shipmentMethodCount
       } else {
         throw resp?.data
       }
@@ -640,17 +630,14 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const resp = await UtilService.getProductStoreSetting({
-        "inputFields": {
-          "productStoreId": eComStoreId,
-          "settingTypeEnumId": "BARCODE_IDEN_PREF"
-        },
-        "filterByDate": 'Y',
-        "entityName": "ProductStoreSetting",
-        "fieldList": ["fromDate"],
-        "viewSize": 1
+        "productStoreId": eComStoreId,
+        "settingTypeEnumId": "BARCODE_IDEN_PREF",
+        "thruDate_not": 'Y',
+        "fieldsToSelect": ["fromDate"],
+        "pageSize": 1
       }) as any
       if(!hasError(resp)) {
-        fromDate = resp.data.docs[0]?.fromDate
+        fromDate = resp.data[0]?.fromDate
       }
     } catch(err) {
       console.error(err)

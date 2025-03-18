@@ -48,12 +48,27 @@ const fetchShipmentMethodTypes = async (params: any): Promise<any> => {
     params
   });
 }
-const fetchProductStoreShipmentMethods = async (params: any): Promise<any> => {
+const fetchProductStoreShipmentMethodsByCarrier = async (params: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
     url: `/oms/shippingGateways/carrierParties/${params.partyId}/productStoreShipmentMethods`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params
+  });
+}
+const fetchProductStoreShipmentMethods = async (params: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/productStores/${params.productStoreId}/shipmentMethods`,
     method: "GET",
     baseURL,
     headers: {
@@ -214,6 +229,21 @@ const fetchCarrierFacilities = async (params: any): Promise<any> => {
     params
   });
 }
+const fetchFacilityCarriers = async (params: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/facilities/${params.facilityId}/parties`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params
+  });
+}
 const createShipmentMethod = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -304,7 +334,9 @@ export const CarrierService = {
   fetchCarrierFacilities,
   fetchCarrierShipmentMethods,
   fetchCarrierTrackingUrls,
+  fetchFacilityCarriers,
   fetchProductStoreShipmentMethods,
+  fetchProductStoreShipmentMethodsByCarrier,
   fetchShipmentGatewayConfigs,
   fetchShipmentMethodTypes,
   removeCarrierFromFacility,

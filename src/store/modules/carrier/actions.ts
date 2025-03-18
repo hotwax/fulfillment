@@ -110,7 +110,7 @@ const actions: ActionTree<CarrierState, RootState> = {
           "thruDate_op": "empty",
         }
   
-        resp = await CarrierService.fetchProductStoreShipmentMethods(params)
+        resp = await CarrierService.fetchProductStoreShipmentMethodsByCarrier(params)
         if (!hasError(resp)) {
           productStoreShipmentMethods = [...productStoreShipmentMethods, ...resp.data]
           viewIndex++;
@@ -342,7 +342,7 @@ const actions: ActionTree<CarrierState, RootState> = {
           "thruDate_op": "empty",
         }
   
-        resp = await CarrierService.fetchCarrierFacilities(params)
+        resp = await CarrierService.fetchFacilityCarriers(params)
         if (!hasError(resp)) {
           facilityCarriers = [...facilityCarriers, ...resp.data]
           docCount = resp.data.length;
@@ -387,7 +387,6 @@ const actions: ActionTree<CarrierState, RootState> = {
         carrier.trackingUrl = systemProperties[carrier.partyId.toUpperCase()]
       })
     }
-
     commit(types.CARRIER_FACILITY_CARRIERS_UPDATED, facilityCarriers)
   },
   async fetchProductStoreShipmentMeths({ state, commit }) {
@@ -415,7 +414,7 @@ const actions: ActionTree<CarrierState, RootState> = {
         } else {
           throw resp.data
         }
-      } while (resp.data.docs.length >= 250);
+      } while (resp.data.length >= 250);
 
     } catch(error) {
       logger.error(error);
