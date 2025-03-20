@@ -35,6 +35,9 @@
             </ion-checkbox>
           </ion-item>
         </div>
+        <div class="filters">
+          <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentEComStore="currentEComStore" @updateOpenQuery="updateOpenQuery" />
+        </div>
 
         <div class="results">
           <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picklist") }}</ion-button>
@@ -188,6 +191,7 @@ import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import { isKit } from '@/utils/order'
+import { useDynamicImport } from "@/utils/moduleFederation";
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -225,7 +229,8 @@ export default defineComponent({
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       getProductStock: 'stock/getProductStock',
       notifications: 'user/getNotifications',
-      unreadNotificationsStatus: 'user/getUnreadNotificationsStatus'
+      unreadNotificationsStatus: 'user/getUnreadNotificationsStatus',
+      instanceUrl: "user/getInstanceUrl"
     })
   },
   data () {
@@ -233,13 +238,17 @@ export default defineComponent({
       shipmentMethods: [] as Array<any>,
       searchedQuery: '',
       isScrollingEnabled: false,
-      isRejecting: false
+      isRejecting: false,
+      productCategoryFilterExt: "" as any
     }
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
   },
   methods: {
+    updateOpenQuery(payload: any) {
+      this.store.dispatch("order/updateOpenQuery", payload)
+    },
     getErrorMessage() {
       return this.searchedQuery === '' ? translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility?.facilityName }) : translate( "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
     },
@@ -425,6 +434,8 @@ export default defineComponent({
   async mounted () {
     emitter.on('updateOrderQuery', this.updateOrderQuery)
     await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
+    const instance = this.instanceUrl.split("-")[0]
+    this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`})
   },
   unmounted() {
     this.store.dispatch('order/clearOpenOrders');

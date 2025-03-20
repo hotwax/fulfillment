@@ -429,6 +429,11 @@ const actions: ActionTree<OrderState, RootState> = {
       params.filters['shipmentMethodTypeId'] = { value: openOrderQuery.selectedShipmentMethods, op: 'OR' }
     }
 
+    // only adding categories when a category is selected
+    if(openOrderQuery.selectedCategories.length) {
+      params.filters['productType'] = { value: openOrderQuery.selectedCategories.map((category: string) => JSON.stringify(category)), op: 'OR' }
+    }
+
     const orderQueryPayload = prepareOrderQuery(params)
     let orders = [];
     let total = 0;
