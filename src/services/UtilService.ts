@@ -11,14 +11,6 @@ const fetchShipmentMethods = async (query: any): Promise <any>  => {
   });
 }
 
-const fetchCategories = async (query: any): Promise <any>  => {
-  return api({
-    url: "solr-query",
-    method: "post",
-    data: query
-  });
-}
-
 const fetchTransferOrderFacets = async (query: any): Promise <any>  => {
   return api({
     url: "solr-query", 
@@ -684,7 +676,6 @@ export const UtilService = {
   createEnumeration,
   fetchAdjustmentTypeDescription,
   fetchCarrierPartyIds,
-  fetchCategories,
   fetchDefaultShipmentBox,
   fetchEnumeration,
   fetchFacilities,
