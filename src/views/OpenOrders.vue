@@ -25,15 +25,27 @@
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
       <ion-searchbar class="searchbar" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="openOrders.total">
-        <div class="filters">
-          <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
-            <ion-checkbox label-placement="end" @ionChange="updateSelectedShipmentMethods(method.val)">
-              <ion-label>
-                {{ getShipmentMethodDesc(method.val) }}
-                <p>{{ method.ordersCount }} {{ translate("orders") }}, {{ method.count }} {{ translate("items") }}</p>
-              </ion-label>
-            </ion-checkbox>
-          </ion-item>
+        <div class="order-filters">
+          <div class="filters">
+            <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
+              <ion-checkbox label-placement="end" @ionChange="updateSelectedShipmentMethods(method.val)">
+                <ion-label>
+                  {{ getShipmentMethodDesc(method.val) }}
+                  <p>{{ method.ordersCount }} {{ translate("orders") }}, {{ method.count }} {{ translate("items") }}</p>
+                </ion-label>
+              </ion-checkbox>
+            </ion-item>
+          </div>
+          <div class="filters">
+            <ion-item lines="none" v-for="category in productCategories" :key="category">
+              <ion-checkbox label-placement="end" @ionChange="updateSelectedCategories(category.val)">
+                <ion-label>
+                  {{ category.val }}
+                  <p>{{ category.ordersCount }}</p>
+                </ion-label>
+              </ion-checkbox>
+            </ion-item>
+          </div>
         </div>
 
         <div class="results">
@@ -233,7 +245,8 @@ export default defineComponent({
       shipmentMethods: [] as Array<any>,
       searchedQuery: '',
       isScrollingEnabled: false,
-      isRejecting: false
+      isRejecting: false,
+      productCategories: [] as Array<any>
     }
   },
   async ionViewWillEnter() {
@@ -288,6 +301,23 @@ export default defineComponent({
       // making view size default when changing the shipment method to correctly fetch orders
       openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       openOrdersQuery.selectedShipmentMethods = selectedShipmentMethods
+
+      this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
+    },
+    async updateSelectedCategories(category: string) {
+      const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
+
+      const selectedCategories = openOrdersQuery.selectedCategories
+      const index = selectedCategories.indexOf(category)
+      if (index < 0) {
+        selectedCategories.push(category)
+      } else {
+        selectedCategories.splice(index, 1)
+      }
+
+      // making view size default when changing the category to correctly fetch orders
+      openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      openOrdersQuery.selectedCategories = selectedCategories
 
       this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
     },
@@ -346,6 +376,48 @@ export default defineComponent({
         }
       } catch(err) {
         logger.error('Failed to fetch shipment methods information', err)
+      }
+    },
+    async fetchCategories() {
+      let resp: any;
+
+      const payload = prepareOrderQuery({
+        queryFields: 'orderId',
+        viewSize: '0',  // passed viewSize as 0 to not fetch any data
+        filters: {
+          quantityNotAvailable: { value: 0 },
+          isPicked: { value: 'N' },
+          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+          '-fulfillmentStatus': { value: 'Cancelled' },
+          orderStatusId: { value: 'ORDER_APPROVED' },
+          orderTypeId: { value: 'SALES_ORDER' },
+          facilityId: { value: this.currentFacility?.facilityId },
+          productStoreId: { value: this.currentEComStore.productStoreId }
+        },
+        facet: {
+          "productCategoryFacet":{
+            "excludeTags":"productTypeFilter",
+            "field":"productType",
+            "mincount":1,
+            "limit":-1,
+            "sort":"index",
+            "type":"terms",
+            "facet": {
+              "ordersCount": "unique(orderId)"
+            }
+          }
+        }
+      })
+
+      try {
+        resp = await UtilService.fetchCategories(payload);
+        if(resp.status == 200 && !hasError(resp) && resp.data.facets?.count > 0) {
+          this.productCategories = resp.data.facets.productCategoryFacet.buckets
+        } else {
+          throw resp.data;
+        }
+      } catch(err) {
+        logger.error('Failed to fetch product categories', err)
       }
     },
     async updateQueryString(queryString: string) {
@@ -424,7 +496,7 @@ export default defineComponent({
   },
   async mounted () {
     emitter.on('updateOrderQuery', this.updateOrderQuery)
-    await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
+    await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCategories()]);
   },
   unmounted() {
     this.store.dispatch('order/clearOpenOrders');

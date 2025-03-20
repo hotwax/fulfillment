@@ -6,7 +6,8 @@ export default interface OrderState {
       viewIndex: number,
       viewSize: any,
       queryString: string,
-      selectedShipmentMethods: Array<string>
+      selectedShipmentMethods: Array<string>,
+      selectedCategories: Array<string>
     }
   },
   completed: {
