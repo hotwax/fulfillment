@@ -181,13 +181,13 @@
             <div>
               <template v-if="category === 'in-progress'">
                 <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">
-                  <ion-icon slot="start" :icon="personAddOutline" />
+                  <ion-icon slot="start" :icon="archiveOutline" />
                   {{ translate("Pack order") }}
                 </ion-button>
                 <ion-button :disabled="order.hasMissingInfo" fill="outline" @click.stop="save(order)">{{ translate("Save") }}</ion-button>
               </template>  
               <ion-button v-else-if="category === 'open'" @click="assignPickers">
-                <ion-icon slot="start" :icon="archiveOutline" />
+                <ion-icon slot="start" :icon="personAddOutline" />
                 {{ translate("Pick order") }}
               </ion-button>
               <div v-else-if="category === 'completed'" class="desktop-only">
