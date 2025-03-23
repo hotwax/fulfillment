@@ -67,45 +67,43 @@
               </div>
             </div>
 
-            <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-line-item">
-              <div class="order-item">
-                <div class="product-info">
-                  <ion-item lines="none">
-                    <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
-                    </ion-thumbnail>
-                    <ion-label>
-                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                      <div>
-                        {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                        <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
-                      </div>
-                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
-                    </ion-label>
-                  </ion-item>
-                </div>
-                <div class="product-metadata">
-                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
-                    <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
-                    <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
-                  </ion-button>
-                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
-                    <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
-                  </ion-button>
-                </div>
+            <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-item">
+              <div class="product-info">
+                <ion-item lines="none">
+                  <ion-thumbnail slot="start">
+                    <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                  </ion-thumbnail>
+                  <ion-label>
+                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                    <div>
+                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                      <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                    </div>
+                    <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  </ion-label>
+                </ion-item>
               </div>
-              <div v-if="item.showKitComponents && !getProduct(item.productId)?.productComponents" class="kit-components">
+              <div class="product-metadata">
+                <ion-button v-if="isKit(item)" color="medium" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
+                  <ion-icon v-if="item.showKitComponents" slot="icon-only" :icon="chevronUpOutline"/>
+                  <ion-icon v-else slot="icon-only" :icon="listOutline"/>
+                </ion-button>
+                <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                <ion-button color="medium" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                  <ion-icon slot="icon-only" :icon="cubeOutline"/>
+                </ion-button>
+              </div>
+              <div v-if="item.showKitComponents" class="kit-components">
+                <template v-if="!getProduct(item.productId)?.productComponents">
                 <ion-item lines="none">
                   <ion-skeleton-text animated style="height: 80%;"/>
                 </ion-item>
                 <ion-item lines="none">
                   <ion-skeleton-text animated style="height: 80%;"/>
                 </ion-item>
-              </div>
-              <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
-                <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
-                  <ion-item lines="none">
+                </template>
+                <template v-else-if="getProduct(item.productId)?.productComponents">
+                  <ion-item v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index" lines="none">
                     <ion-thumbnail slot="start">
                       <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                     </ion-thumbnail>
@@ -115,7 +113,7 @@
                       <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
                     </ion-label>
                   </ion-item>
-                </ion-card>
+                </template>
               </div>
             </div>
             
@@ -475,14 +473,4 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.order-tags{
-  display: flex;
-  justify-content: space-between;
-}
-
-@media (max-width: 991px) {
-  .order-item {
-    border-bottom: none;
-  }
-}
 </style>
