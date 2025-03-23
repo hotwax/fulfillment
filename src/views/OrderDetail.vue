@@ -72,8 +72,7 @@
             </div>  
           </div>
 
-          <div v-for="item in order.items" :key="item" class="order-line-item">
-            <div class="order-item">
+          <div v-for="item in order.items" :key="item" class="order-item">
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
@@ -136,7 +135,6 @@
                 {{ translate('Gift card') }}
                 <ion-icon slot="end" :icon="item.isGCActivated ? gift : giftOutline"/>
               </ion-button>
-            </div>
             </div>
             <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
               <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
@@ -1879,11 +1877,6 @@ ion-card-header {
 
 .box-type > ion-skeleton-text {
   width: 10%;
-  height: 30px;
-}
-
-ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-text {
-  width: 100%;
   height: 30px;
 }
 
