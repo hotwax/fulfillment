@@ -119,13 +119,17 @@ export default defineComponent({
     isPickerSelected(id: string) {
       return this.selectedPickers.some((picker: any) => picker.id == id)
     },
-    updateSelectedPickers(id: string) {
+    async updateSelectedPickers(id: string) {
       const picker = this.isPickerSelected(id)
       if (picker) {
         // if picker is already selected then removing that picker from the list on click
         this.selectedPickers = this.selectedPickers.filter((picker: any) => picker.id != id)
       } else {
         this.selectedPickers.push(this.pickers.find((picker: any) => picker.id == id))
+      }
+
+      if(!this.selectedPickers.length){
+       await this.findPickers();
       }
     },
     async findPickers(pickerIds?: Array<any>) {
