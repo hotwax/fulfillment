@@ -38,7 +38,7 @@
   "Are you sure you want to reject in progress order(s)?": "{ ordersCount }件の進行中の注文を拒否してもよろしいですか？",
   "Are you sure you want to update box selection?": "ボックスの選択を更新してもよろしいですか？",
   "Assign Pickers": "ピッカーを割り当てる",
-  "A tracking URL not configured for": "A tracking URL not configured for {carrierName}",
+  "A tracking URL is not configured for": "A tracking URL is not configured for {carrierName}",
   "ATP": "ATP",
   "Auto reject related items": "Auto reject related items",
   "Available to promise": "Available to promise",
