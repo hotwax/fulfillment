@@ -53,7 +53,7 @@ export default defineComponent({
           .create({
             message: options.message ? translate(options.message) : (options.backdropDismiss ? translate("Click the backdrop to dismiss.") : translate("Loading...")),
             translucent: true,
-            backdropDismiss: options.backdropDismiss
+            backdropDismiss: options.backdropDismiss || false
           });
       }
       this.loader.present();
