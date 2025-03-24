@@ -128,7 +128,7 @@ export default defineComponent({
         this.selectedPickers.push(this.pickers.find((picker: any) => picker.id == id))
       }
 
-      if(!this.selectedPickers.length){
+      if (!this.selectedPickers.length) {
        await this.findPickers();
       }
     },
@@ -154,7 +154,7 @@ export default defineComponent({
             "qf": "firstName lastName groupName partyId externalId",
             "sort": "firstName asc"
           },
-          "filter": ["docType:EMPLOYEE", "WAREHOUSE_PICKER_role:true"]
+          "filter": ["docType:EMPLOYEE", "WAREHOUSE_PICKER_role:true", partyIdsFilter.length ? `partyId:(${partyIdsFilter})` : ""]
         }
       }
 
