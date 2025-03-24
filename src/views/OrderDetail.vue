@@ -1248,7 +1248,7 @@ export default defineComponent({
             "rejectionReasonId": item.rejectReason,
             "rejectedComponents": item.rejectedComponents,
           })
-        } else {
+        } else if (item.selectedBox !== item.currentBox) {
           shipmentPackageContents.push({
             shipmentId: item.shipmentId,
             shipmentItemSeqId: item.shipmentItemSeqId,

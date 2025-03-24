@@ -40,13 +40,17 @@ const actions: ActionTree<MaargOrderState, RootState> = {
     orders = (resp.orders || []).map((order: any) => ({
       ...order,
       category: 'in-progress',
-      items: order.items.map((item: any) => ({
-        ...item,
-        selectedBox: order?.shipmentPackageRouteSegDetails.find(
-          (shipmentPackageContent: any) =>
-            shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId
-        )?.packageName || null,
-      })),
+      items: order.items.map((item: any) => {
+        const packageName = order?.shipmentPackageRouteSegDetails.find(
+            (shipmentPackageContent: any) =>
+              shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId
+        )?.packageName || null
+        return {
+          ...item,
+          selectedBox: packageName,
+          currentBox: packageName,
+        };
+      }),
     }));
     
     const productIds = [...new Set(orders.flatMap((order:any) => order.items.map((item:any) => item.productId)))];

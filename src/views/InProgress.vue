@@ -503,7 +503,7 @@ export default defineComponent({
               let toast: any;
               const shipmentIds = [order.shipmentId]
               try {
-                const updatedOrderDetail = this.getUpdatedOrderDetail(order, updateParameter) as any
+                const updatedOrderDetail = await this.getUpdatedOrderDetail(order, updateParameter) as any
                 const params = {
                   shipmentId: order.shipmentId,
                   orderId: order.orderId,
@@ -511,6 +511,7 @@ export default defineComponent({
                   rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
                   shipmentPackageContents: updatedOrderDetail.shipmentPackageContents
                 }
+                console.log("===packOrder==params====", params)
                 const resp = await MaargOrderService.packOrder(params);
                 if (hasError(resp)) {
                   throw resp.data
@@ -607,17 +608,16 @@ export default defineComponent({
               // Considering only unique shipment IDs
               // TODO check reason for redundant shipment IDs
               const shipments = [] as any
-              orderList.forEach((order: any) => {
-                const updatedOrderDetail = this.getUpdatedOrderDetail(order) as any
+              for (const order of orderList) {
+                const updatedOrderDetail = await this.getUpdatedOrderDetail(order) as any
                 shipments.push({
                   shipmentId: order.shipmentId,
                   orderId: order.orderId,
                   facilityId: order.orgiginFacilityId,
                   rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
                   shipmentPackageContents: updatedOrderDetail.shipmentPackageContents,
-
                 })
-              })
+              }
               const shipmentIds = shipments.map((shipment: any) => shipment.shipmentId)
 
               const internationalInvoiceUrls: string[] = Array.from(
@@ -742,7 +742,7 @@ export default defineComponent({
     async findInProgressOrders () {
       await this.store.dispatch('maargorder/findInProgressOrders')
     },
-    async getUpdatedOrderDetail(order: any, updateParameter?: string) {
+    getUpdatedOrderDetail(order: any, updateParameter?: string) {
       const items = JSON.parse(JSON.stringify(order.items));
       
       // creating updated data for items
@@ -764,7 +764,7 @@ export default defineComponent({
             "rejectionReasonId": item.rejectReason,
             "rejectedComponents": item.rejectedComponents,
           })
-        } else {
+        } else if (item.selectedBox !== item.currentBox) {
           shipmentPackageContents.push({
             shipmentId: item.shipmentId,
             shipmentItemSeqId: item.shipmentItemSeqId,
@@ -773,7 +773,7 @@ export default defineComponent({
           })
         }
       })
-      return {rejectedOrderItems, shipmentPackageContents}
+      return { rejectedOrderItems, shipmentPackageContents }
     },
     updateRejectReason(updatedReason: string, item: any, order: any) {
       item.rejectReason = updatedReason;
