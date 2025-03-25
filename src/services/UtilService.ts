@@ -113,12 +113,12 @@ const fetchShipmentMethodTypeDesc = async (payload: any): Promise <any>  => {
   });
 }
 
-const fetchShipmentBoxTypeDesc = async (query: any): Promise <any>  => {
+const fetchShipmentBoxType = async (query: any): Promise <any>  => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/poorti/shipmentBoxTypes`,
+    url: `/oms/shippingGateways/shipmentBoxTypes`,
     method: "GET",
     baseURL,
     headers: {
@@ -489,7 +489,7 @@ export const UtilService = {
   fetchPartyInformation,
   fetchProductStores,
   fetchRejectReasons,
-  fetchShipmentBoxTypeDesc,
+  fetchShipmentBoxType,
   fetchShipmentMethods,
   fetchShipmentMethodTypeDesc,
   fetchPaymentMethodTypeDesc,

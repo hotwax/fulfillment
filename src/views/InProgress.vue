@@ -371,7 +371,7 @@ export default defineComponent({
   data() {
     return {
       picklists: [] as any,
-      defaultShipmentBoxType: '',
+      defaultShipmentBoxType: {} as any,
       orderBoxes: [] as any,
       searchedQuery: '',
       addingBoxForShipmentIds: [] as any,
@@ -511,7 +511,6 @@ export default defineComponent({
                   rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
                   shipmentPackageContents: updatedOrderDetail.shipmentPackageContents
                 }
-                console.log("===packOrder==params====", params)
                 const resp = await MaargOrderService.packOrder(params);
                 if (hasError(resp)) {
                   throw resp.data
@@ -898,10 +897,11 @@ export default defineComponent({
       this.store.dispatch('maargorder/updateInProgressQuery', { ...inProgressOrdersQuery })
     },
     async fetchDefaultShipmentBox() {
-      let defaultBoxType = 'YOURPACKNG'
+      let defaultBoxTypeId = 'YOURPACKNG'
+      let defaultBoxType = {}
 
       try {
-        const resp = await UtilService.fetchDefaultShipmentBox({
+        let resp = await UtilService.fetchDefaultShipmentBox({
           systemResourceId: "shipment",
           systemPropertyId: "shipment.default.boxtype",
           fieldsToSelect: ["systemPropertyValue", "systemResourceId"],
@@ -909,9 +909,18 @@ export default defineComponent({
         })
 
         if(!hasError(resp)) {
-          defaultBoxType = resp.data?.[0].systemPropertyValue
+          defaultBoxTypeId = resp.data?.[0].systemPropertyValue
         } else {
           throw resp.data
+        }
+        
+        const payload = {
+          "shipmentBoxTypeId": defaultBoxTypeId,
+          "pageSize": 1
+        }
+        resp = await UtilService.fetchShipmentBoxType(payload);
+        if (!hasError(resp)) {
+          defaultBoxType = resp.data[0];
         }
       } catch (err) {
         logger.error('Failed to fetch default shipment box type information', err)
@@ -924,8 +933,8 @@ export default defineComponent({
 
       const { carrierPartyId, shipmentMethodTypeId } = order
       
-      if(!this.defaultShipmentBoxType) {
-        this.defaultShipmentBoxType = await this.fetchDefaultShipmentBox();
+      if(!Object.keys(this.defaultShipmentBoxType).length) {
+        this.defaultShipmentBoxType = await this.fetchDefaultShipmentBox() as any;
       }
 
       let packageName = "A";
@@ -939,7 +948,11 @@ export default defineComponent({
 
       const params = {
         shipmentId: order.shipmentId,
-        shipmentBoxTypeId: this.defaultShipmentBoxType,
+        shipmentBoxTypeId: this.defaultShipmentBoxType?.shipmentBoxTypeId,
+        boxLength	: this.defaultShipmentBoxType?.boxLength,
+        boxHeight	: this.defaultShipmentBoxType?.boxHeight,
+        boxWidth	: this.defaultShipmentBoxType?.boxWidth,
+        weightUomId :	this.defaultShipmentBoxType?.weightUomId,
         packageName
       } as any
 

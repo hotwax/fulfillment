@@ -526,7 +526,7 @@ export default defineComponent({
       shipmentMethods: [] as Array<any>,
       picklists: [] as any,
       addingBoxForShipmentIds: [] as any,
-      defaultShipmentBoxType: '',
+      defaultShipmentBoxType: {} as any,
       itemsIssueSegmentSelected: [] as any,
       statusColor: {
         'PAYMENT_AUTHORIZED': '',
@@ -1083,7 +1083,7 @@ export default defineComponent({
 
       const { carrierPartyId, shipmentMethodTypeId } = order
       
-      if(!this.defaultShipmentBoxType) {
+      if(!Object.keys(this.defaultShipmentBoxType).length) {
         this.defaultShipmentBoxType = await this.fetchDefaultShipmentBox();
       }
 
@@ -1098,7 +1098,12 @@ export default defineComponent({
 
       const params = {
         shipmentId: order.shipmentId,
-        shipmentBoxTypeId: this.defaultShipmentBoxType
+        shipmentBoxTypeId: this.defaultShipmentBoxType?.shipmentBoxTypeId,
+        boxLength	: this.defaultShipmentBoxType?.boxLength,
+        boxHeight	: this.defaultShipmentBoxType?.boxHeight,
+        boxWidth	: this.defaultShipmentBoxType?.boxWidth,
+        weightUomId :	this.defaultShipmentBoxType?.weightUomId,
+        packageName
       } as any
 
       carrierPartyId && (params['carrierPartyId'] = carrierPartyId)
@@ -1146,10 +1151,11 @@ export default defineComponent({
       }
     },
     async fetchDefaultShipmentBox() {
-      let defaultBoxType = 'YOURPACKNG'
+      let defaultBoxTypeId = 'YOURPACKNG'
+      let defaultBoxType = {}
 
       try {
-        const resp = await UtilService.fetchDefaultShipmentBox({
+        let resp = await UtilService.fetchDefaultShipmentBox({
           systemResourceId: "shipment",
           systemPropertyId: "shipment.default.boxtype",
           fieldsToSelect: ["systemPropertyValue", "systemResourceId"],
@@ -1157,9 +1163,18 @@ export default defineComponent({
         })
 
         if(!hasError(resp)) {
-          defaultBoxType = resp.data?.[0].systemPropertyValue
+          defaultBoxTypeId = resp.data?.[0].systemPropertyValue
         } else {
           throw resp.data
+        }
+        
+        const payload = {
+          "shipmentBoxTypeId": defaultBoxTypeId,
+          "pageSize": 1
+        }
+        resp = await UtilService.fetchShipmentBoxType(payload);
+        if (!hasError(resp)) {
+          defaultBoxType = resp.data[0];
         }
       } catch (err) {
         logger.error('Failed to fetch default shipment box type information', err)

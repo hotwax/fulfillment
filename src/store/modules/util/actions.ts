@@ -201,7 +201,7 @@ const actions: ActionTree<UtilState, RootState> = {
         "pageSize": ids.length
       }
 
-      const resp = await UtilService.fetchShipmentBoxTypeDesc(payload);
+      const resp = await UtilService.fetchShipmentBoxType(payload);
 
       if(!hasError(resp)) {
         const shipmentBoxResp = {} as any
