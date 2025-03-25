@@ -700,7 +700,7 @@ const fetchGiftCardItemPriceInfo = async (payload: any): Promise<any> => {
       params: {fieldsToSelect: ["unitPrice"]}
     });
     if (!hasError(resp)) {
-      itemPriceInfo.unitPrice = resp.data.docs[0].unitPrice
+      itemPriceInfo.unitPrice = resp.data[0].unitPrice
     } else {
       throw resp.data
     }

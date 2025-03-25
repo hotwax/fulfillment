@@ -122,7 +122,6 @@ const actions: ActionTree<UserState, RootState> = {
       this.dispatch('util/findProductStoreShipmentMethCount')
       this.dispatch('util/getForceScanSetting', preferredStore.productStoreId);
       this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
-      await dispatch('getNewRejectionApiConfig')
       await dispatch('getPartialOrderRejectionConfig')
       await dispatch('getCollateralRejectionConfig')
       await dispatch('getAffectQohConfig')
@@ -222,7 +221,6 @@ const actions: ActionTree<UserState, RootState> = {
         this.dispatch('maargorder/clearOrders')
         await dispatch('getDisableShipNowConfig')
         await dispatch('getDisableUnpackConfig')
-        await dispatch('getNewRejectionApiConfig')
         await dispatch('getPartialOrderRejectionConfig')
         await dispatch('getCollateralRejectionConfig')
         await dispatch('getAffectQohConfig')
@@ -263,7 +261,6 @@ const actions: ActionTree<UserState, RootState> = {
 
     await dispatch('getDisableShipNowConfig')
     await dispatch('getDisableUnpackConfig')
-    await dispatch('getNewRejectionApiConfig')
     await dispatch('getPartialOrderRejectionConfig')
     await dispatch('getCollateralRejectionConfig')
     await dispatch('getAffectQohConfig')
@@ -282,51 +279,21 @@ const actions: ActionTree<UserState, RootState> = {
   setOmsRedirectionInfo({ commit }, payload) {
     commit(types.USER_OMS_REDIRECTION_INFO_UPDATED, payload)
   },
-
-  async getNewRejectionApiConfig ({ commit }) {
-    let config = {};
-    const params = {
-      "inputFields": {
-        "productStoreId": getProductStoreId(),
-        "settingTypeEnumId": "FF_USE_NEW_REJ_API"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
-      "viewSize": 1
-    } as any
-
-    try {
-      const resp = await UserService.getNewRejectionApiConfig(params)
-      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
-        config = resp.data?.docs[0];
-      } else {
-        logger.error('Failed to fetch new rejection API configuration');
-      }
-    } catch (err) {
-      logger.error(err);
-    } 
-    commit(types.USER_NEW_REJECTION_API_CONFIG_UPDATED, config);   
-  },
-
   async getDisableShipNowConfig ({ commit }) {
     let isShipNowDisabled = false;
     const params = {
-      "inputFields": {
-        "productStoreId": getProductStoreId(),
-        "settingTypeEnumId": "DISABLE_SHIPNOW"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["settingTypeEnumId", "settingValue"],
-      "viewSize": 1
+      "productStoreId": getProductStoreId(),
+      "settingTypeEnumId": "DISABLE_SHIPNOW",
+      "thruDate_op": 'empty',
+      "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
+      "pageSize": 1
     } as any
 
     try { 
       const resp = await UserService.getDisableShipNowConfig(params)
 
       if (!hasError(resp)) {
-        isShipNowDisabled = resp.data?.docs[0]?.settingValue === "true";
+        isShipNowDisabled = resp.data[0]?.settingValue === "true";
       } else {
         logger.error('Failed to fetch disable ship now config.');
       }
@@ -339,21 +306,18 @@ const actions: ActionTree<UserState, RootState> = {
   async getDisableUnpackConfig ({ commit }) {
     let isUnpackDisabled = false;
     const params = {
-      "inputFields": {
-        "productStoreId": getProductStoreId(),
-        "settingTypeEnumId": "DISABLE_UNPACK"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["settingTypeEnumId", "settingValue"],
-      "viewSize": 1
+      "productStoreId": getProductStoreId(),
+      "settingTypeEnumId": "DISABLE_UNPACK",
+      "thruDate_op": 'empty',
+      "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
+      "pageSize": 1
     } as any
 
     try {
       const resp = await UserService.getDisableUnpackConfig(params)
 
       if (!hasError(resp)) {
-        isUnpackDisabled = resp.data?.docs[0]?.settingValue === "true";
+        isUnpackDisabled = resp.data[0]?.settingValue === "true";
       } else {
         logger.error('Failed to fetch disable unpack config.');
       }
@@ -453,20 +417,17 @@ const actions: ActionTree<UserState, RootState> = {
   async getPartialOrderRejectionConfig ({ commit }) {
     let config = {};
     const params = {
-      "inputFields": {
-        "productStoreId": getProductStoreId(),
-        "settingTypeEnumId": "FULFILL_PART_ODR_REJ"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
-      "viewSize": 1
+      "productStoreId": getProductStoreId(),
+      "settingTypeEnumId": "FULFILL_PART_ODR_REJ",
+      "thruDate_op": 'empty',
+      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "pageSize": 1
     } as any
 
     try {
       const resp = await UserService.getPartialOrderRejectionConfig(params)
-      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
-        config = resp.data?.docs[0];
+      if (!hasError(resp)) {
+        config = resp.data[0];
       } else {
         logger.error('Failed to fetch partial order rejection configuration');
       }
@@ -478,20 +439,17 @@ const actions: ActionTree<UserState, RootState> = {
   async getCollateralRejectionConfig ({ commit }) {
     let config = {};
     const params = {
-      "inputFields": {
-        "productStoreId": getProductStoreId(),
-        "settingTypeEnumId": "FF_COLLATERAL_REJ"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
-      "viewSize": 1
+      "productStoreId": getProductStoreId(),
+      "settingTypeEnumId": "FF_COLLATERAL_REJ",
+      "thruDate_op": 'empty',
+      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "pageSize": 1
     } as any
 
     try {
       const resp = await UserService.getCollateralRejectionConfig(params)
-      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
-        config = resp.data?.docs[0];
+      if (!hasError(resp)) {
+        config = resp.data[0];
       } else {
         logger.error('Failed to fetch collateral rejection configuration');
       }
@@ -534,20 +492,17 @@ const actions: ActionTree<UserState, RootState> = {
   async getAffectQohConfig ({ commit }) {
     let config = {};
     const params = {
-      "inputFields": {
-        "productStoreId": getProductStoreId(),
-        "settingTypeEnumId": "AFFECT_QOH_ON_REJ"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
-      "viewSize": 1
+      "productStoreId": getProductStoreId(),
+      "settingTypeEnumId": "AFFECT_QOH_ON_REJ",
+      "thruDate_op": 'empty',
+      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "pageSize": 1
     } as any
 
     try {
       const resp = await UserService.getAffectQohConfig(params)
-      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
-        config = resp.data?.docs[0];
+      if (!hasError(resp)) {
+        config = resp.data[0];
       } else {
         logger.error('Failed to fetch affect QOH configuration');
       }

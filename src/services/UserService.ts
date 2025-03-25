@@ -339,7 +339,7 @@ const isEnumExists = async (enumId: string): Promise<any> => {
     const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
     const baseURL = store.getters['user/getMaargBaseUrl'];
 
-    const resp = client({
+    const resp = await client({
       url: `/admin/enums`,
       method: "GET",
       baseURL,
@@ -356,22 +356,6 @@ const isEnumExists = async (enumId: string): Promise<any> => {
   } catch (err) {
     return false
   }
-}
-
-const getNewRejectionApiConfig = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return client({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "GET",
-    baseURL,
-    headers: {
-      "api_key": omsRedirectionInfo.token,
-      "Content-Type": "application/json"
-    },
-    params: payload
-  });
 }
 
 const getDisableShipNowConfig = async (payload: any): Promise<any> => {
@@ -545,7 +529,6 @@ export const UserService = {
     getFacilityOrderCount,
     getFacilityGroupDetails,
     getFacilityGroupAndMemberDetails,
-    getNewRejectionApiConfig,
     getPartialOrderRejectionConfig,
     getUserProfile,
     getPreferredStore,

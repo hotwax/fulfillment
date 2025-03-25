@@ -60,24 +60,20 @@ const actions: ActionTree<RejectionState, RootState> = {
           if (usedReasons) {
             const reasonIds = usedReasons.map((usedReason: any) => usedReason.val)
             const payload = {
-              "inputFields": {
-                "enumId": reasonIds,
-                "enumId_op": "in"
-              },
-              "fieldList": ["description", "enumId", "enumName", "enumTypeId", "sequenceNum"],
-              "distinct": "Y",
-              "entityName": "Enumeration",
-              "viewSize": reasonIds.length, //There won't we rejection reasons more than 20, hence fetching detail for all the reasons at once
-              "orderBy": "sequenceNum"
+              "enumId": reasonIds,
+              "enumId_op": "in",
+              "fieldsToSelect": ["description", "enumId", "enumName", "enumTypeId", "sequenceNum"],
+              "pageSize": reasonIds.length, //There won't we rejection reasons more than 20, hence fetching detail for all the reasons at once
+              "orderByField": "sequenceNum"
             }
             const resp = await UtilService.fetchRejectReasons(payload)
 
-            if (!hasError(resp) && resp.data.count > 0) {
+            if (!hasError(resp)) {
               const reasonCountDetail = usedReasons.reduce((reasonDetail: any, reason: any) => {
                 reasonDetail[reason.val.trim().toUpperCase()] = reason;
                 return reasonDetail;
               }, {});
-              usedRejectionReasons = resp.data.docs
+              usedRejectionReasons = resp.data
               await store.dispatch("util/updateRejectReasons", usedRejectionReasons)
 
               // Added this logic as we need to display the rejections on UI in desc order of count
