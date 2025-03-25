@@ -35,7 +35,7 @@
             </ion-checkbox>
           </ion-item>
         </div>
-        <div class="filters">
+        <div class="filters" v-if="productCategoryFilterExt">
           <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentEComStore="currentEComStore" @updateOpenQuery="updateOpenQuery" />
         </div>
 
