@@ -119,7 +119,7 @@ export default defineComponent({
     isPickerSelected(id: string) {
       return this.selectedPickers.some((picker: any) => picker.id == id)
     },
-    async updateSelectedPickers(id: string) {
+    updateSelectedPickers(id: string) {
       const picker = this.isPickerSelected(id)
       if (picker) {
         // if picker is already selected then removing that picker from the list on click
@@ -130,7 +130,7 @@ export default defineComponent({
 
       // If all the selected pickers are removed, retrieve and display the original picker list.
       if (!this.selectedPickers.length) {
-        await this.findPickers();
+        this.findPickers();
       }
     },
     async findPickers(pickerIds?: Array<any>) {
