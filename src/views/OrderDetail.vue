@@ -278,7 +278,7 @@
             <template v-if="order.missingLabelImage">
               <ion-item lines="none" v-if="shipmentLabelErrorMessages">
                 <ion-label class="ion-text-wrap">
-                  <p class=oveline>{{ translate("Error Log") }}</p>
+                  <p class=overline>{{ translate("Error Log") }}</p>
                   {{ shipmentLabelErrorMessages }}
                 </ion-label>
               </ion-item>

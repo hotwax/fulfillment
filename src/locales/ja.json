@@ -137,7 +137,7 @@
   "Enter tracking details for shipping labels generated outside of the fulfillment app. This tracking code will be shared with customers when you complete the fulfillment of the order.": "Enter tracking details for shipping labels generated outside of the fulfillment app. This tracking code will be shared with customers when you complete the fulfillment of the order.",
   "Error getting preferred product store.": "優先製品ストアの取得エラー。",
   "Error getting user profile.": "ユーザープロファイルの取得エラー。",
-  "Error Log": "Error Log",
+  "Error Log": "エラーログ",
   "Export packed orders": "梱包済み注文をエクスポート",
   "Ext Other Gateways": "その他のゲートウェイ",
   "Facility": "施設",
