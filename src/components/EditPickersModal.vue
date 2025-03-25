@@ -128,8 +128,9 @@ export default defineComponent({
         this.selectedPickers.push(this.pickers.find((picker: any) => picker.id == id))
       }
 
+      // If all the selected pickers are removed, retrieve and display the original picker list.
       if (!this.selectedPickers.length) {
-       await this.findPickers();
+        await this.findPickers();
       }
     },
     async findPickers(pickerIds?: Array<any>) {
