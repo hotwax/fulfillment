@@ -185,6 +185,7 @@
                   {{ translate("Pack order") }}
                 </ion-button>
                 <ion-button :disabled="order.hasMissingInfo" fill="outline" @click.stop="save(order)">{{ translate("Save") }}</ion-button>
+                <Component :is="printDocumentsExt" :category="category" :order="order" :currentFacility="currentFacility" :hasMissingInfo="order.hasMissingInfo || order.missingLabelImage"/>
               </template>  
               <ion-button v-else-if="category === 'open'" @click="assignPickers">
                 <ion-icon slot="start" :icon="archiveOutline" />
@@ -552,7 +553,8 @@ export default defineComponent({
       orderAdjustments: [],
       orderHeaderAdjustmentTotal: 0,
       adjustmentsByGroup: {} as any,
-      orderAdjustmentShipmentId: ""
+      orderAdjustmentShipmentId: "",
+      printDocumentsExt: "" as any
     }
   },
   async ionViewDidEnter() {
@@ -585,6 +587,7 @@ export default defineComponent({
   },
   async mounted() {
     const instance = this.instanceUrl.split("-")[0]
+    this.printDocumentsExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_PrintDocument`})
     this.orderInvoiceExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderInvoice`})
   },
   methods: {
