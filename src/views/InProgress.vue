@@ -953,7 +953,9 @@ export default defineComponent({
         boxHeight	: this.defaultShipmentBoxType?.boxHeight,
         boxWidth	: this.defaultShipmentBoxType?.boxWidth,
         weightUomId :	this.defaultShipmentBoxType?.weightUomId,
-        packageName
+        dimensionUomId : this.defaultShipmentBoxType?.dimensionUomId,
+        packageName,
+        dateCreated: DateTime.now().toMillis()
       } as any
 
       carrierPartyId && (params['carrierPartyId'] = carrierPartyId)
