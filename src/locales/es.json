@@ -135,6 +135,7 @@
   "Enter tracking details for shipping labels generated outside of the fulfillment app. This tracking code will be shared with customers when you complete the fulfillment of the order.": "Ingrese los detalles del trackingreguimiento para la generacion de la guía de envío en el app de cumplimiento.Este código de rastreo será compartido con los clientes cuando complete el fulfillment de la orden.",
   "Error getting preferred product store.": "Error al obtener la tienda de productos preferida.",
   "Error getting user profile.": "Error al obtener el perfil de usuario.",
+  "Error Log": "Registro de errores",
   "Export packed orders": "Exportar pedidos empacados",
   "Ext Other Gateways": "Ext Otras Pasarelas de Pago",
   "Facility": "Tiendas",

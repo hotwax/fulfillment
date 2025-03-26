@@ -137,6 +137,7 @@
   "Enter tracking details for shipping labels generated outside of the fulfillment app. This tracking code will be shared with customers when you complete the fulfillment of the order.": "Enter tracking details for shipping labels generated outside of the fulfillment app. This tracking code will be shared with customers when you complete the fulfillment of the order.",
   "Error getting preferred product store.": "Error getting preferred product store.",
   "Error getting user profile.": "Error getting user profile.",
+  "Error Log": "Error Log",
   "Export packed orders": "Export packed orders",
   "Ext Other Gateways": "Ext Other Gateways",
   "Facility": "Facility",
