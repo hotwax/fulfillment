@@ -46,7 +46,7 @@ import {
 } from "@ionic/vue";
 import { computed, defineComponent } from "vue";
 import { mapGetters } from "vuex";
-import { arrowBackOutline, backspaceOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline } from "ionicons/icons";
+import { arrowBackOutline, backspaceOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 import { hasPermission } from "@/authorization";
@@ -131,16 +131,6 @@ export default defineComponent({
         childRoutes: ["/transfer-order-details", "/transfer-shipment-review"],
         meta: {
           permissionId: "APP_TRANSFER_ORDERS_VIEW"
-        }
-      },
-      {
-        title: "EXIM",
-        url: "/exim",
-        iosIcon: swapVerticalOutline,
-        mdIcon: swapVerticalOutline,
-        childRoutes: ["/download-packed-orders", "/upload-import-orders", "/saved-mappings"], // defined child routes as to enable the correct menu when we are on a route that is not listed in the menu
-        meta: {
-          permissionId: "APP_EXIM_VIEW"
         }
       },
       {

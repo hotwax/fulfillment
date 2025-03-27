@@ -18,7 +18,8 @@ const mutations: MutationTree <OrderState> = {
         viewIndex: 0,
         viewSize: process.env.VUE_APP_VIEW_SIZE,
         queryString: '',
-        selectedShipmentMethods: []
+        selectedShipmentMethods: [],
+        selectedCategories: []
       }
     }
   },
