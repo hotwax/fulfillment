@@ -151,7 +151,7 @@
           <ion-card-content>
             {{ translate("Individual items within an order will be rejected without affecting the other items in the order.") }}
           </ion-card-content>
-          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE)">
+          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE) || !Object.keys(partialOrderRejectionConfig).length">
             <ion-toggle label-placement="start" :checked="partialOrderRejectionConfig.settingValue" @click.prevent="confirmPartialOrderRejection(partialOrderRejectionConfig, $event)">{{ translate("Partial rejections") }}</ion-toggle>
           </ion-item>
         </ion-card>
@@ -164,7 +164,7 @@
           <ion-card-content>
             {{ translate('When rejecting an item, automatically reject all other orders for that item as well.') }}
           </ion-card-content>
-          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_COLLATERAL_REJECTION_CONFIG_UPDATE)">
+          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_COLLATERAL_REJECTION_CONFIG_UPDATE) || !Object.keys(collateralRejectionConfig).length">
             <ion-toggle label-placement="start" :checked="'true' === collateralRejectionConfig.settingValue" @click.prevent="confirmCollateralRejection(collateralRejectionConfig, $event)">{{ translate("Auto reject related items") }}</ion-toggle>
           </ion-item>
         </ion-card>
@@ -177,7 +177,7 @@
           <ion-card-content>
             {{ translate('Adjust the QOH along with ATP on rejection.') }}
           </ion-card-content>
-          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_AFFECT_QOH_CONFIG_UPDATE)">
+          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_AFFECT_QOH_CONFIG_UPDATE) || !Object.keys(affectQohConfig).length">
             <ion-toggle label-placement="start" :checked="'true' === affectQohConfig.settingValue" @click.prevent="confirmAffectQohConfig(affectQohConfig, $event)">{{ translate("Affect QOH") }}</ion-toggle>
           </ion-item>
         </ion-card>
