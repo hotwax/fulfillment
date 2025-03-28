@@ -432,7 +432,7 @@ export default defineComponent({
   async mounted () {
     emitter.on('updateOrderQuery', this.updateOrderQuery)
     await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
-    const instance = this.instanceUrl.split("-")[0]
+    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http):\/\/"), "")
     this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`})
   },
   unmounted() {
