@@ -15,6 +15,7 @@
     <ion-row>
       <ion-chip v-for="picker in selectedPickers" :key="picker.id">
         <ion-label>{{ picker.name }}</ion-label>
+        <ion-icon :icon="closeCircle" @click="selectPicker(picker.id)" />
       </ion-chip>
     </ion-row>
 
@@ -70,7 +71,7 @@ import {
   IonToolbar,
   modalController } from "@ionic/vue";
 import { defineComponent, computed } from "vue";
-import { closeOutline, saveOutline } from "ionicons/icons";
+import { closeOutline, closeCircle, saveOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { showToast } from "@/utils";
 import { hasError } from "@/adapter";
@@ -244,20 +245,10 @@ export default defineComponent({
       closeOutline,
       currentFacility,
       saveOutline,
+      closeCircle,
       store,
       translate
     };
   },
 });
 </script>
-
-<style scoped>
-ion-row {
-  flex-wrap: nowrap;
-  overflow: scroll;
-}
-
-ion-chip {
-  flex-shrink: 0;
-}
-</style>
