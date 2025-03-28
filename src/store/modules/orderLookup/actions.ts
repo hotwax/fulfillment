@@ -90,7 +90,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
     const carriersTrackingInfo = {} as any;
     const systemProperties = {} as any;
 
-    await this.dispatch('util/fetchPartyInformation', carrierPartyIds);
+    await this.dispatch('party/fetchPartyInformation', carrierPartyIds);
 
     try {
       const resp = await CarrierService.fetchCarrierTrackingUrls({
