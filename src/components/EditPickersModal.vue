@@ -10,7 +10,7 @@
     </ion-toolbar>
   </ion-header>
   
-  <ion-content class="ion-padding">
+  <ion-content>
     <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; findPickers()" />
     <ion-row>
       <ion-chip v-for="picker in selectedPickers" :key="picker.id">
@@ -271,3 +271,13 @@ export default defineComponent({
   }
 });
 </script>
+
+<style scoped>
+ion-row {
+  flex-wrap: nowrap;
+  overflow: scroll;
+}
+ion-chip {
+  flex-shrink: 0;
+}
+</style>
