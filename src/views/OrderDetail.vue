@@ -1261,6 +1261,7 @@ export default defineComponent({
             "orderItemSeqId": item.orderItemSeqId,
             "shipmentId": item.shipmentId,
             "shipmentItemSeqId": item.shipmentItemSeqId,
+            "productId": item.productId,
             "facilityId": this.currentFacility?.facilityId,
             "rejectToFacilityId": "_NA_",
             "updateQOH": this.affectQohConfig && this.affectQohConfig?.settingValue ? this.affectQohConfig?.settingValue : false,
