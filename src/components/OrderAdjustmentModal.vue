@@ -70,7 +70,7 @@ import { defineComponent } from "vue";
 import { close } from "ionicons/icons";
 import { translate } from '@hotwax/dxp-components'
 import logger from "@/logger";
-import { MaargOrderService } from "@/services/MaargOrderService";
+import { OrderService } from "@/services/OrderService";
 import { UtilService } from "@/services/UtilService";
 import { hasError } from "@/adapter";
 
@@ -122,7 +122,7 @@ export default defineComponent({
   methods: {
     async fetchOrderShipGroupInfo() {
       try {
-        const resp = await MaargOrderService.fetchOrderItems({
+        const resp = await OrderService.fetchOrderItems({
           orderId: this.orderId,
           pageSize: 50,
           fieldsToSelect: ["orderId", "orderItemseqId", "shipGroupSeqId", "unitPrice"]

@@ -214,7 +214,7 @@ import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import emitter from '@/event-bus';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
-import { MaargOrderService } from '@/services/MaargOrderService';
+import { OrderService } from '@/services/OrderService';
 import logger from '@/logger';
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'
@@ -264,7 +264,7 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      completedOrders: 'maargorder/getCompletedOrders',
+      completedOrders: 'order/getCompletedOrders',
       getProduct: 'product/getProduct',
       getPartyName: 'util/getPartyName',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
@@ -280,7 +280,7 @@ export default defineComponent({
     this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
   },
   unmounted() {
-    this.store.dispatch('maargorder/clearCompletedOrders')
+    this.store.dispatch('order/clearCompletedOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   watch: {
@@ -331,7 +331,7 @@ export default defineComponent({
       }
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
       completedOrdersQuery.viewIndex++;
-      await this.store.dispatch('maargorder/updateCompletedOrderIndex', { ...completedOrdersQuery })
+      await this.store.dispatch('order/updateCompletedOrderIndex', { ...completedOrdersQuery })
       event.target.complete();
     },
     isCompletedOrderScrollable() {
@@ -341,24 +341,24 @@ export default defineComponent({
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
       completedOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      await this.store.dispatch('maargorder/updateCompletedQuery', { ...completedOrdersQuery })
+      await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async updateOrderQuery(size: any) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
 
       completedOrdersQuery.viewSize = size
-      await this.store.dispatch('maargorder/updateCompletedQuery', { ...completedOrdersQuery })
+      await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async shipOrder(order: any) {
 
       try {
-        const resp = await MaargOrderService.shipOrder({shipmentId: order.shipmentId})
+        const resp = await OrderService.shipOrder({shipmentId: order.shipmentId})
 
         if(!hasError(resp)) {
           showToast(translate('Order shipped successfully'))
           // TODO: handle the case of data not updated correctly
           const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
-          await Promise.all([this.store.dispatch('maargorder/updateCompletedQuery', { ...completedOrdersQuery }), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+          await Promise.all([this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery }), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
         } else {
           throw resp.data
         }
@@ -400,7 +400,7 @@ export default defineComponent({
               let shipmentIds = orderList.map((order: any) =>  order.shipmentId)
 
               try {
-                const resp = await MaargOrderService.bulkShipOrders({shipmentIds})
+                const resp = await OrderService.bulkShipOrders({shipmentIds})
 
                 if (resp.status == 200 && !hasError(resp)) {
                   !trackingRequiredAndMissingCodeOrders.length
@@ -408,7 +408,7 @@ export default defineComponent({
                     : showToast(translate('out of cannot be shipped due to missing tracking codes.', { remainingOrders: trackingRequiredAndMissingCodeOrders.length, totalOrders: packedOrdersCount }))
                   // TODO: handle the case of data not updated correctly
                   const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
-                  await Promise.all([this.store.dispatch('maargorder/updateCompletedQuery', { ...completedOrdersQuery }), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+                  await Promise.all([this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery }), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
                   throw resp.data
                 }
@@ -519,7 +519,7 @@ export default defineComponent({
 
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       completedOrdersQuery.queryString = queryString
-      await this.store.dispatch('maargorder/updateCompletedQuery', { ...completedOrdersQuery })
+      await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
       this.searchedQuery = queryString;
     },
     async updateSelectedShipmentMethods (method: string) {
@@ -537,7 +537,7 @@ export default defineComponent({
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       completedOrdersQuery.selectedShipmentMethods = selectedShipmentMethods
 
-      this.store.dispatch('maargorder/updateCompletedQuery', { ...completedOrdersQuery })
+      this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async updateSelectedCarrierPartyIds (carrierPartyId: string) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
@@ -554,7 +554,7 @@ export default defineComponent({
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       completedOrdersQuery.selectedCarrierPartyIds = selectedCarrierPartyIds
 
-      this.store.dispatch('maargorder/updateCompletedQuery', { ...completedOrdersQuery })
+      this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async unpackOrder(order: any) {
       const unpackOrderAlert = await alertController
@@ -568,12 +568,12 @@ export default defineComponent({
             text: translate("Unpack"),
             handler: async () => {
               try {
-                const resp = await MaargOrderService.unpackOrder({shipmentId: order.shipmentId, statusId: 'SHIPMENT_APPROVED'})
+                const resp = await OrderService.unpackOrder({shipmentId: order.shipmentId, statusId: 'SHIPMENT_APPROVED'})
 
                 if(resp.status == 200 && !hasError(resp)) {
                   showToast(translate('Order unpacked successfully'))
                   // TODO: handle the case of data not updated correctly
-                  await Promise.all([this.store.dispatch('maargorder/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+                  await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
                 } else {
                   throw resp.data
                 }
@@ -592,10 +592,10 @@ export default defineComponent({
     },
     async retryShippingLabel(order: any) {
       // TODO Handle error case
-      const resp = await MaargOrderService.retryShippingLabel(order.shipmentId)
+      const resp = await OrderService.retryShippingLabel(order.shipmentId)
       if (!hasError(resp)) {
         //Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
-        await this.store.dispatch('maargorder/updateShipmentPackageDetail', order)
+        await this.store.dispatch('order/updateShipmentPackageDetail', order)
         order = this.completedOrders.list.find((completedOrder:any) => completedOrder.shipmentId === order.shipmentId);
 
         showToast(translate("Shipping Label generated successfully"))
@@ -615,7 +615,7 @@ export default defineComponent({
 
       const shipmentIds = [order.shipmentId]
       order.isGeneratingPackingSlip = true;
-      await MaargOrderService.printPackingSlip(shipmentIds);
+      await OrderService.printPackingSlip(shipmentIds);
       order.isGeneratingPackingSlip = false;
     },
     async printShippingLabel(order: any) {
@@ -634,14 +634,14 @@ export default defineComponent({
         return
       }
 
-      await MaargOrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
       
       const internationalInvoiceUrls = order.shipmentPackageRouteSegDetails
           ?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl)
           .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) || [];
 
       if (internationalInvoiceUrls.length > 0) {
-        await MaargOrderService.printCustomDocuments(internationalInvoiceUrls);
+        await OrderService.printCustomDocuments(internationalInvoiceUrls);
       }
     },
     async regenerateShippingLabel(order: any) {
@@ -707,7 +707,7 @@ export default defineComponent({
 
       modal.onDidDismiss().then((result: any) => {
         if(result.data?.isGCActivated) {
-          this.store.dispatch("maargorder/updateCurrentItemGCActivationDetails", { item, category: "completed", isDetailsPage: false })
+          this.store.dispatch("order/updateCurrentItemGCActivationDetails", { item, category: "completed", isDetailsPage: false })
         }
       })
 

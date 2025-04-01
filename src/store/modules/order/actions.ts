@@ -1,21 +1,21 @@
 import { ActionTree } from 'vuex'
 import RootState from '@/store/RootState'
-import MaargOrderState from './MaargOrderState'
+import OrderState from './OrderState'
 import emitter from '@/event-bus'
-import { MaargOrderService } from '@/services/MaargOrderService'
+import { OrderService } from '@/services/OrderService'
 import { UtilService } from '@/services/UtilService'
 import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import logger from '@/logger'
 
-const actions: ActionTree<MaargOrderState, RootState> = {
+const actions: ActionTree<OrderState, RootState> = {
 
   // get open orders
   async findOpenOrders ({ commit, state }) {
     emitter.emit('presentLoader');
 
     const openOrderQuery = JSON.parse(JSON.stringify(state.open.query))
-    const resp = await MaargOrderService.findOpenOrders({ openOrderQuery });
+    const resp = await OrderService.findOpenOrders({ openOrderQuery });
     
     const productIds = [
       ...new Set(resp.orders.flatMap((order:any) => order.items.map((item:any) => item.productId)))
@@ -36,7 +36,7 @@ const actions: ActionTree<MaargOrderState, RootState> = {
     const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
     inProgressQuery.statusId = "SHIPMENT_APPROVED"
     inProgressQuery.orderStatusId = "ORDER_APPROVED"
-    const resp = await MaargOrderService.findShipments(inProgressQuery);
+    const resp = await OrderService.findShipments(inProgressQuery);
     orders = (resp.orders || []).map((order: any) => ({
       ...order,
       category: 'in-progress',
@@ -73,7 +73,7 @@ const actions: ActionTree<MaargOrderState, RootState> = {
 
     const completedOrderQuery = JSON.parse(JSON.stringify(state.completed.query))
     completedOrderQuery.statusId = ['SHIPMENT_PACKED']
-    const resp = await MaargOrderService.findShipments(completedOrderQuery);
+    const resp = await OrderService.findShipments(completedOrderQuery);
     orders = (resp.orders || []).map((order: any) => ({
       ...order,
       category: 'completed'
@@ -114,7 +114,7 @@ const actions: ActionTree<MaargOrderState, RootState> = {
     openOrderQuery.orderId = payload.orderId;
     openOrderQuery.viewSize = 1;
     
-    const resp = await MaargOrderService.findOpenOrders({ openOrderQuery });
+    const resp = await OrderService.findOpenOrders({ openOrderQuery });
     const order = resp?.orders[0];
 
     const productIds = order.items.map((item: any) => item.productId)
@@ -152,7 +152,7 @@ const actions: ActionTree<MaargOrderState, RootState> = {
     inProgressQuery.shipmentId = payload.shipmentId
     inProgressQuery.statusId = "SHIPMENT_APPROVED"
 
-    const resp = await MaargOrderService.findShipments(inProgressQuery);
+    const resp = await OrderService.findShipments(inProgressQuery);
 
     order = resp.orders[0];
     order.category = 'in-progress'
@@ -188,7 +188,7 @@ const actions: ActionTree<MaargOrderState, RootState> = {
     completedOrderQuery.shipmentId =  payload.shipmentId
     completedOrderQuery.statusId = ['SHIPMENT_PACKED', 'SHIPMENT_SHIPPED']
     
-    const resp = await MaargOrderService.findShipments(completedOrderQuery);
+    const resp = await OrderService.findShipments(completedOrderQuery);
     order = resp?.orders[0]
     order.category = 'completed'
 
@@ -213,7 +213,7 @@ const actions: ActionTree<MaargOrderState, RootState> = {
     if (!currentShipmentId) {
       openOrderQuery.shipGroupFilter =  {'-shipGroupSeqId': { value: state.current.shipGroupSeqId }}  
     }
-    const openOrderResp = await MaargOrderService.findOpenOrders({ openOrderQuery });
+    const openOrderResp = await OrderService.findOpenOrders({ openOrderQuery });
     if (openOrderResp.orders && openOrderResp.orders.length) {
       otherShipments = openOrderResp.orders
     }
@@ -227,7 +227,7 @@ const actions: ActionTree<MaargOrderState, RootState> = {
       shipmentQuery.shipmentId_op = "equal";
       shipmentQuery.shipmentId_not = "Y";
     }
-    const resp = await MaargOrderService.findShipments(shipmentQuery);
+    const resp = await OrderService.findShipments(shipmentQuery);
     if (resp.orders && resp.orders.length) {
       otherShipments = [...otherShipments, resp.orders]
     }
@@ -310,7 +310,7 @@ const actions: ActionTree<MaargOrderState, RootState> = {
 
     try {
       
-      const resp = await MaargOrderService.fetchShipmentPackageRouteSegDetails(payload.shipmentId) as any
+      const resp = await OrderService.fetchShipmentPackageRouteSegDetails(payload.shipmentId) as any
       if (!hasError(resp)) {
         const shipmentPackageRouteSegDetails = resp.data
         const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? shipmentPackageRouteSegDetails.some((shipmentPackageRouteSeg:any) => shipmentPackageRouteSeg.trackingCode === undefined || shipmentPackageRouteSeg.trackingCode === null || shipmentPackageRouteSeg.trackingCode === '') : false;
@@ -355,7 +355,7 @@ const actions: ActionTree<MaargOrderState, RootState> = {
     let order = JSON.parse(JSON.stringify(state.current))
 
     try {
-      const resp = await MaargOrderService.fetchOrderDetail(order.orderId);
+      const resp = await OrderService.fetchOrderDetail(order.orderId);
       if (!hasError(resp)) {
         
 

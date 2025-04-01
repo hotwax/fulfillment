@@ -174,7 +174,7 @@ const actions: ActionTree<UserState, RootState> = {
     const userStore = useUserStore()
     // TODO add any other tasks if need
     commit(types.USER_END_SESSION)
-    this.dispatch('maargorder/clearOrders')
+    this.dispatch('order/clearOrders')
     this.dispatch("orderLookup/clearOrderLookup")
     this.dispatch('user/clearNotificationState')
     this.dispatch('util/updateForceScanStatus', false)
@@ -218,7 +218,7 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_INFO_UPDATED, userProfile);
 
       if(previousEComStoreId !== preferredStore.productStoreId) {
-        this.dispatch('maargorder/clearOrders')
+        this.dispatch('order/clearOrders')
         await dispatch('getDisableShipNowConfig')
         await dispatch('getDisableUnpackConfig')
         await dispatch('getPartialOrderRejectionConfig')

@@ -85,7 +85,7 @@ import { defineComponent } from "vue";
 import { barcodeOutline, closeOutline, copyOutline, informationCircleOutline, openOutline, saveOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
 import { mapGetters, useStore } from "vuex";
-import { MaargOrderService } from '@/services/MaargOrderService';
+import { OrderService } from '@/services/OrderService';
 import logger from "@/logger";
 import { showToast } from "@/utils";
 import { hasError } from "@/adapter";
@@ -173,7 +173,7 @@ export default defineComponent({
       }
 
       //fetching updated shipment packages
-      await this.store.dispatch('maargorder/updateShipmentPackageDetail', order)
+      await this.store.dispatch('order/updateShipmentPackageDetail', order)
 
       if(isRegenerated || !this.isTrackingRequired) {
         this.closeModal({ moveToNext: true });
@@ -184,7 +184,7 @@ export default defineComponent({
     async addTrackingCode(order: any) {
       try {
         const shipmentRouteSegmentId = this.order.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
-        const resp = await MaargOrderService.addTrackingCode({
+        const resp = await OrderService.addTrackingCode({
           shipmentId: this.order.shipmentId,
           shipmentRouteSegmentId,
           trackingIdNumber: this.trackingCode.trim()
@@ -229,7 +229,7 @@ export default defineComponent({
           carrierPartyId
         }
 
-        resp = await MaargOrderService.updateShipmentCarrierAndMethod(params)
+        resp = await OrderService.updateShipmentCarrierAndMethod(params)
         if (hasError(resp)) {
           throw resp.data;
         }

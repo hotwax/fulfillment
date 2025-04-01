@@ -70,7 +70,7 @@ export default defineComponent({
     },
     async viewOrder() {
       emitter.emit("presentLoader")
-      this.store.dispatch('maargorder/updateCurrent', this.order).then(() => {
+      this.store.dispatch('order/updateCurrent', this.order).then(() => {
         this.closePopover();
         emitter.emit("dismissLoader")
         if (this.order.category === 'open') {

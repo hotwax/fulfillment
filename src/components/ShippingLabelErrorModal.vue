@@ -43,7 +43,7 @@ import {
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { closeOutline, copyOutline } from "ionicons/icons";
-import { MaargOrderService } from "@/services/MaargOrderService";
+import { OrderService } from "@/services/OrderService";
 import { translate } from "@hotwax/dxp-components";
 import { copyToClipboard } from "@/utils";
 
@@ -69,7 +69,7 @@ export default defineComponent({
   props: ['shipmentId'],
   async mounted() {
     // Fetching shipment label errors
-    this.shipmentLabelErrorMessages = await MaargOrderService.fetchShipmentLabelError(this.shipmentId);
+    this.shipmentLabelErrorMessages = await OrderService.fetchShipmentLabelError(this.shipmentId);
   },
   methods: {
     closeModal() {

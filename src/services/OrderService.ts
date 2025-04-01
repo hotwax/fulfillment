@@ -672,7 +672,7 @@ const addTrackingCode = async (payload: any): Promise<any> => {
 const fetchGiftCardItemPriceInfo = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
-  const currentOrder = store.getters['maargorder/getCurrent'];
+  const currentOrder = store.getters['order/getCurrent'];
   
   let resp = {} as any;
   const itemPriceInfo = {} as any;
@@ -743,7 +743,7 @@ const fetchOrderItems = async (payload: any): Promise <any>  => {
   });
 }
 
-export const MaargOrderService = {
+export const OrderService = {
   activateGiftCard,
   addShipmentBox,
   addTrackingCode,

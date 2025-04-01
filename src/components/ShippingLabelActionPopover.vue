@@ -27,7 +27,7 @@
   import { documentOutline, trashOutline } from "ionicons/icons";
   import { translate } from "@hotwax/dxp-components";
   import { useStore } from "vuex";
-  import { MaargOrderService } from '@/services/MaargOrderService';
+  import { OrderService } from '@/services/OrderService';
   import { showToast } from '@/utils'
   import logger from '@/logger';
   
@@ -52,20 +52,20 @@
           )
         );
 
-        await MaargOrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+        await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
         popoverController.dismiss()
       },
       async voidShippingLabel(order: any) {
         let resp = {} as any;
         try {
-          resp = await MaargOrderService.voidShipmentLabel({
+          resp = await OrderService.voidShipmentLabel({
             "shipmentId": order.shipmentId,
             "shipmentRouteSegmentId": order.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
           })
           
           showToast(translate("Shipping label voided successfully."))
           //fetching updated shipment packages
-          await this.store.dispatch('maargorder/updateShipmentPackageDetail', order) 
+          await this.store.dispatch('order/updateShipmentPackageDetail', order) 
         } catch (err) {
           logger.error('Failed to void shipping label', err);
           showToast(translate("Failed to void shipping label"));

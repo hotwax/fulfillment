@@ -76,7 +76,7 @@ import { close, closeCircle, saveOutline } from "ionicons/icons";
 import { useStore } from "vuex";
 import { hasError, showToast } from '@/utils';
 import logger from "@/logger"
-import { MaargOrderService } from "@/services/MaargOrderService"
+import { OrderService } from "@/services/OrderService"
 import { UtilService } from "@/services/UtilService"
 import { translate } from '@hotwax/dxp-components'
 import { DateTime } from 'luxon';
@@ -226,7 +226,7 @@ export default defineComponent({
           }
         });
 
-        const resp = await MaargOrderService.resetPicker({ 
+        const resp = await OrderService.resetPicker({ 
           picklistId: this.selectedPicklist.picklistId,
           roles
         });

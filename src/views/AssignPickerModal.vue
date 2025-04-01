@@ -78,7 +78,7 @@ import { translate, useUserStore } from '@hotwax/dxp-components'
 import { UtilService } from "@/services/UtilService";
 import emitter from "@/event-bus";
 import logger from "@/logger"
-import { MaargOrderService } from '@/services/MaargOrderService';
+import { OrderService } from '@/services/OrderService';
 
 export default defineComponent({
   name: "AssignPickerModal",
@@ -104,7 +104,7 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      openOrders: 'maargorder/getOpenOrders'
+      openOrders: 'order/getOpenOrders'
     })
   },
   data () {
@@ -170,23 +170,23 @@ export default defineComponent({
       };
 
       try {
-        resp = await MaargOrderService.createPicklist(payload);
+        resp = await OrderService.createPicklist(payload);
         if (resp.status === 200 && !hasError(resp)) {
           this.closeModal({picklistId: resp.data.picklistId, shipmentIds: resp.data.shipmentIds});
           showToast(translate('Picklist created successfully'))
 
           // generating picklist after creating a new picklist
-          await MaargOrderService.printPicklist(resp.data.picklistId)
+          await OrderService.printPicklist(resp.data.picklistId)
 
-          await this.store.dispatch('maargorder/findOpenOrders')
+          await this.store.dispatch('order/findOpenOrders')
           //Removing orders if the solr doc is not updated after picking
           if (orderIdsToPick.length) {
             const updatedOpenOrders = this.openOrders?.list.filter(openOrder => !orderIdsToPick.includes(openOrder.orderId))
             const outdatedOpenOrderCount = this.openOrders.list.reduce((count, openOrder) => 
               orderIdsToPick.includes(openOrder.orderId) ? count + 1 : count, 0
             );
-            await this.store.dispatch('maargorder/updateOpenOrderQuery', {...this.openOrders.query, viewSize: updatedOpenOrders.length})
-            await this.store.dispatch('maargorder/updateOpenOrders', {orders: updatedOpenOrders, total: this.openOrders.total - outdatedOpenOrderCount})
+            await this.store.dispatch('order/updateOpenOrderQuery', {...this.openOrders.query, viewSize: updatedOpenOrders.length})
+            await this.store.dispatch('order/updateOpenOrders', {orders: updatedOpenOrders, total: this.openOrders.total - outdatedOpenOrderCount})
           }
         } else {
           throw resp.data

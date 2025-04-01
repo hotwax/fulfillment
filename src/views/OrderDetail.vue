@@ -440,7 +440,7 @@ import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import emitter from '@/event-bus';
-import { MaargOrderService } from "@/services/MaargOrderService";
+import { OrderService } from "@/services/OrderService";
 import { hasError } from "@/adapter";
 import logger from '@/logger';
 import { UtilService } from "@/services/UtilService";
@@ -494,11 +494,11 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       boxTypeDesc: 'util/getShipmentBoxDesc',
-      completedOrders: 'maargorder/getCompletedOrders',
+      completedOrders: 'order/getCompletedOrders',
       getProduct: 'product/getProduct',
       getProductStock: 'stock/getProductStock',
-      inProgressOrders: 'maargorder/getInProgressOrders',
-      order: "maargorder/getCurrent",
+      inProgressOrders: 'order/getInProgressOrders',
+      order: "order/getCurrent",
       rejectReasonOptions: 'util/getRejectReasonOptions',
       userPreference: 'user/getUserPreference',
       getPartyName: 'util/getPartyName',
@@ -557,10 +557,10 @@ export default defineComponent({
   async ionViewDidEnter() {
     this.store.dispatch('util/fetchRejectReasonOptions')
     this.category === 'open'
-    ? await this.store.dispatch('maargorder/getOpenOrder', { orderId: this.orderId })
+    ? await this.store.dispatch('order/getOpenOrder', { orderId: this.orderId })
     : this.category === 'in-progress'
-    ? await this.store.dispatch('maargorder/getInProgressOrder', { orderId: this.orderId, shipmentId: this.shipmentId })
-    : await this.store.dispatch('maargorder/getCompletedOrder', { orderId: this.orderId, shipmentId: this.shipmentId })
+    ? await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipmentId: this.shipmentId })
+    : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipmentId: this.shipmentId })
     await Promise.all([this.store.dispatch('util/fetchCarrierShipmentBoxTypes'), this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths'), this.fetchOrderInvoicingStatus()]);
     if (this.facilityCarriers) {
       const shipmentPackageRouteSegDetail = this.order.shipmentPackageRouteSegDetails?.[0];
@@ -586,7 +586,7 @@ export default defineComponent({
     },
     async fetchShipmentLabelError() {
       const shipmentId = this.order?.shipmentId
-      const labelErrors = await MaargOrderService.fetchShipmentLabelError(shipmentId);
+      const labelErrors = await OrderService.fetchShipmentLabelError(shipmentId);
       if (labelErrors && labelErrors.length) {
         this.shipmentLabelErrorMessages = labelErrors.join(', ');
       }
@@ -630,14 +630,14 @@ export default defineComponent({
           shipmentMethodTypeId : shipmentMethodTypeId ? shipmentMethodTypeId : "",
           carrierPartyId
         }
-        resp = await MaargOrderService.updateShipmentCarrierAndMethod(params)
+        resp = await OrderService.updateShipmentCarrierAndMethod(params)
         if (!hasError(resp)) {
           this.shipmentMethodTypeId = shipmentMethodTypeId
           emitter.emit("dismissLoader");
           showToast(translate("Shipment method detail updated successfully."))
           
           //fetching updated shipment packages
-          await this.store.dispatch('maargorder/updateShipmentPackageDetail', this.order) 
+          await this.store.dispatch('order/updateShipmentPackageDetail', this.order) 
           this.carrierMethods = carrierShipmentMethods;
           this.isUpdatingCarrierDetail = false;
         } else {
@@ -682,7 +682,7 @@ export default defineComponent({
       return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
     },
     async printPicklist (order: any) {
-      await MaargOrderService.printPicklist(order.picklistId)
+      await OrderService.printPicklist(order.picklistId)
     },
     async openShipmentBoxPopover(ev: Event, item: any, order: any, kitProducts?: any, orderItemSeqId?: number) {
       const popover = await popoverController.create({
@@ -792,11 +792,11 @@ export default defineComponent({
               
 
               try {
-                const resp = await MaargOrderService.packOrder(params);
+                const resp = await OrderService.packOrder(params);
                 if (hasError(resp)) {
                   throw resp.data
                 }
-                await this.store.dispatch('maargorder/updateShipmentPackageDetail', this.order)
+                await this.store.dispatch('order/updateShipmentPackageDetail', this.order)
                 const shippingLabelPdfUrls: string[] = Array.from(
                   new Set(
                     (this.order.shipmentPackageRouteSegDetails ?? [])
@@ -814,18 +814,18 @@ export default defineComponent({
 
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
                     if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
-                      await MaargOrderService.printPackingSlip(shipmentIds)
-                      await MaargOrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                      await OrderService.printPackingSlip(shipmentIds)
+                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
                     } else {
-                      await MaargOrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
                     }
                   } else if (data.includes('printPackingSlip')) {
-                    await MaargOrderService.printPackingSlip(shipmentIds)
+                    await OrderService.printPackingSlip(shipmentIds)
                   } else if (data.includes('printShippingLabel')) {
-                    await MaargOrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
                   }
                   if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
-                    await MaargOrderService.printCustomDocuments([order.shipmentPackageRouteSegDetails?.[0].internationalInvoiceUrl]);
+                    await OrderService.printCustomDocuments([order.shipmentPackageRouteSegDetails?.[0].internationalInvoiceUrl]);
                   }
 
                   toast.dismiss()
@@ -856,7 +856,7 @@ export default defineComponent({
           pageSize: 50
       }
       try {
-        const resp = await MaargOrderService.fetchPicklists(payload);
+        const resp = await OrderService.fetchPicklists(payload);
         if(!hasError(resp)) {
 
           this.picklists = resp.data.map((picklist: any) => {
@@ -897,7 +897,7 @@ export default defineComponent({
       size && (inProgressOrdersQuery.viewSize = size)
       queryString && (inProgressOrdersQuery.queryString = '')
       inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
-      await this.store.dispatch('maargorder/updateInProgressQuery', { ...inProgressOrdersQuery })
+      await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
     },
     async packagingPopover(ev: Event) {
       const popover = await popoverController.create({
@@ -1022,13 +1022,13 @@ export default defineComponent({
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
       completedOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      await this.store.dispatch('maargorder/updateCompletedQuery', { ...completedOrdersQuery })
+      await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async retryShippingLabel(order: any) {
-      const resp = await MaargOrderService.retryShippingLabel(order.shipmentId)
+      const resp = await OrderService.retryShippingLabel(order.shipmentId)
       if (!hasError(resp)) {
         //Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
-        await this.store.dispatch('maargorder/updateShipmentPackageDetail', order) 
+        await this.store.dispatch('order/updateShipmentPackageDetail', order) 
         order = this.order;
         
         showToast(translate("Shipping Label generated successfully"))
@@ -1073,9 +1073,9 @@ export default defineComponent({
         return;
       }
 
-      await MaargOrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
       if (internationalInvoiceUrls.length) {
-        await MaargOrderService.printCustomDocuments([internationalInvoiceUrls[0]]);
+        await OrderService.printCustomDocuments([internationalInvoiceUrls[0]]);
       }
     },
     async addShipmentBox(order: any) {
@@ -1112,12 +1112,12 @@ export default defineComponent({
       shipmentMethodTypeId && (params['shipmentMethodTypeId'] = shipmentMethodTypeId)
 
       try {
-        const resp = await MaargOrderService.addShipmentBox(params)
+        const resp = await OrderService.addShipmentBox(params)
 
         if(!hasError(resp)) {
           showToast(translate('Box added successfully'))
-          await this.store.dispatch('maargorder/getInProgressOrder', { orderId: this.orderId, shipmentId: this.shipmentId, isModified: true })
-          this.store.dispatch('maargorder/updateInProgressOrder', this.order);
+          await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipmentId: this.shipmentId, isModified: true })
+          this.store.dispatch('order/updateInProgressOrder', this.order);
         } else {
           throw resp.data
         }
@@ -1149,7 +1149,7 @@ export default defineComponent({
       if (result.data) {
         shipmentPackage.shipmentBoxTypeId = result.data;
         order.isModified = true;
-        this.store.dispatch('maargorder/updateInProgressOrder', order);
+        this.store.dispatch('order/updateInProgressOrder', order);
       }
     },
     async fetchDefaultShipmentBox() {
@@ -1234,7 +1234,7 @@ export default defineComponent({
                 if(order.items.length === 1 ||  this.isEntierOrderRejectionEnabled(order)) {
                   this.router.push('/in-progress')
                 } else {
-                  await this.store.dispatch('maargorder/getInProgressOrder', { orderId: this.orderId, shipmentId: this.shipmentId, isModified: true })
+                  await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipmentId: this.shipmentId, isModified: true })
                 }
               }).catch(err => err);
             }
@@ -1282,14 +1282,14 @@ export default defineComponent({
     },
     async shipOrder(order: any) {
       try {
-        const resp = await MaargOrderService.shipOrder({shipmentId: order.shipmentId})
+        const resp = await OrderService.shipOrder({shipmentId: order.shipmentId})
 
         if (!hasError(resp)) {
           showToast(translate('Order shipped successfully'))
 
           // updating order locally after ship action is success, as solr takes some time to update
           order.statusId = 'SHIPMENT_SHIPPED'
-          this.store.dispatch('maargorder/updateCurrent', order)
+          this.store.dispatch('order/updateCurrent', order)
         } else {
           throw resp.data
         }
@@ -1313,7 +1313,7 @@ export default defineComponent({
       const orderInvoicingQueryPayload = prepareSolrQuery(params)
 
       try {
-        resp = await MaargOrderService.findOrderInvoicingInfo(orderInvoicingQueryPayload);
+        resp = await OrderService.findOrderInvoicingInfo(orderInvoicingQueryPayload);
 
         if(!hasError(resp) && resp.data?.response?.docs?.length) {
           const response = resp.data.response.docs[0];
@@ -1376,7 +1376,7 @@ export default defineComponent({
       }
 
       order.isGeneratingPackingSlip = true;
-      await MaargOrderService.printPackingSlip([order.shipmentId]);
+      await OrderService.printPackingSlip([order.shipmentId]);
       order.isGeneratingPackingSlip = false;
     },
     async unpackOrder(order: any) {
@@ -1391,7 +1391,7 @@ export default defineComponent({
             text: translate("Unpack"),
             handler: async () => {
               try {
-                const resp = await MaargOrderService.unpackOrder({shipmentId: order.shipmentId, statusId: 'SHIPMENT_APPROVED'})
+                const resp = await OrderService.unpackOrder({shipmentId: order.shipmentId, statusId: 'SHIPMENT_APPROVED'})
 
                 if(resp.status == 200 && !hasError(resp)) {
                   showToast(translate('Order unpacked successfully'))
@@ -1456,7 +1456,7 @@ export default defineComponent({
 
       modal.onDidDismiss().then((result: any) => {
         if(result.data?.isGCActivated) {
-          this.store.dispatch("maargorder/updateCurrentItemGCActivationDetails", { item, category: this.category, isDetailsPage: true })
+          this.store.dispatch("order/updateCurrentItemGCActivationDetails", { item, category: this.category, isDetailsPage: true })
         }
       })
 
