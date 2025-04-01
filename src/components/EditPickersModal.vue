@@ -129,6 +129,11 @@ export default defineComponent({
       } else {
         this.selectedPickers.push(this.pickers.find((picker: any) => picker.id == id))
       }
+
+      // If all the selected pickers are removed, retrieve and display the original picker list.
+      if (!this.selectedPickers.length) {
+        this.findPickers();
+      }
     },
     async findPickers(pickerIds?: Array<any>) {
       this.isLoading = true;
@@ -152,7 +157,7 @@ export default defineComponent({
             "qf": "firstName lastName groupName partyId externalId",
             "sort": "firstName asc"
           },
-          "filter": ["docType:EMPLOYEE", "WAREHOUSE_PICKER_role:true", partyIdsFilter.length ? `partyId:(${partyIdsFilter})` : ""]
+          "filter": ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true", partyIdsFilter.length ? `partyId:(${partyIdsFilter})` : ""]
         }
       }
 

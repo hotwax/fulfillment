@@ -24,17 +24,18 @@
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
       <ion-searchbar class="searchbar" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)"/>
+      <div class="filters">
+        <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
+          <ion-checkbox label-placement="end" @ionChange="updateSelectedShipmentMethods(method.val)">
+            <ion-label>
+              {{ getShipmentMethodDesc(method.val) }}
+              <p>{{ method.ordersCount }} {{ translate("orders") }}, {{ method.count }} {{ translate("items") }}</p>
+            </ion-label>
+          </ion-checkbox>
+        </ion-item>
+      </div>
       <div v-if="openOrders.total">
-        <div class="filters">
-          <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
-            <ion-checkbox label-placement="end" @ionChange="updateSelectedShipmentMethods(method.val)">
-              <ion-label>
-                {{ getShipmentMethodDesc(method.val) }}
-                <p>{{ method.ordersCount }} {{ translate("orders") }}, {{ method.count }} {{ translate("items") }}</p>
-              </ion-label>
-            </ion-checkbox>
-          </ion-item>
-        </div>
+        <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentEComStore="currentEComStore" @updateOpenQuery="updateOpenQuery" />
 
         <div class="results">
           <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picklist") }}</ion-button>
@@ -189,6 +190,7 @@ import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import { isKit } from '@/utils/order'
 import { OrderService } from '@/services/OrderService'
+import { useDynamicImport } from "@/utils/moduleFederation";
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -226,7 +228,8 @@ export default defineComponent({
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       getProductStock: 'stock/getProductStock',
       notifications: 'user/getNotifications',
-      unreadNotificationsStatus: 'user/getUnreadNotificationsStatus'
+      unreadNotificationsStatus: 'user/getUnreadNotificationsStatus',
+      instanceUrl: "user/getInstanceUrl"
     })
   },
   data () {
@@ -234,13 +237,17 @@ export default defineComponent({
       shipmentMethods: [] as Array<any>,
       searchedQuery: '',
       isScrollingEnabled: false,
-      isRejecting: false
+      isRejecting: false,
+      productCategoryFilterExt: "" as any
     }
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
   },
   methods: {
+    updateOpenQuery(payload: any) {
+      this.store.dispatch("order/updateOpenQuery", payload)
+    },
     getErrorMessage() {
       return this.searchedQuery === '' ? translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility?.facilityName }) : translate( "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
     },
@@ -428,6 +435,8 @@ export default defineComponent({
   async mounted () {
     emitter.on('updateOrderQuery', this.updateOrderQuery)
     await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
+    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "")
+    this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`})
   },
   unmounted() {
     this.store.dispatch('order/clearOpenOrders');

@@ -183,6 +183,7 @@
                   <ion-icon slot="start" :icon="personAddOutline" />
                   {{ translate("Pack order") }}
                 </ion-button>
+                <Component :is="printDocumentsExt" :category="category" :order="order" :currentFacility="currentFacility" :hasMissingInfo="order.missingLabelImage"/>
               </template>  
               <ion-button v-else-if="category === 'open'" @click="assignPickers">
                 <ion-icon slot="start" :icon="archiveOutline" />
@@ -274,6 +275,12 @@
               </template>
             </ion-item>
             <template v-if="order.missingLabelImage">
+              <ion-item lines="none" v-if="shipmentLabelErrorMessages">
+                <ion-label class="ion-text-wrap">
+                  <p class=overline>{{ translate("Error Log") }}</p>
+                  {{ shipmentLabelErrorMessages }}
+                </ion-label>
+              </ion-item>
               <template v-if="category === 'completed'">
                 <ion-button :disabled="!shipmentMethodTypeId || !hasPackedShipments(order)" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
                   {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
@@ -283,11 +290,6 @@
                   {{ translate("Add tracking code manually") }}
                 </ion-button>
               </template>
-              <ion-item lines="none" v-if="shipmentLabelErrorMessages">
-                <ion-label class="ion-text-wrap">
-                  {{ shipmentLabelErrorMessages }}
-                </ion-label>
-              </ion-item>
             </template>
             <ion-item v-else-if="order.trackingCode">
               <ion-label>
@@ -551,7 +553,8 @@ export default defineComponent({
       orderAdjustments: [],
       orderHeaderAdjustmentTotal: 0,
       adjustmentsByGroup: {} as any,
-      orderAdjustmentShipmentId: ""
+      orderAdjustmentShipmentId: "",
+      printDocumentsExt: "" as any
     }
   },
   async ionViewDidEnter() {
@@ -578,6 +581,7 @@ export default defineComponent({
 },
   async mounted() {
     const instance = this.instanceUrl.split("-")[0]
+    this.printDocumentsExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_PrintDocument`})
     this.orderInvoiceExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderInvoice`})
   },
   methods: {

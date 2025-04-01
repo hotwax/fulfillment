@@ -208,7 +208,7 @@ export default defineComponent({
       if(this.getCarrierTrackingUrl()) {
         return translate("Tracking URL:", { trackingUrl: this.getCarrierTrackingUrl()?.replace("${trackingNumber}", this.trackingCode) })
       }
-      return translate("A tracking URL not configured for", { carrierName: this.getCarrierName() })
+      return translate("A tracking URL is not configured for", { carrierName: this.getCarrierName() })
     },
     getCarrierName() {
       return this.facilityCarriers.find((carrier: any) => carrier.partyId === this.carrierPartyId)?.groupName

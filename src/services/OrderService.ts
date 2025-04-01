@@ -51,6 +51,10 @@ const findOpenOrders = async (payload: any): Promise<any> => {
     params.filters['shipmentMethodTypeId'] = { value: openOrderQuery.selectedShipmentMethods, op: 'OR' }
   }
 
+  if (openOrderQuery.selectedCategories.length) {
+    params.filters['productType'] = { value: openOrderQuery.selectedCategories.map((category: string) => JSON.stringify(category)), op: 'OR' }
+  }
+
   const orderQueryPayload = prepareSolrQuery(params)
   let orders = [], total = 0, resp;
 
