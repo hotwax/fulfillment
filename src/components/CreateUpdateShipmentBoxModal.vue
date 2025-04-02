@@ -29,7 +29,7 @@
       <ion-item>
         <ion-select interface="popover" :label="translate('Unit of measurement')" :placeholder="translate('Select')" :interfaceOptions="{ header: translate('Unit of measurement') }" v-model="formData.dimensionUomId">
           <ion-select-option value="LEN_cm">{{ translate(uomById["LEN_cm"].description) }}</ion-select-option>
-          <ion-select-option value="LEN_in">{{ translate(uomById["LEN_in"].description) }} {{ boxUomConversions["inToCm"] ? `(${boxUomConversions["inToCm"]}cm)` : "" }}</ion-select-option>
+          <ion-select-option value="LEN_in">{{ translate(uomById["LEN_in"].description) }} {{ boxUomConversions["inToCm"] ? `(${boxUomConversions["inToCm"]} cm)` : "" }}</ion-select-option>
         </ion-select>
       </ion-item>
       <ion-item lines="full">
@@ -50,7 +50,7 @@
       <ion-item>
         <ion-select interface="popover" :label="translate('Unit of measurement')" :placeholder="translate('Select')" :interfaceOptions="{ header: translate('Unit of measurement') }" v-model="formData.weigthUomId">
           <ion-select-option value="WT_lb">{{ translate(uomById["WT_lb"].description) }}</ion-select-option>
-          <ion-select-option value="WT_kg">{{ translate(uomById["WT_kg"].description) }} {{ boxUomConversions["kgToLb"] ? `(${boxUomConversions["kgToLb"]}lb)` : "" }}</ion-select-option>
+          <ion-select-option value="WT_kg">{{ translate(uomById["WT_kg"].description) }} {{ boxUomConversions["kgToLb"] ? `(${boxUomConversions["kgToLb"]} lb)` : "" }}</ion-select-option>
         </ion-select>
       </ion-item>
       <ion-item lines="full">

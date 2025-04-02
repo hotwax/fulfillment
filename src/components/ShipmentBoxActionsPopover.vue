@@ -25,7 +25,7 @@ import { hasError } from "@/adapter";
 import CreateUpdateShipmentBoxModal from "./CreateUpdateShipmentBoxModal.vue";
 
 export default defineComponent({
-  name: "ShipmentMethodActionsPopover",
+  name: "ShipmentBoxActionsPopover",
   components: { 
     IonContent,
     IonItem,

@@ -752,39 +752,37 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, prefValue)
   },
   
-  async fetchShipmentBoxUomConversions({ commit }) { 
-    const dimensionPayload = {
-      "inputFields": {
-        "uomId": "LEN_in",
-        "uomIdTo": "LEN_cm"
-      },
-      "entityName": "UomConversion",
-      "noConditionFind": "Y",
-      "fieldList": ["conversionFactor"],
-      "viewSize": 1
+  async fetchShipmentBoxUomConversions({ commit, state }) { 
+    if(Object.keys(state.boxUomConversions)?.length) return;
+    const boxUomConversions = {} as any;
+
+    try {
+      const resp = await UtilService.fetchUomConversions({
+        "inputFields": {
+          "uomId": ["LEN_in", "WT_kg"],
+          "uomIdTo": ["LEN_cm", "WT_lb"]
+        },
+        "entityName": "UomConversion",
+        "noConditionFind": "Y",
+        "fieldList": ["conversionFactor", "uomId", "uomIdTo"],
+        "viewSize": 4
+      })
+
+      if(!hasError(resp) && resp.data.docs?.length) {
+        resp.data.docs.map((conversion: any) => {
+          if(conversion.uomId === "LEN_in" && conversion.uomIdTo === "LEN_cm") {
+            boxUomConversions["inToCm"] = conversion.conversionFactor
+          } else {
+            boxUomConversions["kgToLb"] = conversion.conversionFactor
+          }
+        })
+      } else {
+        throw resp.data;
+      }
+    } catch(error: any) {
+      logger.error(error);
     }
     
-    const weightPayload = {
-      "inputFields": {
-        "uomId": "WT_kg",
-        "uomIdTo": "WT_lb"
-      },
-      "entityName": "UomConversion",
-      "noConditionFind": "Y",
-      "fieldList": ["conversionFactor"],
-      "viewSize": 1
-    }
-
-    const boxUomConversions = {} as any;
-    const conversionResponses = await Promise.allSettled([UtilService.fetchUomConversions(dimensionPayload), UtilService.fetchUomConversions(weightPayload)])
-
-    if(conversionResponses[0].status === "fulfilled" && conversionResponses[0].value?.data?.docs?.length) {
-      boxUomConversions["inToCm"] = conversionResponses[0].value.data.docs[0].conversionFactor
-    }
-    if(conversionResponses[1].status === "fulfilled" && conversionResponses[1].value?.data?.docs?.length) {
-      boxUomConversions["kgToLb"] = conversionResponses[1].value.data.docs[0].conversionFactor
-    }
-
     commit(types.UTIL_BOX_UOM_CONVERSIONS_UPDATED, boxUomConversions)
   },
   

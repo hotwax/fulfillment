@@ -53,7 +53,7 @@ import { showToast } from '@/utils';
 
 
 export default defineComponent({
-  name: "ShipmentMethods",
+  name: "ShipmentBoxes",
   components: {
     IonButton,
     IonCheckbox,
