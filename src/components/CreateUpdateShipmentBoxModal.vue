@@ -17,7 +17,7 @@
       </ion-input>
     </ion-item>
     <ion-item lines="none" v-if="!isBoxUpdating">
-      <ion-input label-placement="floating" v-model="formData.shipmentBoxTypeId" ref="shipmentBoxTypeId" @ionChange="validateShipmentBoxTypeId" @ionBlur="markshipmentBoxTypeIdTouched" error-text="translate('Internal ID cannot be more than 20 characters.')">
+      <ion-input label-placement="floating" v-model="formData.shipmentBoxTypeId" ref="shipmentBoxTypeId" @ionChange="validateShipmentBoxTypeId" @ionBlur="markshipmentBoxTypeIdTouched" :error-text="translate('Shipment box ID cannot be more than 20 characters.')">
         <div slot="label">{{ translate("ID") }} <ion-text color="danger">*</ion-text></div>
       </ion-input>
     </ion-item>
@@ -67,7 +67,7 @@
 </template>
 
 <script lang="ts">
-import { IonButtons, IonButton, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonList, IonListHeader, IonSelect, IonSelectOption, IonText, IonTitle, IonToolbar, IonItem, modalController, popoverController } from "@ionic/vue";
+import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonList, IonListHeader, IonSelect, IonSelectOption, IonText, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { checkmarkDoneOutline, closeOutline } from "ionicons/icons";
 import { mapGetters, useStore } from 'vuex';
@@ -80,22 +80,22 @@ import { hasError } from "@/adapter";
 export default defineComponent({
   name: "CreateUpdateShipmentBoxModal",
   components: { 
-    IonButtons,
     IonButton,
+    IonButtons,
     IonContent,
     IonFab,
     IonFabButton,
     IonHeader,
     IonIcon,
     IonInput,
+    IonItem,
     IonList,
     IonListHeader,
     IonSelect,
     IonSelectOption,
     IonText,
     IonTitle,
-    IonToolbar,
-    IonItem
+    IonToolbar
   },
   data() {
     return {
@@ -116,8 +116,8 @@ export default defineComponent({
   props: ["currentBox"],
   computed: {
     ...mapGetters({
-      shipmentBoxes: "carrier/getShipmentBoxes",
-      boxUomConversions: "util/getShipmentBoxUomConversions"
+      boxUomConversions: "util/getShipmentBoxUomConversions",
+      shipmentBoxes: "carrier/getShipmentBoxes"
     }),
   },
   async mounted() {
@@ -142,7 +142,7 @@ export default defineComponent({
       }
 
       if (this.formData.shipmentBoxTypeId.length > 20) {
-        showToast(translate('Internal ID cannot be more than 20 characters.'))
+        showToast(translate("shipment box ID cannot be more than 20 characters."))
         return
       }
 

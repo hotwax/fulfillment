@@ -8,8 +8,7 @@ import logger from '@/logger'
 import store from '@/store';
 import { translate } from '@hotwax/dxp-components';
 import { showToast, isValidCarrierCode, isValidDeliveryDays, getCurrentFacilityId, getProductStoreId } from '@/utils';
-import { log } from '@module-federation/runtime/dist/src/utils'
-  
+
 
 const actions: ActionTree<CarrierState, RootState> = {
 
@@ -310,7 +309,7 @@ const actions: ActionTree<CarrierState, RootState> = {
     commit(types.CARRIER_SHIPMENT_BOXES_LIST_UPDATED, payload)
   },
 
-  async fetchCarrierFacilities({ state, commit }, payload) {
+  async fetchCarrierFacilities({ state, commit }) {
     let currentCarrier = JSON.parse(JSON.stringify(state.current))
     let carrierFacilities  = [] as any;
     let viewIndex = 0, resp, docCount = 0;
