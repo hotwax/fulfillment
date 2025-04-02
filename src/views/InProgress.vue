@@ -815,49 +815,70 @@ export default defineComponent({
       this.store.dispatch('order/updateInProgressOrder', order)
     },
     async fetchPickersInformation() {
-      const payload = {
-          shipmentMethodTypeId: 'STOREPICKUP',
-          shipmentMethodTypeId_not: 'Y',
-          shipmentMethodTypeId_op: 'equals',
-          facilityId: this.currentFacility?.facilityId,
-          statusId: 'PICKLIST_ASSIGNED',
-          pageIndex: 0,
-          pageSize: 50
-      }
+      let pageIndex = 0;
+      let resp;
+      const picklistInfo = {} as any;
+
       try {
-        const resp = await OrderService.fetchPicklists(payload);
-        if(!hasError(resp)) {
+        do {
+          const payload = {
+            shipmentMethodTypeId: 'STOREPICKUP',
+            shipmentMethodTypeId_not: 'Y',
+            shipmentMethodTypeId_op: 'equals',
+            originFacilityId: this.currentFacility?.facilityId,
+            statusId: "SHIPMENT_APPROVED",
+            pageIndex, // Ensure updated pageIndex is used
+            pageSize: 50
+          };
 
-          this.picklists = resp.data.map((picklist: any) => {
-            picklist.roles = picklist.roles.filter((role: any) => !role.thruDate)
+          resp = await OrderService.fetchPicklists(payload);
 
-            let pickersName = (picklist?.roles ?? [])
-              .map((role:any) => {
-                if (role?.person) {
-                  return `${role.person.firstName} ${role.person.lastName}`;
-                } else if (role?.partyGroup) {
-                  return role.partyGroup.groupName;
-                }
-                return null;
-              })
-              .filter(Boolean)
-              .join(", ") ?? ""; 
+          if (!hasError(resp)) {
+            resp.data?.forEach((shipment: any) => {
+              if (shipment?.order?.statusId === "ORDER_APPROVED") {
+                shipment?.picklistShipment?.forEach((picklistShipment: any) => {
+                  if (!picklistInfo[picklistShipment.picklistId]) {
+                    const picklistRoles = picklistShipment?.picklist?.roles.filter((role: any) => !role.thruDate)
+                    const pickerIds = (picklistRoles ?? []).map((role: any) => role?.partyId);
 
-            let pickerIds = (picklist?.roles ?? []).map((role:any) => role?.partyId) ?? [];
+                    const pickersName = (picklistRoles ?? [])
+                      .map((role: any) => {
+                        if (role?.person) {
+                          return `${role.person.firstName} ${role.person.lastName}`;
+                        } else if (role?.partyGroup) {
+                          return role.partyGroup.groupName;
+                        }
+                        return null;
+                      })
+                      .filter(Boolean)
+                      .join(", ");
 
-            return {
-              ...picklist,
-              id: picklist.picklistId,
-              pickersName,
-              pickerIds,
-              date: picklist.picklistDate ? DateTime.fromMillis(picklist?.picklistDate).toLocaleString(DateTime.TIME_SIMPLE) : null,
-            };
-          });
-        } else {
-          throw resp.data
-        }
-      } catch(err) {
-        logger.error('Failed to fetch picklists', err)
+                    picklistInfo[picklistShipment.picklistId] = {
+                      ...picklistShipment.picklist,
+                      id: picklistShipment.picklistId,
+                      date: picklistShipment.picklist?.picklistDate
+                        ? DateTime.fromMillis(picklistShipment.picklist.picklistDate).toLocaleString(DateTime.TIME_SIMPLE)
+                        : null,
+                      pickersName,
+                      pickerIds
+                    };
+
+                  }
+                });
+              }
+            });
+
+            // Move pageIndex update **after** processing data
+            pageIndex++;
+          } else {
+            throw resp.data;
+          }
+        } while (resp.data.length >= 50);
+
+        // Assign the processed picklists to `this.picklists`
+        this.picklists = Object.values(picklistInfo);
+      } catch (err) {
+        logger.error('Failed to fetch picklists', err);
       }
     },
     getPicklist(id: string) {

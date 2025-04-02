@@ -395,7 +395,7 @@ const fetchPicklists = async (payload: any): Promise <any>  => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/poorti/picklists`,
+    url: `/poorti/shipmentPicklists`,
     method: "GET",
     baseURL,
     headers: {
