@@ -209,8 +209,9 @@ export default defineComponent ({
       isScrollingEnabled: false
     }
   },
-  ionViewWillEnter() {
+  async ionViewWillEnter() {
     this.isScrollingEnabled = false;
+    await this.getOrders();
   },
   beforeRouteEnter(_, from) {
     // Clearing the orderLookup filters only when coming from any page other than detail page
@@ -266,9 +267,6 @@ export default defineComponent ({
         this.isScrollingEnabled = true;
       }
     },
-  },
-  async mounted() {
-    await this.getOrders();
   },
   setup() {
     const router = useRouter();
