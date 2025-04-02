@@ -33,6 +33,9 @@
           <ion-segment-button value="shipping-methods">
             <ion-label>{{ translate("Methods") }}</ion-label>
           </ion-segment-button>
+          <ion-segment-button value="shipping-boxes">
+            <ion-label>{{ translate("Boxes") }}</ion-label>
+          </ion-segment-button>
           <ion-segment-button value="facilities">
             <ion-label>{{ translate("Facilities") }}</ion-label>
           </ion-segment-button>
@@ -44,6 +47,9 @@
         <div class="segments" v-if="currentCarrier">
           <template v-if="selectedSegment === 'shipping-methods'">
             <ShipmentMethods />
+          </template>
+          <template v-else-if="selectedSegment === 'shipping-boxes'">
+            <ShipmentBoxes />
           </template>
           <template v-else-if="selectedSegment === 'facilities'">
             <section v-if="currentCarrier.facilities">
@@ -97,8 +103,8 @@
           </template>
         </div>
       </ion-content>
-      <ion-fab v-if="selectedSegment === 'shipping-methods'" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="openCreateShipmentMethodModal()">
+      <ion-fab v-if="selectedSegment === 'shipping-methods' || selectedSegment === 'shipping-boxes'" vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button @click="selectedSegment === 'shipment-methods' ? openCreateShipmentMethodModal() : openCreateShipmentBoxModal()">
           <ion-icon :icon="addOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -148,6 +154,8 @@
   import { CarrierService } from '@/services/CarrierService';
   import CreateShipmentMethodModal from '@/components/CreateShipmentMethodModal.vue';
   import ShipmentMethods from '@/components/ShipmentMethods.vue'
+  import ShipmentBoxes from '@/components/ShipmentBoxes.vue'
+  import CreateUpdateShipmentBoxModal from '@/components/CreateUpdateShipmentBoxModal.vue';
 
   
   export default defineComponent({
@@ -176,6 +184,7 @@
       IonTitle,
       IonToggle,
       IonToolbar,
+      ShipmentBoxes,
       ShipmentMethods
     },
     data() {
@@ -187,15 +196,11 @@
     async mounted() {
       emitter.emit('presentLoader');
       await this.store.dispatch('carrier/fetchCarrierDetail', { partyId: this.$route.params.partyId });
-      await Promise.all([this.store.dispatch('carrier/fetchShipmentMethodTypes'), this.store.dispatch('util/fetchProductStores'),
-       this.store.dispatch('util/fetchShipmentGatewayConfigs'),
-        this.store.dispatch('carrier/fetchCarrierShipmentMethods', {partyId: this.$route.params.partyId}),
-         this.store.dispatch('carrier/fetchProductStoreShipmentMethods', {partyId: this.$route.params.partyId}),
-          this.store.dispatch('util/fetchFacilities')])
+      await Promise.all([this.store.dispatch('carrier/fetchShipmentMethodTypes'), this.store.dispatch('util/fetchProductStores'), this.store.dispatch('carrier/fetchShipmentBoxTypes'), this.store.dispatch('util/fetchShipmentGatewayConfigs'), this.store.dispatch('carrier/fetchCarrierShipmentMethods', {partyId: this.$route.params.partyId}), this.store.dispatch('carrier/fetchProductStoreShipmentMethods', {partyId: this.$route.params.partyId}), this.store.dispatch('util/fetchFacilities')])
       await this.store.dispatch('carrier/checkAssociatedShipmentMethods')
       await this.store.dispatch('carrier/checkAssociatedProductStoreShipmentMethods')
       await this.store.dispatch('carrier/fetchCarrierFacilities');
-
+      await this.store.dispatch('carrier/fetchCarrierShipmentBoxTypes', { partyId: this.$route.params.partyId })
       emitter.emit('dismissLoader');
     },
     computed: {
@@ -268,6 +273,12 @@
           componentProps: { carrier: this.currentCarrier }
         });
         return createShipmentMethodModal.present();
+      },
+      async openCreateShipmentBoxModal() {
+        const createShipmentBoxModal = await modalController.create({
+          component: CreateUpdateShipmentBoxModal
+        });
+        return createShipmentBoxModal.present();
       },
       async updateCarrierFacility(event: any, facility: any) {
         event.stopPropagation();

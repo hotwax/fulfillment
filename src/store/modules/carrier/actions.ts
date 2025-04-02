@@ -8,6 +8,7 @@ import logger from '@/logger'
 import store from '@/store';
 import { translate } from '@hotwax/dxp-components';
 import { showToast, isValidCarrierCode, isValidDeliveryDays, getCurrentFacilityId, getProductStoreId } from '@/utils';
+import { log } from '@module-federation/runtime/dist/src/utils'
   
 
 const actions: ActionTree<CarrierState, RootState> = {
@@ -249,6 +250,64 @@ const actions: ActionTree<CarrierState, RootState> = {
       return updatedShipmentMethod;
     }, {})
     commit(types.SHIPMENT_METHODS_UPDATED, shipmentMethods)
+  },
+
+  async fetchShipmentBoxTypes({ commit }) {
+    let shipmentBoxes  = [] as any;
+
+    try {
+      const payload = {
+        "entityName": "ShipmentBoxType",
+        "noConditionFind": "Y",
+        "fieldList": ["boxHeight", "boxLength", "boxWidth", "boxWeight", "description", "dimensionUomId", "shipmentBoxTypeId", "weightUomId"],
+        "viewSize": 250
+      }
+
+      const resp = await CarrierService.fetchShipmentMethodTypes(payload)
+      if (!hasError(resp) && resp.data.docs?.length) {
+        shipmentBoxes = resp.data.docs
+      } else {
+        throw resp.data
+      }
+    } catch(error) {
+      logger.error(error);
+    }
+    commit(types.CARRIER_SHIPMENT_BOXES_LIST_UPDATED, shipmentBoxes)
+  },
+
+
+  async fetchCarrierShipmentBoxTypes ({ commit, state }, payload) {
+    try {
+      const resp = await CarrierService.fetchCarrierShipmentBoxTypes({
+        "entityName": "CarrierShipmentBoxType",
+        "inputFields": {
+          "partyId": payload.partyId
+        },
+        "fieldList": ["partyId" ,"shipmentBoxTypeId"],
+        "viewSize": 250,  // maximum records we could have
+        "distinct": "Y",
+        "noConditionFind": "Y"
+      });
+
+      if (!hasError(resp) && resp.data.docs?.length) {
+        const associatedBoxTypeIds = resp.data.docs.map((doc: any) => doc.shipmentBoxTypeId);
+
+        const shipmentBoxes = JSON.parse(JSON.stringify(state.shipmentBoxes))
+        shipmentBoxes.map((box: any) => {
+          box.isChecked = associatedBoxTypeIds.includes(box.shipmentBoxTypeId)
+        })
+
+        commit(types.CARRIER_SHIPMENT_BOXES_LIST_UPDATED, shipmentBoxes)
+      } else {
+        throw resp.data;
+      }
+    } catch (err: any) {
+      logger.error(err);
+    }
+  },
+
+  updateShipmentBoxTypes({ commit }, payload) {
+    commit(types.CARRIER_SHIPMENT_BOXES_LIST_UPDATED, payload)
   },
 
   async fetchCarrierFacilities({ state, commit }, payload) {
