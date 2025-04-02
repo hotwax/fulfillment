@@ -6,7 +6,7 @@
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
-      <ion-title>{{ translate("Create a box") }}</ion-title>
+      <ion-title>{{ translate(isBoxUpdating ? "Edit dimensions" : "Create a box") }}</ion-title>
     </ion-toolbar>
   </ion-header>
   
