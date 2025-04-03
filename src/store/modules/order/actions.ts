@@ -7,6 +7,7 @@ import { UtilService } from '@/services/UtilService'
 import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import logger from '@/logger'
+import { DateTime } from 'luxon';
 
 const actions: ActionTree<OrderState, RootState> = {
 
@@ -73,6 +74,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const completedOrderQuery = JSON.parse(JSON.stringify(state.completed.query))
     completedOrderQuery.statusId = ['SHIPMENT_PACKED']
+    completedOrderQuery.shippedDateFrom = DateTime.now().startOf('day').toMillis();
     const resp = await OrderService.findShipments(completedOrderQuery);
     orders = (resp.orders || []).map((order: any) => ({
       ...order,

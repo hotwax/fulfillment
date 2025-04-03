@@ -350,6 +350,10 @@ const findShipments = async (query: any): Promise <any>  => {
       params.picklistId = query.selectedPicklist
     }
 
+    if (query.shippedDateFrom) {
+      params.shippedDateFrom = query.shippedDateFrom
+    }
+
     if(query.selectedCarrierPartyIds && query.selectedCarrierPartyIds.length) {
       params.carrierPartyId = query.selectedCarrierPartyIds,
       params.carrierPartyId_op = 'in' 
