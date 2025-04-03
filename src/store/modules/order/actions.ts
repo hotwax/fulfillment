@@ -311,8 +311,13 @@ const actions: ActionTree<OrderState, RootState> = {
     const inProgressOrders = JSON.parse(JSON.stringify(state.inProgress.list));
 
     try {
-      
-      const resp = await OrderService.fetchShipmentPackageRouteSegDetails(payload.shipmentId) as any
+      const params = {
+        shipmentId: payload.shipmentId,
+        carrierServiceStatusId: "SHRSCS_VOIDED",
+        carrierServiceStatusId_op: "equals",
+        carrierServiceStatusId_not: "Y"
+      }
+      const resp = await OrderService.fetchShipmentPackageRouteSegDetails(params) as any
       if (!hasError(resp)) {
         const shipmentPackageRouteSegDetails = resp.data
         const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? shipmentPackageRouteSegDetails.some((shipmentPackageRouteSeg:any) => shipmentPackageRouteSeg.trackingCode === undefined || shipmentPackageRouteSeg.trackingCode === null || shipmentPackageRouteSeg.trackingCode === '') : false;

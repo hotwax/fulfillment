@@ -378,11 +378,12 @@ const findShipments = async (query: any): Promise <any>  => {
     if (!hasError(resp)) {
       total = resp.data.shipmentCount
       orders = resp.data.shipments.map((shipment: any) => {
-        const missingLabelImage = productStoreShipmentMethCount > 0 ? shipment?.shipmentPackageRouteSegDetails?.some((shipmentPackageRouteSeg: any) => !shipmentPackageRouteSeg.trackingCode) : false;
+        shipment.shipmentPackageRouteSegDetails = shipment?.shipmentPackageRouteSegDetails?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.carrierServiceStatusId !== "SHRSCS_VOIDED")
+        const missingLabelImage = productStoreShipmentMethCount > 0 ? shipment.shipmentPackageRouteSegDetails?.some((shipmentPackageRouteSeg: any) => !shipmentPackageRouteSeg.trackingCode) : false;
         return {
           ...shipment,
           missingLabelImage,
-          trackingCode: shipment?.shipmentPackageRouteSegDetails[0]?.trackingCode || null,
+          trackingCode: shipment?.tracingIdNumber,
         };
       });
     } else {
@@ -591,7 +592,7 @@ const fetchShipmentLabelError = async (shipmentId: string): Promise<any> => {
   return shipmentLabelError;
 }
 
-const fetchShipmentPackageRouteSegDetails = async (shipmentId: string): Promise<any> => {
+const fetchShipmentPackageRouteSegDetails = async (params: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
@@ -603,7 +604,7 @@ const fetchShipmentPackageRouteSegDetails = async (shipmentId: string): Promise<
       "api_key": omsRedirectionInfo.token,
       "Content-Type": "application/json"
     },
-    params: { shipmentId },
+    params,
   });
 }
 
