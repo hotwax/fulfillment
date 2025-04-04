@@ -72,8 +72,7 @@
             </div>  
           </div>
 
-          <div v-for="item in order.items" :key="item" class="order-line-item">
-            <div class="order-item">
+          <div v-for="item in order.items" :key="item" class="order-item">
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
@@ -111,7 +110,7 @@
               </template>
             </div>
 
-            <!-- In completed and inprogress category we only have two items in product item while css needs 3 hence adding an empty div. -->
+            <!-- In completed and open category we only have two items in product item while css needs 3 hence adding an empty div. -->
             <div v-else></div>
 
             <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
@@ -129,14 +128,13 @@
               </ion-button>
               <ion-button v-if="isKit(item)" fill="clear" color="medium" size="small" @click.stop="fetchKitComponent(item)">
                 {{ translate('Components') }}
-                <ion-icon v-if="item.showKitComponents" color="medium" slot="end" :icon="chevronUpOutline"/>
-                <ion-icon v-else color="medium" slot="end" :icon="listOutline"/>
+                <ion-icon v-if="item.showKitComponents" slot="end" :icon="chevronUpOutline"/>
+                <ion-icon v-else slot="end" :icon="listOutline"/>
               </ion-button>
               <ion-button :disabled="order.hasMissingInfo" v-if="item.productTypeId === 'GIFT_CARD'" fill="clear" color="medium" size="small" @click="openGiftCardActivationModal(item)">
                 {{ translate('Gift card') }}
-                <ion-icon color="medium" slot="end" :icon="item.isGCActivated ? gift : giftOutline"/>
+                <ion-icon slot="end" :icon="item.isGCActivated ? gift : giftOutline"/>
               </ion-button>
-            </div>
             </div>
             <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
               <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
@@ -181,14 +179,14 @@
             <div>
               <template v-if="category === 'in-progress'">
                 <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">
-                  <ion-icon slot="start" :icon="personAddOutline" />
+                  <ion-icon slot="start" :icon="archiveOutline" />
                   {{ translate("Pack order") }}
                 </ion-button>
                 <ion-button :disabled="order.hasMissingInfo" fill="outline" @click.stop="save(order)">{{ translate("Save") }}</ion-button>
                 <Component :is="printDocumentsExt" :category="category" :order="order" :currentFacility="currentFacility" :hasMissingInfo="order.hasMissingInfo || order.missingLabelImage"/>
               </template>  
               <ion-button v-else-if="category === 'open'" @click="assignPickers">
-                <ion-icon slot="start" :icon="archiveOutline" />
+                <ion-icon slot="start" :icon="personAddOutline" />
                 {{ translate("Pick order") }}
               </ion-button>
               <div v-else-if="category === 'completed'" class="desktop-only">
@@ -348,12 +346,12 @@
               <div class="other-shipment-actions">
                 <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
                 <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).quantityOnHandTotal">{{ getProductStock(item.productId, item.facilityId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button slot="end" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
-                  <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                <ion-button color="medium" slot="end" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
+                  <ion-icon slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
-                <ion-button slot="end" v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponent(item, true)">
-                  <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
-                  <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
+                <ion-button slot="end" v-if="isKit(item)" color="medium"  fill="clear" size="small" @click.stop="fetchKitComponent(item, true)">
+                  <ion-icon v-if="item.showKitComponents" slot="icon-only" :icon="chevronUpOutline"/>
+                  <ion-icon v-else slot="icon-only" :icon="listOutline"/>
                 </ion-button>
               </div>
             </ion-item>
@@ -1883,11 +1881,6 @@ ion-card-header {
 
 .box-type > ion-skeleton-text {
   width: 10%;
-  height: 30px;
-}
-
-ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-text {
-  width: 100%;
   height: 30px;
 }
 
