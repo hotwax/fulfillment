@@ -882,7 +882,7 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('Something went wrong', err)
     }
 
-    await dispatch('fetchInProgressOrderAdditionalInformation', order);
+    if(order?.orderId) await dispatch('fetchInProgressOrderAdditionalInformation', order);
 
     emitter.emit('dismissLoader');
   },
@@ -952,7 +952,7 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('No completed orders found', err)
     }
 
-    await dispatch('fetchCompletedOrderAdditionalInformation', order);
+    if(order?.orderId) await dispatch('fetchCompletedOrderAdditionalInformation', order);
     emitter.emit('dismissLoader');
   },
 
