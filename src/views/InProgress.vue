@@ -115,9 +115,9 @@
                   <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
                   <div>
                     <template v-if="item.rejectReason">
-                      <ion-chip :disabled="order.hasMissingInfo" outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
+                      <ion-chip :disabled="order.hasMissingInfo" outline color="danger">
                         <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
-                        <ion-icon :icon="closeCircleOutline" />
+                        <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)"/>
                       </ion-chip>
                     </template>
                     <template v-else-if="useNewRejectionApi() && isEntierOrderRejectionEnabled(order)">
