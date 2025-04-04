@@ -215,7 +215,7 @@
       </div>
     </ion-content>
     <!-- only show footer buttons if 'All orders' is not selected -->
-    <ion-footer v-if="selectedPicklistId">
+    <ion-footer v-if="selectedPicklistId && inProgressOrders.total">
       <ion-toolbar>
         <ion-buttons slot="start">
           <ion-button fill="clear" color="primary" @click="openQRCodeModal(selectedPicklistId)">
