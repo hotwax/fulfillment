@@ -9,7 +9,7 @@
       </ion-list>
     </ion-content>
   </template>
-  
+
   <script lang="ts">
   import {
     IonContent,
@@ -25,9 +25,6 @@
   import { translate } from "@hotwax/dxp-components";
   import { useStore } from 'vuex';
   import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
-  
-
-
   
   export default defineComponent({
     name: "TransferShipmentActionsPopover",
