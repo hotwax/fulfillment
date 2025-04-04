@@ -84,7 +84,7 @@
   import { useRouter } from 'vue-router';
   import Scanner from "@/components/Scanner.vue";
   import { Actions, hasPermission } from '@/authorization'
-  import { getFeature, showToast, hasWebcamAccess } from '@/utils';
+  import { showToast, hasWebcamAccess } from '@/utils';
   import { hasError } from '@/adapter'
   import { OrderService } from '@/services/OrderService'
   import TransferShipmentActionsPopover from '@/components/TransferShipmentActionsPopover.vue'
@@ -333,7 +333,6 @@
         checkmarkDone,
         documentTextOutline,
         sendOutline,
-        getFeature,
         getProductIdentificationValue,
         hasPermission,
         productIdentificationPref,
