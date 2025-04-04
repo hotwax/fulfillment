@@ -46,7 +46,6 @@
         />
       </div>
     </ion-list>
-
   </ion-content>
 
   <ion-fab v-if="!item.isGCActivated" vertical="bottom" horizontal="end" slot="fixed">
