@@ -24,7 +24,8 @@ const utilModule: Module<UtilState, RootState> = {
     isForceScanEnabled: false,
     fulfillmentRejectReasons: {},
     rejectReasonOptions: [],
-    barcodeIdentificationPref: "internalName"
+    barcodeIdentificationPref: "internalName",
+    boxUomConversions: {}
   },
   getters,
   actions,
