@@ -65,9 +65,9 @@ const formatUtcDate = (value: any, outFormat: string) => {
 
 const getFeatures = (productFeatures: any) => {
   const features = productFeatures
-    .sort((firstFeature: string, secondFeature: string) => firstFeature.split('/')[0].localeCompare(secondFeature.split('/')[0]))
-    .map((feature: string) => feature.split('/')[1])
-    .join(' ');
+    ?.sort((firstFeature: string, secondFeature: string) => firstFeature.split('/')[0].localeCompare(secondFeature.split('/')[0]))
+    ?.map((feature: string) => feature.split('/')[1])
+    ?.join(' ');
   return features || "";
 }
 
