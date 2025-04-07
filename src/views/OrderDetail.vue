@@ -735,11 +735,11 @@ export default defineComponent({
 
       if (result.data && item.selectedBox !== result.data) {
         order.items.map((orderItem: any) => {
-                if(orderItem.orderItemSeqId === item.orderItemSeqId) {
-                  orderItem.selectedBox = result.data
-                }
-              })
-              order.isModified = true;
+          if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+            orderItem.selectedBox = result.data
+          }
+        })
+        order.isModified = true;
         }
       return result.data;
     },
