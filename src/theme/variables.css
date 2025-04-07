@@ -413,6 +413,45 @@ div:has(> .kit-badge) {
   gap: var(--spacer-xs);
 }
 
+.date-time-button::part(native) {
+  box-shadow: none;
+  border-radius: 8px;
+  padding-inline: 12px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  background: var(--ion-color-step-300, #edeef0);
+  color: var(--ion-text-color, #000);
+  font-family: inherit;
+}
+
+.find {
+  display: grid;
+  grid-template-areas: "search"
+                       "create-filters"
+                       "main";
+  align-items: start;
+}
+
+.find > .create-filters{
+  display: none;
+}
+
+.find > main {
+  grid-area: main;
+}
+
+.createfilters {
+  grid-area: create-filters;
+}
+
+.search {
+  grid-area: search;
+}
+
+p:has(a) {
+  cursor: pointer;
+}
+
 @media (min-width: 991px) {
   /* shipment card desktop layout start */
   ion-searchbar.searchbar {
@@ -464,6 +503,22 @@ div:has(> .kit-badge) {
   .mobile-only {
     display: none;
   }  
+
+  .find {
+    grid: "search  main" min-content
+          "create-filters main" 1fr
+          / 375px;
+    column-gap: var(--spacer-xl);
+    margin: var(--spacer-lg);
+  }
+
+  .create-filters {
+    margin-top: var(--spacer-lg);
+  }
+
+  .find > .create-filters{
+    display: unset;
+  }
 } 
 
 @media (prefers-color-scheme: dark) {

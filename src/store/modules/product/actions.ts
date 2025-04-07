@@ -102,7 +102,18 @@ const actions: ActionTree<ProductState, RootState> = {
       logger.error('Failed to fetch product components information', err)
     }
     return resp;
-  }
+  },
+
+
+  async addProductToCached ( { commit }, payload) {
+    commit(types.PRODUCT_ADD_TO_CACHED, payload);
+  },
+
+  async addProductToCachedMultiple ( { commit }, payload) {
+    commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, payload);
+  },
+
+  
 }
 
 export default actions;

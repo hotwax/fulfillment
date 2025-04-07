@@ -667,9 +667,35 @@ const fetchOrderShipGroupInfo = async(payload: any): Promise<any> => {
   })
 }
 
+const fetchCarriers = async (query: any): Promise <any>  => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
+const fetchSampleProducts = async (params: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params
+  })
+}
+
+const fetchStoreCarrierAndMethods = async (query: any): Promise <any>  => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
+
 export const UtilService = {
   activateGiftCard,
   createBarcodeIdentificationPref,
+  fetchCarriers,
   createEnumerationGroupMember,
   createForceScanSetting,
   createPicklist,
@@ -690,10 +716,12 @@ export const UtilService = {
   fetchProductStores,
   fetchRejectReasonEnumTypes,
   fetchRejectReasons,
+  fetchSampleProducts,
   fetchShipmentGatewayConfigs,
   fetchShipmentBoxTypeDesc,
   fetchShipmentMethods,
   fetchShipmentMethodTypeDesc,
+  fetchStoreCarrierAndMethods,
   fetchPaymentMethodTypeDesc,
   fetchStatusDesc,
   fetchShipmentRouteSegmentInformation,

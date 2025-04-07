@@ -50,6 +50,13 @@
         </ion-button>
       </div>
     </ion-content>
+
+
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab-button @click="router.push('/create-transfer-order')">
+        <ion-icon :icon="addOutline" />
+      </ion-fab-button>
+    </ion-fab>
   </ion-page>
 </template>
 
@@ -60,6 +67,8 @@ import {
   IonButtons,
   IonIcon,
   IonContent, 
+  IonFab,
+  IonFabButton,
   IonHeader, 
   IonInfiniteScroll,
   IonInfiniteScrollContent,
@@ -73,7 +82,7 @@ import {
   IonToolbar, 
 } from '@ionic/vue';
 import { defineComponent, computed } from 'vue';
-import { caretDownOutline, checkmarkDoneOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
+import { addOutline, caretDownOutline, checkmarkDoneOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { translate, useUserStore } from '@hotwax/dxp-components';
@@ -92,6 +101,8 @@ export default defineComponent({
     IonButtons,
     IonIcon,  
     IonContent,
+    IonFab,
+    IonFabButton,
     IonHeader,
     IonInfiniteScroll,
     IonInfiniteScrollContent,
@@ -259,6 +270,7 @@ export default defineComponent({
 
     return{
       Actions,
+      addOutline,
       caretDownOutline,
       checkmarkDoneOutline,
       cubeOutline,

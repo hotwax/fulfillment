@@ -53,6 +53,15 @@ const mutations: MutationTree <UtilState> = {
   },
   [types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED](state, payload) {
     state.barcodeIdentificationPref = payload
-  }
+  },
+  [types.UTIL_SAMPLE_PRODUCTS_UPDATED](state, payload) {
+    state.sampleProducts = payload
+  },
+  [types.UTIL_CARRIER_DESC_UPDATED](state, payload) {
+    state.carrierDesc = payload
+  },
+  [types.UTIL_SHPMNT_MTHD_BY_CARRIER_UPDATED](state, payload) {
+    state.shipmentMethodsByCarrier = payload
+  },
 }
 export default mutations;
