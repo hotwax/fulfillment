@@ -9,7 +9,6 @@
       <ion-title>{{ translate("Select facility") }}</ion-title>
     </ion-toolbar>
   </ion-header>
-
   <ion-content>
     <ion-radio-group v-model="selectedFacilityIdValue">
       <ion-item v-for="facility in facilities" :key="facility.facilityId">
@@ -30,54 +29,28 @@
   </ion-fab>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonRadio, IonRadioGroup, IonTitle, IonToolbar, modalController } from "@ionic/vue";
-import { defineComponent } from "vue";
+import { defineProps, onMounted, ref } from "vue";
 import { closeOutline, saveOutline } from "ionicons/icons";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from '@hotwax/dxp-components'
 
-export default defineComponent({
-  name: "SelectFacilityModal",
-  components: {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonRadio,
-    IonRadioGroup,
-    IonTitle,
-    IonToolbar
-  },
-  props: ["selectedFacilityId", "facilities"],
-  data() {
-    return {
-      selectedFacilityIdValue: ""
-    };
-  },
-  mounted() {
-    this.selectedFacilityIdValue = this.selectedFacilityId;
-  },
-  methods: {
-    closeModal(payload = {}) {
-      modalController.dismiss({ ...payload });
-    },
-    saveFacility() {
-      this.closeModal({ selectedFacilityId: this.selectedFacilityIdValue });
-    },
-  },
-  setup() {
-    return {
-      closeOutline,
-      saveOutline,
-      translate,
-    }
-  }
-});
+const props = defineProps(["selectedFacilityId", "facilities"]);
+
+const selectedFacilityIdValue = ref("");
+
+onMounted(() => {
+  selectedFacilityIdValue.value = props.selectedFacilityId
+})
+
+function closeModal(payload = {}) {
+  modalController.dismiss({ ...payload });
+}
+
+function saveFacility() {
+  closeModal({ selectedFacilityId: selectedFacilityIdValue.value })
+}
+
 </script>
 
 <style scoped>

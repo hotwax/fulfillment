@@ -691,6 +691,13 @@ const fetchStoreCarrierAndMethods = async (query: any): Promise <any>  => {
   });
 }
 
+const fetchFacilityAddresses = async (params: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params
+  })
+}
 
 export const UtilService = {
   activateGiftCard,
@@ -705,6 +712,7 @@ export const UtilService = {
   fetchDefaultShipmentBox,
   fetchEnumeration,
   fetchFacilities,
+  fetchFacilityAddresses,
   fetchFacilityTypeInformation,
   fetchFulfillmentRejectReasons,
   fetchGiftCardFulfillmentInfo,

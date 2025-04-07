@@ -63,5 +63,8 @@ const mutations: MutationTree <UtilState> = {
   [types.UTIL_SHPMNT_MTHD_BY_CARRIER_UPDATED](state, payload) {
     state.shipmentMethodsByCarrier = payload
   },
+  [types.UTIL_FACILITY_ADDRESSES_UPDATED](state, payload) {
+    state.facilityAddresses = payload
+  },
 }
 export default mutations;

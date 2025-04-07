@@ -19,4 +19,5 @@ export default interface UtilState {
   sampleProducts: any;
   carrierDesc: any;
   shipmentMethodsByCarrier: any;
+  facilityAddresses: any;
 }

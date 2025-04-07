@@ -859,6 +859,47 @@ const actions: ActionTree<UtilState, RootState> = {
     }
     commit(types.UTIL_SHPMNT_MTHD_BY_CARRIER_UPDATED, shipmentMethodsByCarrier)
   },
+
+  async fetchFacilityAddresses ({ commit, state }, facilityIds) {
+    const facilityAddresses = state.facilityAddresses ? JSON.parse(JSON.stringify(state.facilityAddresses)) : {}
+    let addresses = [] as any;
+    const remainingFacilityIds = [] as any;
+
+    facilityIds.map((facilityId: string) => {
+      facilityAddresses[facilityId] ? addresses.push(facilityAddresses[facilityId]) : remainingFacilityIds.push(facilityId)
+    })
+
+    if(!remainingFacilityIds?.length) return addresses;
+
+    try {
+      const resp = await UtilService.fetchFacilityAddresses({
+        inputFields: {
+          contactMechPurposeTypeId: "PRIMARY_LOCATION",
+          contactMechTypeId: "POSTAL_ADDRESS",
+          facilityId: remainingFacilityIds,
+          facilityId_op: "in"
+        },
+        entityName: "FacilityContactDetailByPurpose",
+        orderBy: 'fromDate DESC',
+        filterByDate: 'Y',
+        fieldList: ['address1', 'address2', 'city', 'countryGeoName', 'postalCode', 'stateGeoName', 'facilityId', 'facilityName', 'contactMechId'],
+        viewSize: 2
+      }) as any;
+  
+      if(!hasError(resp) && resp.data.docs?.length) {
+        resp.data.docs.map((facility: any) => {
+          facilityAddresses[facility.facilityId] = facility;
+        })
+        addresses = [...addresses, ...resp.data.docs]
+      } else {
+        throw resp.data;
+      }
+    } catch (error) {
+      logger.error(error);
+    }
+    commit(types.UTIL_FACILITY_ADDRESSES_UPDATED, facilityAddresses)
+    return addresses
+  },
 }
 
 export default actions;

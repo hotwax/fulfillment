@@ -38,95 +38,59 @@
     </ion-fab>
   </ion-content>
 </template>
-
-<script lang="ts">
-import {
-  IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon,
-  IonItem, IonList, IonListHeader, IonSelect, IonSelectOption, IonTitle, IonToolbar,
-  modalController
-} from "@ionic/vue";
-import { defineComponent } from "vue";
+  
+<script setup lang="ts">
+import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonList, IonListHeader, IonSelect, IonSelectOption, IonTitle, IonToolbar,modalController } from "@ionic/vue";
+import { defineProps, onMounted, ref } from "vue";
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { translate, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { showToast } from "@/utils";
 
-export default defineComponent({
-  name: "ImportTOItemsCsvModal",
-  components: {
-    IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon,
-    IonItem, IonList, IonListHeader, IonSelect, IonSelectOption, IonTitle, IonToolbar
-  },
-  props: {
-    fileColumns: {
-      type: Array,
-      required: true
-    },
-    content: {
-      type: Array,
-      required: true
-    },
-    countId: {
-      type: String,
-      required: false
-    }
-  },
-  data() {
-    return {
-      productIdentifications: [],
-      selectedIdentifier: '',
-      selectedIdentifierColumn: '',
-      selectedQuantityColumn: ''
-    };
-  },
-  mounted() {
-    this.prepareIdentifiers();
-  },
-  methods: {
-    async prepareIdentifiers() {
-      await useProductIdentificationStore().prepareProductIdentifierOptions();
-      const options = useProductIdentificationStore().getGoodIdentificationOptions;
-      this.productIdentifications = options ? options : [];
-    },
-    closeModal(identifierData = {}) {
-      modalController.dismiss({ identifierData });
-    },
-    saveImportData() {
-      if (!this.selectedIdentifier) {
-        return showToast(translate("Please select a Product identifier"));
-      }
-      if (!this.selectedIdentifierColumn) {
-        return showToast(translate("Please select the index for the product identifier column"));
-      }
+const props = defineProps(["fileColumns", "content", "countId"])
+const productIdentifications = ref([]) as any;
 
-      const idValues: Record<string, any> = {};
-      this.content.forEach((row: any) => {
-        const key = row[this.selectedIdentifierColumn];
-        const value = row[this.selectedQuantityColumn];
-        if (key) {
-          idValues[key] = value;
-        }
-      });
+const selectedIdentifier = ref('')
+const selectedIdentifierColumn = ref('')
+const selectedQuantityColumn = ref('')
 
-      const identifierData = {
-        productField: this.selectedIdentifierColumn,
-        quantityField: this.selectedQuantityColumn,
-        idType: this.selectedIdentifier,
-        idValue: idValues
-      };
+onMounted(async () => {
+  await useProductIdentificationStore().prepareProductIdentifierOptions();
+  productIdentifications.value = useProductIdentificationStore()?.getGoodIdentificationOptions ? useProductIdentificationStore().getGoodIdentificationOptions : []
+})
 
-      this.closeModal(identifierData);
-    },
-  },
-  setup() {
-    return {
-      translate,
-      closeOutline,
-      saveOutline
-    }
+function closeModal(identifierData = {}) {
+  modalController.dismiss({ identifierData });
+}
+
+function saveImportData() {
+  if (!selectedIdentifier.value) {
+    return showToast(translate("Please select a Product identifier"));
   }
-});
-</script>
 
+  if (!selectedIdentifierColumn.value) {
+    return showToast(translate("Please select the index for the product identifier column"));
+  }
+
+  const idType = selectedIdentifier.value;
+  let idValues = {} as any;
+
+  props.content.map((row: any) => {
+    if(row[selectedIdentifierColumn.value]) {
+      idValues[row[selectedIdentifierColumn.value]] = row[selectedQuantityColumn.value];
+    }
+  })
+
+  let identifierData = {
+    productField: selectedIdentifierColumn.value,
+    quantityField: selectedQuantityColumn.value,
+    idType: idType,
+    idValue: idValues
+  };
+
+  closeModal(identifierData);
+}
+</script>
+    
 <style scoped>
 ion-content {
   --padding-bottom: 70px;

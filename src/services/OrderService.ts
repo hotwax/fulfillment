@@ -905,10 +905,19 @@ const rejectOrderItems = async (payload: any): Promise <any> => {
   });
 }
 
+const createOrder = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createSalesOrder",
+    method: "post",
+    data: payload
+  });
+}
+
 export const OrderService = {
   addShipmentBox,
   addTrackingCode,
   bulkShipOrders,
+  createOrder,
   createOutboundTransferShipment,
   fetchAdditionalShipGroupForOrder,
   fetchOrderAttribute,
