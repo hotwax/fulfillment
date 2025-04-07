@@ -104,7 +104,6 @@ const actions: ActionTree<ProductState, RootState> = {
     return resp;
   },
 
-
   async addProductToCached ( { commit }, payload) {
     commit(types.PRODUCT_ADD_TO_CACHED, payload);
   },

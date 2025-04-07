@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-back-button slot="start" :default-href="`/tabs/transfers`" />
+        <ion-back-button slot="start" default-href="/transfer-orders" />
         <ion-title>{{ translate("Create transfer order") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -276,7 +276,6 @@ onIonViewDidEnter(async () => {
     currentOrder.value.carrierPartyId = Object.keys(shipmentMethodsByCarrier.value)[0]
     selectUpdatedMethod()
   }
-  currentOrder.value.originFacilityId = facilities.value[0]?.facilityId
   uploadedFile.value = {}
   content.value = []
   emitter.emit("dismissLoader")
@@ -545,6 +544,7 @@ async function createOrder() {
     const resp = await OrderService.createOrder({ order })
     if(!hasError(resp)) {
       router.replace(`/transfer-order-details/${resp.data.orderId}`)
+      showToast(translate("Transfer order created successfully."))
     } else {
       throw resp.data;
     }
