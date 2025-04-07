@@ -587,7 +587,7 @@ export default defineComponent({
     }
   },
   async mounted() {
-    const instance = this.instanceUrl.split("-")[0]
+    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "")
     this.printDocumentsExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_PrintDocument`})
     this.orderInvoiceExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderInvoice`})
   },
