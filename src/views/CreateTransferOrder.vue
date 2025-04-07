@@ -343,7 +343,7 @@ async function findProductFromIdentifier(payload: any) {
           currentOrder.value.items.push({
             productId: product.productId,
             sku: product.sku,
-            quantity: (Number(uploadedItemsByIdValue[idValue][quantityField]) || 0),
+            quantity: quantityField ? (Number(uploadedItemsByIdValue[idValue][quantityField]) || 0) : 0,
             isChecked: false,
             unitPrice: product.BASE_PRICE_PURCHASE_USD_STORE_GROUP_price,
             qoh: stock.quantityOnHandTotal || 0,
