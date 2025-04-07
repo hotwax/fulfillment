@@ -734,38 +734,14 @@ export default defineComponent({
       const result = await popover.onDidDismiss();
 
       if (result.data && item.selectedBox !== result.data) {
-        this.confirmUpdateBox(item, order, result.data, kitProducts, orderItemSeqId)
-      }
-    },
-    async confirmUpdateBox(item: any, order: any, selectedBox: string, kitProducts?: any, orderItemSeqId?: number) {
-      const alert = await alertController.create({
-        message: translate("Are you sure you want to update box selection?"),
-        header: translate("Update box selection?"),
-        buttons: [
-          {
-            text: translate("Cancel"),
-            role: 'cancel'
-          },
-          {
-            text: translate("Confirm"),
-            handler: () => {
-              order.items.map((orderItem: any) => {
+        order.items.map((orderItem: any) => {
                 if(orderItem.orderItemSeqId === item.orderItemSeqId) {
-                  orderItem.selectedBox = selectedBox
+                  orderItem.selectedBox = result.data
                 }
               })
               order.isModified = true;
-
-              /*
-              Commenting this out to avoid directly updating items. Now user need to click on the save button to save the detail.
-              await this.updateOrder(order, 'box-selection').then(async () => {
-                await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
-              }).catch(err => err);*/
-            }
-          }
-        ],
-      });
-      return alert.present();
+        }
+      return result.data;
     },
     save(order: any) {
       if(order.hasRejectedItem) {
