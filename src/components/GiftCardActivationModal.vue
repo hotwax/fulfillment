@@ -40,7 +40,7 @@
           <ion-icon slot="start" :icon="isCameraEnabled ? stopOutline : cameraOutline" />
           {{ translate(isCameraEnabled ? "Stop" : "Scan") }}
         </ion-button>
-        <StreamBarcodeReader
+        <StreamBarcodeReader class="scanning-preview"
           v-if="isCameraEnabled"
           @decode="onDecode"
         />
@@ -216,7 +216,10 @@ export default defineComponent({
 </script>
 
 <style scoped>
-ion-content {
-  --padding-bottom: 80px;
+.scanning-preview {
+  justify-self: center;
+  max-width: 360px;
 }
+
+
 </style>
