@@ -92,9 +92,9 @@
 
             <div v-if="category === 'in-progress'" class="desktop-only ion-text-center" >
               <template v-if="item.rejectReason">
-                <ion-chip :disabled="order.hasMissingInfo" outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
+                <ion-chip :disabled="order.hasMissingInfo" outline color="danger" >
                   <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
-                  <ion-icon :icon="closeCircleOutline" />
+                  <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)"/>
                 </ion-chip>
               </template>
               <template v-else-if="useNewRejectionApi() && isEntierOrderRejectionEnabled(order)">
