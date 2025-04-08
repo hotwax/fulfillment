@@ -345,7 +345,6 @@ async function findProductFromIdentifier(payload: any) {
             sku: product.sku,
             quantity: quantityField ? (Number(uploadedItemsByIdValue[idValue][quantityField]) || 0) : 0,
             isChecked: false,
-            unitPrice: product.BASE_PRICE_PURCHASE_USD_STORE_GROUP_price,
             qoh: stock.quantityOnHandTotal || 0,
             atp: stock.availableToPromiseTotal || 0
           })
@@ -368,8 +367,7 @@ async function addProductToCount() {
     productId: searchedProduct.value.productId,
     sku: searchedProduct.value.sku,
     quantity: 0,
-    isChecked: false,
-    unitPrice: searchedProduct.value.BASE_PRICE_PURCHASE_USD_STORE_GROUP_price
+    isChecked: false
   } as any;
 
   const stock = await fetchStock(newProduct.productId);
@@ -494,6 +492,9 @@ async function createOrder() {
     return;
   }
 
+  const productIds = currentOrder.value.items?.map((item: any) => item.productId);
+  const productsUnitPrice = await UtilService.fetchProductsAverageCost(productIds, currentOrder.value.originFacilityId)
+
   const order = {
     orderName: currentOrder.value.name.trim(),
     orderTypeId: "TRANSFER_ORDER",
@@ -515,11 +516,17 @@ async function createOrder() {
           sku: item.sku,
           status: "ITEM_CREATED",
           quantity: Number(item.quantity),
-          unitPrice: item.unitPrice
+          unitPrice: productsUnitPrice[item.productId] || 0.00
         }
       })
     }]
   } as any;
+
+  let grandTotal = 0;
+  order.shipGroup[0].items.map((item: any) => {
+    grandTotal += Number(item.quantity) * Number(item.unitPrice)
+  })
+  order["grandTotal"] = grandTotal
 
   const addresses = await store.dispatch("util/fetchFacilityAddresses", [currentOrder.value.originFacilityId, currentOrder.value.destinationFacilityId])
   
