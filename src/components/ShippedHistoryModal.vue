@@ -12,7 +12,7 @@
     <ion-content>
       <ion-list v-for="(item, index) in items" :key="index">
         <ion-item>
-          <ion-thumbnail slot="start">
+          <ion-thumbnail slot="start" @click="openFullImage(getProduct(item.productId))">
             <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" />
           </ion-thumbnail>
           <ion-label>
@@ -54,6 +54,7 @@
   import { DxpShopifyImg, translate } from '@hotwax/dxp-components';
   import { mapGetters, useStore } from "vuex";
   import { DateTime } from 'luxon';
+  import { openFullImage } from '@/utils';
   
   export default defineComponent({
     name: "ShippedHistoryModal",
@@ -111,6 +112,7 @@
   
       return {
         closeOutline,
+        openFullImage,
         store,
         translate
       };

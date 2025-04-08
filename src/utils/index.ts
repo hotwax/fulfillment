@@ -2,11 +2,12 @@ import { translate, useUserStore } from '@hotwax/dxp-components';
 import store from '@/store';
 import { JsonToCsvOption } from '@/types';
 import { Plugins } from '@capacitor/core';
-import { toastController } from '@ionic/vue';
+import { modalController, toastController } from '@ionic/vue';
 import { saveAs } from 'file-saver';
 import { DateTime } from 'luxon';
 import Papa from 'papaparse';
 import Encoding from 'encoding-japanese';
+import ImageModal from '@/components/ImageModal.vue';
 
 // TODO Use separate files for specific utilities
 
@@ -226,4 +227,12 @@ const hasWebcamAccess = async () => {
   }
 }
 
-export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getFeature, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess }
+const openFullImage = async (product: any) => {
+  const imageModal = await modalController.create({
+    component: ImageModal,
+    componentProps: { imageUrl: product?.mainImageUrl , productName: product?.productName }
+  });
+  return imageModal.present();
+}
+
+export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getFeature, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, openFullImage }

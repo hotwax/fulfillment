@@ -90,7 +90,7 @@
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start">
+                    <ion-thumbnail slot="start" @click="openFullImage(getProduct(item.productId))">
                       <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
@@ -164,7 +164,7 @@
               <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start">
+                    <ion-thumbnail slot="start" @click="openFullImage(getProduct(productComponent.productIdTo))">
                       <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
@@ -295,7 +295,7 @@ import {
 } from 'ionicons/icons'
 import PackagingPopover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
-import { copyToClipboard, formatUtcDate, getFeature, jsonToCsv, showToast } from '@/utils';
+import { copyToClipboard, formatUtcDate, getFeature, jsonToCsv, openFullImage, showToast } from '@/utils';
 import { isKit } from '@/utils/order'
 import { hasError } from '@/adapter';
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
@@ -1357,6 +1357,7 @@ export default defineComponent({
       hasPermission,
       isKit,
       listOutline,
+      openFullImage,
       optionsOutline,
       pencilOutline,
       pricetagOutline,

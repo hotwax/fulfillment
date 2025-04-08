@@ -39,7 +39,7 @@
           </ion-card-header>
           <ion-list v-if="getMostRejectedItems().length">
             <ion-item v-for="(item, index) in getMostRejectedItems()" :key="item.val" :lines="getMostRejectedItems().length -1 === index ? 'none' : 'inset'">
-              <ion-thumbnail slot="start">
+              <ion-thumbnail slot="start" @click="openFullImage(getProduct(item.val))">
                 <DxpShopifyImg :src="getProduct(item.val).mainImageUrl" size="small"/>
               </ion-thumbnail>
               <ion-label>
@@ -110,7 +110,7 @@
         <div v-for="item in order.items" :key="item.orderItemSeqId" class="list-item">
             <div class="product-info">
               <ion-item lines="none">
-                <ion-thumbnail slot="start">
+                <ion-thumbnail slot="start" @click="openFullImage(getProduct(item.productId))">
                   <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                 </ion-thumbnail>
                 <ion-label>
@@ -175,7 +175,7 @@ import { computed, defineComponent } from 'vue';
 import { addOutline, caretDownOutline, cloudDownloadOutline, ellipsisVerticalOutline, filterOutline, personCircleOutline, pricetagOutline } from 'ionicons/icons';
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import { mapGetters, useStore } from 'vuex';
-import { formatUtcDate, jsonToCsv } from '@/utils';
+import { formatUtcDate, openFullImage } from '@/utils';
 import RejectedItemsModal from '@/components/RejectedItemsModal.vue';
 import UsedReasonsModal from '@/components/UsedReasonsModal.vue';
 import RejectedOrdersFilters from '@/components/RejectedOrdersFilters.vue'
@@ -321,6 +321,7 @@ export default defineComponent({
       filterOutline,
       formatUtcDate,
       getProductIdentificationValue,
+      openFullImage,
       personCircleOutline,
       pricetagOutline,
       productIdentificationPref,
