@@ -493,7 +493,7 @@ async function createOrder() {
   }
 
   const productIds = currentOrder.value.items?.map((item: any) => item.productId);
-  const productsUnitPrice = await UtilService.fetchProductsAverageCost(productIds, currentOrder.value.originFacilityId)
+  const productAverageCostDetail = await UtilService.fetchProductsAverageCost(productIds, currentOrder.value.originFacilityId)
 
   const order = {
     orderName: currentOrder.value.name.trim(),
@@ -516,7 +516,7 @@ async function createOrder() {
           sku: item.sku,
           status: "ITEM_CREATED",
           quantity: Number(item.quantity),
-          unitPrice: productsUnitPrice[item.productId] || 0.00
+          unitPrice: productAverageCostDetail[item.productId] || 0.00
         }
       })
     }]

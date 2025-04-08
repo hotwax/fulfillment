@@ -701,7 +701,7 @@ const fetchFacilityAddresses = async (params: any): Promise<any> => {
 
 const fetchProductsAverageCost = async (productIds: any, facilityId: any): Promise<any> => {
   if(!productIds.length) return []
-  const requests = [], productIdList = productIds, productsUnitPrice = {} as any;
+  const requests = [], productIdList = productIds, productAverageCostDetail = {} as any;
 
   while(productIdList.length) {
     const productIds = productIdList.splice(0, 100)
@@ -721,24 +721,24 @@ const fetchProductsAverageCost = async (productIds: any, facilityId: any): Promi
     requests.push(params)
   }
 
-  const shipmentItemsResps = await Promise.allSettled(requests.map((params) => api({
+  const productAverageCostResps = await Promise.allSettled(requests.map((params) => api({
     url: 'performFind',
     method: 'POST',
     data: params
   })))
 
-  const hasFailedResponse = shipmentItemsResps.some((response: any) => response.status !== "fulfilled")
+  const hasFailedResponse = productAverageCostResps.some((response: any) => response.status !== "fulfilled")
   if(hasFailedResponse) return {};
 
-  shipmentItemsResps.map((response: any) => {
+  productAverageCostResps.map((response: any) => {
     if(response.value.data?.docs?.length) {
       response.value.data.docs.map((item: any) => {
-        if(!productsUnitPrice[item.productId]) productsUnitPrice[item.productId] = item.averageCost
+        if(!productAverageCostDetail[item.productId]) productAverageCostDetail[item.productId] = item.averageCost
       })
     }
   })
 
-  return productsUnitPrice;
+  return productAverageCostDetail;
 }
 
 export const UtilService = {
