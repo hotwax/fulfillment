@@ -16,4 +16,5 @@ export default interface UtilState {
   fulfillmentRejectReasons: any;
   rejectReasonOptions: any;
   barcodeIdentificationPref: string;
+  boxUomConversions: any;
 }
