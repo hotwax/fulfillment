@@ -550,7 +550,7 @@ async function createOrder() {
   try {
     const resp = await OrderService.createOrder({ order })
     if(!hasError(resp)) {
-      router.replace(`/transfer-order-details/${resp.data.orderId}`)
+      router.replace((currentOrder.value.originFacilityId === useUserStore().getCurrentFacility?.facilityId) ? `/transfer-order-details/${resp.data.orderId}` : "/transfer-orders")
       showToast(translate("Transfer order created successfully."))
     } else {
       throw resp.data;
