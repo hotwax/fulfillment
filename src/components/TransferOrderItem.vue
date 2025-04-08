@@ -9,7 +9,7 @@
           <ion-label class="ion-text-wrap">
             <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
             {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
-            <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+            <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
           </ion-label>
         </ion-item>
       </div>
@@ -85,7 +85,7 @@ import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIden
 
 import { useRouter } from 'vue-router';
 import { Actions } from '@/authorization'
-import { getFeature } from '@/utils';
+import { getFeatures } from '@/utils';
 import ShippedHistoryModal from '@/components/ShippedHistoryModal.vue'
 import ReportIssuePopover from './ReportIssuePopover.vue';
 
@@ -229,7 +229,7 @@ export default defineComponent({
       caretDownOutline,
       checkmarkDone,
       closeCircleOutline,
-      getFeature,
+      getFeatures,
       getProductIdentificationValue,
       productIdentificationPref,
       store,
