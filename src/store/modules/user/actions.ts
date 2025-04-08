@@ -276,7 +276,8 @@ const actions: ActionTree<UserState, RootState> = {
       "filterByDate": 'Y',
       "entityName": "ProductStoreSetting",
       "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
-      "viewSize": 1
+      "viewSize": 1,
+      "orderBy": "fromDate asc" // to fetch the oldest setting
     } as any
 
     try {
@@ -302,7 +303,8 @@ const actions: ActionTree<UserState, RootState> = {
       "filterByDate": 'Y',
       "entityName": "ProductStoreSetting",
       "fieldList": ["settingTypeEnumId", "settingValue"],
-      "viewSize": 1
+      "viewSize": 1,
+      "orderBy": "fromDate asc"
     } as any
 
     try { 
@@ -329,7 +331,8 @@ const actions: ActionTree<UserState, RootState> = {
       "filterByDate": 'Y',
       "entityName": "ProductStoreSetting",
       "fieldList": ["settingTypeEnumId", "settingValue"],
-      "viewSize": 1
+      "viewSize": 1,
+      "orderBy": "fromDate asc"
     } as any
 
     try {
@@ -345,7 +348,7 @@ const actions: ActionTree<UserState, RootState> = {
     }
     commit(types.USER_DISABLE_UNPACK_CONFIG_UPDATED, isUnpackDisabled);
   },
-  async updatePartialOrderRejectionConfig ({ dispatch }, payload) {  
+  async updatePartialOrderRejectionConfig ({ commit, dispatch }, payload) {  
     let resp = {} as any;
     try {
       if(!await UserService.isEnumExists("FULFILL_PART_ODR_REJ")) {
@@ -363,14 +366,9 @@ const actions: ActionTree<UserState, RootState> = {
       }
 
       if (!payload.fromDate) {
-        //Create Product Store Setting
-        payload = {
-          ...payload, 
-          "productStoreId": getProductStoreId(),
-          "settingTypeEnumId": "FULFILL_PART_ODR_REJ",
-          "fromDate": DateTime.now().toMillis()
-        }
-        resp = await UserService.createPartialOrderRejectionConfig(payload) as any
+        const currentPartialOrderRejectionConfig = store.getters['user/getPartialOrderRejectionConfig']
+        commit(types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED, currentPartialOrderRejectionConfig);
+        throw Error;
       } else {
         //Update Product Store Setting
         resp = await UserService.updatePartialOrderRejectionConfig(payload) as any
@@ -389,7 +387,7 @@ const actions: ActionTree<UserState, RootState> = {
     // Fetch the updated configuration
     await dispatch("getPartialOrderRejectionConfig");
   },
-  async updateCollateralRejectionConfig ({ dispatch }, payload) {  
+  async updateCollateralRejectionConfig ({ commit, dispatch }, payload) {  
     let resp = {} as any;
     try {
       if(!await UserService.isEnumExists("FF_COLLATERAL_REJ")) {
@@ -407,14 +405,9 @@ const actions: ActionTree<UserState, RootState> = {
       }
 
       if (!payload.fromDate) {
-        //Create Product Store Setting
-        payload = {
-          ...payload, 
-          "productStoreId": getProductStoreId(),
-          "settingTypeEnumId": "FF_COLLATERAL_REJ",
-          "fromDate": DateTime.now().toMillis()
-        }
-        resp = await UserService.createCollateralRejectionConfig(payload) as any
+        const currentCollateralRejectionConfig = store.getters['user/getCollateralRejectionConfig']
+        commit(types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED, currentCollateralRejectionConfig);
+        throw Error;
       } else {
         //Update Product Store Setting
         resp = await UserService.updateCollateralRejectionConfig(payload) as any
@@ -443,7 +436,8 @@ const actions: ActionTree<UserState, RootState> = {
       "filterByDate": 'Y',
       "entityName": "ProductStoreSetting",
       "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
-      "viewSize": 1
+      "viewSize": 1,
+      "orderBy": "fromDate asc"
     } as any
 
     try {
@@ -468,7 +462,8 @@ const actions: ActionTree<UserState, RootState> = {
       "filterByDate": 'Y',
       "entityName": "ProductStoreSetting",
       "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
-      "viewSize": 1
+      "viewSize": 1,
+      "orderBy": "fromDate asc"
     } as any
 
     try {
@@ -484,18 +479,13 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED, config);   
   },
 
-  async updateAffectQohConfig ({ dispatch }, payload) {  
+  async updateAffectQohConfig ({ commit, dispatch }, payload) {  
     let resp = {} as any;
     try {
       if (!payload.fromDate) {
-        //Create Product Store Setting
-        payload = {
-          ...payload, 
-          "productStoreId": getProductStoreId(),
-          "settingTypeEnumId": "AFFECT_QOH_ON_REJ",
-          "fromDate": DateTime.now().toMillis()
-        }
-        resp = await UserService.createAffectQohConfig(payload) as any
+        const currentAffectQohConfig = store.getters['user/getAffectQohConfig']
+        commit(types.USER_AFFECT_QOH_CONFIG_UPDATED, currentAffectQohConfig);
+        throw Error;
       } else {
         //Update Product Store Setting
         resp = await UserService.updateAffectQohConfig(payload) as any
@@ -524,7 +514,8 @@ const actions: ActionTree<UserState, RootState> = {
       "filterByDate": 'Y',
       "entityName": "ProductStoreSetting",
       "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
-      "viewSize": 1
+      "viewSize": 1,
+      "orderBy": "fromDate asc"
     } as any
 
     try {
