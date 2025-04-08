@@ -601,7 +601,7 @@ export default defineComponent({
                   .filter((url: string | null) => url !== null)
                 )]
               )
-              .flat() as Array<string>;
+              .flat().filter((url: any) => url) as Array<string>
 
               const shippingLabelPdfUrls = orderList
               .map((order: any) =>
@@ -610,7 +610,7 @@ export default defineComponent({
                   .filter((url: string | null) => url !== null)
                 )]
               )
-              .flat() as Array<string>;
+              .flat().filter((url: any) => url) as Array<string>;
 
               try {
                 const resp = await OrderService.packOrders({
