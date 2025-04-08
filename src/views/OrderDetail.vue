@@ -92,9 +92,9 @@
 
             <div v-if="category === 'in-progress'" class="desktop-only ion-text-center" >
               <template v-if="item.rejectReason">
-                <ion-chip :disabled="order.hasMissingInfo" outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
+                <ion-chip :disabled="order.hasMissingInfo" outline color="danger" >
                   <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
-                  <ion-icon :icon="closeCircleOutline" />
+                  <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)"/>
                 </ion-chip>
               </template>
               <template v-else-if="useNewRejectionApi() && isEntierOrderRejectionEnabled(order)">
@@ -587,7 +587,7 @@ export default defineComponent({
     }
   },
   async mounted() {
-    const instance = this.instanceUrl.split("-")[0]
+    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "")
     this.printDocumentsExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_PrintDocument`})
     this.orderInvoiceExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderInvoice`})
   },
@@ -734,38 +734,14 @@ export default defineComponent({
       const result = await popover.onDidDismiss();
 
       if (result.data && item.selectedBox !== result.data) {
-        this.confirmUpdateBox(item, order, result.data, kitProducts, orderItemSeqId)
-      }
-    },
-    async confirmUpdateBox(item: any, order: any, selectedBox: string, kitProducts?: any, orderItemSeqId?: number) {
-      const alert = await alertController.create({
-        message: translate("Are you sure you want to update box selection?"),
-        header: translate("Update box selection?"),
-        buttons: [
-          {
-            text: translate("Cancel"),
-            role: 'cancel'
-          },
-          {
-            text: translate("Confirm"),
-            handler: () => {
-              order.items.map((orderItem: any) => {
-                if(orderItem.orderItemSeqId === item.orderItemSeqId) {
-                  orderItem.selectedBox = selectedBox
-                }
-              })
-              order.isModified = true;
-
-              /*
-              Commenting this out to avoid directly updating items. Now user need to click on the save button to save the detail.
-              await this.updateOrder(order, 'box-selection').then(async () => {
-                await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
-              }).catch(err => err);*/
-            }
+        order.items.map((orderItem: any) => {
+          if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+            orderItem.selectedBox = result.data
           }
-        ],
-      });
-      return alert.present();
+        })
+        order.isModified = true;
+        }
+      return result.data;
     },
     save(order: any) {
       if(order.hasRejectedItem) {

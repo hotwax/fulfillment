@@ -869,6 +869,7 @@ const actions: ActionTree<OrderState, RootState> = {
           orderName: orderItem.orderName,
           groupValue: resp.data.grouped.picklistBinId.groups[0].groupValue,
           picklistBinId: orderItem.picklistBinId,
+          picklistId: orderItem.picklistId,
           items: removeKitComponents({items: resp.data.grouped.picklistBinId.groups[0].doclist.docs}) ,
           shipGroupSeqId: orderItem.shipGroupSeqId,
           shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
@@ -882,7 +883,7 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('Something went wrong', err)
     }
 
-    await dispatch('fetchInProgressOrderAdditionalInformation', order);
+    if(order?.orderId) await dispatch('fetchInProgressOrderAdditionalInformation', order);
 
     emitter.emit('dismissLoader');
   },
@@ -937,6 +938,7 @@ const actions: ActionTree<OrderState, RootState> = {
           reservedDatetime: orderItem.reservedDatetime,
           groupValue: resp.data.grouped.picklistBinId.groups[0].groupValue,
           picklistBinId: orderItem.picklistBinId,
+          picklistId: orderItem.picklistId,
           items: removeKitComponents({items : resp.data.grouped.picklistBinId.groups[0].doclist.docs}),
           shipmentId: orderItem.shipmentId,
           shipGroupSeqId: orderItem.shipGroupSeqId,
@@ -952,7 +954,7 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('No completed orders found', err)
     }
 
-    await dispatch('fetchCompletedOrderAdditionalInformation', order);
+    if(order?.orderId) await dispatch('fetchCompletedOrderAdditionalInformation', order);
     emitter.emit('dismissLoader');
   },
 
