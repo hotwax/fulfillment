@@ -70,7 +70,7 @@
               <section v-if="showOrderItems">
                 <div class="list-item" v-for="(item, index) in order.doclist.docs" :key="index">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start">
+                    <ion-thumbnail slot="start" @click="openFullImage(getProduct(item.productId))">
                       <Image :src="getProduct(item.productId)?.mainImageUrl" />
                     </ion-thumbnail>
                     <ion-label class="ion-text-wrap">
@@ -155,7 +155,7 @@ import {
 } from 'ionicons/icons';
 import { defineComponent, ref } from "vue";
 import { mapGetters, useStore } from "vuex";
-import { copyToClipboard, getColorByDesc, formatUtcDate } from '@/utils'
+import { copyToClipboard, getColorByDesc, formatUtcDate, openFullImage } from '@/utils'
 import { useRouter } from 'vue-router';
 import OrderLookupFilters from '@/components/OrderLookupFilters.vue'
 import { translate } from '@hotwax/dxp-components';
@@ -284,6 +284,7 @@ export default defineComponent ({
       filterOutline,
       itemStatus,
       pricetag,
+      openFullImage,
       orderStatus,
       ribbon,
       swapVerticalOutline,

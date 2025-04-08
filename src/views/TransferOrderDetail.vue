@@ -76,7 +76,7 @@
                   <div v-for="item in shipment.items" :key="item.shipmentItemSeqId" class="order-item order-line-item">
                     <div class="product-info">
                       <ion-item lines="none">
-                        <ion-thumbnail slot="start">
+                        <ion-thumbnail slot="start" @click="openFullImage(getProduct(item.productId))">
                           <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                         </ion-thumbnail>
                         <ion-label>
@@ -172,7 +172,7 @@
   import Scanner from "@/components/Scanner.vue";
   import { Actions, hasPermission } from '@/authorization'
   import { DateTime } from 'luxon';
-  import { getFeature, showToast, hasWebcamAccess } from '@/utils';
+  import { getFeature, showToast, hasWebcamAccess, openFullImage } from '@/utils';
   import { hasError } from '@/adapter';
   import { OrderService } from '@/services/OrderService'
   import TransferOrderItem from '@/components/TransferOrderItem.vue'
@@ -478,6 +478,7 @@
         getFeature,
         getProductIdentificationValue,
         hasPermission,
+        openFullImage,
         personCircleOutline,
         pricetagOutline,
         printOutline,

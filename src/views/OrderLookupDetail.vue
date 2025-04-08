@@ -207,7 +207,7 @@
               <div class="product-card">
                 <ion-card v-for="shipGroup in shipGroups" :key="shipGroup.shipGroupSeqId">
                   <ion-item>
-                    <ion-thumbnail slot="start">
+                    <ion-thumbnail slot="start" @click="openFullImage(getProduct(shipGroup.productId))">
                       <DxpShopifyImg :src="getProduct(shipGroup.productId)?.mainImageUrl" size="small" />
                     </ion-thumbnail>
                     <ion-label class="ion-text-wrap">
@@ -280,12 +280,12 @@ import {
   IonToolbar,
   popoverController
 } from "@ionic/vue";
-import { computed, defineComponent } from "vue";
+import { defineComponent } from "vue";
 import { translate, useUserStore } from '@hotwax/dxp-components';
 import { cubeOutline, golfOutline, callOutline, cashOutline, closeCircleOutline, ellipsisVerticalOutline, informationCircleOutline, ribbonOutline, mailOutline, ticketOutline, timeOutline, pulseOutline, storefrontOutline, sunnyOutline, checkmarkDoneOutline, downloadOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { DateTime } from "luxon";
-import { formatCurrency, getColorByDesc } from "@/utils"
+import { formatCurrency, getColorByDesc, openFullImage } from "@/utils"
 import { prepareSolrQuery } from '@/utils/solrHelper';
 import OrderLookupLabelActionsPopover from '@/components/OrderLookupLabelActionsPopover.vue';
 import { hasError } from "@hotwax/oms-api";
@@ -432,6 +432,7 @@ export default defineComponent({
       golfOutline,
       informationCircleOutline,
       mailOutline,
+      openFullImage,
       pulseOutline,
       ribbonOutline,
       store,

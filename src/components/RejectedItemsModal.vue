@@ -12,7 +12,7 @@
   <ion-content>
     <ion-list v-if="rejectedItems.length">
       <ion-item v-for="(item, index) in rejectedItems" :key="item.val" :lines="rejectedItems.length -1 === index ? 'none' : 'inset'">
-        <ion-thumbnail slot="start">
+        <ion-thumbnail slot="start" @click="openFullImage(getProduct(item.val))">
           <DxpShopifyImg :src="getProduct(item.val).mainImageUrl" size="small"/>
         </ion-thumbnail>
         <ion-label>
@@ -47,6 +47,7 @@ import { computed, defineComponent } from "vue";
 import { mapGetters } from 'vuex';
 import { closeOutline, pricetag } from "ionicons/icons";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { openFullImage } from "@/utils";
   
 
 export default defineComponent({
@@ -83,6 +84,7 @@ export default defineComponent({
 
     return {
       closeOutline,
+      openFullImage,
       pricetag,
       productIdentificationPref,
       productIdentificationStore,

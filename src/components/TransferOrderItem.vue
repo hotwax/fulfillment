@@ -3,7 +3,7 @@
     <div class="product">
       <div class="product-info">
         <ion-item lines="none">
-          <ion-thumbnail slot="start">
+          <ion-thumbnail slot="start" @click="openFullImage(getProduct(item.productId))">
             <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" />
           </ion-thumbnail>
           <ion-label class="ion-text-wrap">
@@ -85,7 +85,7 @@ import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIden
 
 import { useRouter } from 'vue-router';
 import { Actions } from '@/authorization'
-import { getFeature } from '@/utils';
+import { getFeature, openFullImage } from '@/utils';
 import ShippedHistoryModal from '@/components/ShippedHistoryModal.vue'
 import ReportIssuePopover from './ReportIssuePopover.vue';
 
@@ -231,6 +231,7 @@ export default defineComponent({
       closeCircleOutline,
       getFeature,
       getProductIdentificationValue,
+      openFullImage,
       productIdentificationPref,
       store,
       router,

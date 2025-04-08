@@ -24,7 +24,7 @@
       <div class="list-item" v-for="(item, index) in orderItems" :key="index" :class="item.orderItemSeqId === lastScannedId ? 'scanned-item' : '' " :id="item.productSku">
         <div class="product-info">
           <ion-item lines="none">
-            <ion-thumbnail slot="start">
+            <ion-thumbnail slot="start" @click="openFullImage(getProduct(item.productId))">
               <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
             </ion-thumbnail>
             <ion-label>
@@ -74,7 +74,7 @@ import { computed, defineComponent } from "vue";
 import { cameraOutline, closeOutline, copyOutline, saveOutline } from "ionicons/icons";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { mapGetters } from 'vuex';
-import { getFeature, showToast, hasWebcamAccess } from "@/utils"
+import { getFeature, showToast, hasWebcamAccess, openFullImage } from "@/utils"
 import Scanner from "@/components/Scanner.vue"
 import { isKit } from '@/utils/order'
 
@@ -181,6 +181,7 @@ export default defineComponent({
       getFeature,
       getProductIdentificationValue,
       isKit,
+      openFullImage,
       productIdentificationPref,
       saveOutline,
       translate
