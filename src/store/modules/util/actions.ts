@@ -760,39 +760,6 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, payload)
   },
 
-  async fetchSampleProducts ({ commit, state }) {
-    let products = state.sampleProducts ? JSON.parse(JSON.stringify(state.sampleProducts)) : []
-    if(products.length) return;
-
-    try {
-      const resp = await UtilService.fetchSampleProducts({
-        inputFields: {
-          internalName_op: "not-empty"
-        },
-        entityName: "Product",
-        fieldList: ["internalName", "productId"],
-        noConditionFind: "Y",
-        viewSize: 10
-      }) as any;
-  
-      if(!hasError(resp) && resp.data.docs?.length) {
-        products = resp.data.docs
-        products.map((product: any) => {
-          product.sku = product.internalName
-          product.quantity = 2
-          delete product["internalName"]
-          delete product["productId"]
-        })
-        
-      } else {
-        throw resp.data;
-      }
-    } catch (error) {
-      logger.error(error);
-    }
-    commit(types.UTIL_SAMPLE_PRODUCTS_UPDATED, products)
-  },
-
   async fetchCarriersDetail ({ commit, state }) {
     if(Object.keys(state.carrierDesc)?.length) return;
     const carrierDesc = {} as any;
@@ -900,6 +867,10 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_FACILITY_ADDRESSES_UPDATED, facilityAddresses)
     return addresses
   },
+
+  async clearUtilState ({ commit }) {
+    commit(types.UTIL_CLEARED)
+  }
 }
 
 export default actions;

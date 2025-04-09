@@ -54,9 +54,6 @@ const mutations: MutationTree <UtilState> = {
   [types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED](state, payload) {
     state.barcodeIdentificationPref = payload
   },
-  [types.UTIL_SAMPLE_PRODUCTS_UPDATED](state, payload) {
-    state.sampleProducts = payload
-  },
   [types.UTIL_CARRIER_DESC_UPDATED](state, payload) {
     state.carrierDesc = payload
   },
@@ -65,6 +62,13 @@ const mutations: MutationTree <UtilState> = {
   },
   [types.UTIL_FACILITY_ADDRESSES_UPDATED](state, payload) {
     state.facilityAddresses = payload
+  },
+  [types.UTIL_CLEARED](state) {
+    state.productStoreShipmentMethCount = 0
+    state.isForceScanEnabled = false
+    state.barcodeIdentificationPref = "internalName"
+    state.carrierDesc = {}
+    state.facilityAddresses = {}
   },
 }
 export default mutations;
