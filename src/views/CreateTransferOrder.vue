@@ -23,25 +23,17 @@
             <ion-item>
               <ion-icon :icon="sendOutline" slot="start" />
               <ion-label>{{ translate("Origin") }}</ion-label>
-              <template v-if="currentOrder.originFacilityId" slot="end">
-                <ion-chip outline @click="openSelectFacilityModal('originFacilityId')">
-                  {{ getFacilityName(currentOrder.originFacilityId) ? getFacilityName(currentOrder.originFacilityId) : currentOrder.originFacilityId }}
-                </ion-chip>
-              </template>
-              <ion-button v-else slot="end" fill="outline" @click="openSelectFacilityModal('originFacilityId')">
-                <ion-icon slot="start" :icon="addCircleOutline" />
-                <ion-label>{{ translate("Assign") }}</ion-label>
-              </ion-button>
+              <ion-label slot="end">{{ getFacilityName(currentOrder.originFacilityId) ? getFacilityName(currentOrder.originFacilityId) : currentOrder.originFacilityId }}</ion-label>
             </ion-item>
             <ion-item lines="none">
               <ion-icon :icon="downloadOutline" slot="start" />
               <ion-label>{{ translate("Destination") }}</ion-label>
               <template v-if="currentOrder.destinationFacilityId" slot="end">
-                <ion-chip outline @click="openSelectFacilityModal('destinationFacilityId')">
+                <ion-chip outline @click="openSelectFacilityModal()">
                   {{ getFacilityName(currentOrder.destinationFacilityId) ? getFacilityName(currentOrder.destinationFacilityId) : currentOrder.destinationFacilityId }}
                 </ion-chip>
               </template>
-              <ion-button v-else slot="end" fill="outline" @click="openSelectFacilityModal('destinationFacilityId')">
+              <ion-button v-else slot="end" fill="outline" @click="openSelectFacilityModal()">
                 <ion-icon slot="start" :icon="addCircleOutline" />
                 <ion-label>{{ translate("Assign") }}</ion-label>
               </ion-button>
@@ -271,6 +263,7 @@ watch(queryString, (value) => {
 onIonViewDidEnter(async () => {
   emitter.emit("presentLoader")
   currentOrder.value.productStoreId = useUserStore().getCurrentEComStore?.productStoreId
+  currentOrder.value.originFacilityId = useUserStore().getCurrentFacility?.facilityId
   await Promise.allSettled([fetchFacilitiesByCurrentStore(), store.dispatch("util/fetchStoreCarrierAndMethods", currentOrder.value.productStoreId), store.dispatch("util/fetchCarriersDetail"), store.dispatch("product/fetchSampleProducts")])
   if(Object.keys(shipmentMethodsByCarrier.value)?.length) {
     currentOrder.value.carrierPartyId = Object.keys(shipmentMethodsByCarrier.value)[0]
@@ -550,7 +543,7 @@ async function createOrder() {
   try {
     const resp = await OrderService.createOrder({ order })
     if(!hasError(resp)) {
-      router.replace((currentOrder.value.originFacilityId === useUserStore().getCurrentFacility?.facilityId) ? `/transfer-order-details/${resp.data.orderId}` : "/transfer-orders")
+      router.replace(`/transfer-order-details/${resp.data.orderId}`)
       showToast(translate("Transfer order created successfully."))
     } else {
       throw resp.data;
@@ -621,32 +614,19 @@ function downloadSampleCsv() {
   })
 }
 
-async function openSelectFacilityModal(facilityType: any) {
+async function openSelectFacilityModal() {
   const addressModal = await modalController.create({
     component: SelectFacilityModal,
-    componentProps: { selectedFacilityId: currentOrder.value[facilityType], facilities: facilities.value }
+    componentProps: { selectedFacilityId: currentOrder.value.destinationFacilityId, facilities: facilities.value }
   })
 
   addressModal.onDidDismiss().then(async(result: any) => {
     if(result.data?.selectedFacilityId) {
-      currentOrder.value[facilityType] = result.data.selectedFacilityId
-      if(facilityType === "originFacilityId") {
-        refetchAllItemsStock()
-      }
+      currentOrder.value.destinationFacilityId = result.data.selectedFacilityId
     }
   })
 
   addressModal.present()
-}
-
-async function refetchAllItemsStock() {
-  const responses = await Promise.allSettled(currentOrder.value.items.map((item: any) => fetchStock(item.productId)))
-  currentOrder.value.items.map((item: any, index: any) => {
-    if(responses[index].status === "fulfilled") {
-      item["qoh"] = responses[index]?.value.quantityOnHandTotal 
-      item["atp"] = responses[index]?.value.availableToPromiseTotal 
-    }
-  })
 }
 
 function isProductAvailableInOrder() {
