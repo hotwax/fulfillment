@@ -383,10 +383,6 @@ export default defineComponent({
       rejectEntireOrderReasonId: "REJ_AVOID_ORD_SPLIT",
     }
   },
-  async ionViewWillEnter() {
-    this.isScrollingEnabled = false;
-    await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths')]);
-  },
   methods: {
     getRejectionReasonDescription (rejectionReasonId: string) {
       const reason = this.rejectReasonOptions?.find((reason: any) => reason.enumId === rejectionReasonId)
@@ -1317,12 +1313,18 @@ export default defineComponent({
       modal.present();
     }
   },
-  async mounted () {
-    this.store.dispatch('util/fetchRejectReasonOptions')
-    await Promise.all([this.fetchPickersInformation(), this.initialiseOrderQuery()])
+  async ionViewWillEnter() {
+    this.isScrollingEnabled = false;
+    await Promise.all([
+      this.store.dispatch('util/fetchRejectReasonOptions'),
+      this.store.dispatch('carrier/fetchFacilityCarriers'),
+      this.store.dispatch('carrier/fetchProductStoreShipmentMeths'),
+      this.fetchPickersInformation(),
+      this.initialiseOrderQuery()
+    ]);
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
-  unmounted() {
+  ionViewWillLeave() {
     this.store.dispatch('order/clearInProgressOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
