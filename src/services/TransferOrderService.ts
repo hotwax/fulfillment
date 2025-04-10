@@ -1,56 +1,64 @@
-import { api, hasError } from '@/adapter';
+import { api, hasError, client } from '@/adapter';
 import { translate } from '@hotwax/dxp-components'
 import logger from '@/logger';
 import { showToast } from '@/utils';
-import { cogOutline } from 'ionicons/icons';
+import { closeSharp, cogOutline } from 'ionicons/icons';
+import store from '@/store'
 
 
 const findTransferOrders = async (query: any): Promise<any> => {
   return api({
     // TODO: We can replace this with any API
+    //TODO: update certain filter according to status.(moqui migration)
     url: "solr-query",
     method: "post",
     data: query
   });
 }
 const fetchOrderHeader = async (params: any): Promise<any> => {
-  return await api({
-    url: "performFind",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+  return client({
+    url: `/oms/orders/${params}`,
     method: "get",
-    params
-  })
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    }
+  });
 }
 
 const fetchOrderItems = async (orderId: string): Promise<any> => {
-  let viewIndex = 0;
+  let pageIndex = 0;
   let orderItems = [] as any, resp;
-
   try {
-    do {
-      resp = await api({
-        url: "performFind",
+    const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+    const baseURL = store.getters['user/getMaargBaseUrl'];
+    
+    do{
+      resp = await client({
+        url: `/oms/orders/${orderId}/items`,
         method: "get",
-        params : {
-          "entityName": "OrderItemAndProduct",
-          "inputFields": {
-            "orderId": orderId,
-          },
-          "fieldList": ["orderId", "orderItemSeqId", "statusId", "shipGroupSeqId", "productId", "productName", "internalName", "quantity"],
-          "viewIndex": viewIndex,
-          "viewSize": 250,  // maximum records we could have
-          "distinct": "Y",
-          "noConditionFind": "Y"
+        baseURL,
+        headers: {
+          "api_key": omsRedirectionInfo.token,
+          "Content-Type": "application/json"
+        },
+        params: {
+          pageIndex: pageIndex,
+          pageSize:250
         }
-      }) as any;
+      })  as any
 
-      if (!hasError(resp) && resp.data.count) {
-        orderItems = orderItems.concat(resp.data.docs)
-        viewIndex++;
+      if (!hasError(resp) && resp.data.length) {
+        orderItems = orderItems.concat(resp.data)
+        pageIndex++;
       } else {
         throw resp.data;
       }
     }
-    while (resp.data.docs.length >= 250);
+    while(resp.data.length >=250)
   } catch (error) {
     logger.error(error);
   }
@@ -93,48 +101,52 @@ const fetchShippedQuantity = async (orderId: string): Promise<any> => {
 }
 
 const createOutboundTransferShipment = async (query: any): Promise<any> => {
-  return api({
-    url: "createSalesShipment",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+  return client({
+    url: "/poorti/transferShipments",
     method: "post",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     data: query
   });
 }
 
 const fetchShipmentItems = async (orderId: string, shipmentId: string): Promise<any> => {
-  let viewIndex = 0;
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+  let pageIndex = 0;
   let shipmentItems = [] as any, resp;
-
+  
   try {
-    const inputFields = {} as any;
-    if (orderId) {
-      inputFields['orderId'] = orderId;
-    }
-    if (shipmentId) {
-      inputFields['shipmentId'] = shipmentId;
-    }
-
     do {
-      resp = await api({
-        url: "performFind",
+      resp = await client({
+        url: `/poorti/shipments/`,
         method: "get",
+        baseURL,
+        headers: {
+          "api_key": omsRedirectionInfo.token,
+          "Content-Type": "application/json"
+        },
         params: {
-          "entityName": "ShipmentItemDetail",
-          inputFields,
-          "fieldList": ["shipmentId", "shipmentStatusId", "shipmentItemSeqId", "orderId", "orderItemSeqId", "productId", "productName", "internalName", "quantity", "orderedQuantity"],
-          "viewIndex": viewIndex,
-          "viewSize": 250,
-          "distinct": "Y"
+          pageIndex: pageIndex,
+          pageSize:250,
+          orderId,
+          shipmentId
         }
-      }) as any;
+      })  as any
 
-      if (!hasError(resp) && resp.data.count) {
-        shipmentItems = shipmentItems.concat(resp.data.docs)
-        viewIndex++;
+      if (!hasError(resp) && resp.data.shipmentCount) {
+        shipmentItems = shipmentItems.concat(resp.data.shipments)
+        pageIndex++;
       } else {
         throw resp.data;
       }
     }
-    while (resp.data.docs.length >= 250);
+    while (resp.data.shipmentCount >= 250);
   } catch (error) {
     logger.error(error);
   }
@@ -352,13 +364,54 @@ const printTransferOrder = async (orderId: string): Promise<any> => {
     showToast(translate('Failed to print picklist'))
     logger.error("Failed to load picklist", err)
   }
+  //TODO: update when the endpoint is live.
+  
+  //const baseURL = store.getters['user/getMaargBaseUrl'];
+  // try {
+  //   // Get packing slip from the server
+  //   const resp = client({
+  //   url: `/poorti/transferOrders/${orderId}/printPicklist`,
+  //   method: "get",
+  //   baseURL,
+  //   headers: {
+  //     "api_key": omsRedirectionInfo.token,
+  //     "Content-Type": "application/json"
+  //   }
+  //   });
+    
+  //   if (!resp || resp.status !== 200 || hasError(resp)) {
+  //     throw resp.data
+  //   }
+
+  //   // Generate local file URL for the blob received
+  //   const pdfUrl = window.URL.createObjectURL(resp);
+  //   // Open the file in new tab
+  //   try {
+  //     (window as any).open(pdfUrl, "_blank").focus();
+  //   }
+  //   catch {
+  //     showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'picklist'}), { icon: cogOutline });
+  //   }
+
+  // } catch (err) {
+  //   showToast(translate('Failed to print picklist'))
+  //   logger.error("Failed to load picklist", err)
+  // }
 }
 const updateShipment = async (payload: any): Promise<any> => {
-  return api({
-    url: "updateShipment",
-    method: "POST",
-    data: payload
-  })
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const resp =  client({
+    url: `/poorti/shipments/${payload.shipmentId}`,
+    method: "put",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload.statusId
+  });
+  return resp;
 }
 
 const retryShippingLabel = async (shipmentIds: Array<string>, forceRateShop = false): Promise<any> => {

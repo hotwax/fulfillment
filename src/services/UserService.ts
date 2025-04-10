@@ -13,12 +13,12 @@ const login = async (username: string, password: string): Promise <any> => {
   });
 }
 const moquiLogin = async (omsRedirectionUrl: string, token: string): Promise <any> => {
-  const baseURL = omsRedirectionUrl.startsWith('http') ? omsRedirectionUrl.includes('/rest/s1/admin') ? omsRedirectionUrl : `${omsRedirectionUrl}/rest/s1/admin/` : `https://${omsRedirectionUrl}.hotwax.io/rest/s1/admin/`;
+  const baseURL = omsRedirectionUrl.startsWith('http') ? omsRedirectionUrl.includes('/rest/s1/') ? omsRedirectionUrl : `${omsRedirectionUrl}/rest/s1/` : `https://${omsRedirectionUrl}.hotwax.io/rest/s1/`;
   let api_key = ""
 
   try {
     const resp = await client({
-      url: "login",
+      url: "admin/login",
       method: "post",
       baseURL,
       params: {
@@ -38,6 +38,7 @@ const moquiLogin = async (omsRedirectionUrl: string, token: string): Promise <an
     logger.error(err)
     return Promise.resolve("");
   }
+  
   return Promise.resolve(api_key)
 }
 
