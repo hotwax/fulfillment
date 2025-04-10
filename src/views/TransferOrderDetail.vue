@@ -266,7 +266,7 @@ export default defineComponent({
       }
     },
     getPickedToOrderedFraction(item: any) {
-      return item.pickedQuantity / item.orderedQuantity;
+      return item.quantity / item.orderedQuantity;
     },
     async createShipment() {
       this.isCreatingShipment = true;
@@ -298,9 +298,9 @@ export default defineComponent({
       return alert.present();
     },
     isEligibleForCreatingShipment() {
-      let isEligible = this.currentOrder && this.currentOrder.items?.some((item: any) => item.pickedQuantity > 0);
+      let isEligible = this.currentOrder && this.currentOrder.items?.some((item: any) => item.quantity > 0);
       if (isEligible) {
-        isEligible = !this.currentOrder.items?.some((item: any) =>  item.pickedQuantity > 0 && (this.getShippedQuantity(item) + item.pickedQuantity) > item.orderedQuantity);
+        isEligible = !this.currentOrder.items?.some((item: any) =>  item.quantity > 0 && (this.getShippedQuantity(item) + item.quantity) > item.orderedQuantity);
       }
       return isEligible;
     },
@@ -319,7 +319,7 @@ export default defineComponent({
       else if (result.isProductFound) {
         const item = result.orderItem
         const shippedQuantity = this.getShippedQuantity(item)
-        if(item.pickedQuantity > item.orderedQuantity - shippedQuantity) {
+        if(item.quantity > item.orderedQuantity - shippedQuantity) {
           showToast(translate('The picked quantity cannot exceed the ordered quantity.') + " " + translate("already shipped.", {shippedQuantity: shippedQuantity}))
         } else {
           showToast(translate("Scanned successfully.", { itemName: payload }))
