@@ -115,9 +115,9 @@
                   <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
                   <div>
                     <template v-if="item.rejectReason">
-                      <ion-chip :disabled="order.hasMissingInfo" outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
+                      <ion-chip :disabled="order.hasMissingInfo" outline color="danger">
                         <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
-                        <ion-icon :icon="closeCircleOutline" />
+                        <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)"/>
                       </ion-chip>
                     </template>
                     <template v-else-if="useNewRejectionApi() && isEntierOrderRejectionEnabled(order)">
@@ -215,7 +215,7 @@
       </div>
     </ion-content>
     <!-- only show footer buttons if 'All orders' is not selected -->
-    <ion-footer v-if="selectedPicklistId">
+    <ion-footer v-if="selectedPicklistId && inProgressOrders.total">
       <ion-toolbar>
         <ion-buttons slot="start">
           <ion-button fill="clear" color="primary" @click="openQRCodeModal(selectedPicklistId)">
@@ -601,7 +601,7 @@ export default defineComponent({
                   .filter((url: string | null) => url !== null)
                 )]
               )
-              .flat() as Array<string>;
+              .flat().filter((url: any) => url) as Array<string>
 
               const shippingLabelPdfUrls = orderList
               .map((order: any) =>
@@ -610,7 +610,7 @@ export default defineComponent({
                   .filter((url: string | null) => url !== null)
                 )]
               )
-              .flat() as Array<string>;
+              .flat().filter((url: any) => url) as Array<string>;
 
               try {
                 const resp = await OrderService.packOrders({

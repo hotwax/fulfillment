@@ -270,7 +270,8 @@
         return createShipmentMethodModal.present();
       },
       async updateCarrierFacility(event: any, facility: any) {
-        event.stopPropagation();
+        event.preventDefault();
+        event.stopImmediatePropagation();
 
         try {
           const payload = {
@@ -378,7 +379,8 @@
       },
       
       async updateProductStoreShipmentMethodAssociation(event: any, shipmentMethod: any, productStore: any) {
-        event.stopPropagation();
+        event.preventDefault();
+        event.stopImmediatePropagation();
 
         let resp = {} as any;
         const payload = {

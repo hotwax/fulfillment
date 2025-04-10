@@ -24,7 +24,10 @@ const utilModule: Module<UtilState, RootState> = {
     isForceScanEnabled: false,
     fulfillmentRejectReasons: {},
     rejectReasonOptions: [],
-    barcodeIdentificationPref: "internalName"
+    barcodeIdentificationPref: "internalName",
+    carrierDesc: {},
+    shipmentMethodsByCarrier: {},
+    facilityAddresses: {}
   },
   getters,
   actions,

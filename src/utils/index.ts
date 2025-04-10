@@ -217,4 +217,31 @@ function getDateWithOrdinalSuffix(time: any) {
   return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 
-export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getFeature, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv }
+const hasWebcamAccess = async () => {
+  try {
+    await navigator.mediaDevices.getUserMedia({ video: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const parseCsv = async (file: File, options?: any) => {
+  return new Promise ((resolve, reject) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function (results: any) {
+        if (results.errors.length) {
+          reject(results.error)
+        } else {
+          resolve(results.data)
+        }
+      },
+      ...options
+    });
+  })
+}
+
+
+export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getFeature, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv }

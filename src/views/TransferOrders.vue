@@ -50,6 +50,13 @@
         </ion-button>
       </div>
     </ion-content>
+
+
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab-button @click="router.push('/create-transfer-order')">
+        <ion-icon :icon="addOutline" />
+      </ion-fab-button>
+    </ion-fab>
   </ion-page>
 </template>
 
@@ -60,6 +67,8 @@ import {
   IonButtons,
   IonIcon,
   IonContent, 
+  IonFab,
+  IonFabButton,
   IonHeader, 
   IonInfiniteScroll,
   IonInfiniteScrollContent,
@@ -73,7 +82,7 @@ import {
   IonToolbar, 
 } from '@ionic/vue';
 import { defineComponent, computed } from 'vue';
-import { caretDownOutline, checkmarkDoneOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
+import { addOutline, caretDownOutline, checkmarkDoneOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { translate, useUserStore } from '@hotwax/dxp-components';
@@ -92,6 +101,8 @@ export default defineComponent({
     IonButtons,
     IonIcon,  
     IonContent,
+    IonFab,
+    IonFabButton,
     IonHeader,
     IonInfiniteScroll,
     IonInfiniteScrollContent,
@@ -163,7 +174,7 @@ export default defineComponent({
     async showCompletedTransferOrders() {
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
       transferOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
-      transferOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      transferOrdersQuery.viewSize = 20
       transferOrdersQuery.selectedStatuses = ["ORDER_COMPLETED"]
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
       this.hasCompletedTransferOrders = this.transferOrders.list.some((order: any) => order.orderStatusId === "ORDER_COMPLETED");
@@ -172,7 +183,7 @@ export default defineComponent({
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
 
       transferOrdersQuery.viewIndex = 0
-      transferOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      transferOrdersQuery.viewSize = 20
       transferOrdersQuery.queryString = queryString.trim()
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
       this.searchedQuery = queryString;
@@ -235,7 +246,7 @@ export default defineComponent({
     async initialiseTransferOrderQuery() {
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
       transferOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
-      transferOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      transferOrdersQuery.viewSize = 20
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
     },
     async viewTransferOrderDetail(order: any) {
@@ -259,6 +270,7 @@ export default defineComponent({
 
     return{
       Actions,
+      addOutline,
       caretDownOutline,
       checkmarkDoneOutline,
       cubeOutline,
