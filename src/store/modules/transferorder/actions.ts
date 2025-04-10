@@ -130,13 +130,13 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   async createOutboundTransferShipment({ commit }, payload) {
     let shipmentId;
     try {
-      let eligibleItems = payload.items.filter((item: any) => item.quantity > 0)
+      let eligibleItems = payload.items.filter((item: any) => item.pickedQuantity > 0)
       let seqIdCounter = 1;
       eligibleItems = eligibleItems.map((item:any) => ({
         orderItemSeqId: item.orderItemSeqId, //This is needed to map shipment item with order item correctly if multiple order items for the same product are there in the TO.
         shipGroupSeqId: item.shipGroupSeqId,
         productId: item.productId,
-        quantity: parseInt(item.quantity), // Using parseInt to convert to an integer
+        quantity: parseInt(item.pickedQuantity), // Using parseInt to convert to an integer
         itemSeqId: String(seqIdCounter++).padStart(5, '0') // This is needed to correctly create the shipment package content if multiple order items for the same product are there in the TO.
       }));  
 
@@ -161,7 +161,6 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     let resp;
     try {
       const shipmentItems = await TransferOrderService.fetchShipmentItems('', payload.shipmentId);
-        console.log(shipmentItems)
       if (shipmentItems?.length > 0) {
         const [shipmentPackagesWithMissingLabel, shipmentPackages, shipmentCarriers] = await Promise.all([TransferOrderService.fetchShipmentPackages([payload.shipmentId]), TransferOrderService.findShipmentPackages([payload.shipmentId]), TransferOrderService.fetchShipmentCarrierDetail([payload.shipmentId])]);
 
@@ -177,9 +176,9 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           isTrackingRequired: shipmentPackagesWithMissingLabel?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y'),
           items: shipmentItems.map((item: any) => ({
             ...item,
-            pickedQuantity: item.quantity
+            pickedQuantity: item.pickedQuantity
           })),
-          totalQuantityPicked: shipmentItems.reduce((accumulator:any, currentItem:any) => accumulator + currentItem.quantity, 0)
+          totalQuantityPicked: shipmentItems.reduce((accumulator:any, currentItem:any) => accumulator + currentItem.pickedQuantity, 0)
         }
 
         commit(types.ORDER_CURRENT_SHIPMENT_UPDATED, shipment)
