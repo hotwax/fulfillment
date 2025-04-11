@@ -157,6 +157,7 @@
   "Failed to add box": "ボックスの追加に失敗しました",
   "Failed to add items to the order due to incorrect SKU mapping or invalid SKUs.": "Failed to add items to the order due to incorrect SKU mapping or invalid SKUs.",
   "Failed to add tracking code.": "Failed to add tracking code.",
+  "Failed to approve transfer order.": "Failed to approve transfer order.",
   "Failed to create order.": "Failed to create order.",
   "Failed to create picklist for orders": "注文のピックリスト作成に失敗しました",
   "Failed to create rejection reason.": "拒否理由の作成に失敗しました。",

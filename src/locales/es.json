@@ -155,6 +155,7 @@
   "Failed to add box": "Error al agregar la caja",
   "Failed to add items to the order due to incorrect SKU mapping or invalid SKUs.": "Failed to add items to the order due to incorrect SKU mapping or invalid SKUs.",
   "Failed to add tracking code.": "Error al agregar el codigo de seguimiento.",
+  "Failed to approve transfer order.": "Failed to approve transfer order.",
   "Failed to create order.": "Failed to create order.",
   "Failed to create picklist for orders": "Error al crear la lista de selección para los pedidos",
   "Failed to create rejection reason.": "Erro al crear la razon de Rechazo.",
