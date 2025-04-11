@@ -913,9 +913,28 @@ const createOrder = async (payload: any): Promise<any> => {
   });
 }
 
+const approveOrder = async (payload: any): Promise<any> => {
+  try {
+    const resp = await api({
+      url: "service/approveSalesOrder",
+      method: "POST",
+      data: payload
+    })
+    if(!hasError(resp)) {
+      return true;
+    } else {
+      throw resp?.data;
+    }
+  } catch(error) {
+    logger.error(error)
+    return false;
+  }
+}
+
 export const OrderService = {
   addShipmentBox,
   addTrackingCode,
+  approveOrder,
   bulkShipOrders,
   createOrder,
   createOutboundTransferShipment,
