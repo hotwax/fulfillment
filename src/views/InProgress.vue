@@ -22,29 +22,29 @@
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
       <ion-searchbar class="searchbar" :placeholder="translate('Search orders')" v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
-      <div v-if="inProgressOrders.total">
-        <ion-radio-group v-model="selectedPicklistId" @ionChange="updateSelectedPicklist($event.detail.value)">
-          <ion-row class="filters">
-            <ion-item lines="none">
-              <!-- empty value '' for 'All orders' radio -->
-              <ion-radio label-placement="end" value="">
-                <ion-label class="ion-text-wrap">
-                  {{ translate('All') }}
-                  <p>{{ translate('picklists', { count: picklists.length }) }}</p>
-                </ion-label>
-              </ion-radio>
-            </ion-item>
-            <ion-item lines="none" v-for="picklist in picklists" :key="picklist.id">
-              <ion-radio label-placement="end" :value="picklist.id">
-                <ion-label class="ion-text-wrap">
-                  {{ picklist.pickersName }}
-                  <p>{{ picklist.date }}</p>
-                </ion-label>
-              </ion-radio>
-            </ion-item>
-          </ion-row>
-        </ion-radio-group>
+      <ion-radio-group v-model="selectedPicklistId" @ionChange="updateSelectedPicklist($event.detail.value)">
+        <ion-row class="filters">
+          <ion-item lines="none">
+            <!-- empty value '' for 'All orders' radio -->
+            <ion-radio label-placement="end" value="">
+              <ion-label class="ion-text-wrap">
+                {{ translate('All') }}
+                <p>{{ translate('picklists', { count: picklists.length }) }}</p>
+              </ion-label>
+            </ion-radio>
+          </ion-item>
+          <ion-item lines="none" v-for="picklist in picklists" :key="picklist.id">
+            <ion-radio label-placement="end" :value="picklist.id">
+              <ion-label class="ion-text-wrap">
+                {{ picklist.pickersName }}
+                <p>{{ picklist.date }}</p>
+              </ion-label>
+            </ion-radio>
+          </ion-item>
+        </ion-row>
+      </ion-radio-group>
 
+      <div v-if="inProgressOrders.total">
         <div class="results">
           <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" v-if="!isForceScanEnabled" @click="packOrders()">{{ translate("Pack orders") }}</ion-button>
           <ion-card class="order" v-for="(order, index) in getInProgressOrders()" :key="index" :class="isForceScanEnabled ? 'ion-margin-top' : ''">
