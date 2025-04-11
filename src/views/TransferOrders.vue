@@ -92,6 +92,7 @@ import { UtilService } from '@/services/UtilService';
 import { hasError } from '@/adapter';
 import logger from '@/logger';
 import TransferOrderFilters from '@/components/TransferOrderFilters.vue'
+import emitter from '@/event-bus';
 
 export default defineComponent({
   name: 'TransferOrders',
@@ -133,11 +134,13 @@ export default defineComponent({
     }
   },
   async ionViewWillEnter() {
+    emitter.emit('presentLoader');
     this.isScrollingEnabled = false;
     await this.fetchFilters(); 
     if(this.transferOrderCount) { 
       await this.initialiseTransferOrderQuery();
     }
+    emitter.emit('dismissLoader');
   },
   methods: {
     getErrorMessage() {
