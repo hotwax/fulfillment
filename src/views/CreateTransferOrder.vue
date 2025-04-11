@@ -545,7 +545,7 @@ async function createOrder() {
     if(!hasError(resp) && resp.data?.orderId) {
       const orderId = resp.data.orderId
       const isApproved = await OrderService.approveOrder({ orderId })
-      if(isApproved) {
+      if(!isApproved) {
         router.replace("/transfer-orders");
         const toast = await showToast(translate("Order is created successfully, but approval failed. Please contact administrator.", { orderId }), { canDismiss: true, manualDismiss: true })
         toast?.present();

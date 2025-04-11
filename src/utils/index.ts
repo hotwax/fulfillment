@@ -16,9 +16,6 @@ const hasError = (response: any) => {
 }
 
 const showToast = async (message: string, options?: any) => {  
-  console.log(message);
-  console.log(options);
-  
   const config = {
     message,
     ...options
