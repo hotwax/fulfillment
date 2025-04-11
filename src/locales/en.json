@@ -324,7 +324,7 @@
   "orders allocated today": "{orderCount} orders allocated today",
   "orders in fulfillment queue": "{orderCount} orders in fulfillment queue",
   "Order detail": "Order detail",
-  "Order was created successfully, but approval failed. Please contact administrator.": "Order {orderId} was created successfully, but approval failed. Please contact administrator.",
+  "Order is created successfully, but approval failed. Please contact administrator.": "Order {orderId} is created successfully, but approval failed. Please contact administrator.",
   "Order fulfillment capacity": "Order fulfillment capacity",
   "Order fulfillment capacity updated successfully": "Order fulfillment capacity updated successfully",
   "Options": "Options",

@@ -345,7 +345,7 @@
   "Order total": "Order total",
   "Order unpacked successfully": "Pedido desempacado exitosamente",
   "Order updated successfully": "Pedido actualizado exitosamente",
-  "Order was created successfully, but approval failed. Please contact administrator.": "Order {orderId} was created successfully, but approval failed. Please contact administrator.",
+  "Order is created successfully, but approval failed. Please contact administrator.": "Order {orderId} is created successfully, but approval failed. Please contact administrator.",
   "Orders": "Pedidos",
   "ordered": "ordenado",
   "ordered quantity": "ordered quantity",
