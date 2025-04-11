@@ -346,6 +346,7 @@
   "Order total": "Order total",
   "Order unpacked successfully": "注文の梱包解除が正常に行われました",
   "Order updated successfully": "注文が正常に更新されました",
+  "Order is created successfully, but approval failed. Please contact administrator.": "Order {orderId} is created successfully, but approval failed. Please contact administrator.",
   "Orders": "注文",
   "ordered": "注文済み",
   "ordered quantity": "ordered quantity",
