@@ -750,10 +750,6 @@ which results in distorted label text and thus reduced ion-item width */
   grid-area: search;
 }
 
-p:has(a) {
-  cursor: pointer;
-}
-
 @media (min-width: 991px) {
   .item-search {
     display: grid;

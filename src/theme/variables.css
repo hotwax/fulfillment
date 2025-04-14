@@ -424,6 +424,10 @@ div:has(> .kit-badge) {
   font-family: inherit;
 }
 
+p:has(a) {
+  cursor: pointer;
+}
+
 @media (min-width: 991px) {
   /* shipment card desktop layout start */
   ion-searchbar.searchbar {
