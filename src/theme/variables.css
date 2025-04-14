@@ -424,34 +424,6 @@ div:has(> .kit-badge) {
   font-family: inherit;
 }
 
-.find {
-  display: grid;
-  grid-template-areas: "search"
-                       "to-filters"
-                       "main";
-  align-items: start;
-}
-
-.find > .to-filters{
-  display: none;
-}
-
-.find > main {
-  grid-area: main;
-}
-
-.createfilters {
-  grid-area: to-filters;
-}
-
-.search {
-  grid-area: search;
-}
-
-p:has(a) {
-  cursor: pointer;
-}
-
 @media (min-width: 991px) {
   /* shipment card desktop layout start */
   ion-searchbar.searchbar {
@@ -502,22 +474,6 @@ p:has(a) {
 
   .mobile-only {
     display: none;
-  }  
-
-  .find {
-    grid: "search  main" min-content
-          "to-filters main" 1fr
-          / 375px;
-    column-gap: var(--spacer-xl);
-    margin: var(--spacer-lg);
-  }
-
-  .to-filters {
-    margin-top: var(--spacer-lg);
-  }
-
-  .find > .to-filters{
-    display: unset;
   }
 } 
 
