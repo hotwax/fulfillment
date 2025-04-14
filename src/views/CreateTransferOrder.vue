@@ -720,10 +720,6 @@ which results in distorted label text and thus reduced ion-item width */
   grid-column: span 2;
 }
 
-.find > .to-filters{
-  display: unset;
-}
-
 .date-time-modal {
   --width: 320px;
   --height: 400px;
@@ -734,6 +730,26 @@ which results in distorted label text and thus reduced ion-item width */
   cursor: pointer;
 }
 
+.find {
+  display: grid;
+  grid-template-areas: "search"
+                       "to-filters"
+                       "main";
+  align-items: start;
+}
+
+.find > main {
+  grid-area: main;
+}
+
+.to-filters {
+  grid-area: to-filters;
+}
+
+.search {
+  grid-area: search;
+}
+
 @media (min-width: 991px) {
   .item-search {
     display: grid;
@@ -742,7 +758,20 @@ which results in distorted label text and thus reduced ion-item width */
   }
 
   .find {
+    grid: "search  main" min-content
+    "to-filters main" 1fr
+    / 375px;
+    column-gap: var(--spacer-xl);
+    margin: var(--spacer-lg);
     margin-right: 0;
+  }
+
+  .to-filters {
+    margin-top: var(--spacer-lg);
+  }
+
+  .find > .to-filters{
+    display: unset;
   }
 }
 </style>
