@@ -241,6 +241,10 @@ export default defineComponent({
     }
   },
   async ionViewWillEnter() {
+    emitter.on('updateOrderQuery', this.updateOrderQuery)
+    await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
+    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "")
+    this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`})
     this.isScrollingEnabled = false;
   },
   methods: {
@@ -428,12 +432,6 @@ export default defineComponent({
     fetchProductStock(productId: string) {
       this.store.dispatch('stock/fetchStock', { productId })
     }
-  },
-  async mounted () {
-    emitter.on('updateOrderQuery', this.updateOrderQuery)
-    await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
-    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "")
-    this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`})
   },
   unmounted() {
     this.store.dispatch('order/clearOpenOrders');
