@@ -84,30 +84,31 @@
           <ion-icon slot="end" :icon="cloudDownloadOutline" />{{ translate("Download rejections") }}
         </ion-button>
       </div>
-      <ion-card class="order" v-for="order in rejectedOrders.list" :key="order.orderId">
-        <div class="order-header">
-          <div class="order-primary-info">
-            <ion-label>
-              <strong>{{ order.customerName }}</strong>
-              <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
-            </ion-label>
-          </div>
+      <div v-if="rejectedOrders.list.length">
+        <ion-card class="order" v-for="order in rejectedOrders.list" :key="order.orderId">
+          <div class="order-header">
+            <div class="order-primary-info">
+              <ion-label>
+                <strong>{{ order.customerName }}</strong>
+                <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+              </ion-label>
+            </div>
 
-          <div class="order-tags">
-            <ion-chip outline>
-              <ion-icon :icon="pricetagOutline" />
-              <ion-label>{{ order.orderId }}</ion-label>
-            </ion-chip>
-          </div>
+            <div class="order-tags">
+              <ion-chip outline>
+                <ion-icon :icon="pricetagOutline" />
+                <ion-label>{{ order.orderId }}</ion-label>
+              </ion-chip>
+            </div>
 
-          <div class="order-metadata">
-            <ion-label>
-              {{ order.shipmentMethod }}
-              <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
-            </ion-label>
+            <div class="order-metadata">
+              <ion-label>
+                {{ order.shipmentMethod }}
+                <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+              </ion-label>
+            </div>
           </div>
-        </div>
-        <div v-for="item in order.items" :key="item.orderItemSeqId" class="list-item">
+          <div v-for="item in order.items" :key="item.orderItemSeqId" class="list-item">
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
@@ -135,8 +136,12 @@
               <ion-icon :icon="personCircleOutline" />
               <ion-label>{{ item.rejectedBy }}</ion-label>
             </ion-chip>
-        </div>
-      </ion-card>
+          </div>
+        </ion-card>
+      </div>
+      <div v-else class="empty-state">
+        <p>{{ translate("No orders found.") }}</p>
+      </div>
       <ion-infinite-scroll @ionInfinite="loadMoreRejectedOrders($event)" threshold="100px"  v-show="isRejectedOrdersScrollable()" ref="infiniteScrollRef">
         <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
       </ion-infinite-scroll>
