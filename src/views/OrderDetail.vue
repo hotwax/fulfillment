@@ -1075,19 +1075,21 @@ export default defineComponent({
 
       // TODO Handle error case
       const resp = await OrderService.retryShippingLabel(shipmentIds)
-      if (!hasError(resp)) {
-        //Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
-        await this.store.dispatch('order/updateShipmentPackageDetail', order) 
-        order = this.order;
-        
+      // Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
+      // Refetching the order tracking detail irrespective of api response since currently in some cases api returns error whether label is generated
+      // Temporarily handling this in app but should be handled in backend
+      await this.store.dispatch('order/updateShipmentPackageDetail', order) 
+      order = this.order;
+      
+      if(order.missingLabelImage) {
+        showToast(translate("Failed to generate shipping label"))
+        this.fetchShipmentLabelError()
+      } else {
         showToast(translate("Shipping Label generated successfully"))
         await this.printShippingLabel(order)
         // TODO fetch specific order
         this.initialiseOrderQuery();
         order.isGeneratingShippingLabel = false
-      } else {
-        showToast(translate("Failed to generate shipping label"))
-        this.fetchShipmentLabelError()
       }
     },
     async shippingPopover(ev: Event) {

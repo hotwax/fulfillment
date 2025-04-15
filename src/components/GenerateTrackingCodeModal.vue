@@ -169,12 +169,11 @@ export default defineComponent({
 
       if(this.trackingCode.trim()) {
         isRegenerated = await this.addTrackingCode(order);
+        //fetching updated shipment packages
+        await this.store.dispatch('order/updateShipmentPackageDetail', order)
       } else if(this.shipmentMethodTypeId) {
         isRegenerated = await this.regenerateShippingLabel(order)
       }
-
-      //fetching updated shipment packages
-      await this.store.dispatch('order/updateShipmentPackageDetail', order)
 
       if(isRegenerated || !this.isTrackingRequired) {
         this.closeModal({ moveToNext: true });
@@ -221,8 +220,11 @@ export default defineComponent({
 
       try {
         const resp = await OrderService.retryShippingLabel(shipmentIds)
-        if(hasError(resp)) {
+        const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
+        if(updatedOrder.missingLabelImage) {
           throw resp.data;
+        } else {
+          return true;
         }
       } catch(error: any) {
         this.fetchShipmentLabelError && this.fetchShipmentLabelError()
@@ -230,7 +232,6 @@ export default defineComponent({
         showToast(translate("Failed to generate shipping label"))
         return false;
       }
-      return true;
     },
     getCarrierTrackingUrl() {
       return this.facilityCarriers.find((carrier: any) => carrier.partyId === this.carrierPartyId)?.trackingUrl
