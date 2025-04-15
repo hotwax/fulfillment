@@ -272,11 +272,6 @@ export default defineComponent({
       isUnpackDisabled: 'user/isUnpackDisabled'
     })
   },
-  async mounted() {
-    await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
-    emitter.on('updateOrderQuery', this.updateOrderQuery)
-    this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
-  },
   unmounted() {
     this.store.dispatch('order/clearCompletedOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
@@ -289,6 +284,9 @@ export default defineComponent({
     }
   },
   async ionViewWillEnter() {
+    await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+    emitter.on('updateOrderQuery', this.updateOrderQuery)
+    this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
     this.isScrollingEnabled = false;
   },
   methods: {

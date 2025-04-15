@@ -385,6 +385,9 @@ export default defineComponent({
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
+    this.store.dispatch('util/fetchRejectReasonOptions')
+    await Promise.all([this.fetchPickersInformation(), this.initialiseOrderQuery()])
+    emitter.on('updateOrderQuery', this.updateOrderQuery)
     await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths')]);
   },
   methods: {
@@ -1316,11 +1319,6 @@ export default defineComponent({
 
       modal.present();
     }
-  },
-  async mounted () {
-    this.store.dispatch('util/fetchRejectReasonOptions')
-    await Promise.all([this.fetchPickersInformation(), this.initialiseOrderQuery()])
-    emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
   unmounted() {
     this.store.dispatch('order/clearInProgressOrders')
