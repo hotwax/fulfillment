@@ -220,6 +220,8 @@ export default defineComponent({
 
       try {
         const resp = await OrderService.retryShippingLabel(shipmentIds)
+        // Refetching the order tracking detail irrespective of api response since currently in some cases api returns error whether label is generated
+        // Temporarily handling this in app but should be handled in backend
         const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
         if(updatedOrder.missingLabelImage) {
           throw resp.data;
