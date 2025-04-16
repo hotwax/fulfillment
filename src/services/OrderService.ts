@@ -702,15 +702,22 @@ const printTransferOrder = async (orderId: string): Promise<any> => {
 }
 
 const retryShippingLabel = async (shipmentIds: Array<string>, forceRateShop = false): Promise<any> => {
-  return api({
-    method: 'POST',
-    url: 'retryShippingLabel',  // TODO: update the api
-    data: {
-      shipmentIds,
-      forceRateShop: forceRateShop ? 'Y' : 'N',
-      generateLabel: "Y" // This is needed to generate label after the new changes in backend related to auto generation of label.
+  try {
+    const resp = await api({
+      method: 'POST',
+      url: 'retryShippingLabel',  // TODO: update the api
+      data: {
+        shipmentIds,
+        forceRateShop: forceRateShop ? 'Y' : 'N',
+        generateLabel: "Y" // This is needed to generate label after the new changes in backend related to auto generation of label.
+      }
+    })
+    if(hasError(resp)) {
+      throw resp?.data;
     }
-  })
+  } catch(error) {
+    logger.error(error)
+  }
 }
 
 const fetchShipmentLabelError = async (shipmentIds: Array<string>): Promise<any> => {

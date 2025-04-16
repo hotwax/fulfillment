@@ -699,6 +699,7 @@ const actions: ActionTree<OrderState, RootState> = {
     } catch(err) {
       logger.error('Failed to fetch shipment packages.', err)
     }
+    return currentOrder
   },
 
   async clearOrders ({ commit }) {

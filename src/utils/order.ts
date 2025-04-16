@@ -1,4 +1,7 @@
 import store from '@/store';
+import { translate } from '@hotwax/dxp-components';
+import { showToast } from '@/utils';
+import { OrderService } from '@/services/OrderService';
 
 const orderCategoryParameters = {
   'Open': {
@@ -110,8 +113,41 @@ const removeKitComponents = (order: any) => {
   return itemsWithoutKitComponents;
 }
 
+const retryShippingLabel = async (order: any) => {
+  let isGenerated = false;
+
+  // Getting all the shipmentIds from shipmentPackages for which label is missing
+  const shipmentIds = order.shipmentPackages
+    ?.filter((shipmentPackage: any) => !shipmentPackage.trackingCode)
+    .reduce((uniqueIds: any[], shipmentPackage: any) => {
+      if(!uniqueIds.includes(shipmentPackage.shipmentId)) uniqueIds.push(shipmentPackage.shipmentId);
+      return uniqueIds;
+    }, []);
+
+  if(!shipmentIds?.length) {
+    showToast(translate("Failed to generate shipping label"))
+    return;
+  }
+
+  await OrderService.retryShippingLabel(shipmentIds)
+  // Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
+  // Temporarily handling this in app but should be handled in backend
+  // Refetching the order tracking detail irrespective of api response since currently in SHIPHAWK api returns error whether label is generated
+  order = await store.dispatch('order/updateShipmentPackageDetail', order) 
+  
+  if(order.missingLabelImage) {
+    showToast(translate("Failed to generate shipping label"))
+  } else {
+    showToast(translate("Shipping Label generated successfully"))
+    isGenerated = true;
+  }
+
+  return { isGenerated, order }
+}
+
 export {
   getOrderCategory,
   isKit,
-  removeKitComponents
+  removeKitComponents,
+  retryShippingLabel
 }

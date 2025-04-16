@@ -89,6 +89,7 @@ import { OrderService } from '@/services/OrderService';
 import logger from "@/logger";
 import { showToast } from "@/utils";
 import { hasError } from "@/adapter";
+import { retryShippingLabel } from "@/utils/order";
 
 export default defineComponent({
   name: "GenerateTrackingCodeModal",
@@ -169,12 +170,11 @@ export default defineComponent({
 
       if(this.trackingCode.trim()) {
         isRegenerated = await this.addTrackingCode(order);
+        //fetching updated shipment packages
+        await this.store.dispatch('order/updateShipmentPackageDetail', order)
       } else if(this.shipmentMethodTypeId) {
         isRegenerated = await this.regenerateShippingLabel(order)
       }
-
-      //fetching updated shipment packages
-      await this.store.dispatch('order/updateShipmentPackageDetail', order)
 
       if(isRegenerated || !this.isTrackingRequired) {
         this.closeModal({ moveToNext: true });
@@ -206,31 +206,13 @@ export default defineComponent({
         return false;
       }
 
-      // Getting all the shipmentIds from shipmentPackages for which label is missing
-      const shipmentIds = order.shipmentPackages
-        ?.filter((shipmentPackage: any) => !shipmentPackage.trackingCode)
-        .reduce((uniqueIds: any[], shipmentPackage: any) => {
-          if(!uniqueIds.includes(shipmentPackage.shipmentId)) uniqueIds.push(shipmentPackage.shipmentId);
-          return uniqueIds;
-        }, []);
-
-      if(!shipmentIds?.length) {
-        showToast(translate("Failed to generate shipping label"))
-        return false;
-      }
-
-      try {
-        const resp = await OrderService.retryShippingLabel(shipmentIds)
-        if(hasError(resp)) {
-          throw resp.data;
-        }
-      } catch(error: any) {
+      const response = await this.retryShippingLabel(order);
+      if(response?.isGenerated) {
+        return true;
+      } else {
         this.fetchShipmentLabelError && this.fetchShipmentLabelError()
-        logger.error(error);
-        showToast(translate("Failed to generate shipping label"))
         return false;
       }
-      return true;
     },
     getCarrierTrackingUrl() {
       return this.facilityCarriers.find((carrier: any) => carrier.partyId === this.carrierPartyId)?.trackingUrl
@@ -307,6 +289,7 @@ export default defineComponent({
       copyOutline,
       informationCircleOutline,
       openOutline,
+      retryShippingLabel,
       saveOutline,
       store,
       translate

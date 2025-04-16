@@ -456,7 +456,7 @@ import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
 import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
-import { isKit } from '@/utils/order'
+import { isKit, retryShippingLabel } from '@/utils/order'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import ShippingLabelActionPopover from '@/components/ShippingLabelActionPopover.vue';
 import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
@@ -1046,49 +1046,23 @@ export default defineComponent({
       order.isGeneratingShippingLabel = true;
 
       if(order.missingLabelImage) {
-        await this.retryShippingLabel(order)
+        const response = await this.retryShippingLabel(order)
+        if(response?.isGenerated) {
+          await this.printShippingLabel(response.order)
+        } else {
+          this.fetchShipmentLabelError()
+        }
       } else {
         await this.printShippingLabel(order)
       }
 
-      order.isGeneratingShippingLabel = false;
+      this.order.isGeneratingShippingLabel = false;
     },
     async initialiseOrderQuery() {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
       completedOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
-    },
-    async retryShippingLabel(order: any) {
-      // Getting all the shipmentIds from shipmentPackages for which label is missing
-      const shipmentIds = order.shipmentPackages
-          ?.filter((shipmentPackage: any) => !shipmentPackage.trackingCode)
-          .reduce((uniqueIds: any[], shipmentPackage: any) => {
-            if(!uniqueIds.includes(shipmentPackage.shipmentId)) uniqueIds.push(shipmentPackage.shipmentId);
-            return uniqueIds;
-          }, []);
-
-      if(!shipmentIds?.length) {
-        showToast(translate("Failed to generate shipping label"))
-        return;
-      }
-
-      // TODO Handle error case
-      const resp = await OrderService.retryShippingLabel(shipmentIds)
-      if (!hasError(resp)) {
-        //Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
-        await this.store.dispatch('order/updateShipmentPackageDetail', order) 
-        order = this.order;
-        
-        showToast(translate("Shipping Label generated successfully"))
-        await this.printShippingLabel(order)
-        // TODO fetch specific order
-        this.initialiseOrderQuery();
-        order.isGeneratingShippingLabel = false
-      } else {
-        showToast(translate("Failed to generate shipping label"))
-        this.fetchShipmentLabelError()
-      }
     },
     async shippingPopover(ev: Event) {
       const popover = await popoverController.create({
@@ -1830,6 +1804,7 @@ export default defineComponent({
       personAddOutline,
       pricetagOutline,
       productIdentificationPref,
+      retryShippingLabel,
       router,
       store,
       trashBinOutline,
