@@ -14,11 +14,12 @@
       <ion-list-header>
         {{ translate("Manifests from the last seven days") }}
       </ion-list-header>
-      <ion-item>
+      <ion-item v-for="manifest in carrierConfiguration[selectedCarrierPartyId]?.manifests" :key="manifest.fromDate">
         <ion-label>
-          {{ "3:19pm 12th december 2024" }}
+          {{ translate("Manifest") }}
+          <p>{{ manifest.fromDate }}</p>
         </ion-label>
-        <ion-button>
+        <ion-button fill="outline" @click="downloadCarrierManifest(manifest)">
           <ion-icon :icon="printOutline" slot="start"/>
           {{ translate("Print") }}
         </ion-button>
@@ -26,8 +27,8 @@
     </ion-list>
 
     <!-- Empty state -->
-    <div class="empty-state" v-if="!items.length">
-      <p v-html="emptyStateMessage">{{ translate("No historical manifests found.") }}</p>
+    <div class="empty-state" v-if="!carrierConfiguration[selectedCarrierPartyId]?.manifests?.length">
+      <p>{{ translate("No historical manifests found.") }}</p>
     </div>
   </ion-content>
 </template>
@@ -43,16 +44,18 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
-  IonThumbnail,
   IonTitle,
   IonToolbar,
   modalController,
 } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import { computed, defineComponent, resolveComponent } from 'vue';
 import { closeOutline, printOutline } from 'ionicons/icons';
-import { translate } from '@hotwax/dxp-components';
-import { mapGetters, useStore } from "vuex";
+import { translate, useUserStore } from '@hotwax/dxp-components';
+import { useStore } from "vuex";
 import { DateTime } from 'luxon';
+import logger from '@/logger';
+import { UtilService } from '@/services/UtilService';
+import { hasError } from '@hotwax/oms-api';
 
 export default defineComponent({
   name: "HistoricalManifestModal",
@@ -66,50 +69,50 @@ export default defineComponent({
     IonLabel,
     IonList,
     IonListHeader,
-    IonNote,
-    IonThumbnail,
     IonTitle,
     IonToolbar,
   },
   data() {
     return {
-      items: [],
-      emptyStateMessage: translate("No shipments have been shipped yet")
+      items: []
     }
   },
-  props: ["productId"],
-  mounted() {
-    const shippedHistory = [];
-    this.currentOrder.shipments.forEach(shipment => {
-      if (shipment.statusId === 'SHIPMENT_SHIPPED') {
-        shipment.items.forEach(item => {
-          if (item.productId === this.productId) {
-            shippedHistory.push({...shipment, ...item});
-          }
-        });
-      }
-    });
-    this.items = shippedHistory;
-  },
-  computed: {
-    ...mapGetters({
-      currentOrder: 'transferorder/getCurrent',
-      getProduct: 'product/getProduct'
-    })
-  },
+  props: ["selectedCarrierPartyId", "carrierConfiguration"],
   methods: {
     closeModal() {
       modalController.dismiss({ dismissed: true });
     },
     getTime(time) {
       return DateTime.fromMillis(time).toFormat("H:mm a dd/MM/yyyy")
+    },
+    async downloadCarrierManifest(manifest) {
+      const payload = {
+        facilityId: this.currentFacility?.facilityId,
+        carrierPartyId: this.selectedCarrierPartyId,
+        manifestServiceName: this.carrierConfiguration[this.selectedCarrierPartyId]?.["MANIFEST_PRINT"],
+        manifestPdfLink: manifest.objectInfo
+      }
+
+      try {
+        const resp = await UtilService.downloadCarrierManifest(payload);
+
+        if(hasError(resp)) {
+          throw resp.data
+        }
+      } catch(err) {
+        logger.error("Failed to print manifest", err)
+      }
     }
   },
   setup() {
     const store = useStore();
+    const userStore = useUserStore()
+
+    let currentFacility = computed(() => userStore.getCurrentFacility)
 
     return {
       closeOutline,
+      currentFacility,
       printOutline,
       store,
       translate
