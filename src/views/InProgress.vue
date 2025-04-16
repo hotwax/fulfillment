@@ -612,7 +612,7 @@ export default defineComponent({
                 shipments.push({
                   shipmentId: order.shipmentId,
                   orderId: order.orderId,
-                  facilityId: order.orgiginFacilityId,
+                  facilityId: order.originFacilityId,
                   rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
                   shipmentPackageContents: updatedOrderDetail.shipmentPackageContents,
                 })
