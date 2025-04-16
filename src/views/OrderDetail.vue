@@ -151,7 +151,7 @@
                     </div>
                     <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
                   </ion-label>
-                  <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.rejectedComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
+                  <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.kitComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
                 </ion-item>
               </ion-card>
             </div>
@@ -941,28 +941,28 @@ export default defineComponent({
     },
     async removeRejectionReason(ev: Event, item: any, order: any) {
       delete item["rejectReason"];
-      delete item["rejectedComponents"];
+      delete item["kitComponents"];
 
       item.rejectReason = "";
         order.items.map((orderItem: any) => {
           if(orderItem.orderItemSeqId === item.orderItemSeqId) {
             delete orderItem["rejectReason"];
-            delete orderItem["rejectedComponents"];
+            delete orderItem["kitComponents"];
           }
         })
         order.hasRejectedItem = order.items.some((item:any) => item.rejectReason);
     },
     rejectKitComponent(order: any, item: any, componentProductId: string) {
-      let rejectedComponents = item.rejectedComponents ? item.rejectedComponents : []
-      if (rejectedComponents.includes(componentProductId)) {
-        rejectedComponents = rejectedComponents.filter((rejectedComponent: any) => rejectedComponent !== componentProductId)
+      let kitComponents = item.kitComponents ? item.kitComponents : []
+      if (kitComponents.includes(componentProductId)) {
+        kitComponents = kitComponents.filter((rejectedComponent: any) => rejectedComponent !== componentProductId)
       } else {
-        rejectedComponents.push(componentProductId);
+        kitComponents.push(componentProductId);
       }
-      item.rejectedComponents = rejectedComponents;
+      item.kitComponents = kitComponents;
       order.items.map((orderItem: any) => {
         if (orderItem.orderItemSeqId === item.orderItemSeqId) {
-          orderItem.rejectedComponents = rejectedComponents;
+          orderItem.kitComponents = kitComponents;
         }
       })
     },
@@ -1268,7 +1268,7 @@ export default defineComponent({
             "maySplit": this.isEntierOrderRejectionEnabled(order) ? "N" : "Y",
             "cascadeRejectByProduct": this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
             "rejectionReasonId": item.rejectReason,
-            "rejectedComponents": item.rejectedComponents,
+            "kitComponents": item.kitComponents,
           })
         } else if (item.selectedBox !== item.currentBox) {
           shipmentPackageContents.push({
