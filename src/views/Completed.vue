@@ -218,7 +218,7 @@ import logger from '@/logger';
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
-import { isKit } from '@/utils/order'
+import { isKit, retryShippingLabel } from '@/utils/order'
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
 
 export default defineComponent({
@@ -639,38 +639,6 @@ export default defineComponent({
       // TODO check if ternary check is needed or we could handle on UI
       return order.shipments ? Object.values(order.shipments).some((shipment: any) => shipment.statusId === 'SHIPMENT_PACKED') : {}
     },
-    async retryShippingLabel(order: any) {
-      // Getting all the shipmentIds from shipmentPackages for which label is missing
-      const shipmentIds = order.shipmentPackages
-          ?.filter((shipmentPackage: any) => !shipmentPackage.trackingCode)
-          .reduce((uniqueIds: any[], shipmentPackage: any) => {
-            if(!uniqueIds.includes(shipmentPackage.shipmentId)) uniqueIds.push(shipmentPackage.shipmentId);
-            return uniqueIds;
-          }, []);
-
-      // Don't make any api call when we does not have any shipmentIds for order
-      if(!shipmentIds?.length) {
-        showToast(translate("Failed to generate shipping label"))
-        return;
-      }
-
-      // TODO Handle error case
-      const resp = await OrderService.retryShippingLabel(shipmentIds)
-      // Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
-      // Refetching the order tracking detail irrespective of api response since currently in some cases api returns error whether label is generated
-      // Temporarily handling this in app but should be handled in backend
-      await this.store.dispatch('order/updateShipmentPackageDetail', order)
-      order = this.completedOrders.list.find((completedOrder:any) => completedOrder.orderId === order.orderId);
-
-      if(order.missingLabelImage) {
-        showToast(translate("Failed to generate shipping label"))
-      } else {
-        showToast(translate("Shipping Label generated successfully"))
-        await this.printShippingLabel(order)
-        // TODO fetch specific order
-        this.initialiseOrderQuery();
-      }
-    },
     async printPackingSlip(order: any) {
       // if the request to print packing slip is not yet completed, then clicking multiple times on the button
       // should not do anything
@@ -714,7 +682,10 @@ export default defineComponent({
       order.isGeneratingShippingLabel = true;
 
       if(order.missingLabelImage) {
-        await this.retryShippingLabel(order)
+        const response = await this.retryShippingLabel(order)
+        if(response?.isGenerated) {
+          await this.printShippingLabel(response.order)
+        }
       } else {
         await this.printShippingLabel(order)
       }
@@ -800,6 +771,7 @@ export default defineComponent({
       pricetagOutline,
       productIdentificationPref,
       printOutline,
+      retryShippingLabel,
       router,
       store,
       translate

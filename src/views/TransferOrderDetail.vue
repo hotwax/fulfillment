@@ -384,7 +384,7 @@
 
         if (!currentShipment.trackingIdNumber) {
           //regenerate shipping label if missing tracking code
-          const resp = await OrderService.retryShippingLabel([currentShipment.shipmentId])
+          await OrderService.retryShippingLabel([currentShipment.shipmentId])
           // retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
           // Refetching the order tracking detail irrespective of api response since currently in some cases api returns error whether label is generated
           // Temporarily handling this in app but should be handled in backend        
