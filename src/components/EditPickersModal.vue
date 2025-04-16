@@ -232,7 +232,7 @@ export default defineComponent({
         });
 
         const resp = await OrderService.resetPicker({ 
-          picklistId: this.selectedPicklist.picklistId,
+          picklistId: this.selectedPicklist.id,
           roles
         });
         if (resp.status === 200 && !hasError(resp)) {
