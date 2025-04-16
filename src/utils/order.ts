@@ -131,8 +131,8 @@ const retryShippingLabel = async (order: any) => {
 
   await OrderService.retryShippingLabel(shipmentIds)
   // Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
-  // Refetching the order tracking detail irrespective of api response since currently in some cases api returns error whether label is generated
   // Temporarily handling this in app but should be handled in backend
+  // Refetching the order tracking detail irrespective of api response since currently in SHIPHAWK api returns error whether label is generated
   order = await store.dispatch('order/updateShipmentPackageDetail', order) 
   
   if(order.missingLabelImage) {
