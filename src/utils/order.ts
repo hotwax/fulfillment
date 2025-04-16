@@ -125,8 +125,8 @@ const retryShippingLabel = async (order: any) => {
     }, []);
 
   if(!shipmentIds?.length) {
-  showToast(translate("Failed to generate shipping label"))
-  return;
+    showToast(translate("Failed to generate shipping label"))
+    return;
   }
 
   await OrderService.retryShippingLabel(shipmentIds)
