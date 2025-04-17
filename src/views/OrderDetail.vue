@@ -1283,7 +1283,7 @@ export default defineComponent({
     },
     hasPackedShipments(order: any) {
       // TODO check if ternary check is needed or we could handle on UI
-      return order.shipments ? Object.values(order.shipments).some((shipment: any) => shipment.statusId === 'SHIPMENT_PACKED') : {}
+      return order.statusId === 'SHIPMENT_PACKED'
     },
     async shipOrder(order: any) {
       try {

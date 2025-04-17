@@ -21,7 +21,6 @@ const findOpenOrders = async (payload: any): Promise<any> => {
       '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
       orderStatusId: { value: 'ORDER_APPROVED' },
       orderTypeId: { value: 'SALES_ORDER' },
-      facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
       productStoreId: { value: getProductStoreId() }
     },
     solrFilters: [
@@ -29,7 +28,9 @@ const findOpenOrders = async (payload: any): Promise<any> => {
       "((*:* -fulfillmentStatus: [* TO *]) OR fulfillmentStatus:Created)"
     ]
   } as any
-
+  if (!openOrderQuery.excludeFacilityFilter) {
+    params.filters['facilityId'] = { value: escapeSolrSpecialChars(getCurrentFacilityId()) }
+  } 
   if (shipGroupFilter && Object.keys(shipGroupFilter).length) {
     Object.assign(params.filters, shipGroupFilter);
   }
@@ -43,7 +44,6 @@ const findOpenOrders = async (payload: any): Promise<any> => {
   } else {
     params.isGroupingRequired = true
     params.groupBy = "orderId"
-    payload.groupBy = "orderId"
   }
 
   // only adding shipmentMethods when a method is selected
@@ -64,9 +64,9 @@ const findOpenOrders = async (payload: any): Promise<any> => {
       method: "post",
       data: orderQueryPayload
     }) as any;
-    if (!hasError(resp) && resp.data.grouped[payload.groupBy]?.matches > 0) {
-      total = resp.data.grouped[payload.groupBy].ngroups
-      orders = resp.data.grouped[payload.groupBy].groups
+    if (!hasError(resp) && resp.data.grouped[params.groupBy]?.matches > 0) {
+      total = resp.data.grouped[params.groupBy].ngroups
+      orders = resp.data.grouped[params.groupBy].groups
 
       orders = orders.map((order: any) => {
         const orderItem = order.doclist.docs[0];

@@ -438,7 +438,7 @@ export default defineComponent({
         isGroupingRequired: false,
         filters: {
           orderTypeId: { value: 'SALES_ORDER' },
-          fulfillmentStatus: { value: 'Completed' },
+          fulfillmentStatus: { value: '(InProgress OR (Completed AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId }
@@ -479,7 +479,7 @@ export default defineComponent({
         isGroupingRequired: false,
         filters: {
           orderTypeId: { value: 'SALES_ORDER' },
-          fulfillmentStatus: { value: 'Completed' },
+          fulfillmentStatus: { value: '(InProgress OR (Completed AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId },

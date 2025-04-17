@@ -209,7 +209,9 @@ const actions: ActionTree<OrderState, RootState> = {
 
     //fetching open orders
     const openOrderQuery = JSON.parse(JSON.stringify(state.open.query))
+    openOrderQuery.excludeFacilityFilter = true
     openOrderQuery.groupBy = "shipGroupSeqId"
+    openOrderQuery.orderId = currentOrder.orderId
     
     //filter to exclue current ship group
     if (!currentShipmentId) {
