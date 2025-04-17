@@ -383,7 +383,7 @@ const findShipments = async (query: any): Promise <any>  => {
         return {
           ...shipment,
           missingLabelImage,
-          trackingCode: shipment?.tracingIdNumber,
+          trackingCode: shipment?.trackingIdNumber,
         };
       });
     } else {
