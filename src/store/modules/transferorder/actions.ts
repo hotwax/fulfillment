@@ -1,7 +1,7 @@
 import { ActionTree } from 'vuex'
 import RootState from '@/store/RootState'
 import TransferOrderState from './TransferOrderState'
-import { OrderService } from '@/services/OrderService'
+import { TransferOrderService } from '@/services/TransferOrderService';
 import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
@@ -46,7 +46,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     let total = 0;
 
     try {
-      resp = await OrderService.findTransferOrders(transferOrderQueryPayload);
+      resp = await TransferOrderService.findTransferOrders(transferOrderQueryPayload);
       if (!hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
         total = resp.data.grouped.orderId.ngroups
         orders = resp.data.grouped.orderId.groups
@@ -94,13 +94,13 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         "distinct": "Y"
       }
     
-      resp = await OrderService.fetchOrderHeader(params);
+      resp = await TransferOrderService.fetchOrderHeader(params);
       if (!hasError(resp)) {
          orderDetail = resp.data.docs?.[0];
          orderDetail["facilityId"] = orderDetail.oisgFacilityId
          
         //fetch order items
-        orderDetail.items = await OrderService.fetchOrderItems(payload.orderId);
+        orderDetail.items = await TransferOrderService.fetchOrderItems(payload.orderId);
         if (orderDetail?.items?.length > 0) {
           orderDetail.items.forEach((item: any) => {
             item.pickedQuantity = 0;
@@ -109,7 +109,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   
           //fetch shipped quantity
           const shippedQuantityInfo = {} as any;
-          resp = await OrderService.fetchShippedQuantity(payload.orderId);
+          resp = await TransferOrderService.fetchShippedQuantity(payload.orderId);
           resp.forEach((doc:any) => {
             shippedQuantityInfo[doc.orderItemSeqId] = doc.shippedQuantity;
           });
@@ -160,7 +160,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           "items": eligibleItems
         }]
       }
-      const resp = await OrderService.createOutboundTransferShipment({"shipments": params})
+      const resp = await TransferOrderService.createOutboundTransferShipment({"shipments": params})
       if (!hasError(resp)) {
         shipmentId = resp.data.shipments.id;
       } else {
@@ -176,10 +176,10 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   async fetchTransferShipmentDetail ({ commit }, payload) {
     let resp;
     try {
-      const shipmentItems = await OrderService.fetchShipmentItems('', payload.shipmentId);
+      const shipmentItems = await TransferOrderService.fetchShipmentItems('', payload.shipmentId);
         
       if (shipmentItems?.length > 0) {
-        const [shipmentPackagesWithMissingLabel, shipmentPackages, shipmentCarriers] = await Promise.all([OrderService.fetchShipmentPackages([payload.shipmentId]), UtilService.findShipmentPackages([payload.shipmentId]), OrderService.fetchShipmentCarrierDetail([payload.shipmentId])]);
+        const [shipmentPackagesWithMissingLabel, shipmentPackages, shipmentCarriers] = await Promise.all([TransferOrderService.fetchShipmentPackages([payload.shipmentId]), UtilService.findShipmentPackages([payload.shipmentId]), TransferOrderService.fetchShipmentCarrierDetail([payload.shipmentId])]);
 
         const shipment = {
           shipmentId: shipmentItems?.[0].shipmentId,
@@ -220,7 +220,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     let shipments = [];
 
     try {
-      const shipmentItems  = await OrderService.fetchShipmentItems(payload.orderId, '');
+      const shipmentItems  = await TransferOrderService.fetchShipmentItems(payload.orderId, '');
       if (shipmentItems?.length > 0) {
         shipments = Object.values(shipmentItems.reduce((shipmentInfo:any, currentItem:any) => {
           const { shipmentId, shipmentStatusId, orderId } = currentItem;
@@ -238,7 +238,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         }, {}));
 
         const shipmentIds = new Set(shipments.map((shipment:any) => shipment.shipmentId));
-        const [shipmentCarriers, shipmentShippedStatuses, shipmentPackages] = await Promise.all([OrderService.fetchShipmentCarrierDetail([...shipmentIds]), OrderService.fetchShipmentShippedStatusHistory([...shipmentIds]), UtilService.findShipmentPackages([...shipmentIds])]);
+        const [shipmentCarriers, shipmentShippedStatuses, shipmentPackages] = await Promise.all([TransferOrderService.fetchShipmentCarrierDetail([...shipmentIds]), TransferOrderService.fetchShipmentShippedStatusHistory([...shipmentIds]), UtilService.findShipmentPackages([...shipmentIds])]);
         const shipmentCarrierDetail = shipmentCarriers.reduce((carriers: any, carrierDetail:any) => {
           carriers[carrierDetail.shipmentId] = carrierDetail;
           return carriers;
@@ -341,7 +341,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           orderBy: "sequenceNum"
         }
 
-        const resp = await OrderService.fetchRejectReasons(payload)
+        const resp = await TransferOrderService.fetchRejectReasons(payload)
 
         if(!hasError(resp) && resp.data.count > 0) {
           rejectReasons = resp.data.docs
@@ -366,7 +366,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           orderBy: "sequenceNum"
         }
 
-        const resp = await OrderService.fetchRejectReasons(payload)
+        const resp = await TransferOrderService.fetchRejectReasons(payload)
 
         if(!hasError(resp) && resp?.data.docs.length > 0) {
           rejectReasons = resp.data.docs

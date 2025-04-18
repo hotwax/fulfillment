@@ -174,7 +174,7 @@
   import { DateTime } from 'luxon';
   import { getFeature, showToast, hasWebcamAccess } from '@/utils';
   import { hasError } from '@/adapter';
-  import { OrderService } from '@/services/OrderService'
+  import { TransferOrderService } from '@/services/TransferOrderService'
   import TransferOrderItem from '@/components/TransferOrderItem.vue'
   import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
   import emitter from "@/event-bus";
@@ -243,7 +243,7 @@
     },
     methods: {
       async printTransferOrder() {
-        await OrderService.printTransferOrder(this.currentOrder.orderId)
+        await TransferOrderService.printTransferOrder(this.currentOrder.orderId)
       },
       getItemCount() {
         return this.currentOrder?.items?.reduce((totalItems:any, item:any) => totalItems + (item.orderedQuantity || 0), 0);
@@ -275,7 +275,7 @@
         this.isCreatingShipment = false;
         if (shipmentId) {
           await this.store.dispatch('transferorder/clearCurrentTransferShipment');
-          await OrderService.updateShipment({"shipmentId": shipmentId, "statusId": "SHIPMENT_APPROVED"})
+          await TransferOrderService.updateShipment({"shipmentId": shipmentId, "statusId": "SHIPMENT_APPROVED"})
           this.router.push({ path: `/transfer-shipment-review/${shipmentId}` })
         }
       },
@@ -384,7 +384,7 @@
 
         if (!currentShipment.trackingIdNumber) {
           //regenerate shipping label if missing tracking code
-          await OrderService.retryShippingLabel([currentShipment.shipmentId])
+          await TransferOrderService.retryShippingLabel([currentShipment.shipmentId])
           // retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
           // Refetching the order tracking detail irrespective of api response since currently in SHIPHAWK api returns error whether label is generated
           // Temporarily handling this in app but should be handled in backend        
@@ -397,13 +397,13 @@
 
           if(currentShipment.trackingIdNumber) {
             showToast(translate("Shipping Label generated successfully"))
-            await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
+            await TransferOrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
           } else {
             showToast(translate("Failed to generate shipping label"))
           }
         } else {
           //print shipping label if label already exists
-          await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
+          await TransferOrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
         }
 
         currentShipment.isGeneratingShippingLabel = false;
@@ -436,7 +436,7 @@
               })
 
               try {
-                const resp = await OrderService.rejectOrderItems({ payload });
+                const resp = await TransferOrderService.rejectOrderItems({ payload });
 
                 if(!hasError(resp) && resp.data?.rejectedItemsList.length) {
                   showToast(translate("All order items are rejected"))

@@ -88,7 +88,7 @@ import { useRouter } from 'vue-router';
 import { translate, useUserStore } from '@hotwax/dxp-components';
 import { Actions } from '@/authorization'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper';
-import { UtilService } from '@/services/UtilService';
+import { TransferOrderService } from '@/services/TransferOrderService';
 import { hasError } from '@/adapter';
 import logger from '@/logger';
 import TransferOrderFilters from '@/components/TransferOrderFilters.vue'
@@ -230,7 +230,7 @@ export default defineComponent({
       })
 
       try {
-        resp = await UtilService.fetchTransferOrderFacets(payload);
+        resp = await TransferOrderService.fetchTransferOrderFacets(payload);
         if(resp.status == 200 && !hasError(resp)) {
           this.transferOrderCount = resp.data.facets?.count
           if(this.transferOrderCount) {
