@@ -57,6 +57,7 @@ import logger from '@/logger';
 import { UtilService } from '@/services/UtilService';
 import { hasError } from '@hotwax/oms-api';
 import { showToast } from "@/utils";
+import emitter from '@/event-bus';
 
 export default defineComponent({
   name: "HistoricalManifestModal",
@@ -87,6 +88,7 @@ export default defineComponent({
       return DateTime.fromMillis(time).toFormat("H:mm a dd/MM/yyyy")
     },
     async downloadCarrierManifest(manifest) {
+      emitter.emit("presentLoader");
       const payload = {
         facilityId: this.currentFacility?.facilityId,
         carrierPartyId: this.selectedCarrierPartyId,
@@ -112,7 +114,9 @@ export default defineComponent({
         }
       } catch(err) {
         logger.error("Failed to print manifest", err)
+        showToast(translate("Failed to print manifest"));
       }
+      emitter.emit("dismissLoader");
     }
   },
   setup() {
