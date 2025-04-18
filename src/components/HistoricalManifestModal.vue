@@ -107,12 +107,8 @@ export default defineComponent({
           window.open(pdfUrl, "_blank").focus();
         }
         catch {
-          console.log('Unable to open as browser is blocking pop-ups.')
+          showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'carrier manifest'}), { icon: cogOutline });
         }
-
-        // if(hasError(resp)) {
-        //   throw resp.data
-        // }
       } catch(err) {
         logger.error("Failed to print manifest", err)
       }
