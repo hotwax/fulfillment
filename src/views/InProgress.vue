@@ -651,6 +651,8 @@ export default defineComponent({
                 emitter.emit('dismissLoader');
                 showToast(translate('Failed to pack orders'))
                 logger.error('Failed to pack orders', err)
+              } finally {
+                emitter.emit("dismissLoader");
               }
             }
           }]
