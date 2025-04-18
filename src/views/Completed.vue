@@ -194,6 +194,7 @@ import {
   IonButton,
   IonButtons,
   IonCard,
+  IonCheckbox,
   IonChip,
   IonContent,
   IonFab,
@@ -251,6 +252,7 @@ export default defineComponent({
     IonButton,
     IonButtons,
     IonCard,
+    IonCheckbox,
     IonChip,
     IonContent,
     IonFab,
@@ -552,7 +554,7 @@ export default defineComponent({
         sort: 'orderDate asc',
         defType: "edismax",
         filters: {
-          picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED))' },
+          picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY-7DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId },
@@ -882,7 +884,7 @@ export default defineComponent({
       const payload = {
         facilityId: this.currentFacility?.facilityId,
         carrierPartyId: this.selectedCarrierPartyId,
-        manifestServiceName: this.carrierConfiguration[this.selectedCarrierPartyId]?.["MANIFEST_GEN_REQUEST"]
+        manifestGenerateServiceName: this.carrierConfiguration[this.selectedCarrierPartyId]?.["MANIFEST_GEN_REQUEST"]
       }
 
       try {

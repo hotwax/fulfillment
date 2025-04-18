@@ -353,7 +353,7 @@ const fetchConfiguredCarrierService = async(query: any): Promise<any> => {
 
 const generateManifest = async(payload: any): Promise<any> => {
   return api({
-    url: "service/generateManifests",
+    url: "generateManifests",
     method: "POST",
     data: payload
   });
@@ -361,9 +361,10 @@ const generateManifest = async(payload: any): Promise<any> => {
 
 const downloadCarrierManifest = async(payload: any): Promise<any> => {
   return api({
-    url: "service/downloadCarrierManifest",
+    url: "downloadCarrierManifest",
     method: "POST",
-    data: payload
+    data: payload,
+    responseType: "blob"
   });
 }
 

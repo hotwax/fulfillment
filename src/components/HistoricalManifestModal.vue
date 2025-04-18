@@ -17,7 +17,7 @@
       <ion-item v-for="manifest in carrierConfiguration[selectedCarrierPartyId]?.manifests" :key="manifest.fromDate">
         <ion-label>
           {{ translate("Manifest") }}
-          <p>{{ manifest.fromDate }}</p>
+          <p>{{ DateTime.fromMillis(manifest.fromDate).toFormat("dd MMMM yyyy hh:mm a ZZZZ") }}</p>
         </ion-label>
         <ion-button fill="outline" @click="downloadCarrierManifest(manifest)">
           <ion-icon :icon="printOutline" slot="start"/>
@@ -96,9 +96,23 @@ export default defineComponent({
       try {
         const resp = await UtilService.downloadCarrierManifest(payload);
 
-        if(hasError(resp)) {
+        if (!resp || resp.status !== 200 || hasError(resp)) {
           throw resp.data
         }
+
+        // Generate local file URL for the blob received
+        const pdfUrl = window.URL.createObjectURL(resp.data);
+        // Open the file in new tab
+        try {
+          window.open(pdfUrl, "_blank").focus();
+        }
+        catch {
+          console.log('Unable to open as browser is blocking pop-ups.')
+        }
+
+        // if(hasError(resp)) {
+        //   throw resp.data
+        // }
       } catch(err) {
         logger.error("Failed to print manifest", err)
       }
@@ -115,7 +129,8 @@ export default defineComponent({
       currentFacility,
       printOutline,
       store,
-      translate
+      translate,
+      DateTime
     };
   },
 });
