@@ -53,7 +53,22 @@ const mutations: MutationTree <UtilState> = {
   },
   [types.UTIL_CARRIER_SHIPMENT_BOX_TYPES_UPDATED](state, payload) {
     state.carrierShipmentBoxTypes = payload
-  }
-  
+  },
+  [types.UTIL_CARRIER_DESC_UPDATED](state, payload) {
+    state.carrierDesc = payload
+  },
+  [types.UTIL_SHPMNT_MTHD_BY_CARRIER_UPDATED](state, payload) {
+    state.shipmentMethodsByCarrier = payload
+  },
+  [types.UTIL_FACILITY_ADDRESSES_UPDATED](state, payload) {
+    state.facilityAddresses = payload
+  },
+  [types.UTIL_CLEARED](state) {
+    state.productStoreShipmentMethCount = 0
+    state.isForceScanEnabled = false
+    state.barcodeIdentificationPref = "internalName"
+    state.carrierDesc = {}
+    state.facilityAddresses = {}
+  },
 }
 export default mutations;

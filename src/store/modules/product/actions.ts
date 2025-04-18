@@ -95,6 +95,48 @@ const actions: ActionTree<ProductState, RootState> = {
       logger.error('Failed to fetch product components information', err)
     }
     return resp;
+  },
+
+  async fetchSampleProducts ({ commit, state }) {
+    let products = state.sampleProducts ? JSON.parse(JSON.stringify(state.sampleProducts)) : []
+    if(products.length) return;
+
+    try {
+      const resp = await ProductService.fetchSampleProducts({
+        internalName_op: "empty",
+        internalName_not: "Y",
+        fieldsToSelect: ["internalName", "productId"],
+        pageSize: 10
+      }) as any;
+  
+      if(!hasError(resp) && resp.data?.length) {
+        products = resp.data
+        products.map((product: any) => {
+          product.sku = product.internalName
+          product.quantity = 2
+          delete product["internalName"]
+          delete product["productId"]
+        })
+        
+      } else {
+        throw resp.data;
+      }
+    } catch (error) {
+      logger.error(error);
+    }
+    commit(types.PRODUCT_SAMPLE_PRODUCTS_UPDATED, products)
+  },
+
+  async addProductToCached ( { commit }, payload) {
+    commit(types.PRODUCT_ADD_TO_CACHED, payload);
+  },
+
+  async addProductToCachedMultiple ( { commit }, payload) {
+    commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, payload);
+  },
+
+  async clearProductState ({ commit }) {
+    commit(types.PRODUCT_CLEARED)
   }
 }
 

@@ -31,6 +31,7 @@ import { loader } from '@/utils/user';
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 import Rejections from '@/views/Rejections.vue';
+import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
 
 const authGuard = async (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
@@ -91,6 +92,15 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     meta: {
       permissionId: "APP_TRANSFER_ORDERS_VIEW"
+    }
+  },
+  {
+    path: '/create-transfer-order',
+    name: 'CreateTransferOrder',
+    component: CreateTransferOrder,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: ""
     }
   },
   {

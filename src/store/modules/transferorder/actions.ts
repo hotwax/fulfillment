@@ -1,7 +1,6 @@
 import { ActionTree } from 'vuex'
 import RootState from '@/store/RootState'
 import TransferOrderState from './TransferOrderState'
-import emitter from '@/event-bus'
 import { TransferOrderService } from '@/services/TransferOrderService'
 import { hasError } from '@/adapter'
 import * as types from './mutation-types'
@@ -14,7 +13,6 @@ import store from "@/store";
 const actions: ActionTree<TransferOrderState, RootState> = {
 
   async findTransferOrders ({ commit, state }, payload = {}) {
-    emitter.emit('presentLoader');
     let resp;
     const transferOrderQuery = JSON.parse(JSON.stringify(state.transferOrder.query))
 
@@ -78,7 +76,6 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     commit(types.ORDER_TRANSFER_QUERY_UPDATED, { ...transferOrderQuery })
     commit(types.ORDER_TRANSFER_UPDATED, { list: orderList.length > 0 ? orderList : orders, total})
 
-    emitter.emit('dismissLoader');
     return resp;
   },
   async fetchTransferOrderDetail ({ commit }, payload) {

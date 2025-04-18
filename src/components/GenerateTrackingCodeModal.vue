@@ -89,6 +89,7 @@ import { OrderService } from '@/services/OrderService';
 import logger from "@/logger";
 import { showToast } from "@/utils";
 import { hasError } from "@/adapter";
+import { retryShippingLabel } from "@/utils/order";
 
 export default defineComponent({
   name: "GenerateTrackingCodeModal",
@@ -170,10 +171,11 @@ export default defineComponent({
 
       if (this.trackingCode.trim()) {
         isRegenerated = await this.addTrackingCode(order);
+        //fetching updated shipment packages
+        await this.store.dispatch('order/updateShipmentPackageDetail', order)
+      } else if(this.shipmentMethodTypeId) {
+        isRegenerated = await this.regenerateShippingLabel(order)
       }
-
-      //fetching updated shipment packages
-      await this.store.dispatch('order/updateShipmentPackageDetail', order)
 
       if(isRegenerated || !this.isTrackingRequired) {
         this.closeModal({ moveToNext: true });
@@ -200,6 +202,21 @@ export default defineComponent({
         return false;
       }
       return true;
+    },
+    async regenerateShippingLabel(order: any) {
+      // If there are no product store shipment method configured, then not generating the label and displaying an error toast
+      if(this.productStoreShipmentMethCount <= 0) {
+        showToast(translate("Unable to generate shipping label due to missing product store shipping method configuration"))
+        return false;
+      }
+
+      const response = await this.retryShippingLabel(order);
+      if(response?.isGenerated) {
+        return true;
+      } else {
+        this.fetchShipmentLabelError && this.fetchShipmentLabelError()
+        return false;
+      }
     },
     getCarrierTrackingUrl() {
       return this.facilityCarriers.find((carrier: any) => carrier.partyId === this.carrierPartyId)?.trackingUrl
@@ -253,6 +270,7 @@ export default defineComponent({
       copyOutline,
       informationCircleOutline,
       openOutline,
+      retryShippingLabel,
       saveOutline,
       store,
       translate

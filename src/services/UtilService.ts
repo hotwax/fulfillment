@@ -288,6 +288,22 @@ const fetchFacilities = async (payload: any): Promise<any> => {
   });
 }
 
+const fetchProductStoreFacilities = async (params: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/productStores/${params.productStoreId}/facilities`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params
+  });
+}
+
 const updateForceScanSetting = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -473,8 +489,57 @@ const fetchAdjustmentTypeDescription = async(payload: any): Promise<any> => {
   });
 }
 
+const fetchCarriers = async (params: any): Promise <any>  => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/carrierParties`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params,
+  });
+}
+
+const fetchStoreCarrierAndMethods = async (params: any): Promise <any>  => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/productStores/${params.productStoreId}/shipmentMethods`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params,
+  });
+}
+
+const fetchFacilityAddresses = async (params: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/facilityContactMechs`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params,
+  });
+}
+
 export const UtilService = {
   createBarcodeIdentificationPref,
+  fetchCarriers,
   createEnumerationGroupMember,
   createForceScanSetting,
   createEnumeration,
@@ -483,6 +548,7 @@ export const UtilService = {
   fetchDefaultShipmentBox,
   fetchEnumeration,
   fetchFacilities,
+  fetchFacilityAddresses,
   fetchFacilityTypeInformation,
   fetchFulfillmentRejectReasons,
   fetchGiftCardFulfillmentInfo,
@@ -492,9 +558,11 @@ export const UtilService = {
   fetchShipmentBoxType,
   fetchShipmentMethods,
   fetchShipmentMethodTypeDesc,
+  fetchStoreCarrierAndMethods,
   fetchPaymentMethodTypeDesc,
   fetchStatusDesc,
   fetchCarrierShipmentBoxTypes,
+  fetchProductStoreFacilities,
   findProductStoreShipmentMethCount,
   fetchTransferOrderFacets,
   getAvailablePickers,

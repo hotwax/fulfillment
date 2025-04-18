@@ -92,9 +92,9 @@
 
             <div v-if="category === 'in-progress'" class="desktop-only ion-text-center" >
               <template v-if="item.rejectReason">
-                <ion-chip outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
+                <ion-chip outline color="danger" >
                   <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
-                  <ion-icon :icon="closeCircleOutline" />
+                  <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)"/>
                 </ion-chip>
               </template>
               <template v-else-if="isEntierOrderRejectionEnabled(order)">
@@ -454,7 +454,7 @@ import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
 import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
-import { isKit } from '@/utils/order'
+import { isKit, retryShippingLabel } from '@/utils/order'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import ShippingLabelActionPopover from '@/components/ShippingLabelActionPopover.vue';
 import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
@@ -580,7 +580,7 @@ export default defineComponent({
     this.fetchCODPaymentInfo();
 },
   async mounted() {
-    const instance = this.instanceUrl.split("-")[0]
+    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "")
     this.printDocumentsExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_PrintDocument`})
     this.orderInvoiceExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderInvoice`})
   },
@@ -703,38 +703,14 @@ export default defineComponent({
       const result = await popover.onDidDismiss();
 
       if (result.data && item.selectedBox !== result.data) {
-        this.confirmUpdateBox(item, order, result.data, kitProducts, orderItemSeqId)
-      }
-    },
-    async confirmUpdateBox(item: any, order: any, selectedBox: string, kitProducts?: any, orderItemSeqId?: number) {
-      const alert = await alertController.create({
-        message: translate("Are you sure you want to update box selection?"),
-        header: translate("Update box selection?"),
-        buttons: [
-          {
-            text: translate("Cancel"),
-            role: 'cancel'
-          },
-          {
-            text: translate("Confirm"),
-            handler: () => {
-              order.items.map((orderItem: any) => {
-                if(orderItem.orderItemSeqId === item.orderItemSeqId) {
-                  orderItem.selectedBox = selectedBox
-                }
-              })
-              order.isModified = true;
-
-              /*
-              Commenting this out to avoid directly updating items. Now user need to click on the save button to save the detail.
-              await this.updateOrder(order, 'box-selection').then(async () => {
-                await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
-              }).catch(err => err);*/
-            }
+        order.items.map((orderItem: any) => {
+          if(orderItem.orderItemSeqId === item.orderItemSeqId) {
+            orderItem.selectedBox = result.data
           }
-        ],
-      });
-      return alert.present();
+        })
+        order.isModified = true;
+        }
+      return result.data;
     },
     async orderActionsPopover(order: any, ev: Event) {
       const popover = await popoverController.create({
@@ -1015,35 +991,23 @@ export default defineComponent({
       order.isGeneratingShippingLabel = true;
 
       if(order.missingLabelImage) {
-        await this.retryShippingLabel(order)
+        const response = await this.retryShippingLabel(order)
+        if(response?.isGenerated) {
+          await this.printShippingLabel(response.order)
+        } else {
+          this.fetchShipmentLabelError()
+        }
       } else {
         await this.printShippingLabel(order)
       }
 
-      order.isGeneratingShippingLabel = false;
+      this.order.isGeneratingShippingLabel = false;
     },
     async initialiseOrderQuery() {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
       completedOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
-    },
-    async retryShippingLabel(order: any) {
-      const resp = await OrderService.retryShippingLabel(order.shipmentId)
-      if (!hasError(resp)) {
-        //Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
-        await this.store.dispatch('order/updateShipmentPackageDetail', order) 
-        order = this.order;
-        
-        showToast(translate("Shipping Label generated successfully"))
-        await this.printShippingLabel(order)
-        // TODO fetch specific order
-        this.initialiseOrderQuery();
-        order.isGeneratingShippingLabel = false
-      } else {
-        showToast(translate("Failed to generate shipping label"))
-        this.fetchShipmentLabelError()
-      }
     },
     async shippingPopover(ev: Event) {
       const popover = await popoverController.create({
@@ -1585,6 +1549,7 @@ export default defineComponent({
       personAddOutline,
       pricetagOutline,
       productIdentificationPref,
+      retryShippingLabel,
       router,
       store,
       trashBinOutline,

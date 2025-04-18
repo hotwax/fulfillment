@@ -160,6 +160,7 @@ import { useRouter } from 'vue-router';
 import OrderLookupFilters from '@/components/OrderLookupFilters.vue'
 import { translate } from '@hotwax/dxp-components';
 import Image from '@/components/Image.vue'
+import store from "@/store"
 
 export default defineComponent ({
   name: 'OrderLookup',
@@ -208,13 +209,14 @@ export default defineComponent ({
       isScrollingEnabled: false
     }
   },
-  ionViewWillEnter() {
+  async ionViewWillEnter() {
     this.isScrollingEnabled = false;
+    await this.getOrders();
   },
-  beforeRouteLeave(to) {
-    // Clearing the orderLookup filters only when moving to a page other than detail page
-    if(to.name !== "OrderLookupDetail") {
-      this.store.dispatch("orderLookup/clearOrderLookup")
+  beforeRouteEnter(_, from) {
+    // Clearing the orderLookup filters only when coming from any page other than detail page
+    if(from.name !== "OrderLookupDetail") {
+      store.dispatch("orderLookup/clearOrderLookup")
     }
   },
   methods: {
@@ -265,9 +267,6 @@ export default defineComponent ({
         this.isScrollingEnabled = true;
       }
     },
-  },
-  async mounted() {
-    await this.getOrders();
   },
   setup() {
     const router = useRouter();

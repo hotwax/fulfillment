@@ -676,6 +676,112 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async updateBarcodeIdentificationPref({ commit }, payload) { 
     commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, payload)
+  },
+
+  async fetchCarriersDetail ({ commit, state }) {
+    if(Object.keys(state.carrierDesc)?.length) return;
+    const carrierDesc = {} as any;
+
+    try {
+      const resp = await UtilService.fetchCarriers({
+        "roleTypeId": "CARRIER",
+        "fieldsToSelect": ["partyId", "partyTypeId", "roleTypeId", "firstName", "lastName", "groupName"],
+        "distinct": "Y",
+        "pageSize": 20
+      });
+
+      console.log("===carrier====resp===", resp)
+      if (!hasError(resp)) {
+        resp.data.map((carrier: any) => {
+          carrierDesc[carrier.partyId] = carrier.partyTypeId === "PERSON" ? `${carrier.firstName} ${carrier.lastName}` : carrier.groupName
+        })
+      } else {
+        throw resp.data;
+      }
+    } catch (err: any) {
+      logger.error("error", err);
+    }
+    commit(types.UTIL_CARRIER_DESC_UPDATED, carrierDesc)
+  },
+
+  async fetchStoreCarrierAndMethods({ commit }, productStoreId) {
+    let shipmentMethodsByCarrier = {};
+
+    try {
+      const payload = {
+        productStoreId,
+        "roleTypeId": "CARRIER",
+        "shipmentMethodTypeId": "STOREPICKUP",
+        "shipmentMethodTypeId_op": "equals",
+        "shipmentMethodTypeId_not": "Y",
+        "fieldsToSelect": ["description", "partyId", "shipmentMethodTypeId"],
+        "thruDate_op": "empty",
+        "distinct": "Y",
+        "pageSize": 100
+      }
+
+      const resp = await UtilService.fetchStoreCarrierAndMethods(payload);
+      console.log("===methods====resp===", resp)
+
+      if(!hasError(resp)) {
+        const storeCarrierAndMethods = resp.data;
+        shipmentMethodsByCarrier = storeCarrierAndMethods.reduce((shipmentMethodsByCarrier: any, storeCarrierAndMethod: any) => {
+          const { partyId, shipmentMethodTypeId, description } = storeCarrierAndMethod;
+
+          if(!shipmentMethodsByCarrier[partyId]) shipmentMethodsByCarrier[partyId] = []
+          shipmentMethodsByCarrier[partyId].push({ shipmentMethodTypeId, description })
+
+          return shipmentMethodsByCarrier
+        }, {})
+      } else {
+        throw resp.data
+      }
+    } catch(err) {
+      logger.error('Error fetching status description', err)
+    }
+    commit(types.UTIL_SHPMNT_MTHD_BY_CARRIER_UPDATED, shipmentMethodsByCarrier)
+  },
+
+  async fetchFacilityAddresses ({ commit, state }, facilityIds) {
+    const facilityAddresses = state.facilityAddresses ? JSON.parse(JSON.stringify(state.facilityAddresses)) : {}
+    let addresses = [] as any;
+    const remainingFacilityIds = [] as any;
+
+    facilityIds.map((facilityId: string) => {
+      facilityAddresses[facilityId] ? addresses.push(facilityAddresses[facilityId]) : remainingFacilityIds.push(facilityId)
+    })
+
+    if(!remainingFacilityIds?.length) return addresses;
+
+    try {
+      const resp = await UtilService.fetchFacilityAddresses({
+          contactMechPurposeTypeId: "PRIMARY_LOCATION",
+          contactMechTypeId: "POSTAL_ADDRESS",
+          facilityId: remainingFacilityIds,
+          facilityId_op: "in",
+        orderByField: 'fromDate DESC',
+        thruDate_op: 'empty',
+        fieldsToSelect: ['address1', 'address2', 'city', 'countryGeoName', 'postalCode', 'stateGeoName', 'facilityId', 'facilityName', 'contactMechId'],
+        pageSize: 2
+      }) as any;
+  
+      if(!hasError(resp) && resp.data?.length) {
+        resp.data.map((facility: any) => {
+          facilityAddresses[facility.facilityId] = facility;
+        })
+        addresses = [...addresses, ...resp.data.docs]
+      } else {
+        throw resp.data;
+      }
+    } catch (error) {
+      logger.error(error);
+    }
+    commit(types.UTIL_FACILITY_ADDRESSES_UPDATED, facilityAddresses)
+    return addresses
+  },
+
+  async clearUtilState ({ commit }) {
+    commit(types.UTIL_CLEARED)
   }
 }
 

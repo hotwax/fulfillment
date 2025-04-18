@@ -115,9 +115,9 @@
                   <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
                   <div>
                     <template v-if="item.rejectReason">
-                      <ion-chip outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
+                      <ion-chip outline color="danger">
                         <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
-                        <ion-icon :icon="closeCircleOutline" />
+                        <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)"/>
                       </ion-chip>
                     </template>
                     <template v-else-if="isEntierOrderRejectionEnabled(order)">
@@ -214,7 +214,7 @@
       </div>
     </ion-content>
     <!-- only show footer buttons if 'All orders' is not selected -->
-    <ion-footer v-if="selectedPicklistId">
+    <ion-footer v-if="selectedPicklistId && inProgressOrders.total">
       <ion-toolbar>
         <ion-buttons slot="start">
           <ion-button fill="clear" color="primary" @click="openQRCodeModal(selectedPicklistId)">
@@ -380,10 +380,6 @@ export default defineComponent({
       isRejecting: false,
       rejectEntireOrderReasonId: "REJ_AVOID_ORD_SPLIT",
     }
-  },
-  async ionViewWillEnter() {
-    this.isScrollingEnabled = false;
-    await Promise.all([this.store.dispatch('util/fetchCarrierShipmentBoxTypes'), this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths')]);
   },
   methods: {
     getTime(time: any) {
@@ -1198,12 +1194,19 @@ export default defineComponent({
       modal.present();
     }
   },
-  async mounted () {
-    this.store.dispatch('util/fetchRejectReasonOptions')
-    await Promise.all([this.fetchPickersInformation(), this.initialiseOrderQuery()])
+  async ionViewWillEnter() {
+    this.isScrollingEnabled = false;
+    await Promise.all([
+      this.store.dispatch('util/fetchRejectReasonOptions'),
+      this.store.dispatch('util/fetchCarrierShipmentBoxTypes'),
+      this.store.dispatch('carrier/fetchFacilityCarriers'),
+      this.store.dispatch('carrier/fetchProductStoreShipmentMeths'),
+      this.fetchPickersInformation(),
+      this.initialiseOrderQuery()
+    ]);
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
-  unmounted() {
+  ionViewWillLeave() {
     this.store.dispatch('order/clearInProgressOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },

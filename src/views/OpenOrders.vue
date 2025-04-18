@@ -241,9 +241,6 @@ export default defineComponent({
       productCategoryFilterExt: "" as any
     }
   },
-  async ionViewWillEnter() {
-    this.isScrollingEnabled = false;
-  },
   methods: {
     updateOpenQuery(payload: any) {
       this.store.dispatch("order/updateOpenQuery", payload)
@@ -432,13 +429,14 @@ export default defineComponent({
       this.store.dispatch('stock/fetchStock', { productId })
     }
   },
-  async mounted () {
-    emitter.on('updateOrderQuery', this.updateOrderQuery)
+  async ionViewWillEnter () {
+    this.isScrollingEnabled = false;
     await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
     const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "")
-    this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`})
+    this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`});
+    emitter.on("updateOrderQuery", this.updateOrderQuery);
   },
-  unmounted() {
+  ionViewWillLeave() {
     this.store.dispatch('order/clearOpenOrders');
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },

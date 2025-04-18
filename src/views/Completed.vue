@@ -218,7 +218,7 @@ import logger from '@/logger';
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
-import { isKit } from '@/utils/order'
+import { isKit, retryShippingLabel } from '@/utils/order'
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
 import { DateTime } from 'luxon';
 
@@ -273,12 +273,13 @@ export default defineComponent({
       isUnpackDisabled: 'user/isUnpackDisabled'
     })
   },
-  async mounted() {
+  async ionViewWillEnter() {
+    this.isScrollingEnabled = false;
     await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
     emitter.on('updateOrderQuery', this.updateOrderQuery)
     this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
   },
-  unmounted() {
+  ionViewWillLeave() {
     this.store.dispatch('order/clearCompletedOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
@@ -288,9 +289,6 @@ export default defineComponent({
         this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
       },
     }
-  },
-  async ionViewWillEnter() {
-    this.isScrollingEnabled = false;
   },
   methods: {
     getTime(time: any) {
@@ -589,22 +587,6 @@ export default defineComponent({
       // TODO check if ternary check is needed or we could handle on UI
       return order.statusId === 'SHIPMENT_PACKED'
     },
-    async retryShippingLabel(order: any) {
-      // TODO Handle error case
-      const resp = await OrderService.retryShippingLabel(order.shipmentId)
-      if (!hasError(resp)) {
-        //Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
-        await this.store.dispatch('order/updateShipmentPackageDetail', order)
-        order = this.completedOrders.list.find((completedOrder:any) => completedOrder.shipmentId === order.shipmentId);
-
-        showToast(translate("Shipping Label generated successfully"))
-        await this.printShippingLabel(order)
-        // TODO fetch specific order
-        this.initialiseOrderQuery();
-      } else {
-        showToast(translate("Failed to generate shipping label"))
-      }
-    },
     async printPackingSlip(order: any) {
       // if the request to print packing slip is not yet completed, then clicking multiple times on the button
       // should not do anything
@@ -659,7 +641,10 @@ export default defineComponent({
       order.isGeneratingShippingLabel = true;
 
       if(order.missingLabelImage) {
-        await this.retryShippingLabel(order)
+        const response = await this.retryShippingLabel(order)
+        if(response?.isGenerated) {
+          await this.printShippingLabel(response.order)
+        }
       } else {
         await this.printShippingLabel(order)
       }
@@ -744,6 +729,7 @@ export default defineComponent({
       pricetagOutline,
       productIdentificationPref,
       printOutline,
+      retryShippingLabel,
       router,
       store,
       translate

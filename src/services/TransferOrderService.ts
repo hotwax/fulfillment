@@ -463,9 +463,35 @@ const updateShipmentPackageRouteSeg = async (payload: any): Promise<any> => {
     data: payload
   })
 }
+const createOrder = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createSalesOrder",
+    method: "post",
+    data: payload
+  });
+}
 
+const approveOrder = async (payload: any): Promise<any> => {
+  try {
+    const resp = await api({
+      url: "service/approveSalesOrder",
+      method: "POST",
+      data: payload
+    })
+    if(!hasError(resp)) {
+      return true;
+    } else {
+      throw resp?.data;
+    }
+  } catch(error) {
+    logger.error(error)
+    return false;
+  }
+}
 export const TransferOrderService = {
   addTrackingCode,
+  approveOrder,
+  createOrder,
   createOutboundTransferShipment,
   fetchOrderHeader,
   fetchOrderItems,

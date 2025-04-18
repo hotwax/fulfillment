@@ -24,7 +24,10 @@ const utilModule: Module<UtilState, RootState> = {
     fulfillmentRejectReasons: {},
     rejectReasonOptions: [],
     barcodeIdentificationPref: "internalName",
-    carrierShipmentBoxTypes: {}
+    carrierShipmentBoxTypes: {},
+    carrierDesc: {},
+    shipmentMethodsByCarrier: {},
+    facilityAddresses: {}
   },
   getters,
   actions,
