@@ -113,7 +113,7 @@ const removeKitComponents = (order: any) => {
   return itemsWithoutKitComponents;
 }
 
-const retryShippingLabel = async (order: any) => {
+const retryShippingLabel = async (order: any, showSuccessToast = true) => {
   let isGenerated = false;
 
   // Getting all the shipmentIds from shipmentPackages for which label is missing
@@ -138,7 +138,7 @@ const retryShippingLabel = async (order: any) => {
   if(order.missingLabelImage) {
     showToast(translate("Failed to generate shipping label"))
   } else {
-    showToast(translate("Shipping Label generated successfully"))
+    if(showSuccessToast) showToast(translate("Shipping Label generated successfully"))
     isGenerated = true;
   }
 
