@@ -206,7 +206,7 @@ export default defineComponent({
         return false;
       }
 
-      const response = await this.retryShippingLabel(order);
+      const response = await this.retryShippingLabel(order, false);
       if(response?.isGenerated) {
         return true;
       } else {
