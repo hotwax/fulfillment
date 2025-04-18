@@ -476,7 +476,7 @@ export default defineComponent({
         forceScan = false
       } else {
         //no need to scan when all the items are going to reject
-        forceScan = order.items.some((item: any) => !item.rejectReason)
+        forceScan = !order.items.every((item: any) => item.rejectReason)
       }
 
       if (order.missingLabelImage) {
@@ -484,10 +484,11 @@ export default defineComponent({
       } else if (forceScan) {
         await this.scanOrder(order, updateParameter)
       } else {
-        this.confirmPackOrder(order);
+        this.confirmPackOrder(order, updateParameter);
       }
     },
     async confirmPackOrder(order: any, updateParameter?: string) {
+      console.log("=======updateParameter==", updateParameter)
       const confirmPackOrder = await alertController
         .create({
           header: translate("Pack order"),
@@ -518,6 +519,7 @@ export default defineComponent({
               const shipmentIds = [order.shipmentId]
               try {
                 const updatedOrderDetail = await this.getUpdatedOrderDetail(order, updateParameter) as any
+                console.log("========updatedOrderDetail==", updatedOrderDetail)
                 const params = {
                   shipmentId: order.shipmentId,
                   orderId: order.orderId,
@@ -756,6 +758,7 @@ export default defineComponent({
       await this.store.dispatch('order/findInProgressOrders')
     },
     getUpdatedOrderDetail(order: any, updateParameter?: string) {
+      console.log("====updateParameter===", updateParameter)
       const items = JSON.parse(JSON.stringify(order.items));
       
       // creating updated data for items
