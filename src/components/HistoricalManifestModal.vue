@@ -48,14 +48,15 @@ import {
   IonToolbar,
   modalController,
 } from '@ionic/vue';
-import { computed, defineComponent, resolveComponent } from 'vue';
-import { closeOutline, printOutline } from 'ionicons/icons';
+import { computed, defineComponent } from 'vue';
+import { cogOutline, closeOutline, printOutline } from 'ionicons/icons';
 import { translate, useUserStore } from '@hotwax/dxp-components';
 import { useStore } from "vuex";
 import { DateTime } from 'luxon';
 import logger from '@/logger';
 import { UtilService } from '@/services/UtilService';
 import { hasError } from '@hotwax/oms-api';
+import { showToast } from "@/utils";
 
 export default defineComponent({
   name: "HistoricalManifestModal",
@@ -107,12 +108,8 @@ export default defineComponent({
           window.open(pdfUrl, "_blank").focus();
         }
         catch {
-          console.log('Unable to open as browser is blocking pop-ups.')
+          showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'carrier manifest'}), { icon: cogOutline });
         }
-
-        // if(hasError(resp)) {
-        //   throw resp.data
-        // }
       } catch(err) {
         logger.error("Failed to print manifest", err)
       }
