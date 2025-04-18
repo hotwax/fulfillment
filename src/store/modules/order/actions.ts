@@ -308,7 +308,7 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   async updateShipmentPackageDetail ({ commit, state }, payload) {
-    const currentOrder = JSON.parse(JSON.stringify(state.current));
+    let currentOrder = JSON.parse(JSON.stringify(state.current));
     const completedOrders = JSON.parse(JSON.stringify(state.completed.list));
     const inProgressOrders = JSON.parse(JSON.stringify(state.inProgress.list));
 
@@ -341,6 +341,7 @@ const actions: ActionTree<OrderState, RootState> = {
           const order = completedOrders.find((completedOrder:any) => completedOrder.shipmentId === payload.shipmentId);
           if (order) {
             updateShipmentPackages(order);
+            currentOrder = order
             commit(types.ORDER_COMPLETED_UPDATED, { list: completedOrders, total: state.completed.total });
           }
         }
@@ -348,6 +349,7 @@ const actions: ActionTree<OrderState, RootState> = {
           const order = inProgressOrders.find((inProgressOrder:any) => inProgressOrder.shipmentId === payload.shipmentId);
           if (order) {
             updateShipmentPackages(order);
+            currentOrder = order
             commit(types.ORDER_INPROGRESS_UPDATED, { orders: inProgressOrders, total: state.inProgress.total });
           }
         }
@@ -358,6 +360,7 @@ const actions: ActionTree<OrderState, RootState> = {
     } catch(err) {
       logger.error('Failed to fetch shipment packages.', err)
     }
+    return currentOrder
   },
 
   async fetchOrderDetail ({ commit, state }) {

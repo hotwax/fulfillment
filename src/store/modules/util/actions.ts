@@ -690,7 +690,6 @@ const actions: ActionTree<UtilState, RootState> = {
         "pageSize": 20
       });
 
-      console.log("===carrier====resp===", resp)
       if (!hasError(resp)) {
         resp.data.map((carrier: any) => {
           carrierDesc[carrier.partyId] = carrier.partyTypeId === "PERSON" ? `${carrier.firstName} ${carrier.lastName}` : carrier.groupName
@@ -721,7 +720,6 @@ const actions: ActionTree<UtilState, RootState> = {
       }
 
       const resp = await UtilService.fetchStoreCarrierAndMethods(payload);
-      console.log("===methods====resp===", resp)
 
       if(!hasError(resp)) {
         const storeCarrierAndMethods = resp.data;

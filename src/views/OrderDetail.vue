@@ -179,7 +179,7 @@
             <!-- positive -->
             <div>
               <template v-if="category === 'in-progress'">
-                <ion-button @click="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">
+                <ion-button @click="packOrder(order)">
                   <ion-icon slot="start" :icon="personAddOutline" />
                   {{ translate("Pack order") }}
                 </ion-button>
@@ -730,7 +730,25 @@ export default defineComponent({
         this.reportIssue(order, itemsToReject);
         return;
       }
-      this.confirmPackOrder(order);
+      this.initiatePackOrder(order);
+    },
+    async initiatePackOrder(order: any, updateParameter?: string) {
+      let forceScan = this.isForceScanEnabled;
+      if (this.isEntierOrderRejectionEnabled(order)) {
+        //no need to scan when all the items are going to reject when partial order rejection is not allowed
+        forceScan = false
+      } else {
+        //no need to scan when all the items are going to reject
+        forceScan = order.items.some((item: any) => !item.rejectReason)
+      }
+
+      if (order.missingLabelImage) {
+        await this.generateTrackingCodeForPacking(order, updateParameter, forceScan)
+      } else if (forceScan) {
+        await this.scanOrder(order, updateParameter)
+      } else {
+        this.confirmPackOrder(order);
+      }
     },
     async confirmPackOrder(order: any, updateParameter?: string) {
       const confirmPackOrder = await alertController
@@ -1196,7 +1214,7 @@ export default defineComponent({
             text: translate("Report"),
             role: 'confirm',
             handler: async() => {
-              await this.confirmPackOrder(order, 'report').then(async () => {
+              await this.initiatePackOrder(order, 'report').then(async () => {
                 // redirect user to inProgress list page only when the order has a single item, and the user initiated report action on the same
                 // update the current order only when order contains multiple items in it.
                 if(order.items.length === 1 ||  this.isEntierOrderRejectionEnabled(order)) {
@@ -1380,7 +1398,7 @@ export default defineComponent({
     isTrackingRequiredForAnyShipmentPackage(order: any) {
       return order.isTrackingRequired === 'Y'
     },
-    async scanOrder(order: any) {
+    async scanOrder(order: any, updateParameter?: string) {
       const modal = await modalController.create({
         component: ScanOrderItemModal,
         componentProps: { order }
@@ -1388,13 +1406,13 @@ export default defineComponent({
 
       modal.onDidDismiss().then((result: any) => {
         if(result.data?.packOrder) {
-          this.packOrder(this.order);
+          this.confirmPackOrder(order, updateParameter);
         }
       })
 
       modal.present();
     },
-    async generateTrackingCodeForPacking(order: any) {
+    async generateTrackingCodeForPacking(order: any, updateParameter?: string, forceScan = false) {
       const modal = await modalController.create({
         component: GenerateTrackingCodeModal,
         componentProps: { order, updateCarrierShipmentDetails: this.updateCarrierShipmentDetails, shipmentLabelErrorMessages: this.shipmentLabelErrorMessages, fetchShipmentLabelError: this.fetchShipmentLabelError }
@@ -1402,8 +1420,8 @@ export default defineComponent({
 
       modal.onDidDismiss().then((result: any) => {
         if(result.data?.moveToNext) {
-          if(this.isForceScanEnabled) this.scanOrder(this.order);
-          else this.packOrder(this.order);
+          if(forceScan) this.scanOrder(this.order, updateParameter);
+          else this.confirmPackOrder(this.order, updateParameter);
         }
       })
 

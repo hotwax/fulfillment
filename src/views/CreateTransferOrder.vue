@@ -487,7 +487,6 @@ async function createOrder() {
   const productIds = currentOrder.value.items?.map((item: any) => item.productId);
   const productAverageCostDetail = await ProductService.fetchProductsAverageCost(productIds, currentOrder.value.originFacilityId)
 
-  console.log("=======productAverageCostDetail===", productAverageCostDetail)
   const order = {
     orderName: currentOrder.value.name.trim(),
     orderTypeId: "TRANSFER_ORDER",

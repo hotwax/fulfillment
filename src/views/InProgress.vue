@@ -189,7 +189,7 @@
 
             <div class="actions">
               <div>
-                <ion-button  @click.stop="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack") }}</ion-button>
+                <ion-button  @click.stop="packOrder(order)">{{ translate("Pack") }}</ion-button>
               </div>
 
               <div class="desktop-only">
@@ -467,7 +467,25 @@ export default defineComponent({
         this.reportIssue(order, itemsToReject);
         return;
       }
-      this.confirmPackOrder(order);
+      this.initiatePackOrder(order);
+    },
+    async initiatePackOrder(order: any, updateParameter?: string) {
+      let forceScan = this.isForceScanEnabled;
+      if (this.isEntierOrderRejectionEnabled(order)) {
+        //no need to scan when all the items are going to reject when partial order rejection is not allowed
+        forceScan = false
+      } else {
+        //no need to scan when all the items are going to reject
+        forceScan = order.items.some((item: any) => !item.rejectReason)
+      }
+
+      if (order.missingLabelImage) {
+        await this.generateTrackingCodeForPacking(order, updateParameter, forceScan)
+      } else if (forceScan) {
+        await this.scanOrder(order, updateParameter)
+      } else {
+        this.confirmPackOrder(order);
+      }
     },
     async confirmPackOrder(order: any, updateParameter?: string) {
       const confirmPackOrder = await alertController
@@ -727,7 +745,7 @@ export default defineComponent({
             text: translate("Report"),
             role: 'confirm',
             handler: async() => {
-              await this.confirmPackOrder(order, "report");
+              await this.initiatePackOrder(order, "report");
             }
           }]
         });
@@ -1147,7 +1165,7 @@ export default defineComponent({
       });
       return qrCodeModal.present();
     },
-    async scanOrder(order: any) {
+    async scanOrder(order: any, updateParameter?: string) {
       const modal = await modalController.create({
         component: ScanOrderItemModal,
         componentProps: { order }
@@ -1155,13 +1173,13 @@ export default defineComponent({
 
       modal.onDidDismiss().then((result: any) => {
         if(result.data?.packOrder) {
-          this.packOrder(order);
+          this.confirmPackOrder(order, updateParameter);
         }
       })
 
       modal.present();
     },
-    async generateTrackingCodeForPacking(order: any) {
+    async generateTrackingCodeForPacking(order: any, updateParameter?: string, forceScan = false) {
       const modal = await modalController.create({
         component: GenerateTrackingCodeModal,
         componentProps: { order }
@@ -1171,8 +1189,8 @@ export default defineComponent({
         if(result.data?.moveToNext) {
           const inProgressOrders = this.getInProgressOrders()
           const updatedOrder = inProgressOrders.find((currentOrder: any) => currentOrder.shipmentId === order.shipmentId);
-          if(this.isForceScanEnabled) this.scanOrder(updatedOrder);
-          else this.packOrder(updatedOrder);
+          if(forceScan) this.scanOrder(updatedOrder, updateParameter);
+          else this.confirmPackOrder(updatedOrder, updateParameter);
         }
       })
 
