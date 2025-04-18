@@ -852,6 +852,7 @@ export default defineComponent({
       modal.present();
     },
     async generateCarrierManifest() {
+      emitter.emit("presentLoader")
       const payload = {
         facilityId: this.currentFacility?.facilityId,
         carrierPartyId: this.selectedCarrierPartyId,
@@ -860,9 +861,12 @@ export default defineComponent({
 
       try {
         await UtilService.generateManifest(payload);
+        showToast(translate("Manifest has been generated successfully"))
       } catch(err) {
         logger.error("Failed to generate manifest", err)
+        showToast(translate("Failed to generate manifest"))
       }
+      emitter.emit("dismissLoader")
     }
   },
   setup() {
