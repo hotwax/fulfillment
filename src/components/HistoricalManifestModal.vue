@@ -48,7 +48,7 @@ import {
   IonToolbar,
   modalController,
 } from '@ionic/vue';
-import { computed, defineComponent, resolveComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { closeOutline, printOutline } from 'ionicons/icons';
 import { translate, useUserStore } from '@hotwax/dxp-components';
 import { useStore } from "vuex";
