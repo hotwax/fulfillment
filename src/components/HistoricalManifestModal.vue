@@ -49,13 +49,14 @@ import {
   modalController,
 } from '@ionic/vue';
 import { computed, defineComponent } from 'vue';
-import { closeOutline, printOutline } from 'ionicons/icons';
+import { cogOutline, closeOutline, printOutline } from 'ionicons/icons';
 import { translate, useUserStore } from '@hotwax/dxp-components';
 import { useStore } from "vuex";
 import { DateTime } from 'luxon';
 import logger from '@/logger';
 import { UtilService } from '@/services/UtilService';
 import { hasError } from '@hotwax/oms-api';
+import { showToast } from "@/utils";
 
 export default defineComponent({
   name: "HistoricalManifestModal",
