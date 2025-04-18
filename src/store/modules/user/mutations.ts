@@ -10,7 +10,11 @@ const mutations: MutationTree <UserState> = {
       state.token = ''
       state.current = {},
       state.permissions = [],
-      state.allNotificationPrefs = []
+      state.allNotificationPrefs = [],
+      state.omsRedirectionInfo = {
+        url: "",
+        token: ""
+      }
     },
     [types.USER_INFO_UPDATED] (state, payload) {
         state.current = { ...state.current,  ...payload}
@@ -60,6 +64,9 @@ const mutations: MutationTree <UserState> = {
     },
     [types.USER_DISABLE_UNPACK_CONFIG_UPDATED] (state, payload) {
         state.isUnpackDisabled = payload
-    }
+    },
+    [types.USER_OMS_REDIRECTION_INFO_UPDATED](state, payload) {
+         state.omsRedirectionInfo = payload;
+     }
 }
 export default mutations;
