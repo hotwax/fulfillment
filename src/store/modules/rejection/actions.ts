@@ -79,7 +79,7 @@ const actions: ActionTree<RejectionState, RootState> = {
                 return reasonDetail;
               }, {});
 
-              await store.dispatch("util/updateRejectReasons", usedRejectionReasons)
+              await store.dispatch("util/updateRejectReasons", resp.data.docs)
               usedRejectionReasons = usedReasons.map((reason:any) => {
                 return {
                   count: reason.count,
