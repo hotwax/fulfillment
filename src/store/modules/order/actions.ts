@@ -500,8 +500,9 @@ const actions: ActionTree<OrderState, RootState> = {
       }
     }
 
-    if(completedOrderQuery.selectedCarrierPartyIds.length) {
-      params.filters['manifestContentId'] = { value: completedOrderQuery.selectedCarrierPartyIds, op: 'OR' }
+    if(completedOrderQuery.selectedCarrierPartyId) {
+      // Filtering on shipmentCarrierPartyId as manifestContentId contains \ at the end, that will need extra handling
+      params.filters['shipmentCarrierPartyId'] = { value: completedOrderQuery.selectedCarrierPartyId }
     }
 
     // only adding shipmentMethods when a method is selected
