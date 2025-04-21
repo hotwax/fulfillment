@@ -22,6 +22,7 @@
         <ion-button fill="outline" @click="downloadCarrierManifest(manifest)">
           <ion-icon :icon="printOutline" slot="start"/>
           {{ translate("Print") }}
+          <ion-spinner name="crescent" slot="end" v-if="isLoading === manifest.contentId" />
         </ion-button>
       </ion-item>
     </ion-list>
@@ -44,6 +45,7 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
+  IonSpinner,
   IonTitle,
   IonToolbar,
   modalController,
@@ -57,7 +59,6 @@ import logger from '@/logger';
 import { UtilService } from '@/services/UtilService';
 import { hasError } from '@hotwax/oms-api';
 import { showToast } from "@/utils";
-import emitter from '@/event-bus';
 
 export default defineComponent({
   name: "HistoricalManifestModal",
@@ -71,12 +72,14 @@ export default defineComponent({
     IonLabel,
     IonList,
     IonListHeader,
+    IonSpinner,
     IonTitle,
     IonToolbar,
   },
   data() {
     return {
-      items: []
+      items: [],
+      isLoading: null
     }
   },
   props: ["selectedCarrierPartyId", "carrierConfiguration"],
@@ -88,7 +91,7 @@ export default defineComponent({
       return DateTime.fromMillis(time).toFormat("H:mm a dd/MM/yyyy")
     },
     async downloadCarrierManifest(manifest) {
-      emitter.emit("presentLoader");
+      this.isLoading = manifest?.contentId;
       const payload = {
         facilityId: this.currentFacility?.facilityId,
         carrierPartyId: this.selectedCarrierPartyId,
@@ -116,7 +119,7 @@ export default defineComponent({
         logger.error("Failed to print manifest", err)
         showToast(translate("Failed to print manifest"));
       }
-      emitter.emit("dismissLoader");
+      this.isLoading = null;
     }
   },
   setup() {
