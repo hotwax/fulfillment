@@ -73,20 +73,17 @@ const actions: ActionTree<RejectionState, RootState> = {
             const resp = await UtilService.fetchRejectReasons(payload)
 
             if (!hasError(resp) && resp.data.count > 0) {
-              const reasonCountDetail = usedReasons.reduce((reasonDetail: any, reason: any) => {
-                reasonDetail[reason.val.trim().toUpperCase()] = reason;
+              
+              const reasonCountDetail = resp.data.docs.reduce((reasonDetail: any, reason: any) => {
+                reasonDetail[reason.enumId] = reason;
                 return reasonDetail;
               }, {});
-              usedRejectionReasons = resp.data.docs
-              await store.dispatch("util/updateRejectReasons", usedRejectionReasons)
 
-              // Added this logic as we need to display the rejections on UI in desc order of count
-              // If directly looping over the resp, it does not persist the rejections order on the basis of count
-              usedRejectionReasons = Object.keys(reasonCountDetail).map((rejectionReasonId: any) => {
-                const reason = usedRejectionReasons.find((reason: any) => reason.enumId === rejectionReasonId)
+              await store.dispatch("util/updateRejectReasons", usedRejectionReasons)
+              usedRejectionReasons = usedReasons.map((reason:any) => {
                 return {
-                  ...reason,
-                  count: reasonCountDetail[rejectionReasonId]?.count
+                  count: reason.count,
+                  ...reasonCountDetail[reason.val.toUpperCase()]
                 }
               })
             } else {
