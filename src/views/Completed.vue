@@ -18,20 +18,20 @@
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
       <ion-searchbar class="searchbar" :value="completedOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)" />
-      <div class="filters">
-        <ion-radio-group v-model="selectedCarrierPartyId">
-          <ion-row class="filters">
-            <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId.val">
-              <ion-radio label-placement="end" :value="carrierPartyId.id">
-                <ion-label>
-                  {{ getPartyName(carrierPartyId.id) }}
-                  <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? translate('package') : translate("packages") }}</p>
-                </ion-label>
-              </ion-radio>
-            </ion-item>
-          </ion-row>
-        </ion-radio-group>
+      <ion-radio-group v-model="selectedCarrierPartyId">
+        <ion-row class="filters">
+          <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId.val">
+            <ion-radio label-placement="end" :value="carrierPartyId.id">
+              <ion-label>
+                {{ getPartyName(carrierPartyId.id) }}
+                <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? translate('package') : translate("packages") }}</p>
+              </ion-label>
+            </ion-radio>
+          </ion-item>
+        </ion-row>
+      </ion-radio-group>
 
+      <div class="filters">
         <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod.val">
           <ion-checkbox label-placement="end" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)" @ionChange="updateSelectedShipmentMethods(shipmentMethod.val)">
             <ion-label>
@@ -211,7 +211,6 @@ import {
   IonPage,
   IonRadio,
   IonRadioGroup,
-  IonRow,
   IonSearchbar,
   IonSkeletonText,
   IonSpinner,
@@ -269,7 +268,6 @@ export default defineComponent({
     IonPage,
     IonRadio,
     IonRadioGroup,
-    IonRow,
     IonSearchbar,
     IonSkeletonText,
     IonSpinner,
