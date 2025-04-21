@@ -18,7 +18,7 @@
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
       <ion-searchbar class="searchbar" :value="completedOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)" />
-      <ion-radio-group v-model="selectedCarrierPartyId" @ionChange="updateSelectedCarrierPartyIds($event.target.value)">
+      <ion-radio-group v-model="selectedCarrierPartyId">
         <ion-row class="filters">
           <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId.val">
             <ion-radio label-placement="end" :value="carrierPartyId.id">
@@ -618,9 +618,17 @@ export default defineComponent({
     async updateSelectedCarrierPartyIds (carrierPartyId: string) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
 
+      const selectedCarrierPartyIds = completedOrdersQuery.selectedCarrierPartyIds
+      const index = selectedCarrierPartyIds.indexOf(carrierPartyId)
+      if (index < 0) {
+        selectedCarrierPartyIds.push(carrierPartyId)
+      } else {
+        selectedCarrierPartyIds.splice(index, 1)
+      }
+
       // making view size default when changing the shipment method to correctly fetch orders
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      completedOrdersQuery.selectedCarrierPartyIds = [carrierPartyId]
+      completedOrdersQuery.selectedCarrierPartyIds = selectedCarrierPartyIds
 
       this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
