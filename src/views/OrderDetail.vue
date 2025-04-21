@@ -737,9 +737,9 @@ export default defineComponent({
       if (this.isEntierOrderRejectionEnabled(order)) {
         //no need to scan when all the items are going to reject when partial order rejection is not allowed
         forceScan = false
-      } else {
+      } else if (forceScan) {
         //no need to scan when all the items are going to reject
-        forceScan = order.items.some((item: any) => !item.rejectReason)
+        forceScan = !order.items.every((item: any) => item.rejectReason)
       }
 
       if (order.missingLabelImage) {
@@ -747,7 +747,7 @@ export default defineComponent({
       } else if (forceScan) {
         await this.scanOrder(order, updateParameter)
       } else {
-        this.confirmPackOrder(order);
+        this.confirmPackOrder(order, updateParameter);
       }
     },
     async confirmPackOrder(order: any, updateParameter?: string) {

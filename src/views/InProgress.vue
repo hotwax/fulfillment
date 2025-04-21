@@ -474,7 +474,7 @@ export default defineComponent({
       if (this.isEntierOrderRejectionEnabled(order)) {
         //no need to scan when all the items are going to reject when partial order rejection is not allowed
         forceScan = false
-      } else {
+      } else if (forceScan) {
         //no need to scan when all the items are going to reject
         forceScan = !order.items.every((item: any) => item.rejectReason)
       }
@@ -488,7 +488,6 @@ export default defineComponent({
       }
     },
     async confirmPackOrder(order: any, updateParameter?: string) {
-      console.log("=======updateParameter==", updateParameter)
       const confirmPackOrder = await alertController
         .create({
           header: translate("Pack order"),
@@ -519,7 +518,6 @@ export default defineComponent({
               const shipmentIds = [order.shipmentId]
               try {
                 const updatedOrderDetail = await this.getUpdatedOrderDetail(order, updateParameter) as any
-                console.log("========updatedOrderDetail==", updatedOrderDetail)
                 const params = {
                   shipmentId: order.shipmentId,
                   orderId: order.orderId,
@@ -758,7 +756,6 @@ export default defineComponent({
       await this.store.dispatch('order/findInProgressOrders')
     },
     getUpdatedOrderDetail(order: any, updateParameter?: string) {
-      console.log("====updateParameter===", updateParameter)
       const items = JSON.parse(JSON.stringify(order.items));
       
       // creating updated data for items
