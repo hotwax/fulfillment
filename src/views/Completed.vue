@@ -18,7 +18,7 @@
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
       <ion-searchbar class="searchbar" :value="completedOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)" />
-      <ion-radio-group v-model="selectedCarrierPartyId">
+      <ion-radio-group v-model="selectedCarrierPartyId" @ionChange="updateSelectedCarrierPartyIds($event.target.value)">
         <ion-row class="filters">
           <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId.val">
             <ion-radio label-placement="end" :value="carrierPartyId.id">
@@ -357,6 +357,7 @@ export default defineComponent({
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
       completedOrdersQuery.viewIndex++;
       await this.store.dispatch('order/updateCompletedOrderIndex', { ...completedOrdersQuery })
+      this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
       event.target.complete();
     },
     isCompletedOrderScrollable() {
@@ -617,17 +618,9 @@ export default defineComponent({
     async updateSelectedCarrierPartyIds (carrierPartyId: string) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
 
-      const selectedCarrierPartyIds = completedOrdersQuery.selectedCarrierPartyIds
-      const index = selectedCarrierPartyIds.indexOf(carrierPartyId)
-      if (index < 0) {
-        selectedCarrierPartyIds.push(carrierPartyId)
-      } else {
-        selectedCarrierPartyIds.splice(index, 1)
-      }
-
       // making view size default when changing the shipment method to correctly fetch orders
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      completedOrdersQuery.selectedCarrierPartyIds = selectedCarrierPartyIds
+      completedOrdersQuery.selectedCarrierPartyIds = [carrierPartyId]
 
       this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
