@@ -406,12 +406,15 @@ export default defineComponent({
       }
     },
     async fetchKitComponents(orderItem: any) {
-      this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
+      await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
       
       //update the order in order to toggle kit components section
       const updatedOrder = this.inProgressOrders.list.find((order: any) => order.orderId === orderItem.orderId && order.picklistBinId === orderItem.picklistBinId);
       const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
       updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
+      if (!updatedItem.kitComponents) {
+        updatedItem.kitComponents = this.getProduct(updatedItem.productId).productComponents.map((productComponent: any) => productComponent.productIdTo)
+      }
       this.store.dispatch('order/updateInProgressOrder', updatedOrder)
     },
     async removeRejectionReason(ev: Event, item: any, order: any) {

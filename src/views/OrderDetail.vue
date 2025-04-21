@@ -676,6 +676,9 @@ export default defineComponent({
       } else {
         const updatedItem = this.order.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
         updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
+        if (!updatedItem.kitComponents) {
+          updatedItem.kitComponents = this.getProduct(updatedItem.productId).productComponents.map((productComponent: any) => productComponent.productIdTo)
+        }
       }
     },
     getRejectionReasonDescription (rejectionReasonId: string) {

@@ -24,7 +24,7 @@ const fetchProductComponents = async (params: any): Promise<any> => {
       "api_key": omsRedirectionInfo.token,
       "Content-Type": "application/json"
     },
-    data: params,
+    params,
   });
 }
 
