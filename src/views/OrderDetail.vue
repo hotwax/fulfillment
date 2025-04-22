@@ -778,7 +778,7 @@ export default defineComponent({
             text: translate("Pack"),
             role: 'confirm',
             handler: async (data) => {
-              const updatedOrderDetail = this.getUpdatedOrderDetail(order, updateParameter) as any
+              const updatedOrderDetail = await this.getUpdatedOrderDetail(order, updateParameter) as any
               const params = {
                 shipmentId: order.shipmentId,
                 orderId: order.primaryOrderId,
