@@ -70,7 +70,8 @@
                 <div class="product-info">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                      <!-- TODO: Currently handled product image mismatch on the order list page — needs to be applied to other pages using DxpShopifyImg  -->
+                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -105,7 +106,7 @@
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
+                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
