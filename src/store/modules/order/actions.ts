@@ -31,10 +31,11 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   async findInProgressOrders ({ commit, dispatch, state }) {
-    emitter.emit('presentLoader');
+    const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
+
+    if(!inProgressQuery.hideLoader) emitter.emit('presentLoader');
     let orders = [];
 
-    const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
     inProgressQuery.statusId = "SHIPMENT_APPROVED"
     inProgressQuery.orderStatusId = "ORDER_APPROVED"
     const resp = await OrderService.findShipments(inProgressQuery);
