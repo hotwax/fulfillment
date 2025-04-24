@@ -309,7 +309,7 @@ export default defineComponent({
       const updatedOrder = this.completedOrders.list.find((order: any) =>  order.shipmentId === orderItem.shipmentId);
       const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
       updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
-      this.store.dispatch('order/updateCompletedOrder', updatedOrder)
+      this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
     },
     enableScrolling() {
       const parentElement = (this as any).$refs.contentRef.$el
