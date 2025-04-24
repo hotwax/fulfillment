@@ -431,6 +431,19 @@ const actions: ActionTree<OrderState, RootState> = {
 
     commit(types.ORDER_INPROGRESS_UPDATED, {orders, total: state.inProgress.total})
   },
+  updateCompletedOrder ({ commit, state }, updatedOrder) {
+    const orders = state.completed.list.map((order: any) => {
+      if (updatedOrder.shipmentId === order.shipmentId) {
+        return {
+          ...order,
+          ...updatedOrder
+        };
+      }
+      return order;
+    })
+
+    commit(types.ORDER_COMPLETED_UPDATED, {list: orders, total: state.completed.total})
+  },
   async updateCompletedQuery({ commit, dispatch }, payload) {
     commit(types.ORDER_COMPLETED_QUERY_UPDATED, payload)
     await dispatch('findCompletedOrders');

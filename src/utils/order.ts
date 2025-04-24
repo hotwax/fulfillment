@@ -93,19 +93,15 @@ const removeKitComponents = (order: any) => {
   const kitItemSeqIds = new Set();
   const itemsWithoutKitComponents = [] as any;
 
-
   order.items.forEach((item:any) => {
-    const product = store.getters['product/getProduct'](item.productId);
-    if (product && product.productTypeId === "MARKETING_PKG_PICK") {
+    if (item.productTypeId === "MARKETING_PKG_PICK") {
       kitItemSeqIds.add(item.orderItemSeqId);
     }
   })
   
   //In current implementation kit product and component product will have the same orderItemSeqId
   order.items.forEach((item:any) => {
-    const product = store.getters['product/getProduct'](item.productId);
-    if ((product && product.productTypeId === "MARKETING_PKG_PICK") || !kitItemSeqIds.has(item.orderItemSeqId)) {
-      item["productTypeId"] = product.productTypeId
+    if (item.productTypeId === "MARKETING_PKG_PICK" || !kitItemSeqIds.has(item.orderItemSeqId)) {
       itemsWithoutKitComponents.push(item)
     }
   })

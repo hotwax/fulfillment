@@ -6,6 +6,7 @@ import logger from '@/logger'
 import { cogOutline } from 'ionicons/icons';
 import { escapeSolrSpecialChars, prepareSolrQuery } from '@/utils/solrHelper'
 import { getCurrentFacilityId, getProductStoreId } from '@/utils'
+import { removeKitComponents } from '@/utils/order';
 
 const findOpenOrders = async (payload: any): Promise<any> => {
   const openOrderQuery = payload.openOrderQuery
@@ -382,6 +383,7 @@ const findShipments = async (query: any): Promise <any>  => {
         const missingLabelImage = productStoreShipmentMethCount > 0 ? shipment.shipmentPackageRouteSegDetails?.some((shipmentPackageRouteSeg: any) => !shipmentPackageRouteSeg.trackingCode) : false;
         return {
           ...shipment,
+          items: removeKitComponents(shipment),
           missingLabelImage,
           trackingCode: shipment?.trackingIdNumber,
         };

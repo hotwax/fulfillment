@@ -303,12 +303,13 @@ export default defineComponent({
       })
     },
     async fetchKitComponents(orderItem: any) {
-      this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
+      await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
       
       //update the order in order to toggle kit components section
       const updatedOrder = this.completedOrders.list.find((order: any) =>  order.shipmentId === orderItem.shipmentId);
       const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
       updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
+      this.store.dispatch('order/updateCompletedOrder', updatedOrder)
     },
     enableScrolling() {
       const parentElement = (this as any).$refs.contentRef.$el
