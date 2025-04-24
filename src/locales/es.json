@@ -398,6 +398,7 @@
   "Primary product ID": "Primary product ID",
   "Print Customer Letter": "Imprimir Carta al Cliente",
   "Print Picklist": "Imprimir Lista de Selección",
+  "Print Shipping Label": "Print Shipping Label",
   "Print supplementary documents with the shipment for package identification.": "Imprime documentos adicionales con el envío para la identificación del paquete.",
   "Product identifier": "Product identifier",
   "Product is already received:": "Producto ya esta recibido: {itemName}",
