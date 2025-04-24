@@ -660,7 +660,6 @@ export default defineComponent({
                 if (hasError(resp)) {
                   throw resp.data
                 }
-                emitter.emit('dismissLoader');
 
                 // TODO: need to check that do we need to pass all the shipmentIds for an order or just need to pass
                 // the associated ids, currently passing the associated shipmentId
