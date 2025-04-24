@@ -97,7 +97,7 @@
                   <div class="actions">
                     <div class="desktop-only">
                       <ion-button fill="outline" @click.stop="regenerateShippingLabel(shipment)">
-                        {{ translate("Regenerate Generate Label") }}
+                        {{ translate("Regenerate Shipping Label") }}
                         <ion-spinner color="primary" slot="start" v-if="shipment.isGeneratingShippingLabel" name="crescent" />
                       </ion-button>
                       <ion-button v-if="!shipment.trackingIdNumber" fill="outline" @click.stop="showShippingLabelErrorModal(shipment)">{{ translate("Shipping label error") }}</ion-button>
