@@ -398,6 +398,7 @@
   "Primary product ID": "Primary product ID",
   "Print Customer Letter": "顧客の手紙を印刷",
   "Print Picklist": "ピックリストを印刷",
+  "Print Shipping Label": "Print Shipping Label",
   "Print supplementary documents with the shipment for package identification.": "パッケージの識別のために、出荷時に補助書類を印刷します。",
   "Product identifier": "Product identifier",
   "Product is already received:": "製品はすでに受け取られています: {itemName}",
