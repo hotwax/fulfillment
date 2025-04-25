@@ -225,7 +225,7 @@
           if(this.currentShipment.trackingCode) {
             this.showLabelError = false;
             showToast(translate("Shipping Label generated successfully"))
-            await OrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
+            await OrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls, this.currentShipment?.shipmentPackages);
           } else {
             this.showLabelError = true;
             showToast(translate("Failed to generate shipping label"))
@@ -233,7 +233,7 @@
         } else {
           this.showLabelError = false;
           //print shipping label if label already exists
-          await OrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
+          await OrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls, this.currentShipment?.shipmentPackages);
         }
 
         this.isGeneratingShippingLabel = false;

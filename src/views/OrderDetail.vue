@@ -815,14 +815,14 @@ export default defineComponent({
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
                     if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
                       await OrderService.printPackingSlip(shipmentIds)
-                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
                     } else {
                       await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
                     }
                   } else if (data.includes('printPackingSlip')) {
                     await OrderService.printPackingSlip(shipmentIds)
                   } else if (data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
                   }
                   if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
                     await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
@@ -1087,7 +1087,7 @@ export default defineComponent({
         return;
       }
 
-      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
       if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
         await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
       }

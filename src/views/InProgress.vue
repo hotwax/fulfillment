@@ -512,14 +512,14 @@ export default defineComponent({
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
                     if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
                       await OrderService.printPackingSlip(shipmentIds)
-                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
                     } else {
                     await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
                     }
                   } else if (data.includes('printPackingSlip')) {
                     await OrderService.printPackingSlip(shipmentIds)
                   } else if (data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
                   }
 
                   if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
@@ -608,6 +608,13 @@ export default defineComponent({
               )
               .flat().filter((url: any) => url) as Array<string>;
 
+              const shipmentPackages = orderList.
+              map((order: any) =>
+                [...new Set(order.shipmentPackages
+                  .map((shipmentPackage: any) => shipmentPackage)
+                )]
+              ).flat() as Array<string>;
+
               try {
                 const resp = await OrderService.packOrders({
                   shipmentIds
@@ -626,14 +633,14 @@ export default defineComponent({
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
                     if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
                       await OrderService.printPackingSlip(shipmentIds)
-                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentPackages);
                     } else {
                       await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
                     }
                   } else if (data.includes('printPackingSlip')) {
                     await OrderService.printPackingSlip(shipmentIds)
                   } else if (data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentPackages);
                   }
                   //print custom documents like international invoice 
                   await OrderService.printCustomDocuments(internationalInvoiceUrls);

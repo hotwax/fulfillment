@@ -397,13 +397,13 @@
 
           if(currentShipment.trackingIdNumber) {
             showToast(translate("Shipping Label generated successfully"))
-            await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
+            await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
           } else {
             showToast(translate("Failed to generate shipping label"))
           }
         } else {
           //print shipping label if label already exists
-          await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
+          await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
         }
 
         currentShipment.isGeneratingShippingLabel = false;
