@@ -431,7 +431,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
     // only adding categories when a category is selected
     if(openOrderQuery.selectedCategories.length) {
-      params.filters['productType'] = { value: openOrderQuery.selectedCategories.map((category: string) => JSON.stringify(category)), op: 'OR' }
+      params.filters['productCategories'] = { value: openOrderQuery.selectedCategories.map((category: string) => JSON.stringify(category)), op: 'OR' }
     }
 
     const orderQueryPayload = prepareOrderQuery(params)
