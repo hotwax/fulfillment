@@ -18,7 +18,7 @@
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
       <ion-searchbar class="searchbar" :value="completedOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)" />
-      <ion-radio-group v-model="selectedCarrierPartyId" @ionChange="updateSelectedCarrierPartyIds($event.detail.value)">
+      <ion-radio-group v-if="carrierPartyIds?.length" v-model="selectedCarrierPartyId" @ionChange="updateSelectedCarrierPartyIds($event.detail.value)">
         <ion-row class="filters">
           <ion-item lines="none">
               <!-- empty value '' for 'All orders' radio -->
@@ -40,7 +40,7 @@
         </ion-row>
       </ion-radio-group>
 
-      <div class="filters">
+      <div v-if="shipmentMethods?.length" class="filters">
         <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod.val">
           <ion-checkbox label-placement="end" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)" @ionChange="updateSelectedShipmentMethods(shipmentMethod.val)">
             <ion-label>
@@ -190,6 +190,7 @@
           <ion-button fill="solid" color="primary" :disabled="!carrierConfiguration[selectedCarrierPartyId]?.['MANIFEST_GEN_REQUEST']" @click="generateCarrierManifest">
             <ion-icon slot="start" :icon="printOutline" />
             {{ translate("Generate Manifest") }}
+            <ion-spinner name="crescent" slot="end" v-if="isGeneratingManifest" />
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -295,7 +296,8 @@ export default defineComponent({
       isScrollingEnabled: false,
       completedOrdersList: [] as any,
       selectedCarrierPartyId: "",
-      carrierConfiguration: {} as any
+      carrierConfiguration: {} as any,
+      isGeneratingManifest: false,
     }
   },
   computed: {
@@ -857,6 +859,7 @@ export default defineComponent({
       modal.present();
     },
     async generateCarrierManifest() {
+      this.isGeneratingManifest = true;
       const payload = {
         facilityId: this.currentFacility?.facilityId,
         carrierPartyId: this.selectedCarrierPartyId,
@@ -865,9 +868,12 @@ export default defineComponent({
 
       try {
         await UtilService.generateManifest(payload);
+        showToast(translate("Manifest has been generated successfully"))
       } catch(err) {
         logger.error("Failed to generate manifest", err)
+        showToast(translate("Failed to generate manifest"))
       }
+      this.isGeneratingManifest = false;
     }
   },
   setup() {
