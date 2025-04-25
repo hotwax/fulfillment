@@ -751,11 +751,6 @@ which results in distorted label text and thus reduced ion-item width */
 }
 
 @media (min-width: 991px) {
-  .item-search {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-gap: 40px;
-  }
 
   .find {
     grid: "search  main" min-content

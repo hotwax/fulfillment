@@ -18,8 +18,17 @@
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
       <ion-searchbar class="searchbar" :value="completedOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)" />
-      <ion-radio-group v-if="carrierPartyIds.length" v-model="selectedCarrierPartyId">
+      <ion-radio-group v-if="carrierPartyIds.length" v-model="selectedCarrierPartyId" @ionChange="updateSelectedCarrierPartyIds($event.detail.value)">
         <ion-row class="filters">
+          <ion-item lines="none">
+              <!-- empty value '' for 'All orders' radio -->
+            <ion-radio label-placement="end" value="">
+              <ion-label class="ion-text-wrap">
+                {{ translate("All") }}
+                <p>{{ getTotalPackages }} {{ translate("packages") }}</p>
+              </ion-label>
+            </ion-radio>
+          </ion-item>
           <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId.val">
             <ion-radio label-placement="end" :value="carrierPartyId.id">
               <ion-label>
@@ -142,7 +151,7 @@
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
                 <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
-                  {{ translate("Regenerate Shipping Label") }}
+                  {{ translate(order.missingLabelImage ? "Regenerate Shipping Label" : "Print Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
@@ -212,6 +221,7 @@ import {
   IonPage,
   IonRadio,
   IonRadioGroup,
+  IonRow,
   IonSearchbar,
   IonSkeletonText,
   IonSpinner,
@@ -223,7 +233,7 @@ import {
   modalController
 } from '@ionic/vue';
 import { computed, defineComponent } from 'vue';
-import { caretDownOutline, chevronUpOutline, cubeOutline, printOutline, downloadOutline, gift, giftOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline, timeOutline } from 'ionicons/icons'
+import { caretDownOutline, chevronUpOutline, cubeOutline, printOutline, downloadOutline, gift, giftOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline, timeOutline, analytics } from 'ionicons/icons'
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
@@ -269,6 +279,7 @@ export default defineComponent({
     IonPage,
     IonRadio,
     IonRadioGroup,
+    IonRow,
     IonSearchbar,
     IonSkeletonText,
     IonSpinner,
@@ -299,7 +310,10 @@ export default defineComponent({
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
       isShipNowDisabled: 'user/isShipNowDisabled',
       isUnpackDisabled: 'user/isUnpackDisabled'
-    })
+    }),
+    getTotalPackages() {
+      return this.carrierPartyIds.reduce((total: number, carrier: any) => total + Number(carrier.groups), 0);
+    }
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
@@ -339,6 +353,7 @@ export default defineComponent({
       const updatedOrder = this.completedOrders.list.find((order: any) =>  order.orderId === orderItem.orderId && order.picklistBinId === orderItem.picklistBinId);
       const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
       updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
+      this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
     },
     enableScrolling() {
       const parentElement = (this as any).$refs.contentRef.$el
@@ -619,17 +634,9 @@ export default defineComponent({
     async updateSelectedCarrierPartyIds (carrierPartyId: string) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
 
-      const selectedCarrierPartyIds = completedOrdersQuery.selectedCarrierPartyIds
-      const index = selectedCarrierPartyIds.indexOf(carrierPartyId)
-      if (index < 0) {
-        selectedCarrierPartyIds.push(carrierPartyId)
-      } else {
-        selectedCarrierPartyIds.splice(index, 1)
-      }
-
       // making view size default when changing the shipment method to correctly fetch orders
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      completedOrdersQuery.selectedCarrierPartyIds = selectedCarrierPartyIds
+      completedOrdersQuery.selectedCarrierPartyId = carrierPartyId
 
       this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
