@@ -19,11 +19,10 @@
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
       <ion-searchbar class="searchbar" :value="completedOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)" />
       <div class="filters">
-        <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId.val">
-          <ion-checkbox label-placement="end" :checked="completedOrders.query.selectedCarrierPartyIds.includes(carrierPartyId.val)" @ionChange="updateSelectedCarrierPartyIds(carrierPartyId.val)">
+        <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId">
+          <ion-checkbox label-placement="end" :checked="completedOrders.query.selectedCarrierPartyIds.includes(carrierPartyId)" @ionChange="updateSelectedCarrierPartyIds(carrierPartyId)">
             <ion-label>
-              {{ getPartyName(carrierPartyId.val.split('/')[0]) }}
-              <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? translate('package') : translate("packages") }}</p>
+              {{ getPartyName(carrierPartyId) }}
             </ion-label>
           </ion-checkbox>
           <!-- TODO: make the print icon functional -->
@@ -31,10 +30,9 @@
         </ion-item>
 
         <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod.val">
-          <ion-checkbox label-placement="end" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)" @ionChange="updateSelectedShipmentMethods(shipmentMethod.val)">
+          <ion-checkbox label-placement="end" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod)" @ionChange="updateSelectedShipmentMethods(shipmentMethod)">
             <ion-label>
-              {{ getShipmentMethodDesc(shipmentMethod.val) }}
-              <p>{{ shipmentMethod.groups }} {{ shipmentMethod.groups > 1 ? translate('orders') : translate('order') }}, {{ shipmentMethod.itemCount }} {{ shipmentMethod.itemCount > 1 ? translate('items') : translate('item') }}</p>
+              {{ getShipmentMethodDesc(shipmentMethod) }}
             </ion-label>
           </ion-checkbox>
         </ion-item>
@@ -275,7 +273,7 @@ export default defineComponent({
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
-    await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+    await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentFacets()]);
     emitter.on('updateOrderQuery', this.updateOrderQuery)
     this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
   },
@@ -356,7 +354,7 @@ export default defineComponent({
           showToast(translate('Order shipped successfully'))
           // TODO: handle the case of data not updated correctly
           const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
-          await Promise.all([this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery }), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+          await Promise.all([this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery }), this.fetchShipmentFacets()]);
         } else {
           throw resp.data
         }
@@ -406,7 +404,7 @@ export default defineComponent({
                     : showToast(translate('out of cannot be shipped due to missing tracking codes.', { remainingOrders: trackingRequiredAndMissingCodeOrders.length, totalOrders: packedOrdersCount }))
                   // TODO: handle the case of data not updated correctly
                   const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
-                  await Promise.all([this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery }), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+                  await Promise.all([this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery }), this.fetchShipmentFacets()]);
                 } else {
                   throw resp.data
                 }
@@ -430,40 +428,26 @@ export default defineComponent({
       return popover.present();
     },
 
-    async fetchShipmentMethods() {
-      const payload = prepareOrderQuery({
-        docType: 'ORDER',
-        viewSize: '0',  // passed viewSize as 0 to not fetch any data
-        isGroupingRequired: false,
-        filters: {
-          orderTypeId: { value: 'SALES_ORDER' },
-          fulfillmentStatus: { value: '(InProgress OR (Completed AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
-          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
-        },
-        facet: {
-          "shipmentMethodFacet": {
-            "excludeTags": "shipmentMethodTypeIdFilter",
-            "field": "shipmentMethodTypeId",
-            "mincount": 1,
-            "limit": -1,
-            "sort": "index",
-            "type": "terms",
-            "facet": {
-              "groups": "unique(orderId)",
-              "itemCount": "sum(quantity)"
-            }
-          }
-        }
-      })
+    async fetchShipmentFacets() {
+      const params = {
+        keyword: "1",
+        orderTypeId: "SALES_ORDER",
+        shipmentMethodTypeId: "STOREPICKUP",
+        shipmentMethodTypeId_not: "Y",
+        statusId: "SHIPMENT_PACKED",
+        shippedDateFrom: DateTime.now().startOf('day').toMillis(),
+        originFacilityId: this.currentFacility?.facilityId,
+        productStoreId: this.currentEComStore.productStoreId
+      }
 
       try {
-        const resp = await UtilService.fetchShipmentMethods(payload)
+        const resp = await OrderService.fetchShipmentFacets(params)
 
-        if(resp.status == 200 && !hasError(resp)) {
-          this.shipmentMethods = resp.data.facets.shipmentMethodFacet.buckets
-          this.store.dispatch('util/fetchShipmentMethodTypeDesc', this.shipmentMethods.map((shipmentMethod: any) => shipmentMethod.val))
+        if(!hasError(resp)) {
+          this.shipmentMethods = resp.data.shipmentMethodTypeIds
+          this.carrierPartyIds = resp.data.carrierPartyIds
+          this.store.dispatch('util/fetchShipmentMethodTypeDesc', resp.data.shipmentMethodTypeIds)
+          this.store.dispatch('util/fetchPartyInformation', resp.data.carrierPartyIds)
         } else {
           throw resp.data
         }
@@ -471,47 +455,7 @@ export default defineComponent({
         logger.error('Failed to fetch shipment methods', err)
       }
     },
-    async fetchCarrierPartyIds() {
-      const payload = prepareOrderQuery({
-        docType: 'ORDER',
-        viewSize: '0',  // passed viewSize as 0 to not fetch any data
-        isGroupingRequired: false,
-        filters: {
-          orderTypeId: { value: 'SALES_ORDER' },
-          fulfillmentStatus: { value: '(InProgress OR (Completed AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
-          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId },
-        },
-        facet: {
-          manifestContentIdFacet: {
-            "excludeTags": "carrierPartyIdFilter",
-            "field": "carrierPartyId",
-            "mincount": 1,
-            "limit": -1,
-            "sort": "index",
-            "type": "terms",
-            "facet": {
-              "groups": "unique(orderId)"
-            }
-          }
-        }
-      })
-
-      try {
-        const resp = await UtilService.fetchCarrierPartyIds(payload)
-        
-
-        if(resp.status == 200 && !hasError(resp)) {
-          this.carrierPartyIds = resp.data.facets.manifestContentIdFacet.buckets
-          this.store.dispatch('util/fetchPartyInformation', this.carrierPartyIds.map((carrierPartyId) => carrierPartyId.val.split('/')[0]))
-        } else {
-          throw resp.data
-        }
-      } catch(err) {
-        logger.error('Failed to fetch carrierPartyIds', err)
-      }
-    },
+    
     async updateQueryString(queryString: string) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
 
@@ -566,12 +510,12 @@ export default defineComponent({
             text: translate("Unpack"),
             handler: async () => {
               try {
-                const resp = await OrderService.unpackOrder({shipmentId: order.shipmentId, statusId: 'SHIPMENT_APPROVED'})
+                const resp = await OrderService.unpackOrder({shipmentId: order.shipmentId})
 
                 if(resp.status == 200 && !hasError(resp)) {
                   showToast(translate('Order unpacked successfully'))
                   // TODO: handle the case of data not updated correctly
-                  await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentMethods(), this.fetchCarrierPartyIds()]);
+                  await Promise.all([this.store.dispatch('order/findCompletedOrders'), this.fetchShipmentFacets()]);
                 } else {
                   throw resp.data
                 }

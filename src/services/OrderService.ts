@@ -374,7 +374,7 @@ const findShipments = async (query: any): Promise <any>  => {
         "api_key": omsRedirectionInfo.token,
         "Content-Type": "application/json"
       },
-      params
+      params,
     }) as any;
     if (!hasError(resp)) {
       total = resp.data.shipmentCount
@@ -395,6 +395,22 @@ const findShipments = async (query: any): Promise <any>  => {
     logger.error('No inProgress orders found', err)
   }
   return { orders, total }
+}
+
+const fetchShipmentFacets = async (params: any): Promise <any>  => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/poorti/shipmentFacetsDetails`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params
+  });
 }
 
 const fetchPicklists = async (payload: any): Promise <any>  => {
@@ -530,8 +546,8 @@ const unpackOrder = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/poorti/shipments/${payload.shipmentId}`,
-    method: "PUT",
+    url: `/poorti/shipments/${payload.shipmentId}/unpack`,
+    method: "post",
     baseURL,
     headers: {
       "api_key": omsRedirectionInfo.token,
@@ -764,6 +780,7 @@ export const OrderService = {
   fetchOrderDetail,
   fetchOrderItems,
   fetchPicklists,
+  fetchShipmentFacets,
   fetchShipmentLabelError,
   fetchShipmentPackageRouteSegDetails,
   findOpenOrders,
