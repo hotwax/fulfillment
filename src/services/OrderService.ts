@@ -556,86 +556,69 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
 const fetchShippingLabelForZebra = async (shipmentIds: Array<string>): Promise<any> => {
   try {
     const resp : any = await api({
-      url: 'performFind',
-      method: 'get',
+      url: "performFind",
+      method: "get",
       params: {
         "entityName": "ShipmentPackageRouteSeg",
         "inputFields": {
-            "shipmentId" : shipmentIds
-          }
+          "shipmentId": shipmentIds,
+          "shipmentId_op": "in"
+        },
+        viewSize: shipmentIds.length
       },
     }) as any;
 
-    // console.log("RESP" , resp);
-    if (!resp || resp.status !== 200 || hasError(resp)) {
+    if (hasError(resp) || !resp.data?.docs?.length) {
       throw resp.data;
     }
     const shippingLabels = resp.data.docs.map((doc: any) => doc.labelImage);
     return shippingLabels;
 
   } catch (err) {
-    logger.error("Failed to load shipping label from Route Segment");
+    logger.error("Failed to fetch shipping label data");
   }
 }
 
-const fetchLabelImageType = async (carrierId : string) : Promise<any> => {
-  try {
-    const resp: any = await api({
-      method: 'get',
-      url: 'performFind',
-      params: {
-        "entityName": "SystemProperty",
-        "inputFields": {
-          "systemResourceId": carrierId,
-          "systemPropertyId": "shipment.carrier.labelImageType"
-        }
-      }
-    }) as any;
-
-    if (!resp || resp.status !== 200 || hasError(resp)) {
-      throw resp.data;
-    }
-
-    const labelImageType = resp?.data?.docs[0]?.systemPropertyValue;
-    return labelImageType;
-
-  } catch (err) {
-    logger.error("Failed to fetch label image type from System Property ", err)
-  }
-}
-
-const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages? : Array<any>): Promise<any> => {
+const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string): Promise<any> => {
   try {
     let pdfUrls = shippingLabelPdfUrls?.filter((pdfUrl: any) => pdfUrl);
     if (!pdfUrls || pdfUrls.length == 0) {
-      let labelImageType = 'PNG';
+      let labelImageType = imageType || "PNG";
 
-      if (shipmentPackages && shipmentPackages.length !== 0) {
-        labelImageType = await store.dispatch('util/fetchLabelImageType', shipmentPackages[0]?.carrierPartyId); 
+      console.log('labelImageType', labelImageType)
+
+      if(!imageType && shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId) {
+        labelImageType = await store.dispatch("util/fetchLabelImageType", shipmentPackages[0].carrierPartyId);
       }
 
-      if (labelImageType === 'ZPLII'){
-        const zplLabels = await fetchShippingLabelForZebra(shipmentIds);
-        await ZebraPrinterService.printZplLabels(zplLabels);
+      const labelImages = [] as Array<string>
+      console.log('shipmentPackages', shipmentPackages)
+      if (labelImageType === "ZPLII") {
+        shipmentPackages?.map((shipmentPackage: any) => {
+          shipmentPackage.labelImage && labelImages.push(shipmentPackage.labelImage)
+        })
+        console.log("labelImages", labelImages)
+        // const zplLabels = await fetchShippingLabelForZebra(shipmentIds);
+        await ZebraPrinterService.printZplLabels(labelImages);
         return;
       }
-    // Get packing slip from the server
-    const resp: any = await api({
-      method: 'get',
-      url: 'ShippingLabel.pdf',
-      params: {
-        shipmentId: shipmentIds[0]
-      },
-      responseType: "blob"
-    })
+      // Get packing slip from the server
+      const resp: any = await api({
+        method: 'get',
+        url: 'ShippingLabel.pdf',
+        params: {
+          shipmentId: shipmentIds[0]
+        },
+        responseType: "blob"
+      })
 
-    if (!resp || resp.status !== 200 || hasError(resp)) {
-      throw resp.data;
-    }
+      if (!resp || resp.status !== 200 || hasError(resp)) {
+        throw resp.data;
+      }
 
-    // Generate local file URL for the blob received
-    const pdfUrl = window.URL.createObjectURL(resp.data);
-    pdfUrls = [pdfUrl];
+      // Generate local file URL for the blob received
+      const pdfUrl = window.URL.createObjectURL(resp.data);
+      pdfUrls = [pdfUrl];
     }
     // Open the file in new tab
     pdfUrls.forEach((pdfUrl: string) => {
@@ -671,7 +654,19 @@ const printCustomDocuments = async (internationalInvoiceUrls: Array<string>): Pr
   }
 }
 
-const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
+const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>, shipmentPackages: any): Promise<any> => {
+
+  let labelImageType = "PNG";
+  if(shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId) {
+    labelImageType = await store.dispatch("util/fetchLabelImageType", shipmentPackages[0].carrierPartyId); 
+  }
+
+  if (labelImageType === "ZPLII") {
+    await printShippingLabel(shipmentIds, [], shipmentPackages, labelImageType)
+    await printPackingSlip(shipmentIds)
+    return;
+  }
+
   try {
     // Get packing slip from the server
     const resp: any = await api({

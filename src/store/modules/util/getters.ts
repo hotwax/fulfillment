@@ -59,9 +59,6 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   getShipmentMethodsByCarrier(state) {
     return state.shipmentMethodsByCarrier
-  },
-  getCarrierShippingLabelImageType: (state) => (carrierId: string) => {
-    return state.carrierShippingLabelImageType[carrierId] ? state.carrierShippingLabelImageType[carrierId] : ''
   }
 }
 export default getters;

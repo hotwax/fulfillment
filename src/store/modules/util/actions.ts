@@ -872,24 +872,38 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_CLEARED)
   },
 
-  async fetchLabelImageType ({ commit, state }, carrierId){
-    if (state.carrierShippingLabelImageType[carrierId]) { return state.carrierShippingLabelImageType[carrierId]}
+  async fetchLabelImageType({ commit, state }, carrierId) {
+    const facilityId = store.state.user.currentFacility.facilityId
+    const labelImageType = "ZPLII"
+    if(state.facilityShippingLabelImageType[facilityId]) {
+      return state.facilityShippingLabelImageType[facilityId]
+    }
+
+    const isFacilityZPLConfigured = await UtilService.fetchFacilityZPLGroupInfo(store.state.user.currentFacility.facilityId);
+    
+    if(isFacilityZPLConfigured) {
+      commit(types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED, {
+        labelImageType,
+        facilityId
+      })
+      return labelImageType;
+    }
+
     try {
       const resp = await UtilService.fetchLabelImageType(carrierId);
 
-      if (!resp || resp.status !== 200 || hasError(resp)) {
+      if(hasError(resp) || !resp.data.docs?.length) {
         throw resp.data;
       }
 
       const labelImageType = resp?.data?.docs[0]?.systemPropertyValue;
-      commit(types.UTIL_CARRIER_SHIPPING_LABEL_UPDATED, {
-        carrierId: carrierId,
-        labelImageType: labelImageType
+      commit(types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED, {
+        labelImageType,
+        facilityId
       })
       return labelImageType;
-
     } catch (err) {
-      logger.error("Failed to fetch label image type from System Property ", err)
+      logger.error("Failed to fetch label image type", err)
     }
   }
 }

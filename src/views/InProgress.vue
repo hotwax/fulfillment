@@ -514,7 +514,7 @@ export default defineComponent({
                       await OrderService.printPackingSlip(shipmentIds)
                       await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
                     } else {
-                    await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds, order.shipmentPackages)
                     }
                   } else if (data.includes('printPackingSlip')) {
                     await OrderService.printPackingSlip(shipmentIds)
@@ -635,7 +635,7 @@ export default defineComponent({
                       await OrderService.printPackingSlip(shipmentIds)
                       await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentPackages);
                     } else {
-                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds, shipmentPackages)
                     }
                   } else if (data.includes('printPackingSlip')) {
                     await OrderService.printPackingSlip(shipmentIds)

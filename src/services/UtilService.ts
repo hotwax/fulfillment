@@ -724,6 +724,38 @@ const fetchFacilityAddresses = async (params: any): Promise<any> => {
   })
 }
 
+const fetchFacilityZPLGroupInfo = async (facilityId: string): Promise<any> => {
+  let isFacilityZPLConfigured = false;
+  const params = {
+    inputFields: {
+      facilityId,
+      facilityGroupId: "ZPL_SHIPPING_LABEL",
+      facilityGroupTypeId: "SHIPPING_LABEL"
+    },
+    fieldList: ["facilityGroupId", "facilityId"],
+    entityName: "FacilityGroupAndMember",
+    filterByDate: "Y",
+    viewSize: 1
+  }
+
+  try {
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    }) as any;
+
+    if (!hasError(resp) && resp.data?.docs?.length > 0) {
+      isFacilityZPLConfigured = true
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    logger.error(err)
+  }
+  return isFacilityZPLConfigured;
+}
+
 const fetchLabelImageType = async (carrierId : string): Promise<any> => {
   return api({
     method: 'get',
@@ -753,6 +785,7 @@ export const UtilService = {
   fetchEnumeration,
   fetchFacilities,
   fetchFacilityAddresses,
+  fetchFacilityZPLGroupInfo,
   fetchFacilityTypeInformation,
   fetchFulfillmentRejectReasons,
   fetchGiftCardFulfillmentInfo,
