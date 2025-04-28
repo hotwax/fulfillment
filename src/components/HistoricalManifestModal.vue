@@ -22,6 +22,7 @@
         <ion-button fill="outline" @click="downloadCarrierManifest(manifest)">
           <ion-icon :icon="printOutline" slot="start"/>
           {{ translate("Print") }}
+          <ion-spinner name="crescent" slot="end" v-if="loadingContentId === manifest.contentId" />
         </ion-button>
       </ion-item>
     </ion-list>
@@ -44,6 +45,7 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
+  IonSpinner,
   IonTitle,
   IonToolbar,
   modalController,
@@ -70,12 +72,14 @@ export default defineComponent({
     IonLabel,
     IonList,
     IonListHeader,
+    IonSpinner,
     IonTitle,
     IonToolbar,
   },
   data() {
     return {
-      items: []
+      items: [],
+      loadingContentId: null
     }
   },
   props: ["selectedCarrierPartyId", "carrierConfiguration"],
@@ -87,6 +91,7 @@ export default defineComponent({
       return DateTime.fromMillis(time).toFormat("H:mm a dd/MM/yyyy")
     },
     async downloadCarrierManifest(manifest) {
+      this.loadingContentId = manifest?.contentId;
       const payload = {
         facilityId: this.currentFacility?.facilityId,
         carrierPartyId: this.selectedCarrierPartyId,
@@ -112,7 +117,9 @@ export default defineComponent({
         }
       } catch(err) {
         logger.error("Failed to print manifest", err)
+        showToast(translate("Failed to print manifest"));
       }
+      this.loadingContentId = null;
     }
   },
   setup() {

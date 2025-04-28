@@ -332,8 +332,7 @@
               </ion-label>
             </ion-item>
     
-            <div v-for="item in shipGroup.items" :key="item">
-            <ion-item lines="none">
+            <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
               <ion-thumbnail slot="start">
                 <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
               </ion-thumbnail>
@@ -351,28 +350,8 @@
                 <ion-button slot="end" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
-                <ion-button slot="end" v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponent(item, true)">
-                  <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
-                  <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
-                </ion-button>
               </div>
             </ion-item>
-
-              <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
-                <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
-                  <ion-item lines="none">
-                    <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
-                    </ion-thumbnail>
-                    <ion-label>
-                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
-                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
-                      <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
-                    </ion-label>
-                  </ion-item>
-                </ion-card>
-              </div>
-            </div>
           </ion-card>
         </div>
       </div>
@@ -851,7 +830,7 @@ export default defineComponent({
         groupBy: 'picklistBinId',
         filters: {
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
-          '-fulfillmentStatus': { value: 'Rejected' },
+          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId }

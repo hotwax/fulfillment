@@ -40,7 +40,7 @@
           <ion-list v-if="getMostRejectedItems().length">
             <ion-item v-for="(item, index) in getMostRejectedItems()" :key="item.val" :lines="getMostRejectedItems().length -1 === index ? 'none' : 'inset'">
               <ion-thumbnail slot="start">
-                <DxpShopifyImg :src="getProduct(item.val).mainImageUrl" size="small"/>
+                <DxpShopifyImg :src="getProduct(item.val).mainImageUrl" :key="getProduct(item.val).mainImageUrl" size="small"/>
               </ion-thumbnail>
               <ion-label>
                 <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.val)) }}</p>
@@ -112,7 +112,7 @@
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
-                  <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                  <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                 </ion-thumbnail>
                 <ion-label>
                   <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>

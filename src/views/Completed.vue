@@ -18,7 +18,7 @@
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
       <ion-searchbar class="searchbar" :value="completedOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)" />
-      <ion-radio-group v-model="selectedCarrierPartyId" @ionChange="updateSelectedCarrierPartyIds($event.detail.value)">
+      <ion-radio-group v-if="carrierPartyIds?.length" v-model="selectedCarrierPartyId" @ionChange="updateSelectedCarrierPartyIds($event.detail.value)">
         <ion-row class="filters">
           <ion-item lines="none">
               <!-- empty value '' for 'All orders' radio -->
@@ -40,7 +40,7 @@
         </ion-row>
       </ion-radio-group>
 
-      <div class="filters">
+      <div v-if="shipmentMethods?.length" class="filters">
         <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod.val">
           <ion-checkbox label-placement="end" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)" @ionChange="updateSelectedShipmentMethods(shipmentMethod.val)">
             <ion-label>
@@ -85,7 +85,7 @@
                 <div class="product-info">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -123,7 +123,7 @@
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
+                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
@@ -151,7 +151,7 @@
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
                 <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
-                  {{ translate("Regenerate Shipping Label") }}
+                  {{ translate(order.missingLabelImage ? "Regenerate Shipping Label" : "Print Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
@@ -190,6 +190,7 @@
           <ion-button fill="solid" color="primary" :disabled="!carrierConfiguration[selectedCarrierPartyId]?.['MANIFEST_GEN_REQUEST']" @click="generateCarrierManifest">
             <ion-icon slot="start" :icon="printOutline" />
             {{ translate("Generate Manifest") }}
+            <ion-spinner name="crescent" slot="end" v-if="isGeneratingManifest" />
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -295,7 +296,8 @@ export default defineComponent({
       isScrollingEnabled: false,
       completedOrdersList: [] as any,
       selectedCarrierPartyId: "",
-      carrierConfiguration: {} as any
+      carrierConfiguration: {} as any,
+      isGeneratingManifest: false,
     }
   },
   computed: {
@@ -351,6 +353,7 @@ export default defineComponent({
       const updatedOrder = this.completedOrders.list.find((order: any) =>  order.orderId === orderItem.orderId && order.picklistBinId === orderItem.picklistBinId);
       const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
       updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
+      this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
     },
     enableScrolling() {
       const parentElement = (this as any).$refs.contentRef.$el
@@ -856,6 +859,7 @@ export default defineComponent({
       modal.present();
     },
     async generateCarrierManifest() {
+      this.isGeneratingManifest = true;
       const payload = {
         facilityId: this.currentFacility?.facilityId,
         carrierPartyId: this.selectedCarrierPartyId,
@@ -864,9 +868,12 @@ export default defineComponent({
 
       try {
         await UtilService.generateManifest(payload);
+        showToast(translate("Manifest has been generated successfully"))
       } catch(err) {
         logger.error("Failed to generate manifest", err)
+        showToast(translate("Failed to generate manifest"))
       }
+      this.isGeneratingManifest = false;
     }
   },
   setup() {
