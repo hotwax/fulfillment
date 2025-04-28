@@ -323,7 +323,7 @@ const actions: ActionTree<OrderState, RootState> = {
         groupBy: 'picklistBinId',
         filters: {
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
-          '-fulfillmentStatus': { value: ['Rejected', 'Cancelled'] },
+          '-fulfillmentStatus': { value: ['Rejected', 'Cancelled', 'Completed'] },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
           productStoreId: { value: getProductStoreId() }
@@ -416,7 +416,7 @@ const actions: ActionTree<OrderState, RootState> = {
         quantityNotAvailable: { value: 0 },
         isPicked: { value: 'N' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        '-fulfillmentStatus': { value: ['Cancelled', 'Rejected']},
+        '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
         facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
@@ -779,7 +779,7 @@ const actions: ActionTree<OrderState, RootState> = {
         isPicked: { value: 'N' },
         shipGroupSeqId: { value: payload.shipGroupSeqId },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        '-fulfillmentStatus': { value: ['Cancelled', 'Rejected']},
+        '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
         facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
@@ -849,7 +849,7 @@ const actions: ActionTree<OrderState, RootState> = {
           orderId: { value: payload.orderId },
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           shipGroupSeqId: { value: payload.shipGroupSeqId },
-          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected']},
+          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
           productStoreId: { value: getProductStoreId() }
