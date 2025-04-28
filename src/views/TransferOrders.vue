@@ -1,17 +1,10 @@
 <template>
-  <ion-page>
-    <TransferOrderFilters menu-id="transfer-order-filters" content-id="transfer-order-filters" :queryString="transferOrders.query.queryString" :shipmentMethods="shipmentMethods" :statuses="statuses"/>
-    
+  <ion-page> 
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button menu="start" slot="start" />
         <ion-title v-if="!transferOrders.total">{{ transferOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-title v-else>{{ transferOrders.list.length }} {{ translate('of') }} {{ transferOrders.total }} {{ translate('orders') }}</ion-title>
-        <ion-buttons slot="end">
-          <ion-menu-button menu="transfer-order-filters" :disabled="!transferOrderCount">
-            <ion-icon :icon="optionsOutline" />
-          </ion-menu-button>
-        </ion-buttons>
       </ion-toolbar>
     </ion-header>
     
@@ -64,7 +57,6 @@
 import { 
   IonBadge,
   IonButton,
-  IonButtons,
   IonIcon,
   IonContent, 
   IonFab,
@@ -91,7 +83,6 @@ import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper';
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { hasError } from '@/adapter';
 import logger from '@/logger';
-import TransferOrderFilters from '@/components/TransferOrderFilters.vue'
 import emitter from '@/event-bus';
 
 export default defineComponent({
@@ -99,7 +90,6 @@ export default defineComponent({
   components: {
     IonBadge,
     IonButton,
-    IonButtons,
     IonIcon,  
     IonContent,
     IonFab,
@@ -114,8 +104,7 @@ export default defineComponent({
     IonPage,
     IonSearchbar,
     IonTitle,
-    IonToolbar,
-    TransferOrderFilters
+    IonToolbar
   },
   computed: {
     ...mapGetters({
