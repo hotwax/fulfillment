@@ -877,7 +877,7 @@ const actions: ActionTree<UtilState, RootState> = {
     console.log('store.state.user', store.state.user)
     const facilityId = (useUserStore().getCurrentFacility as any).facilityId
     console.log('facilityId', facilityId)
-    const labelImageType = "ZPLII"
+    let labelImageType = "PNG"
     if(state.facilityShippingLabelImageType[facilityId]) {
       return state.facilityShippingLabelImageType[facilityId]
     }
@@ -885,6 +885,7 @@ const actions: ActionTree<UtilState, RootState> = {
     const isFacilityZPLConfigured = await UtilService.fetchFacilityZPLGroupInfo(facilityId);
     
     if(isFacilityZPLConfigured) {
+      labelImageType = "ZPLII"
       commit(types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED, {
         labelImageType,
         facilityId
