@@ -724,6 +724,20 @@ const fetchFacilityAddresses = async (params: any): Promise<any> => {
   })
 }
 
+const fetchLabelImageType = async (carrierId : string): Promise<any> => {
+  return api({
+    method: 'get',
+    url: 'performFind',
+    params: {
+      "entityName": "SystemProperty",
+      "inputFields": {
+        "systemResourceId": carrierId,
+        "systemPropertyId": "shipment.carrier.labelImageType"
+      }
+    }
+  })
+}
+
 export const UtilService = {
   activateGiftCard,
   createBarcodeIdentificationPref,
@@ -778,5 +792,6 @@ export const UtilService = {
   updateEnumeration,
   updateBarcodeIdentificationPref,
   updateEnumerationGroupMember,
-  updateForceScanSetting
+  updateForceScanSetting,
+  fetchLabelImageType
 }

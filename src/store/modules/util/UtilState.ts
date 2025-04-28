@@ -19,4 +19,5 @@ export default interface UtilState {
   carrierDesc: any;
   shipmentMethodsByCarrier: any;
   facilityAddresses: any;
+  carrierShippingLabelImageType: any;
 }

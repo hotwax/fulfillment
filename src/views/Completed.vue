@@ -698,7 +698,6 @@ export default defineComponent({
         return
       }
 
-      // await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
       await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
       if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
         await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);

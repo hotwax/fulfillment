@@ -70,5 +70,8 @@ const mutations: MutationTree <UtilState> = {
     state.carrierDesc = {}
     state.facilityAddresses = {}
   },
+  [types.UTIL_CARRIER_SHIPPING_LABEL_UPDATED](state, payload) {
+    state.carrierShippingLabelImageType[payload.carrierId] = payload.labelImageType
+  }
 }
 export default mutations;

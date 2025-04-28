@@ -870,6 +870,27 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async clearUtilState ({ commit }) {
     commit(types.UTIL_CLEARED)
+  },
+
+  async fetchLabelImageType ({ commit, state }, carrierId){
+    if (state.carrierShippingLabelImageType[carrierId]) { return state.carrierShippingLabelImageType[carrierId]}
+    try {
+      const resp = await UtilService.fetchLabelImageType(carrierId);
+
+      if (!resp || resp.status !== 200 || hasError(resp)) {
+        throw resp.data;
+      }
+
+      const labelImageType = resp?.data?.docs[0]?.systemPropertyValue;
+      commit(types.UTIL_CARRIER_SHIPPING_LABEL_UPDATED, {
+        carrierId: carrierId,
+        labelImageType: labelImageType
+      })
+      return labelImageType;
+
+    } catch (err) {
+      logger.error("Failed to fetch label image type from System Property ", err)
+    }
   }
 }
 
