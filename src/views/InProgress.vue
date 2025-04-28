@@ -839,9 +839,6 @@ export default defineComponent({
       try {
         do {
           const payload = {
-            shipmentMethodTypeId: 'STOREPICKUP',
-            shipmentMethodTypeId_not: 'Y',
-            shipmentMethodTypeId_op: 'equals',
             originFacilityId: this.currentFacility?.facilityId,
             statusId: "SHIPMENT_APPROVED",
             pageIndex, // Ensure updated pageIndex is used

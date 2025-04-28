@@ -29,7 +29,7 @@
           <!-- <ion-icon :icon="printOutline" /> -->
         </ion-item>
 
-        <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod.val">
+        <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod">
           <ion-checkbox label-placement="end" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod)" @ionChange="updateSelectedShipmentMethods(shipmentMethod)">
             <ion-label>
               {{ getShipmentMethodDesc(shipmentMethod) }}
@@ -290,7 +290,7 @@ export default defineComponent({
   },
   methods: {
     getTime(time: any) {
-      return DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED);
+      return time ? DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED) : "";
     },
     getErrorMessage() {
       return this.searchedQuery === '' ? translate("doesn't have any completed orders right now.", { facilityName: this.currentFacility?.facilityName }) : translate( "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
@@ -430,10 +430,7 @@ export default defineComponent({
 
     async fetchShipmentFacets() {
       const params = {
-        keyword: "1",
         orderTypeId: "SALES_ORDER",
-        shipmentMethodTypeId: "STOREPICKUP",
-        shipmentMethodTypeId_not: "Y",
         statusId: "SHIPMENT_PACKED",
         shippedDateFrom: DateTime.now().startOf('day').toMillis(),
         originFacilityId: this.currentFacility?.facilityId,
@@ -446,8 +443,8 @@ export default defineComponent({
         if(!hasError(resp)) {
           this.shipmentMethods = resp.data.shipmentMethodTypeIds
           this.carrierPartyIds = resp.data.carrierPartyIds
-          this.store.dispatch('util/fetchShipmentMethodTypeDesc', resp.data.shipmentMethodTypeIds)
-          this.store.dispatch('util/fetchPartyInformation', resp.data.carrierPartyIds)
+          await this.store.dispatch('util/fetchShipmentMethodTypeDesc', resp.data.shipmentMethodTypeIds)
+          await this.store.dispatch('util/fetchPartyInformation', resp.data.carrierPartyIds)
         } else {
           throw resp.data
         }

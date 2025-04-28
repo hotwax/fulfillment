@@ -402,7 +402,7 @@ const fetchShipmentFacets = async (params: any): Promise <any>  => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/poorti/shipmentFacetsDetails`,
+    url: `/poorti/shipmentFacets`,
     method: "GET",
     baseURL,
     headers: {
