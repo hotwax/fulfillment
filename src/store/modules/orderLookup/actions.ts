@@ -74,7 +74,6 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         await this.dispatch("product/getProductInformation", { orders });
         await this.dispatch("util/fetchShipmentMethodTypeDesc", shipmentMethodTypeIds)
       } else {
-        showToast(translate("Failed to fetch orders"));
         throw resp.data;
       }
     } catch(error) {
