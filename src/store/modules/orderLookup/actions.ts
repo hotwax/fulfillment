@@ -21,7 +21,11 @@ const actions: ActionTree<OrderLookupState, RootState> = {
     const query = prepareOrderLookupQuery({ ...(state.query), ...params })
     try {
       resp = await OrderLookupService.findOrder(query)
-      if (!hasError(resp) && resp.data?.grouped?.orderId?.groups?.length) {
+      if (!hasError(resp)) {
+        if (!resp.data?.grouped?.orderId?.groups?.length) {
+          showToast(translate("No orders found"));
+          throw resp.data;
+        }
         const orders = resp.data.grouped.orderId.groups.map((order: any) => {
           order.orderId = order.doclist.docs[0].orderId
           order.customer = {

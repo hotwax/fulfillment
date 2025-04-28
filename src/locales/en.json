@@ -162,6 +162,7 @@
   "Failed to create rejection reason.": "Failed to create rejection reason.",
   "Failed to fetch eCom inventory config": "Failed to fetch eCom inventory config",
   "Failed to fetch orders": "Failed to fetch orders",
+  "No orders found": "No orders found",
   "Failed to generate manifest": "Failed to generate manifest",
   "Failed to generate shipping label": "Failed to generate shipping label",
   "Failed to pack order": "Failed to pack order",
