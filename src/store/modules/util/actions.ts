@@ -7,7 +7,7 @@ import { hasError } from '@/adapter'
 import logger from '@/logger'
 import store from '@/store';
 import { showToast, getProductStoreId } from '@/utils'
-import { translate } from '@hotwax/dxp-components'
+import { translate, useUserStore } from '@hotwax/dxp-components'
 
 const actions: ActionTree<UtilState, RootState> = {
   async fetchRejectReasons({ commit }) {
@@ -873,13 +873,16 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   async fetchLabelImageType({ commit, state }, carrierId) {
-    const facilityId = store.state.user.currentFacility.facilityId
+    console.log('carrierId', carrierId)
+    console.log('store.state.user', store.state.user)
+    const facilityId = (useUserStore().getCurrentFacility as any).facilityId
+    console.log('facilityId', facilityId)
     const labelImageType = "ZPLII"
     if(state.facilityShippingLabelImageType[facilityId]) {
       return state.facilityShippingLabelImageType[facilityId]
     }
 
-    const isFacilityZPLConfigured = await UtilService.fetchFacilityZPLGroupInfo(store.state.user.currentFacility.facilityId);
+    const isFacilityZPLConfigured = await UtilService.fetchFacilityZPLGroupInfo(facilityId);
     
     if(isFacilityZPLConfigured) {
       commit(types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED, {

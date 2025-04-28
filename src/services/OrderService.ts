@@ -585,9 +585,11 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
     if (!pdfUrls || pdfUrls.length == 0) {
       let labelImageType = imageType || "PNG";
 
-      console.log('labelImageType', labelImageType)
+      console.log('labelImageType', imageType, labelImageType, shipmentPackages)
+      console.log(!imageType && shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId)
 
       if(!imageType && shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId) {
+        console.log('fetcjing iomaghe')
         labelImageType = await store.dispatch("util/fetchLabelImageType", shipmentPackages[0].carrierPartyId);
       }
 
