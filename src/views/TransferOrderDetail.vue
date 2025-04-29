@@ -73,7 +73,7 @@
                     </div>
                   </div>
 
-                  <div v-for="item in shipment.items" :key="item.shipmentItemSeqId" class="order-item">
+                  <div v-for="item in shipment.items" :key="item.shipmentItemSeqId" class="order-item order-line-item">
                     <div class="product-info">
                       <ion-item lines="none">
                         <ion-thumbnail slot="start">
@@ -172,7 +172,7 @@
   import Scanner from "@/components/Scanner.vue";
   import { Actions, hasPermission } from '@/authorization'
   import { DateTime } from 'luxon';
-  import { getFeature, showToast } from '@/utils';
+  import { getFeature, showToast, hasWebcamAccess } from '@/utils';
   import { hasError } from '@/adapter';
   import { OrderService } from '@/services/OrderService'
   import TransferOrderItem from '@/components/TransferOrderItem.vue'
@@ -340,6 +340,10 @@
       },
       
       async scanCode () {
+        if (!(await hasWebcamAccess())) {
+          showToast(translate("Camera access not allowed, please check permissons."));
+          return;
+        } 
         const modal = await modalController
           .create({
             component: Scanner,
@@ -380,25 +384,26 @@
 
         if (!currentShipment.trackingIdNumber) {
           //regenerate shipping label if missing tracking code
-          const resp = await OrderService.retryShippingLabel([currentShipment.shipmentId])
-          if (!hasError(resp)) {
+          await OrderService.retryShippingLabel([currentShipment.shipmentId])
+          // retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
+          // Refetching the order tracking detail irrespective of api response since currently in SHIPHAWK api returns error whether label is generated
+          // Temporarily handling this in app but should be handled in backend        
+          await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.currentOrder.orderId })
+          currentShipment = this.currentOrder?.shipments?.find((shipment:any) => shipment.shipmentId === currentShipment.shipmentId);
+          shippingLabelPdfUrls = currentShipment?.shipmentPackages
+              ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+              .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+
+
+          if(currentShipment.trackingIdNumber) {
             showToast(translate("Shipping Label generated successfully"))
-            
-            //retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
-            await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.currentOrder.orderId })
-            currentShipment = this.currentOrder?.shipments?.find((shipment:any) => shipment.shipmentId === currentShipment.shipmentId);
-            shippingLabelPdfUrls = currentShipment?.shipmentPackages
-                ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
-                .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
-
-
-            await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
+            await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
           } else {
             showToast(translate("Failed to generate shipping label"))
           }
         } else {
           //print shipping label if label already exists
-          await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
+          await OrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
         }
 
         currentShipment.isGeneratingShippingLabel = false;

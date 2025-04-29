@@ -323,7 +323,7 @@ const actions: ActionTree<OrderState, RootState> = {
         groupBy: 'picklistBinId',
         filters: {
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
-          '-fulfillmentStatus': { value: ['Rejected', 'Cancelled'] },
+          '-fulfillmentStatus': { value: ['Rejected', 'Cancelled', 'Completed'] },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
           productStoreId: { value: getProductStoreId() }
@@ -416,7 +416,7 @@ const actions: ActionTree<OrderState, RootState> = {
         quantityNotAvailable: { value: 0 },
         isPicked: { value: 'N' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        '-fulfillmentStatus': { value: ['Cancelled', 'Rejected']},
+        '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
         facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
@@ -427,6 +427,11 @@ const actions: ActionTree<OrderState, RootState> = {
     // only adding shipmentMethods when a method is selected
     if(openOrderQuery.selectedShipmentMethods.length) {
       params.filters['shipmentMethodTypeId'] = { value: openOrderQuery.selectedShipmentMethods, op: 'OR' }
+    }
+
+    // only adding categories when a category is selected
+    if(openOrderQuery.selectedCategories.length) {
+      params.filters['productCategories'] = { value: openOrderQuery.selectedCategories.map((category: string) => JSON.stringify(category)), op: 'OR' }
     }
 
     const orderQueryPayload = prepareOrderQuery(params)
@@ -495,8 +500,9 @@ const actions: ActionTree<OrderState, RootState> = {
       }
     }
 
-    if(completedOrderQuery.selectedCarrierPartyIds.length) {
-      params.filters['manifestContentId'] = { value: completedOrderQuery.selectedCarrierPartyIds, op: 'OR' }
+    if(completedOrderQuery.selectedCarrierPartyId) {
+      // Filtering on shipmentCarrierPartyId as manifestContentId contains \ at the end, that will need extra handling
+      params.filters['shipmentCarrierPartyId'] = { value: completedOrderQuery.selectedCarrierPartyId }
     }
 
     // only adding shipmentMethods when a method is selected
@@ -630,7 +636,7 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   async updateShipmentPackageDetail ({ commit, state }, payload) {
-    const currentOrder = JSON.parse(JSON.stringify(state.current));
+    let currentOrder = JSON.parse(JSON.stringify(state.current));
     const completedOrders = JSON.parse(JSON.stringify(state.completed.list));
     const inProgressOrders = JSON.parse(JSON.stringify(state.inProgress.list));
 
@@ -681,6 +687,7 @@ const actions: ActionTree<OrderState, RootState> = {
         const order = completedOrders.find((completedOrder:any) => completedOrder.orderId === payload.orderId);
         if (order) {
           updateShipmentPackages(order);
+          currentOrder = order
           commit(types.ORDER_COMPLETED_UPDATED, { list: completedOrders, total: state.completed.total });
         }
       }
@@ -688,12 +695,14 @@ const actions: ActionTree<OrderState, RootState> = {
         const order = inProgressOrders.find((inProgressOrder:any) => inProgressOrder.orderId === payload.orderId);
         if (order) {
           updateShipmentPackages(order);
+          currentOrder = order
           commit(types.ORDER_INPROGRESS_UPDATED, { orders: inProgressOrders, total: state.inProgress.total });
         }
       }
     } catch(err) {
       logger.error('Failed to fetch shipment packages.', err)
     }
+    return currentOrder
   },
 
   async clearOrders ({ commit }) {
@@ -770,7 +779,7 @@ const actions: ActionTree<OrderState, RootState> = {
         isPicked: { value: 'N' },
         shipGroupSeqId: { value: payload.shipGroupSeqId },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        '-fulfillmentStatus': { value: ['Cancelled', 'Rejected']},
+        '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
         facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
@@ -840,7 +849,7 @@ const actions: ActionTree<OrderState, RootState> = {
           orderId: { value: payload.orderId },
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           shipGroupSeqId: { value: payload.shipGroupSeqId },
-          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected']},
+          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
           productStoreId: { value: getProductStoreId() }
@@ -864,6 +873,7 @@ const actions: ActionTree<OrderState, RootState> = {
           orderName: orderItem.orderName,
           groupValue: resp.data.grouped.picklistBinId.groups[0].groupValue,
           picklistBinId: orderItem.picklistBinId,
+          picklistId: orderItem.picklistId,
           items: removeKitComponents({items: resp.data.grouped.picklistBinId.groups[0].doclist.docs}) ,
           shipGroupSeqId: orderItem.shipGroupSeqId,
           shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
@@ -877,7 +887,7 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('Something went wrong', err)
     }
 
-    await dispatch('fetchInProgressOrderAdditionalInformation', order);
+    if(order?.orderId) await dispatch('fetchInProgressOrderAdditionalInformation', order);
 
     emitter.emit('dismissLoader');
   },
@@ -932,6 +942,7 @@ const actions: ActionTree<OrderState, RootState> = {
           reservedDatetime: orderItem.reservedDatetime,
           groupValue: resp.data.grouped.picklistBinId.groups[0].groupValue,
           picklistBinId: orderItem.picklistBinId,
+          picklistId: orderItem.picklistId,
           items: removeKitComponents({items : resp.data.grouped.picklistBinId.groups[0].doclist.docs}),
           shipmentId: orderItem.shipmentId,
           shipGroupSeqId: orderItem.shipGroupSeqId,
@@ -947,7 +958,7 @@ const actions: ActionTree<OrderState, RootState> = {
       logger.error('No completed orders found', err)
     }
 
-    await dispatch('fetchCompletedOrderAdditionalInformation', order);
+    if(order?.orderId) await dispatch('fetchCompletedOrderAdditionalInformation', order);
     emitter.emit('dismissLoader');
   },
 

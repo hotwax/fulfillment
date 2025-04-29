@@ -84,7 +84,7 @@
   import { useRouter } from 'vue-router';
   import Scanner from "@/components/Scanner.vue";
   import { Actions, hasPermission } from '@/authorization'
-  import { getFeature, showToast } from '@/utils';
+  import { getFeature, showToast, hasWebcamAccess } from '@/utils';
   import { hasError } from '@/adapter'
   import { OrderService } from '@/services/OrderService'
   import TransferShipmentActionsPopover from '@/components/TransferShipmentActionsPopover.vue'
@@ -203,8 +203,8 @@
           return;
         }
 
-        await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
         this.isGeneratingShippingLabel = true;
+        await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
         let shippingLabelPdfUrls = this.currentShipment.shipmentPackages
           ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
           .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
@@ -212,18 +212,20 @@
 
         if (!this.currentShipment.trackingCode) {
           //regenerate shipping label if missing tracking code
-          const resp = await OrderService.retryShippingLabel([this.currentShipment.shipmentId])
-          if (!hasError(resp)) {
+          await OrderService.retryShippingLabel([this.currentShipment.shipmentId])
+          //retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
+          // Refetching the order tracking detail irrespective of api response since currently in SHIPHAWK api returns error whether label is generated
+          // Temporarily handling this in app but should be handled in backend        
+          await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
+
+          shippingLabelPdfUrls = this.currentShipment?.shipmentPackages
+              ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+              .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+
+          if(this.currentShipment.trackingCode) {
             this.showLabelError = false;
             showToast(translate("Shipping Label generated successfully"))
-
-            //retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
-            await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
-            shippingLabelPdfUrls = this.currentShipment?.shipmentPackages
-                ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
-                .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
-
-            await OrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
+            await OrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls, this.currentShipment?.shipmentPackages);
           } else {
             this.showLabelError = true;
             showToast(translate("Failed to generate shipping label"))
@@ -231,7 +233,7 @@
         } else {
           this.showLabelError = false;
           //print shipping label if label already exists
-          await OrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
+          await OrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls, this.currentShipment?.shipmentPackages);
         }
 
         this.isGeneratingShippingLabel = false;
@@ -304,6 +306,10 @@
         this.store.dispatch('transferorder/updateOrderProductCount', payload)
       },
       async scanCode () {
+        if (!(await hasWebcamAccess())) {
+          showToast(translate("Camera access not allowed, please check permissons."));
+          return;
+        } 
         const modal = await modalController
           .create({
             component: Scanner,

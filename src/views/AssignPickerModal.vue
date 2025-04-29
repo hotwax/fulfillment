@@ -15,6 +15,7 @@
     <ion-row>
       <ion-chip v-for="picker in selectedPickers" :key="picker.id">
         <ion-label>{{ picker.name }}</ion-label>
+        <ion-icon :icon="closeCircle" @click="selectPicker(picker.id)" />
       </ion-chip>
     </ion-row>
 
@@ -70,7 +71,7 @@ import {
   IonToolbar,
   modalController } from "@ionic/vue";
 import { defineComponent, computed } from "vue";
-import { closeOutline, saveOutline } from "ionicons/icons";
+import { closeOutline, closeCircle, saveOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { showToast } from "@/utils";
 import { hasError } from "@/adapter";
@@ -209,7 +210,7 @@ export default defineComponent({
             "qf": "firstName lastName groupName partyId externalId",
             "sort": "firstName asc"
           },
-          "filter": ["docType:EMPLOYEE", "WAREHOUSE_PICKER_role:true"]
+          "filter": ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true"]
         }
       }
 
@@ -244,6 +245,7 @@ export default defineComponent({
       closeOutline,
       currentFacility,
       saveOutline,
+      closeCircle,
       store,
       translate
     };
@@ -256,7 +258,6 @@ ion-row {
   flex-wrap: nowrap;
   overflow: scroll;
 }
-
 ion-chip {
   flex-shrink: 0;
 }

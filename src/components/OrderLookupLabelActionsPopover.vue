@@ -57,7 +57,7 @@ export default defineComponent({
         shipmentPackage.labelImageUrl && shippingLabelPdfUrls.push(shipmentPackage.labelImageUrl)
       })
 
-      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentPackages);
       popoverController.dismiss()
     },
 

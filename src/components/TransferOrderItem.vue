@@ -51,7 +51,7 @@
       </div>
 
       <div class="to-item-history" v-else>
-        <ion-chip outline @click="shippedHistory(item.productId)">
+        <ion-chip outline @click="getShippedQuantity(item) && shippedHistory(item.productId)">
           <ion-icon :icon="checkmarkDone"/>
           <ion-label> {{ getShippedQuantity(item) }} {{ translate("shipped") }} </ion-label>
         </ion-chip>
