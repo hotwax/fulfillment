@@ -125,10 +125,7 @@ export default defineComponent({
   async ionViewWillEnter() {
     emitter.emit('presentLoader');
     this.isScrollingEnabled = false;
-    await this.fetchFilters(); 
-    if(this.transferOrderCount) { 
-      await this.initialiseTransferOrderQuery();
-    }
+    await this.store.dispatch('transferorder/fetchTransferOrders', )
     emitter.emit('dismissLoader');
   },
   methods: {

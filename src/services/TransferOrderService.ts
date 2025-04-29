@@ -1,4 +1,4 @@
-import { api, hasError } from "@/adapter";
+import { api, client, hasError } from "@/adapter";
 import logger from "@/logger";
 import store from "@/store";
 import { getCurrentFacilityId } from "@/utils";
@@ -14,6 +14,21 @@ const fetchTransferOrderFacets = async (query: any): Promise<any> => {
     data: query,
   });
 };
+
+const fetchTransferOrders = async (): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `oms/transferOrders/?orderStatusId=ORDER_APPROVED&originFacilityId=${getCurrentFacilityId()}`,
+    method: "get",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    }
+  });
+}
 
 const findTransferOrders = async (query: any): Promise<any> => {
   return api({
@@ -510,6 +525,7 @@ export const TransferOrderService = {
   fetchShipmentPackages,
   fetchRejectReasons,
   fetchShipmentShippedStatusHistory,
+  fetchTransferOrders,
   findTransferOrders,
   printTransferOrder,
   printShippingLabel,

@@ -35,7 +35,7 @@ const getters: GetterTree <UserState, RootState> = {
     },
     getMaargBaseUrl (state) {
         const url = state.omsRedirectionInfo.url
-        return url.startsWith('http') ? url.includes('/rest/s1/admin') ? url : `${url}/rest/s1/admin/` : `https://${url}.hotwax.io/rest/s1/admin/`;
+        return url.startsWith('http') ? url.includes('/rest/s1/') ? url : `${url}/rest/s1/` : `https://${url}.hotwax.io/rest/s1/`;
     },
     getOmsRedirectionInfo(state) {
         return state.omsRedirectionInfo
