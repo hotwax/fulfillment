@@ -59,6 +59,6 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   getShipmentMethodsByCarrier(state) {
     return state.shipmentMethodsByCarrier
-  },
+  }
 }
 export default getters;

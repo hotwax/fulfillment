@@ -7,7 +7,7 @@ import { hasError } from '@/adapter'
 import logger from '@/logger'
 import store from '@/store';
 import { showToast, getProductStoreId } from '@/utils'
-import { translate } from '@hotwax/dxp-components'
+import { translate, useUserStore } from '@hotwax/dxp-components'
 
 const actions: ActionTree<UtilState, RootState> = {
   async fetchRejectReasons({ commit }) {
@@ -870,6 +870,42 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async clearUtilState ({ commit }) {
     commit(types.UTIL_CLEARED)
+  },
+
+  async fetchLabelImageType({ commit, state }, carrierId) {
+    const facilityId = (useUserStore().getCurrentFacility as any).facilityId
+    let labelImageType = "PNG"
+    if(state.facilityShippingLabelImageType[facilityId]) {
+      return state.facilityShippingLabelImageType[facilityId]
+    }
+
+    const isFacilityZPLConfigured = await UtilService.fetchFacilityZPLGroupInfo(facilityId);
+    
+    if(isFacilityZPLConfigured) {
+      labelImageType = "ZPLII"
+      commit(types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED, {
+        labelImageType,
+        facilityId
+      })
+      return labelImageType;
+    }
+
+    try {
+      const resp = await UtilService.fetchLabelImageType(carrierId);
+
+      if(hasError(resp) || !resp.data.docs?.length) {
+        throw resp.data;
+      }
+
+      const labelImageType = resp?.data?.docs[0]?.systemPropertyValue;
+      commit(types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED, {
+        labelImageType,
+        facilityId
+      })
+      return labelImageType;
+    } catch (err) {
+      logger.error("Failed to fetch label image type", err)
+    }
   }
 }
 
