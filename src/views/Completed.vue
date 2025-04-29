@@ -207,8 +207,6 @@ import { mapGetters, useStore } from 'vuex'
 import { copyToClipboard, getFeature, showToast } from '@/utils'
 import { hasError } from '@/adapter'
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { UtilService } from '@/services/UtilService';
-import { prepareOrderQuery } from '@/utils/solrHelper';
 import emitter from '@/event-bus';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import { OrderService } from '@/services/OrderService';
@@ -346,7 +344,6 @@ export default defineComponent({
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async shipOrder(order: any) {
-
       try {
         const resp = await OrderService.shipOrder({shipmentId: order.shipmentId})
 
