@@ -51,7 +51,7 @@ const actions: ActionTree<OrderState, RootState> = {
           selectedBox: packageName,
           currentBox: packageName,
         };
-      }),
+      })
     }));
     
     const productIds = [...new Set(orders.flatMap((order:any) => order.items.map((item:any) => item.productId)))];
@@ -158,6 +158,21 @@ const actions: ActionTree<OrderState, RootState> = {
 
     order = resp.orders[0];
     order.category = 'in-progress'
+
+    order = {
+      ...order,
+      items: order.items.map((item: any) => {
+        const packageName = order?.shipmentPackageRouteSegDetails.find(
+            (shipmentPackageContent: any) =>
+              shipmentPackageContent.shipmentItemSeqId === item.shipmentItemSeqId
+        )?.packageName || null
+        return {
+          ...item,
+          selectedBox: packageName,
+          currentBox: packageName,
+        };
+      })
+    }
 
     const productIds = order.items.map((item:any) => item.productId)
     this.dispatch('product/fetchProducts', { productIds })

@@ -19,7 +19,7 @@
             </ion-chip>
             <ion-chip v-if="category !== 'open'" outline @click="printPicklist(order)">
               <ion-icon :icon="documentTextOutline" />
-              <ion-label>{{ translate('Linked picklist') }}: {{ order.picklistBinId }}</ion-label>
+              <ion-label>{{ translate('Linked picklist') }}: {{ order.picklistId }}</ion-label>
             </ion-chip>
             <ion-chip outline v-if="order?.paymentPreferences?.length > 0" :color="statusColor[order?.paymentPreferences[0]?.statusId]">
               <ion-icon :icon="cashOutline" />
