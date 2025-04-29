@@ -553,32 +553,6 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
   }
 }
 
-const fetchShippingLabelForZebra = async (shipmentIds: Array<string>): Promise<any> => {
-  try {
-    const resp : any = await api({
-      url: "performFind",
-      method: "get",
-      params: {
-        "entityName": "ShipmentPackageRouteSeg",
-        "inputFields": {
-          "shipmentId": shipmentIds,
-          "shipmentId_op": "in"
-        },
-        viewSize: shipmentIds.length
-      },
-    }) as any;
-
-    if (hasError(resp) || !resp.data?.docs?.length) {
-      throw resp.data;
-    }
-    const shippingLabels = resp.data.docs.map((doc: any) => doc.labelImage);
-    return shippingLabels;
-
-  } catch (err) {
-    logger.error("Failed to fetch shipping label data");
-  }
-}
-
 const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string): Promise<any> => {
   try {
     let pdfUrls = shippingLabelPdfUrls?.filter((pdfUrl: any) => pdfUrl);
@@ -594,7 +568,6 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
         shipmentPackages?.map((shipmentPackage: any) => {
           shipmentPackage.labelImage && labelImages.push(shipmentPackage.labelImage)
         })
-        // const zplLabels = await fetchShippingLabelForZebra(shipmentIds);
         await ZebraPrinterService.printZplLabels(labelImages);
         return;
       }
