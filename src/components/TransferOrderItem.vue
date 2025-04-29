@@ -8,7 +8,7 @@
           </ion-thumbnail>
           <ion-label class="ion-text-wrap">
             <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-            {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
+            {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productId }}
             <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
           </ion-label>
         </ion-item>
@@ -22,8 +22,7 @@
         </ion-item>
       </div>
     </div>
-
-    <div class="action border-top" v-if="item.orderedQuantity > 0">
+    <div class="action border-top" v-if="item.quantity > 0">
       <div class="pick-all-qty" v-if="!item.shipmentId">
         <ion-button @click="pickAll(item)" slot="start" size="small" fill="outline">
           {{ translate("Pick All") }}
@@ -34,7 +33,7 @@
         <ion-progress-bar :color="getProgressBarColor(item)" :value="getPickedToOrderedFraction(item)" />
       </div>
 
-      <div class="to-item-history" v-if="isRejectionSupported && !isAnyItemShipped">
+      <div class="to-item-history" v-if="isRejectionSupported">
         <ion-chip outline color="danger" v-if="item.rejectReasonId" @click="openRejectReasonPopover($event, item)">
           <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason(item)"/>
           <ion-label>{{ getRejectionReasonDescription(item.rejectReasonId) }}</ion-label>
@@ -58,7 +57,7 @@
       </div>
 
       <div class="qty-ordered">
-        <ion-label>{{ item.orderedQuantity }} {{ translate("ordered") }}</ion-label>   
+        <ion-label>{{ item.quantity }} {{ translate("ordered") }}</ion-label>   
       </div>         
     </div>
   </ion-card>
@@ -124,9 +123,9 @@ export default defineComponent({
     isAnyItemSelectedForRejection() {
       return this.currentOrder.items.some((item: any) => item.rejectReasonId)
     },
-    isAnyItemShipped() {
-      return !!Object.keys(this.currentOrder?.shippedQuantityInfo)?.length
-    }
+    // isAnyItemShipped() {
+    //   return !!Object.keys(this.currentOrder?.shippedQuantityInfo)?.length
+    // }
   },
   methods: {
     getProgressBarColor(item: any) {
@@ -137,7 +136,7 @@ export default defineComponent({
       return 'warning'
     },
     getPickedToOrderedFraction(item: any) {
-      return (parseInt(item.pickedQuantity) + this.getShippedQuantity(item)) / item.orderedQuantity;
+      return (parseInt(item.pickedQuantity) + this.getShippedQuantity(item)) / item.quantity;
     },
     getShippedQuantity(item: any) {
       return this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] ? this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] : 0;
@@ -178,7 +177,7 @@ export default defineComponent({
 
       if (value === '') return;
 
-      value > (item.orderedQuantity - this.getShippedQuantity(item))
+      value > (item.quantity - this.getShippedQuantity(item))
         ? (this as any).$refs.pickedQuantity.$el.classList.add('ion-invalid')
         : (this as any).$refs.pickedQuantity.$el.classList.add('ion-valid');
     },

@@ -124,48 +124,32 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     let orderDetail = {} as any;
     let resp;
     try {
-      const params = {
-        "entityName": "OrderHeaderItemAndShipGroup",
-        "inputFields": {
-          "orderId": payload.orderId,
-          "oisgFacilityId": escapeSolrSpecialChars(getCurrentFacilityId())
-        },
-        "fieldList": ["orderId", "orderName", "externalId", "orderTypeId", "statusId", "orderDate", "shipGroupSeqId", "oisgFacilityId", "orderFacilityId"],
-        "viewSize": 1,
-        "distinct": "Y"
+      resp = await TransferOrderService.fetchOrderDetailMoqui(payload.orderId);
+            if (!hasError(resp)) {
+              orderDetail = resp.data.order;
+              orderDetail.statusId= orderDetail.orderStatusId
+              orderDetail.items = orderDetail.orderItems
+      // fetch product details
+      const productIds = [...new Set(orderDetail.items.map((item: any) => item.productId))];
+      console.log("productIds", productIds);
+      
+      const batchSize = 250;
+      const productIdBatches = [];
+      while (productIds.length) {
+        productIdBatches.push(productIds.splice(0, batchSize));
       }
-    
-      resp = await TransferOrderService.fetchOrderHeader(params);
-      if (!hasError(resp)) {
-         orderDetail = resp.data.docs?.[0];
-         orderDetail["facilityId"] = orderDetail.oisgFacilityId
-         
-        //fetch order items
-        orderDetail.items = await TransferOrderService.fetchOrderItems(payload.orderId);
-        if (orderDetail?.items?.length > 0) {
-          orderDetail.items.forEach((item: any) => {
-            item.pickedQuantity = 0;
-            item.orderedQuantity = item.quantity;
-          })
-  
-          //fetch shipped quantity
-          const shippedQuantityInfo = {} as any;
-          resp = await TransferOrderService.fetchShippedQuantity(payload.orderId);
-          resp.forEach((doc:any) => {
-            shippedQuantityInfo[doc.orderItemSeqId] = doc.shippedQuantity;
-          });
-          orderDetail.shippedQuantityInfo = shippedQuantityInfo;
+      
+      try {
+        await Promise.all([
+          productIdBatches.map((productIds) => this.dispatch('product/fetchProducts', { productIds })),
+          this.dispatch('util/fetchStatusDesc', [orderDetail.statusId]),
+        ]);
+        commit(types.ORDER_CURRENT_UPDATED, orderDetail);
+      } catch (err: any) {
+        logger.error("Error fetching product details or status description", err);
+        return Promise.reject(new Error(err));
+      }
 
-          //fetch product details
-          const productIds = [...new Set(orderDetail.items.map((item:any) => item.productId))];
-  
-          const batchSize = 250;
-          const productIdBatches = [];
-          while(productIds.length) {
-            productIdBatches.push(productIds.splice(0, batchSize))
-          }
-          await Promise.all([productIdBatches.map((productIds) => this.dispatch('product/fetchProducts', { productIds })), this.dispatch('util/fetchStatusDesc', [orderDetail.statusId])])
-        }
         commit(types.ORDER_CURRENT_UPDATED, orderDetail)
       } else {
         throw resp.data;
@@ -185,25 +169,18 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       eligibleItems = eligibleItems.map((item:any) => ({
         orderItemSeqId: item.orderItemSeqId, //This is needed to map shipment item with order item correctly if multiple order items for the same product are there in the TO.
         productId: item.productId,
-        sku: item.internalName,
         quantity: parseInt(item.pickedQuantity), // Using parseInt to convert to an integer
-        itemSeqId: String(seqIdCounter++).padStart(5, '0') // This is needed to correctly create the shipment package content if multiple order items for the same product are there in the TO.
+        shipGroupSeqId: String(seqIdCounter++).padStart(5, '0') // This is needed to correctly create the shipment package content if multiple order items for the same product are there in the TO.
       }));  
-
       const params = {
-        "shipmentTypeId": "OUT_TRANSFER",
-        orderId: payload.orderId,
-        "shipGroupSeqId": payload.shipGroupSeqId,
-        "originFacilityId": getCurrentFacilityId(),
-        "destinationFacilityId": payload.orderFacilityId,
-        "items": eligibleItems,
-        "packages": [{
-          "items": eligibleItems
-        }]
-      }
-      const resp = await TransferOrderService.createOutboundTransferShipment({"shipments": params})
-      if (!hasError(resp)) {
-        shipmentId = resp.data.shipments.id;
+            "orderId": 12104,
+           "orderItems": eligibleItems
+        }
+  
+        const resp = await TransferOrderService.createOutboundTransferShipmentOrder(params)
+     if (!hasError(resp)) {
+      shipmentId = resp.data.shipmentId;
+  console.log(shipmentId);
       } else {
         throw resp.data;
       }
@@ -313,7 +290,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     } catch (err: any) {
       logger.error("error", err);
     }
-    commit(types.ORDER_CURRENT_UPDATED, {...state.current, shipments})
+    // commit(types.ORDER_CURRENT_UPDATED, {...state.current, shipments})
   },
 
   async updateOrderProductCount({ commit, state }, payload ) {

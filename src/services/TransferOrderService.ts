@@ -1,4 +1,4 @@
-import { api, client, hasError } from "@/adapter";
+import { api, hasError, client } from "@/adapter";
 import logger from "@/logger";
 import store from "@/store";
 import { getCurrentFacilityId } from "@/utils";
@@ -29,6 +29,93 @@ const fetchTransferOrders = async (): Promise<any> => {
     }
   });
 }
+
+const fetchOrderDetailMoqui = async (orderId: string): Promise<any> => { // TODO: pass the order id
+console.log("fetchOrderDetailMoqui for orderId", orderId);
+  // const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  // const baseURL = store.getters['user/getMaargBaseUrl'];
+  return client({
+    // url: `/oms/orders/${params}`,fetchOrderHeaderMoqui
+    url: 'https://32cf1e0f-e33f-44a7-a881-f85acfae638b.mock.pstmn.io//rest/s1/poorti/orderItem',
+    method: "get",
+    // baseURL,
+    headers: {
+      // "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    }
+  });
+};
+
+const printTransferOrderPicklist = async (orderId: string): Promise<any> => {
+
+  try {
+
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+    // Get packing slip from the server
+    const resp: any = await client({
+      method: "get",
+      url: `poorti/transferOrders/${orderId}/printPicklist`,
+      responseType: "blob",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+    }
+    })
+
+    if (!resp || resp.status !== 200 || hasError(resp)) {
+      throw resp.data;
+    }
+
+    // Generate local file URL for the blob received
+    const pdfUrl = window.URL.createObjectURL(resp.data);
+    // Open the file in new tab
+    try {
+      (window as any).open(pdfUrl, "_blank").focus();
+    } catch {
+      showToast(
+        translate("Unable to open as browser is blocking pop-ups.", {
+          documentName: "picklist",
+        }),
+        { icon: cogOutline }
+      );
+    }
+  } catch (err) {
+    showToast(translate("Failed to print picklist"));
+    logger.error("Failed to load picklist", err);
+  }
+};
+
+const createOutboundTransferShipmentOrder = async (query: any): Promise<any> => { // TODO: pass the order id
+
+ const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+    // Get packing slip from the server
+    return await client({
+      method: "post",
+      url: "poorti/transferShipments",
+    baseURL,
+data:query,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+    }
+    })
+};
+
+const fetchShipmentItems = async (orderId: string, shipmentId: string): Promise<any> => {
+  console.log("fetchShipmentItems for shipmentId", shipmentId);
+  return client({
+    url: `https://05ae2724-ed6c-4ca7-9bde-6f6c3ae2d241.mock.pstmn.io/transferShipments?shipmentId=${shipmentId}`,
+    method: "get",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+};
+
+
 
 const findTransferOrders = async (query: any): Promise<any> => {
   return api({
@@ -259,13 +346,6 @@ const fetchShippedQuantity = async (orderId: string): Promise<any> => {
   return shippedItemQuantitySum;
 };
 
-const createOutboundTransferShipment = async (query: any): Promise<any> => {
-  return api({
-    url: "createSalesShipment",
-    method: "post",
-    data: query,
-  });
-};
 
 const fetchShipmentPackages = async (
   shipmentIds: Array<string>,
@@ -337,60 +417,6 @@ const fetchShipmentPackages = async (
   return shipmentPackages;
 };
 
-const fetchShipmentItems = async (
-  orderId: string,
-  shipmentId: string
-): Promise<any> => {
-  let viewIndex = 0;
-  let shipmentItems = [] as any,
-    resp;
-
-  try {
-    const inputFields = {} as any;
-    if (orderId) {
-      inputFields["orderId"] = orderId;
-    }
-    if (shipmentId) {
-      inputFields["shipmentId"] = shipmentId;
-    }
-
-    do {
-      resp = (await api({
-        url: "performFind",
-        method: "get",
-        params: {
-          entityName: "ShipmentItemDetail",
-          inputFields,
-          fieldList: [
-            "shipmentId",
-            "shipmentStatusId",
-            "shipmentItemSeqId",
-            "orderId",
-            "orderItemSeqId",
-            "productId",
-            "productName",
-            "internalName",
-            "quantity",
-            "orderedQuantity",
-          ],
-          viewIndex: viewIndex,
-          viewSize: 250,
-          distinct: "Y",
-        },
-      })) as any;
-
-      if (!hasError(resp) && resp.data.count) {
-        shipmentItems = shipmentItems.concat(resp.data.docs);
-        viewIndex++;
-      } else {
-        throw resp.data;
-      }
-    } while (resp.data.docs.length >= 250);
-  } catch (error) {
-    logger.error(error);
-  }
-  return shipmentItems;
-};
 
 const fetchShipmentCarrierDetail = async (
   shipmentIds: Array<string>
@@ -515,9 +541,12 @@ const addTrackingCode = async (payload: any): Promise<any> => {
 
 export const TransferOrderService = {
   addTrackingCode,
-  createOutboundTransferShipment,
+  createOutboundTransferShipmentOrder,
   fetchTransferOrderFacets,
   fetchOrderHeader,
+  fetchTransferOrders,
+  fetchOrderDetailMoqui,
+  printTransferOrderPicklist,
   fetchOrderItems,
   fetchShippedQuantity,
   fetchShipmentItems,
@@ -525,7 +554,6 @@ export const TransferOrderService = {
   fetchShipmentPackages,
   fetchRejectReasons,
   fetchShipmentShippedStatusHistory,
-  fetchTransferOrders,
   findTransferOrders,
   printTransferOrder,
   printShippingLabel,

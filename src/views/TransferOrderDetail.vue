@@ -53,9 +53,9 @@
                 <ion-card class="order" v-for="(shipment, index) in getShipments('shipped')" :key="index">
                   <div class="order-header">
                     <div class="order-primary-info">
-                      <ion-label>
-                        <p>{{ translate("Shipped") }} {{ getTime(shipment.statusDate) }}</p>
-                      </ion-label>
+                      <!-- <ion-label> -->
+                        <p>{{ translate("Shipped") }} {{ getTime(shipment.createdDate) }}</p>
+                      <!-- </ion-label> -->
                     </div>
 
                     <div class="order-tags">
@@ -124,7 +124,7 @@
               <ion-icon slot="start" :icon="trashOutline" />
               {{ translate("Reject Items") }}
             </ion-button>
-            <ion-button color="primary" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="printTransferOrder()">
+            <ion-button color="primary" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="printTransferOrderPicklist()">
               <ion-icon slot="start" :icon="printOutline" />
               {{ translate('Picklist') }}   
             </ion-button>
@@ -218,14 +218,7 @@
     },
     async ionViewWillEnter() {
       emitter.emit('presentLoader');
-      await this.store.dispatch("transferorder/fetchRejectReasons");
-      try {
-        await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
-        await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.$route.params.orderId });
-      } catch(err) {
-        logger.error(err)
-      }
-
+      await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
       emitter.emit('dismissLoader');
     },
     computed: {
@@ -242,12 +235,13 @@
       }
     },
     methods: {
-      async printTransferOrder() {
-        await TransferOrderService.printTransferOrder(this.currentOrder.orderId)
+      async printTransferOrderPicklist() {
+        // await TransferOrderService.printTransferOrderPicklist(this.currentOrder.orderId)
+        await TransferOrderService.printTransferOrderPicklist("12104")
       },
       getItemCount() {
-        return this.currentOrder?.items?.reduce((totalItems:any, item:any) => totalItems + (item.orderedQuantity || 0), 0);
 
+        return this.currentOrder?.items?.reduce((totalItems: any, item: any) => totalItems + (item.quantity || 0), 0);
       },
       getTime(time: any) {
         return DateTime.fromMillis(time).toFormat("dd MMMM yyyy t a")
