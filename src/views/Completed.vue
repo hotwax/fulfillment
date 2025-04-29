@@ -869,6 +869,8 @@ export default defineComponent({
       try {
         await UtilService.generateManifest(payload);
         showToast(translate("Manifest has been generated successfully"))
+        // Fetch the latest manifest information once the manifest is generated successfully
+        await this.fetchCarrierManifestInformation([this.selectedCarrierPartyId])
       } catch(err) {
         logger.error("Failed to generate manifest", err)
         showToast(translate("Failed to generate manifest"))
