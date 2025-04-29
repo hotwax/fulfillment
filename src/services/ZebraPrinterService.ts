@@ -29,7 +29,7 @@ export class ZebraPrinterService {
       const zebraPrinter = new window.Zebra.Printer(device);
       zebraPrinter.getStatus(
         (status: any) => logger.log(status.getMessage()),
-        (err: any) => console.error(err)
+        (err: any) => logger.error(err)
       );
     }
   
@@ -39,7 +39,7 @@ export class ZebraPrinterService {
       zebraPrinter.printImageAsLabel(
         url,
         () => logger.log("Image sent to printer"),
-        (err: any) => console.error(err)
+        (err: any) => logger.error(err)
       );
     }
 
