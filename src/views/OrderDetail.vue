@@ -614,6 +614,9 @@ export default defineComponent({
           shipmentMethodTypeId : shipmentMethodTypeId ? shipmentMethodTypeId : "",
           carrierPartyId
         }
+
+        const isTrackingRequired = carrierShipmentMethods.find((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)?.isTrackingRequired
+
         resp = await OrderService.updateOrderItemShipGroup(params)
         if (!hasError(resp)) {
           for (const shipmentPackage of this.order.shipmentPackages) {
@@ -621,7 +624,8 @@ export default defineComponent({
               "shipmentId": shipmentPackage.shipmentId,
               "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
               "carrierPartyId": carrierPartyId,
-              "shipmentMethodTypeId": shipmentMethodTypeId ? shipmentMethodTypeId : ""
+              "shipmentMethodTypeId": shipmentMethodTypeId ? shipmentMethodTypeId : "",
+              "isTrackingRequired": isTrackingRequired ? isTrackingRequired : "Y"
             }) as any;
             if (!hasError(resp)) {
               //on changing the shipment carrier/method, voiding the gatewayMessage and gatewayStatus

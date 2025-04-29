@@ -666,6 +666,7 @@ const actions: ActionTree<OrderState, RootState> = {
             newShipmentPackage.labelPdfUrl = updatedShipmentPackage.labelPdfUrl;
             newShipmentPackage.shipmentMethodTypeId = updatedShipmentPackage.shipmentMethodTypeId;
             newShipmentPackage.carrierPartyId = updatedShipmentPackage.carrierPartyId;
+            newShipmentPackage.isTrackingRequired = updatedShipmentPackage.isTrackingRequired
             newShipmentPackage.missingLabelImage = missingLabelImage;
             updatedShipmentPackages.push(newShipmentPackage);
           }
