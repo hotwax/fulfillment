@@ -27,6 +27,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       sort: payload.sort ? payload.sort : "orderDate asc",
       filters: {
         orderTypeId: { value: 'TRANSFER_ORDER' },
+        "-statusFlowId": { value: 'RECEIVE_ONLY'},
         facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
         productStoreId: { value: getProductStoreId() }
       }
@@ -87,7 +88,9 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         "entityName": "OrderHeaderItemAndShipGroup",
         "inputFields": {
           "orderId": payload.orderId,
-          "oisgFacilityId": escapeSolrSpecialChars(getCurrentFacilityId())
+          "oisgFacilityId": escapeSolrSpecialChars(getCurrentFacilityId()),
+          "statusFlowId": "RECEIVE_ONLY",
+          "statusFlowId_op": "notEqual"
         },
         "fieldList": ["orderId", "orderName", "externalId", "orderTypeId", "statusId", "orderDate", "shipGroupSeqId", "oisgFacilityId", "orderFacilityId"],
         "viewSize": 1,
