@@ -585,21 +585,15 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
     if (!pdfUrls || pdfUrls.length == 0) {
       let labelImageType = imageType || "PNG";
 
-      console.log('labelImageType', imageType, labelImageType, shipmentPackages)
-      console.log(!imageType && shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId)
-
       if(!imageType && shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId) {
-        console.log('fetcjing iomaghe')
         labelImageType = await store.dispatch("util/fetchLabelImageType", shipmentPackages[0].carrierPartyId);
       }
 
       const labelImages = [] as Array<string>
-      console.log('shipmentPackages', shipmentPackages)
       if (labelImageType === "ZPLII") {
         shipmentPackages?.map((shipmentPackage: any) => {
           shipmentPackage.labelImage && labelImages.push(shipmentPackage.labelImage)
         })
-        console.log("labelImages", labelImages)
         // const zplLabels = await fetchShippingLabelForZebra(shipmentIds);
         await ZebraPrinterService.printZplLabels(labelImages);
         return;

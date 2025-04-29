@@ -873,10 +873,7 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   async fetchLabelImageType({ commit, state }, carrierId) {
-    console.log('carrierId', carrierId)
-    console.log('store.state.user', store.state.user)
     const facilityId = (useUserStore().getCurrentFacility as any).facilityId
-    console.log('facilityId', facilityId)
     let labelImageType = "PNG"
     if(state.facilityShippingLabelImageType[facilityId]) {
       return state.facilityShippingLabelImageType[facilityId]

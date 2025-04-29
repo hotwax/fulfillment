@@ -1,3 +1,5 @@
+import logger from "@/logger";
+
 export class ZebraPrinterService {
     static getDefaultPrinter(): Promise<any> {
       return new Promise((resolve, reject) => {
@@ -26,7 +28,7 @@ export class ZebraPrinterService {
       const device = await this.getDefaultPrinter();
       const zebraPrinter = new window.Zebra.Printer(device);
       zebraPrinter.getStatus(
-        (status: any) => console.log(status.getMessage()),
+        (status: any) => logger.log(status.getMessage()),
         (err: any) => console.error(err)
       );
     }
@@ -36,14 +38,14 @@ export class ZebraPrinterService {
       const zebraPrinter = new window.Zebra.Printer(device);
       zebraPrinter.printImageAsLabel(
         url,
-        () => console.log("Image sent to printer"),
+        () => logger.log("Image sent to printer"),
         (err: any) => console.error(err)
       );
     }
 
     static async printZplLabels(zplBase64Labels: string[]): Promise<void> {
         if (!zplBase64Labels || zplBase64Labels.length === 0) {
-          console.warn('No ZPL labels to print.');
+          logger.warn('No ZPL labels to print.');
           return;
         }
         
@@ -52,10 +54,9 @@ export class ZebraPrinterService {
             const isBase64 = (str: string) => /^[A-Za-z0-9+/=]+$/.test(str) && str.length % 4 === 0;
               
             const decodedZpl = isBase64(base64Zpl) ? atob(base64Zpl) : base64Zpl;
-            console.log('decode label', decodedZpl);
             await this.printZPL(decodedZpl);
           } catch (err) {
-            console.error('Failed to print decoded ZPL label:', err);
+            logger.error('Failed to print decoded ZPL label:', err);
           }
         }
       }
