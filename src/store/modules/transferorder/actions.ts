@@ -46,7 +46,6 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     let orderList = []
     let total = 0;
 
-    console.log("======transferOrderQueryPayload===", transferOrderQueryPayload)
     try {
       resp = await OrderService.findTransferOrders(transferOrderQueryPayload);
       if (!hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
