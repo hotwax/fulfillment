@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { api, hasError } from '@/adapter';
 import { translate } from '@hotwax/dxp-components'
 import logger from '@/logger';
 import { showToast, formatPhoneNumber } from '@/utils';
 import store from '@/store';
-import { cogOutline, add } from 'ionicons/icons';
+import { cogOutline } from 'ionicons/icons';
 import { prepareSolrQuery } from '@/utils/solrHelper';
 import { ZebraPrinterService } from './ZebraPrinterService';
 
