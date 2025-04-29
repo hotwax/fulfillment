@@ -203,8 +203,8 @@
           return;
         }
 
-        await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
         this.isGeneratingShippingLabel = true;
+        await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
         let shippingLabelPdfUrls = this.currentShipment.shipmentPackages
           ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
           .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
