@@ -96,20 +96,6 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   async getOpenOrder({ dispatch, state }, payload) {
-    const current = state.current as any
-    if (current.orderId === payload.orderId && current.category === 'open') {
-      return
-    }
-
-    const orders = JSON.parse(JSON.stringify(state.open.list)) as Array<any>
-    if (orders.length) {
-      const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'open')
-      if (order) {
-        dispatch('updateCurrent', order)
-        return
-      }
-    }
-
     emitter.emit('presentLoader');
 
     const openOrderQuery = JSON.parse(JSON.stringify(state.open.query))
@@ -129,27 +115,9 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   async getInProgressOrder ({ dispatch, state }, payload) {
-    // if order is modified, we refetch it instead of returning from the state
-    if (!payload.isModified) {
-      const current = state.current as any
-      if (current.orderId === payload.orderId && current.category === 'in-progress' && current.shipmentId === payload.shipmentId) {
-        return
-      }
-
-      const orders = JSON.parse(JSON.stringify(state.inProgress.list)) as Array<any>
-      if (orders.length) {
-        const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'in-progress' && payload.shipmentId === order.shipmentId)
-        if (order) {
-          dispatch('updateCurrent', order)
-          return
-        }
-      }
-    }
     emitter.emit('presentLoader');
-    
     let order = {} as any;
-
-
+    
     const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
     inProgressQuery.orderId = payload.orderId
     inProgressQuery.shipGroupSeqId = payload.shipGroupSeqId
@@ -185,19 +153,6 @@ const actions: ActionTree<OrderState, RootState> = {
   },
 
   async getCompletedOrder({ dispatch, state }, payload) {
-    const current = state.current as any
-    if (current.orderId === payload.orderId && current.category === 'completed' && current.shipmentId === payload.shipmentId) {
-      return
-    }
-
-    const orders = JSON.parse(JSON.stringify(state.completed.list)) as Array<any>
-    if (orders.length) {
-      const order = orders.find((order: any) => order.orderId === payload.orderId && current.category === 'completed' && payload.shipmentId === order.shipmentId)
-      if (order) {
-        dispatch('updateCurrent', order)
-        return
-      }
-    }
     emitter.emit('presentLoader');
     let order = {} as  any;
 
