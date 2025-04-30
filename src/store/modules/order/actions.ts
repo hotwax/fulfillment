@@ -16,6 +16,7 @@ const actions: ActionTree<OrderState, RootState> = {
     emitter.emit('presentLoader');
 
     const openOrderQuery = JSON.parse(JSON.stringify(state.open.query))
+    openOrderQuery.groupBy = "shipGroupSeqId"
     const resp = await OrderService.findOpenOrders({ openOrderQuery });
     
     const productIds = [
