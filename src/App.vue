@@ -17,9 +17,10 @@ import { mapGetters, useStore } from 'vuex';
 import { initialise, resetConfig } from '@/adapter'
 import { useRouter } from 'vue-router';
 import { Settings } from 'luxon'
-import { translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
+import { initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import logger from '@/logger'
 import { init, loadRemote } from '@module-federation/runtime';
+import { addNotification, storeClientRegistrationToken } from '@/utils/firebase';
 
 export default defineComponent({
   name: 'App',
@@ -32,7 +33,9 @@ export default defineComponent({
   data() {
     return {
       loader: null as any,
-      maxAge: process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0
+      maxAge: process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0,
+      appFirebaseConfig: JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any),
+      appFirebaseVapidKey: process.env.VUE_APP_FIREBASE_VAPID_KEY,
     }
   },
   computed: {
@@ -41,19 +44,21 @@ export default defineComponent({
       instanceUrl: 'user/getInstanceUrl',
       userProfile: 'user/getUserProfile',
       locale: 'user/getLocale',
+      currentEComStore: 'user/getCurrentEComStore',
+      allNotificationPrefs: 'user/getAllNotificationPrefs'
     })
   },
   methods: {
-    async presentLoader(options = { message: '', backdropDismiss: true }) {
+    async presentLoader(options = { message: '', backdropDismiss: false }) {
       // When having a custom message remove already existing loader
       if(options.message && this.loader) this.dismissLoader();
 
       if (!this.loader) {
         this.loader = await loadingController
           .create({
-            message: options.message ? translate(options.message) : translate("Click the backdrop to dismiss."),
+            message: options.message ? translate(options.message) : (options.backdropDismiss ? translate("Click the backdrop to dismiss.") : translate("Loading...")),
             translucent: true,
-            backdropDismiss: options.backdropDismiss
+            backdropDismiss: options.backdropDismiss || false
           });
       }
       this.loader.present();
@@ -123,9 +128,9 @@ export default defineComponent({
 
     this.loader = await loadingController
       .create({
-        message: translate("Click the backdrop to dismiss."),
+        message: translate("Loading..."),
         translucent: true,
-        backdropDismiss: true
+        backdropDismiss: false
       });
     emitter.on('presentLoader', this.presentLoader);
     emitter.on('dismissLoader', this.dismissLoader);
@@ -144,6 +149,17 @@ export default defineComponent({
       // Get product identification from api using dxp-component
       await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId)
         .catch((error) => logger.error(error));
+
+      // check if firebase configurations are there.
+      if (this.appFirebaseConfig && this.appFirebaseConfig.apiKey && this.allNotificationPrefs?.length) {
+        // initialising and connecting firebase app for notification support
+        await initialiseFirebaseApp(
+          this.appFirebaseConfig,
+          this.appFirebaseVapidKey,
+          storeClientRegistrationToken,
+          addNotification,
+        )
+      }
     }
   },
   unmounted() {
