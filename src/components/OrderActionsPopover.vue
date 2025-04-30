@@ -73,8 +73,11 @@ export default defineComponent({
       this.store.dispatch('order/updateCurrent', this.order).then(() => {
         this.closePopover();
         emitter.emit("dismissLoader")
-        const shipGroupSeqId = this.order.primaryShipGroupSeqId ? this.order.primaryShipGroupSeqId : this.order.shipGroupSeqId
-        this.$router.push({ path: `${this.category}/order-detail/${this.order.orderId}/${shipGroupSeqId}` })
+        if (this.order.category === 'open') {
+          this.$router.push({ path: `${this.category}/order-detail/${this.order.orderId}/${this.order.shipGroupSeqId}` })
+        } else {
+          this.$router.push({ path: `${this.category}/order-detail/${this.order.orderId}/${this.order.shipmentId}` })
+        }
       })
     },
   },

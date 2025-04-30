@@ -324,14 +324,18 @@ const findShipments = async (query: any): Promise <any>  => {
 
   try {
     const params = {
-      keyword: query.queryString,
       pageSize: query.viewSize,
       orderBy: 'orderDate',
       shipmentTypeId: 'SALES_SHIPMENT', 
-      originFacilityId: getCurrentFacilityId(),
       productStoreId: getProductStoreId(),
     } as any
-    
+
+    if (query.queryString) {
+      params.keyword = query.queryString
+    }
+    if (!query.excludeFacilityFilter) {
+      params.originFacilityId = getCurrentFacilityId()
+    }
     if (query.orderStatusId) {
       params.orderStatusId = query.orderStatusId
       if (Array.isArray(query.orderStatusId)) {
@@ -347,10 +351,8 @@ const findShipments = async (query: any): Promise <any>  => {
     if (query.orderId) {
       params.orderId = query.orderId
     }
-    if (query.shipGroupSeqId) {
-      params.primaryShipGroupSeqId = query.shipGroupSeqId
-      query.shipGroupSeqId_op && (params.primaryShipGroupSeqId_op = query.shipGroupSeqId_op);
-      query.shipGroupSeqId_not && (params.primaryShipGroupSeqId_not = query.shipGroupSeqId_not);
+    if (query.shipmentId) {
+      params.shipmentId = query.shipmentId
     }
     // preparing filters separately those are based on some condition
     if (query.selectedPicklist) {
@@ -385,9 +387,11 @@ const findShipments = async (query: any): Promise <any>  => {
     if (!hasError(resp)) {
       total = resp.data.shipmentCount
       orders = resp.data.shipments.map((shipment: any) => {
+        const category = shipment.statusId === 'SHIPMENT_APPROVED' ? 'in-progress' : (shipment.statusId === 'SHIPMENT_PACKED' || shipment.statusId === 'SHIPMENT_SHIPPED') ? 'completed' : ""
         shipment.shipmentPackageRouteSegDetails = shipment?.shipmentPackageRouteSegDetails?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.carrierServiceStatusId !== "SHRSCS_VOIDED")
         const missingLabelImage = productStoreShipmentMethCount > 0 ? shipment.shipmentPackageRouteSegDetails?.some((shipmentPackageRouteSeg: any) => !shipmentPackageRouteSeg.trackingCode) : false;
         return {
+          category,
           ...shipment,
           items: removeKitComponents(shipment),
           missingLabelImage,

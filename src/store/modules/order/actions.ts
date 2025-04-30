@@ -117,10 +117,10 @@ const actions: ActionTree<OrderState, RootState> = {
   async getInProgressOrder ({ dispatch, state }, payload) {
     emitter.emit('presentLoader');
     let order = {} as any;
-    
+
     const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
     inProgressQuery.orderId = payload.orderId
-    inProgressQuery.shipGroupSeqId = payload.shipGroupSeqId
+    inProgressQuery.shipmentId = payload.shipmentId
     inProgressQuery.statusId = "SHIPMENT_APPROVED"
 
     const resp = await OrderService.findShipments(inProgressQuery);
@@ -158,7 +158,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const completedOrderQuery = JSON.parse(JSON.stringify(state.completed.query))
     completedOrderQuery.orderId =  payload.orderId
-    completedOrderQuery.shipGroupSeqId =  payload.shipGroupSeqId
+    completedOrderQuery.shipmentId =  payload.shipmentId
     completedOrderQuery.statusId = ['SHIPMENT_PACKED']
     completedOrderQuery.shippedDateFrom = DateTime.now().startOf('day').toMillis();
 
@@ -174,9 +174,10 @@ const actions: ActionTree<OrderState, RootState> = {
     emitter.emit('dismissLoader');
   },
 
-  async fetchOtherShipments ({ commit, state }, payload = {}) {
+  async fetchOtherShipments ({ commit, state }) {
     let otherShipments = [];
     const currentOrder = JSON.parse(JSON.stringify(state.current))
+    const currentShipmentId = currentOrder.shipmentId;
     const shipGroupSeqId = currentOrder.primaryShipGroupSeqId ? currentOrder.primaryShipGroupSeqId : currentOrder.shipGroupSeqId
 
     //fetching open orders
@@ -198,17 +199,16 @@ const actions: ActionTree<OrderState, RootState> = {
     const shipmentQuery = {} as any;
     shipmentQuery.viewSize = 50
     shipmentQuery.statusId = ["SHIPMENT_APPROVED", "SHIPMENT_PACKED", "SHIPMENT_SHIPPED"]
-    shipmentQuery.shipGroupSeqId = shipGroupSeqId;
-    shipmentQuery.shipGroupSeqId_op = "equal";
-    shipmentQuery.shipGroupSeqId_not = "Y";
+    shipmentQuery.orderId = currentOrder.orderId;
+    shipmentQuery.excludeFacilityFilter = true
     const resp = await OrderService.findShipments(shipmentQuery);
+    
     if (resp.orders && resp.orders.length) {
-      otherShipments = [...otherShipments, resp.orders]
+      const filteredShipments = resp.orders.filter((order: any) => order.shipmentId !== currentShipmentId)
+      otherShipments = [...otherShipments, ...filteredShipments]
     }
     if (otherShipments.length) {
-      const productIds = [
-        ...new Set(otherShipments.flatMap((shipment:any) => shipment.items.map((item:any) => item.productId)))
-      ];
+      const productIds = [...new Set(otherShipments.flatMap((shipment: any) => shipment.items?.map((item: any) => item.productId) || []))];
       this.dispatch('product/fetchProducts', { productIds })
     }
 

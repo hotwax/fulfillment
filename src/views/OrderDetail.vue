@@ -444,7 +444,7 @@ import OrderAdjustmentModal from "@/components/OrderAdjustmentModal.vue";
 
 export default defineComponent({
   name: "OrderDetail",
-  props: ['category', 'orderId', 'shipGroupSeqId'],
+  props: ['category', 'orderId', 'shipGroupSeqId', 'shipmentId'],
   components: {
     DxpShopifyImg,
     IonBackButton,
@@ -541,8 +541,8 @@ export default defineComponent({
     this.category === 'open'
     ? await this.store.dispatch('order/getOpenOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId})
     : this.category === 'in-progress'
-    ? await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
-    : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
+    ? await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipmentId })
+    : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipGroupSeqId: this.shipmentId })
     await Promise.all([this.store.dispatch('util/fetchCarrierShipmentBoxTypes'), this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths'), this.fetchOrderInvoicingStatus()]);
     if (this.facilityCarriers) {
       const shipmentPackageRouteSegDetail = this.order.shipmentPackageRouteSegDetails?.[0];
@@ -811,7 +811,7 @@ export default defineComponent({
                 } else {
                   showToast(translate('Order packed successfully'));
                 }
-                this.router.replace(`/completed/order-detail/${this.orderId}/${this.shipGroupSeqId}`)
+                this.router.replace(`/completed/order-detail/${this.orderId}/${this.shipmentId}`)
               } catch (err) {
                 // in case of error, if loader and toast are not dismissed above
                 if (toast) toast.dismiss()
@@ -951,8 +951,12 @@ export default defineComponent({
       assignPickerModal.onDidDismiss().then((result: any) => {
         popoverController.dismiss();
         // redirect to in-progress page only when we have picklist created successfully for the order
-        if (result?.data?.value?.picklistId) {
-          this.router.replace(`/in-progress/order-detail/${this.orderId}/${this.shipGroupSeqId}`)
+        if (result?.data?.value?.picklistId && result?.data?.value?.shipmentIds && result?.data?.value?.shipmentIds.length) {
+          let newShipmentId = this.shipmentId
+          if (!newShipmentId) {
+            newShipmentId = result?.data?.value?.shipmentIds[0]
+          }
+          this.router.replace(`/in-progress/order-detail/${this.orderId}/${newShipmentId}`)
         }
       });
 
@@ -1079,7 +1083,7 @@ export default defineComponent({
 
         if(!hasError(resp)) {
           showToast(translate('Box added successfully'))
-          await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId})
+          await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipmentId: this.shipmentId})
           this.store.dispatch('order/updateInProgressOrder', this.order);
         } else {
           throw resp.data
@@ -1196,7 +1200,7 @@ export default defineComponent({
                 if(order.items.length === 1 ||  this.isEntierOrderRejectionEnabled(order)) {
                   this.router.push('/in-progress')
                 } else {
-                  await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId})
+                  await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipmentId: this.shipmentId})
                 }
               }).catch(err => err);
             }
@@ -1358,7 +1362,7 @@ export default defineComponent({
 
                 if(resp.status == 200 && !hasError(resp)) {
                   showToast(translate('Order unpacked successfully'))
-                  this.router.replace(`/in-progress/order-detail/${this.orderId}/${this.shipGroupSeqId}`)
+                  this.router.replace(`/in-progress/order-detail/${this.orderId}/${this.shipmentId}`)
                 } else {
                   throw resp.data
                 }
