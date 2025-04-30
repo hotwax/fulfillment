@@ -828,7 +828,6 @@ export default defineComponent({
           orderItem.selectedBox = updatedBox;
         }
       })
-      order.isModified = true;
       this.store.dispatch('order/updateInProgressOrder', order)
     },
     async fetchPickersInformation() {
@@ -1070,7 +1069,6 @@ export default defineComponent({
 
       if(result.data && shipmentPackage.shipmentBoxTypeId !== result.data) {
         shipmentPackage.shipmentBoxTypeId = result.data;
-        order.isModified = true;
         this.store.dispatch('order/updateInProgressOrder', order);
       }
     },

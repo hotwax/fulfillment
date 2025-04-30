@@ -690,7 +690,6 @@ export default defineComponent({
             orderItem.selectedBox = result.data
           }
         })
-        order.isModified = true;
         }
       return result.data;
     },
@@ -1080,7 +1079,7 @@ export default defineComponent({
 
         if(!hasError(resp)) {
           showToast(translate('Box added successfully'))
-          await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
+          await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId})
           this.store.dispatch('order/updateInProgressOrder', this.order);
         } else {
           throw resp.data
@@ -1112,7 +1111,6 @@ export default defineComponent({
 
       if (result.data) {
         shipmentPackage.shipmentBoxTypeId = result.data;
-        order.isModified = true;
         this.store.dispatch('order/updateInProgressOrder', order);
       }
     },
@@ -1198,7 +1196,7 @@ export default defineComponent({
                 if(order.items.length === 1 ||  this.isEntierOrderRejectionEnabled(order)) {
                   this.router.push('/in-progress')
                 } else {
-                  await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
+                  await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId})
                 }
               }).catch(err => err);
             }
