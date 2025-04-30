@@ -238,15 +238,15 @@ const actions: ActionTree<UtilState, RootState> = {
       facilityTypeId: facilityTypeIds,
       facilityTypeId_op: 'in',
       pageSize: facilityTypeIds.length,
-      fieldsToSelect: ["facilityTypeId", "description"]
+      fieldsToSelect: ["facilityTypeId", "typeDescription"]
     }
 
     try {
       const resp = await UtilService.fetchFacilityTypeInformation(payload);
 
       if(!hasError(resp) && resp.data?.length > 0) {
-        resp.data.docs.map((facilityType: any) => { 
-          facilityTypeDesc[facilityType.facilityTypeId] = facilityType['description'] 
+        resp.data.map((facilityType: any) => { 
+          facilityTypeDesc[facilityType.facilityTypeId] = facilityType['typeDescription'] 
         })
 
         commit(types.UTIL_FACILITY_TYPE_UPDATED, facilityTypeDesc)

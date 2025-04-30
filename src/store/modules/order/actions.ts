@@ -114,6 +114,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const openOrderQuery = JSON.parse(JSON.stringify(state.open.query))
     openOrderQuery.orderId = payload.orderId;
+    openOrderQuery.shipGroupSeqId = payload.shipGroupSeqId;
     openOrderQuery.viewSize = 1;
     
     const resp = await OrderService.findOpenOrders({ openOrderQuery });
@@ -151,7 +152,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
     inProgressQuery.orderId = payload.orderId
-    inProgressQuery.shipmentId = payload.shipmentId
+    inProgressQuery.shipGroupSeqId = payload.shipGroupSeqId
     inProgressQuery.statusId = "SHIPMENT_APPROVED"
 
     const resp = await OrderService.findShipments(inProgressQuery);
@@ -202,9 +203,10 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const completedOrderQuery = JSON.parse(JSON.stringify(state.completed.query))
     completedOrderQuery.orderId =  payload.orderId
-    completedOrderQuery.shipmentId =  payload.shipmentId
-    completedOrderQuery.statusId = ['SHIPMENT_PACKED', 'SHIPMENT_SHIPPED']
-    
+    completedOrderQuery.shipGroupSeqId =  payload.shipGroupSeqId
+    completedOrderQuery.statusId = ['SHIPMENT_PACKED']
+    completedOrderQuery.shippedDateFrom = DateTime.now().startOf('day').toMillis();
+
     const resp = await OrderService.findShipments(completedOrderQuery);
     order = resp?.orders[0]
     order.category = 'completed'
@@ -219,19 +221,19 @@ const actions: ActionTree<OrderState, RootState> = {
 
   async fetchOtherShipments ({ commit, state }, payload = {}) {
     let otherShipments = [];
-    const currentShipmentId = payload.shipmentId;
     const currentOrder = JSON.parse(JSON.stringify(state.current))
+    const shipGroupSeqId = currentOrder.primaryShipGroupSeqId ? currentOrder.primaryShipGroupSeqId : currentOrder.shipGroupSeqId
 
     //fetching open orders
     const openOrderQuery = JSON.parse(JSON.stringify(state.open.query))
     openOrderQuery.excludeFacilityFilter = true
     openOrderQuery.groupBy = "shipGroupSeqId"
     openOrderQuery.orderId = currentOrder.orderId
+    openOrderQuery.viewIndex = 0
+    openOrderQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
     
     //filter to exclue current ship group
-    if (!currentShipmentId) {
-      openOrderQuery.shipGroupFilter =  {'-shipGroupSeqId': { value: state.current.shipGroupSeqId }}  
-    }
+    openOrderQuery.shipGroupFilter =  {'-shipGroupSeqId': { value: shipGroupSeqId }}  
     const openOrderResp = await OrderService.findOpenOrders({ openOrderQuery });
     if (openOrderResp.orders && openOrderResp.orders.length) {
       otherShipments = openOrderResp.orders
@@ -241,11 +243,9 @@ const actions: ActionTree<OrderState, RootState> = {
     const shipmentQuery = {} as any;
     shipmentQuery.viewSize = 50
     shipmentQuery.statusId = ["SHIPMENT_APPROVED", "SHIPMENT_PACKED", "SHIPMENT_SHIPPED"]
-    if (currentShipmentId) {
-      shipmentQuery.shipmentId = currentShipmentId;
-      shipmentQuery.shipmentId_op = "equal";
-      shipmentQuery.shipmentId_not = "Y";
-    }
+    shipmentQuery.shipGroupSeqId = shipGroupSeqId;
+    shipmentQuery.shipGroupSeqId_op = "equal";
+    shipmentQuery.shipGroupSeqId_not = "Y";
     const resp = await OrderService.findShipments(shipmentQuery);
     if (resp.orders && resp.orders.length) {
       otherShipments = [...otherShipments, resp.orders]
@@ -256,7 +256,10 @@ const actions: ActionTree<OrderState, RootState> = {
       ];
       this.dispatch('product/fetchProducts', { productIds })
     }
-    
+
+    const facilityTypeIds = otherShipments.map((shipment: any) => shipment.facilityTypeId)
+    this.dispatch('util/fetchFacilityTypeInformation', facilityTypeIds)
+
     currentOrder.otherShipGroups = otherShipments
     commit(types.ORDER_CURRENT_UPDATED, currentOrder)
   },

@@ -255,13 +255,13 @@
               <ion-icon slot="end" :icon="cashOutline" />
             </ion-item>
             <ion-item>
-              <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')">
+              <ion-select :disabled="!order.missingLabelImage || !hasPackedShipments(order)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')">
                 <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item>
               <template v-if="carrierMethods && carrierMethods.length > 0">
-                <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
+                <ion-select :disabled="!order.missingLabelImage || !hasPackedShipments(order)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
                   <ion-select-option v-for="method in carrierMethods" :key="method.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
                 </ion-select>
               </template>
@@ -444,7 +444,7 @@ import OrderAdjustmentModal from "@/components/OrderAdjustmentModal.vue";
 
 export default defineComponent({
   name: "OrderDetail",
-  props: ['category', 'orderId', 'shipmentId'],
+  props: ['category', 'orderId', 'shipGroupSeqId'],
   components: {
     DxpShopifyImg,
     IonBackButton,
@@ -539,10 +539,10 @@ export default defineComponent({
   async ionViewDidEnter() {
     this.store.dispatch('util/fetchRejectReasonOptions')
     this.category === 'open'
-    ? await this.store.dispatch('order/getOpenOrder', { orderId: this.orderId })
+    ? await this.store.dispatch('order/getOpenOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId})
     : this.category === 'in-progress'
-    ? await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipmentId: this.shipmentId })
-    : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipmentId: this.shipmentId })
+    ? await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
+    : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
     await Promise.all([this.store.dispatch('util/fetchCarrierShipmentBoxTypes'), this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths'), this.fetchOrderInvoicingStatus()]);
     if (this.facilityCarriers) {
       const shipmentPackageRouteSegDetail = this.order.shipmentPackageRouteSegDetails?.[0];
@@ -812,7 +812,7 @@ export default defineComponent({
                 } else {
                   showToast(translate('Order packed successfully'));
                 }
-                this.router.replace(`/completed/order-detail/${this.orderId}/${this.shipmentId}`)
+                this.router.replace(`/completed/order-detail/${this.orderId}/${this.shipGroupSeqId}`)
               } catch (err) {
                 // in case of error, if loader and toast are not dismissed above
                 if (toast) toast.dismiss()
@@ -952,12 +952,8 @@ export default defineComponent({
       assignPickerModal.onDidDismiss().then((result: any) => {
         popoverController.dismiss();
         // redirect to in-progress page only when we have picklist created successfully for the order
-        if(result?.data?.value?.picklistId && result?.data?.value?.shipmentIds && result?.data?.value?.shipmentIds.length) {
-          let newShipmentId = this.shipmentId
-          if (!newShipmentId) {
-            newShipmentId = result?.data?.value?.shipmentIds[0]
-          }
-          this.router.replace(`/in-progress/order-detail/${this.orderId}/${newShipmentId}`)
+        if (result?.data?.value?.picklistId) {
+          this.router.replace(`/in-progress/order-detail/${this.orderId}/${this.shipGroupSeqId}`)
         }
       });
 
@@ -1084,7 +1080,7 @@ export default defineComponent({
 
         if(!hasError(resp)) {
           showToast(translate('Box added successfully'))
-          await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipmentId: this.shipmentId, isModified: true })
+          await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
           this.store.dispatch('order/updateInProgressOrder', this.order);
         } else {
           throw resp.data
@@ -1202,7 +1198,7 @@ export default defineComponent({
                 if(order.items.length === 1 ||  this.isEntierOrderRejectionEnabled(order)) {
                   this.router.push('/in-progress')
                 } else {
-                  await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipmentId: this.shipmentId, isModified: true })
+                  await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
                 }
               }).catch(err => err);
             }
@@ -1364,7 +1360,7 @@ export default defineComponent({
 
                 if(resp.status == 200 && !hasError(resp)) {
                   showToast(translate('Order unpacked successfully'))
-                  this.router.replace(`/in-progress/order-detail/${this.orderId}/${this.shipmentId}`)
+                  this.router.replace(`/in-progress/order-detail/${this.orderId}/${this.shipGroupSeqId}`)
                 } else {
                   throw resp.data
                 }

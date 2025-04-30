@@ -39,6 +39,9 @@ const findOpenOrders = async (payload: any): Promise<any> => {
   if (openOrderQuery.orderId) {
     params.filters['orderId'] = { value:  openOrderQuery.orderId }
   }
+  if (openOrderQuery.shipGroupSeqId) {
+    params.filters['shipGroupSeqId'] = { value:  openOrderQuery.shipGroupSeqId }
+  }
   if (openOrderQuery.groupBy) {
     params.isGroupingRequired = true
     params.groupBy = openOrderQuery.groupBy
@@ -83,7 +86,10 @@ const findOpenOrders = async (payload: any): Promise<any> => {
           items: order.doclist.docs,
           shipGroupSeqId: orderItem.shipGroupSeqId,
           shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
-          reservedDatetime: orderItem.reservedDatetime
+          reservedDatetime: orderItem.reservedDatetime,
+          facilityId: orderItem.facilityId,
+          facilityName: orderItem.facilityName,
+          facilityTypeId: orderItem.facilityTypeId
         }
       })
     } else {
@@ -341,10 +347,10 @@ const findShipments = async (query: any): Promise <any>  => {
     if (query.orderId) {
       params.orderId = query.orderId
     }
-    if (query.shipmentId) {
-      params.shipmentId = query.shipmentId
-      query.shipmentId_op && (params.shipmentId_op = query.shipmentId_op);
-      query.shipmentId_not && (params.shipmentId_not = query.shipmentId_not);
+    if (query.shipGroupSeqId) {
+      params.primaryShipGroupSeqId = query.shipGroupSeqId
+      query.shipGroupSeqId_op && (params.primaryShipGroupSeqId_op = query.shipGroupSeqId_op);
+      query.shipGroupSeqId_not && (params.primaryShipGroupSeqId_not = query.shipGroupSeqId_not);
     }
     // preparing filters separately those are based on some condition
     if (query.selectedPicklist) {
