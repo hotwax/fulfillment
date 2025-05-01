@@ -159,7 +159,6 @@
   "Failed to create picklist for orders": "Error al crear la lista de selección para los pedidos",
   "Failed to create rejection reason.": "Erro al crear la razon de Rechazo.",
   "Failed to fetch eCom inventory config": "Error al obtener la configuración del inventario de comercio electrónico",
-  "Failed to fetch picklist data": "Failed to fetch picklist data",
   "Failed to generate manifest": "Failed to generate manifest",
   "Failed to generate shipping label": "Error al generar la etiqueta de envío",
   "Failed to pack order": "Error al empacar el pedido",

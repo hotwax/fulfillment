@@ -161,7 +161,6 @@
   "Failed to create picklist for orders": "Failed to create picklist for orders",
   "Failed to create rejection reason.": "Failed to create rejection reason.",
   "Failed to fetch eCom inventory config": "Failed to fetch eCom inventory config",
-  "Failed to fetch picklist data": "Failed to fetch picklist data",
   "Failed to generate manifest": "Failed to generate manifest",
   "Failed to generate shipping label": "Failed to generate shipping label",
   "Failed to pack order": "Failed to pack order",

@@ -1,5 +1,5 @@
 import { api, hasError } from '@/adapter';
-import { getProductIdentificationValue, translate } from '@hotwax/dxp-components'
+import { getProductIdentificationValue, translate, useUserStore } from '@hotwax/dxp-components'
 import logger from '@/logger';
 import { showToast, formatPhoneNumber, getFeatures, jsonToCsv } from '@/utils';
 import store from '@/store';
@@ -675,78 +675,96 @@ const getPicklistData = async (payload: any): Promise<any> => {
 }
 
 const downloadPicklist = async (picklistId: string): Promise<any> => {
-  const payload = {
-    inputFields: {
-      picklistId
-    },
-    entityName: "PicklistItemsQuantityCountView",
-    orderBy: "idValue DESC | name",
-    viewSize: 250,
-  }
+  let viewIndex = 0;
+  let docCount = 0;
+  let picklistDate = "";
+  const picklistData: Array<Record<string, string | number>> = []
+  const orderIdentifier: Record<string, string> = {}
 
-  try {
-    const resp = await OrderService.getPicklistData(payload)
-
-    if(!hasError(resp) && resp.data.docs?.length) {
-      const picklistData: Array<Record<string, string | number>> = []
-      const productIds: Array<string> = []
-      const orderIds: Array<string> = []
-      const orderIdentifier: Record<string, string> = {}
-
-      resp.data.docs.map((data: any) => {
-        productIds.push(data.inventoryItemProductId)
-        orderIds.push(data.orderId)
-      })
-
-      await store.dispatch("product/fetchProducts", { productIds })
-
-      try {
-        const orderHeaderResp = await fetchOrderHeader({
-          inputFields: {
-            orderId: [...new Set(orderIds)],
-            orderId_op: "in"
-          },
-          entityName: "OrderHeader",
-          fieldList: ["orderId", "orderName"],
-          viewSize: orderIds.length,
-        })
-
-        if(!hasError(orderHeaderResp) && orderHeaderResp.data.docs?.length) {
-          orderHeaderResp.data.docs?.map((order: any) => orderIdentifier[order.orderId] = order.orderName)
-        } else {
-          throw resp.data;
-        }
-      } catch(err) {
-        logger.error("Failed to fetch order info", err)
-      }
-
-      resp.data.docs.map((data: any) => {
-        const product = store.getters["product/getProduct"](data.inventoryItemProductId)
-        if(!product) {
-          return;
-        }
-
-        // Preparing data to download as CSV
-        const productName = product.parentProductName || product.productName
-        picklistData.push({
-          "Order #": orderIdentifier[data.orderId] || data.orderId,
-          "HC Order Id": data.orderId,
-          "Product Identifier": getProductIdentificationValue(store.getters["util/getPicklistItemIdentificationPref"] || "internalName", product),
-          "Product Code": data.idValue,
-          "Product Name": productName,
-          "Product Features": getFeatures(product.productFeatures),
-          "To Pick": data.itemQuantity
-        })
-      })
-
-      const fileName = `Picklist-${resp.data.docs[0].picklistDate}.csv`
-      await jsonToCsv(picklistData, { download: true, name: fileName });
-    } else {
-      showToast(translate("No items to print"))
+  do {
+    const payload = {
+      inputFields: {
+        picklistId
+      },
+      entityName: "PicklistItemsQuantityCountView",
+      orderBy: "idValue DESC | name",
+      viewSize: 50,
+      viewIndex
     }
-  } catch(err) {
-    showToast(translate("Failed to fetch picklist data"))
-    logger.error("Failed to fetch picklist data", err)
+
+    try {
+      const resp = await OrderService.getPicklistData(payload)
+
+      if(!hasError(resp) && resp.data.docs?.length) {
+        const productIds: Array<string> = []
+        const orderIds: Array<string> = []
+
+        docCount = resp.data.docs.length;
+        viewIndex++;
+        picklistDate = resp.data.docs[0].picklistDate
+
+        resp.data.docs.map((data: any) => {
+          productIds.push(data.inventoryItemProductId)
+          orderIds.push(data.orderId)
+        })
+
+        await store.dispatch("product/fetchProducts", { productIds })
+
+        try {
+          const orderHeaderResp = await fetchOrderHeader({
+            inputFields: {
+              orderId: [...new Set(orderIds)],
+              orderId_op: "in"
+            },
+            entityName: "OrderHeader",
+            fieldList: ["orderId", "orderName"],
+            viewSize: orderIds.length,
+          })
+
+          if(!hasError(orderHeaderResp) && orderHeaderResp.data.docs?.length) {
+            orderHeaderResp.data.docs?.map((order: any) => orderIdentifier[order.orderId] = order.orderName)
+          } else {
+            throw resp.data;
+          }
+        } catch(err) {
+          logger.error("Failed to fetch order info", err)
+        }
+
+        resp.data.docs.map((data: any) => {
+          const product = store.getters["product/getProduct"](data.inventoryItemProductId)
+          if(!product) {
+            return;
+          }
+
+          const facility = useUserStore().getCurrentFacility as any
+
+          // Preparing data to download as CSV
+          const productName = product.parentProductName || product.productName
+          picklistData.push({
+            "Order #": orderIdentifier[data.orderId] || data.orderId,
+            "HC Order Id": data.orderId,
+            "Facility Name": facility?.facilityName || facility?.facilityId,
+            "Product Identifier": getProductIdentificationValue(store.getters["util/getPicklistItemIdentificationPref"] || "internalName", product),
+            "Product Code": data.idValue,
+            "Product Name": productName,
+            "Product Features": getFeatures(product.productFeatures),
+            "To Pick": data.itemQuantity
+          })
+        })
+      } else {
+        docCount = 0;
+      }
+    } catch(err) {
+      docCount = 0;
+      logger.error("Failed to fetch picklist data", err)
+    }
+  } while(docCount >= 250)
+
+  if(picklistData.length) {
+    const fileName = `Picklist-${picklistDate}.csv`
+    await jsonToCsv(picklistData, { download: true, name: fileName });
+  } else {
+    showToast(translate("No items to print"))
   }
 }
 
