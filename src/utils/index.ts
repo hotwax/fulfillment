@@ -63,16 +63,6 @@ const formatUtcDate = (value: any, outFormat: string) => {
   return DateTime.fromISO(value, { zone: 'utc' }).setZone(store.state.user.current.userTimeZone).toFormat(outFormat ? outFormat : 'MM-dd-yyyy')
 }
 
-const getFeature = (featureHierarchy: any, featureKey: string) => {
-  let  featureValue = ''
-  if (featureHierarchy) {
-    const feature = featureHierarchy.find((featureItem: any) => featureItem.startsWith(featureKey))
-    const featureSplit = feature ? feature.split('/') : [];
-    featureValue = featureSplit[2] ? featureSplit[2] : '';
-  }
-  return featureValue;
-}
-
 const getFeatures = (productFeatures: any) => {
   const features = productFeatures
     ?.sort((firstFeature: string, secondFeature: string) => firstFeature.split('/')[0].localeCompare(secondFeature.split('/')[0]))
@@ -252,4 +242,4 @@ const parseCsv = async (file: File, options?: any) => {
 }
 
 
-export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getFeature, getFeatures, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv }
+export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getFeatures, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv }

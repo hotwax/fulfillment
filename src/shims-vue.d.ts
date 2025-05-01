@@ -4,6 +4,5 @@ declare module '*.vue' {
   export default component
 }
 
-
+declare module "vue-barcode-reader";
 declare module "fulfillment_extensions/*";
-
