@@ -741,14 +741,14 @@ const downloadPicklist = async (picklistId: string): Promise<any> => {
           // Preparing data to download as CSV
           const productName = product.parentProductName || product.productName
           picklistData.push({
-            "Order #": orderIdentifier[data.orderId] || data.orderId,
-            "HC Order Id": data.orderId,
-            "Facility Name": facility?.facilityName || facility?.facilityId,
-            "Product Identifier": getProductIdentificationValue(store.getters["util/getPicklistItemIdentificationPref"] || "internalName", product),
-            "Product Code": data.idValue,
-            "Product Name": productName,
-            "Product Features": getFeatures(product.productFeatures),
-            "To Pick": data.itemQuantity
+            "shopify-order-id": orderIdentifier[data.orderId],
+            "hc-order-id": data.orderId,
+            "facility-name": facility?.facilityName || facility?.facilityId,
+            "product-identifier": getProductIdentificationValue(store.getters["util/getPicklistItemIdentificationPref"] || "internalName", product),
+            "product-code": data.idValue,
+            "product-name": productName,
+            "product-features": getFeatures(product.productFeatures),
+            "to-pick": data.itemQuantity
           })
         })
       } else {
