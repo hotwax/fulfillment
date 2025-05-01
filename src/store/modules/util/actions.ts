@@ -752,6 +752,40 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, prefValue)
   },
   
+  async fetchShipmentBoxUomConversions({ commit, state }) { 
+    if(Object.keys(state.boxUomConversions)?.length) return;
+    const boxUomConversions = {} as any;
+
+    try {
+      const resp = await UtilService.fetchUomConversions({
+        "inputFields": {
+          "uomId": ["LEN_in", "WT_kg"],
+          "uomIdTo": ["LEN_cm", "WT_lb"]
+        },
+        "entityName": "UomConversion",
+        "noConditionFind": "Y",
+        "fieldList": ["conversionFactor", "uomId", "uomIdTo"],
+        "viewSize": 4
+      })
+
+      if(!hasError(resp) && resp.data.docs?.length) {
+        resp.data.docs.map((conversion: any) => {
+          if(conversion.uomId === "LEN_in" && conversion.uomIdTo === "LEN_cm") {
+            boxUomConversions["inToCm"] = conversion.conversionFactor
+          } else {
+            boxUomConversions["kgToLb"] = conversion.conversionFactor
+          }
+        })
+      } else {
+        throw resp.data;
+      }
+    } catch(error: any) {
+      logger.error(error);
+    }
+    
+    commit(types.UTIL_BOX_UOM_CONVERSIONS_UPDATED, boxUomConversions)
+  },
+  
   async updateForceScanStatus({ commit }, payload) { 
     commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, payload)
   },
