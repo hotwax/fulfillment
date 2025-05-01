@@ -758,7 +758,7 @@ const downloadPicklist = async (picklistId: string): Promise<any> => {
       docCount = 0;
       logger.error("Failed to fetch picklist data", err)
     }
-  } while(docCount >= 250)
+  } while(docCount >= 50)
 
   if(picklistData.length) {
     const fileName = `Picklist-${picklistDate}.csv`
