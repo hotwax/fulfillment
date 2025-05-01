@@ -70,7 +70,8 @@
                 <div class="product-info">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                      <!-- TODO: Currently handled product image mismatch on the order list page — needs to be applied to other pages using DxpShopifyImg  -->
+                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -105,7 +106,7 @@
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
+                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
@@ -240,9 +241,6 @@ export default defineComponent({
       productCategoryFilterExt: "" as any
     }
   },
-  async ionViewWillEnter() {
-    this.isScrollingEnabled = false;
-  },
   methods: {
     updateOpenQuery(payload: any) {
       this.store.dispatch("order/updateOpenQuery", payload)
@@ -322,7 +320,7 @@ export default defineComponent({
           quantityNotAvailable: { value: 0 },
           isPicked: { value: 'N' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          '-fulfillmentStatus': { value: 'Cancelled' },
+          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
           facilityId: { value: this.currentFacility?.facilityId },
@@ -429,13 +427,14 @@ export default defineComponent({
       this.store.dispatch('stock/fetchStock', { productId })
     }
   },
-  async mounted () {
-    emitter.on('updateOrderQuery', this.updateOrderQuery)
+  async ionViewWillEnter () {
+    this.isScrollingEnabled = false;
     await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
     const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "")
-    this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`})
+    this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`});
+    emitter.on("updateOrderQuery", this.updateOrderQuery);
   },
-  unmounted() {
+  ionViewWillLeave() {
     this.store.dispatch('order/clearOpenOrders');
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
