@@ -731,7 +731,7 @@ const downloadPicklist = async (picklistId: string): Promise<any> => {
         picklistData.push({
           "Order #": orderIdentifier[data.orderId] || data.orderId,
           "HC Order Id": data.orderId,
-          "Product": getProductIdentificationValue(store.getters["util/getPicklistItemIdentificationPref"] || "internalName", product),
+          "Product Identifier": getProductIdentificationValue(store.getters["util/getPicklistItemIdentificationPref"] || "internalName", product),
           "Product Code": data.idValue,
           "Product Name": productName,
           "Product Features": getFeatures(product.productFeatures),
