@@ -57,7 +57,7 @@
         const shippingLabelPdfUrls = order.shipmentPackages
             ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
             .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
-        await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+            await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
         popoverController.dismiss()
       },
       async voidShippingLabel(order: any) {

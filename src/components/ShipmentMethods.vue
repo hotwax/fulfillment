@@ -176,7 +176,8 @@
       },
             
       async updateCarrierShipmentMethodAssociation(event: any, shipmentMethod: any) {
-        event.stopPropagation();
+        event.preventDefault();
+        event.stopImmediatePropagation();
 
         let resp = {} as any;
         const payload = {
