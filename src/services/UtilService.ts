@@ -85,7 +85,7 @@ const findShipmentPackages = async(shipmentIds: Array<string>): Promise<any> => 
       "shipmentId": shipmentIds,
       "shipmentId_op": "in"
     },
-    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentRouteSegmentId", "shipmentMethodTypeId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "picklistBinId", "isTrackingRequired", "trackingCode", "internationalInvoiceUrl", "labelImageUrl", "carrierServiceStatusId"],
+    "fieldList": ["shipmentId", "shipmentPackageSeqId", "shipmentRouteSegmentId", "shipmentMethodTypeId", "shipmentBoxTypeId", "packageName", "primaryOrderId", "carrierPartyId", "picklistBinId", "isTrackingRequired", "trackingCode", "internationalInvoiceUrl", "labelImage", "labelImageUrl", "carrierServiceStatusId"],
     "viewSize": 250, //max size perform find support, need to update this logic to fetch the paginated detail
     "distinct": "Y"
   }
@@ -340,6 +340,39 @@ const fetchCarrierPartyIds = async (query: any): Promise <any>  => {
     url: "solr-query",
     method: "post",
     data: query
+  });
+}
+
+const fetchConfiguredCarrierService = async(query: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
+const generateManifest = async(payload: any): Promise<any> => {
+  return api({
+    url: "generateManifests",
+    method: "POST",
+    data: payload
+  });
+}
+
+const downloadCarrierManifest = async(payload: any): Promise<any> => {
+  return api({
+    url: "downloadCarrierManifest",
+    method: "POST",
+    data: payload,
+    responseType: "blob"
+  });
+}
+
+const fetchManifestsInformation = async(payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "POST",
+    data: payload
   });
 }
 
@@ -675,22 +708,97 @@ const fetchUomConversions = async(payload: any): Promise<any> => {
   })
 }
 
+const fetchCarriers = async (query: any): Promise <any>  => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
+const fetchStoreCarrierAndMethods = async (query: any): Promise <any>  => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
+const fetchFacilityAddresses = async (params: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params
+  })
+}
+
+const fetchFacilityZPLGroupInfo = async (facilityId: string): Promise<any> => {
+  let isFacilityZPLConfigured = false;
+  const params = {
+    inputFields: {
+      facilityId,
+      facilityGroupId: "ZPL_SHIPPING_LABEL",
+      facilityGroupTypeId: "SHIPPING_LABEL"
+    },
+    fieldList: ["facilityGroupId", "facilityId"],
+    entityName: "FacilityGroupAndMember",
+    filterByDate: "Y",
+    viewSize: 1
+  }
+
+  try {
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    }) as any;
+
+    if (!hasError(resp) && resp.data?.docs?.length > 0) {
+      isFacilityZPLConfigured = true
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    logger.error(err)
+  }
+  return isFacilityZPLConfigured;
+}
+
+const fetchLabelImageType = async (carrierId : string): Promise<any> => {
+  return api({
+    method: 'get',
+    url: 'performFind',
+    params: {
+      "entityName": "SystemProperty",
+      "inputFields": {
+        "systemResourceId": carrierId,
+        "systemPropertyId": "shipment.carrier.labelImageType"
+      }
+    }
+  })
+}
+
 export const UtilService = {
   activateGiftCard,
   createBarcodeIdentificationPref,
+  fetchCarriers,
   createEnumerationGroupMember,
   createForceScanSetting,
   createPicklist,
   createEnumeration,
+  downloadCarrierManifest,
   fetchAdjustmentTypeDescription,
   fetchCarrierPartyIds,
   fetchDefaultShipmentBox,
   fetchEnumeration,
   fetchFacilities,
+  fetchFacilityAddresses,
+  fetchFacilityZPLGroupInfo,
   fetchFacilityTypeInformation,
   fetchFulfillmentRejectReasons,
   fetchGiftCardFulfillmentInfo,
   fetchGiftCardItemPriceInfo,
+  fetchManifestsInformation,
   fetchOrderAdjustments,
   fetchOrderShipGroupInfo,
   fetchPartyInformation,
@@ -702,12 +810,14 @@ export const UtilService = {
   fetchShipmentBoxTypeDesc,
   fetchShipmentMethods,
   fetchShipmentMethodTypeDesc,
+  fetchStoreCarrierAndMethods,
   fetchPaymentMethodTypeDesc,
   fetchStatusDesc,
   fetchShipmentRouteSegmentInformation,
   fetchUomConversions,
   findCarrierPartyIdsForShipment,
   findCarrierShipmentBoxType,
+  fetchConfiguredCarrierService,
   fetchOrderPayment,
   findProductStoreShipmentMethCount,
   findShipmentIdsForOrders,
@@ -715,6 +825,7 @@ export const UtilService = {
   findShipmentPackages,
   findShipmentPackageContents,
   fetchTransferOrderFacets,
+  generateManifest,
   getAvailablePickers,
   getProductStoreSetting,
   isEnumExists,
@@ -723,5 +834,6 @@ export const UtilService = {
   updateEnumeration,
   updateBarcodeIdentificationPref,
   updateEnumerationGroupMember,
-  updateForceScanSetting
+  updateForceScanSetting,
+  fetchLabelImageType
 }
