@@ -136,7 +136,7 @@
           </ion-item>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_BARCODE_IDENTIFIER_UPDATE)">
             <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="barcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
-              <ion-select-option v-for="identification in barcodeIdentificationOptions" :key="identification" :value="identification" >{{ identification }}</ion-select-option>
+              <ion-select-option v-for="identification in barcodeIdentificationOptions" :key="identification" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
             </ion-select>
           </ion-item>
         </ion-card>
@@ -734,7 +734,7 @@ export default defineComponent({
     const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let currentFacility: any = computed(() => userStore.getCurrentFacility) 
-    let barcodeIdentificationOptions = computed(() => productIdentificationStore.getProductIdentificationOptions)
+    let barcodeIdentificationOptions = computed(() => productIdentificationStore.getGoodIdentificationOptions)
 
     return {
       Actions,
