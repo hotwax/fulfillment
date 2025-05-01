@@ -73,6 +73,14 @@ const getFeature = (featureHierarchy: any, featureKey: string) => {
   return featureValue;
 }
 
+const getFeatures = (productFeatures: any) => {
+  const features = productFeatures
+    ?.sort((firstFeature: string, secondFeature: string) => firstFeature.split('/')[0].localeCompare(secondFeature.split('/')[0]))
+    ?.map((feature: string) => feature.split('/')[1])
+    ?.join(' ');
+  return features || "";
+}
+
 const jsonToCsv = (file: any, options: JsonToCsvOption = {}) => {
   const csv = Papa.unparse(file, {
     ...options.parse
@@ -244,4 +252,4 @@ const parseCsv = async (file: File, options?: any) => {
 }
 
 
-export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getFeature, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv }
+export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getFeature, getFeatures, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv }

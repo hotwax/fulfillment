@@ -108,6 +108,7 @@ const actions: ActionTree<UserState, RootState> = {
       this.dispatch('util/findProductStoreShipmentMethCount')
       this.dispatch('util/getForceScanSetting', preferredStore.productStoreId);
       this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
+      this.dispatch('util/fetchProductStoreSettingPicklist', preferredStore.productStoreId);
       await dispatch('getNewRejectionApiConfig')
       await dispatch('getPartialOrderRejectionConfig')
       await dispatch('getCollateralRejectionConfig')
@@ -215,6 +216,7 @@ const actions: ActionTree<UserState, RootState> = {
         this.dispatch('util/findProductStoreShipmentMethCount');
         this.dispatch('util/getForceScanSetting', preferredStore.productStoreId)
         this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
+        this.dispatch('util/fetchProductStoreSettingPicklist', preferredStore.productStoreId);
       }
     } catch(error: any) {
       logger.error(error);
@@ -256,6 +258,7 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch('util/findProductStoreShipmentMethCount');
     this.dispatch('util/getForceScanSetting', productStoreId)
     this.dispatch('util/fetchBarcodeIdentificationPref', productStoreId);
+    this.dispatch('util/fetchProductStoreSettingPicklist', productStoreId);
   },
 
   setUserPreference({ commit }, payload){
