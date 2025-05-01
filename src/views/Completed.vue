@@ -374,6 +374,7 @@ export default defineComponent({
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
       completedOrdersQuery.viewIndex++;
       await this.store.dispatch('order/updateCompletedOrderIndex', { ...completedOrdersQuery })
+      this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
       event.target.complete();
     },
     isCompletedOrderScrollable() {
