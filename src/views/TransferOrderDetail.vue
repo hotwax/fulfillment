@@ -82,7 +82,7 @@
                         <ion-label>
                           <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                           {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                          <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                          <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
                         </ion-label>
                       </ion-item>
                     </div>
@@ -172,7 +172,7 @@
   import Scanner from "@/components/Scanner.vue";
   import { Actions, hasPermission } from '@/authorization'
   import { DateTime } from 'luxon';
-  import { getFeature, showToast, hasWebcamAccess } from '@/utils';
+  import { getFeatures, showToast, hasWebcamAccess } from '@/utils';
   import { hasError } from '@/adapter';
   import { OrderService } from '@/services/OrderService'
   import TransferOrderItem from '@/components/TransferOrderItem.vue'
@@ -476,7 +476,7 @@
         add,
         barcodeOutline,
         checkmarkDone,
-        getFeature,
+        getFeatures,
         getProductIdentificationValue,
         hasPermission,
         personCircleOutline,
