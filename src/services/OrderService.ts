@@ -364,14 +364,12 @@ const findShipments = async (query: any): Promise <any>  => {
     }
 
     if(query.selectedCarrierPartyIds && query.selectedCarrierPartyIds.length) {
-      params.carrierPartyId = query.selectedCarrierPartyIds,
-      params.carrierPartyId_op = 'in' 
+      params.carrierPartyId = query.selectedCarrierPartyIds
     }
 
     // only adding shipmentMethods when a method is selected
-    if(query.selectedShipmentMethods && query.selectedShipmentMethods.length) {
-      params.shipmentMethodTypeId = query.selectedShipmentMethods
-      params.shipmentMethodTypeId_op = "in"
+    if (query.selectedShipmentMethods && query.selectedShipmentMethods.length) {
+      params.shipmentMethodTypeIds = query.selectedShipmentMethods
     }
 
     const resp = await client({
