@@ -241,5 +241,11 @@ const parseCsv = async (file: File, options?: any) => {
   })
 }
 
+const hasActiveFilters = (query: any): boolean => {
+  const excludedFields = ["viewSize", "viewIndex", "queryString"];
+  return Object.keys(query).some((key: string) => 
+    !excludedFields.includes(key) && (Array.isArray(query[key]) ? query[key].length : query[key].trim())
+  );
+}
 
-export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getFeatures, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv }
+export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getFeatures, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getIdentificationId, handleDateTimeInput, hasActiveFilters, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv }

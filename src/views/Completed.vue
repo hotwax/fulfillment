@@ -237,7 +237,7 @@ import { caretDownOutline, chevronUpOutline, cubeOutline, printOutline, download
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
-import { copyToClipboard, formatUtcDate, getFeatures, showToast } from '@/utils'
+import { copyToClipboard, formatUtcDate, getFeatures, hasActiveFilters, showToast } from '@/utils'
 import { hasError } from '@/adapter'
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import { UtilService } from '@/services/UtilService';
@@ -334,7 +334,7 @@ export default defineComponent({
   },
   methods: {
     getErrorMessage() {
-      return this.searchedQuery === '' ? translate("doesn't have any completed orders right now.", { facilityName: this.currentFacility?.facilityName }) : translate( "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+      return this.searchedQuery ? (hasActiveFilters(this.completedOrders.query) ? translate("No results found for . Try using different filters.", { searchedQuery: this.searchedQuery }) : translate( "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })) : translate("doesn't have any completed orders right now.", { facilityName: this.currentFacility?.facilityName });
     },
     hasAnyPackedShipment(): boolean {
       return this.completedOrders.list.some((order: any) => {
@@ -904,6 +904,7 @@ export default defineComponent({
       getProductIdentificationValue,
       gift,
       giftOutline,
+      hasActiveFilters,
       hasPermission,
       isKit,
       listOutline,
