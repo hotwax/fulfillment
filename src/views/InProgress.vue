@@ -774,12 +774,12 @@ export default defineComponent({
             "shipmentItemSeqId": item.shipmentItemSeqId,
             "productId": item.productId,
             "facilityId": this.currentFacility?.facilityId,
-            "rejectToFacilityId": "_NA_",
             "updateQOH": this.affectQohConfig && this.affectQohConfig?.settingValue ? this.affectQohConfig?.settingValue : false,
             "maySplit": this.isEntierOrderRejectionEnabled(order) ? "N" : "Y",
             "cascadeRejectByProduct": this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
             "rejectionReasonId": item.rejectReason,
             "kitComponents": item.kitComponents,
+            "comments": "Store Rejected Inventory"
           })
         } else if (item.selectedBox !== item.currentBox) {
           shipmentPackageContents.push({
