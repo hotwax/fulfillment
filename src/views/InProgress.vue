@@ -446,7 +446,7 @@ export default defineComponent({
       }
     },
     getErrorMessage() {
-      return this.searchedQuery ? (hasActiveFilters(this.inProgressOrders.query) ? translate("No results found for . Try searching different filters.", { searchedQuery: this.searchedQuery }) : translate( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })) : translate("doesn't have any orders in progress right now.", { facilityName: this.currentFacility?.facilityName });
+      return this.searchedQuery ? (hasActiveFilters(this.inProgressOrders.query) ? translate("No results found for . Try using different filters.", { searchedQuery: this.searchedQuery }) : translate( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })) : translate("doesn't have any orders in progress right now.", { facilityName: this.currentFacility?.facilityName });
     },
     getInProgressOrders() {
       return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));

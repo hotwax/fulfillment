@@ -246,7 +246,7 @@ export default defineComponent({
       this.store.dispatch("order/updateOpenQuery", payload)
     },
     getErrorMessage() {
-      return this.searchedQuery ? (hasActiveFilters(this.openOrders.query) ? translate("No results found for . Try searching different filters.", { searchedQuery: this.searchedQuery }) : translate("No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })) : translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility?.facilityName });
+      return this.searchedQuery ? (hasActiveFilters(this.openOrders.query) ? translate("No results found for . Try using different filters.", { searchedQuery: this.searchedQuery }) : translate("No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })) : translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility?.facilityName });
     },
     viewNotifications() {
       this.store.dispatch('user/setUnreadNotificationsStatus', false)
