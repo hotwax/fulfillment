@@ -292,6 +292,7 @@
   "No payments found": "支払いが見つかりません",
   "No reason": "理由なし",
   "No results found for .": "No results found for { searchedQuery }.",
+  "No results found for . Try searching different filters.": "No results found for { searchedQuery }. Try searching different filters.",
   "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.": "{ searchedQuery }の結果は見つかりませんでした。代わりに「オープン」または「完了」タブで検索してみてください。 { lineBreak } それでも見つからない場合は、ストアを切り替えてみてください。",
   "No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.": "{ searchedQuery }の結果は見つかりませんでした。代わりに「進行中」または「オープン」タブで検索してみてください。 { lineBreak } それでも見つからない場合は、ストアを切り替えてみてください。",
   "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.": "{ searchedQuery }の結果は見つかりませんでした。代わりに「進行中」または「完了」タブで検索してみてください。 { lineBreak } それでも見つからない場合は、ストアを切り替えてみてください。",
