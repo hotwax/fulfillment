@@ -388,9 +388,12 @@ const findShipments = async (query: any): Promise <any>  => {
         const category = shipment.statusId === 'SHIPMENT_APPROVED' ? 'in-progress' : (shipment.statusId === 'SHIPMENT_PACKED' || shipment.statusId === 'SHIPMENT_SHIPPED') ? 'completed' : ""
         shipment.shipmentPackageRouteSegDetails = shipment?.shipmentPackageRouteSegDetails?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.carrierServiceStatusId !== "SHRSCS_VOIDED")
         const missingLabelImage = productStoreShipmentMethCount > 0 ? shipment.shipmentPackageRouteSegDetails?.some((shipmentPackageRouteSeg: any) => !shipmentPackageRouteSeg.trackingCode) : false;
+        const customerName = (shipment.firstName && shipment.lastName) ? shipment.firstName + " " + shipment.lastName : shipment.firstName ? shipment.firstName : "";
+
         return {
           category,
           ...shipment,
+          customerName,
           items: removeKitComponents(shipment),
           missingLabelImage,
           trackingCode: shipment?.trackingIdNumber,
