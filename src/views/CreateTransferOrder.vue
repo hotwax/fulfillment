@@ -23,25 +23,17 @@
             <ion-item>
               <ion-icon :icon="sendOutline" slot="start" />
               <ion-label>{{ translate("Origin") }}</ion-label>
-              <template v-if="currentOrder.originFacilityId" slot="end">
-                <ion-chip outline @click="openSelectFacilityModal('originFacilityId')">
-                  {{ getFacilityName(currentOrder.originFacilityId) ? getFacilityName(currentOrder.originFacilityId) : currentOrder.originFacilityId }}
-                </ion-chip>
-              </template>
-              <ion-button v-else slot="end" fill="outline" @click="openSelectFacilityModal('originFacilityId')">
-                <ion-icon slot="start" :icon="addCircleOutline" />
-                <ion-label>{{ translate("Assign") }}</ion-label>
-              </ion-button>
+              <ion-label slot="end">{{ getFacilityName(currentOrder.originFacilityId) ? getFacilityName(currentOrder.originFacilityId) : currentOrder.originFacilityId }}</ion-label>
             </ion-item>
             <ion-item lines="none">
               <ion-icon :icon="downloadOutline" slot="start" />
               <ion-label>{{ translate("Destination") }}</ion-label>
               <template v-if="currentOrder.destinationFacilityId" slot="end">
-                <ion-chip outline @click="openSelectFacilityModal('destinationFacilityId')">
+                <ion-chip outline @click="openSelectFacilityModal()">
                   {{ getFacilityName(currentOrder.destinationFacilityId) ? getFacilityName(currentOrder.destinationFacilityId) : currentOrder.destinationFacilityId }}
                 </ion-chip>
               </template>
-              <ion-button v-else slot="end" fill="outline" @click="openSelectFacilityModal('destinationFacilityId')">
+              <ion-button v-else slot="end" fill="outline" @click="openSelectFacilityModal()">
                 <ion-icon slot="start" :icon="addCircleOutline" />
                 <ion-label>{{ translate("Assign") }}</ion-label>
               </ion-button>
@@ -271,6 +263,7 @@ watch(queryString, (value) => {
 onIonViewDidEnter(async () => {
   emitter.emit("presentLoader")
   currentOrder.value.productStoreId = useUserStore().getCurrentEComStore?.productStoreId
+  currentOrder.value.originFacilityId = useUserStore().getCurrentFacility?.facilityId
   await Promise.allSettled([fetchFacilitiesByCurrentStore(), store.dispatch("util/fetchStoreCarrierAndMethods", currentOrder.value.productStoreId), store.dispatch("util/fetchCarriersDetail"), store.dispatch("product/fetchSampleProducts")])
   if(Object.keys(shipmentMethodsByCarrier.value)?.length) {
     currentOrder.value.carrierPartyId = Object.keys(shipmentMethodsByCarrier.value)[0]
@@ -549,8 +542,16 @@ async function createOrder() {
 
   try {
     const resp = await OrderService.createOrder({ order })
-    if(!hasError(resp)) {
-      router.replace((currentOrder.value.originFacilityId === useUserStore().getCurrentFacility?.facilityId) ? `/transfer-order-details/${resp.data.orderId}` : "/transfer-orders")
+    if(!hasError(resp) && resp.data?.orderId) {
+      const orderId = resp.data.orderId
+      const isApproved = await OrderService.approveOrder({ orderId })
+      if(!isApproved) {
+        router.replace("/transfer-orders");
+        const toast = await showToast(translate("Order is created successfully, but approval failed. Please contact administrator.", { orderId }), { canDismiss: true, manualDismiss: true })
+        toast?.present();
+        return;
+      }
+      router.replace(`/transfer-order-details/${orderId}`)
       showToast(translate("Transfer order created successfully."))
     } else {
       throw resp.data;
@@ -621,32 +622,19 @@ function downloadSampleCsv() {
   })
 }
 
-async function openSelectFacilityModal(facilityType: any) {
+async function openSelectFacilityModal() {
   const addressModal = await modalController.create({
     component: SelectFacilityModal,
-    componentProps: { selectedFacilityId: currentOrder.value[facilityType], facilities: facilities.value }
+    componentProps: { selectedFacilityId: currentOrder.value.destinationFacilityId, facilities: facilities.value }
   })
 
   addressModal.onDidDismiss().then(async(result: any) => {
     if(result.data?.selectedFacilityId) {
-      currentOrder.value[facilityType] = result.data.selectedFacilityId
-      if(facilityType === "originFacilityId") {
-        refetchAllItemsStock()
-      }
+      currentOrder.value.destinationFacilityId = result.data.selectedFacilityId
     }
   })
 
   addressModal.present()
-}
-
-async function refetchAllItemsStock() {
-  const responses = await Promise.allSettled(currentOrder.value.items.map((item: any) => fetchStock(item.productId)))
-  currentOrder.value.items.map((item: any, index: any) => {
-    if(responses[index].status === "fulfilled") {
-      item["qoh"] = responses[index]?.value.quantityOnHandTotal 
-      item["atp"] = responses[index]?.value.availableToPromiseTotal 
-    }
-  })
 }
 
 function isProductAvailableInOrder() {
@@ -732,10 +720,6 @@ which results in distorted label text and thus reduced ion-item width */
   grid-column: span 2;
 }
 
-.find > .to-filters{
-  display: unset;
-}
-
 .date-time-modal {
   --width: 320px;
   --height: 400px;
@@ -746,15 +730,43 @@ which results in distorted label text and thus reduced ion-item width */
   cursor: pointer;
 }
 
+.find {
+  display: grid;
+  grid-template-areas: "search"
+                       "to-filters"
+                       "main";
+  align-items: start;
+}
+
+.find > main {
+  grid-area: main;
+}
+
+.to-filters {
+  grid-area: to-filters;
+}
+
+.search {
+  grid-area: search;
+}
+
 @media (min-width: 991px) {
-  .item-search {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-gap: 40px;
-  }
 
   .find {
+    grid: "search  main" min-content
+    "to-filters main" 1fr
+    / 375px;
+    column-gap: var(--spacer-xl);
+    margin: var(--spacer-lg);
     margin-right: 0;
+  }
+
+  .to-filters {
+    margin-top: var(--spacer-lg);
+  }
+
+  .find > .to-filters{
+    display: unset;
   }
 }
 </style>

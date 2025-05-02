@@ -441,7 +441,7 @@ const actions: ActionTree<CarrierState, RootState> = {
             "shipmentMethodTypeId": "STOREPICKUP",
             "shipmentMethodTypeId_op": "notEqual"
           },
-          "fieldList": ["productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "description"],
+          "fieldList": ["productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "description", "isTrackingRequired"],
           "noConditionFind": "Y",
           "viewIndex": viewIndex,
           "viewSize": 250,

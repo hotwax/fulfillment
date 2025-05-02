@@ -70,7 +70,8 @@
                 <div class="product-info">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                      <!-- TODO: Currently handled product image mismatch on the order list page — needs to be applied to other pages using DxpShopifyImg  -->
+                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -78,7 +79,7 @@
                         {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
                         <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
                       </div>
-                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                      <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
                     </ion-label>
                   </ion-item>
                 </div>
@@ -105,12 +106,12 @@
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
+                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
                       {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
-                      <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
+                      <p>{{ getFeatures(getProduct(productComponent.productIdTo).productFeatures)}}</p>
                     </ion-label>
                   </ion-item>
                 </ion-card>
@@ -177,7 +178,7 @@ import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificat
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { formatUtcDate, getFeature, showToast } from '@/utils'
+import { formatUtcDate, getFeatures, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
@@ -239,9 +240,6 @@ export default defineComponent({
       isRejecting: false,
       productCategoryFilterExt: "" as any
     }
-  },
-  async ionViewWillEnter() {
-    this.isScrollingEnabled = false;
   },
   methods: {
     updateOpenQuery(payload: any) {
@@ -322,7 +320,7 @@ export default defineComponent({
           quantityNotAvailable: { value: 0 },
           isPicked: { value: 'N' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          '-fulfillmentStatus': { value: 'Cancelled' },
+          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
           facilityId: { value: this.currentFacility?.facilityId },
@@ -429,13 +427,14 @@ export default defineComponent({
       this.store.dispatch('stock/fetchStock', { productId })
     }
   },
-  async mounted () {
-    emitter.on('updateOrderQuery', this.updateOrderQuery)
+  async ionViewWillEnter () {
+    this.isScrollingEnabled = false;
     await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
     const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "")
-    this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`})
+    this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`});
+    emitter.on("updateOrderQuery", this.updateOrderQuery);
   },
-  unmounted() {
+  ionViewWillLeave() {
     this.store.dispatch('order/clearOpenOrders');
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
@@ -455,7 +454,7 @@ export default defineComponent({
       currentEComStore,
       currentFacility,
       formatUtcDate,
-      getFeature,
+      getFeatures,
       getProductIdentificationValue,
       hasPermission,
       isKit,

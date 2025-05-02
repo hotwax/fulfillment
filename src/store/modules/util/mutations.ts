@@ -69,6 +69,12 @@ const mutations: MutationTree <UtilState> = {
     state.barcodeIdentificationPref = "internalName"
     state.carrierDesc = {}
     state.facilityAddresses = {}
+    state.facilityShippingLabelImageType = {}
   },
+  [types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED](state, payload) {
+    if(payload.facilityId) {
+      state.facilityShippingLabelImageType[payload.facilityId] = payload.labelImageType
+    }
+  }
 }
 export default mutations;

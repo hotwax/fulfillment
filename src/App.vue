@@ -17,9 +17,10 @@ import { mapGetters, useStore } from 'vuex';
 import { initialise, resetConfig } from '@/adapter'
 import { useRouter } from 'vue-router';
 import { Settings } from 'luxon'
-import { translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
+import { initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import logger from '@/logger'
 import { init, loadRemote } from '@module-federation/runtime';
+import { addNotification, storeClientRegistrationToken } from '@/utils/firebase';
 
 export default defineComponent({
   name: 'App',
@@ -32,7 +33,9 @@ export default defineComponent({
   data() {
     return {
       loader: null as any,
-      maxAge: process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0
+      maxAge: process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0,
+      appFirebaseConfig: JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any),
+      appFirebaseVapidKey: process.env.VUE_APP_FIREBASE_VAPID_KEY,
     }
   },
   computed: {
@@ -41,6 +44,8 @@ export default defineComponent({
       instanceUrl: 'user/getInstanceUrl',
       userProfile: 'user/getUserProfile',
       locale: 'user/getLocale',
+      currentEComStore: 'user/getCurrentEComStore',
+      allNotificationPrefs: 'user/getAllNotificationPrefs'
     })
   },
   methods: {
@@ -144,6 +149,17 @@ export default defineComponent({
       // Get product identification from api using dxp-component
       await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId)
         .catch((error) => logger.error(error));
+
+      // check if firebase configurations are there.
+      if (this.appFirebaseConfig && this.appFirebaseConfig.apiKey && this.allNotificationPrefs?.length) {
+        // initialising and connecting firebase app for notification support
+        await initialiseFirebaseApp(
+          this.appFirebaseConfig,
+          this.appFirebaseVapidKey,
+          storeClientRegistrationToken,
+          addNotification,
+        )
+      }
     }
   },
   unmounted() {

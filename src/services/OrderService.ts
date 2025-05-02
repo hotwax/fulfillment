@@ -5,6 +5,7 @@ import { showToast, formatPhoneNumber } from '@/utils';
 import store from '@/store';
 import { cogOutline } from 'ionicons/icons';
 import { prepareSolrQuery } from '@/utils/solrHelper';
+import { ZebraPrinterService } from './ZebraPrinterService';
 
 const fetchOrderHeader = async (params: any): Promise<any> => {
   return await api({
@@ -551,27 +552,41 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
   }
 }
 
-const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>): Promise<any> => {
+const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string): Promise<any> => {
   try {
     let pdfUrls = shippingLabelPdfUrls?.filter((pdfUrl: any) => pdfUrl);
     if (!pdfUrls || pdfUrls.length == 0) {
-    // Get packing slip from the server
-    const resp: any = await api({
-      method: 'get',
-      url: 'ShippingLabel.pdf',
-      params: {
-        shipmentId: shipmentIds
-      },
-      responseType: "blob"
-    })
+      let labelImageType = imageType || "PNG";
 
-    if (!resp || resp.status !== 200 || hasError(resp)) {
-      throw resp.data;
-    }
+      if(!imageType && shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId) {
+        labelImageType = await store.dispatch("util/fetchLabelImageType", shipmentPackages[0].carrierPartyId);
+      }
 
-    // Generate local file URL for the blob received
-    const pdfUrl = window.URL.createObjectURL(resp.data);
-    pdfUrls = [pdfUrl];
+      const labelImages = [] as Array<string>
+      if (labelImageType === "ZPLII") {
+        shipmentPackages?.map((shipmentPackage: any) => {
+          shipmentPackage.labelImage && labelImages.push(shipmentPackage.labelImage)
+        })
+        await ZebraPrinterService.printZplLabels(labelImages);
+        return;
+      }
+      // Get packing slip from the server
+      const resp: any = await api({
+        method: 'get',
+        url: 'ShippingLabel.pdf',
+        params: {
+          shipmentId: shipmentIds[0]
+        },
+        responseType: "blob"
+      })
+
+      if (!resp || resp.status !== 200 || hasError(resp)) {
+        throw resp.data;
+      }
+
+      // Generate local file URL for the blob received
+      const pdfUrl = window.URL.createObjectURL(resp.data);
+      pdfUrls = [pdfUrl];
     }
     // Open the file in new tab
     pdfUrls.forEach((pdfUrl: string) => {
@@ -607,7 +622,19 @@ const printCustomDocuments = async (internationalInvoiceUrls: Array<string>): Pr
   }
 }
 
-const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
+const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>, shipmentPackages: any): Promise<any> => {
+
+  let labelImageType = "PNG";
+  if(shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId) {
+    labelImageType = await store.dispatch("util/fetchLabelImageType", shipmentPackages[0].carrierPartyId); 
+  }
+
+  if (labelImageType === "ZPLII") {
+    await printShippingLabel(shipmentIds, [], shipmentPackages, labelImageType)
+    await printPackingSlip(shipmentIds)
+    return;
+  }
+
   try {
     // Get packing slip from the server
     const resp: any = await api({
@@ -702,15 +729,22 @@ const printTransferOrder = async (orderId: string): Promise<any> => {
 }
 
 const retryShippingLabel = async (shipmentIds: Array<string>, forceRateShop = false): Promise<any> => {
-  return api({
-    method: 'POST',
-    url: 'retryShippingLabel',  // TODO: update the api
-    data: {
-      shipmentIds,
-      forceRateShop: forceRateShop ? 'Y' : 'N',
-      generateLabel: "Y" // This is needed to generate label after the new changes in backend related to auto generation of label.
+  try {
+    const resp = await api({
+      method: 'POST',
+      url: 'retryShippingLabel',  // TODO: update the api
+      data: {
+        shipmentIds,
+        forceRateShop: forceRateShop ? 'Y' : 'N',
+        generateLabel: "Y" // This is needed to generate label after the new changes in backend related to auto generation of label.
+      }
+    })
+    if(hasError(resp)) {
+      throw resp?.data;
     }
-  })
+  } catch(error) {
+    logger.error(error)
+  }
 }
 
 const fetchShipmentLabelError = async (shipmentIds: Array<string>): Promise<any> => {
@@ -913,9 +947,28 @@ const createOrder = async (payload: any): Promise<any> => {
   });
 }
 
+const approveOrder = async (payload: any): Promise<any> => {
+  try {
+    const resp = await api({
+      url: "service/approveSalesOrder",
+      method: "POST",
+      data: payload
+    })
+    if(!hasError(resp)) {
+      return true;
+    } else {
+      throw resp?.data;
+    }
+  } catch(error) {
+    logger.error(error)
+    return false;
+  }
+}
+
 export const OrderService = {
   addShipmentBox,
   addTrackingCode,
+  approveOrder,
   bulkShipOrders,
   createOrder,
   createOutboundTransferShipment,

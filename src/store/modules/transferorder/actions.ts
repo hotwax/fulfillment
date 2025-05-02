@@ -1,7 +1,6 @@
 import { ActionTree } from 'vuex'
 import RootState from '@/store/RootState'
 import TransferOrderState from './TransferOrderState'
-import emitter from '@/event-bus'
 import { OrderService } from '@/services/OrderService'
 import { hasError } from '@/adapter'
 import * as types from './mutation-types'
@@ -15,7 +14,6 @@ import store from "@/store";
 const actions: ActionTree<TransferOrderState, RootState> = {
 
   async findTransferOrders ({ commit, state }, payload = {}) {
-    emitter.emit('presentLoader');
     let resp;
     const transferOrderQuery = JSON.parse(JSON.stringify(state.transferOrder.query))
 
@@ -29,6 +27,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       sort: payload.sort ? payload.sort : "orderDate asc",
       filters: {
         orderTypeId: { value: 'TRANSFER_ORDER' },
+        "-statusFlowId": { value: 'RECEIVE_ONLY'},
         facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
         productStoreId: { value: getProductStoreId() }
       }
@@ -79,7 +78,6 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     commit(types.ORDER_TRANSFER_QUERY_UPDATED, { ...transferOrderQuery })
     commit(types.ORDER_TRANSFER_UPDATED, { list: orderList.length > 0 ? orderList : orders, total})
 
-    emitter.emit('dismissLoader');
     return resp;
   },
   async fetchTransferOrderDetail ({ commit }, payload) {
@@ -90,7 +88,9 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         "entityName": "OrderHeaderItemAndShipGroup",
         "inputFields": {
           "orderId": payload.orderId,
-          "oisgFacilityId": escapeSolrSpecialChars(getCurrentFacilityId())
+          "oisgFacilityId": escapeSolrSpecialChars(getCurrentFacilityId()),
+          "statusFlowId": "RECEIVE_ONLY",
+          "statusFlowId_op": "notEqual"
         },
         "fieldList": ["orderId", "orderName", "externalId", "orderTypeId", "statusId", "orderDate", "shipGroupSeqId", "oisgFacilityId", "orderFacilityId"],
         "viewSize": 1,

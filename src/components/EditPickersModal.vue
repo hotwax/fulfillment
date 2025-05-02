@@ -111,7 +111,7 @@ export default defineComponent({
     }
   },
   async mounted() {
-    await this.findPickers(this.selectedPicklist.pickerIds)
+    await this.findPickers()
     this.selectAlreadyAssociatedPickers()
   },
   props: ['selectedPicklist'],

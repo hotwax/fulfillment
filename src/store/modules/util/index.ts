@@ -27,7 +27,8 @@ const utilModule: Module<UtilState, RootState> = {
     barcodeIdentificationPref: "internalName",
     carrierDesc: {},
     shipmentMethodsByCarrier: {},
-    facilityAddresses: {}
+    facilityAddresses: {},
+    facilityShippingLabelImageType: {}
   },
   getters,
   actions,
