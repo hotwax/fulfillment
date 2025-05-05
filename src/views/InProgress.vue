@@ -295,7 +295,7 @@ import {
 } from 'ionicons/icons'
 import PackagingPopover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
-import { copyToClipboard, formatUtcDate, getFeatures, hasActiveFilters, jsonToCsv, showToast } from '@/utils';
+import { copyToClipboard, formatUtcDate, getFeatures, getOrderReservationFacilityField, hasActiveFilters, jsonToCsv, showToast } from '@/utils';
 import { isKit } from '@/utils/order'
 import { hasError } from '@/adapter';
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
@@ -916,9 +916,6 @@ export default defineComponent({
       this.store.dispatch('order/updateInProgressOrder', order)
     },
     async fetchPickersInformation() {
-      const facilityFilter = {} as any;
-      facilityFilter[this.isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: this.currentFacility?.facilityId }
-
       const orderQueryPayload = prepareOrderQuery({
         viewSize: '0',  // passing viewSize as 0 as we don't need any data
         groupBy: 'picklistBinId',
@@ -927,7 +924,7 @@ export default defineComponent({
           '-fulfillmentStatus': { value: ['Rejected', 'Cancelled', 'Completed'] },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: this.currentEComStore.productStoreId },
-          ...facilityFilter
+          ...getOrderReservationFacilityField(this.currentFacility?.facilityId)
         },
         facet: {
           picklistFacet: {
@@ -1363,6 +1360,7 @@ export default defineComponent({
       fileTrayOutline,
       formatUtcDate,
       getFeatures,
+      getOrderReservationFacilityField,
       getProductIdentificationValue,
       gift,
       giftOutline,

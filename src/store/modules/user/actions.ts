@@ -298,6 +298,9 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_NEW_REJECTION_API_CONFIG_UPDATED, config);   
   },
 
+  // This setting is intended for temporary use to enable a more controlled rollout of the
+  // reservationFacilityId Solr field changes on a client-by-client basis.
+  // It should be removed once all clients' OMS instances have been upgraded to a version that includes this change.
   async getReservationFacilityIdFieldConfig ({ commit }) {
     let isEnabled = false;
 

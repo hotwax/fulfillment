@@ -93,6 +93,7 @@ import { hasError } from '@/adapter';
 import logger from '@/logger';
 import TransferOrderFilters from '@/components/TransferOrderFilters.vue'
 import emitter from '@/event-bus';
+import { getOrderReservationFacilityField } from "@/utils";
 
 export default defineComponent({
   name: 'TransferOrders',
@@ -120,7 +121,8 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       transferOrders: 'transferorder/getTransferOrders',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
+      isReservationFacilityFieldEnabled: 'user/isReservationFacilityFieldEnabled'
     })
   },
   data () {
@@ -193,6 +195,7 @@ export default defineComponent({
     },
     async fetchFilters() {
       let resp: any;
+
       const payload = prepareOrderQuery({
         docType: "ORDER",
         queryFields: 'orderId',
@@ -200,8 +203,8 @@ export default defineComponent({
         filters: {
           '-orderStatusId': { value: 'ORDER_CREATED' },
           orderTypeId: { value: 'TRANSFER_ORDER' },
-          facilityId: { value: escapeSolrSpecialChars(this.currentFacility?.facilityId) },
-          productStoreId: { value: this.currentEComStore?.productStoreId }
+          productStoreId: { value: this.currentEComStore?.productStoreId },
+          ...this.getOrderReservationFacilityField(escapeSolrSpecialChars(this.currentFacility?.facilityId))
         },
         facet: {
           "shipmentMethodTypeIdFacet":{
@@ -279,6 +282,7 @@ export default defineComponent({
       cubeOutline,
       currentEComStore,
       currentFacility,
+      getOrderReservationFacilityField,
       optionsOutline,
       pricetagOutline,
       printOutline,

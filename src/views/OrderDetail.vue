@@ -419,7 +419,7 @@ import {
   checkmarkCircleOutline
 } from 'ionicons/icons';
 import { getProductIdentificationValue, translate, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { copyToClipboard, formatUtcDate, getFeatures, showToast } from '@/utils'
+import { copyToClipboard, formatUtcDate, getFeatures, getOrderReservationFacilityField, showToast } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import emitter from '@/event-bus';
@@ -830,9 +830,6 @@ export default defineComponent({
       return confirmPackOrder.present();
     },
     async fetchPickersInformation() {
-      const facilityFilter = {} as any;
-      facilityFilter[this.isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: this.currentFacility?.facilityId }
-
       const orderQueryPayload = prepareOrderQuery({
         viewSize: '0',  // passing viewSize as 0 as we don't need any data
         groupBy: 'picklistBinId',
@@ -841,7 +838,7 @@ export default defineComponent({
           '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: this.currentEComStore.productStoreId },
-          ...facilityFilter
+          ...getOrderReservationFacilityField(this.currentFacility?.facilityId)
         },
         facet: {
           picklistFacet: {
@@ -1408,9 +1405,6 @@ export default defineComponent({
       }
     },
     async fetchShipmentMethods() {
-      const facilityFilter = {} as any;
-      facilityFilter[this.isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: this.currentFacility?.facilityId }
-
       const payload = prepareOrderQuery({
         viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
         groupBy: 'picklistBinId',
@@ -1420,7 +1414,7 @@ export default defineComponent({
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: this.currentEComStore.productStoreId },
-          ...facilityFilter
+          ...getOrderReservationFacilityField(this.currentFacility?.facilityId)
         },
         facet: {
           "shipmentMethodFacet": {
@@ -1452,9 +1446,6 @@ export default defineComponent({
       }
     },
     async fetchCarrierPartyIds() {
-      const facilityFilter = {} as any;
-      facilityFilter[this.isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: this.currentFacility?.facilityId }
-
       const payload = prepareOrderQuery({
         viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
         groupBy: 'picklistBinId',
@@ -1464,7 +1455,7 @@ export default defineComponent({
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: this.currentEComStore.productStoreId },
-          ...facilityFilter
+          ...getOrderReservationFacilityField(this.currentFacility?.facilityId)
         },
         facet: {
           manifestContentIdFacet: {
@@ -1794,6 +1785,7 @@ export default defineComponent({
       fileTrayOutline,
       formatUtcDate,
       getFeatures,
+      getOrderReservationFacilityField,
       getProductIdentificationValue,
       gift,
       giftOutline,

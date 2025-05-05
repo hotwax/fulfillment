@@ -178,7 +178,7 @@ import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificat
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { formatUtcDate, getFeatures, hasActiveFilters, showToast } from '@/utils'
+import { formatUtcDate, getFeatures, getOrderReservationFacilityField, hasActiveFilters, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
@@ -313,8 +313,6 @@ export default defineComponent({
     },
     async fetchShipmentMethods() {
       let resp: any;
-      const facilityFilter = {} as any;
-      facilityFilter[this.isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: this.currentFacility?.facilityId }
 
       const payload = prepareOrderQuery({
         queryFields: 'orderId',
@@ -327,7 +325,7 @@ export default defineComponent({
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
           productStoreId: { value: this.currentEComStore.productStoreId },
-          ...facilityFilter
+          ...getOrderReservationFacilityField(this.currentFacility?.facilityId)
         },
         facet: {
           "shipmentMethodTypeIdFacet":{
@@ -458,6 +456,7 @@ export default defineComponent({
       currentFacility,
       formatUtcDate,
       getFeatures,
+      getOrderReservationFacilityField,
       getProductIdentificationValue,
       hasActiveFilters,
       hasPermission,

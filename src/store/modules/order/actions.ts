@@ -9,7 +9,7 @@ import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
 import { getOrderCategory, removeKitComponents } from '@/utils/order'
-import { getCurrentFacilityId, getProductStoreId } from '@/utils'
+import { getCurrentFacilityId, getOrderReservationFacilityField, getProductStoreId } from '@/utils'
 import store from '@/store'
 
 const actions: ActionTree<OrderState, RootState> = {
@@ -316,10 +316,6 @@ const actions: ActionTree<OrderState, RootState> = {
     const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
 
     try {
-      const isReservationFacilityFieldEnabled = store.getters["user/isReservationFacilityFieldEnabled"];
-      const facilityFilter = {} as any;
-      facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: escapeSolrSpecialChars(getCurrentFacilityId()) }
-
       const params = {
         ...payload,
         queryString: inProgressQuery.queryString,
@@ -331,7 +327,7 @@ const actions: ActionTree<OrderState, RootState> = {
           '-fulfillmentStatus': { value: ['Rejected', 'Cancelled', 'Completed'] },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: getProductStoreId() },
-          ...facilityFilter
+          ...getOrderReservationFacilityField(escapeSolrSpecialChars(getCurrentFacilityId()))
         }
       }
 
@@ -412,10 +408,6 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const openOrderQuery = JSON.parse(JSON.stringify(state.open.query))
 
-    const isReservationFacilityFieldEnabled = store.getters["user/isReservationFacilityFieldEnabled"];
-    const facilityFilter = {} as any;
-    facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: escapeSolrSpecialChars(getCurrentFacilityId()) }
-
     const params = {
       ...payload,
       queryString: openOrderQuery.queryString,
@@ -429,7 +421,7 @@ const actions: ActionTree<OrderState, RootState> = {
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
         productStoreId: { value: getProductStoreId() },
-        ...facilityFilter
+        ...getOrderReservationFacilityField(escapeSolrSpecialChars(getCurrentFacilityId()))
       }
     }
 
@@ -495,10 +487,6 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const completedOrderQuery = JSON.parse(JSON.stringify(state.completed.query))
 
-    const isReservationFacilityFieldEnabled = store.getters["user/isReservationFacilityFieldEnabled"];
-    const facilityFilter = {} as any;
-    facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: escapeSolrSpecialChars(getCurrentFacilityId()) }
-
     const params = {
       ...payload,
       queryString: completedOrderQuery.queryString,
@@ -509,7 +497,7 @@ const actions: ActionTree<OrderState, RootState> = {
         picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
         productStoreId: { value: getProductStoreId() },
-        ...facilityFilter
+        ...getOrderReservationFacilityField(escapeSolrSpecialChars(getCurrentFacilityId()))
       }
     }
 
@@ -785,11 +773,6 @@ const actions: ActionTree<OrderState, RootState> = {
     let resp, order = {} as any;
     emitter.emit('presentLoader');
 
-
-    const isReservationFacilityFieldEnabled = store.getters["user/isReservationFacilityFieldEnabled"];
-    const facilityFilter = {} as any;
-    facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: escapeSolrSpecialChars(getCurrentFacilityId()) }
-
     const params = {
       viewSize: 1,
       filters: {
@@ -802,7 +785,7 @@ const actions: ActionTree<OrderState, RootState> = {
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
         productStoreId: { value: getProductStoreId() },
-        ...facilityFilter
+        ...getOrderReservationFacilityField(escapeSolrSpecialChars(getCurrentFacilityId()))
       }
     }
     const orderQueryPayload = prepareOrderQuery(params)
@@ -860,10 +843,6 @@ const actions: ActionTree<OrderState, RootState> = {
     let resp, order = {} as any;
 
     try {
-      const isReservationFacilityFieldEnabled = store.getters["user/isReservationFacilityFieldEnabled"];
-      const facilityFilter = {} as any;
-      facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: escapeSolrSpecialChars(getCurrentFacilityId()) }
-
       const params = {
         viewSize: 1,
         sort: 'orderDate asc',
@@ -875,7 +854,7 @@ const actions: ActionTree<OrderState, RootState> = {
           '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: getProductStoreId() },
-          ...facilityFilter
+          ...getOrderReservationFacilityField(escapeSolrSpecialChars(getCurrentFacilityId()))
         }
       }
 
@@ -933,10 +912,6 @@ const actions: ActionTree<OrderState, RootState> = {
     let resp, order = {} as  any;
 
     try {
-      const isReservationFacilityFieldEnabled = store.getters["user/isReservationFacilityFieldEnabled"];
-      const facilityFilter = {} as any;
-      facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: escapeSolrSpecialChars(getCurrentFacilityId()) }
-
       const params = {
         viewSize: 1,
         groupBy: 'picklistBinId',
@@ -947,7 +922,7 @@ const actions: ActionTree<OrderState, RootState> = {
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           shipGroupSeqId: { value: payload.shipGroupSeqId },
           productStoreId: { value: getProductStoreId() },
-          ...facilityFilter
+          ...getOrderReservationFacilityField(escapeSolrSpecialChars(getCurrentFacilityId()))
         }
       }
 
