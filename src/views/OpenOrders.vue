@@ -26,7 +26,7 @@
       <ion-searchbar class="searchbar" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)"/>
       <div class="filters">
         <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
-          <ion-checkbox label-placement="end" @ionChange="updateSelectedShipmentMethods(method.val)">
+          <ion-checkbox label-placement="end" :checked="openOrders.query.selectedShipmentMethods.includes(method.val)" @ionChange="updateSelectedShipmentMethods(method.val)">
             <ion-label>
               {{ getShipmentMethodDesc(method.val) }}
               <p>{{ method.ordersCount }} {{ translate("orders") }}, {{ method.count }} {{ translate("items") }}</p>
@@ -238,7 +238,8 @@ export default defineComponent({
       searchedQuery: '',
       isScrollingEnabled: false,
       isRejecting: false,
-      productCategoryFilterExt: "" as any
+      productCategoryFilterExt: "" as any,
+      selectedShipmentMethods: [] as any
     }
   },
   methods: {
@@ -293,6 +294,7 @@ export default defineComponent({
       // making view size default when changing the shipment method to correctly fetch orders
       openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       openOrdersQuery.selectedShipmentMethods = selectedShipmentMethods
+      this.selectedShipmentMethods = selectedShipmentMethods
 
       this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
     },
@@ -371,6 +373,7 @@ export default defineComponent({
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
       openOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      if(this.selectedShipmentMethods?.length) openOrdersQuery.selectedShipmentMethods = this.selectedShipmentMethods
       await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
     },
     async recycleOutstandingOrders() {

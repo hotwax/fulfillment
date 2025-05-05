@@ -1146,6 +1146,7 @@ export default defineComponent({
       size && (inProgressOrdersQuery.viewSize = size)
       queryString && (inProgressOrdersQuery.queryString = '')
       inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
+      this.selectedPicklistId && (inProgressOrdersQuery.selectedPicklist = this.selectedPicklistId)
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
     },
     async initialiseOrderQuery() {

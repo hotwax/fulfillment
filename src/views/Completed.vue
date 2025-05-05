@@ -298,6 +298,7 @@ export default defineComponent({
       selectedCarrierPartyId: "",
       carrierConfiguration: {} as any,
       isGeneratingManifest: false,
+      selectedShipmentMethods: [] as any
     }
   },
   computed: {
@@ -384,6 +385,8 @@ export default defineComponent({
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
       completedOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      if(this.selectedCarrierPartyId) completedOrdersQuery.selectedCarrierPartyId = this.selectedCarrierPartyId
+      if(this.selectedShipmentMethods?.length) completedOrdersQuery.selectedShipmentMethods = this.selectedShipmentMethods
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async updateOrderQuery(size: any) {
@@ -629,6 +632,7 @@ export default defineComponent({
       // making view size default when changing the shipment method to correctly fetch orders
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       completedOrdersQuery.selectedShipmentMethods = selectedShipmentMethods
+      this.selectedShipmentMethods = selectedShipmentMethods
 
       this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
