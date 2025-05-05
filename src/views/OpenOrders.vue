@@ -229,7 +229,8 @@ export default defineComponent({
       getProductStock: 'stock/getProductStock',
       notifications: 'user/getNotifications',
       unreadNotificationsStatus: 'user/getUnreadNotificationsStatus',
-      instanceUrl: "user/getInstanceUrl"
+      instanceUrl: "user/getInstanceUrl",
+      isReservationFacilityFieldEnabled: "user/isReservationFacilityFieldEnabled"
     })
   },
   data () {
@@ -312,6 +313,8 @@ export default defineComponent({
     },
     async fetchShipmentMethods() {
       let resp: any;
+      const facilityFilter = {} as any;
+      facilityFilter[this.isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: this.currentFacility?.facilityId }
 
       const payload = prepareOrderQuery({
         queryFields: 'orderId',
@@ -323,8 +326,8 @@ export default defineComponent({
           '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
-          reservationFacilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.productStoreId },
+          ...facilityFilter
         },
         facet: {
           "shipmentMethodTypeIdFacet":{

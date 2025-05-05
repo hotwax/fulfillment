@@ -10,6 +10,7 @@ import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
 import { getOrderCategory, removeKitComponents } from '@/utils/order'
 import { getCurrentFacilityId, getProductStoreId } from '@/utils'
+import store from '@/store'
 
 const actions: ActionTree<OrderState, RootState> = {
   async fetchInProgressOrdersAdditionalInformation({ commit, dispatch, state }, payload = { viewIndex: 0 }) {
@@ -315,6 +316,10 @@ const actions: ActionTree<OrderState, RootState> = {
     const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
 
     try {
+      const isReservationFacilityFieldEnabled = store.getters["user/isReservationFacilityFieldEnabled"];
+      const facilityFilter = {} as any;
+      facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: escapeSolrSpecialChars(getCurrentFacilityId()) }
+
       const params = {
         ...payload,
         queryString: inProgressQuery.queryString,
@@ -325,8 +330,8 @@ const actions: ActionTree<OrderState, RootState> = {
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           '-fulfillmentStatus': { value: ['Rejected', 'Cancelled', 'Completed'] },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          reservationFacilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
-          productStoreId: { value: getProductStoreId() }
+          productStoreId: { value: getProductStoreId() },
+          ...facilityFilter
         }
       }
 
@@ -407,6 +412,10 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const openOrderQuery = JSON.parse(JSON.stringify(state.open.query))
 
+    const isReservationFacilityFieldEnabled = store.getters["user/isReservationFacilityFieldEnabled"];
+    const facilityFilter = {} as any;
+    facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: escapeSolrSpecialChars(getCurrentFacilityId()) }
+
     const params = {
       ...payload,
       queryString: openOrderQuery.queryString,
@@ -419,8 +428,8 @@ const actions: ActionTree<OrderState, RootState> = {
         '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
-        reservationFacilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
-        productStoreId: { value: getProductStoreId() }
+        productStoreId: { value: getProductStoreId() },
+        ...facilityFilter
       }
     }
 
@@ -486,6 +495,10 @@ const actions: ActionTree<OrderState, RootState> = {
 
     const completedOrderQuery = JSON.parse(JSON.stringify(state.completed.query))
 
+    const isReservationFacilityFieldEnabled = store.getters["user/isReservationFacilityFieldEnabled"];
+    const facilityFilter = {} as any;
+    facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: escapeSolrSpecialChars(getCurrentFacilityId()) }
+
     const params = {
       ...payload,
       queryString: completedOrderQuery.queryString,
@@ -495,8 +508,8 @@ const actions: ActionTree<OrderState, RootState> = {
       filters: {
         picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        reservationFacilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
-        productStoreId: { value: getProductStoreId() }
+        productStoreId: { value: getProductStoreId() },
+        ...facilityFilter
       }
     }
 
@@ -772,6 +785,11 @@ const actions: ActionTree<OrderState, RootState> = {
     let resp, order = {} as any;
     emitter.emit('presentLoader');
 
+
+    const isReservationFacilityFieldEnabled = store.getters["user/isReservationFacilityFieldEnabled"];
+    const facilityFilter = {} as any;
+    facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: escapeSolrSpecialChars(getCurrentFacilityId()) }
+
     const params = {
       viewSize: 1,
       filters: {
@@ -783,8 +801,8 @@ const actions: ActionTree<OrderState, RootState> = {
         '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
-        reservationFacilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
-        productStoreId: { value: getProductStoreId() }
+        productStoreId: { value: getProductStoreId() },
+        ...facilityFilter
       }
     }
     const orderQueryPayload = prepareOrderQuery(params)
@@ -842,6 +860,10 @@ const actions: ActionTree<OrderState, RootState> = {
     let resp, order = {} as any;
 
     try {
+      const isReservationFacilityFieldEnabled = store.getters["user/isReservationFacilityFieldEnabled"];
+      const facilityFilter = {} as any;
+      facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: escapeSolrSpecialChars(getCurrentFacilityId()) }
+
       const params = {
         viewSize: 1,
         sort: 'orderDate asc',
@@ -852,8 +874,8 @@ const actions: ActionTree<OrderState, RootState> = {
           shipGroupSeqId: { value: payload.shipGroupSeqId },
           '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          reservationFacilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
-          productStoreId: { value: getProductStoreId() }
+          productStoreId: { value: getProductStoreId() },
+          ...facilityFilter
         }
       }
 
@@ -911,6 +933,10 @@ const actions: ActionTree<OrderState, RootState> = {
     let resp, order = {} as  any;
 
     try {
+      const isReservationFacilityFieldEnabled = store.getters["user/isReservationFacilityFieldEnabled"];
+      const facilityFilter = {} as any;
+      facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: escapeSolrSpecialChars(getCurrentFacilityId()) }
+
       const params = {
         viewSize: 1,
         groupBy: 'picklistBinId',
@@ -920,8 +946,8 @@ const actions: ActionTree<OrderState, RootState> = {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           shipGroupSeqId: { value: payload.shipGroupSeqId },
-          reservationFacilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
-          productStoreId: { value: getProductStoreId() }
+          productStoreId: { value: getProductStoreId() },
+          ...facilityFilter
         }
       }
 

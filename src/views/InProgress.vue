@@ -367,7 +367,8 @@ export default defineComponent({
       newRejectionApiConfig: 'user/getNewRejectionApiConfig',
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
-      affectQohConfig: 'user/getAffectQohConfig'
+      affectQohConfig: 'user/getAffectQohConfig',
+      isReservationFacilityFieldEnabled: 'user/isReservationFacilityFieldEnabled'
     }),
   },
   data() {
@@ -915,6 +916,8 @@ export default defineComponent({
       this.store.dispatch('order/updateInProgressOrder', order)
     },
     async fetchPickersInformation() {
+      const facilityFilter = {} as any;
+      facilityFilter[this.isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: this.currentFacility?.facilityId }
 
       const orderQueryPayload = prepareOrderQuery({
         viewSize: '0',  // passing viewSize as 0 as we don't need any data
@@ -923,8 +926,8 @@ export default defineComponent({
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           '-fulfillmentStatus': { value: ['Rejected', 'Cancelled', 'Completed'] },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          reservationFacilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.productStoreId },
+          ...facilityFilter
         },
         facet: {
           picklistFacet: {

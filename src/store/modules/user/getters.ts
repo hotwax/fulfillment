@@ -65,6 +65,9 @@ const getters: GetterTree <UserState, RootState> = {
     },
     isUnpackDisabled(state) {
         return state.isUnpackDisabled;
+    },
+    isReservationFacilityFieldEnabled(state) {
+        return state.isReservationFacilityFieldEnabled;
     }
 }
 export default getters;

@@ -309,7 +309,8 @@ export default defineComponent({
       getProductStock: 'stock/getProductStock',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
       isShipNowDisabled: 'user/isShipNowDisabled',
-      isUnpackDisabled: 'user/isUnpackDisabled'
+      isUnpackDisabled: 'user/isUnpackDisabled',
+      isReservationFacilityFieldEnabled: 'user/isReservationFacilityFieldEnabled',
     }),
     getTotalPackages() {
       return this.carrierPartyIds.reduce((total: number, carrier: any) => total + Number(carrier.groups), 0);
@@ -521,6 +522,9 @@ export default defineComponent({
     },
 
     async fetchShipmentMethods() {
+      const facilityFilter = {} as any;
+      facilityFilter[this.isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: this.currentFacility?.facilityId }
+
       const payload = prepareOrderQuery({
         viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
         groupBy: 'picklistBinId',
@@ -529,8 +533,8 @@ export default defineComponent({
         filters: {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          reservationFacilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.productStoreId },
+          ...facilityFilter
         },
         facet: {
           "shipmentMethodFacet": {
@@ -562,6 +566,9 @@ export default defineComponent({
       }
     },
     async fetchCarrierPartyIds() {
+      const facilityFilter = {} as any;
+      facilityFilter[this.isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value: this.currentFacility?.facilityId }
+
       const payload = prepareOrderQuery({
         viewSize: "0",  // passing viewSize as 0, as we don't want to fetch any data
         groupBy: 'picklistBinId',
@@ -570,8 +577,8 @@ export default defineComponent({
         filters: {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY-7DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          reservationFacilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId },
+          ...facilityFilter
         },
         facet: {
           manifestContentIdFacet: {
