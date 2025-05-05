@@ -295,7 +295,7 @@ import {
 } from 'ionicons/icons'
 import PackagingPopover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
-import { copyToClipboard, formatUtcDate, getFeatures, getOrderReservationFacilityField, hasActiveFilters, jsonToCsv, showToast } from '@/utils';
+import { copyToClipboard, formatUtcDate, getFeatures, getFacilityFilter, hasActiveFilters, jsonToCsv, showToast } from '@/utils';
 import { isKit } from '@/utils/order'
 import { hasError } from '@/adapter';
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
@@ -923,7 +923,7 @@ export default defineComponent({
           '-fulfillmentStatus': { value: ['Rejected', 'Cancelled', 'Completed'] },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: this.currentEComStore.productStoreId },
-          ...getOrderReservationFacilityField(this.currentFacility?.facilityId)
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           picklistFacet: {
@@ -1359,7 +1359,7 @@ export default defineComponent({
       fileTrayOutline,
       formatUtcDate,
       getFeatures,
-      getOrderReservationFacilityField,
+      getFacilityFilter,
       getProductIdentificationValue,
       gift,
       giftOutline,

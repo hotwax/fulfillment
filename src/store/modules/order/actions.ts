@@ -9,7 +9,7 @@ import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
 import { getOrderCategory, removeKitComponents } from '@/utils/order'
-import { getCurrentFacilityId, getOrderReservationFacilityField, getProductStoreId } from '@/utils'
+import { getCurrentFacilityId, getFacilityFilter, getProductStoreId } from '@/utils'
 import store from '@/store'
 
 const actions: ActionTree<OrderState, RootState> = {
@@ -327,7 +327,7 @@ const actions: ActionTree<OrderState, RootState> = {
           '-fulfillmentStatus': { value: ['Rejected', 'Cancelled', 'Completed'] },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: getProductStoreId() },
-          ...getOrderReservationFacilityField(escapeSolrSpecialChars(getCurrentFacilityId()))
+          ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))
         }
       }
 
@@ -421,7 +421,7 @@ const actions: ActionTree<OrderState, RootState> = {
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
         productStoreId: { value: getProductStoreId() },
-        ...getOrderReservationFacilityField(escapeSolrSpecialChars(getCurrentFacilityId()))
+        ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))
       }
     }
 
@@ -497,7 +497,7 @@ const actions: ActionTree<OrderState, RootState> = {
         picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
         productStoreId: { value: getProductStoreId() },
-        ...getOrderReservationFacilityField(escapeSolrSpecialChars(getCurrentFacilityId()))
+        ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))
       }
     }
 
@@ -785,7 +785,7 @@ const actions: ActionTree<OrderState, RootState> = {
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
         productStoreId: { value: getProductStoreId() },
-        ...getOrderReservationFacilityField(escapeSolrSpecialChars(getCurrentFacilityId()))
+        ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))
       }
     }
     const orderQueryPayload = prepareOrderQuery(params)
@@ -854,7 +854,7 @@ const actions: ActionTree<OrderState, RootState> = {
           '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: getProductStoreId() },
-          ...getOrderReservationFacilityField(escapeSolrSpecialChars(getCurrentFacilityId()))
+          ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))
         }
       }
 
@@ -922,7 +922,7 @@ const actions: ActionTree<OrderState, RootState> = {
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           shipGroupSeqId: { value: payload.shipGroupSeqId },
           productStoreId: { value: getProductStoreId() },
-          ...getOrderReservationFacilityField(escapeSolrSpecialChars(getCurrentFacilityId()))
+          ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))
         }
       }
 

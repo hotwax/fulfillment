@@ -419,7 +419,7 @@ import {
   checkmarkCircleOutline
 } from 'ionicons/icons';
 import { getProductIdentificationValue, translate, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { copyToClipboard, formatUtcDate, getFeatures, getOrderReservationFacilityField, showToast } from '@/utils'
+import { copyToClipboard, formatUtcDate, getFeatures, getFacilityFilter, showToast } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import emitter from '@/event-bus';
@@ -837,7 +837,7 @@ export default defineComponent({
           '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: this.currentEComStore.productStoreId },
-          ...getOrderReservationFacilityField(this.currentFacility?.facilityId)
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           picklistFacet: {
@@ -1413,7 +1413,7 @@ export default defineComponent({
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: this.currentEComStore.productStoreId },
-          ...getOrderReservationFacilityField(this.currentFacility?.facilityId)
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           "shipmentMethodFacet": {
@@ -1454,7 +1454,7 @@ export default defineComponent({
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: this.currentEComStore.productStoreId },
-          ...getOrderReservationFacilityField(this.currentFacility?.facilityId)
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           manifestContentIdFacet: {
@@ -1784,7 +1784,7 @@ export default defineComponent({
       fileTrayOutline,
       formatUtcDate,
       getFeatures,
-      getOrderReservationFacilityField,
+      getFacilityFilter,
       getProductIdentificationValue,
       gift,
       giftOutline,

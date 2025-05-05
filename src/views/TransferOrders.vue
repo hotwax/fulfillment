@@ -93,7 +93,7 @@ import { hasError } from '@/adapter';
 import logger from '@/logger';
 import TransferOrderFilters from '@/components/TransferOrderFilters.vue'
 import emitter from '@/event-bus';
-import { getOrderReservationFacilityField } from "@/utils";
+import { getFacilityFilter } from "@/utils";
 
 export default defineComponent({
   name: 'TransferOrders',
@@ -203,7 +203,7 @@ export default defineComponent({
           '-orderStatusId': { value: 'ORDER_CREATED' },
           orderTypeId: { value: 'TRANSFER_ORDER' },
           productStoreId: { value: this.currentEComStore?.productStoreId },
-          ...getOrderReservationFacilityField(escapeSolrSpecialChars(this.currentFacility?.facilityId))
+          ...getFacilityFilter(escapeSolrSpecialChars(this.currentFacility?.facilityId))
         },
         facet: {
           "shipmentMethodTypeIdFacet":{
@@ -281,7 +281,7 @@ export default defineComponent({
       cubeOutline,
       currentEComStore,
       currentFacility,
-      getOrderReservationFacilityField,
+      getFacilityFilter,
       optionsOutline,
       pricetagOutline,
       printOutline,

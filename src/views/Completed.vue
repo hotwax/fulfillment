@@ -237,7 +237,7 @@ import { caretDownOutline, chevronUpOutline, cubeOutline, printOutline, download
 import Popover from '@/views/ShippingPopover.vue'
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
-import { copyToClipboard, formatUtcDate, getFeatures, getOrderReservationFacilityField, hasActiveFilters, showToast } from '@/utils'
+import { copyToClipboard, formatUtcDate, getFeatures, getFacilityFilter, hasActiveFilters, showToast } from '@/utils'
 import { hasError } from '@/adapter'
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import { UtilService } from '@/services/UtilService';
@@ -530,7 +530,7 @@ export default defineComponent({
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: this.currentEComStore.productStoreId },
-          ...getOrderReservationFacilityField(this.currentFacility?.facilityId)
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           "shipmentMethodFacet": {
@@ -571,7 +571,7 @@ export default defineComponent({
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY-7DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           productStoreId: { value: this.currentEComStore.productStoreId },
-          ...getOrderReservationFacilityField(this.currentFacility?.facilityId)
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           manifestContentIdFacet: {
@@ -901,7 +901,7 @@ export default defineComponent({
       ellipsisVerticalOutline,
       formatUtcDate,
       getFeatures,
-      getOrderReservationFacilityField,
+      getFacilityFilter,
       getProductIdentificationValue,
       gift,
       giftOutline,
