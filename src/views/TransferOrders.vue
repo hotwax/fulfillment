@@ -200,7 +200,7 @@ export default defineComponent({
         filters: {
           '-orderStatusId': { value: 'ORDER_CREATED' },
           orderTypeId: { value: 'TRANSFER_ORDER' },
-          reservationFacilityId: { value: escapeSolrSpecialChars(this.currentFacility?.facilityId) },
+          facilityId: { value: escapeSolrSpecialChars(this.currentFacility?.facilityId) },
           productStoreId: { value: this.currentEComStore?.productStoreId }
         },
         facet: {
