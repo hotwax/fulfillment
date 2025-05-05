@@ -367,8 +367,7 @@ export default defineComponent({
       newRejectionApiConfig: 'user/getNewRejectionApiConfig',
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
-      affectQohConfig: 'user/getAffectQohConfig',
-      isReservationFacilityFieldEnabled: 'user/isReservationFacilityFieldEnabled'
+      affectQohConfig: 'user/getAffectQohConfig'
     }),
   },
   data() {

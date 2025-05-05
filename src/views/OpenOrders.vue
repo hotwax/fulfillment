@@ -229,8 +229,7 @@ export default defineComponent({
       getProductStock: 'stock/getProductStock',
       notifications: 'user/getNotifications',
       unreadNotificationsStatus: 'user/getUnreadNotificationsStatus',
-      instanceUrl: "user/getInstanceUrl",
-      isReservationFacilityFieldEnabled: "user/isReservationFacilityFieldEnabled"
+      instanceUrl: "user/getInstanceUrl"
     })
   },
   data () {

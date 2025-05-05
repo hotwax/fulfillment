@@ -309,8 +309,7 @@ export default defineComponent({
       getProductStock: 'stock/getProductStock',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
       isShipNowDisabled: 'user/isShipNowDisabled',
-      isUnpackDisabled: 'user/isUnpackDisabled',
-      isReservationFacilityFieldEnabled: 'user/isReservationFacilityFieldEnabled',
+      isUnpackDisabled: 'user/isUnpackDisabled'
     }),
     getTotalPackages() {
       return this.carrierPartyIds.reduce((total: number, carrier: any) => total + Number(carrier.groups), 0);

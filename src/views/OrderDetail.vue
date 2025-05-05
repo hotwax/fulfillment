@@ -499,8 +499,7 @@ export default defineComponent({
       userProfile: 'user/getUserProfile',
       isShipNowDisabled: 'user/isShipNowDisabled',
       isUnpackDisabled: 'user/isUnpackDisabled',
-      instanceUrl: "user/getInstanceUrl",
-      isReservationFacilityFieldEnabled: 'user/isReservationFacilityFieldEnabled',
+      instanceUrl: "user/getInstanceUrl"
     })
   },
   data() {

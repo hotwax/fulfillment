@@ -121,8 +121,7 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       transferOrders: 'transferorder/getTransferOrders',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
-      isReservationFacilityFieldEnabled: 'user/isReservationFacilityFieldEnabled'
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
     })
   },
   data () {
