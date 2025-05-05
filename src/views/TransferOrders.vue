@@ -203,7 +203,7 @@ export default defineComponent({
           '-orderStatusId': { value: 'ORDER_CREATED' },
           orderTypeId: { value: 'TRANSFER_ORDER' },
           productStoreId: { value: this.currentEComStore?.productStoreId },
-          ...this.getOrderReservationFacilityField(escapeSolrSpecialChars(this.currentFacility?.facilityId))
+          ...getOrderReservationFacilityField(escapeSolrSpecialChars(this.currentFacility?.facilityId))
         },
         facet: {
           "shipmentMethodTypeIdFacet":{
