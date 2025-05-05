@@ -60,6 +60,9 @@ const mutations: MutationTree <UserState> = {
     },
     [types.USER_DISABLE_UNPACK_CONFIG_UPDATED] (state, payload) {
         state.isUnpackDisabled = payload
-    }
+    },
+    [types.USER_RESERVATION_FACILITY_ID_FIELD_CONFIG_UPDATED] (state, payload) {
+        state.isReservationFacilityFieldEnabled = payload
+    },
 }
 export default mutations;

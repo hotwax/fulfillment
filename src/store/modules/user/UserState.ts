@@ -19,4 +19,5 @@ export default interface UserState {
     affectQohConfig: any;
     isShipNowDisabled: boolean;
     isUnpackDisabled: boolean;
+    isReservationFacilityFieldEnabled: boolean;
 }

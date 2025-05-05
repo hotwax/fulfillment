@@ -178,7 +178,7 @@ import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificat
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { formatUtcDate, getFeatures, hasActiveFilters, showToast } from '@/utils'
+import { formatUtcDate, getFeatures, getFacilityFilter, hasActiveFilters, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
@@ -325,8 +325,8 @@ export default defineComponent({
           '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
-          facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.productStoreId },
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           "shipmentMethodTypeIdFacet":{
@@ -458,6 +458,7 @@ export default defineComponent({
       currentFacility,
       formatUtcDate,
       getFeatures,
+      getFacilityFilter,
       getProductIdentificationValue,
       hasActiveFilters,
       hasPermission,

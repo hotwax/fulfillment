@@ -93,6 +93,7 @@ import { hasError } from '@/adapter';
 import logger from '@/logger';
 import TransferOrderFilters from '@/components/TransferOrderFilters.vue'
 import emitter from '@/event-bus';
+import { getFacilityFilter } from "@/utils";
 
 export default defineComponent({
   name: 'TransferOrders',
@@ -193,6 +194,7 @@ export default defineComponent({
     },
     async fetchFilters() {
       let resp: any;
+
       const payload = prepareOrderQuery({
         docType: "ORDER",
         queryFields: 'orderId',
@@ -200,8 +202,8 @@ export default defineComponent({
         filters: {
           '-orderStatusId': { value: 'ORDER_CREATED' },
           orderTypeId: { value: 'TRANSFER_ORDER' },
-          facilityId: { value: escapeSolrSpecialChars(this.currentFacility?.facilityId) },
-          productStoreId: { value: this.currentEComStore?.productStoreId }
+          productStoreId: { value: this.currentEComStore?.productStoreId },
+          ...getFacilityFilter(escapeSolrSpecialChars(this.currentFacility?.facilityId))
         },
         facet: {
           "shipmentMethodTypeIdFacet":{
@@ -279,6 +281,7 @@ export default defineComponent({
       cubeOutline,
       currentEComStore,
       currentFacility,
+      getFacilityFilter,
       optionsOutline,
       pricetagOutline,
       printOutline,

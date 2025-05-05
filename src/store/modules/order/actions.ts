@@ -9,7 +9,8 @@ import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
 import { getOrderCategory, removeKitComponents } from '@/utils/order'
-import { getCurrentFacilityId, getProductStoreId } from '@/utils'
+import { getCurrentFacilityId, getFacilityFilter, getProductStoreId } from '@/utils'
+import store from '@/store'
 
 const actions: ActionTree<OrderState, RootState> = {
   async fetchInProgressOrdersAdditionalInformation({ commit, dispatch, state }, payload = { viewIndex: 0 }) {
@@ -325,8 +326,8 @@ const actions: ActionTree<OrderState, RootState> = {
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           '-fulfillmentStatus': { value: ['Rejected', 'Cancelled', 'Completed'] },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
-          productStoreId: { value: getProductStoreId() }
+          productStoreId: { value: getProductStoreId() },
+          ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))
         }
       }
 
@@ -419,8 +420,8 @@ const actions: ActionTree<OrderState, RootState> = {
         '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
-        facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
-        productStoreId: { value: getProductStoreId() }
+        productStoreId: { value: getProductStoreId() },
+        ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))
       }
     }
 
@@ -495,8 +496,8 @@ const actions: ActionTree<OrderState, RootState> = {
       filters: {
         picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
-        productStoreId: { value: getProductStoreId() }
+        productStoreId: { value: getProductStoreId() },
+        ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))
       }
     }
 
@@ -783,8 +784,8 @@ const actions: ActionTree<OrderState, RootState> = {
         '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
-        facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
-        productStoreId: { value: getProductStoreId() }
+        productStoreId: { value: getProductStoreId() },
+        ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))
       }
     }
     const orderQueryPayload = prepareOrderQuery(params)
@@ -852,8 +853,8 @@ const actions: ActionTree<OrderState, RootState> = {
           shipGroupSeqId: { value: payload.shipGroupSeqId },
           '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
-          productStoreId: { value: getProductStoreId() }
+          productStoreId: { value: getProductStoreId() },
+          ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))
         }
       }
 
@@ -920,8 +921,8 @@ const actions: ActionTree<OrderState, RootState> = {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           shipGroupSeqId: { value: payload.shipGroupSeqId },
-          facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
-          productStoreId: { value: getProductStoreId() }
+          productStoreId: { value: getProductStoreId() },
+          ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))
         }
       }
 
