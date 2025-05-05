@@ -521,7 +521,8 @@ const actions: ActionTree<UtilState, RootState> = {
       "filterByDate": 'Y',
       "entityName": "ProductStoreSetting",
       "fieldList": ["settingValue", "fromDate"],
-      "viewSize": 1
+      "viewSize": 1,
+      "orderBy": "fromDate asc"
     }
 
     try {
@@ -529,8 +530,10 @@ const actions: ActionTree<UtilState, RootState> = {
       if(!hasError(resp)) {
         const respValue = resp.data.docs[0].settingValue === "true"
         commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, respValue)
-      } else {
+      } else if (resp.data.error === "No record found") {
         dispatch('createForceScanSetting');
+      } else {
+        throw resp.data;
       }
     } catch(err) {
       console.error(err)
@@ -596,7 +599,8 @@ const actions: ActionTree<UtilState, RootState> = {
         "filterByDate": 'Y',
         "entityName": "ProductStoreSetting",
         "fieldList": ["fromDate"],
-        "viewSize": 1
+        "viewSize": 1,
+        "orderBy": "fromDate asc"
       }) as any
       if(!hasError(resp)) {
         fromDate = resp.data.docs[0]?.fromDate
@@ -606,7 +610,8 @@ const actions: ActionTree<UtilState, RootState> = {
     }
 
     if(!fromDate) {
-      fromDate = await dispatch("createForceScanSetting");
+      commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
+        throw Error;
     }
 
     const params = {
@@ -641,7 +646,8 @@ const actions: ActionTree<UtilState, RootState> = {
       "filterByDate": 'Y',
       "entityName": "ProductStoreSetting",
       "fieldList": ["settingValue", "fromDate"],
-      "viewSize": 1
+      "viewSize": 1,
+      "orderBy": "fromDate asc"
     }
 
     try {
@@ -649,8 +655,10 @@ const actions: ActionTree<UtilState, RootState> = {
       if(!hasError(resp)) {
         const respValue = resp.data.docs[0].settingValue
         commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, respValue)
-      } else {
+      } else if (resp.data.error === "No record found") {
         dispatch("createBarcodeIdentificationPref");
+      } else {
+        throw resp.data;
       }
     } catch(err) {
       console.error(err)
@@ -716,7 +724,8 @@ const actions: ActionTree<UtilState, RootState> = {
         "filterByDate": 'Y',
         "entityName": "ProductStoreSetting",
         "fieldList": ["fromDate"],
-        "viewSize": 1
+        "viewSize": 1,
+        "orderBy": "fromDate asc"
       }) as any
       if(!hasError(resp)) {
         fromDate = resp.data.docs[0]?.fromDate
@@ -726,7 +735,8 @@ const actions: ActionTree<UtilState, RootState> = {
     }
 
     if(!fromDate) {
-      fromDate = await dispatch("createBarcodeIdentificationPref");
+      commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, prefValue)
+      throw Error;
     }
 
     const params = {
