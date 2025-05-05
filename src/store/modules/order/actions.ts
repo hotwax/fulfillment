@@ -325,7 +325,7 @@ const actions: ActionTree<OrderState, RootState> = {
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           '-fulfillmentStatus': { value: ['Rejected', 'Cancelled', 'Completed'] },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
+          reservationFacilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
           productStoreId: { value: getProductStoreId() }
         }
       }
@@ -419,7 +419,7 @@ const actions: ActionTree<OrderState, RootState> = {
         '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
-        facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
+        reservationFacilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
         productStoreId: { value: getProductStoreId() }
       }
     }
@@ -495,7 +495,7 @@ const actions: ActionTree<OrderState, RootState> = {
       filters: {
         picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
         '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-        facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
+        reservationFacilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
         productStoreId: { value: getProductStoreId() }
       }
     }
@@ -783,7 +783,7 @@ const actions: ActionTree<OrderState, RootState> = {
         '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
         orderStatusId: { value: 'ORDER_APPROVED' },
         orderTypeId: { value: 'SALES_ORDER' },
-        facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
+        reservationFacilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
         productStoreId: { value: getProductStoreId() }
       }
     }
@@ -852,7 +852,7 @@ const actions: ActionTree<OrderState, RootState> = {
           shipGroupSeqId: { value: payload.shipGroupSeqId },
           '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
+          reservationFacilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
           productStoreId: { value: getProductStoreId() }
         }
       }
@@ -920,7 +920,7 @@ const actions: ActionTree<OrderState, RootState> = {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           shipGroupSeqId: { value: payload.shipGroupSeqId },
-          facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
+          reservationFacilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
           productStoreId: { value: getProductStoreId() }
         }
       }

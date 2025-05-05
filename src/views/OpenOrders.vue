@@ -323,7 +323,7 @@ export default defineComponent({
           '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
-          facilityId: { value: this.currentFacility?.facilityId },
+          reservationFacilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId }
         },
         facet: {

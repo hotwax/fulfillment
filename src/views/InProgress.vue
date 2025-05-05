@@ -923,7 +923,7 @@ export default defineComponent({
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           '-fulfillmentStatus': { value: ['Rejected', 'Cancelled', 'Completed'] },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility?.facilityId },
+          reservationFacilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId }
         },
         facet: {

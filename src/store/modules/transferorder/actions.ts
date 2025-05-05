@@ -28,7 +28,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       filters: {
         orderTypeId: { value: 'TRANSFER_ORDER' },
         "-statusFlowId": { value: 'RECEIVE_ONLY'},
-        facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
+        reservationFacilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
         productStoreId: { value: getProductStoreId() }
       }
     }
