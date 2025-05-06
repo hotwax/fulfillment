@@ -64,6 +64,9 @@ const mutations: MutationTree <UserState> = {
     },
     [types.USER_OMS_REDIRECTION_INFO_UPDATED](state, payload) {
         state.omsRedirectionInfo = payload;
-    }
+    },
+    [types.USER_RESERVATION_FACILITY_ID_FIELD_CONFIG_UPDATED] (state, payload) {
+        state.isReservationFacilityFieldEnabled = payload
+    },
 }
 export default mutations;

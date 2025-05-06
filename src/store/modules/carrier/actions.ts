@@ -401,10 +401,10 @@ const actions: ActionTree<CarrierState, RootState> = {
           "shipmentMethodTypeId": "STOREPICKUP",
           "shipmentMethodTypeId_op": "equals",
           "shipmentMethodTypeId_not": "Y",
-          "fieldsToSelect": ["productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "description"],
+          "fieldsToSelect": ["productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "description", "isTrackingRequired"],
           "pageIndex": viewIndex,
           "pageSize": 250,
-          "thruDate_op": "empty",
+          "thruDate_op": "empty"
         }
   
         resp = await CarrierService.fetchProductStoreShipmentMethods(params)

@@ -237,19 +237,23 @@ export default defineComponent({
         shipmentMethodTypeId = shipmentMethodTypeId ? shipmentMethodTypeId : carrierShipmentMethods?.[0]?.shipmentMethodTypeId;
         const shipmentRouteSegmentId = this.order?.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
 
+        const isTrackingRequired = carrierShipmentMethods.find((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)?.isTrackingRequired
         const params = {
           orderId: this.order.orderId,
           shipGroupSeqId: this.order.primaryShipGroupSeqId,
           shipmentId: this.order.shipmentId,
           shipmentRouteSegmentId,
           shipmentMethodTypeId : shipmentMethodTypeId ? shipmentMethodTypeId : "",
-          carrierPartyId
+          carrierPartyId,
+          "isTrackingRequired": isTrackingRequired ? isTrackingRequired : "Y"
         }
 
         resp = await OrderService.updateShipmentCarrierAndMethod(params)
         if (hasError(resp)) {
           throw resp.data;
         }
+
+        this.isTrackingRequired = isTrackingRequired === "N" ? false : true
       } catch(error: any) {
         logger.error("Failed to update carrier and method", error);
         return false;

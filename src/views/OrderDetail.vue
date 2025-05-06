@@ -85,7 +85,7 @@
                     {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
                     <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
                   </div>
-                  <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
                 </ion-label>
               </ion-item>
             </div>
@@ -149,7 +149,7 @@
                     <div>
                       {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
                     </div>
-                    <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
+                    <p>{{ getFeatures(getProduct(productComponent.productIdTo).productFeatures)}}</p>
                   </ion-label>
                   <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.kitComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
                 </ion-item>
@@ -255,13 +255,13 @@
               <ion-icon slot="end" :icon="cashOutline" />
             </ion-item>
             <ion-item>
-              <ion-select :disabled="!order.missingLabelImage || !hasPackedShipments(order)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')">
+              <ion-select :disabled="!order.missingLabelImage || !hasPackedShipments(order)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')" :selected-text="getSelectedCarrier(carrierPartyId)">
                 <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item>
               <template v-if="carrierMethods && carrierMethods.length > 0">
-                <ion-select :disabled="!order.missingLabelImage || !hasPackedShipments(order)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
+                <ion-select :disabled="!order.missingLabelImage || !hasPackedShipments(order)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedShipmentMethod(shipmentMethodTypeId)">
                   <ion-select-option v-for="method in carrierMethods" :key="method.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
                 </ion-select>
               </template>
@@ -417,7 +417,7 @@ import {
   checkmarkCircleOutline
 } from 'ionicons/icons';
 import { getProductIdentificationValue, translate, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
+import { copyToClipboard, formatUtcDate, getFeatures, getFacilityFilter, showToast } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import emitter from '@/event-bus';
@@ -604,6 +604,7 @@ export default defineComponent({
         const carrierShipmentMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
         shipmentMethodTypeId = shipmentMethodTypeId ? shipmentMethodTypeId : carrierShipmentMethods?.[0]?.shipmentMethodTypeId;
         const shipmentRouteSegmentId = this.order?.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
+        const isTrackingRequired = carrierShipmentMethods.find((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)?.isTrackingRequired
 
         const params = {
           orderId: this.order.orderId,
@@ -611,8 +612,10 @@ export default defineComponent({
           shipmentId: this.order.shipmentId,
           shipmentRouteSegmentId,
           shipmentMethodTypeId : shipmentMethodTypeId ? shipmentMethodTypeId : "",
-          carrierPartyId
+          carrierPartyId,
+          isTrackingRequired: isTrackingRequired ? isTrackingRequired : "Y"
         }
+
         resp = await OrderService.updateShipmentCarrierAndMethod(params)
         if (!hasError(resp)) {
           this.shipmentMethodTypeId = shipmentMethodTypeId
@@ -794,14 +797,14 @@ export default defineComponent({
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
                     if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
                       await OrderService.printPackingSlip(shipmentIds)
-                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
                     } else {
-                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds, order.shipmentPackages)
                     }
                   } else if (data.includes('printPackingSlip')) {
                     await OrderService.printPackingSlip(shipmentIds)
                   } else if (data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
                   }
                   if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
                     await OrderService.printCustomDocuments([order.shipmentPackageRouteSegDetails?.[0].internationalInvoiceUrl]);
@@ -1040,7 +1043,7 @@ export default defineComponent({
         return;
       }
 
-      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackageRouteSegDetails)
       if (internationalInvoiceUrls.length) {
         await OrderService.printCustomDocuments([internationalInvoiceUrls[0]]);
       }
@@ -1507,6 +1510,14 @@ export default defineComponent({
         return modal.present();
       }
     },
+    getSelectedCarrier(carrierPartyId: string) {
+      const facilityCarrier = this.facilityCarriers.find((carrier: any) => carrier.partyId === carrierPartyId)
+      return facilityCarrier ? facilityCarrier.groupName : carrierPartyId;
+    },
+    getSelectedShipmentMethod(shipmentMethodTypeId: string) {
+      const shippingMethod = this.carrierMethods.find((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId);
+      return shippingMethod ? shippingMethod.description : shipmentMethodTypeId;
+    }
   },
   setup() {
     const store = useStore();
@@ -1535,7 +1546,8 @@ export default defineComponent({
       ellipsisVerticalOutline,
       fileTrayOutline,
       formatUtcDate,
-      getFeature,
+      getFeatures,
+      getFacilityFilter,
       getProductIdentificationValue,
       gift,
       giftOutline,

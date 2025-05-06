@@ -301,9 +301,11 @@ const actions: ActionTree<OrderState, RootState> = {
 
         const updateShipmentPackages = (order:any) => {
           order.shipmentPackageRouteSegDetails = shipmentPackageRouteSegDetails
+          order.labelImageUrl = shipmentPackageRouteSegDetails[0]?.labelImageUrl
           order.carrierPartyId = shipmentPackageRouteSegDetails[0]?.carrierPartyId
           order.shipmentMethodTypeId = shipmentPackageRouteSegDetails[0]?.shipmentMethodTypeId
           order.trackingCode = shipmentPackageRouteSegDetails[0]?.trackingCode
+          order.isTrackingRequired = shipmentPackageRouteSegDetails[0]?.isTrackingRequired
           order.missingLabelImage = missingLabelImage
         };
     

@@ -63,14 +63,12 @@ const formatUtcDate = (value: any, outFormat: string) => {
   return DateTime.fromISO(value, { zone: 'utc' }).setZone(store.state.user.current.userTimeZone).toFormat(outFormat ? outFormat : 'MM-dd-yyyy')
 }
 
-const getFeature = (featureHierarchy: any, featureKey: string) => {
-  let  featureValue = ''
-  if (featureHierarchy) {
-    const feature = featureHierarchy.find((featureItem: any) => featureItem.startsWith(featureKey))
-    const featureSplit = feature ? feature.split('/') : [];
-    featureValue = featureSplit[2] ? featureSplit[2] : '';
-  }
-  return featureValue;
+const getFeatures = (productFeatures: any) => {
+  const features = productFeatures
+    ?.sort((firstFeature: string, secondFeature: string) => firstFeature.split('/')[0].localeCompare(secondFeature.split('/')[0]))
+    ?.map((feature: string) => feature.split('/')[1])
+    ?.join(' ');
+  return features || "";
 }
 
 const jsonToCsv = (file: any, options: JsonToCsvOption = {}) => {
@@ -243,5 +241,18 @@ const parseCsv = async (file: File, options?: any) => {
   })
 }
 
+const hasActiveFilters = (query: any): boolean => {
+  const excludedFields = ["viewSize", "viewIndex", "queryString"];
+  return Object.keys(query).some((key: string) => 
+    !excludedFields.includes(key) && (Array.isArray(query[key]) ? query[key].length : query[key].trim())
+  );
+}
 
-export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getFeature, getIdentificationId, handleDateTimeInput, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv }
+const getFacilityFilter = (value: any): any => {
+  const isReservationFacilityFieldEnabled = store.getters["user/isReservationFacilityFieldEnabled"];
+  const facilityFilter = {} as any;
+  facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value }
+  return facilityFilter 
+}
+
+export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getFacilityFilter, getFeatures, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getIdentificationId, handleDateTimeInput, hasActiveFilters, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv }

@@ -13,7 +13,7 @@
   <ion-content>
     <ion-item>
       <ion-select :label="translate('Product identifier')" interface="popover" :placeholder="translate('Select')" v-model="selectedIdentifier">
-        <ion-select-option v-for="identification in productIdentifications" :key="identification">{{ identification }}</ion-select-option>
+        <ion-select-option v-for="identification in productIdentifications" :value="identification.goodIdentificationTypeId" :key="identification.goodIdentificationTypeId">{{ identification.description }}</ion-select-option>
       </ion-select>
     </ion-item>
     

@@ -84,7 +84,7 @@
   import { useRouter } from 'vue-router';
   import Scanner from "@/components/Scanner.vue";
   import { Actions, hasPermission } from '@/authorization'
-  import { getFeature, showToast, hasWebcamAccess } from '@/utils';
+  import { showToast, hasWebcamAccess } from '@/utils';
   import { hasError } from '@/adapter'
   import { TransferOrderService } from '@/services/TransferOrderService'
   import TransferShipmentActionsPopover from '@/components/TransferShipmentActionsPopover.vue'
@@ -203,8 +203,8 @@
           return;
         }
 
-        await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
         this.isGeneratingShippingLabel = true;
+        await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
         let shippingLabelPdfUrls = this.currentShipment.shipmentPackages
           ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
           .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
@@ -225,7 +225,7 @@
           if(this.currentShipment.trackingCode) {
             this.showLabelError = false;
             showToast(translate("Shipping Label generated successfully"))
-            await TransferOrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
+            await TransferOrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls, this.currentShipment?.shipmentPackages)
           } else {
             this.showLabelError = true;
             showToast(translate("Failed to generate shipping label"))
@@ -233,7 +233,7 @@
         } else {
           this.showLabelError = false;
           //print shipping label if label already exists
-          await TransferOrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
+          await TransferOrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls, this.currentShipment?.shipmentPackages)
         }
 
         this.isGeneratingShippingLabel = false;
@@ -335,7 +335,6 @@
         checkmarkDone,
         documentTextOutline,
         sendOutline,
-        getFeature,
         getProductIdentificationValue,
         hasPermission,
         productIdentificationPref,

@@ -7,7 +7,7 @@ import * as types from './mutation-types'
 import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import logger from '@/logger'
 import { getProductIdentificationValue, translate } from '@hotwax/dxp-components'
-import { showToast, getCurrentFacilityId, getProductStoreId } from "@/utils";
+import { showToast, getCurrentFacilityId, getProductStoreId, getFacilityFilter } from "@/utils";
 import store from "@/store";
 
 const actions: ActionTree<TransferOrderState, RootState> = {
@@ -26,8 +26,9 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       sort: payload.sort ? payload.sort : "orderDate asc",
       filters: {
         orderTypeId: { value: 'TRANSFER_ORDER' },
-        facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
-        productStoreId: { value: getProductStoreId() }
+        "-statusFlowId": { value: 'RECEIVE_ONLY'},
+        productStoreId: { value: getProductStoreId() },
+        ...getFacilityFilter(escapeSolrSpecialChars(getCurrentFacilityId()))
       }
     }
 
@@ -86,7 +87,9 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         "entityName": "OrderHeaderItemAndShipGroup",
         "inputFields": {
           "orderId": payload.orderId,
-          "oisgFacilityId": escapeSolrSpecialChars(getCurrentFacilityId())
+          "oisgFacilityId": escapeSolrSpecialChars(getCurrentFacilityId()),
+          "statusFlowId": "RECEIVE_ONLY",
+          "statusFlowId_op": "notEqual"
         },
         "fieldList": ["orderId", "orderName", "externalId", "orderTypeId", "statusId", "orderDate", "shipGroupSeqId", "oisgFacilityId", "orderFacilityId"],
         "viewSize": 1,

@@ -358,6 +358,14 @@ const isEnumExists = async (enumId: string): Promise<any> => {
   }
 }
 
+const getReservationFacilityIdFieldConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: payload,
+  });
+}
+
 const getDisableShipNowConfig = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -530,6 +538,7 @@ export const UserService = {
     getFacilityGroupDetails,
     getFacilityGroupAndMemberDetails,
     getPartialOrderRejectionConfig,
+    getReservationFacilityIdFieldConfig,
     getUserProfile,
     getPreferredStore,
     isEnumExists,

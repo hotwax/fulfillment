@@ -3,6 +3,8 @@ import { translate } from '@hotwax/dxp-components'
 import logger from '@/logger';
 import { showToast } from '@/utils';
 import { cogOutline } from 'ionicons/icons';
+import store from '@/store';
+import { ZebraPrinterService } from './ZebraPrinterService';
 
 
 const findTransferOrders = async (query: any): Promise<any> => {
@@ -373,27 +375,41 @@ const retryShippingLabel = async (shipmentIds: Array<string>, forceRateShop = fa
   })
 }
 
-const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>): Promise<any> => {
+const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string): Promise<any> => {
   try {
     let pdfUrls = shippingLabelPdfUrls?.filter((pdfUrl: any) => pdfUrl);
     if (!pdfUrls || pdfUrls.length == 0) {
-    // Get packing slip from the server
-    const resp: any = await api({
-      method: 'get',
-      url: 'ShippingLabel.pdf',
-      params: {
-        shipmentId: shipmentIds
-      },
-      responseType: "blob"
-    })
+      let labelImageType = imageType || "PNG";
 
-    if (!resp || resp.status !== 200 || hasError(resp)) {
-      throw resp.data;
-    }
+      if(!imageType && shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId) {
+        labelImageType = await store.dispatch("util/fetchLabelImageType", shipmentPackages[0].carrierPartyId);
+      }
 
-    // Generate local file URL for the blob received
-    const pdfUrl = window.URL.createObjectURL(resp.data);
-    pdfUrls = [pdfUrl];
+      const labelImages = [] as Array<string>
+      if (labelImageType === "ZPLII") {
+        shipmentPackages?.map((shipmentPackage: any) => {
+          shipmentPackage.labelImage && labelImages.push(shipmentPackage.labelImage)
+        })
+        await ZebraPrinterService.printZplLabels(labelImages);
+        return;
+      }
+      // Get packing slip from the server
+      const resp: any = await api({
+        method: 'get',
+        url: 'ShippingLabel.pdf',
+        params: {
+          shipmentId: shipmentIds[0]
+        },
+        responseType: "blob"
+      })
+
+      if (!resp || resp.status !== 200 || hasError(resp)) {
+        throw resp.data;
+      }
+
+      // Generate local file URL for the blob received
+      const pdfUrl = window.URL.createObjectURL(resp.data);
+      pdfUrls = [pdfUrl];
     }
     // Open the file in new tab
     pdfUrls.forEach((pdfUrl: string) => {

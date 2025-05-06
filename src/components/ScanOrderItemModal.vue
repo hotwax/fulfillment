@@ -33,7 +33,7 @@
                 {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
                 <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
               </div>
-              <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+              <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
             </ion-label>
           </ion-item>
         </div>
@@ -74,7 +74,7 @@ import { computed, defineComponent } from "vue";
 import { cameraOutline, closeOutline, copyOutline, saveOutline } from "ionicons/icons";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { mapGetters } from 'vuex';
-import { getFeature, showToast, hasWebcamAccess } from "@/utils"
+import { getFeatures, showToast, hasWebcamAccess } from "@/utils"
 import Scanner from "@/components/Scanner.vue"
 import { isKit } from '@/utils/order'
 
@@ -179,7 +179,7 @@ export default defineComponent({
       cameraOutline,
       closeOutline,
       copyOutline,
-      getFeature,
+      getFeatures,
       getProductIdentificationValue,
       isKit,
       productIdentificationPref,

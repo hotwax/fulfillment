@@ -57,7 +57,7 @@ export default defineComponent({
 
       const shipmentIds: string[] = Array.from(new Set (shipmentPackageRouteSegDetails.map((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.shipmentId)))
 
-     await OrderLookupService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+      await OrderLookupService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentPackageRouteSegDetails)
       popoverController.dismiss()
     },
 

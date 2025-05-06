@@ -52,7 +52,7 @@
           )
         );
 
-        await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+        await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackageRouteSegDetails)
         popoverController.dismiss()
       },
       async voidShippingLabel(order: any) {

@@ -17,7 +17,7 @@ export default interface OrderState {
       viewIndex: number,
       viewSize: any,
       queryString: string,
-      selectedCarrierPartyIds: Array<string>,
+      selectedCarrierPartyId: string,
       selectedShipmentMethods: Array<string>
     }
   },  
@@ -32,4 +32,5 @@ export default interface OrderState {
     }
   },
   current: any,
+  
 }

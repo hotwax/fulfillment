@@ -81,6 +81,39 @@ const fetchCarrierPartyIds = async (query: any): Promise <any>  => {
   });
 }
 
+const fetchConfiguredCarrierService = async(query: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: query
+  });
+}
+
+const generateManifest = async(payload: any): Promise<any> => {
+  return api({
+    url: "generateManifests",
+    method: "POST",
+    data: payload
+  });
+}
+
+const downloadCarrierManifest = async(payload: any): Promise<any> => {
+  return api({
+    url: "downloadCarrierManifest",
+    method: "POST",
+    data: payload,
+    responseType: "blob"
+  });
+}
+
+const fetchManifestsInformation = async(payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "POST",
+    data: payload
+  });
+}
+
 const fetchPartyInformation = async (payload: any): Promise <any>  => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -537,21 +570,70 @@ const fetchFacilityAddresses = async (params: any): Promise<any> => {
   });
 }
 
+const fetchFacilityZPLGroupInfo = async (facilityId: string): Promise<any> => {
+  let isFacilityZPLConfigured = false;
+  const params = {
+    inputFields: {
+      facilityId,
+      facilityGroupId: "ZPL_SHIPPING_LABEL",
+      facilityGroupTypeId: "SHIPPING_LABEL"
+    },
+    fieldList: ["facilityGroupId", "facilityId"],
+    entityName: "FacilityGroupAndMember",
+    filterByDate: "Y",
+    viewSize: 1
+  }
+
+  try {
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    }) as any;
+
+    if (!hasError(resp) && resp.data?.docs?.length > 0) {
+      isFacilityZPLConfigured = true
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    logger.error(err)
+  }
+  return isFacilityZPLConfigured;
+}
+
+const fetchLabelImageType = async (carrierId : string): Promise<any> => {
+  return api({
+    method: 'get',
+    url: 'performFind',
+    params: {
+      "entityName": "SystemProperty",
+      "inputFields": {
+        "systemResourceId": carrierId,
+        "systemPropertyId": "shipment.carrier.labelImageType"
+      }
+    }
+  })
+}
+
 export const UtilService = {
   createBarcodeIdentificationPref,
   fetchCarriers,
   createEnumerationGroupMember,
   createForceScanSetting,
   createEnumeration,
+  downloadCarrierManifest,
   fetchAdjustmentTypeDescription,
   fetchCarrierPartyIds,
   fetchDefaultShipmentBox,
   fetchEnumeration,
   fetchFacilities,
   fetchFacilityAddresses,
+  fetchFacilityZPLGroupInfo,
   fetchFacilityTypeInformation,
   fetchFulfillmentRejectReasons,
   fetchGiftCardFulfillmentInfo,
+  fetchManifestsInformation,
   fetchPartyInformation,
   fetchProductStores,
   fetchRejectReasons,
@@ -563,8 +645,10 @@ export const UtilService = {
   fetchStatusDesc,
   fetchCarrierShipmentBoxTypes,
   fetchProductStoreFacilities,
+  fetchConfiguredCarrierService,
   findProductStoreShipmentMethCount,
   fetchTransferOrderFacets,
+  generateManifest,
   getAvailablePickers,
   getProductStoreSetting,
   isEnumExists,
@@ -572,5 +656,6 @@ export const UtilService = {
   updateEnumeration,
   updateBarcodeIdentificationPref,
   updateEnumerationGroupMember,
-  updateForceScanSetting
+  updateForceScanSetting,
+  fetchLabelImageType
 }

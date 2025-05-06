@@ -82,7 +82,7 @@
                         <ion-label>
                           <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                           {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                          <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                          <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
                         </ion-label>
                       </ion-item>
                     </div>
@@ -172,7 +172,7 @@
   import Scanner from "@/components/Scanner.vue";
   import { Actions, hasPermission } from '@/authorization'
   import { DateTime } from 'luxon';
-  import { getFeature, showToast, hasWebcamAccess } from '@/utils';
+  import { getFeatures, showToast, hasWebcamAccess } from '@/utils';
   import { hasError } from '@/adapter';
   import { TransferOrderService } from '@/services/TransferOrderService'
   import TransferOrderItem from '@/components/TransferOrderItem.vue'
@@ -398,13 +398,13 @@
 
           if(currentShipment.trackingIdNumber) {
             showToast(translate("Shipping Label generated successfully"))
-            await TransferOrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
+            await TransferOrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages)
           } else {
             showToast(translate("Failed to generate shipping label"))
           }
         } else {
           //print shipping label if label already exists
-          await TransferOrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
+          await TransferOrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages)
         }
 
         currentShipment.isGeneratingShippingLabel = false;
@@ -477,7 +477,7 @@
         add,
         barcodeOutline,
         checkmarkDone,
-        getFeature,
+        getFeatures,
         getProductIdentificationValue,
         hasPermission,
         personCircleOutline,
