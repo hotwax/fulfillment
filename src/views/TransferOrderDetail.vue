@@ -54,7 +54,7 @@
                   <div class="order-header">
                     <div class="order-primary-info">
                       <!-- <ion-label> -->
-                        <p>{{ translate("Shipped") }} {{ getTime(shipment.createdDate) }}</p>
+                        <p>{{ translate("Shipped") }} {{ getTime(shipment.orderDate) }}</p>
                       <!-- </ion-label> -->
                     </div>
 
@@ -255,9 +255,9 @@
       },
       getShipments(shipmentType: string) {
         if (shipmentType === 'shipped') {
-          return this.currentOrder?.shipments?.filter((shipment: any) => shipment.statusId === 'SHIPMENT_SHIPPED')
+          return this.currentOrder?.shipments?.filter((shipment: any) => shipment.shipmentStatusId === 'SHIPMENT_SHIPPED')
         } else {
-          return this.currentOrder?.shipments?.filter((shipment: any) => shipment.statusId !== 'SHIPMENT_SHIPPED' && shipment.statusId !== 'SHIPMENT_CANCELLED')
+          return this.currentOrder?.shipments?.filter((shipment: any) => shipment.shipmentStatusId !== 'SHIPMENT_SHIPPED' && shipment.shipmentStatusId !== 'SHIPMENT_CANCELLED')
         }
       },
       getPickedToOrderedFraction(item: any) {

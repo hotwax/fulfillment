@@ -122,7 +122,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   },
   async fetchTransferOrderDetail ({ commit }, payload) {
     let orderDetail = {} as any;
-    let resp;
+    let resp,resp2;
     try {
       resp = await TransferOrderService.fetchOrderDetailMoqui(payload.orderId);
             if (!hasError(resp)) {
@@ -131,8 +131,12 @@ const actions: ActionTree<TransferOrderState, RootState> = {
               orderDetail.items;
       // fetch product details
       const productIds = [...new Set(orderDetail.items.map((item: any) => item.productId))];
-      console.log("productIds", productIds);
       
+      resp2 = await TransferOrderService.fetchShippedOrdersMoqui(payload.orderId);
+      if (!hasError(resp2)) {
+          orderDetail.shipments = resp2.data.shipments;
+      }
+
       const batchSize = 250;
       const productIdBatches = [];
       while (productIds.length) {
