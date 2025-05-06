@@ -240,6 +240,7 @@ import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIden
 import emitter from '@/event-bus';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import { OrderService } from '@/services/OrderService';
+import { UtilService } from '@/services/UtilService';
 import logger from '@/logger';
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import { Actions, hasPermission } from '@/authorization'

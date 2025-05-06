@@ -3,7 +3,7 @@ import store from '@/store';
 import { getProductIdentificationValue, translate, useUserStore } from '@hotwax/dxp-components';
 import logger from '@/logger'
 import { cogOutline } from 'ionicons/icons';
-import { getCurrentFacilityId, getFeatures, getProductStoreId, showToast } from '@/utils'
+import { getCurrentFacilityId, getFeatures, getProductStoreId, jsonToCsv, showToast } from '@/utils'
 import { removeKitComponents } from '@/utils/order';
 import { escapeSolrSpecialChars, prepareSolrQuery } from '@/utils/solrHelper';
 import { ZebraPrinterService } from './ZebraPrinterService';

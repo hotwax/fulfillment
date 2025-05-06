@@ -1,5 +1,6 @@
 import { api, client, hasError } from '@/adapter';
 import store from '@/store';
+import logger from '@/logger'
 
 const fetchShipmentMethods = async (query: any): Promise <any>  => {
   return api({
