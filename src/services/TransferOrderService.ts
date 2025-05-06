@@ -32,15 +32,31 @@ const fetchTransferOrders = async (): Promise<any> => {
 
 const fetchOrderDetailMoqui = async (orderId: string): Promise<any> => { // TODO: pass the order id
 console.log("fetchOrderDetailMoqui for orderId", orderId);
-  // const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
-  // const baseURL = store.getters['user/getMaargBaseUrl'];
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
   return client({
-    // url: `/oms/orders/${params}`,fetchOrderHeaderMoqui
-    url: 'https://32cf1e0f-e33f-44a7-a881-f85acfae638b.mock.pstmn.io//rest/s1/poorti/orderItem',
+    url: `/oms/transferOrders/${orderId}`,
     method: "get",
-    // baseURL,
+    baseURL,
     headers: {
-      // "api_key": omsRedirectionInfo.token,
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    }
+  });
+};
+
+const fetchShippedOrdersMoqui = async (orderId: string): Promise<any> => { // TODO: pass the order id
+
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `poorti/transferShipments?orderId=${orderId}&shipmentStatusId=SHIPMENT_SHIPPED`, 
+    method: "get",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
       "Content-Type": "application/json"
     }
   });
@@ -548,6 +564,7 @@ export const TransferOrderService = {
   fetchOrderDetailMoqui,
   printTransferOrderPicklist,
   fetchOrderItems,
+  fetchShippedOrdersMoqui,
   fetchShippedQuantity,
   fetchShipmentItems,
   fetchShipmentCarrierDetail,
