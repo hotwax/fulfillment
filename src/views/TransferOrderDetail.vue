@@ -269,7 +269,6 @@
         this.isCreatingShipment = false;
         if (shipmentId) {
           await this.store.dispatch('transferorder/clearCurrentTransferShipment');
-          await TransferOrderService.updateShipment({"shipmentId": shipmentId, "statusId": "SHIPMENT_APPROVED"})
           this.router.push({ path: `/transfer-shipment-review/${shipmentId}` })
         }
       },
