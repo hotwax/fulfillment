@@ -643,6 +643,32 @@ const updateEnumerationGroupMember = async (payload: any): Promise<any> => {
   });
 }
 
+const isAutoShippingLabelConfigured = async (facilityId: string): Promise<any> => {
+  try {
+    const resp = await api({
+      url: 'performFind',
+      method: 'POST',
+      data: {
+        entityName: "FacilityGroupMember",
+        inputFields: {
+          facilityId,
+          facilityGroupId : "AUTO_SHIPPING_LABEL"
+        },
+        viewSize: 1,
+        fieldList: ["facilityId", "facilityGroupId", "fromDate"],
+        filterByDate: "Y"
+      }
+    }) as any
+
+    if (!hasError(resp) && resp.data.docs.length) {
+      return true
+    }
+    return false
+  } catch (err) {
+    return false
+  }
+}
+
 const isEnumExists = async (enumId: string): Promise<any> => {
   try {
     const resp = await api({
@@ -820,6 +846,7 @@ export const UtilService = {
   getAvailablePickers,
   getProductStoreSetting,
   isEnumExists,
+  isAutoShippingLabelConfigured,
   resetPicker,
   deleteEnumeration,
   updateEnumeration,

@@ -174,14 +174,6 @@ const voidShipmentLabel = async (payload: any): Promise<any> => {
   })
 }
 
-const updateOrderItemShipGroup = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/updateOrderItemShipGroup",
-    method: "POST",
-    data: payload
-  })
-}
-
 const addTrackingCode = async (payload: any): Promise<any> => {
   try {
     let resp = await updateShipmentPackageRouteSeg({
@@ -1116,7 +1108,6 @@ export const OrderService = {
   shipOrder,
   unpackOrder,
   updateOrder,
-  updateOrderItemShipGroup,
   updateShipment,
   updateShipmentPackageRouteSeg,
   updateShipmentRouteSegment,

@@ -372,6 +372,7 @@ export default defineComponent({
   },
   data() {
     return {
+      isAutoShippingLabelConfigured: true,
       picklists: [] as any,
       defaultShipmentBoxType: '',
       orderBoxes: [] as any,
@@ -384,6 +385,9 @@ export default defineComponent({
     }
   },
   methods: {
+    async checkAutoGenerateShippingLabelConfig() {
+      this.isAutoShippingLabelConfigured = await UtilService.isAutoShippingLabelConfigured(this.currentFacility?.facilityId)
+    },
     getRejectionReasonDescription (rejectionReasonId: string) {
       const reason = this.rejectReasonOptions?.find((reason: any) => reason.enumId === rejectionReasonId)
       return reason?.description ? reason.description : reason?.enumDescription ? reason.enumDescription : reason?.enumId;
@@ -1290,7 +1294,7 @@ export default defineComponent({
     async generateTrackingCodeForPacking(order: any) {
       const modal = await modalController.create({
         component: GenerateTrackingCodeModal,
-        componentProps: { order }
+        componentProps: { order, isAutoShippingLabelConfigured: this.isAutoShippingLabelConfigured}
       })
 
       modal.onDidDismiss().then((result: any) => {
@@ -1327,7 +1331,8 @@ export default defineComponent({
       this.store.dispatch('carrier/fetchFacilityCarriers'),
       this.store.dispatch('carrier/fetchProductStoreShipmentMeths'),
       this.fetchPickersInformation(),
-      this.initialiseOrderQuery()
+      this.initialiseOrderQuery(),
+      this.checkAutoGenerateShippingLabelConfig()
     ]);
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
