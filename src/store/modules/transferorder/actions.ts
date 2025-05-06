@@ -127,8 +127,8 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       resp = await TransferOrderService.fetchOrderDetailMoqui(payload.orderId);
             if (!hasError(resp)) {
               orderDetail = resp.data.order;
-              orderDetail.statusId= orderDetail.orderStatusId
-              orderDetail.items = orderDetail.orderItems
+              orderDetail.statusId;
+              orderDetail.items;
       // fetch product details
       const productIds = [...new Set(orderDetail.items.map((item: any) => item.productId))];
       console.log("productIds", productIds);
