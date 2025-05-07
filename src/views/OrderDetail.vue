@@ -311,8 +311,8 @@
             <ion-card-header>
               <div>
                 <ion-card-subtitle class="overline">{{ getfacilityTypeDesc(shipGroup.facilityTypeId) }}</ion-card-subtitle>
-                <ion-card-title>{{ shipGroup.facilityName }}</ion-card-title>
-                {{ shipGroup.shipGroupSeqId }}
+                <ion-card-title>{{ shipGroup.facilityName ?  shipGroup.facilityName : shipGroup.facilityId}}</ion-card-title>
+                {{ shipGroup.primaryShipGroupSeqId ? shipGroup.primaryShipGroupSeqId : shipGroup.shipGroupSeqId }}
               </div>
               <ion-badge :color="shipGroup.category ? 'primary' : 'medium'">
                 {{

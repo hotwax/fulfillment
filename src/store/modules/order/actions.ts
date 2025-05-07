@@ -209,6 +209,72 @@ const actions: ActionTree<OrderState, RootState> = {
       const filteredShipments = resp.orders.filter((order: any) => order.shipmentId !== currentShipmentId)
       otherShipments = [...otherShipments, ...filteredShipments]
     }
+    
+    //fetching/preparing pending allocation items
+    try {
+      const resp = await OrderService.fetchOrderItems({
+        orderId: currentOrder.orderId,
+        shipGroupSeqId,
+        shipGroupSeqId_op: "equals",
+        shipGroupSeqId_not: "Y",
+        pageSize: 50,
+        fieldsToSelect: ["orderId", "orderItemseqId", "shipGroupSeqId", "productId"]
+      })
+      if (!hasError(resp)) {
+        const allocatedOrderItemSeqIds = [
+          ...new Set(
+            otherShipments.flatMap((shipment:any) => shipment.items.map((item:any) => item.orderItemSeqId))
+          )
+        ];
+
+        const pendingAllocationItems = resp.data.filter((item:any) =>  item.shipGroupSeqId !== shipGroupSeqId && !allocatedOrderItemSeqIds.includes(item.orderItemSeqId));
+        if (pendingAllocationItems.length) {
+          //fetching facility details
+          let facilityInfo = {} as any
+          const facilityIds = [
+            ...new Set(
+              currentOrder.shipGroups
+                .filter((shipGroup: any) => shipGroup.shipGroupSeqId !== shipGroupSeqId)
+                .map((shipGroup: any) => shipGroup.facilityId)
+            )
+          ];
+          if (facilityIds.length) {
+            const facilityResp = await UtilService.fetchFacilities({
+              facilityId: facilityIds,
+              facilityId_op: "in",
+              pageSize: 10,
+            })
+            if (!hasError(facilityResp)) {
+              facilityInfo = facilityResp.data.reduce((facilityDetail: Record<string, any>, facility: any) => {
+                facilityDetail[facility.facilityId] = facility;
+                return facilityDetail;
+              }, {});
+            }
+          }
+
+          const pendingItemsByShipGroup = pendingAllocationItems.reduce((shipGroupDetail:any, item:any) => {
+            const itemShipGroup = currentOrder.shipGroups.find((shipGroup: any) => shipGroup.shipGroupSeqId === item.shipGroupSeqId);
+            const facility = facilityInfo[itemShipGroup.facilityId];
+            const groupId = item.shipGroupSeqId;
+            if (!shipGroupDetail[groupId]) {
+              shipGroupDetail[groupId] = {
+                ...item,
+                ...itemShipGroup,
+                facilityName: facility.facilityName,
+                facilityTypeId: facility.facilityTypeId,
+                items: []
+              };
+            }
+            shipGroupDetail[groupId].items.push(item);
+            return shipGroupDetail;
+          }, {});
+          otherShipments = [...otherShipments, ...Object.values(pendingItemsByShipGroup)]
+        }
+      }
+    } catch(err) {
+      logger.error("Failed to fetch ship group info for order", err)
+    }
+
     if (otherShipments.length) {
       const productIds = [...new Set(otherShipments.flatMap((shipment: any) => shipment.items?.map((item: any) => item.productId) || []))];
       this.dispatch('product/fetchProducts', { productIds })
@@ -350,6 +416,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
         order = {
           ...order,
+          shipGroups: resp.data.shipGroups,
           paymentPreferences: resp.data.paymentPreferences,
           adjustments: resp.data.adjustments,
           attributes: resp.data.attributes,
