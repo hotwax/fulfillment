@@ -195,48 +195,61 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     return shipmentId;
   },
 
-  async fetchTransferShipmentDetail ({ commit }, payload) {
-    let resp;
-    try {
-      const shipmentItems = await TransferOrderService.fetchShipmentItems('', payload.shipmentId);
-        
-      if (shipmentItems?.length > 0) {
-        const [shipmentPackagesWithMissingLabel, shipmentPackages, shipmentCarriers] = await Promise.all([TransferOrderService.fetchShipmentPackages([payload.shipmentId]), UtilService.findShipmentPackages([payload.shipmentId]), TransferOrderService.fetchShipmentCarrierDetail([payload.shipmentId])]);
+async fetchTransferShipmentDetail({ commit }, payload) {
+  try {
+    const shipmentResponse = await TransferOrderService.fetchTransferShipmentReviewDetails(payload.shipmentId);
+    console.log("shipmentResponse", shipmentResponse.data);
 
-        const shipment = {
-          shipmentId: shipmentItems?.[0].shipmentId,
-          primaryOrderId: shipmentItems?.[0].orderId,
-          statusId: shipmentItems?.[0].shipmentStatusId,
-          trackingCode: shipmentCarriers?.[0].trackingIdNumber,
-          carrierPartyId: shipmentCarriers?.[0].carrierPartyId,
-          shipmentMethodTypeId: shipmentCarriers?.[0].shipmentMethodTypeId,
-          shipmentPackagesWithMissingLabel: shipmentPackagesWithMissingLabel,
-          shipmentPackages: shipmentPackages ? Object.values(shipmentPackages).flat() : [],
-          isTrackingRequired: shipmentPackagesWithMissingLabel?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y'),
-          items: shipmentItems.map((item: any) => ({
-            ...item,
-            pickedQuantity: item.quantity
-          })),
-          totalQuantityPicked: shipmentItems.reduce((accumulator:any, currentItem:any) => accumulator + currentItem.quantity, 0)
-        }
+    const shipments = shipmentResponse.data?.shipments || [];
+    if (shipments.length > 0) {
+      const shipmentData = shipments[0];
+      const shipmentItems = shipmentData.items || [];
 
-        commit(types.ORDER_CURRENT_SHIPMENT_UPDATED, shipment)
+      const shipment = {
+        shipmentId: shipmentData.shipmentId,
+        primaryOrderId: shipmentData.orderId,
+        statusId: shipmentData.statusId,
+        trackingCode: null, // Not present in response
+        carrierPartyId: shipmentData.carrierPartyId,
+        shipmentMethodTypeId: shipmentData.shipmentMethodTypeId,
+        shipmentPackagesWithMissingLabel: [],
+        shipmentPackages: [{
+          shipmentId: shipmentData.shipmentId,
+          labelPdfUrl: null, //todo
+        }],
+        isTrackingRequired: shipmentData.carrierPartyId === 'FEDEX_TEST',
+        items: shipmentItems.map((item: any) => ({
+          ...item,
+          pickedQuantity: item.quantity,
+          productName: item.productName,
+          internalName: item.internalName,
+          productId: item.productId
+        })),
+        totalQuantityPicked: shipmentItems.reduce((acc: number, curr: any) => acc + curr.quantity, 0)
+      };
 
-        const productIds = [...new Set(shipmentItems.map((item:any) => item.productId))];
+      console.log("shipment before commit", shipment);
 
+      commit(types.ORDER_CURRENT_SHIPMENT_UPDATED, shipment);
 
-        const batchSize = 250;
-        const productIdBatches = [];
-        while(productIds.length) {
-          productIdBatches.push(productIds.splice(0, batchSize))
-        }
-        await Promise.all([productIdBatches.map((productIds) => this.dispatch('product/fetchProducts', { productIds })), this.dispatch('util/fetchPartyInformation', [shipmentCarriers?.[0].carrierPartyId,]), this.dispatch('util/fetchShipmentMethodTypeDesc', [shipmentCarriers?.[0].shipmentMethodTypeId])])
+      const productIds = [...new Set(shipmentItems.map((item: any) => item.productId))];
+      const batchSize = 250;
+      const productIdBatches = [];
+
+      while (productIds.length) {
+        productIdBatches.push(productIds.splice(0, batchSize));
       }
 
-    } catch (err: any) {
-      logger.error("error", err);
+      await Promise.all([
+        ...productIdBatches.map((productIds) => this.dispatch('product/fetchProducts', { productIds })),
+        this.dispatch('util/fetchPartyInformation', [shipmentData.carrierPartyId]),
+        this.dispatch('util/fetchShipmentMethodTypeDesc', [shipmentData.shipmentMethodTypeId])
+      ]);
     }
-  },
+  } catch (err: any) {
+    logger.error("error", err);
+  }
+},
   async fetchOrderShipments ({ commit, state }, payload) {
     let resp;
     let shipments = [];

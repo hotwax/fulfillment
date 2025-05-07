@@ -236,8 +236,7 @@
     },
     methods: {
       async printTransferOrderPicklist() {
-        // await TransferOrderService.printTransferOrderPicklist(this.currentOrder.orderId)
-        await TransferOrderService.printTransferOrderPicklist("12104")
+        await TransferOrderService.printTransferOrderPicklist(this.currentOrder.orderId)
       },
       getItemCount() {
 

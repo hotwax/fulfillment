@@ -135,7 +135,7 @@
           {
             text: translate("Discard"),
             handler: async () => {
-              const resp = await TransferOrderService.updateShipment({"shipmentId": this.currentShipment.shipmentId, "statusId": "SHIPMENT_CANCELLED"})
+              const resp = await TransferOrderService.cancelTransferOrderShipment(this.currentShipment.shipmentId)
               if (!hasError(resp)) {
                 showToast(translate('Shipment is discarded.'));
               }
@@ -269,34 +269,28 @@
         return alert.present();
       },
       async shipOutboundTransferShipment() {
-        try {
-          const shipmentPackagesWithMissingLabel = this.currentShipment.shipmentPackagesWithMissingLabel;
-          if (shipmentPackagesWithMissingLabel.length > 0 && this.trackingCode && this.currentShipment.trackingCode !== this.trackingCode) {
-            await TransferOrderService.addTrackingCode({
-              "shipmentId": this.currentShipment.shipmentId,
-              "shipmentRouteSegmentId": shipmentPackagesWithMissingLabel?.[0].shipmentRouteSegmentId,
-              "shipmentPackageSeqId": shipmentPackagesWithMissingLabel?.[0].shipmentPackageSeqId,
-              "trackingCode": this.trackingCode
-            });
+      try {
+
+          if (
+            this.trackingCode &&
+            this.currentShipment.trackingCode !== this.trackingCode
+          ) {
+            await TransferOrderService.shipTransferOrderShipment(
+              this.currentShipment.shipmentId,
+              this.trackingCode,
+              '01'
+            );
           }
-          
-          let resp = await TransferOrderService.updateShipment({"shipmentId": this.currentShipment.shipmentId, "statusId": "SHIPMENT_PACKED"})
-          if (!hasError(resp)) {
-            resp = await TransferOrderService.updateShipment({"shipmentId": this.currentShipment.shipmentId, "statusId": "SHIPMENT_SHIPPED"})
-            if (hasError(resp)) {
-              throw resp.data;
-            }
-          } else {
-            throw resp.data;
-          }
+
           this.isShipped = true;
           showToast(translate('Shipment shipped successfully.'));
-          this.router.replace({ path: `/transfer-order-details/${this.currentShipment.primaryOrderId}` })
+          this.router.replace({ path: `/transfer-order-details/${this.currentShipment.primaryOrderId}` });
         } catch (err) {
           logger.error('Failed to ship the shipment.', err);
-          showToast(translate('Something went wrong, could not ship the shipment'))
+          showToast(translate('Something went wrong, could not ship the shipment'));
         }
       },
+
       getPickedToOrderedFraction(item: any) {
         return item.shippedQuantity / item.orderedQuantity;
       },

@@ -62,6 +62,63 @@ const fetchShippedOrdersMoqui = async (orderId: string): Promise<any> => { // TO
   });
 };
 
+
+const fetchTransferShipmentReviewDetails = async (shipmentId: string): Promise<any> => { // TODO: pass the order id
+
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `poorti/transferShipments?shipmentId=${shipmentId}`, 
+    method: "get",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    }
+  });
+};
+
+const cancelTransferOrderShipment = async (shipmentId: string): Promise<any> => { // TODO: pass the order id
+console.log("cancelTransferOrderShipment for shipmentId", shipmentId);
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `poorti/shipments/${shipmentId}`,
+    method: "put",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data:{
+      "statusId": "SHIPMENT_CANCELLED"
+    }
+  });
+};
+
+const shipTransferOrderShipment = async (shipmentId: string, trackingIdNumber: string, shipmentRouteSegmentId: string): Promise<any> => { // TODO: pass the order id
+
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `poorti/transferShipments/${shipmentId}/ship`,
+    method: "post",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data:{
+      "trackingIdNumber": trackingIdNumber,
+      "shipmentRouteSegmentId": shipmentRouteSegmentId
+    }
+  });
+};
+
+
 const printTransferOrderPicklist = async (orderId: string): Promise<any> => {
 
   try {
@@ -557,6 +614,7 @@ const addTrackingCode = async (payload: any): Promise<any> => {
 
 export const TransferOrderService = {
   addTrackingCode,
+  cancelTransferOrderShipment,
   createOutboundTransferShipmentOrder,
   fetchTransferOrderFacets,
   fetchOrderHeader,
@@ -571,11 +629,13 @@ export const TransferOrderService = {
   fetchShipmentPackages,
   fetchRejectReasons,
   fetchShipmentShippedStatusHistory,
+  fetchTransferShipmentReviewDetails,
   findTransferOrders,
   printTransferOrder,
   printShippingLabel,
   retryShippingLabel,
   rejectOrderItems,
+  shipTransferOrderShipment,
   updateShipment,
   updateShipmentRouteSegment,
   updateShipmentPackageRouteSeg,
