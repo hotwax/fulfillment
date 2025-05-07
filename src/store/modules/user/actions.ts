@@ -293,20 +293,17 @@ const actions: ActionTree<UserState, RootState> = {
     let isEnabled = false;
 
     const params = {
-      "inputFields": {
-        "productStoreId": getProductStoreId(),
-        "settingTypeEnumId": "USE_RES_FACILITY_ID"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
-      "viewSize": 1
+      "productStoreId": getProductStoreId(),
+      "settingTypeEnumId": "USE_RES_FACILITY_ID",
+      "thruDate_op": 'empty',
+      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "pageSize": 1
     } as any
 
     try {
       const resp = await UserService.getReservationFacilityIdFieldConfig(params)
-      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
-        isEnabled = resp.data.docs[0]?.settingValue === "Y" ? true : false
+      if (!hasError(resp)) {
+        isEnabled = resp.data[0]?.settingValue === "Y" ? true : false
       } else {
         throw resp.data;
       }

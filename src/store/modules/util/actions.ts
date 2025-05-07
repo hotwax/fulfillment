@@ -803,11 +803,11 @@ const actions: ActionTree<UtilState, RootState> = {
     try {
       const resp = await UtilService.fetchLabelImageType(carrierId);
 
-      if(hasError(resp) || !resp.data.docs?.length) {
+      if(hasError(resp) || !resp.data.length) {
         throw resp.data;
       }
 
-      const labelImageType = resp?.data?.docs[0]?.systemPropertyValue;
+      const labelImageType = resp?.data[0]?.systemPropertyValue;
       commit(types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED, {
         labelImageType,
         facilityId

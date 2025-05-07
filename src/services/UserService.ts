@@ -359,10 +359,18 @@ const isEnumExists = async (enumId: string): Promise<any> => {
 }
 
 const getReservationFacilityIdFieldConfig = async (payload: any): Promise<any> => {
-  return api({
-    url: "performFind",
-    method: "get",
-    params: payload,
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params: payload
   });
 }
 

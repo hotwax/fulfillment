@@ -107,14 +107,6 @@ const downloadCarrierManifest = async(payload: any): Promise<any> => {
   });
 }
 
-const fetchManifestsInformation = async(payload: any): Promise<any> => {
-  return api({
-    url: "performFind",
-    method: "POST",
-    data: payload
-  });
-}
-
 const fetchPartyInformation = async (payload: any): Promise <any>  => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -574,25 +566,29 @@ const fetchFacilityAddresses = async (params: any): Promise<any> => {
 const fetchFacilityZPLGroupInfo = async (facilityId: string): Promise<any> => {
   let isFacilityZPLConfigured = false;
   const params = {
-    inputFields: {
-      facilityId,
-      facilityGroupId: "ZPL_SHIPPING_LABEL",
-      facilityGroupTypeId: "SHIPPING_LABEL"
-    },
-    fieldList: ["facilityGroupId", "facilityId"],
-    entityName: "FacilityGroupAndMember",
-    filterByDate: "Y",
-    viewSize: 1
+    facilityGroupId: "ZPL_SHIPPING_LABEL",
+    facilityGroupTypeId: "SHIPPING_LABEL",
+    thruDate_op: "empty",
+    pageSize: 1
   }
 
   try {
-    const resp = await api({
-      url: "performFind",
-      method: "get",
-      params
-    }) as any;
 
-    if (!hasError(resp) && resp.data?.docs?.length > 0) {
+    const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+    const baseURL = store.getters['user/getMaargBaseUrl'];
+
+    const resp = await client({
+      url: `/oms/facilities/${facilityId}/groups`,
+      method: "GET",
+      baseURL,
+      headers: {
+        "api_key": omsRedirectionInfo.token,
+        "Content-Type": "application/json"
+      },
+      params
+    });
+
+    if (!hasError(resp) && resp.data?.length > 0) {
       isFacilityZPLConfigured = true
     } else {
       throw resp.data;
@@ -604,17 +600,19 @@ const fetchFacilityZPLGroupInfo = async (facilityId: string): Promise<any> => {
 }
 
 const fetchLabelImageType = async (carrierId : string): Promise<any> => {
-  return api({
-    method: 'get',
-    url: 'performFind',
-    params: {
-      "entityName": "SystemProperty",
-      "inputFields": {
-        "systemResourceId": carrierId,
-        "systemPropertyId": "shipment.carrier.labelImageType"
-      }
-    }
-  })
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/admin/systemProperties`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params: {"systemResourceId": carrierId, "systemPropertyId": "shipment.carrier.labelImageType", "pageSize": 1}
+  });
 }
 
 export const UtilService = {
@@ -634,7 +632,6 @@ export const UtilService = {
   fetchFacilityTypeInformation,
   fetchFulfillmentRejectReasons,
   fetchGiftCardFulfillmentInfo,
-  fetchManifestsInformation,
   fetchPartyInformation,
   fetchProductStores,
   fetchRejectReasons,
