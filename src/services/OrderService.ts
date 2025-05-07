@@ -724,7 +724,7 @@ const downloadPicklist = async (picklistId: string): Promise<any> => {
             inputFields: {
               orderId: [...new Set(orderIds)],
               orderId_op: "in",
-              roleTypeId: "BILL_TO_CUSTOMER"
+              roleTypeId: "SHIP_TO_CUSTOMER"
             },
             entityName: "OrderHeaderAndRoles",
             fieldList: ["orderId", "orderName", "roleTypeId", "partyId"],
