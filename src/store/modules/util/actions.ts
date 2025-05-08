@@ -7,7 +7,7 @@ import { hasError } from '@/adapter'
 import logger from '@/logger'
 import store from '@/store';
 import { showToast, getProductStoreId } from '@/utils'
-import { translate } from '@hotwax/dxp-components'
+import { translate, useUserStore } from '@hotwax/dxp-components'
 
 const actions: ActionTree<UtilState, RootState> = {
   async fetchRejectReasons({ commit }) {
@@ -758,7 +758,190 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async updateBarcodeIdentificationPref({ commit }, payload) { 
     commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, payload)
-  }
+  },
+
+  async fetchCarriersDetail ({ commit, state }) {
+    if(Object.keys(state.carrierDesc)?.length) return;
+    const carrierDesc = {} as any;
+
+    try {
+      const resp = await UtilService.fetchCarriers({
+        "entityName": "PartyRoleAndPartyDetail",
+        "inputFields": {
+          "roleTypeId": "CARRIER"
+        },
+        "fieldList": ["partyId", "partyTypeId", "roleTypeId", "firstName", "lastName", "groupName"],
+        "distinct": "Y",
+        "noConditionFind": "Y"
+      });
+
+      if (!hasError(resp)) {
+        resp.data.docs.map((carrier: any) => {
+          carrierDesc[carrier.partyId] = carrier.partyTypeId === "PERSON" ? `${carrier.firstName} ${carrier.lastName}` : carrier.groupName
+        })
+      } else {
+        throw resp.data;
+      }
+    } catch (err: any) {
+      logger.error("error", err);
+    }
+    commit(types.UTIL_CARRIER_DESC_UPDATED, carrierDesc)
+  },
+
+  async fetchStoreCarrierAndMethods({ commit }, productStoreId) {
+    let shipmentMethodsByCarrier = {};
+
+    try {
+      const payload = {
+        "inputFields": {
+          productStoreId,
+          "roleTypeId": "CARRIER",
+          "shipmentMethodTypeId": "STOREPICKUP",
+          "shipmentMethodTypeId_op": "notEqual"
+        },
+        "fieldList": ["description", "partyId", "shipmentMethodTypeId"],
+        "noConditionFind": "Y",
+        "entityName": "ProductStoreShipmentMethView",
+        "filterByDate": "Y",
+        "distinct": "Y"
+      }
+
+      const resp = await UtilService.fetchStoreCarrierAndMethods(payload);
+
+      if(!hasError(resp)) {
+        const storeCarrierAndMethods = resp.data.docs;
+        shipmentMethodsByCarrier = storeCarrierAndMethods.reduce((shipmentMethodsByCarrier: any, storeCarrierAndMethod: any) => {
+          const { partyId, shipmentMethodTypeId, description } = storeCarrierAndMethod;
+
+          if(!shipmentMethodsByCarrier[partyId]) shipmentMethodsByCarrier[partyId] = []
+          shipmentMethodsByCarrier[partyId].push({ shipmentMethodTypeId, description })
+
+          return shipmentMethodsByCarrier
+        }, {})
+      } else {
+        throw resp.data
+      }
+    } catch(err) {
+      logger.error('Error fetching status description', err)
+    }
+    commit(types.UTIL_SHPMNT_MTHD_BY_CARRIER_UPDATED, shipmentMethodsByCarrier)
+  },
+
+  async fetchFacilityAddresses ({ commit, state }, facilityIds) {
+    const facilityAddresses = state.facilityAddresses ? JSON.parse(JSON.stringify(state.facilityAddresses)) : {}
+    let addresses = [] as any;
+    const remainingFacilityIds = [] as any;
+
+    facilityIds.map((facilityId: string) => {
+      facilityAddresses[facilityId] ? addresses.push(facilityAddresses[facilityId]) : remainingFacilityIds.push(facilityId)
+    })
+
+    if(!remainingFacilityIds?.length) return addresses;
+
+    try {
+      const resp = await UtilService.fetchFacilityAddresses({
+        inputFields: {
+          contactMechPurposeTypeId: "PRIMARY_LOCATION",
+          contactMechTypeId: "POSTAL_ADDRESS",
+          facilityId: remainingFacilityIds,
+          facilityId_op: "in"
+        },
+        entityName: "FacilityContactDetailByPurpose",
+        orderBy: 'fromDate DESC',
+        filterByDate: 'Y',
+        fieldList: ['address1', 'address2', 'city', 'countryGeoName', 'postalCode', 'stateGeoName', 'facilityId', 'facilityName', 'contactMechId'],
+        viewSize: 2
+      }) as any;
+  
+      if(!hasError(resp) && resp.data.docs?.length) {
+        resp.data.docs.map((facility: any) => {
+          facilityAddresses[facility.facilityId] = facility;
+        })
+        addresses = [...addresses, ...resp.data.docs]
+      } else {
+        throw resp.data;
+      }
+    } catch (error) {
+      logger.error(error);
+    }
+    commit(types.UTIL_FACILITY_ADDRESSES_UPDATED, facilityAddresses)
+    return addresses
+  },
+
+  async clearUtilState ({ commit }) {
+    commit(types.UTIL_CLEARED)
+  },
+
+  async fetchLabelImageType({ commit, state }, carrierId) {
+    const facilityId = (useUserStore().getCurrentFacility as any).facilityId
+    let labelImageType = "PNG"
+    if(state.facilityShippingLabelImageType[facilityId]) {
+      return state.facilityShippingLabelImageType[facilityId]
+    }
+
+    const isFacilityZPLConfigured = await UtilService.fetchFacilityZPLGroupInfo(facilityId);
+    
+    if(isFacilityZPLConfigured) {
+      labelImageType = "ZPLII"
+      commit(types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED, {
+        labelImageType,
+        facilityId
+      })
+      return labelImageType;
+    }
+
+    try {
+      const resp = await UtilService.fetchLabelImageType(carrierId);
+
+      if(hasError(resp) || !resp.data.docs?.length) {
+        throw resp.data;
+      }
+
+      const labelImageType = resp?.data?.docs[0]?.systemPropertyValue;
+      commit(types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED, {
+        labelImageType,
+        facilityId
+      })
+      return labelImageType;
+    } catch (err) {
+      logger.error("Failed to fetch label image type", err)
+    }
+  },
+
+  async fetchProductStoreSettingPicklist({ commit }, eComStoreId) {
+    let picklistItemIdentificationPref = "internalName"
+    let isPicklistDownloadEnabled = false
+    const payload = {
+      "inputFields": {
+        "productStoreId": eComStoreId,
+        "settingTypeEnumId": ["PICK_LST_PROD_IDENT", "FF_DOWNLOAD_PICKLIST"]
+      },
+      "filterByDate": "Y",
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["settingTypeEnumId", "settingValue", "fromDate"],
+      "viewSize": 20
+    }
+
+    try {
+      const resp = await UtilService.getProductStoreSetting(payload) as any
+      if(!hasError(resp) && resp.data.docs?.length) {
+
+        resp.data.docs.map((setting: any) => {
+          if(setting.settingTypeEnumId === "PICK_LST_PROD_IDENT") {
+            picklistItemIdentificationPref = setting.settingValue
+          }
+
+          if(setting.settingTypeEnumId === "FF_DOWNLOAD_PICKLIST") {
+            isPicklistDownloadEnabled = setting.settingValue == "true"
+          }
+        })
+      }
+    } catch(err) {
+      logger.error(err)
+    }
+    commit(types.UTIL_PICKLIST_ITEM_IDENTIFICATION_PREF_UPDATED, picklistItemIdentificationPref)
+    commit(types.UTIL_PICKLIST_DOWNLOAD_STATUS_UPDATED, isPicklistDownloadEnabled)
+  },
 }
 
 export default actions;

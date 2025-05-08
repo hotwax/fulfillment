@@ -53,6 +53,18 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   getBarcodeIdentificationPref(state) {
     return state.barcodeIdentificationPref
+  },
+  getCarrierDesc: (state) => (partyId: string) => {
+    return state.carrierDesc[partyId] ? state.carrierDesc[partyId] : partyId
+  },
+  getShipmentMethodsByCarrier(state) {
+    return state.shipmentMethodsByCarrier
+  },
+  getPicklistItemIdentificationPref(state) {
+    return state.picklistItemIdentificationPref
+  },
+  isPicklistDownloadEnabled(state) {
+    return state.isPicklistDownloadEnabled
   }
 }
 export default getters;

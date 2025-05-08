@@ -122,7 +122,9 @@ const actions: ActionTree<UserState, RootState> = {
       this.dispatch('util/findProductStoreShipmentMethCount')
       this.dispatch('util/getForceScanSetting', preferredStore.productStoreId);
       this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
+      this.dispatch('util/fetchProductStoreSettingPicklist', preferredStore.productStoreId);
       await dispatch('getNewRejectionApiConfig')
+      await dispatch('getReservationFacilityIdFieldConfig')
       await dispatch('getPartialOrderRejectionConfig')
       await dispatch('getCollateralRejectionConfig')
       await dispatch('getAffectQohConfig')
@@ -178,14 +180,14 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch('order/clearOrders')
     this.dispatch("orderLookup/clearOrderLookup")
     this.dispatch('user/clearNotificationState')
-    this.dispatch('util/updateForceScanStatus', false)
-    this.dispatch('util/updateBarcodeIdentificationPref', "internalName")
     this.dispatch('user/clearPartialOrderRejectionConfig')
     this.dispatch('user/clearCollateralRejectionConfig')
     this.dispatch('transferorder/clearTransferOrdersList')
     this.dispatch('transferorder/clearTransferOrderFilters')
     this.dispatch('transferorder/clearCurrentTransferOrder')
     this.dispatch('transferorder/clearCurrentTransferShipment')
+    this.dispatch('product/clearProductState')
+    this.dispatch('util/clearUtilState')
     resetConfig();
     resetPermissions();
 
@@ -223,12 +225,14 @@ const actions: ActionTree<UserState, RootState> = {
         await dispatch('getDisableShipNowConfig')
         await dispatch('getDisableUnpackConfig')
         await dispatch('getNewRejectionApiConfig')
+        await dispatch('getReservationFacilityIdFieldConfig')
         await dispatch('getPartialOrderRejectionConfig')
         await dispatch('getCollateralRejectionConfig')
         await dispatch('getAffectQohConfig')
         this.dispatch('util/findProductStoreShipmentMethCount');
         this.dispatch('util/getForceScanSetting', preferredStore.productStoreId)
         this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
+        this.dispatch('util/fetchProductStoreSettingPicklist', preferredStore.productStoreId);
       }
     } catch(error: any) {
       logger.error(error);
@@ -264,12 +268,14 @@ const actions: ActionTree<UserState, RootState> = {
     await dispatch('getDisableShipNowConfig')
     await dispatch('getDisableUnpackConfig')
     await dispatch('getNewRejectionApiConfig')
+    await dispatch('getReservationFacilityIdFieldConfig')
     await dispatch('getPartialOrderRejectionConfig')
     await dispatch('getCollateralRejectionConfig')
     await dispatch('getAffectQohConfig')
     this.dispatch('util/findProductStoreShipmentMethCount');
     this.dispatch('util/getForceScanSetting', productStoreId)
     this.dispatch('util/fetchBarcodeIdentificationPref', productStoreId);
+    this.dispatch('util/fetchProductStoreSettingPicklist', productStoreId);
   },
 
   setUserPreference({ commit }, payload){
@@ -307,6 +313,36 @@ const actions: ActionTree<UserState, RootState> = {
       logger.error(err);
     } 
     commit(types.USER_NEW_REJECTION_API_CONFIG_UPDATED, config);   
+  },
+
+  // This setting is intended for temporary use to enable a more controlled rollout of the
+  // reservationFacilityId Solr field changes on a client-by-client basis.
+  // It should be removed once all clients' OMS instances have been upgraded to a version that includes this change.
+  async getReservationFacilityIdFieldConfig ({ commit }) {
+    let isEnabled = false;
+
+    const params = {
+      "inputFields": {
+        "productStoreId": getProductStoreId(),
+        "settingTypeEnumId": "USE_RES_FACILITY_ID"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "viewSize": 1
+    } as any
+
+    try {
+      const resp = await UserService.getReservationFacilityIdFieldConfig(params)
+      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
+        isEnabled = resp.data.docs[0]?.settingValue === "Y" ? true : false
+      } else {
+        throw resp.data;
+      }
+    } catch (err) {
+      logger.error('Failed to fetch reservation facility id field configuration');
+    } 
+    commit(types.USER_RESERVATION_FACILITY_ID_FIELD_CONFIG_UPDATED, isEnabled);   
   },
 
   async getDisableShipNowConfig ({ commit }) {

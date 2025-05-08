@@ -53,6 +53,36 @@ const mutations: MutationTree <UtilState> = {
   },
   [types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED](state, payload) {
     state.barcodeIdentificationPref = payload
-  }
+  },
+  [types.UTIL_CARRIER_DESC_UPDATED](state, payload) {
+    state.carrierDesc = payload
+  },
+  [types.UTIL_SHPMNT_MTHD_BY_CARRIER_UPDATED](state, payload) {
+    state.shipmentMethodsByCarrier = payload
+  },
+  [types.UTIL_FACILITY_ADDRESSES_UPDATED](state, payload) {
+    state.facilityAddresses = payload
+  },
+  [types.UTIL_CLEARED](state) {
+    state.productStoreShipmentMethCount = 0
+    state.isForceScanEnabled = false
+    state.barcodeIdentificationPref = "internalName"
+    state.carrierDesc = {}
+    state.facilityAddresses = {}
+    state.facilityShippingLabelImageType = {}
+    state.picklistItemIdentificationPref = "internalName"
+    state.isPicklistDownloadEnabled = false
+  },
+  [types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED](state, payload) {
+    if(payload.facilityId) {
+      state.facilityShippingLabelImageType[payload.facilityId] = payload.labelImageType
+    }
+  },
+  [types.UTIL_PICKLIST_ITEM_IDENTIFICATION_PREF_UPDATED](state, payload) {
+    state.picklistItemIdentificationPref = payload
+  },
+  [types.UTIL_PICKLIST_DOWNLOAD_STATUS_UPDATED](state, payload) {
+    state.isPicklistDownloadEnabled = payload
+  },
 }
 export default mutations;

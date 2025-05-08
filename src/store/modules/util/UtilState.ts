@@ -16,4 +16,10 @@ export default interface UtilState {
   fulfillmentRejectReasons: any;
   rejectReasonOptions: any;
   barcodeIdentificationPref: string;
+  carrierDesc: any;
+  shipmentMethodsByCarrier: any;
+  facilityAddresses: any;
+  facilityShippingLabelImageType: any;
+  picklistItemIdentificationPref: string;
+  isPicklistDownloadEnabled: boolean;
 }

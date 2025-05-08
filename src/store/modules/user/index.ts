@@ -34,7 +34,8 @@ const userModule: Module<UserState, RootState> = {
       collateralRejectionConfig: {},
       affectQohConfig: {},
       isShipNowDisabled: false,
-      isUnpackDisabled: false
+      isUnpackDisabled: false,
+      isReservationFacilityFieldEnabled: false
     },
     getters,
     actions,

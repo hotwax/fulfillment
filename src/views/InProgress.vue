@@ -22,29 +22,29 @@
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
       <ion-searchbar class="searchbar" :placeholder="translate('Search orders')" v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
-      <div v-if="inProgressOrders.total">
-        <ion-radio-group v-model="selectedPicklistId" @ionChange="updateSelectedPicklist($event.detail.value)">
-          <ion-row class="filters">
-            <ion-item lines="none">
-              <!-- empty value '' for 'All orders' radio -->
-              <ion-radio label-placement="end" value="">
-                <ion-label class="ion-text-wrap">
-                  {{ translate('All') }}
-                  <p>{{ translate('picklists', { count: picklists.length }) }}</p>
-                </ion-label>
-              </ion-radio>
-            </ion-item>
-            <ion-item lines="none" v-for="picklist in picklists" :key="picklist.id">
-              <ion-radio label-placement="end" :value="picklist.id">
-                <ion-label class="ion-text-wrap">
-                  {{ picklist.pickersName }}
-                  <p>{{ picklist.date }}</p>
-                </ion-label>
-              </ion-radio>
-            </ion-item>
-          </ion-row>
-        </ion-radio-group>
+      <ion-radio-group v-if="picklists?.length" v-model="selectedPicklistId" @ionChange="updateSelectedPicklist($event.detail.value)">
+        <ion-row class="filters">
+          <ion-item lines="none">
+            <!-- empty value '' for 'All orders' radio -->
+            <ion-radio label-placement="end" value="">
+              <ion-label class="ion-text-wrap">
+                {{ translate('All') }}
+                <p>{{ translate('picklists', { count: picklists.length }) }}</p>
+              </ion-label>
+            </ion-radio>
+          </ion-item>
+          <ion-item lines="none" v-for="picklist in picklists" :key="picklist.id">
+            <ion-radio label-placement="end" :value="picklist.id">
+              <ion-label class="ion-text-wrap">
+                {{ picklist.pickersName }}
+                <p>{{ picklist.date }}</p>
+              </ion-label>
+            </ion-radio>
+          </ion-item>
+        </ion-row>
+      </ion-radio-group>
 
+      <div v-if="inProgressOrders.total">
         <div class="results">
           <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" v-if="!isForceScanEnabled" @click="packOrders()">{{ translate("Pack orders") }}</ion-button>
           <ion-card class="order" v-for="(order, index) in getInProgressOrders()" :key="index" :class="isForceScanEnabled ? 'ion-margin-top' : ''">
@@ -91,7 +91,7 @@
                 <div class="product-info">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -99,7 +99,7 @@
                         {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
                         <ion-badge color="dark" class="kit-badge" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
                       </div>
-                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                      <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
                     </ion-label>
                     
                   </ion-item>
@@ -115,9 +115,9 @@
                   <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
                   <div>
                     <template v-if="item.rejectReason">
-                      <ion-chip :disabled="order.hasMissingInfo" outline color="danger" @click.stop="removeRejectionReason($event, item, order)">
+                      <ion-chip :disabled="order.hasMissingInfo" outline color="danger">
                         <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
-                        <ion-icon :icon="closeCircleOutline" />
+                        <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)"/>
                       </ion-chip>
                     </template>
                     <template v-else-if="useNewRejectionApi() && isEntierOrderRejectionEnabled(order)">
@@ -165,12 +165,12 @@
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
+                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
                       {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
-                      <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
+                      <p>{{ getFeatures(getProduct(productComponent.productIdTo).productFeatures)}}</p>
                     </ion-label>
                     <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.rejectedComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
                   </ion-item>
@@ -215,7 +215,7 @@
       </div>
     </ion-content>
     <!-- only show footer buttons if 'All orders' is not selected -->
-    <ion-footer v-if="selectedPicklistId">
+    <ion-footer v-if="selectedPicklistId && inProgressOrders.total">
       <ion-toolbar>
         <ion-buttons slot="start">
           <ion-button fill="clear" color="primary" @click="openQRCodeModal(selectedPicklistId)">
@@ -295,7 +295,7 @@ import {
 } from 'ionicons/icons'
 import PackagingPopover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
-import { copyToClipboard, formatUtcDate, getFeature, jsonToCsv, showToast } from '@/utils';
+import { copyToClipboard, formatUtcDate, getFeatures, getFacilityFilter, hasActiveFilters, jsonToCsv, showToast } from '@/utils';
 import { isKit } from '@/utils/order'
 import { hasError } from '@/adapter';
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
@@ -383,10 +383,6 @@ export default defineComponent({
       rejectEntireOrderReasonId: "REJ_AVOID_ORD_SPLIT",
     }
   },
-  async ionViewWillEnter() {
-    this.isScrollingEnabled = false;
-    await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths')]);
-  },
   methods: {
     getRejectionReasonDescription (rejectionReasonId: string) {
       const reason = this.rejectReasonOptions?.find((reason: any) => reason.enumId === rejectionReasonId)
@@ -450,7 +446,7 @@ export default defineComponent({
       }
     },
     getErrorMessage() {
-      return this.searchedQuery === '' ? translate("doesn't have any orders in progress right now.", { facilityName: this.currentFacility?.facilityName }) : translate( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+      return this.searchedQuery ? (hasActiveFilters(this.inProgressOrders.query) ? translate("No results found for . Try using different filters.", { searchedQuery: this.searchedQuery }) : translate( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })) : translate("doesn't have any orders in progress right now.", { facilityName: this.currentFacility?.facilityName });
     },
     getInProgressOrders() {
       return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
@@ -516,14 +512,14 @@ export default defineComponent({
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
                     if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
                       await OrderService.printPackingSlip(shipmentIds)
-                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
                     } else {
-                    await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds, order.shipmentPackages)
                     }
                   } else if (data.includes('printPackingSlip')) {
                     await OrderService.printPackingSlip(shipmentIds)
                   } else if (data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
                   }
 
                   if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
@@ -601,7 +597,7 @@ export default defineComponent({
                   .filter((url: string | null) => url !== null)
                 )]
               )
-              .flat() as Array<string>;
+              .flat().filter((url: any) => url) as Array<string>
 
               const shippingLabelPdfUrls = orderList
               .map((order: any) =>
@@ -610,7 +606,14 @@ export default defineComponent({
                   .filter((url: string | null) => url !== null)
                 )]
               )
-              .flat() as Array<string>;
+              .flat().filter((url: any) => url) as Array<string>;
+
+              const shipmentPackages = orderList.
+              map((order: any) =>
+                [...new Set(order.shipmentPackages
+                  .map((shipmentPackage: any) => shipmentPackage)
+                )]
+              ).flat() as Array<string>;
 
               try {
                 const resp = await OrderService.packOrders({
@@ -630,14 +633,14 @@ export default defineComponent({
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
                     if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
                       await OrderService.printPackingSlip(shipmentIds)
-                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentPackages);
                     } else {
-                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds, shipmentPackages)
                     }
                   } else if (data.includes('printPackingSlip')) {
                     await OrderService.printPackingSlip(shipmentIds)
                   } else if (data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentPackages);
                   }
                   //print custom documents like international invoice 
                   await OrderService.printCustomDocuments(internationalInvoiceUrls);
@@ -912,16 +915,15 @@ export default defineComponent({
       this.store.dispatch('order/updateInProgressOrder', order)
     },
     async fetchPickersInformation() {
-
       const orderQueryPayload = prepareOrderQuery({
         viewSize: '0',  // passing viewSize as 0 as we don't need any data
         groupBy: 'picklistBinId',
         filters: {
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
-          '-fulfillmentStatus': { value: 'Rejected' },
+          '-fulfillmentStatus': { value: ['Rejected', 'Cancelled', 'Completed'] },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.productStoreId },
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           picklistFacet: {
@@ -1143,6 +1145,7 @@ export default defineComponent({
       size && (inProgressOrdersQuery.viewSize = size)
       queryString && (inProgressOrdersQuery.queryString = '')
       inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
+      this.selectedPicklistId && (inProgressOrdersQuery.selectedPicklist = this.selectedPicklistId)
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
     },
     async initialiseOrderQuery() {
@@ -1317,12 +1320,18 @@ export default defineComponent({
       modal.present();
     }
   },
-  async mounted () {
-    this.store.dispatch('util/fetchRejectReasonOptions')
-    await Promise.all([this.fetchPickersInformation(), this.initialiseOrderQuery()])
+  async ionViewWillEnter() {
+    this.isScrollingEnabled = false;
+    await Promise.all([
+      this.store.dispatch('util/fetchRejectReasonOptions'),
+      this.store.dispatch('carrier/fetchFacilityCarriers'),
+      this.store.dispatch('carrier/fetchProductStoreShipmentMeths'),
+      this.fetchPickersInformation(),
+      this.initialiseOrderQuery()
+    ]);
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
-  unmounted() {
+  ionViewWillLeave() {
     this.store.dispatch('order/clearInProgressOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
@@ -1350,10 +1359,12 @@ export default defineComponent({
       ellipsisVerticalOutline,
       fileTrayOutline,
       formatUtcDate,
-      getFeature,
+      getFeatures,
+      getFacilityFilter,
       getProductIdentificationValue,
       gift,
       giftOutline,
+      hasActiveFilters,
       hasPermission,
       isKit,
       listOutline,
