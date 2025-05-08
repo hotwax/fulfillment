@@ -218,6 +218,7 @@ const addTrackingCode = async (payload: any): Promise<any> => {
     }
   } catch (err) {
     logger.error('Failed to add tracking code', err)
+    return Promise.reject(err)
   }
 }
 
