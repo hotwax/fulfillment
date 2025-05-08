@@ -1015,9 +1015,7 @@ const getOrderContactMechAndAddress = async (orderIds: Array<string>): Promise<a
     })
 
     if (!hasError(resp) && resp.data.docs?.length) {
-      resp.data.docs.map((contactMech: any) => {
-        orderContactMechIds[contactMech.orderId] = contactMech.contactMechId
-      })
+      resp.data.docs.map((contactMech: any) => orderContactMechIds[contactMech.orderId] = contactMech.contactMechId)
 
       try {
         const postalAddressResp = await api({
@@ -1034,16 +1032,13 @@ const getOrderContactMechAndAddress = async (orderIds: Array<string>): Promise<a
         })
 
         if (!hasError(postalAddressResp) && postalAddressResp?.data.docs?.length) {
-          postalAddressResp?.data.docs.map((postalAddress: any) => {
-            shippingAddress[postalAddress.contactMechId] = postalAddress
-          });
+          postalAddressResp?.data.docs.map((postalAddress: any) => shippingAddress[postalAddress.contactMechId] = postalAddress);
         } else {
           throw resp?.data;
         }
-        } catch (err) {
+      } catch (err) {
         logger.error("Failed to fetch postal address info", err)
       }
-
     } else {
       throw resp.data
     }
