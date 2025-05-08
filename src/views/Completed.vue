@@ -1,5 +1,5 @@
 <template>
-  <ion-page>
+  <ion-page :key="router.currentRoute.value.path">
     <ViewSizeSelector menu-id="view-size-selector-completed" content-id="view-size-selector" />
 
     <ion-header :translucent="true">

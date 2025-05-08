@@ -1,5 +1,5 @@
 <template>
-  <ion-page>
+  <ion-page :key="router.currentRoute.value.path">
     <ViewSizeSelector menu-id="view-size-selector-open" content-id="view-size-selector" />
     
     <ion-header :translucent="true">
@@ -191,6 +191,7 @@ import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import { isKit } from '@/utils/order'
 import { useDynamicImport } from "@/utils/moduleFederation";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -443,6 +444,7 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const router = useRouter();
     const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
@@ -469,6 +471,7 @@ export default defineComponent({
       pricetagOutline,
       printOutline,
       productIdentificationPref,
+      router,
       store,
       translate
     }
