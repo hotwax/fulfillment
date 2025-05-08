@@ -1,33 +1,33 @@
 <template>
-    <ion-page>
-      <ion-header :translucent="true">
-        <ion-toolbar>
-          <ion-back-button default-href="/transfer-orders" slot="start" />
-          <ion-title>{{ translate("Transfer Order Details") }}</ion-title>
-        </ion-toolbar>
-      </ion-header>
-  
-      <ion-content>
-        <main v-if="currentOrder.orderId">
-          <ion-item lines="none">
-            <ion-label>
-              <p class="overline">{{ currentOrder.orderId }}</p>
-              {{ currentOrder.orderName }}
-              <p>{{ currentOrder.externalId }}</p>
-              <p>{{ translate('Item count') }}: {{ getItemCount()}}</p>
-            </ion-label>
-            <ion-badge slot="end">{{ currentOrder.orderStatusDesc ? currentOrder.orderStatusDesc : getStatusDesc(currentOrder.statusId) }}</ion-badge>
+  <ion-page>
+    <ion-header :translucent="true">
+      <ion-toolbar>
+        <ion-back-button default-href="/transfer-orders" slot="start" />
+        <ion-title>{{ translate("Transfer Order Details") }}</ion-title>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content>
+      <main v-if="currentOrder.orderId">
+        <ion-item lines="none">
+          <ion-label>
+            <p class="overline">{{ currentOrder.orderId }}</p>
+            {{ currentOrder.orderName }}
+            <p>{{ currentOrder.externalId }}</p>
+            <p>{{ translate('Item count') }}: {{ getItemCount()}}</p>
+          </ion-label>
+          <ion-badge slot="end">{{ currentOrder.orderStatusDesc ? currentOrder.orderStatusDesc : getStatusDesc(currentOrder.statusId) }}</ion-badge>
+        </ion-item>
+
+        <div class="scanner">
+          <ion-item>
+            <ion-input :label="translate('Scan items')" autofocus :placeholder="translate('Scan barcodes to pick them')" v-model="queryString" @keyup.enter="updateProductCount()" />
           </ion-item>
-  
-          <div class="scanner">
-            <ion-item>
-              <ion-input :label="translate('Scan items')" autofocus :placeholder="translate('Scan barcodes to pick them')" v-model="queryString" @keyup.enter="updateProductCount()" />
-            </ion-item>
-  
-            <ion-button expand="block" fill="outline" @click="scanCode()">
-              <ion-icon slot="start" :icon="barcodeOutline" />{{ translate("Scan") }}
-            </ion-button>
-          </div>
+
+          <ion-button expand="block" fill="outline" @click="scanCode()">
+            <ion-icon slot="start" :icon="barcodeOutline" />{{ translate("Scan") }}
+          </ion-button>
+        </div>
 
           <ion-segment scrollable v-model="selectedSegment">
             <ion-segment-button value="open">
@@ -58,20 +58,20 @@
                       <!-- </ion-label> -->
                     </div>
 
-                    <div class="order-tags">
-                      <ion-chip>
-                        <ion-icon :icon="pricetagOutline" />
-                        <ion-label>{{ shipment.shipmentId }}</ion-label>
-                      </ion-chip>
-                    </div>
-
-                    <div class="order-metadata">
-                      <ion-label>
-                        {{ getShipmentMethodDesc(shipment.shipmentMethodTypeId) }}
-                        <p v-if="shipment.trackingIdNumber">{{ translate("Tracking Code") }} {{ shipment.trackingIdNumber }}</p>
-                      </ion-label>
-                    </div>
+                  <div class="order-tags">
+                    <ion-chip>
+                      <ion-icon :icon="pricetagOutline" />
+                      <ion-label>{{ shipment.shipmentId }}</ion-label>
+                    </ion-chip>
                   </div>
+
+                  <div class="order-metadata">
+                    <ion-label>
+                      {{ getShipmentMethodDesc(shipment.shipmentMethodTypeId) }}
+                      <p v-if="shipment.trackingIdNumber">{{ translate("Tracking Code") }} {{ shipment.trackingIdNumber }}</p>
+                    </ion-label>
+                  </div>
+                </div>
 
                   <div v-for="item in shipment.items" :key="item.shipmentItemSeqId" class="order-item order-line-item">
                     <div class="product-info">
@@ -82,7 +82,7 @@
                         <ion-label>
                           <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                           {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                          <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                          <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
                         </ion-label>
                       </ion-item>
                     </div>
@@ -138,41 +138,41 @@
     </ion-page>
   </template>
   
-  <script lang="ts">
-  import {
-    IonBadge,
-    IonBackButton,
-    IonButton,
-    IonButtons,
-    IonCard,
-    IonChip,
-    IonContent,
-    IonFooter,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonInput,
-    IonLabel,
-    IonPage,
-    IonSegment,
-    IonSegmentButton,
-    IonSpinner,
-    IonThumbnail,
-    IonTitle,
-    IonToolbar,
-    alertController,
-    modalController,
-  } from '@ionic/vue';
-  import { computed, defineComponent } from 'vue';
-  import { add, checkmarkDone, barcodeOutline, personCircleOutline, pricetagOutline, printOutline, trashOutline } from 'ionicons/icons';
-  import { mapGetters, useStore } from "vuex";
-  import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
+<script lang="ts">
+import {
+  IonBadge,
+  IonBackButton,
+  IonButton,
+  IonButtons,
+  IonCard,
+  IonChip,
+  IonContent,
+  IonFooter,
+  IonHeader,
+  IonIcon,
+  IonItem,
+  IonInput,
+  IonLabel,
+  IonPage,
+  IonSegment,
+  IonSegmentButton,
+  IonSpinner,
+  IonThumbnail,
+  IonTitle,
+  IonToolbar,
+  alertController,
+  modalController,
+} from '@ionic/vue';
+import { computed, defineComponent } from 'vue';
+import { add, checkmarkDone, barcodeOutline, personCircleOutline, pricetagOutline, printOutline, trashOutline } from 'ionicons/icons';
+import { mapGetters, useStore } from "vuex";
+import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 
   import { useRouter } from 'vue-router';
   import Scanner from "@/components/Scanner.vue";
   import { Actions, hasPermission } from '@/authorization'
   import { DateTime } from 'luxon';
-  import { getFeature, showToast, hasWebcamAccess } from '@/utils';
+  import { getFeatures, showToast, hasWebcamAccess } from '@/utils';
   import { hasError } from '@/adapter';
   import { TransferOrderService } from '@/services/TransferOrderService'
   import TransferOrderItem from '@/components/TransferOrderItem.vue'
@@ -362,16 +362,16 @@
           return;
         }
 
-        // if the request to print shipping label is not yet completed, then clicking multiple times on the button
-        // should not do anything
-        if (currentShipment.isGeneratingShippingLabel) {
-          return;
-        }
+      // if the request to print shipping label is not yet completed, then clicking multiple times on the button
+      // should not do anything
+      if (currentShipment.isGeneratingShippingLabel) {
+        return;
+      }
 
-        currentShipment.isGeneratingShippingLabel = true;
-        let shippingLabelPdfUrls = currentShipment.shipmentPackages
-          ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
-          .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+      currentShipment.isGeneratingShippingLabel = true;
+      let shippingLabelPdfUrls = currentShipment.shipmentPackages
+        ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+        .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
 
 
         if (!currentShipment.trackingIdNumber) {
@@ -398,105 +398,103 @@
           await TransferOrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls)
         }
 
-        currentShipment.isGeneratingShippingLabel = false;
-      },
-      async rejectItems() {
-        const alert = await alertController.create({
-          header: translate("Reject transfer order"),
-          message: translate("Rejecting a transfer order will remove it from your facility. Your inventory levels will not be affected from this rejection.", { space: "<br/><br/>" }),
-          buttons: [{
-            text: translate("Cancel"),
-            role: 'cancel',
-          }, {
-            text: translate("Reject"),
-            handler: async() => {
-              emitter.emit("presentLoader")
-              const payload = {
-                orderId: this.currentOrder.orderId,
-                items: []
-              } as any
+      currentShipment.isGeneratingShippingLabel = false;
+    },
+    async rejectItems() {
+      const alert = await alertController.create({
+        header: translate("Reject transfer order"),
+        message: translate("Rejecting a transfer order will remove it from your facility. Your inventory levels will not be affected from this rejection.", { space: "<br/><br/>" }),
+        buttons: [{
+          text: translate("Cancel"),
+          role: 'cancel',
+        }, {
+          text: translate("Reject"),
+          handler: async() => {
+            emitter.emit("presentLoader")
+            const payload = {
+              orderId: this.currentOrder.orderId,
+              items: []
+            } as any
 
-              this.currentOrder.items.map((item: any) => {
-                payload.items.push({
-                  rejectReason: item.rejectReasonId || this.defaultRejectReasonId,
-                  facilityId: this.currentOrder.facilityId,
-                  orderItemSeqId: item.orderItemSeqId,
-                  shipmentMethodTypeId: this.currentOrder.shipmentMethodTypeId,
-                  quantity: parseInt(item.quantity),
-                  naFacilityId: "REJECTED_ITM_PARKING"
-                })
+            this.currentOrder.items.map((item: any) => {
+              payload.items.push({
+                rejectReason: item.rejectReasonId || this.defaultRejectReasonId,
+                facilityId: this.currentOrder.facilityId,
+                orderItemSeqId: item.orderItemSeqId,
+                shipmentMethodTypeId: this.currentOrder.shipmentMethodTypeId,
+                quantity: parseInt(item.quantity),
+                naFacilityId: "REJECTED_ITM_PARKING"
               })
+            })
 
               try {
                 const resp = await TransferOrderService.rejectOrderItems({ payload });
 
-                if(!hasError(resp) && resp.data?.rejectedItemsList.length) {
-                  showToast(translate("All order items are rejected"))
-                  this.$router.replace("/transfer-orders")
-                } else {
-                  throw resp;
-                }
-              } catch(err) {
-                logger.error(err);
-                showToast(translate("Failed to reject order"))
-                // If there is any error in rejecting the order, fetch the updated order information
-                await this.store.dispatch("transferorder/fetchTransferOrderDetail", { orderId: this.$route.params.orderId })
+              if(!hasError(resp) && resp.data?.rejectedItemsList.length) {
+                showToast(translate("All order items are rejected"))
+                this.$router.replace("/transfer-orders")
+              } else {
+                throw resp;
               }
-
-              emitter.emit("dismissLoader")
+            } catch(err) {
+              logger.error(err);
+              showToast(translate("Failed to reject order"))
+              // If there is any error in rejecting the order, fetch the updated order information
+              await this.store.dispatch("transferorder/fetchTransferOrderDetail", { orderId: this.$route.params.orderId })
             }
-          }]
-        });
-        return alert.present();
-      }
-    }, 
-    ionViewDidLeave() {
-      const routeTo = this.router.currentRoute;
-      if (routeTo.value.name !== 'Transfer Orders') {
-        this.store.dispatch('transferorder/clearTransferOrderFilters');
-      }
-    },
-    setup() {
-      const store = useStore(); 
-      const router = useRouter();
-      const productIdentificationStore = useProductIdentificationStore();
-      let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
 
-  
-      return {
-        Actions,
-        add,
-        barcodeOutline,
-        checkmarkDone,
-        getFeature,
-        getProductIdentificationValue,
-        hasPermission,
-        personCircleOutline,
-        pricetagOutline,
-        printOutline,
-        productIdentificationPref,
-        showToast,
-        store,
-        router,
-        translate,
-        trashOutline
-      };
-    },
-  });
-  </script>
-  
-  <style scoped>
-  ion-content > main {
-    max-width: 1110px;
-    margin-right: auto;
-    margin-left: auto;
-  }
-  .scanned-item {
-    /*
-      Todo: used outline for highliting items for now, need to use border
-      Done this because currently ion-item inside ion-card is not inheriting highlighted background property.
-    */
-    outline: 2px solid var( --ion-color-medium-tint);
-  }
-  </style>
-  
+            emitter.emit("dismissLoader")
+          }
+        }]
+      });
+      return alert.present();
+    }
+  }, 
+  ionViewDidLeave() {
+    const routeTo = this.router.currentRoute;
+    if (routeTo.value.name !== 'Transfer Orders') {
+      this.store.dispatch('transferorder/clearTransferOrderFilters');
+    }
+  },
+  setup() {
+    const store = useStore(); 
+    const router = useRouter();
+    const productIdentificationStore = useProductIdentificationStore();
+    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+
+    return {
+      Actions,
+      add,
+      barcodeOutline,
+      checkmarkDone,
+      getFeatures,
+      getProductIdentificationValue,
+      hasPermission,
+      personCircleOutline,
+      pricetagOutline,
+      printOutline,
+      productIdentificationPref,
+      showToast,
+      store,
+      router,
+      translate,
+      trashOutline
+    };
+  },
+});
+</script>
+
+<style scoped>
+ion-content > main {
+  max-width: 1110px;
+  margin-right: auto;
+  margin-left: auto;
+}
+.scanned-item {
+  /*
+    Todo: used outline for highliting items for now, need to use border
+    Done this because currently ion-item inside ion-card is not inheriting highlighted background property.
+  */
+  outline: 2px solid var( --ion-color-medium-tint);
+}
+</style>

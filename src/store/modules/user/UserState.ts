@@ -4,8 +4,8 @@ export default interface UserState {
     permissions: any;
     pwaState: any;
     omsRedirectionInfo: {
-         url: string;
-         token: string;
+        url: string;
+        token: string;
     }
     instanceUrl: string;
     preference: {
@@ -23,4 +23,5 @@ export default interface UserState {
     affectQohConfig: any;
     isShipNowDisabled: boolean;
     isUnpackDisabled: boolean;
+    isReservationFacilityFieldEnabled: boolean;
 }

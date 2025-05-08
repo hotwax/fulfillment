@@ -26,7 +26,7 @@
       <ion-searchbar class="searchbar" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)"/>
       <div class="filters">
         <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
-          <ion-checkbox label-placement="end" @ionChange="updateSelectedShipmentMethods(method.val)">
+          <ion-checkbox label-placement="end" :checked="openOrders.query.selectedShipmentMethods.includes(method.val)" @ionChange="updateSelectedShipmentMethods(method.val)">
             <ion-label>
               {{ getShipmentMethodDesc(method.val) }}
               <p>{{ method.ordersCount }} {{ translate("orders") }}, {{ method.count }} {{ translate("items") }}</p>
@@ -34,8 +34,8 @@
           </ion-checkbox>
         </ion-item>
       </div>
+      <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentEComStore="currentEComStore" @updateOpenQuery="updateOpenQuery" />
       <div v-if="openOrders.total">
-        <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentEComStore="currentEComStore" @updateOpenQuery="updateOpenQuery" />
 
         <div class="results">
           <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picklist") }}</ion-button>
@@ -70,7 +70,8 @@
                 <div class="product-info">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                      <!-- TODO: Currently handled product image mismatch on the order list page — needs to be applied to other pages using DxpShopifyImg  -->
+                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -78,7 +79,7 @@
                         {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
                         <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
                       </div>
-                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                      <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
                     </ion-label>
                   </ion-item>
                 </div>
@@ -105,12 +106,12 @@
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
+                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
                       {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
-                      <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
+                      <p>{{ getFeatures(getProduct(productComponent.productIdTo).productFeatures)}}</p>
                     </ion-label>
                   </ion-item>
                 </ion-card>
@@ -177,7 +178,7 @@ import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificat
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { formatUtcDate, getFeature, showToast } from '@/utils'
+import { formatUtcDate, getFeatures, getFacilityFilter, hasActiveFilters, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
@@ -237,7 +238,8 @@ export default defineComponent({
       searchedQuery: '',
       isScrollingEnabled: false,
       isRejecting: false,
-      productCategoryFilterExt: "" as any
+      productCategoryFilterExt: "" as any,
+      selectedShipmentMethods: [] as any
     }
   },
   methods: {
@@ -245,7 +247,7 @@ export default defineComponent({
       this.store.dispatch("order/updateOpenQuery", payload)
     },
     getErrorMessage() {
-      return this.searchedQuery === '' ? translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility?.facilityName }) : translate( "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+      return this.searchedQuery ? (hasActiveFilters(this.openOrders.query) ? translate("No results found for . Try using different filters.", { searchedQuery: this.searchedQuery }) : translate("No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })) : translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility?.facilityName });
     },
     viewNotifications() {
       this.store.dispatch('user/setUnreadNotificationsStatus', false)
@@ -292,6 +294,7 @@ export default defineComponent({
       // making view size default when changing the shipment method to correctly fetch orders
       openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       openOrdersQuery.selectedShipmentMethods = selectedShipmentMethods
+      this.selectedShipmentMethods = selectedShipmentMethods
 
       this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
     },
@@ -319,11 +322,11 @@ export default defineComponent({
           quantityNotAvailable: { value: 0 },
           isPicked: { value: 'N' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          '-fulfillmentStatus': { value: 'Cancelled' },
+          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
-          facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.productStoreId },
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           "shipmentMethodTypeIdFacet":{
@@ -370,6 +373,7 @@ export default defineComponent({
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
       openOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      if(this.selectedShipmentMethods?.length) openOrdersQuery.selectedShipmentMethods = this.selectedShipmentMethods
       await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
     },
     async recycleOutstandingOrders() {
@@ -453,8 +457,10 @@ export default defineComponent({
       currentEComStore,
       currentFacility,
       formatUtcDate,
-      getFeature,
+      getFeatures,
+      getFacilityFilter,
       getProductIdentificationValue,
+      hasActiveFilters,
       hasPermission,
       isKit,
       listOutline,

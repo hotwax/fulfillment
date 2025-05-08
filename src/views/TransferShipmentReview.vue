@@ -1,90 +1,90 @@
 <template>
-    <ion-page>
-      <ion-header :translucent="true">
-        <ion-toolbar>
-          <ion-back-button :default-href="`/transfer-order-details/${currentShipment.primaryOrderId}`" slot="start" />
-          <ion-title>{{ translate("Review Shipment") }}</ion-title>
-          
-          <ion-buttons slot="end">
-            <ion-button  fill="clear" v-if="!currentShipment.trackingCode && showLabelError" @click="transferShipmentActionsPopover($event)">
-              <ion-icon :icon="documentTextOutline" />
-            </ion-button>
-          </ion-buttons>
-        </ion-toolbar>
-      </ion-header>
-  
-      <ion-content>
-        <main>
-          <div class="scanner">
-            <ion-searchbar class="searchbar" :value="queryString" @keyup.enter="searchItems($event.target.value)"/>
-            <div>
-              <ion-item>
-                <ion-label>{{ currentShipment.totalQuantityPicked }} {{ translate("items picked") }}</ion-label>
-                <ion-button expand="block" fill="outline" @click="generateShippingLabel(currentShipment)">
-                  <ion-icon slot="start" :icon="documentTextOutline" />
-                  {{ currentShipment.trackingCode ? translate("Regenerate Shipping Label") : translate("Generate shipping label") }}
-                  <ion-spinner color="primary" slot="end" v-if="isGeneratingShippingLabel" name="crescent" />
-                </ion-button>
-              </ion-item>
-              <ion-item>
-                <ion-input :label="translate('Tracking Code')" placeholder="add tracking code" v-if="!currentShipment.trackingCode" v-model="trackingCode"></ion-input>
-                <template v-else>
-                  <ion-label>{{ translate("Tracking Code") }}</ion-label>
-                  <p slot="end">{{ currentShipment.trackingCode }}</p>
-                </template>
-              </ion-item>
-              <ion-item>
-                <ion-label>{{ translate('Carrier') }}</ion-label>
-                <ion-label slot="end">
-                  <p> {{ getPartyName(currentShipment.carrierPartyId) }} {{ getShipmentMethodDesc(currentShipment.shipmentMethodTypeId) }}</p>
-                </ion-label>
-              </ion-item>
-            </div>
-          </div>
+  <ion-page>
+    <ion-header :translucent="true">
+      <ion-toolbar>
+        <ion-back-button :default-href="`/transfer-order-details/${currentShipment.primaryOrderId}`" slot="start" />
+        <ion-title>{{ translate("Review Shipment") }}</ion-title>
+        
+        <ion-buttons slot="end">
+          <ion-button  fill="clear" v-if="!currentShipment.trackingCode && showLabelError" @click="transferShipmentActionsPopover($event)">
+            <ion-icon :icon="documentTextOutline" />
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
 
-          <TransferOrderItem v-for="item in shipmentItems" :key="item.shipmentItemSeqId" :itemDetail="item" />
-        </main>
+    <ion-content>
+      <main>
+        <div class="scanner">
+          <ion-searchbar class="searchbar" :value="queryString" @keyup.enter="searchItems($event.target.value)"/>
+          <div>
+            <ion-item>
+              <ion-label>{{ currentShipment.totalQuantityPicked }} {{ translate("items picked") }}</ion-label>
+              <ion-button expand="block" fill="outline" @click="generateShippingLabel(currentShipment)">
+                <ion-icon slot="start" :icon="documentTextOutline" />
+                {{ currentShipment.trackingCode ? translate("Regenerate Shipping Label") : translate("Generate shipping label") }}
+                <ion-spinner color="primary" slot="end" v-if="isGeneratingShippingLabel" name="crescent" />
+              </ion-button>
+            </ion-item>
+            <ion-item>
+              <ion-input :label="translate('Tracking Code')" placeholder="add tracking code" v-if="!currentShipment.trackingCode" v-model="trackingCode"></ion-input>
+              <template v-else>
+                <ion-label>{{ translate("Tracking Code") }}</ion-label>
+                <p slot="end">{{ currentShipment.trackingCode }}</p>
+              </template>
+            </ion-item>
+            <ion-item>
+              <ion-label>{{ translate('Carrier') }}</ion-label>
+              <ion-label slot="end">
+                <p> {{ getPartyName(currentShipment.carrierPartyId) }} {{ getShipmentMethodDesc(currentShipment.shipmentMethodTypeId) }}</p>
+              </ion-label>
+            </ion-item>
+          </div>
+        </div>
+
+        <TransferOrderItem v-for="item in shipmentItems" :key="item.shipmentItemSeqId" :itemDetail="item" />
+      </main>
+
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !Object.keys(currentShipment).length || (currentShipment.isTrackingRequired &&  !trackingCode?.trim())" @click="confirmShip()">
+          <ion-icon :icon="sendOutline" />
+        </ion-fab-button>
+      </ion-fab>
+    </ion-content>
+  </ion-page>
+</template>
   
-        <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-          <ion-fab-button :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !Object.keys(currentShipment).length || (currentShipment.isTrackingRequired &&  !trackingCode?.trim())" @click="confirmShip()">
-            <ion-icon :icon="sendOutline" />
-          </ion-fab-button>
-        </ion-fab>
-      </ion-content>
-    </ion-page>
-  </template>
-  
-  <script lang="ts">
-  import {
-    IonBackButton,
-    IonButton,
-    IonContent,
-    IonHeader,
-    IonFab,
-    IonFabButton,
-    IonButtons,
-    IonIcon,
-    IonItem,
-    IonInput,
-    IonLabel,
-    IonPage,
-    IonSearchbar,
-    IonSpinner,
-    IonTitle,
-    IonToolbar,
-    alertController,
-    modalController,
-    popoverController
-  } from '@ionic/vue';
-  import { computed, defineComponent } from 'vue';
-  import { add, checkmarkDone, barcodeOutline, documentTextOutline, sendOutline } from 'ionicons/icons';
-  import { mapGetters, useStore } from "vuex";
-  import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
+<script lang="ts">
+import {
+  IonBackButton,
+  IonButton,
+  IonContent,
+  IonHeader,
+  IonFab,
+  IonFabButton,
+  IonButtons,
+  IonIcon,
+  IonItem,
+  IonInput,
+  IonLabel,
+  IonPage,
+  IonSearchbar,
+  IonSpinner,
+  IonTitle,
+  IonToolbar,
+  alertController,
+  modalController,
+  popoverController
+} from '@ionic/vue';
+import { computed, defineComponent } from 'vue';
+import { add, checkmarkDone, barcodeOutline, documentTextOutline, sendOutline } from 'ionicons/icons';
+import { mapGetters, useStore } from "vuex";
+import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 
   import { useRouter } from 'vue-router';
   import Scanner from "@/components/Scanner.vue";
   import { Actions, hasPermission } from '@/authorization'
-  import { getFeature, showToast, hasWebcamAccess } from '@/utils';
+  import { getFeatures, showToast, hasWebcamAccess } from '@/utils';
   import { hasError } from '@/adapter'
   import { TransferOrderService } from '@/services/TransferOrderService' 
   import TransferShipmentActionsPopover from '@/components/TransferShipmentActionsPopover.vue'
@@ -197,27 +197,24 @@
           return;
         }
 
-        // if the request to print shipping label is not yet completed, then clicking multiple times on the button
-        // should not do anything
-        if (this.isGeneratingShippingLabel) {
-          return;
-        }
+      // if the request to print shipping label is not yet completed, then clicking multiple times on the button
+      // should not do anything
+      if (this.isGeneratingShippingLabel) {
+        return;
+      }
 
-        await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
-        this.isGeneratingShippingLabel = true;
-        let shippingLabelPdfUrls = this.currentShipment.shipmentPackages
-          ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
-          .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
-        
+      await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
+      this.isGeneratingShippingLabel = true;
+      let shippingLabelPdfUrls = this.currentShipment.shipmentPackages
+        ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+        .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+      
 
         if (!this.currentShipment.trackingCode) {
           //regenerate shipping label if missing tracking code
           await TransferOrderService.retryShippingLabel([this.currentShipment.shipmentId])
           //retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
-          // Refetching the order tracking detail irrespective of api response since currently in SHIPHAWK api returns error whether label is generated
-          // Temporarily handling this in app but should be handled in backend        
           await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
-
           shippingLabelPdfUrls = this.currentShipment?.shipmentPackages
               ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
               .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
@@ -321,34 +318,33 @@
       const productIdentificationStore = useProductIdentificationStore();
       let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
 
-  
-      return {
-        Actions,
-        add,
-        barcodeOutline,
-        checkmarkDone,
-        documentTextOutline,
-        sendOutline,
-        getFeature,
-        getProductIdentificationValue,
-        hasPermission,
-        productIdentificationPref,
-        store,
-        router,
-        translate
-      };
-    },
-  });
-  </script>
-  
-  <style scoped>
-  ion-content{
-    --padding-bottom: 80px;
-  } 
-  ion-content > main {
-    max-width: 1110px;
-    margin-right: auto;
-    margin-left: auto;
-  }
-  </style>
-  
+
+    return {
+      Actions,
+      add,
+      barcodeOutline,
+      checkmarkDone,
+      documentTextOutline,
+      sendOutline,
+      getFeatures,
+      getProductIdentificationValue,
+      hasPermission,
+      productIdentificationPref,
+      store,
+      router,
+      translate
+    };
+  },
+});
+</script>
+
+<style scoped>
+ion-content{
+  --padding-bottom: 80px;
+} 
+ion-content > main {
+  max-width: 1110px;
+  margin-right: auto;
+  margin-left: auto;
+}
+</style>

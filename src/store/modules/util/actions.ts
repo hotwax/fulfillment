@@ -7,7 +7,7 @@ import { hasError } from '@/adapter'
 import logger from '@/logger'
 import store from '@/store';
 import { showToast, getProductStoreId } from '@/utils'
-import { translate } from '@hotwax/dxp-components'
+import { translate, useUserStore } from '@hotwax/dxp-components'
 
 const actions: ActionTree<UtilState, RootState> = {
   async fetchRejectReasons({ commit }) {
@@ -870,7 +870,78 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async clearUtilState ({ commit }) {
     commit(types.UTIL_CLEARED)
-  }
+  },
+
+  async fetchLabelImageType({ commit, state }, carrierId) {
+    const facilityId = (useUserStore().getCurrentFacility as any).facilityId
+    let labelImageType = "PNG"
+    if(state.facilityShippingLabelImageType[facilityId]) {
+      return state.facilityShippingLabelImageType[facilityId]
+    }
+
+    const isFacilityZPLConfigured = await UtilService.fetchFacilityZPLGroupInfo(facilityId);
+    
+    if(isFacilityZPLConfigured) {
+      labelImageType = "ZPLII"
+      commit(types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED, {
+        labelImageType,
+        facilityId
+      })
+      return labelImageType;
+    }
+
+    try {
+      const resp = await UtilService.fetchLabelImageType(carrierId);
+
+      if(hasError(resp) || !resp.data.docs?.length) {
+        throw resp.data;
+      }
+
+      const labelImageType = resp?.data?.docs[0]?.systemPropertyValue;
+      commit(types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED, {
+        labelImageType,
+        facilityId
+      })
+      return labelImageType;
+    } catch (err) {
+      logger.error("Failed to fetch label image type", err)
+    }
+  },
+
+  async fetchProductStoreSettingPicklist({ commit }, eComStoreId) {
+    let picklistItemIdentificationPref = "internalName"
+    let isPicklistDownloadEnabled = false
+    const payload = {
+      "inputFields": {
+        "productStoreId": eComStoreId,
+        "settingTypeEnumId": ["PICK_LST_PROD_IDENT", "FF_DOWNLOAD_PICKLIST"]
+      },
+      "filterByDate": "Y",
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["settingTypeEnumId", "settingValue", "fromDate"],
+      "viewSize": 20
+    }
+
+    try {
+      const resp = await UtilService.getProductStoreSetting(payload) as any
+      if(!hasError(resp) && resp.data.docs?.length) {
+
+        resp.data.docs.map((setting: any) => {
+          if(setting.settingTypeEnumId === "PICK_LST_PROD_IDENT") {
+            picklistItemIdentificationPref = setting.settingValue
+          }
+
+          if(setting.settingTypeEnumId === "FF_DOWNLOAD_PICKLIST") {
+            isPicklistDownloadEnabled = setting.settingValue == "true"
+          }
+        })
+      }
+    } catch(err) {
+      logger.error(err)
+    }
+    commit(types.UTIL_PICKLIST_ITEM_IDENTIFICATION_PREF_UPDATED, picklistItemIdentificationPref)
+    commit(types.UTIL_PICKLIST_DOWNLOAD_STATUS_UPDATED, isPicklistDownloadEnabled)
+  },
 }
 
 export default actions;

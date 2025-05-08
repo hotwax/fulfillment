@@ -27,7 +27,10 @@ const utilModule: Module<UtilState, RootState> = {
     barcodeIdentificationPref: "internalName",
     carrierDesc: {},
     shipmentMethodsByCarrier: {},
-    facilityAddresses: {}
+    facilityAddresses: {},
+    facilityShippingLabelImageType: {},
+    picklistItemIdentificationPref: "internalName",
+    isPicklistDownloadEnabled: false
   },
   getters,
   actions,

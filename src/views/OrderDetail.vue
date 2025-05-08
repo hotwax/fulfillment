@@ -85,7 +85,7 @@
                     {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
                     <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
                   </div>
-                  <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                  <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
                 </ion-label>
               </ion-item>
             </div>
@@ -150,7 +150,7 @@
                       {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
                       <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
                     </div>
-                    <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
+                    <p>{{ getFeatures(getProduct(productComponent.productIdTo).productFeatures)}}</p>
                   </ion-label>
                   <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.rejectedComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
                 </ion-item>
@@ -257,13 +257,13 @@
               <ion-icon slot="end" :icon="cashOutline" />
             </ion-item>
             <ion-item>
-              <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')">
+              <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')" :selected-text="getSelectedCarrier(carrierPartyId)">
                 <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item>
               <template v-if="carrierMethods && carrierMethods.length > 0">
-                <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)">
+                <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedShipmentMethod(shipmentMethodTypeId)">
                   <ion-select-option v-for="method in carrierMethods" :key="method.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
                 </ion-select>
               </template>
@@ -332,8 +332,7 @@
               </ion-label>
             </ion-item>
     
-            <div v-for="item in shipGroup.items" :key="item">
-            <ion-item lines="none">
+            <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
               <ion-thumbnail slot="start">
                 <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
               </ion-thumbnail>
@@ -351,28 +350,8 @@
                 <ion-button slot="end" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
-                <ion-button slot="end" v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponent(item, true)">
-                  <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
-                  <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
-                </ion-button>
               </div>
             </ion-item>
-
-              <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
-                <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
-                  <ion-item lines="none">
-                    <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
-                    </ion-thumbnail>
-                    <ion-label>
-                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
-                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
-                      <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
-                    </ion-label>
-                  </ion-item>
-                </ion-card>
-              </div>
-            </div>
           </ion-card>
         </div>
       </div>
@@ -440,7 +419,7 @@ import {
   checkmarkCircleOutline
 } from 'ionicons/icons';
 import { getProductIdentificationValue, translate, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { copyToClipboard, formatUtcDate, getFeature, showToast } from '@/utils'
+import { copyToClipboard, formatUtcDate, getFeatures, getFacilityFilter, showToast } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import emitter from '@/event-bus';
@@ -628,53 +607,45 @@ export default defineComponent({
         this.isUpdatingCarrierDetail = true;
         const carrierShipmentMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
         shipmentMethodTypeId = shipmentMethodTypeId ? shipmentMethodTypeId : carrierShipmentMethods?.[0]?.shipmentMethodTypeId;
+        const isTrackingRequired = carrierShipmentMethods.find((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)?.isTrackingRequired
 
-        const params = {
-          orderId: this.order.orderId,
-          shipGroupSeqId: this.order.shipGroupSeqId,
-          shipmentMethodTypeId : shipmentMethodTypeId ? shipmentMethodTypeId : "",
-          carrierPartyId
-        }
-        resp = await OrderService.updateOrderItemShipGroup(params)
-        if (!hasError(resp)) {
-          for (const shipmentPackage of this.order.shipmentPackages) {
-            resp = await OrderService.updateShipmentRouteSegment({
-              "shipmentId": shipmentPackage.shipmentId,
-              "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-              "carrierPartyId": carrierPartyId,
-              "shipmentMethodTypeId": shipmentMethodTypeId ? shipmentMethodTypeId : ""
-            }) as any;
-            if (!hasError(resp)) {
-              //on changing the shipment carrier/method, voiding the gatewayMessage and gatewayStatus
-              if (this.shipmentLabelErrorMessages) {
-                resp = await OrderService.updateShipmentPackageRouteSeg({
-                  "shipmentId": shipmentPackage.shipmentId,
-                  "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-                  "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
-                  "gatewayMessage": "",
-                  "gatewayStatus": ""
-                }) as any;
-                if (!hasError(resp)) {
-                  this.shipmentLabelErrorMessages = ""
-                } else {
-                  throw resp.data
-                }
+        for (const shipmentPackage of this.order.shipmentPackages) {
+          resp = await OrderService.updateShipmentRouteSegment({
+            "shipmentId": shipmentPackage.shipmentId,
+            "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
+            "carrierPartyId": carrierPartyId,
+            "shipmentMethodTypeId": shipmentMethodTypeId ? shipmentMethodTypeId : "",
+            "isTrackingRequired": isTrackingRequired ? isTrackingRequired : "Y"
+          }) as any;
+          if (!hasError(resp)) {
+            //on changing the shipment carrier/method, voiding the gatewayMessage and gatewayStatus
+            if (this.shipmentLabelErrorMessages) {
+              resp = await OrderService.updateShipmentPackageRouteSeg({
+                "shipmentId": shipmentPackage.shipmentId,
+                "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
+                "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
+                "gatewayMessage": "",
+                "gatewayStatus": ""
+              }) as any;
+              if (!hasError(resp)) {
+                this.shipmentLabelErrorMessages = ""
+              } else {
+                throw resp.data
               }
-
-              this.shipmentMethodTypeId = shipmentMethodTypeId
-              emitter.emit("dismissLoader");
-              showToast(translate("Shipment method detail updated successfully."))
-              //fetching updated shipment packages
-              await this.store.dispatch('order/updateShipmentPackageDetail', this.order) 
-              this.carrierMethods = carrierShipmentMethods;
-              this.isUpdatingCarrierDetail = false;
-            } else {
-              throw resp.data;
             }
+
+            this.shipmentMethodTypeId = shipmentMethodTypeId
+            emitter.emit("dismissLoader");
+            showToast(translate("Shipment method detail updated successfully."))
+            //fetching updated shipment packages
+            await this.store.dispatch('order/updateShipmentPackageDetail', this.order) 
+            this.carrierMethods = carrierShipmentMethods;
+            this.isUpdatingCarrierDetail = false;
+          } else {
+            throw resp.data;
           }
-        } else {
-          throw resp.data;
         }
+        
       } catch (err) {
         this.isUpdatingCarrierDetail = false;
         this.carrierPartyId = this.order.shipmentPackages?.[0].carrierPartyId;
@@ -815,14 +786,14 @@ export default defineComponent({
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
                     if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
                       await OrderService.printPackingSlip(shipmentIds)
-                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
                     } else {
-                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds)
+                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds, order.shipmentPackages)
                     }
                   } else if (data.includes('printPackingSlip')) {
                     await OrderService.printPackingSlip(shipmentIds)
                   } else if (data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
                   }
                   if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
                     await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
@@ -851,10 +822,10 @@ export default defineComponent({
         groupBy: 'picklistBinId',
         filters: {
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
-          '-fulfillmentStatus': { value: 'Rejected' },
+          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.productStoreId },
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           picklistFacet: {
@@ -1087,7 +1058,7 @@ export default defineComponent({
         return;
       }
 
-      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
       if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
         await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
       }
@@ -1429,8 +1400,8 @@ export default defineComponent({
         filters: {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.productStoreId },
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           "shipmentMethodFacet": {
@@ -1470,8 +1441,8 @@ export default defineComponent({
         filters: {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId },
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           manifestContentIdFacet: {
@@ -1764,6 +1735,14 @@ export default defineComponent({
         return modal.present();
       }
     },
+    getSelectedCarrier(carrierPartyId: string) {
+      const facilityCarrier = this.facilityCarriers.find((carrier: any) => carrier.partyId === carrierPartyId)
+      return facilityCarrier ? facilityCarrier.groupName : carrierPartyId;
+    },
+    getSelectedShipmentMethod(shipmentMethodTypeId: string) {
+      const shippingMethod = this.carrierMethods.find((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId);
+      return shippingMethod ? shippingMethod.description : shipmentMethodTypeId;
+    }
   },
   setup() {
     const store = useStore();
@@ -1792,7 +1771,8 @@ export default defineComponent({
       ellipsisVerticalOutline,
       fileTrayOutline,
       formatUtcDate,
-      getFeature,
+      getFeatures,
+      getFacilityFilter,
       getProductIdentificationValue,
       gift,
       giftOutline,
