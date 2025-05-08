@@ -428,6 +428,10 @@ p:has(a) {
   cursor: pointer;
 }
 
+.pointer {
+  cursor: pointer;
+}
+
 @media (min-width: 991px) {
   /* shipment card desktop layout start */
   ion-searchbar.searchbar {

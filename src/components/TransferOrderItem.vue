@@ -3,7 +3,7 @@
     <div class="product">
       <div class="product-info">
         <ion-item lines="none">
-          <ion-thumbnail slot="start">
+          <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)">
             <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" />
           </ion-thumbnail>
           <ion-label class="ion-text-wrap">

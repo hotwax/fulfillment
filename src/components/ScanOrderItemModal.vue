@@ -24,7 +24,7 @@
       <div class="list-item" v-for="(item, index) in orderItems" :key="index" :class="item.orderItemSeqId === lastScannedId ? 'scanned-item' : '' " :id="item.productSku">
         <div class="product-info">
           <ion-item lines="none">
-            <ion-thumbnail slot="start">
+            <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)">
               <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
             </ion-thumbnail>
             <ion-label>
