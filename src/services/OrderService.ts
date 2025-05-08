@@ -729,8 +729,7 @@ const downloadPicklist = async (picklistId: string): Promise<any> => {
             orderHeaderResp.data.docs?.map((order: any) => {
               orderIdentifier[order.orderId] = {
                 orderName: order.orderName,
-                partyId: order.partyId,
-                partyName: orderContactMechAndAddress.orderContactMechIds[order.orderId] ? orderContactMechAndAddress.shippingAddress[orderContactMechAndAddress.orderContactMechIds[order.orderId]]?.toName : ""
+                partyName: orderContactMechAndAddress.orderContactMechIds[order.orderId] ? orderContactMechAndAddress.shippingAddress[orderContactMechAndAddress.orderContactMechIds[order.orderId]]?.toName ? orderContactMechAndAddress.shippingAddress[orderContactMechAndAddress.orderContactMechIds[order.orderId]].toName : "" : ""
               }
             })
           } else {
