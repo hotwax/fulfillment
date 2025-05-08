@@ -93,7 +93,6 @@ const actions: ActionTree<UserState, RootState> = {
       if (userProfile.userTimeZone) {
         Settings.defaultZone = userProfile.userTimeZone;
       }
-
             
       if(omsRedirectionUrl) {
         const api_key = await UserService.moquiLogin(omsRedirectionUrl, token)

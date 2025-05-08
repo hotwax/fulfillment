@@ -184,7 +184,6 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         const resp = await TransferOrderService.createOutboundTransferShipmentOrder(params)
      if (!hasError(resp)) {
       shipmentId = resp.data.shipmentId;
-  console.log(shipmentId);
       } else {
         throw resp.data;
       }

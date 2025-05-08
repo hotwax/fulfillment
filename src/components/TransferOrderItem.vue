@@ -122,10 +122,7 @@ export default defineComponent({
     }),
     isAnyItemSelectedForRejection() {
       return this.currentOrder.items.some((item: any) => item.rejectReasonId)
-    },
-    // isAnyItemShipped() {
-    //   return !!Object.keys(this.currentOrder?.shippedQuantityInfo)?.length
-    // }
+    }
   },
   methods: {
     getProgressBarColor(item: any) {
