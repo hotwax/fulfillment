@@ -322,7 +322,7 @@ export default defineComponent({
     emitter.on('updateOrderQuery', this.updateOrderQuery)
     this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
   },
-  ionViewWillLeave() {
+  beforeRouteLeave() {
     this.store.dispatch('order/clearCompletedOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
