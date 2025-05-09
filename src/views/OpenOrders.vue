@@ -322,7 +322,6 @@ export default defineComponent({
         isGroupingRequired: false,
         filters: {
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
           productStoreId: { value: this.currentEComStore.productStoreId },
