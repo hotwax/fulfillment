@@ -81,6 +81,7 @@ import { useRouter } from 'vue-router';
 import { translate, useUserStore } from '@hotwax/dxp-components';
 import { Actions } from '@/authorization'
 import emitter from '@/event-bus';
+import { getCurrentFacilityId } from '@/utils'
 
 export default defineComponent({
   name: 'TransferOrders',
@@ -119,7 +120,10 @@ export default defineComponent({
   async ionViewWillEnter() {
     emitter.emit('presentLoader');
     this.isScrollingEnabled = false;
-    await this.store.dispatch('transferorder/fetchTransferOrders', )
+    await this.store.dispatch('transferorder/fetchTransferOrders', {
+      orderStatusId: "ORDER_APPROVED",
+      originFacilityId: getCurrentFacilityId()
+    });
     emitter.emit('dismissLoader');
   },
   methods: {
@@ -155,11 +159,12 @@ export default defineComponent({
       return this.transferOrders.list?.length > 0 && this.transferOrders.list?.length < this.transferOrders.total
     },
     async showCompletedTransferOrders() {
-      const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
-      transferOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
-      transferOrdersQuery.viewSize = 20
-      transferOrdersQuery.selectedStatuses = ["ORDER_COMPLETED"]
-      await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
+      await this.store.dispatch('transferorder/fetchTransferOrders', {
+        orderStatusId: "ORDER_COMPLETED",
+        originFacilityId: getCurrentFacilityId(),
+        viewIndex: 0,
+        viewSize: 20
+      });
       this.hasCompletedTransferOrders = this.transferOrders.list.some((order: any) => order.orderStatusId === "ORDER_COMPLETED");
     },
     async updateQueryString(queryString: string) {
