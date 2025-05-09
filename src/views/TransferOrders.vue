@@ -9,7 +9,8 @@
     </ion-header>
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="transfer-order-filters">
-      <ion-searchbar class="searchbar" :value="transferOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
+      <!-- <ion-searchbar class="searchbar" :value="transferOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/> -->
+      <ion-searchbar class="searchbar" :value="transferOrders.query.queryString"/>
       <div v-if="transferOrders.total">
         <div class="results">
           <ion-list>
@@ -79,12 +80,7 @@ import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { translate, useUserStore } from '@hotwax/dxp-components';
 import { Actions } from '@/authorization'
-import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper';
-import { TransferOrderService } from '@/services/TransferOrderService';
-import { hasError } from '@/adapter';
-import logger from '@/logger';
 import emitter from '@/event-bus';
-import { getFacilityFilter } from "@/utils";
 
 export default defineComponent({
   name: 'TransferOrders',
@@ -115,12 +111,9 @@ export default defineComponent({
   },
   data () {
     return {
-      shipmentMethods: [] as Array<any>,
-      statuses: [] as Array<any>,
       searchedQuery: '',
       isScrollingEnabled: false,
-      hasCompletedTransferOrders: true,
-      transferOrderCount: 0
+      hasCompletedTransferOrders: true
     }
   },
   async ionViewWillEnter() {
@@ -178,68 +171,6 @@ export default defineComponent({
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
       this.searchedQuery = queryString;
     },
-    async fetchFilters() {
-      let resp: any;
-
-      const payload = prepareOrderQuery({
-        docType: "ORDER",
-        queryFields: 'orderId',
-        viewSize: '0',  // passed viewSize as 0 to not fetch any data
-        filters: {
-          '-orderStatusId': { value: 'ORDER_CREATED' },
-          orderTypeId: { value: 'TRANSFER_ORDER' },
-          productStoreId: { value: this.currentEComStore?.productStoreId },
-          ...getFacilityFilter(escapeSolrSpecialChars(this.currentFacility?.facilityId))
-        },
-        facet: {
-          "shipmentMethodTypeIdFacet":{
-            "excludeTags":"shipmentMethodTypeIdFilter",
-            "field":"shipmentMethodTypeId",
-            "mincount":1,
-            "limit":-1,
-            "sort":"index",
-            "type":"terms",
-            "facet": {
-              "ordersCount": "unique(orderId)"
-            }
-          },
-          "orderStatusIdFacet":{
-            "excludeTags":"orderStatusIdFilter",
-            "field":"orderStatusId",
-            "mincount":1,
-            "limit":-1,
-            "sort":"index",
-            "type":"terms",
-            "facet": {
-              "ordersCount": "unique(orderId)"
-            }
-          }
-        }
-      })
-
-      try {
-        resp = await TransferOrderService.fetchTransferOrderFacets(payload);
-        if(resp.status == 200 && !hasError(resp)) {
-          this.transferOrderCount = resp.data.facets?.count
-          if(this.transferOrderCount) {
-            this.shipmentMethods = resp.data.facets.shipmentMethodTypeIdFacet.buckets;
-            this.statuses = resp.data.facets.orderStatusIdFacet.buckets;
-            this.store.dispatch('util/fetchShipmentMethodTypeDesc', this.shipmentMethods.map((shipmentMethod: any) => shipmentMethod.val));
-            this.store.dispatch('util/fetchStatusDesc', this.statuses.map((status: any) => status.val));
-          }
-        } else {
-          throw resp.data;
-        }
-      } catch(err) {
-        logger.error('Failed to fetch transfer order filters.', err)
-      }
-    },
-    async initialiseTransferOrderQuery() {
-      const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
-      transferOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
-      transferOrdersQuery.viewSize = 20
-      await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
-    },
     async viewTransferOrderDetail(order: any) {
       await this.store.dispatch('transferorder/updateCurrentTransferOrder', order)
       this.router.push({ path: `/transfer-order-details/${order.orderId}` })
@@ -267,7 +198,6 @@ export default defineComponent({
       cubeOutline,
       currentEComStore,
       currentFacility,
-      getFacilityFilter,
       optionsOutline,
       pricetagOutline,
       printOutline,

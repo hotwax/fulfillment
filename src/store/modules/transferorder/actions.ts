@@ -4,32 +4,24 @@ import TransferOrderState from './TransferOrderState'
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { hasError } from '@/adapter'
 import * as types from './mutation-types'
-import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import logger from '@/logger'
-import { getProductIdentificationValue, translate } from '@hotwax/dxp-components'
-import { showToast, getCurrentFacilityId, getProductStoreId } from "@/utils";
-import { UtilService } from '@/services/UtilService'
-import store from "@/store";
+import { translate } from '@hotwax/dxp-components'
+import { showToast, getCurrentFacilityId } from "@/utils";
 
 const actions: ActionTree<TransferOrderState, RootState> = {
 
   async fetchTransferOrders ({ commit, state }, payload = {}) {
+    const params = { orderStatusId: "ORDER_APPROVED", originFacilityId: getCurrentFacilityId() };
     let resp;
-
-    const params = {
-      ...payload,
-    }
-
     let orders = [];
     let orderList = [];
     let total = 0;
 
     try {
-      resp = await TransferOrderService.fetchTransferOrders();
+      resp = await TransferOrderService.fetchTransferOrders(params);
       if (!hasError(resp) && resp.data.ordersCount > 0) {
         total = resp.data.ordersCount;
         orders = resp.data.orders;
-
         orders = orders.map((order: any) => {
           return {
             orderId: order.orderId,
@@ -40,7 +32,6 @@ const actions: ActionTree<TransferOrderState, RootState> = {
             orderStatusDesc: order.orderStatusDesc
           };
         });
-
         orderList = JSON.parse(JSON.stringify(state.transferOrder.list)).concat(orders);
       } else {
         throw resp.data;
@@ -48,83 +39,15 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     } catch (err) {
       logger.error('No transfer orders found', err);
     }
-
     commit(types.ORDER_TRANSFER_UPDATED, { list: orderList.length > 0 ? orderList : orders, total });
-
     return resp;
   },
 
-  async findTransferOrders ({ commit, state }, payload = {}) {
-    let resp;
-    const transferOrderQuery = JSON.parse(JSON.stringify(state.transferOrder.query))
-
-    const params = {
-      ...payload,
-      docType: "ORDER",
-      queryString: transferOrderQuery.queryString,
-      viewIndex: transferOrderQuery.viewIndex ? transferOrderQuery.viewIndex : 0,
-      viewSize: transferOrderQuery.viewSize,
-      queryFields: "orderId orderName externalOrderId productId productName internalName",
-      sort: payload.sort ? payload.sort : "orderDate asc",
-      filters: {
-        orderTypeId: { value: 'TRANSFER_ORDER' },
-        facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
-        productStoreId: { value: getProductStoreId() }
-      }
-    }
-
-    // only adding shipmentMethods when a method is selected
-    if(transferOrderQuery.selectedShipmentMethods.length) {
-      params.filters['shipmentMethodTypeId'] = { value: transferOrderQuery.selectedShipmentMethods, op: 'OR' }
-    }
-    if(transferOrderQuery.selectedStatuses.length) {
-      params.filters['orderStatusId'] = { value: transferOrderQuery.selectedStatuses, op: 'OR' }
-    }
-
-    const transferOrderQueryPayload = prepareOrderQuery(params)
-    let orders = [];
-    let orderList = []
-    let total = 0;
-
-    try {
-      resp = await TransferOrderService.findTransferOrders(transferOrderQueryPayload);
-      if (!hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
-        total = resp.data.grouped.orderId.ngroups
-        orders = resp.data.grouped.orderId.groups
-
-        orders = orders.map((order: any) => {
-          const orderItem = order.doclist.docs[0];
-
-          return {
-            orderId: orderItem.orderId,
-            externalId: orderItem.externalOrderId,
-            orderDate: orderItem.orderDate,
-            orderName: orderItem.orderName,
-            shipGroupSeqId: orderItem.shipGroupSeqId,
-            shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
-            orderStatusId: orderItem.orderStatusId,
-            orderStatusDesc: orderItem.orderStatusDesc
-          }
-        })
-
-        if (transferOrderQuery.viewIndex && transferOrderQuery.viewIndex > 0) orderList = JSON.parse(JSON.stringify(state.transferOrder.list)).concat(orders)
-      } else {
-        throw resp.data
-      }
-    } catch (err) {
-      logger.error('No transfer orders found', err)
-    }
-
-    commit(types.ORDER_TRANSFER_QUERY_UPDATED, { ...transferOrderQuery })
-    commit(types.ORDER_TRANSFER_UPDATED, { list: orderList.length > 0 ? orderList : orders, total})
-
-    return resp;
-  },
   async fetchTransferOrderDetail ({ commit }, payload) {
     let orderDetail = {} as any;
     let resp,resp2;
     try {
-      resp = await TransferOrderService.fetchOrderDetailMoqui(payload.orderId);
+      resp = await TransferOrderService.fetchTransferOrderDetail(payload.orderId);
             if (!hasError(resp)) {
               orderDetail = resp.data.order;
               orderDetail.statusId;
@@ -132,7 +55,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       // fetch product details
       const productIds = [...new Set(orderDetail.items.map((item: any) => item.productId))];
       
-      resp2 = await TransferOrderService.fetchShippedOrdersMoqui(payload.orderId);
+      resp2 = await TransferOrderService.fetchShippedTransferOrders({orderId: payload.orderId, shipmentStatusId: "SHIPMENT_SHIPPED"});
       if (!hasError(resp2)) {
           orderDetail.shipments = resp2.data.shipments;
       }
@@ -153,7 +76,6 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         logger.error("Error fetching product details or status description", err);
         return Promise.reject(new Error(err));
       }
-
         commit(types.ORDER_CURRENT_UPDATED, orderDetail)
       } else {
         throw resp.data;
@@ -181,7 +103,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
            "orderItems": eligibleItems
         }
   
-        const resp = await TransferOrderService.createOutboundTransferShipmentOrder(params)
+        const resp = await TransferOrderService.createOutboundTransferShipment(params)
      if (!hasError(resp)) {
       shipmentId = resp.data.shipmentId;
       } else {
@@ -194,10 +116,9 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     return shipmentId;
   },
 
-async fetchTransferShipmentDetail({ commit }, payload) {
+  async fetchTransferShipmentDetail({ commit }, payload) {
   try {
-    const shipmentResponse = await TransferOrderService.fetchTransferShipmentReviewDetails(payload.shipmentId);
-    console.log("shipmentResponse", shipmentResponse.data);
+    const shipmentResponse = await TransferOrderService.fetchTransferShipmentDetails({ shipmentId: payload.shipmentId });
 
     const shipments = shipmentResponse.data?.shipments || [];
     if (shipments.length > 0) {
@@ -227,8 +148,6 @@ async fetchTransferShipmentDetail({ commit }, payload) {
         totalQuantityPicked: shipmentItems.reduce((acc: number, curr: any) => acc + curr.quantity, 0)
       };
 
-      console.log("shipment before commit", shipment);
-
       commit(types.ORDER_CURRENT_SHIPMENT_UPDATED, shipment);
 
       const productIds = [...new Set(shipmentItems.map((item: any) => item.productId))];
@@ -248,89 +167,6 @@ async fetchTransferShipmentDetail({ commit }, payload) {
   } catch (err: any) {
     logger.error("error", err);
   }
-},
-  async fetchOrderShipments ({ commit, state }, payload) {
-    let resp;
-    let shipments = [];
-
-    try {
-      const shipmentItems  = await TransferOrderService.fetchShipmentItems(payload.orderId, '');
-      if (shipmentItems?.length > 0) {
-        shipments = Object.values(shipmentItems.reduce((shipmentInfo:any, currentItem:any) => {
-          const { shipmentId, shipmentStatusId, orderId } = currentItem;
-          if (!shipmentInfo[shipmentId]) {
-            shipmentInfo[shipmentId] = {
-              shipmentId,
-              primaryOrderId: orderId,
-              statusId : shipmentStatusId,
-              items: [currentItem]
-            };
-          } else {
-            shipmentInfo[shipmentId].items.push(currentItem);
-          }
-          return shipmentInfo;
-        }, {}));
-
-        const shipmentIds = new Set(shipments.map((shipment:any) => shipment.shipmentId));
-        const [shipmentCarriers, shipmentShippedStatuses, shipmentPackages] = await Promise.all([TransferOrderService.fetchShipmentCarrierDetail([...shipmentIds]), TransferOrderService.fetchShipmentShippedStatusHistory([...shipmentIds]), UtilService.findShipmentPackages([...shipmentIds])]);
-        const shipmentCarrierDetail = shipmentCarriers.reduce((carriers: any, carrierDetail:any) => {
-          carriers[carrierDetail.shipmentId] = carrierDetail;
-          return carriers;
-        }, {});
-
-        const shipmentShippedStatusDetail = shipmentShippedStatuses.reduce((shipments: any, statusDetail:any) => {
-          shipments[statusDetail.shipmentId] = statusDetail;
-          return shipments;
-        }, {});
-
-        
-        const shipmentPackageValues = Object.values(shipmentPackages).flat() as any;
-        const shipmentPackageDetail = shipmentPackageValues.reduce((shipPackages:any, shipmentPackageDetail:any) => {
-          const { shipmentId } = shipmentPackageDetail;
-          if (!shipPackages[shipmentId]) {
-            shipPackages[shipmentId] = [];
-          }
-          shipPackages[shipmentId].push(shipmentPackageDetail);
-          return shipPackages;
-        }, {})
-
-        shipments = shipments.map((shipment:any) => {
-          const shipmentDetails = shipmentShippedStatusDetail[shipment.shipmentId];
-          const carrierDetails = shipmentCarrierDetail[shipment.shipmentId]
-          const shipmentPackages = shipmentPackageDetail[shipment.shipmentId]
-          return { ...shipment, ...shipmentDetails, ...carrierDetails, shipmentPackages };
-        });
-
-        await this.dispatch('util/fetchShipmentMethodTypeDesc', shipmentCarriers.map((carrier:any) => carrier.shipmentMethodTypeId))
-      }
-    } catch (err: any) {
-      logger.error("error", err);
-    }
-    // commit(types.ORDER_CURRENT_UPDATED, {...state.current, shipments})
-  },
-
-  async updateOrderProductCount({ commit, state }, payload ) {
-    // When there exists multiple line item for a single product, then may arise discrepancy in scanning
-    // since some items might be completed and some pending. Hence searching is done with status check.
-    const getProduct = store.getters['product/getProduct'];
-    const barcodeIdentifier = store.getters['util/getBarcodeIdentificationPref'];
-
-    const item = state.current.items.find((orderItem: any) => {
-      const itemVal = getProductIdentificationValue(barcodeIdentifier, getProduct(orderItem.productId)) ? getProductIdentificationValue(barcodeIdentifier, getProduct(orderItem.productId)) : getProduct(orderItem.productId)?.internalName;
-      return itemVal === payload && orderItem.statusId !== 'ITEM_COMPLETED' && orderItem.statusId !== 'ITEM_REJECTED' && orderItem.statusId !== 'ITEM_CANCELLED';
-    })
-    if(item){
-      item.pickedQuantity = parseInt(item.pickedQuantity) + 1;
-      commit(types.ORDER_CURRENT_UPDATED, state.current )
-      return { isProductFound: true, orderItem: item }
-    }
-
-    const completedItem = state.current.items.some((item: any) => item.internalName === payload && item.statusId === 'ITEM_COMPLETED');
-    if(completedItem) {
-      return { isCompleted: true }
-    }
-
-    return { isProductFound: false }
   },
 
   async updateCurrentTransferOrder({ commit }, payload) {
@@ -354,65 +190,6 @@ async fetchTransferShipmentDetail({ commit }, payload) {
   },
   async clearCurrentTransferShipment({ commit }) {
     commit(types.ORDER_CURRENT_SHIPMENT_CLEARED)
-  },
-  async fetchRejectReasons({ commit }) {
-    let rejectReasons = [];
-
-    const permissions = store.getters["user/getUserPermissions"];
-    const isAdminUser = permissions.some((permission: any) => permission.action === "APP_STOREFULFILLMENT_ADMIN")
-
-    if(isAdminUser) {
-      try {
-        const payload = {
-          inputFields: {
-            parentEnumTypeId: ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
-            parentEnumTypeId_op: "in"
-          },
-          fieldList: ["description", "enumId", "enumName", "enumTypeId", "sequenceNum"],
-          distinct: "Y",
-          entityName: "EnumTypeChildAndEnum",
-          viewSize: 20, // keeping view size 20 as considering that we will have max 20 reasons
-          orderBy: "sequenceNum"
-        }
-
-        const resp = await TransferOrderService.fetchRejectReasons(payload)
-
-        if(!hasError(resp) && resp.data.count > 0) {
-          rejectReasons = resp.data.docs
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        logger.error("Failed to fetch reject reasons", err)
-      }
-    } else {
-      try {
-        const payload = {
-          inputFields: {
-            enumerationGroupId: "TO_REJ_RSN_GRP"
-          },
-          // We shouldn't fetch description here, as description contains EnumGroup description which we don't wanna show on UI.
-          fieldList: ["enumerationGroupId", "enumId", "fromDate", "sequenceNum", "enumDescription", "enumName"],
-          distinct: "Y",
-          entityName: "EnumerationGroupAndMember",
-          viewSize: 200,
-          filterByDate: "Y",
-          orderBy: "sequenceNum"
-        }
-
-        const resp = await TransferOrderService.fetchRejectReasons(payload)
-
-        if(!hasError(resp) && resp?.data.docs.length > 0) {
-          rejectReasons = resp.data.docs
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        logger.error("Failed to fetch fulfillment reject reasons", err)
-      }
-    }
-
-    commit(types.ORDER_REJECT_REASONS_UPDATED, rejectReasons)
   }
 }
 
