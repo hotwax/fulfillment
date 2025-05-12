@@ -1320,7 +1320,7 @@ export default defineComponent({
       modal.present();
     },
     isOrderEligibleForAction(order: any) {
-      return order.items.some((item: any) => item.shipmentItemSeqId)
+      return order.items?.some((item: any) => item.shipmentItemSeqId)
     }
   },
   async ionViewWillEnter() {
