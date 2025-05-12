@@ -439,7 +439,7 @@ export default defineComponent({
     this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`});
     emitter.on("updateOrderQuery", this.updateOrderQuery);
   },
-  ionViewWillLeave() {
+  beforeRouteLeave() {
     this.store.dispatch('order/clearOpenOrders');
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },

@@ -1334,7 +1334,7 @@ export default defineComponent({
     ]);
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
-  ionViewWillLeave() {
+  beforeRouteLeave() {
     this.store.dispatch('order/clearInProgressOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
