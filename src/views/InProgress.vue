@@ -1,5 +1,5 @@
 <template>
-  <ion-page>
+  <ion-page :key="router.currentRoute.value.path">
     <ViewSizeSelector menu-id="view-size-selector-inprogress" content-id="view-size-selector" />
 
     <ion-header :translucent="true">
@@ -319,6 +319,7 @@ import { useAuthStore } from '@hotwax/dxp-components'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
+import { useRouter } from "vue-router";
 
 
 export default defineComponent({
@@ -1339,6 +1340,7 @@ export default defineComponent({
   },
   setup() {
     const authStore = useAuthStore()
+    const router = useRouter();
     const store = useStore();
     const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
@@ -1376,6 +1378,7 @@ export default defineComponent({
       printOutline,
       productIdentificationPref,
       qrCodeOutline,
+      router,
       trashBinOutline,
       store,
       translate
