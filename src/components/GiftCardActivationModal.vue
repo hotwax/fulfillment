@@ -35,7 +35,7 @@
         <ion-label slot="end">{{ formatCurrency(itemPriceInfo.unitPrice, itemPriceInfo.currencyUom) }}</ion-label>
       </ion-item>
 
-      <div class="ion-margin">
+      <div class="ion-margin" v-if="!item.isGCActivated">
         <ion-button expand="block" fill="outline" @click="isCameraEnabled ? stopScan() : scan()">
           <ion-icon slot="start" :icon="isCameraEnabled ? stopOutline : cameraOutline" />
           {{ translate(isCameraEnabled ? "Stop" : "Scan") }}

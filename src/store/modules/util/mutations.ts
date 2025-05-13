@@ -73,11 +73,19 @@ const mutations: MutationTree <UtilState> = {
     state.carrierDesc = {}
     state.facilityAddresses = {}
     state.facilityShippingLabelImageType = {}
+    state.picklistItemIdentificationPref = "internalName"
+    state.isPicklistDownloadEnabled = false
   },
   [types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED](state, payload) {
     if(payload.facilityId) {
       state.facilityShippingLabelImageType[payload.facilityId] = payload.labelImageType
     }
-  }
+  },
+  [types.UTIL_PICKLIST_ITEM_IDENTIFICATION_PREF_UPDATED](state, payload) {
+    state.picklistItemIdentificationPref = payload
+  },
+  [types.UTIL_PICKLIST_DOWNLOAD_STATUS_UPDATED](state, payload) {
+    state.isPicklistDownloadEnabled = payload
+  },
 }
 export default mutations;

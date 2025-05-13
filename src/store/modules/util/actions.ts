@@ -940,7 +940,42 @@ const actions: ActionTree<UtilState, RootState> = {
     } catch (err) {
       logger.error("Failed to fetch label image type", err)
     }
-  }
+  },
+
+  async fetchProductStoreSettingPicklist({ commit }, eComStoreId) {
+    let picklistItemIdentificationPref = "internalName"
+    let isPicklistDownloadEnabled = false
+    const payload = {
+      "inputFields": {
+        "productStoreId": eComStoreId,
+        "settingTypeEnumId": ["PICK_LST_PROD_IDENT", "FF_DOWNLOAD_PICKLIST"]
+      },
+      "filterByDate": "Y",
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["settingTypeEnumId", "settingValue", "fromDate"],
+      "viewSize": 20
+    }
+
+    try {
+      const resp = await UtilService.getProductStoreSetting(payload) as any
+      if(!hasError(resp) && resp.data.docs?.length) {
+
+        resp.data.docs.map((setting: any) => {
+          if(setting.settingTypeEnumId === "PICK_LST_PROD_IDENT") {
+            picklistItemIdentificationPref = setting.settingValue
+          }
+
+          if(setting.settingTypeEnumId === "FF_DOWNLOAD_PICKLIST") {
+            isPicklistDownloadEnabled = setting.settingValue == "true"
+          }
+        })
+      }
+    } catch(err) {
+      logger.error(err)
+    }
+    commit(types.UTIL_PICKLIST_ITEM_IDENTIFICATION_PREF_UPDATED, picklistItemIdentificationPref)
+    commit(types.UTIL_PICKLIST_DOWNLOAD_STATUS_UPDATED, isPicklistDownloadEnabled)
+  },
 }
 
 export default actions;

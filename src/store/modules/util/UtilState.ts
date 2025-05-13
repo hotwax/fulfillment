@@ -21,4 +21,6 @@ export default interface UtilState {
   shipmentMethodsByCarrier: any;
   facilityAddresses: any;
   facilityShippingLabelImageType: any;
+  picklistItemIdentificationPref: string;
+  isPicklistDownloadEnabled: boolean;
 }

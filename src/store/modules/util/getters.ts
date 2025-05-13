@@ -62,6 +62,12 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   getShipmentMethodsByCarrier(state) {
     return state.shipmentMethodsByCarrier
+  },
+  getPicklistItemIdentificationPref(state) {
+    return state.picklistItemIdentificationPref
+  },
+  isPicklistDownloadEnabled(state) {
+    return state.isPicklistDownloadEnabled
   }
 }
 export default getters;
