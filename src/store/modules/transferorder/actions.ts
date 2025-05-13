@@ -20,14 +20,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     resp = await TransferOrderService.fetchTransferOrders(params);
     if (!hasError(resp) && resp.data.ordersCount > 0) {
       total = resp.data.ordersCount;
-      orders = resp.data.orders.map((order: any) => ({
-        orderId: order.orderId,
-        externalId: order.orderExternalId,
-        orderDate: order.orderDate,
-        orderName: order.orderName,
-        orderStatusId: order.orderStatusId,
-        orderStatusDesc: order.orderStatusDesc
-      }));
+      orders = resp.data.orders;
       orderList = JSON.parse(JSON.stringify(state.transferOrder.list)).concat(orders);
     } else {
       throw resp.data;
@@ -39,66 +32,85 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   return resp;
   }, 
 
-  async fetchTransferOrderDetail ({ commit }, payload) {
-    let orderDetail = {} as any;
-    let resp,resp2;
-    try {
-      resp = await TransferOrderService.fetchTransferOrderDetail(payload.orderId);
-            if (!hasError(resp)) {
-              orderDetail = resp.data.order;
-              orderDetail.statusId;
-              orderDetail.items;
-      // fetch product details
-      const productIds = [...new Set(orderDetail.items.map((item: any) => item.productId))];
-      
-      resp2 = await TransferOrderService.fetchShippedTransferOrders({orderId: payload.orderId, shipmentStatusId: "SHIPMENT_SHIPPED"});
+  async fetchTransferOrderDetail({ commit }, payload) {
+  let orderDetail = {} as any;
+  let resp, resp2;
+
+  try {
+    // Fetch main transfer order details
+    resp = await TransferOrderService.fetchTransferOrderDetail(payload.orderId);
+
+    if (!hasError(resp)) {
+      const baseOrder = resp.data.order || {};
+
+      // Start with shallow copy of base order
+      orderDetail = { ...baseOrder };
+
+      // Fetch additional shipment data
+      resp2 = await TransferOrderService.fetchShippedTransferOrders({
+        orderId: payload.orderId,
+        shipmentStatusId: "SHIPMENT_SHIPPED",
+      });
+
       if (!hasError(resp2)) {
-          orderDetail.shipments = resp2.data.shipments;
+        const shipmentData = resp2.data || {};
+
+        // Merge all shipment fields into orderDetail (avoid overwriting existing fields unless necessary)
+        orderDetail = {
+          ...orderDetail,
+          ...shipmentData,
+          shipments: shipmentData.shipments || [],
+        };
       }
 
+      // Fetch products & status description
+      const productIds = [...new Set((orderDetail.items || []).map((item: any) => item.productId))];
       const batchSize = 250;
       const productIdBatches = [];
+
       while (productIds.length) {
         productIdBatches.push(productIds.splice(0, batchSize));
       }
-      
+
       try {
         await Promise.all([
-          productIdBatches.map((productIds) => this.dispatch('product/fetchProducts', { productIds })),
+          ...productIdBatches.map(batch =>
+            this.dispatch('product/fetchProducts', { productIds: batch })
+          ),
           this.dispatch('util/fetchStatusDesc', [orderDetail.statusId]),
         ]);
+        // Commit the full enriched orderDetail to the store
         commit(types.ORDER_CURRENT_UPDATED, orderDetail);
       } catch (err: any) {
         logger.error("Error fetching product details or status description", err);
         return Promise.reject(new Error(err));
       }
-        commit(types.ORDER_CURRENT_UPDATED, orderDetail)
-      } else {
-        throw resp.data;
-      }
-    } catch (err: any) {
-      logger.error("error", err);
-      return Promise.reject(new Error(err))
+    } else {
+      throw resp.data;
     }
-  },
+  } catch (err: any) {
+    logger.error("error", err);
+    return Promise.reject(new Error(err));
+  }
+},
 
   async createOutboundTransferShipment({ commit }, payload) {
     let shipmentId;
     
     try {
       let eligibleItems = payload.items.filter((item: any) => item.pickedQuantity > 0)
-      let seqIdCounter = 1;
       eligibleItems = eligibleItems.map((item:any) => ({
         orderItemSeqId: item.orderItemSeqId, //This is needed to map shipment item with order item correctly if multiple order items for the same product are there in the TO.
         productId: item.productId,
         quantity: parseInt(item.pickedQuantity), // Using parseInt to convert to an integer
-        shipGroupSeqId: String(seqIdCounter++).padStart(5, '0') // This is needed to correctly create the shipment package content if multiple order items for the same product are there in the TO.
+        shipGroupSeqId: item.shipGroupSeqId
       }));  
       const params = {
-            "orderId": 12104,
-           "orderItems": eligibleItems
+        "payload":{
+            "orderId": payload.orderId,
+            "items": eligibleItems
         }
-  
+      }
         const resp = await TransferOrderService.createOutboundTransferShipment(params)
      if (!hasError(resp)) {
       shipmentId = resp.data.shipmentId;
@@ -122,12 +134,8 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       const shipmentItems = shipmentData.items || [];
 
       const shipment = {
-        shipmentId: shipmentData.shipmentId,
-        primaryOrderId: shipmentData.orderId,
-        statusId: shipmentData.statusId,
-        trackingCode: null, // Not present in response
-        carrierPartyId: shipmentData.carrierPartyId,
-        shipmentMethodTypeId: shipmentData.shipmentMethodTypeId,
+        ...shipmentData,
+        trackingCode: shipmentData.trackingCode || null, // If not present, set to null
         shipmentPackagesWithMissingLabel: [],
         shipmentPackages: [{
           shipmentId: shipmentData.shipmentId,
@@ -137,9 +145,6 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         items: shipmentItems.map((item: any) => ({
           ...item,
           pickedQuantity: item.quantity,
-          productName: item.productName,
-          internalName: item.internalName,
-          productId: item.productId
         })),
         totalQuantityPicked: shipmentItems.reduce((acc: number, curr: any) => acc + curr.quantity, 0)
       };

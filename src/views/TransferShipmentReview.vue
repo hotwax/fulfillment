@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-back-button :default-href="`/transfer-order-details/${currentShipment.primaryOrderId}`" slot="start" />
+        <ion-back-button :default-href="`/transfer-order-details/${currentShipment.orderId}`" slot="start" />
         <ion-title>{{ translate("Review Shipment") }}</ion-title>
         
         <ion-buttons slot="end">
@@ -119,7 +119,7 @@ import { translate, useProductIdentificationStore } from '@hotwax/dxp-components
       this.shipmentItems = this.currentShipment.items;
     },
     async beforeRouteLeave(to) {
-      if (to.path !== `/transfer-order-details/${this.currentShipment.primaryOrderId}`) return;
+      if (to.path !== `/transfer-order-details/${this.currentShipment.orderId}`) return;
       let canLeave = false;
       const message = translate("Are you sure that you want to discard this shipment?");
       const alert = await alertController.create({
@@ -280,7 +280,7 @@ import { translate, useProductIdentificationStore } from '@hotwax/dxp-components
 
           this.isShipped = true;
           showToast(translate('Shipment shipped successfully.'));
-          this.router.replace({ path: `/transfer-order-details/${this.currentShipment.primaryOrderId}` })
+          this.router.replace({ path: `/transfer-order-details/${this.currentShipment.orderId}` })
         } catch (err) {
           logger.error('Failed to ship the shipment.', err);
           showToast(translate('Something went wrong, could not ship the shipment'))
