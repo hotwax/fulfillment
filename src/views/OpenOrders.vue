@@ -1,5 +1,5 @@
 <template>
-  <ion-page>
+  <ion-page :key="router.currentRoute.value.path">
     <ViewSizeSelector menu-id="view-size-selector-open" content-id="view-size-selector" />
     
     <ion-header :translucent="true">
@@ -26,7 +26,7 @@
       <ion-searchbar class="searchbar" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)"/>
       <div class="filters">
         <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
-          <ion-checkbox label-placement="end" @ionChange="updateSelectedShipmentMethods(method.val)">
+          <ion-checkbox label-placement="end" :checked="openOrders.query.selectedShipmentMethods.includes(method.val)" @ionChange="updateSelectedShipmentMethods(method.val)">
             <ion-label>
               {{ getShipmentMethodDesc(method.val) }}
               <p>{{ method.ordersCount }} {{ translate("orders") }}, {{ method.count }} {{ translate("items") }}</p>
@@ -34,8 +34,8 @@
           </ion-checkbox>
         </ion-item>
       </div>
+      <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentEComStore="currentEComStore" @updateOpenQuery="updateOpenQuery" />
       <div v-if="openOrders.total">
-        <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentEComStore="currentEComStore" @updateOpenQuery="updateOpenQuery" />
 
         <div class="results">
           <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picklist") }}</ion-button>
@@ -178,7 +178,7 @@ import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificat
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { formatUtcDate, getFeatures, showToast } from '@/utils'
+import { formatUtcDate, getFeatures, getFacilityFilter, hasActiveFilters, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
@@ -191,6 +191,7 @@ import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import { isKit } from '@/utils/order'
 import { useDynamicImport } from "@/utils/moduleFederation";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -238,7 +239,8 @@ export default defineComponent({
       searchedQuery: '',
       isScrollingEnabled: false,
       isRejecting: false,
-      productCategoryFilterExt: "" as any
+      productCategoryFilterExt: "" as any,
+      selectedShipmentMethods: [] as any
     }
   },
   methods: {
@@ -246,7 +248,7 @@ export default defineComponent({
       this.store.dispatch("order/updateOpenQuery", payload)
     },
     getErrorMessage() {
-      return this.searchedQuery === '' ? translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility?.facilityName }) : translate( "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+      return this.searchedQuery ? (hasActiveFilters(this.openOrders.query) ? translate("No results found for . Try using different filters.", { searchedQuery: this.searchedQuery }) : translate("No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })) : translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility?.facilityName });
     },
     viewNotifications() {
       this.store.dispatch('user/setUnreadNotificationsStatus', false)
@@ -293,6 +295,7 @@ export default defineComponent({
       // making view size default when changing the shipment method to correctly fetch orders
       openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       openOrdersQuery.selectedShipmentMethods = selectedShipmentMethods
+      this.selectedShipmentMethods = selectedShipmentMethods
 
       this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
     },
@@ -323,8 +326,8 @@ export default defineComponent({
           '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
-          facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.productStoreId },
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           "shipmentMethodTypeIdFacet":{
@@ -371,6 +374,7 @@ export default defineComponent({
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
       openOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      if(this.selectedShipmentMethods?.length) openOrdersQuery.selectedShipmentMethods = this.selectedShipmentMethods
       await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
     },
     async recycleOutstandingOrders() {
@@ -430,16 +434,18 @@ export default defineComponent({
   async ionViewWillEnter () {
     this.isScrollingEnabled = false;
     await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
-    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "")
+    // Remove http://, https://, /api, or :port
+    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "")
     this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`});
     emitter.on("updateOrderQuery", this.updateOrderQuery);
   },
-  ionViewWillLeave() {
+  beforeRouteLeave() {
     this.store.dispatch('order/clearOpenOrders');
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   setup() {
     const store = useStore();
+    const router = useRouter();
     const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
@@ -455,7 +461,9 @@ export default defineComponent({
       currentFacility,
       formatUtcDate,
       getFeatures,
+      getFacilityFilter,
       getProductIdentificationValue,
+      hasActiveFilters,
       hasPermission,
       isKit,
       listOutline,
@@ -464,6 +472,7 @@ export default defineComponent({
       pricetagOutline,
       printOutline,
       productIdentificationPref,
+      router,
       store,
       translate
     }

@@ -60,7 +60,7 @@
               <ion-skeleton-text animated />
             </div>
             <div class="box-type desktop-only" v-else-if="order.shipmentPackages">
-              <ion-button :disabled="order.items.length >= order.shipmentPackages.length || addingBoxForOrderIds.includes(order.orderId) || !isOrderEligibleForAction(order)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />
+              <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId) || !isOrderEligibleForAction(order)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />
                 {{ translate("Add Box") }}
               </ion-button>
               <ion-row>
@@ -160,7 +160,7 @@
           
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
-              <ion-button fill="clear" :disabled="order.hasMissingInfo || !isOrderEligibleForAction(order)" @click="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) :packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+              <ion-button fill="clear" :disabled="order.hasMissingInfo || !isOrderEligibleForAction(order)" @click="order.missingLabelImage && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE) ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) :packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -180,7 +180,7 @@
             <!-- positive -->
             <div>
               <template v-if="category === 'in-progress'">
-                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo || !isOrderEligibleForAction(order)" @click="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">
+                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo || !isOrderEligibleForAction(order)" @click="order.missingLabelImage && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">
                   <ion-icon slot="start" :icon="personAddOutline" />
                   {{ translate("Pack order") }}
                 </ion-button>
@@ -257,13 +257,13 @@
               <ion-icon slot="end" :icon="cashOutline" />
             </ion-item>
             <ion-item>
-              <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')" :selected-text="getSelectedCarrier(carrierPartyId)">
+              <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')" :selected-text="getSelectedCarrier(carrierPartyId)">
                 <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item>
               <template v-if="carrierMethods && carrierMethods.length > 0">
-                <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedShipmentMethod(shipmentMethodTypeId)">
+                <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedShipmentMethod(shipmentMethodTypeId)">
                   <ion-select-option v-for="method in carrierMethods" :key="method.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
                 </ion-select>
               </template>
@@ -419,7 +419,7 @@ import {
   checkmarkCircleOutline
 } from 'ionicons/icons';
 import { getProductIdentificationValue, translate, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { copyToClipboard, formatUtcDate, getFeatures, showToast } from '@/utils'
+import { copyToClipboard, formatUtcDate, getFeatures, getFacilityFilter, showToast } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import emitter from '@/event-bus';
@@ -566,7 +566,8 @@ export default defineComponent({
     }
   },
   async mounted() {
-    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "")
+    // Remove http://, https://, /api, or :port
+    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "")
     this.printDocumentsExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_PrintDocument`})
     this.orderInvoiceExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderInvoice`})
   },
@@ -607,57 +608,45 @@ export default defineComponent({
         this.isUpdatingCarrierDetail = true;
         const carrierShipmentMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
         shipmentMethodTypeId = shipmentMethodTypeId ? shipmentMethodTypeId : carrierShipmentMethods?.[0]?.shipmentMethodTypeId;
-
-        const params = {
-          orderId: this.order.orderId,
-          shipGroupSeqId: this.order.shipGroupSeqId,
-          shipmentMethodTypeId : shipmentMethodTypeId ? shipmentMethodTypeId : "",
-          carrierPartyId
-        }
-
         const isTrackingRequired = carrierShipmentMethods.find((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)?.isTrackingRequired
 
-        resp = await OrderService.updateOrderItemShipGroup(params)
-        if (!hasError(resp)) {
-          for (const shipmentPackage of this.order.shipmentPackages) {
-            resp = await OrderService.updateShipmentRouteSegment({
-              "shipmentId": shipmentPackage.shipmentId,
-              "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-              "carrierPartyId": carrierPartyId,
-              "shipmentMethodTypeId": shipmentMethodTypeId ? shipmentMethodTypeId : "",
-              "isTrackingRequired": isTrackingRequired ? isTrackingRequired : "Y"
-            }) as any;
-            if (!hasError(resp)) {
-              //on changing the shipment carrier/method, voiding the gatewayMessage and gatewayStatus
-              if (this.shipmentLabelErrorMessages) {
-                resp = await OrderService.updateShipmentPackageRouteSeg({
-                  "shipmentId": shipmentPackage.shipmentId,
-                  "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-                  "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
-                  "gatewayMessage": "",
-                  "gatewayStatus": ""
-                }) as any;
-                if (!hasError(resp)) {
-                  this.shipmentLabelErrorMessages = ""
-                } else {
-                  throw resp.data
-                }
+        for (const shipmentPackage of this.order.shipmentPackages) {
+          resp = await OrderService.updateShipmentRouteSegment({
+            "shipmentId": shipmentPackage.shipmentId,
+            "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
+            "carrierPartyId": carrierPartyId,
+            "shipmentMethodTypeId": shipmentMethodTypeId ? shipmentMethodTypeId : "",
+            "isTrackingRequired": isTrackingRequired ? isTrackingRequired : "Y"
+          }) as any;
+          if (!hasError(resp)) {
+            //on changing the shipment carrier/method, voiding the gatewayMessage and gatewayStatus
+            if (this.shipmentLabelErrorMessages) {
+              resp = await OrderService.updateShipmentPackageRouteSeg({
+                "shipmentId": shipmentPackage.shipmentId,
+                "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
+                "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
+                "gatewayMessage": "",
+                "gatewayStatus": ""
+              }) as any;
+              if (!hasError(resp)) {
+                this.shipmentLabelErrorMessages = ""
+              } else {
+                throw resp.data
               }
-
-              this.shipmentMethodTypeId = shipmentMethodTypeId
-              emitter.emit("dismissLoader");
-              showToast(translate("Shipment method detail updated successfully."))
-              //fetching updated shipment packages
-              await this.store.dispatch('order/updateShipmentPackageDetail', this.order) 
-              this.carrierMethods = carrierShipmentMethods;
-              this.isUpdatingCarrierDetail = false;
-            } else {
-              throw resp.data;
             }
+
+            this.shipmentMethodTypeId = shipmentMethodTypeId
+            emitter.emit("dismissLoader");
+            showToast(translate("Shipment method detail updated successfully."))
+            //fetching updated shipment packages
+            await this.store.dispatch('order/updateShipmentPackageDetail', this.order) 
+            this.carrierMethods = carrierShipmentMethods;
+            this.isUpdatingCarrierDetail = false;
+          } else {
+            throw resp.data;
           }
-        } else {
-          throw resp.data;
         }
+        
       } catch (err) {
         this.isUpdatingCarrierDetail = false;
         this.carrierPartyId = this.order.shipmentPackages?.[0].carrierPartyId;
@@ -836,8 +825,8 @@ export default defineComponent({
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.productStoreId },
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           picklistFacet: {
@@ -1097,7 +1086,7 @@ export default defineComponent({
 
         if(!hasError(resp)) {
           showToast(translate('Box added successfully'))
-          await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
+          await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
           this.store.dispatch('order/updateInProgressOrder', this.order);
         } else {
           throw resp.data
@@ -1276,10 +1265,13 @@ export default defineComponent({
           const itemInformation = itemInformationByOrderResp[order.orderId]
 
           itemInformation?.map((orderItem: any) => {
-            const item = items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
+            //Added a check for item.productId === orderItem.productId to identify the correct shipment item. In the case of a kit, the ShipmentItem will be created with the same orderItemSeqId for both the kit and its components.
+            const item = items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId && item.productId === orderItem.productId)
 
-            item.shipmentId = orderItem.shipmentId
-            item.shipmentItemSeqId = orderItem.shipmentItemSeqId
+            if(item) {
+              item.shipmentId = orderItem.shipmentId
+              item.shipmentItemSeqId = orderItem.shipmentItemSeqId
+            }
           })
           order.items = items
 
@@ -1347,7 +1339,7 @@ export default defineComponent({
                 if(order.items.length === 1 ||  (this.useNewRejectionApi() && this.isEntierOrderRejectionEnabled(order))) {
                   this.router.push('/in-progress')
                 } else {
-                  await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId, isModified: true })
+                  await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId })
                 }
               }).catch(err => err);
             }
@@ -1412,8 +1404,8 @@ export default defineComponent({
         filters: {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.productStoreId },
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           "shipmentMethodFacet": {
@@ -1453,8 +1445,8 @@ export default defineComponent({
         filters: {
           picklistItemStatusId: { value: '(PICKITEM_PICKED OR (PICKITEM_COMPLETED AND itemShippedDate: [NOW/DAY TO NOW/DAY+1DAY]))' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility?.facilityId },
           productStoreId: { value: this.currentEComStore.productStoreId },
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           manifestContentIdFacet: {
@@ -1787,6 +1779,7 @@ export default defineComponent({
       fileTrayOutline,
       formatUtcDate,
       getFeatures,
+      getFacilityFilter,
       getProductIdentificationValue,
       gift,
       giftOutline,

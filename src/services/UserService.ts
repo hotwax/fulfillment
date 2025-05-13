@@ -276,6 +276,14 @@ const getNewRejectionApiConfig = async (payload: any): Promise<any> => {
   });
 }
 
+const getReservationFacilityIdFieldConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "get",
+    params: payload,
+  });
+}
+
 const getDisableShipNowConfig = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
@@ -369,6 +377,7 @@ export const UserService = {
     getFacilityGroupAndMemberDetails,
     getNewRejectionApiConfig,
     getPartialOrderRejectionConfig,
+    getReservationFacilityIdFieldConfig,
     getUserProfile,
     getPreferredStore,
     isEnumExists,

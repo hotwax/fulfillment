@@ -1,5 +1,5 @@
 <template>
-  <ion-page>
+  <ion-page :key="router.currentRoute.value.path">
     <ViewSizeSelector menu-id="view-size-selector-inprogress" content-id="view-size-selector" />
 
     <ion-header :translucent="true">
@@ -22,29 +22,29 @@
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
       <ion-searchbar class="searchbar" :placeholder="translate('Search orders')" v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
-      <div v-if="inProgressOrders.total">
-        <ion-radio-group v-model="selectedPicklistId" @ionChange="updateSelectedPicklist($event.detail.value)">
-          <ion-row class="filters">
-            <ion-item lines="none">
-              <!-- empty value '' for 'All orders' radio -->
-              <ion-radio label-placement="end" value="">
-                <ion-label class="ion-text-wrap">
-                  {{ translate('All') }}
-                  <p>{{ translate('picklists', { count: picklists.length }) }}</p>
-                </ion-label>
-              </ion-radio>
-            </ion-item>
-            <ion-item lines="none" v-for="picklist in picklists" :key="picklist.id">
-              <ion-radio label-placement="end" :value="picklist.id">
-                <ion-label class="ion-text-wrap">
-                  {{ picklist.pickersName }}
-                  <p>{{ picklist.date }}</p>
-                </ion-label>
-              </ion-radio>
-            </ion-item>
-          </ion-row>
-        </ion-radio-group>
+      <ion-radio-group v-if="picklists?.length" v-model="selectedPicklistId" @ionChange="updateSelectedPicklist($event.detail.value)">
+        <ion-row class="filters">
+          <ion-item lines="none">
+            <!-- empty value '' for 'All orders' radio -->
+            <ion-radio label-placement="end" value="">
+              <ion-label class="ion-text-wrap">
+                {{ translate('All') }}
+                <p>{{ translate('picklists', { count: picklists.length }) }}</p>
+              </ion-label>
+            </ion-radio>
+          </ion-item>
+          <ion-item lines="none" v-for="picklist in picklists" :key="picklist.id">
+            <ion-radio label-placement="end" :value="picklist.id">
+              <ion-label class="ion-text-wrap">
+                {{ picklist.pickersName }}
+                <p>{{ picklist.date }}</p>
+              </ion-label>
+            </ion-radio>
+          </ion-item>
+        </ion-row>
+      </ion-radio-group>
 
+      <div v-if="inProgressOrders.total">
         <div class="results">
           <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" v-if="!isForceScanEnabled" @click="packOrders()">{{ translate("Pack orders") }}</ion-button>
           <ion-card class="order" v-for="(order, index) in getInProgressOrders()" :key="index" :class="isForceScanEnabled ? 'ion-margin-top' : ''">
@@ -77,7 +77,7 @@
               <ion-skeleton-text animated />
             </div>
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
-              <ion-button :disabled="order.items.length >= order.shipmentPackages.length || addingBoxForOrderIds.includes(order.orderId) || !isOrderEligibleForAction(order)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
+              <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId) || !isOrderEligibleForAction(order)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
               <ion-row>
                 <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
                   {{ `Box ${shipmentPackage?.packageName}` }} {{ shipmentPackage.shipmentBoxTypes.length ? `| ${boxTypeDesc(getShipmentPackageType(shipmentPackage))}` : '' }}
@@ -180,7 +180,7 @@
 
             <div class="mobile-only">
               <ion-item>
-                <ion-button fill="clear"  :disabled="order.isModified || order.hasMissingInfo || !isOrderEligibleForAction(order)" @click.stop="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+                <ion-button fill="clear"  :disabled="order.isModified || order.hasMissingInfo || !isOrderEligibleForAction(order)" @click.stop="order.missingLabelImage && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE) ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click.stop="packagingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -189,7 +189,7 @@
 
             <div class="actions">
               <div>
-                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo || !isOrderEligibleForAction(order)" @click.stop="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack") }}</ion-button>
+                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo || !isOrderEligibleForAction(order)" @click.stop="order.missingLabelImage && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE) ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack") }}</ion-button>
                 <ion-button :disabled="order.hasMissingInfo || !isOrderEligibleForAction(order)" fill="outline" @click.stop="save(order)">{{ translate("Save") }}</ion-button>
               </div>
 
@@ -295,7 +295,7 @@ import {
 } from 'ionicons/icons'
 import PackagingPopover from "@/views/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
-import { copyToClipboard, formatUtcDate, getFeatures, jsonToCsv, showToast } from '@/utils';
+import { copyToClipboard, formatUtcDate, getFeatures, getFacilityFilter, hasActiveFilters, jsonToCsv, showToast } from '@/utils';
 import { isKit } from '@/utils/order'
 import { hasError } from '@/adapter';
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
@@ -319,6 +319,7 @@ import { useAuthStore } from '@hotwax/dxp-components'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
+import { useRouter } from "vue-router";
 
 
 export default defineComponent({
@@ -446,7 +447,7 @@ export default defineComponent({
       }
     },
     getErrorMessage() {
-      return this.searchedQuery === '' ? translate("doesn't have any orders in progress right now.", { facilityName: this.currentFacility?.facilityName }) : translate( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+      return this.searchedQuery ? (hasActiveFilters(this.inProgressOrders.query) ? translate("No results found for . Try using different filters.", { searchedQuery: this.searchedQuery }) : translate( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })) : translate("doesn't have any orders in progress right now.", { facilityName: this.currentFacility?.facilityName });
     },
     getInProgressOrders() {
       return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
@@ -848,8 +849,10 @@ export default defineComponent({
               //Added a check for item.productId === orderItem.productId to identify the correct shipment item. In the case of a kit, the ShipmentItem will be created with the same orderItemSeqId for both the kit and its components.
               const item = items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId && item.productId === orderItem.productId)
 
-              item.shipmentId = orderItem.shipmentId
-              item.shipmentItemSeqId = orderItem.shipmentItemSeqId
+              if(item) {
+                item.shipmentId = orderItem.shipmentId
+                item.shipmentItemSeqId = orderItem.shipmentItemSeqId
+              }
             })
             order.items = items
 
@@ -915,7 +918,6 @@ export default defineComponent({
       this.store.dispatch('order/updateInProgressOrder', order)
     },
     async fetchPickersInformation() {
-
       const orderQueryPayload = prepareOrderQuery({
         viewSize: '0',  // passing viewSize as 0 as we don't need any data
         groupBy: 'picklistBinId',
@@ -923,8 +925,8 @@ export default defineComponent({
           picklistItemStatusId: { value: 'PICKITEM_PENDING' },
           '-fulfillmentStatus': { value: ['Rejected', 'Cancelled', 'Completed'] },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          productStoreId: { value: this.currentEComStore.productStoreId },
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         facet: {
           picklistFacet: {
@@ -1146,6 +1148,7 @@ export default defineComponent({
       size && (inProgressOrdersQuery.viewSize = size)
       queryString && (inProgressOrdersQuery.queryString = '')
       inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
+      this.selectedPicklistId && (inProgressOrdersQuery.selectedPicklist = this.selectedPicklistId)
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
     },
     async initialiseOrderQuery() {
@@ -1334,12 +1337,13 @@ export default defineComponent({
     ]);
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
-  ionViewWillLeave() {
+  beforeRouteLeave() {
     this.store.dispatch('order/clearInProgressOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   setup() {
     const authStore = useAuthStore()
+    const router = useRouter();
     const store = useStore();
     const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
@@ -1363,9 +1367,11 @@ export default defineComponent({
       fileTrayOutline,
       formatUtcDate,
       getFeatures,
+      getFacilityFilter,
       getProductIdentificationValue,
       gift,
       giftOutline,
+      hasActiveFilters,
       hasPermission,
       isKit,
       listOutline,
@@ -1375,6 +1381,7 @@ export default defineComponent({
       printOutline,
       productIdentificationPref,
       qrCodeOutline,
+      router,
       trashBinOutline,
       store,
       translate
