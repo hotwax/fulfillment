@@ -77,7 +77,7 @@
               <ion-skeleton-text animated />
             </div>
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
-              <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
+              <ion-button :disabled="addingBoxForOrderIds.includes(order.orderId) || !isOrderEligibleForAction(order)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
               <ion-row>
                 <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
                   {{ `Box ${shipmentPackage?.packageName}` }} {{ shipmentPackage.shipmentBoxTypes.length ? `| ${boxTypeDesc(getShipmentPackageType(shipmentPackage))}` : '' }}
@@ -115,18 +115,18 @@
                   <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
                   <div>
                     <template v-if="item.rejectReason">
-                      <ion-chip :disabled="order.hasMissingInfo" outline color="danger">
+                      <ion-chip :disabled="order.hasMissingInfo || !item.shipmentItemSeqId" outline color="danger">
                         <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
                         <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)"/>
                       </ion-chip>
                     </template>
                     <template v-else-if="useNewRejectionApi() && isEntierOrderRejectionEnabled(order)">
-                      <ion-chip :disabled="order.hasMissingInfo" outline color="danger">
+                      <ion-chip :disabled="order.hasMissingInfo || !item.shipmentItemSeqId" outline color="danger">
                         <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject to avoid order split (no variance)')}}</ion-label>
                       </ion-chip>
                     </template>
                     <template v-else>
-                      <ion-chip :disabled="order.hasMissingInfo || !order.shipmentPackages || order.shipmentPackages.length === 0" outline @click="openShipmentBoxPopover($event, item, item.orderItemSeqId, order)">
+                      <ion-chip :disabled="order.hasMissingInfo || !order.shipmentPackages || order.shipmentPackages.length === 0 || !item.shipmentItemSeqId" outline @click="openShipmentBoxPopover($event, item, item.orderItemSeqId, order)">
                         {{ `Box ${item.selectedBox}` }}
                         <ion-icon :icon="caretDownOutline" />
                       </ion-chip>
@@ -140,14 +140,14 @@
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
-                  <ion-button :disabled="order.hasMissingInfo" color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
+                  <ion-button :disabled="order.hasMissingInfo || !item.shipmentItemSeqId" color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
                     <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline"/>
                   </ion-button>
-                  <ion-button :disabled="order.hasMissingInfo" color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
+                  <ion-button :disabled="order.hasMissingInfo || !item.shipmentItemSeqId" color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
                     <ion-icon slot="icon-only" :icon="trashBinOutline"/>
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button :disabled="order.hasMissingInfo" color="medium" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                  <ion-button :disabled="order.hasMissingInfo || !item.shipmentItemSeqId" color="medium" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
                 </div>
@@ -180,7 +180,7 @@
 
             <div class="mobile-only">
               <ion-item>
-                <ion-button fill="clear"  :disabled="order.isModified || order.hasMissingInfo" @click.stop="order.missingLabelImage && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE) ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+                <ion-button fill="clear"  :disabled="order.isModified || order.hasMissingInfo || !isOrderEligibleForAction(order)" @click.stop="order.missingLabelImage && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE) ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click.stop="packagingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -189,8 +189,8 @@
 
             <div class="actions">
               <div>
-                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo" @click.stop="order.missingLabelImage && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE) ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack") }}</ion-button>
-                <ion-button :disabled="order.hasMissingInfo" fill="outline" @click.stop="save(order)">{{ translate("Save") }}</ion-button>
+                <ion-button :disabled="order.hasRejectedItem || order.isModified || order.hasMissingInfo || !isOrderEligibleForAction(order)" @click.stop="order.missingLabelImage && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE) ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) : packOrder(order)">{{ translate("Pack") }}</ion-button>
+                <ion-button :disabled="order.hasMissingInfo || !isOrderEligibleForAction(order)" fill="outline" @click.stop="save(order)">{{ translate("Save") }}</ion-button>
               </div>
 
               <div class="desktop-only">
@@ -750,7 +750,7 @@ export default defineComponent({
         form.append('shipmentIds', shipmentId)
       })
 
-      const items = JSON.parse(JSON.stringify(order.items));
+      const items = JSON.parse(JSON.stringify(order.items.filter((item: any) => !item.shipmentItemSeqId)));
 
       // creating updated data for shipment packages
       order.shipmentPackages.map((shipmentPackage: any, index: number) => {
@@ -1321,6 +1321,9 @@ export default defineComponent({
       })
 
       modal.present();
+    },
+    isOrderEligibleForAction(order: any) {
+      return order.items?.some((item: any) => item.shipmentItemSeqId)
     }
   },
   async ionViewWillEnter() {
