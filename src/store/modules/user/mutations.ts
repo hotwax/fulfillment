@@ -64,6 +64,9 @@ const mutations: MutationTree <UserState> = {
     },
     [types.USER_DISABLE_UNPACK_CONFIG_UPDATED] (state, payload) {
         state.isUnpackDisabled = payload
+    },
+    [types.USER_OMS_REDIRECTION_INFO_UPDATED] (state, payload) {
+        state.omsRedirectionInfo = payload
     }
 }
 export default mutations;
