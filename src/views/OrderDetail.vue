@@ -159,7 +159,7 @@
           
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
-              <ion-button fill="clear" @click="order.missingLabelImage ? generateTrackingCodeForPacking(order) : isForceScanEnabled ? scanOrder(order) :packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+              <ion-button fill="clear" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -737,7 +737,7 @@ export default defineComponent({
         forceScan = !order.items.every((item: any) => item.rejectReason)
       }
 
-      if (order.missingLabelImage) {
+      if (order.missingLabelImage && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)) {
         await this.generateTrackingCodeForPacking(order, updateParameter, forceScan)
       } else if (forceScan) {
         await this.scanOrder(order, updateParameter)
