@@ -493,6 +493,7 @@ const actions: ActionTree<OrderState, RootState> = {
   async updateOpenOrderIndex({ commit }, payload) {
     commit(types.ORDER_OPEN_QUERY_UPDATED, payload)
   },
+
   // TODO clear current on logout
   async updateCurrent({ commit, dispatch }, order) {
     commit(types.ORDER_CURRENT_UPDATED, order)

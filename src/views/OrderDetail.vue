@@ -76,7 +76,7 @@
             <div class="order-item">
             <div class="product-info">
               <ion-item lines="none">
-                <ion-thumbnail slot="start">
+                <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)">
                   <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                 </ion-thumbnail>
                 <ion-label>
@@ -141,7 +141,7 @@
             <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
               <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                 <ion-item lines="none">
-                  <ion-thumbnail slot="start">
+                  <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)">
                     <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
@@ -255,13 +255,13 @@
               <ion-icon slot="end" :icon="cashOutline" />
             </ion-item>
             <ion-item>
-              <ion-select :disabled="!order.missingLabelImage || !hasPackedShipments(order)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')" :selected-text="getSelectedCarrier(carrierPartyId)">
+              <ion-select :disabled="!order.missingLabelImage || !hasPackedShipments(order) || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')" :selected-text="getSelectedCarrier(carrierPartyId)">
                 <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item>
               <template v-if="carrierMethods && carrierMethods.length > 0">
-                <ion-select :disabled="!order.missingLabelImage || !hasPackedShipments(order)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedShipmentMethod(shipmentMethodTypeId)">
+                <ion-select :disabled="!order.missingLabelImage || !hasPackedShipments(order) || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedShipmentMethod(shipmentMethodTypeId)">
                   <ion-select-option v-for="method in carrierMethods" :key="method.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
                 </ion-select>
               </template>
@@ -342,7 +342,7 @@
             </ion-item>
     
             <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
-              <ion-thumbnail slot="start">
+              <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)">
                 <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
               </ion-thumbnail>
               <ion-label>
@@ -570,7 +570,8 @@ export default defineComponent({
     this.fetchCODPaymentInfo();
 },
   async mounted() {
-    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "")
+    // Remove http://, https://, /api, or :port
+    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "")
     this.printDocumentsExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_PrintDocument`})
     this.orderInvoiceExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderInvoice`})
   },
@@ -618,8 +619,6 @@ export default defineComponent({
         const isTrackingRequired = carrierShipmentMethods.find((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)?.isTrackingRequired
 
         const params = {
-          orderId: this.order.orderId,
-          shipGroupSeqId: this.order.primaryShipGroupSeqId,
           shipmentId: this.order.shipmentId,
           shipmentRouteSegmentId,
           shipmentMethodTypeId : shipmentMethodTypeId ? shipmentMethodTypeId : "",
@@ -640,6 +639,7 @@ export default defineComponent({
         } else {
           throw resp.data;
         }
+        
       } catch (err) {
         this.isUpdatingCarrierDetail = false;
         this.carrierPartyId = this.order.shipmentPackages?.[0].carrierPartyId;

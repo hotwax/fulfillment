@@ -207,8 +207,8 @@
               <div class="product-card">
                 <ion-card v-for="item in shipGroup.items" :key="item.orderItemSeqId">
                   <ion-item>
-                    <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(item.productId)?.mainImageUrl" size="small" />
+                    <ion-thumbnail slot="start" v-image-preview="getProduct(shipGroup.productId)">
+                      <DxpShopifyImg :src="getProduct(shipGroup.productId)?.mainImageUrl" size="small" />
                     </ion-thumbnail>
                     <ion-label class="ion-text-wrap">
                       <h1>{{ item.productId }}</h1>
@@ -345,7 +345,8 @@ export default defineComponent({
     await this.store.dispatch("orderLookup/getOrderDetails", this.orderId)
     await this.store.dispatch("util/fetchProductStores")
     await this.fetchOrderInvoicingFacility()
-    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "")
+    // Remove http://, https://, /api, or :port
+    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "")
     this.additionalDetailItemExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderLookupAdditionalDetailItem`})
     this.isFetchingOrderInfo = false
   },

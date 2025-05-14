@@ -76,7 +76,7 @@
                   <div v-for="item in shipment.items" :key="item.shipmentItemSeqId" class="order-item order-line-item">
                     <div class="product-info">
                       <ion-item lines="none">
-                        <ion-thumbnail slot="start">
+                        <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)">
                           <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                         </ion-thumbnail>
                         <ion-label>

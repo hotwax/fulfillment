@@ -17,13 +17,13 @@
       </ion-item>
 
       <ion-item>
-        <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
+        <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
           <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
         </ion-select>
       </ion-item>
       <ion-item>
         <template v-if="carrierMethods && carrierMethods.length > 0">
-          <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
+          <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
             <ion-select-option v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
           </ion-select>
         </template>
@@ -90,6 +90,7 @@ import logger from "@/logger";
 import { showToast } from "@/utils";
 import { hasError } from "@/adapter";
 import { retryShippingLabel } from "@/utils/order";
+import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
   name: "GenerateTrackingCodeModal",
@@ -161,9 +162,9 @@ export default defineComponent({
 
       this.isGeneratingShippingLabel = true;
 
-      if (order.carrierPartyId !== this.carrierPartyId || order.shipmentMethodTypeId !== this.shipmentMethodTypeId) {
+      if (hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE && (order.carrierPartyId !== this.carrierPartyId || order.shipmentMethodTypeId !== this.shipmentMethodTypeId))) {
         const isUpdated = await this.updateCarrierAndShippingMethod(this.carrierPartyId, this.shipmentMethodTypeId)
-        if (!isUpdated) {
+        if(!isUpdated) {
           showToast(translate("Failed to update shipment method detail."));
           return;
         }
@@ -239,13 +240,11 @@ export default defineComponent({
 
         const isTrackingRequired = carrierShipmentMethods.find((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)?.isTrackingRequired
         const params = {
-          orderId: this.order.orderId,
-          shipGroupSeqId: this.order.primaryShipGroupSeqId,
           shipmentId: this.order.shipmentId,
           shipmentRouteSegmentId,
           shipmentMethodTypeId : shipmentMethodTypeId ? shipmentMethodTypeId : "",
           carrierPartyId,
-          "isTrackingRequired": isTrackingRequired ? isTrackingRequired : "Y"
+          isTrackingRequired: isTrackingRequired ? isTrackingRequired : "Y"
         }
 
         resp = await OrderService.updateShipmentCarrierAndMethod(params)
@@ -269,9 +268,11 @@ export default defineComponent({
   setup() {
     const store = useStore();
     return {
+      Actions,
       barcodeOutline,
       closeOutline,
       copyOutline,
+      hasPermission,
       informationCircleOutline,
       openOutline,
       retryShippingLabel,

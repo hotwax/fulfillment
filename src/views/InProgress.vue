@@ -1,5 +1,5 @@
 <template>
-  <ion-page>
+  <ion-page :key="router.currentRoute.value.path">
     <ViewSizeSelector menu-id="view-size-selector-inprogress" content-id="view-size-selector" />
 
     <ion-header :translucent="true">
@@ -90,7 +90,7 @@
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start">
+                    <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)">
                       <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
@@ -164,7 +164,7 @@
               <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start">
+                    <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)">
                       <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
@@ -316,6 +316,7 @@ import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
 import { OrderService } from '@/services/OrderService';
+import { useRouter } from "vue-router";
 
 
 export default defineComponent({
@@ -1231,12 +1232,13 @@ export default defineComponent({
     ]);
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
-  ionViewWillLeave() {
+  beforeRouteLeave() {
     this.store.dispatch('order/clearInProgressOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   setup() {
     const authStore = useAuthStore()
+    const router = useRouter();
     const store = useStore();
     const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
@@ -1273,6 +1275,7 @@ export default defineComponent({
       printOutline,
       productIdentificationPref,
       qrCodeOutline,
+      router,
       trashBinOutline,
       store,
       translate

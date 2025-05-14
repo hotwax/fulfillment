@@ -351,7 +351,7 @@ const downloadPicklist = async (picklistId: string): Promise<any> => {
   let docCount = 0;
   let picklistDate = "";
   const picklistData: Array<Record<string, string | number>> = []
-  const orderIdentifier: Record<string, string> = {}
+  const orderIdentifier: Record<string, Record<string, string>> = {}
 
   do {
     const payload = {
@@ -370,6 +370,7 @@ const downloadPicklist = async (picklistId: string): Promise<any> => {
       if(!hasError(resp) && resp.data.docs?.length) {
         const productIds: Array<string> = []
         const orderIds: Array<string> = []
+        const party: Record<string, string> = {}
 
         docCount = resp.data.docs.length;
         viewIndex++;
@@ -394,7 +395,15 @@ const downloadPicklist = async (picklistId: string): Promise<any> => {
           })
 
           if(!hasError(orderHeaderResp) && orderHeaderResp.data.docs?.length) {
+            const orderContactMechAndAddress = await getOrderContactMechAndAddress([...new Set(orderIds)]);
             orderHeaderResp.data.docs?.map((order: any) => orderIdentifier[order.orderId] = order.orderName)
+
+            orderHeaderResp.data.docs?.map((order: any) => {
+              orderIdentifier[order.orderId] = {
+                orderName: order.orderName,
+                partyName: orderContactMechAndAddress.orderContactMechIds[order.orderId] ? orderContactMechAndAddress.shippingAddress[orderContactMechAndAddress.orderContactMechIds[order.orderId]]?.toName ? orderContactMechAndAddress.shippingAddress[orderContactMechAndAddress.orderContactMechIds[order.orderId]].toName : "" : ""
+              }
+            })
           } else {
             throw resp.data;
           }
@@ -413,11 +422,12 @@ const downloadPicklist = async (picklistId: string): Promise<any> => {
           // Preparing data to download as CSV
           const productName = product.parentProductName || product.productName
           picklistData.push({
-            "shopify-order-id": orderIdentifier[data.orderId],
+            "shopify-order-id": orderIdentifier[data.orderId]?.orderName,
             "hc-order-id": data.orderId,
+            "customer-name": orderIdentifier[data.orderId]?.partyName,
             "facility-name": facility?.facilityName || facility?.facilityId,
             "product-identifier": getProductIdentificationValue(store.getters["util/getPicklistItemIdentificationPref"] || "internalName", product),
-            "product-code": data.idValue,
+            "product-code": `'${data.idValue}`,
             "product-name": productName,
             "product-features": getFeatures(product.productFeatures),
             "to-pick": data.itemQuantity
@@ -847,6 +857,62 @@ const addTrackingCode = async (payload: any): Promise<any> => {
     },
     data: payload
   });
+}
+
+const getOrderContactMechAndAddress = async (orderIds: Array<string>): Promise<any> => {
+  const shippingAddress = {} as any
+  const orderContactMechIds = {} as Record<string, string>
+  try {
+    const resp: any = await api({
+      url: "performFind",
+      method: "get",
+      params: {
+        "entityName": "OrderItemShipGroup",
+        "inputFields": {
+          orderId: orderIds,
+          orderId_op: "in",
+        },
+        "fieldList": ["orderId", "contactMechId"],
+        "distinct": "Y",
+        "viewSize": orderIds.length
+      }
+    })
+
+    if (!hasError(resp) && resp.data.docs?.length) {
+      resp.data.docs.map((contactMech: any) => orderContactMechIds[contactMech.orderId] = contactMech.contactMechId)
+
+      try {
+        const postalAddressResp = await api({
+          url: "performFind",
+          method: "get",
+          params: {
+            entityName: "PostalAddressAndGeo",
+            inputFields: {
+              contactMechId: Object.values(orderContactMechIds),
+              contactMechId_op: "in"
+            },
+            viewSize: Object.values(orderContactMechIds).length
+          }
+        })
+
+        if (!hasError(postalAddressResp) && postalAddressResp?.data.docs?.length) {
+          postalAddressResp?.data.docs.map((postalAddress: any) => shippingAddress[postalAddress.contactMechId] = postalAddress);
+        } else {
+          throw resp?.data;
+        }
+      } catch (err) {
+        logger.error("Failed to fetch postal address info", err)
+      }
+    } else {
+      throw resp.data
+    }
+  } catch (err) {
+    logger.error("Failed to fetch customer shipping address", err)
+  }
+  return {
+    orderContactMechIds,
+    shippingAddress
+  }
 }
 
 const fetchGiftCardItemPriceInfo = async (payload: any): Promise<any> => {
