@@ -251,7 +251,7 @@ const actions: ActionTree<CarrierState, RootState> = {
     commit(types.SHIPMENT_METHODS_UPDATED, shipmentMethods)
   },
 
-  async fetchShipmentBoxTypes({ commit }) {
+  async fetchShipmentBoxTypes({ dispatch }) {
     let shipmentBoxes  = [] as any;
 
     try {
@@ -271,11 +271,11 @@ const actions: ActionTree<CarrierState, RootState> = {
     } catch(error) {
       logger.error(error);
     }
-    commit(types.CARRIER_SHIPMENT_BOXES_LIST_UPDATED, shipmentBoxes)
+    dispatch("updateShipmentBoxTypes", shipmentBoxes)
   },
 
 
-  async fetchCarrierShipmentBoxTypes ({ commit, state }, payload) {
+  async fetchCarrierShipmentBoxTypes ({ dispatch, state }, payload) {
     try {
       const resp = await CarrierService.fetchCarrierShipmentBoxTypes({
         "entityName": "CarrierShipmentBoxType",
@@ -296,7 +296,7 @@ const actions: ActionTree<CarrierState, RootState> = {
           box.isChecked = associatedBoxTypeIds.includes(box.shipmentBoxTypeId)
         })
 
-        commit(types.CARRIER_SHIPMENT_BOXES_LIST_UPDATED, shipmentBoxes)
+        dispatch("updateShipmentBoxTypes", shipmentBoxes)
       } else {
         throw resp.data;
       }
