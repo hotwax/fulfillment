@@ -12,7 +12,7 @@
   
   <ion-content>
     <ion-item lines="full" v-if="!isBoxUpdating" class="ion-margin-top">
-      <ion-input label-placement="floating" v-model="formData.description" @ionBlur="setShipmentBoxTypeId($event)">
+      <ion-input label-placement="floating" v-model="formData.description" @ionBlur="setShipmentBoxTypeId($event.target.value)">
         <div slot="label">{{ translate("Name") }} <ion-text color="danger">*</ion-text></div>
       </ion-input>
     </ion-item>
@@ -33,13 +33,13 @@
         </ion-select>
       </ion-item>
       <ion-item lines="full">
-        <ion-input :label="translate('Length')" v-model="formData.boxLength" />
+        <ion-input :label="translate('Length')" placeholder="0.00" v-model="formData.boxLength" />
       </ion-item>
       <ion-item lines="full">
-        <ion-input :label="translate('Width')" v-model="formData.boxWidth" />
+        <ion-input :label="translate('Width')" placeholder="0.00" v-model="formData.boxWidth" />
       </ion-item>
       <ion-item lines="full">
-        <ion-input :label="translate('Height')" v-model="formData.boxHeight" />
+        <ion-input :label="translate('Height')" placeholder="0.00" v-model="formData.boxHeight" />
       </ion-item>
     </ion-list>
 
@@ -54,12 +54,12 @@
         </ion-select>
       </ion-item>
       <ion-item lines="full">
-        <ion-input :label="translate('Weight')" v-model="formData.boxWeight" />
+        <ion-input :label="translate('Weight')" placeholder="0.00" v-model="formData.boxWeight" />
       </ion-item>
     </ion-list>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-      <ion-fab-button :disabled="isBoxUpdating ? !isBoxUpdated() : false" @click="isBoxUpdating ? updateShipmentBox() : createShipmentBox()">
+      <ion-fab-button :disabled="isBoxUpdating ? !isBoxUpdated() : false" @click="isBoxUpdating ? updateShipmentBoxDimensions() : createShipmentBox()">
         <ion-icon :icon="checkmarkDoneOutline" />
       </ion-fab-button>
     </ion-fab>
@@ -137,12 +137,10 @@ export default defineComponent({
         return;
       }
 
-      if (!this.formData.shipmentBoxTypeId) {
-        this.formData.shipmentBoxTypeId = generateInternalId(this.formData.description)
-      }
+      this.setShipmentBoxTypeId(this.formData.description)
 
       if (this.formData.shipmentBoxTypeId.length > 20) {
-        showToast(translate("shipment box ID cannot be more than 20 characters."))
+        showToast(translate("Shipment box ID cannot be more than 20 characters."))
         return
       }
 
@@ -163,7 +161,7 @@ export default defineComponent({
         showToast(translate("Failed to create shipment box."))
       }
     },
-    async updateShipmentBox() {
+    async updateShipmentBoxDimensions() {
       try {
         const resp = await CarrierService.updateShipmentBox(this.formData)
 
@@ -185,9 +183,9 @@ export default defineComponent({
     isBoxUpdated() {
       return JSON.stringify(this.currentBox) !== JSON.stringify(this.formData)
     },
-    setShipmentBoxTypeId(event: any) {
+    setShipmentBoxTypeId(value: any) {
       if(!this.formData.shipmentBoxTypeId) {
-        this.formData.shipmentBoxTypeId = generateInternalId(event.target.value)
+        this.formData.shipmentBoxTypeId = generateInternalId(value)
       }
     },
     validateShipmentBoxTypeId(event: any) {

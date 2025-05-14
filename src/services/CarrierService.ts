@@ -36,6 +36,16 @@ const fetchShipmentMethodTypes = async (payload: any): Promise<any> => {
     cache: true
   })
 }
+
+const fetchShipmentBoxTypes = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "POST",
+    data: payload,
+    cache: true
+  })
+}
+
 const fetchProductStoreShipmentMethods = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
@@ -230,6 +240,7 @@ export const CarrierService = {
   fetchCarrierShipmentMethods,
   fetchCarrierTrackingUrls,
   fetchProductStoreShipmentMethods,
+  fetchShipmentBoxTypes,
   fetchShipmentMethodTypes,
   removeCarrierFromFacility,
   removeCarrierShipmentBoxType,

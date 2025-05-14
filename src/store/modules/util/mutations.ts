@@ -74,7 +74,8 @@ const mutations: MutationTree <UtilState> = {
     state.facilityAddresses = {}
     state.facilityShippingLabelImageType = {}
     state.picklistItemIdentificationPref = "internalName"
-    state.isPicklistDownloadEnabled = false
+    state.isPicklistDownloadEnabled = false,
+    state.boxUomConversions = {}
   },
   [types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED](state, payload) {
     if(payload.facilityId) {

@@ -760,7 +760,9 @@ const actions: ActionTree<UtilState, RootState> = {
       const resp = await UtilService.fetchUomConversions({
         "inputFields": {
           "uomId": ["LEN_in", "WT_kg"],
-          "uomIdTo": ["LEN_cm", "WT_lb"]
+          "uomId_op": "in",
+          "uomIdTo": ["LEN_cm", "WT_lb"],
+          "uomIdTo_op": "in"
         },
         "entityName": "UomConversion",
         "noConditionFind": "Y",

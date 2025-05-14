@@ -262,7 +262,7 @@ const actions: ActionTree<CarrierState, RootState> = {
         "viewSize": 250
       }
 
-      const resp = await CarrierService.fetchShipmentMethodTypes(payload)
+      const resp = await CarrierService.fetchShipmentBoxTypes(payload)
       if (!hasError(resp) && resp.data.docs?.length) {
         shipmentBoxes = resp.data.docs
       } else {

@@ -57,7 +57,10 @@ export default defineComponent({
           text: translate('Apply'),
           handler: async (data) => {
             const updatedName = data.shipmentBoxName.trim()
-            if(!updatedName) return false;         
+            if(!updatedName) {
+              showToast(translate("Shipment box name can't be empty."))
+              return false;         
+            }
             if(updatedName === this.box.description) return true;
 
             try {
@@ -67,11 +70,11 @@ export default defineComponent({
               })
 
               if(!hasError(resp)) {
-                showToast(translate("Shipment box renamed successfully."))
                 const boxes = JSON.parse(JSON.stringify(this.shipmentBoxes))
                 boxes.find((currentBox: any) => {
                   if(currentBox.shipmentBoxTypeId === this.box.shipmentBoxTypeId) {
                     currentBox.description = updatedName
+                    return true;
                   }
                 })
                 await this.store.dispatch("carrier/updateShipmentBoxTypes", boxes);

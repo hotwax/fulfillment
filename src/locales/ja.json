@@ -541,6 +541,7 @@
   "Shipment box created successfully.": "Shipment box created successfully.",
   "Shipment box dimensions updated successfully.": "Shipment box dimensions updated successfully.",
   "Shipment box ID cannot be more than 20 characters.": "Shipment box ID cannot be more than 20 characters.",
+  "Shipment box name can't be empty.": "Shipment box name can't be empty.",
   "Shipment box renamed succesfully.": "Shipment box renamed succesfully.",
   "Shipment gateway updated successfuly.": "出荷ゲートウェイが正常に更新されました。",
   "Shipment ID": "出荷ID",
