@@ -2,10 +2,10 @@
   <ion-content>
     <ion-list>
       <ion-list-header v-if="item?.productId">{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}</ion-list-header>
-      <ion-item button @click="handleItemAction('bookQOH')">
+      <ion-item :disabled="item?.noMatchFound" button @click="handleItemAction('bookQOH')">
         {{ translate("Book QoH") }}
       </ion-item>
-      <ion-item button @click="handleItemAction('bookATP')">
+      <ion-item :disabled="item?.noMatchFound" button @click="handleItemAction('bookATP')">
         {{ translate("Book ATP") }}
       </ion-item>
       <ion-item button lines="none" @click="handleItemAction('remove')">
