@@ -1187,7 +1187,7 @@ export default defineComponent({
         form.append('shipmentIds', shipmentId)
       })
 
-      const items = JSON.parse(JSON.stringify(order.items.filter((item: any) => !item.shipmentItemSeqId)));
+      const items = JSON.parse(JSON.stringify(order.items.filter((item: any) => item.shipmentItemSeqId)));
 
       // creating updated data for shipment packages
       order.shipmentPackages?.map((shipmentPackage: any, index: number) => {
