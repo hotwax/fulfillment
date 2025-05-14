@@ -504,7 +504,6 @@ export default defineComponent({
           facilityId: order.originFacilityId,
           rejectedOrderItems: updatedOrderDetail.rejectedOrderItems
         }
-        console.log(params)
         const resp = await OrderService.packOrder(params);
 
         if (hasError(resp)) {
