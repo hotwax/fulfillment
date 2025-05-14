@@ -189,7 +189,7 @@
 
             <div class="actions">
               <div>
-                <ion-button :color="order.hasAllRejectedItem ? 'danger' : 'primary'" @click.stop="packOrder(order)">{{ translate(order.hasAllRejectedItem ? "Reject" : "Pack") }}</ion-button>
+                <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" @click.stop="packOrder(order)">{{ translate(order.hasAllRejectedItem ? "Reject" : "Pack") }}</ion-button>
               </div>
 
               <div class="desktop-only">
