@@ -189,7 +189,7 @@
 
             <div class="actions">
               <div>
-                <ion-button  @click.stop="packOrder(order)">{{ translate("Pack") }}</ion-button>
+                <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" @click.stop="packOrder(order)">{{ translate(order.hasAllRejectedItem ? "Reject" : "Pack") }}</ion-button>
               </div>
 
               <div class="desktop-only">
@@ -429,6 +429,7 @@ export default defineComponent({
           }
         })
         order.hasRejectedItem = order.items.some((item:any) => item.rejectReason);
+        order.hasAllRejectedItem = this.isEntierOrderRejectionEnabled(order) || order.items.every((item: any) => item.rejectReason)
       this.store.dispatch('order/updateInProgressOrder', order)
     },
 
@@ -483,12 +484,40 @@ export default defineComponent({
         forceScan = !order.items.every((item: any) => item.rejectReason)
       }
 
-      if (order.missingLabelImage && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)) {
+      if (order.hasAllRejectedItem) {
+        await this.rejectEntireOrder(order, updateParameter)
+      } else if (order.missingLabelImage && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)) {
         await this.generateTrackingCodeForPacking(order, updateParameter, forceScan)
       } else if (forceScan) {
         await this.scanOrder(order, updateParameter)
       } else {
         this.confirmPackOrder(order, updateParameter);
+      }
+    },
+    async rejectEntireOrder(order: any, updateParameter?: string) {
+      emitter.emit('presentLoader');
+      try {
+        const updatedOrderDetail = await this.getUpdatedOrderDetail(order, updateParameter)
+        const params = {
+          shipmentId: order.shipmentId,
+          orderId: order.orderId,
+          facilityId: order.originFacilityId,
+          rejectedOrderItems: updatedOrderDetail.rejectedOrderItems
+        }
+        const resp = await OrderService.packOrder(params);
+
+        if (hasError(resp)) {
+          throw resp.data
+        }
+
+        await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
+        showToast(translate('Order rejected successfully'));
+
+      } catch (err) {
+        logger.error('Failed to reject order', err)
+        showToast(translate('Failed to reject order'))
+      } finally {
+        emitter.emit("dismissLoader");
       }
     },
     async confirmPackOrder(order: any, updateParameter?: string) {
@@ -809,6 +838,7 @@ export default defineComponent({
         }
       })
       order.hasRejectedItem = true
+      order.hasAllRejectedItem = this.isEntierOrderRejectionEnabled(order) || order.items.every((item: any) => item.rejectReason)
       this.store.dispatch('order/updateInProgressOrder', order)
     },
     rejectKitComponent(order: any, item: any, componentProductId: string) {

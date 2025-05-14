@@ -179,9 +179,9 @@
             <!-- positive -->
             <div>
               <template v-if="category === 'in-progress'">
-                <ion-button @click="packOrder(order)">
+                <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" @click="packOrder(order)">
                   <ion-icon slot="start" :icon="personAddOutline" />
-                  {{ translate("Pack order") }}
+                  {{ translate(order.hasAllRejectedItem ? "Reject order" : "Pack order") }}
                 </ion-button>
                 <Component :is="printDocumentsExt" :category="category" :order="order" :currentFacility="currentFacility" :hasMissingInfo="order.missingLabelImage"/>
               </template>  
@@ -737,12 +737,39 @@ export default defineComponent({
         forceScan = !order.items.every((item: any) => item.rejectReason)
       }
 
-      if (order.missingLabelImage && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)) {
+      if (order.hasAllRejectedItem) {
+        await this.rejectEntireOrder(order, updateParameter)
+      } else if (order.missingLabelImage && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)) {
         await this.generateTrackingCodeForPacking(order, updateParameter, forceScan)
       } else if (forceScan) {
         await this.scanOrder(order, updateParameter)
       } else {
         this.confirmPackOrder(order, updateParameter);
+      }
+    },
+    async rejectEntireOrder(order: any, updateParameter?: string) {
+      emitter.emit('presentLoader');
+      try {
+        const updatedOrderDetail = await this.getUpdatedOrderDetail(order, updateParameter)
+        const params = {
+          shipmentId: order.shipmentId,
+          orderId: order.orderId,
+          facilityId: order.originFacilityId,
+          rejectedOrderItems: updatedOrderDetail.rejectedOrderItems
+        }
+        const resp = await OrderService.packOrder(params);
+
+        if (hasError(resp)) {
+          throw resp.data
+        }
+
+        // await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
+        showToast(translate('Order rejected successfully'));
+      } catch (err) {
+        logger.error('Failed to reject order', err)
+        showToast(translate('Failed to reject order'))
+      } finally {
+        emitter.emit("dismissLoader");
       }
     },
     async confirmPackOrder(order: any, updateParameter?: string) {
@@ -920,7 +947,7 @@ export default defineComponent({
           }
         })
         order.hasRejectedItem = true
-        
+        order.hasAllRejectedItem = this.isEntierOrderRejectionEnabled(order) || order.items.every((item: any) => item.rejectReason)
 
         /*
         Commenting this out to avoid directly updating items. Now user need to click on the save button to save the detail.
@@ -940,6 +967,7 @@ export default defineComponent({
           }
         })
         order.hasRejectedItem = order.items.some((item:any) => item.rejectReason);
+        order.hasAllRejectedItem = this.isEntierOrderRejectionEnabled(order) || order.items.every((item: any) => item.rejectReason)
     },
     rejectKitComponent(order: any, item: any, componentProductId: string) {
       let kitComponents = item.kitComponents ? item.kitComponents : []
