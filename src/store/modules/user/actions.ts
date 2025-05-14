@@ -57,8 +57,8 @@ const actions: ActionTree<UserState, RootState> = {
       
       //fetching user facilities
       const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_STOREFULFILLMENT_ADMIN" );
-      const facilities = await useUserStore().getUserFacilities(userProfile?.partyId, "OMS_FULFILLMENT", isAdminUser)
-      await useUserStore().getFacilityPreference('SELECTED_FACILITY')
+      const facilities = await useUserStore().getUserFacilities(userProfile?.partyId, "OMS_FULFILLMENT", isAdminUser, null)
+      await useUserStore().getFacilityPreference('SELECTED_FACILITY', null)
 
       if (!facilities.length) throw 'Unable to login. User is not assocaited with any facility'
 
@@ -85,7 +85,7 @@ const actions: ActionTree<UserState, RootState> = {
       // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
       const currentFacility: any = useUserStore().getCurrentFacility
       userProfile.stores = await useUserStore().getEComStoresByFacility(currentFacility.facilityId);
-      await useUserStore().getEComStorePreference('SELECTED_BRAND');
+      await useUserStore().getEComStorePreference('SELECTED_BRAND', null);
       const preferredStore: any = useUserStore().getCurrentEComStore
       /*  ---- Guard clauses ends here --- */
 
@@ -202,7 +202,7 @@ const actions: ActionTree<UserState, RootState> = {
       const previousEComStoreId = getProductStoreId()
       const userProfile = JSON.parse(JSON.stringify(state.current as any));
       userProfile.stores = await useUserStore().getEComStoresByFacility(facility.facilityId);
-      await useUserStore().getEComStorePreference('SELECTED_BRAND');
+      await useUserStore().getEComStorePreference('SELECTED_BRAND', null);
       const preferredStore: any = useUserStore().getCurrentEComStore
       commit(types.USER_INFO_UPDATED, userProfile);
 

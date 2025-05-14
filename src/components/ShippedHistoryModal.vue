@@ -12,7 +12,7 @@
     <ion-content>
       <ion-list v-for="(item, index) in items" :key="index">
         <ion-item>
-          <ion-thumbnail slot="start">
+          <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)">
             <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" />
           </ion-thumbnail>
           <ion-label>
