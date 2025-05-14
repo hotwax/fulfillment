@@ -714,7 +714,7 @@ const actions: ActionTree<UtilState, RootState> = {
         "shipmentMethodTypeId_op": "equals",
         "shipmentMethodTypeId_not": "Y",
         "fieldsToSelect": ["description", "partyId", "shipmentMethodTypeId"],
-        "thruDate_op": "empty",
+        //"thruDate_op": "empty",
         "distinct": "Y",
         "pageSize": 100
       }
@@ -758,7 +758,7 @@ const actions: ActionTree<UtilState, RootState> = {
           facilityId: remainingFacilityIds,
           facilityId_op: "in",
         orderByField: 'fromDate DESC',
-        thruDate_op: 'empty',
+        //thruDate_op: 'empty',
         fieldsToSelect: ['address1', 'address2', 'city', 'countryGeoName', 'postalCode', 'stateGeoName', 'facilityId', 'facilityName', 'contactMechId'],
         pageSize: 2
       }) as any;

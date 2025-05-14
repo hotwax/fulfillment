@@ -375,7 +375,7 @@ export default defineComponent({
             "facilityGroupId": this.facilityGroupDetails.facilityGroupId,
             "fieldsToSelect": ["facilityId", "fromDate"],
             "pageSize": 1,
-            "thruDate_op": 'empty'
+            //"thruDate_op": 'empty'
           })
 
           if (!hasError(resp)) {

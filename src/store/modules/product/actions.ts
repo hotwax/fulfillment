@@ -78,7 +78,7 @@ const actions: ActionTree<ProductState, RootState> = {
       resp = await ProductService.fetchProductComponents({
         productId: productId,
         productAssocTypeId: "PRODUCT_COMPONENT",
-        thruDate_op: "empty",
+        //thruDate_op: "empty",
         pageSize: 100,  // maximum records we could have
       })
       if (!hasError(resp)) {

@@ -568,7 +568,7 @@ const fetchFacilityZPLGroupInfo = async (facilityId: string): Promise<any> => {
   const params = {
     facilityGroupId: "ZPL_SHIPPING_LABEL",
     facilityGroupTypeId: "SHIPPING_LABEL",
-    thruDate_op: "empty",
+    //thruDate_op: "empty",
     pageSize: 1
   }
 

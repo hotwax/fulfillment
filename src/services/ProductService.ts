@@ -59,7 +59,7 @@ const fetchProductsAverageCost = async (productIds: any, facilityId: any): Promi
       productId_op: "in",
       productAverageCostTypeId: "WEIGHTED_AVG_COST",
       pageSize: 250, // maximum view size
-      thruDate_op: "empty",
+      //thruDate_op: "empty",
       orderByField: "fromDate DESC",
       fieldsToSelect: ["productId", "averageCost"]
     }
