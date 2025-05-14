@@ -424,11 +424,7 @@ div:has(> .kit-badge) {
   font-family: inherit;
 }
 
-p:has(a) {
-  cursor: pointer;
-}
-
-.pointer {
+.pointer, p:has(a) {
   cursor: pointer;
 }
 
