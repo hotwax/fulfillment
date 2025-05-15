@@ -372,12 +372,6 @@ ion-modal {
   --columns-desktop: 5;
 }
 
-/* Added width property as after updating to ionic7 min-width is getting applied on ion-label inside ion-item
-which results in distorted label text and thus reduced ion-item width */
-.list-item > ion-item {
-  width: 100%;
-}
-
 @media (min-width: 991px) {
   ion-menu {
     --width: 375px;
