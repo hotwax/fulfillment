@@ -105,7 +105,7 @@
           <div class="item-search">
             <ion-item>
               <ion-icon slot="start" :icon="listOutline"/>
-              <ion-input ref="addProductInput" :label="translate('Add product')" label-placement="floating" :clear-input="true" v-model="queryString" :placeholder="translate('Searching on SKU')" @keyup.enter="isScanningEnabled ? handleBarcodeScan(queryString) : addProductToCount()" />
+              <ion-input ref="addProductInput" :label="translate('Add product')" label-placement="floating" :clear-input="true" v-model="queryString" :placeholder="translate('Searching on SKU')" @keyup.enter="isScanningEnabled ? updateScannedProduct(queryString) : addProductToCount()" />
               <ion-button fill="outline" @click="initiateScan()">
                 <ion-icon slot="start" :icon="cameraOutline" />
                 {{ isScanningEnabled ? translate("Stop scanning") :translate("Scan") }}
@@ -153,8 +153,8 @@
                   <Image :src="getProduct(item.productId)?.mainImageUrl" />
                 </ion-thumbnail>
                 <ion-label>
-                  {{ (item.scannedId && !item.productId) ? item.scannedId : getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                  <p>{{ item.isMatching ? "Matching..." : item.noMatchFound ? "no match found" : getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                  {{ item.scannedId ? item.scannedId : getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
+                  <p>{{ item.isMatching ? translate("Matching...") : item.noMatchFound ? translate("no match found") : getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                 </ion-label>
               </ion-item>
               <template v-if="item.isMatching || item.noMatchFound">
@@ -408,7 +408,8 @@ async function addProductToCount(scannedId?: any, product?: any) {
   }
 }
 
-async function handleBarcodeScan(barcode: string) {
+// Updates the scanned product by checking if it already exists in the order and adding it if not
+async function updateScannedProduct(barcode: string) {
   if(!isScanningEnabled.value) return;
   // Check if the product already exists in the order
   const existingItem = currentOrder.value.items.find((item: any) => item.sku === barcode);
@@ -430,7 +431,8 @@ async function handleBarcodeScan(barcode: string) {
   await findProduct();
 }
 
-async function handleScannedProduct() {
+// Validates the scanned product by checking if it matches any product in the cachedProducts and updating the order accordingly
+async function validateScannedProduct() {
   queryString.value = "";
   const itemsWithNoMatch = currentOrder.value.items.filter((item: any) => item.noMatchFound);
   const allProducts = Object.values(getProducts.value);
@@ -752,7 +754,7 @@ async function findProduct() {
     })
     if (!hasError(resp) && resp.data.response?.docs?.length) {
       searchedProduct.value = resp.data.response.docs[0];
-      store.dispatch("product/addProductToCached", searchedProduct.value)    
+      store.dispatch("product/addProductToCached", searchedProduct.value)     
     } else {
       throw resp.data
     }
@@ -761,7 +763,7 @@ async function findProduct() {
     logger.error("Product not found", err)
   }
   isSearchingProduct.value = false
-  if(isScanningEnabled.value) await handleScannedProduct()
+  if(isScanningEnabled.value) await validateScannedProduct()
 }
 
 async function fetchStock(productId: string) {
