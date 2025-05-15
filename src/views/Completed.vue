@@ -81,7 +81,7 @@
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)">
+                    <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="item.productId">
                       <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
@@ -119,7 +119,7 @@
               <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)">
+                    <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="productComponent.productIdTo">
                       <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
