@@ -105,9 +105,9 @@
           <div class="item-search">
             <ion-item>
               <ion-icon slot="start" :icon="listOutline"/>
-              <ion-input ref="addProductInput" :label="translate('Add product')" label-placement="floating" :clear-input="true" v-model="queryString" :placeholder="translate('Searching on SKU')" @keyup.enter="isScanningEnabled ? updateScannedProduct(queryString) : addProductToCount()" />
-              <ion-button fill="outline" @click="initiateScan()">
-                <ion-icon slot="start" :icon="cameraOutline" />
+              <ion-input ref="addProductInput" :label="translate('Add product')" label-placement="floating" :clear-input="true" v-model="queryString" :placeholder="translate('Searching on SKU')" @keyup.enter="isScanningEnabled ? scanProduct(queryString) : addProductToOrder()" />
+              <ion-button fill="outline" @click="toggleScan()">
+                <ion-icon slot="start" :icon="isScanningEnabled? stopOutline : cameraOutline" />
                 {{ isScanningEnabled ? translate("Stop scanning") :translate("Scan") }}
               </ion-button>
             </ion-item>
@@ -122,7 +122,7 @@
                 <p class="overline">{{ translate("Search result") }}</p>
                 {{ searchedProduct.internalName || searchedProduct.sku || searchedProduct.productId }}
               </ion-label>
-              <ion-button size="default" slot="end" fill="clear" @click="addProductToCount" :color="isProductAvailableInOrder() ? 'success' : 'primary'">
+              <ion-button size="default" slot="end" fill="clear" @click="addProductToOrder" :color="isProductAvailableInOrder() ? 'success' : 'primary'">
                 <ion-icon slot="icon-only" :icon="isProductAvailableInOrder() ? checkmarkCircle : addCircleOutline"/>
               </ion-button>
             </ion-item>
@@ -202,7 +202,7 @@
 
 <script setup lang="ts">
 import { IonBackButton, IonButton, IonCard, IonCardHeader, IonCardTitle, IonCheckbox, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonModal, IonPage, IonSelect, IonSelectOption, IonSpinner, IonThumbnail, IonTitle, IonToolbar, onIonViewDidEnter, alertController, modalController, popoverController } from '@ionic/vue';
-import { addCircleOutline, cameraOutline, checkmarkCircle, checkmarkDoneOutline, cloudUploadOutline, downloadOutline, ellipsisVerticalOutline, informationCircleOutline, listOutline, sendOutline, storefrontOutline } from 'ionicons/icons';
+import { addCircleOutline, cameraOutline, checkmarkCircle, checkmarkDoneOutline, cloudUploadOutline, downloadOutline, ellipsisVerticalOutline, informationCircleOutline, listOutline, sendOutline, stopOutline, storefrontOutline } from 'ionicons/icons';
 import { getProductIdentificationValue, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components'
 import { computed, ref, watch } from "vue";
 import { getDateWithOrdinalSuffix, jsonToCsv, parseCsv, showToast } from '@/utils';
@@ -254,11 +254,13 @@ const getProducts = computed(() => store.getters["product/getProducts"])
 const shipmentMethodsByCarrier = computed(() => store.getters["util/getShipmentMethodsByCarrier"])
 const getCarrierDesc = computed(() => store.getters["util/getCarrierDesc"])
 const sampleProducts = computed(() => store.getters["product/getSampleProducts"])
+const barcodeIdentifier = computed(() => store.getters["util/getBarcodeIdentificationPref"])
 
 // Implemented watcher to display the search spinner correctly. Mainly the watcher is needed to not make the findProduct call always and to create the debounce effect.
 // Previously we were using the `debounce` property of ion-input but it was updating the searchedString and making other related effects after the debounce effect thus the spinner is also displayed after the debounce
 // effect is completed.
 watch(queryString, (value) => {
+  if(isScanningEnabled.value) return;
   const searchedString = value.trim()
 
   if(searchedString?.length) {
@@ -274,7 +276,7 @@ watch(queryString, (value) => {
 
   // Storing the setTimeoutId in a variable as watcher is invoked multiple times creating multiple setTimeout instance those are all called, but we only need to call the function once.
   timeoutId.value = setTimeout(() => {
-    if(searchedString?.length && !isScanningEnabled.value) findProduct()
+    if(searchedString?.length) findProduct()
   }, 1000)
 
 }, { deep: true })
@@ -371,12 +373,12 @@ async function findProductFromIdentifier(payload: any) {
   }
 }
 
-function initiateScan() {
+function toggleScan() {
   isScanningEnabled.value = !isScanningEnabled.value;
   isScanningEnabled.value ? addProductInput.value.$el.setFocus() : addProductInput.value.$el.blur();
 }
 
-async function addProductToCount(scannedId?: any, product?: any) {
+async function addProductToOrder(scannedId?: any, product?: any) {
   if(!isScanningEnabled.value) {
     if(!searchedProduct.value.productId ||!queryString.value) return;
     if(isProductAvailableInOrder()) return;
@@ -409,10 +411,10 @@ async function addProductToCount(scannedId?: any, product?: any) {
 }
 
 // Updates the scanned product by checking if it already exists in the order and adding it if not
-async function updateScannedProduct(barcode: string) {
+async function scanProduct(scannedItem: string) {
   if(!isScanningEnabled.value) return;
   // Check if the product already exists in the order
-  const existingItem = currentOrder.value.items.find((item: any) => item.sku === barcode);
+  const existingItem = currentOrder.value.items.find((item: any) => item.sku === scannedItem);
   if(existingItem) {
     showToast(translate("Product already added to the order."));
     queryString.value = "";
@@ -420,7 +422,7 @@ async function updateScannedProduct(barcode: string) {
   }
 
   let newProduct = { 
-    scannedId: barcode,
+    scannedId: scannedItem,
     quantity: 0,
     isChecked: false,
     isMatching: true,
@@ -439,9 +441,9 @@ async function validateScannedProduct() {
 
   for(const item of itemsWithNoMatch) {
     const matchedProduct = allProducts.find((product: any) => product.sku === item.scannedId);
-    // If a matched product is found, call addProductToCount
+    // If a matched product is found, call addProductToOrder
     if(matchedProduct) {
-      await addProductToCount(item.scannedId, matchedProduct);
+      await addProductToOrder(item.scannedId, matchedProduct);
     } else {
       // If no match found, set the noMatchFound flag for the scanned item
       currentOrder.value.items = currentOrder.value.items.map((existingItem: any) => {
@@ -463,7 +465,7 @@ async function openMatchProductModal(currentItem: any) {
 
   addProductModal.onDidDismiss().then(async (result) => {
     if(result.data?.selectedProduct) {
-      await addProductToCount(currentItem.scannedId, result.data.selectedProduct);
+      await addProductToOrder(currentItem.scannedId, result.data.selectedProduct);
     }
   })
 
@@ -753,7 +755,7 @@ async function findProduct() {
       "viewSize": 1
     })
     if (!hasError(resp) && resp.data.response?.docs?.length) {
-      searchedProduct.value = resp.data.response.docs[0];
+      if(!isScanningEnabled.value) searchedProduct.value = resp.data.response.docs[0];
       store.dispatch("product/addProductToCached", searchedProduct.value)      
     } else {
       throw resp.data
