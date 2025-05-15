@@ -111,7 +111,7 @@
               <ion-spinner color="secondary" name="crescent"></ion-spinner>
             </ion-item>
             <ion-item lines="none" v-else-if="searchedProduct.productId">
-              <ion-thumbnail slot="start" v-image-preview="getProduct(searchedProduct.productId)">
+              <ion-thumbnail slot="start" v-image-preview="getProduct(searchedProduct.productId)" :key="searchedProduct.productId">
                 <Image :src="getProduct(searchedProduct.productId).mainImageUrl"/>
               </ion-thumbnail>
               <ion-label>
@@ -145,7 +145,7 @@
 
             <div class="list-item" v-for="(item, index) in currentOrder.items" :key="index">
               <ion-item lines="none">
-                <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)">
+                <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="item.productId">
                   <Image :src="getProduct(item.productId)?.mainImageUrl" />
                 </ion-thumbnail>
                 <ion-label>
