@@ -4,6 +4,7 @@ import store from "@/store";
 import { translate } from "@hotwax/dxp-components";
 import { showToast } from "@/utils";
 import { cogOutline } from "ionicons/icons";
+import { ZebraPrinterService } from './ZebraPrinterService';
 
 const fetchTransferOrders = async (params: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
@@ -36,7 +37,7 @@ const fetchTransferOrderDetail = async (orderId: string): Promise<any> => {
   });
 };
 
-const fetchShippedTransferOrders = async (params: any): Promise<any> => {
+const fetchShippedTransferShipment = async (params: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
@@ -81,13 +82,13 @@ const cancelTransferOrderShipment = async (shipmentId: string): Promise<any> => 
       "api_key": omsRedirectionInfo.token,
       "Content-Type": "application/json"
     },
-    data:{
+    data: {
       "statusId": "SHIPMENT_CANCELLED"
     }
   });
 };
 
-const shipTransferOrderShipment = async (payload: { shipmentId: string, trackingIdNumber?: string, shipmentRouteSegmentId?: string, [key: string]: any }): Promise<any> => {
+const shipTransferOrderShipment = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
@@ -99,30 +100,24 @@ const shipTransferOrderShipment = async (payload: { shipmentId: string, tracking
       "api_key": omsRedirectionInfo.token,
       "Content-Type": "application/json"
     },
-    data: {
-      trackingIdNumber: payload.trackingIdNumber,
-      shipmentRouteSegmentId: payload.shipmentRouteSegmentId,
-      ...payload.data
-    }
+    data: payload
   });
 };
 
 const printTransferOrderPicklist = async (orderId: string): Promise<any> => {
-
   try {
-
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+    const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+    const baseURL = store.getters['user/getMaargBaseUrl'];
 
     // Get packing slip from the server
     const resp: any = await client({
       method: "get",
       url: `poorti/transferOrders/${orderId}/printPicklist`,
       responseType: "blob",
-    baseURL,
-    headers: {
-      "api_key": omsRedirectionInfo.token,
-    }
+      baseURL,
+      headers: {
+        "api_key": omsRedirectionInfo.token,
+      }
     })
 
     if (!resp || resp.status !== 200 || hasError(resp)) {
@@ -152,34 +147,52 @@ const createOutboundTransferShipment = async (query: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-    // Get packing slip from the server
-    return await client({
-      method: "post",
-      url: "poorti/transferShipments",
-      baseURL,
-      data:query,
-      headers: {
-        "api_key": omsRedirectionInfo.token,
-        "Content-Type": "application/json"
-      }
-    })
+  return await client({
+    method: "post",
+    url: "poorti/transferShipments",
+    baseURL,
+    data: query,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    }
+  })
 };
 
-const printShippingLabel = async (
-  shipmentIds: Array<string>,
-  shippingLabelPdfUrls?: Array<string>
-): Promise<any> => {
+const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string): Promise<any> => {
   try {
+    const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+    const baseURL = store.getters['user/getMaargBaseUrl'];
+
     let pdfUrls = shippingLabelPdfUrls?.filter((pdfUrl: any) => pdfUrl);
     if (!pdfUrls || pdfUrls.length == 0) {
+      let labelImageType = imageType || "PNG";
+
+      if (!imageType && shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId) {
+        labelImageType = await store.dispatch("util/fetchLabelImageType", shipmentPackages[0].carrierPartyId);
+      }
+
+      const labelImages = [] as Array<string>
+      if (labelImageType === "ZPLII") {
+        shipmentPackages?.map((shipmentPackage: any) => {
+          shipmentPackage.labelImage && labelImages.push(shipmentPackage.labelImage)
+        })
+        await ZebraPrinterService.printZplLabels(labelImages);
+        return;
+      }
+
       // Get packing slip from the server
-      const resp: any = await api({
+      const resp: any = await client({
         method: "get",
         url: "ShippingLabel.pdf",
         params: {
-          shipmentId: shipmentIds,
+          shipmentId: shipmentIds[0]
         },
         responseType: "blob",
+        baseURL,
+        headers: {
+          "api_key": omsRedirectionInfo.token,
+        }
       });
 
       if (!resp || resp.status !== 200 || hasError(resp)) {
@@ -209,14 +222,35 @@ const printShippingLabel = async (
   }
 };
 
+// TODO
+const retryShippingLabel = async (shipmentIds: Array<string>, forceRateShop = false): Promise<any> => {
+  try {
+    const resp = await api({
+      method: 'POST',
+      url: 'retryShippingLabel',  // TODO: update the api
+      data: {
+        shipmentIds,
+        forceRateShop: forceRateShop ? 'Y' : 'N',
+        generateLabel: "Y" // This is needed to generate label after the new changes in backend related to auto generation of label.
+      }
+    })
+    if (hasError(resp)) {
+      throw resp?.data;
+    }
+  } catch (error) {
+    logger.error(error)
+  }
+}
+
 export const TransferOrderService = {
   cancelTransferOrderShipment,
   createOutboundTransferShipment,
   fetchTransferOrders,
   fetchTransferOrderDetail,
   printTransferOrderPicklist,
-  fetchShippedTransferOrders,
+  fetchShippedTransferShipment,
   fetchTransferShipmentDetails,
   printShippingLabel,
+  retryShippingLabel,
   shipTransferOrderShipment
 };

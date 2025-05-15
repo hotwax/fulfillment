@@ -50,12 +50,12 @@
             </template>
           </template>
           <template v-else>
-            <template v-if="getShipments('shipped')?.length > 0">
-              <ion-card class="order" v-for="(shipment, index) in getShipments('shipped')" :key="index">
+            <template v-if="currentOrder?.shipments?.length > 0">
+              <ion-card class="order" v-for="(shipment, index) in currentOrder.shipments" :key="index">
                 <div class="order-header">
                   <div class="order-primary-info">
                     <ion-label>
-                      <p>{{ translate("Shipped") }} {{ getTime(shipment.orderDate) }}</p>
+                      <p>{{ translate("Shipped") }} {{ getTime(shipment.statusDate) }}</p>
                     </ion-label>
                   </div>
                 <div class="order-tags">
@@ -92,7 +92,7 @@
                   </div>
                 </div>
                 
-                <!-- <div class="actions">
+                <div class="actions">
                   <div class="desktop-only">
                     <ion-button fill="outline" @click.stop="regenerateShippingLabel(shipment)">
                       {{ translate("Regenerate Shipping Label") }}
@@ -100,7 +100,7 @@
                     </ion-button>
                     <ion-button v-if="!shipment.trackingIdNumber" fill="outline" @click.stop="showShippingLabelErrorModal(shipment)">{{ translate("Shipping label error") }}</ion-button>
                   </div>
-                </div> -->
+                </div>
               </ion-card>
             </template>
             <template v-else>
@@ -202,7 +202,8 @@ export default defineComponent({
       queryString: '',
       selectedSegment: 'open',
       isCreatingShipment: false,
-      lastScannedId: ''
+      lastScannedId: '',
+      defaultRejectReasonId: "NO_VARIANCE_LOG"  // default variance reason, to be used when any other item is selected for rejection
     }
   },
   async ionViewWillEnter() {
@@ -216,6 +217,7 @@ export default defineComponent({
       getStatusDesc: 'util/getStatusDesc',
       getProduct: 'product/getProduct',
       productIdentificationPref: 'user/getProductIdentificationPref',
+      productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
     })
   },
@@ -234,13 +236,6 @@ export default defineComponent({
         return this.currentOrder?.items?.filter((item: any) => item.statusId === 'ITEM_COMPLETED')
       } else {
         return this.currentOrder?.items?.filter((item: any) => item.statusId !== 'ITEM_COMPLETED' && item.statusId !== 'ITEM_CANCELLED' && item.statusId !== 'ITEM_REJECTED')
-      }
-    },
-    getShipments(shipmentType: string) {
-      if (shipmentType === 'shipped') {
-        return this.currentOrder?.shipments?.filter((shipment: any) => shipment.shipmentStatusId === 'SHIPMENT_SHIPPED')
-      } else {
-        return this.currentOrder?.shipments?.filter((shipment: any) => shipment.shipmentStatusId !== 'SHIPMENT_SHIPPED' && shipment.shipmentStatusId !== 'SHIPMENT_CANCELLED')
       }
     },
     async createShipment() {
@@ -335,7 +330,52 @@ export default defineComponent({
         }
       });
       return shippingLabelErrorModal.present();
-    }
+    },
+      async regenerateShippingLabel(currentShipment: any) {
+        // If there are no product store shipment method configured, then not generating the label and displaying an error toast
+        if (this.productStoreShipmentMethCount <= 0) {
+          showToast(translate('Unable to generate shipping label due to missing product store shipping method configuration'))
+          return;
+        }
+
+        // if the request to print shipping label is not yet completed, then clicking multiple times on the button
+        // should not do anything
+        if (currentShipment.isGeneratingShippingLabel) {
+          return;
+        }
+
+        currentShipment.isGeneratingShippingLabel = true;
+        let shippingLabelPdfUrls = currentShipment.shipmentPackages
+          ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+          .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+
+
+        if (!currentShipment.trackingIdNumber) {
+          //regenerate shipping label if missing tracking code
+          await TransferOrderItem.retryShippingLabel([currentShipment.shipmentId])
+          // retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
+          // Refetching the order tracking detail irrespective of api response since currently in SHIPHAWK api returns error whether label is generated
+          // Temporarily handling this in app but should be handled in backend        
+          await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.currentOrder.orderId })
+          currentShipment = this.currentOrder?.shipments?.find((shipment:any) => shipment.shipmentId === currentShipment.shipmentId);
+          shippingLabelPdfUrls = currentShipment?.shipmentPackages
+              ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+              .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+
+
+          if(currentShipment.trackingIdNumber) {
+            showToast(translate("Shipping Label generated successfully"))
+            await TransferOrderItem.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
+          } else {
+            showToast(translate("Failed to generate shipping label"))
+          }
+        } else {
+          //print shipping label if label already exists
+          await TransferOrderItem.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
+        }
+
+        currentShipment.isGeneratingShippingLabel = false;
+      },
 }, 
 ionViewDidLeave() {
   const routeTo = this.router.currentRoute;

@@ -190,49 +190,49 @@ import { translate, useProductIdentificationStore } from '@hotwax/dxp-components
       },
       async generateShippingLabel(currentShipment: any) {
         
-      //   // If there are no product store shipment method configured, then not generating the label and displaying an error toast
-      //   if (this.productStoreShipmentMethCount <= 0) {
-      //     showToast(translate('Unable to generate shipping label due to missing product store shipping method configuration'))
-      //     return;
-      //   }
+        // If there are no product store shipment method configured, then not generating the label and displaying an error toast
+        if (this.productStoreShipmentMethCount <= 0) {
+          showToast(translate('Unable to generate shipping label due to missing product store shipping method configuration'))
+          return;
+        }
 
-      // // if the request to print shipping label is not yet completed, then clicking multiple times on the button
-      // // should not do anything
-      // if (this.isGeneratingShippingLabel) {
-      //   return;
-      // }
+      // if the request to print shipping label is not yet completed, then clicking multiple times on the button
+      // should not do anything
+      if (this.isGeneratingShippingLabel) {
+        return;
+      }
 
-      // await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
-      // this.isGeneratingShippingLabel = true;
-      // let shippingLabelPdfUrls = this.currentShipment.shipmentPackages
-      //   ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
-      //   .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+      await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
+      this.isGeneratingShippingLabel = true;
+      let shippingLabelPdfUrls = this.currentShipment.shipmentPackages
+        ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+        .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
       
 
-      //   if (!this.currentShipment.trackingCode) {
-      //     //regenerate shipping label if missing tracking code
-      //     await TransferOrderService.retryShippingLabel([this.currentShipment.shipmentId])
-      //     //retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
-      //     await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
-      //     shippingLabelPdfUrls = this.currentShipment?.shipmentPackages
-      //         ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
-      //         .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+        if (!this.currentShipment.trackingCode) {
+          //regenerate shipping label if missing tracking code
+          await TransferOrderService.retryShippingLabel([this.currentShipment.shipmentId])
+          //retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
+          await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
+          shippingLabelPdfUrls = this.currentShipment?.shipmentPackages
+              ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+              .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
 
-      //     if(this.currentShipment.trackingCode) {
-      //       this.showLabelError = false;
-      //       showToast(translate("Shipping Label generated successfully"))
-      //       await TransferOrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
-      //     } else {
-      //       this.showLabelError = true;
-      //       showToast(translate("Failed to generate shipping label"))
-      //     }
-      //   } else {
-      //     this.showLabelError = false;
-      //     //print shipping label if label already exists
-      //     await TransferOrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
-      //   }
+          if(this.currentShipment.trackingCode) {
+            this.showLabelError = false;
+            showToast(translate("Shipping Label generated successfully"))
+            await TransferOrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
+          } else {
+            this.showLabelError = true;
+            showToast(translate("Failed to generate shipping label"))
+          }
+        } else {
+          this.showLabelError = false;
+          //print shipping label if label already exists
+          await TransferOrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
+        }
 
-      //   this.isGeneratingShippingLabel = false;
+        this.isGeneratingShippingLabel = false;
       },
       async transferShipmentActionsPopover(ev: Event) {
         const popover = await popoverController.create({
@@ -274,7 +274,7 @@ import { translate, useProductIdentificationStore } from '@hotwax/dxp-components
             await TransferOrderService.shipTransferOrderShipment({
               shipmentId: this.currentShipment.shipmentId,
               trackingIdNumber: this.trackingCode,
-              shipmentRouteSegmentId: '01'
+              shipmentRouteSegmentId: this.currentShipment.shipmentRouteSegmentId
             });
           }
 

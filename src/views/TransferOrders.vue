@@ -9,8 +9,7 @@
     </ion-header>
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="transfer-order-filters">
-      <!-- <ion-searchbar class="searchbar" :value="transferOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/> -->
-      <ion-searchbar class="searchbar" :value="transferOrders.query.queryString"/>
+      <ion-searchbar class="searchbar" :value="transferOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="transferOrders.total">
         <div class="results">
           <ion-list>
@@ -18,7 +17,7 @@
               <ion-label>
                 <p class="overline">{{ order.orderId }}</p>
                 {{ order.orderName }}
-                <p>{{ order.externalId }}</p>
+                <p>{{ order.orderExternalId }}</p>
               </ion-label>
               <ion-badge slot="end">{{ order.orderStatusDesc }}</ion-badge>
             </ion-item>
@@ -120,10 +119,7 @@ export default defineComponent({
   async ionViewWillEnter() {
     emitter.emit('presentLoader');
     this.isScrollingEnabled = false;
-    await this.store.dispatch('transferorder/fetchTransferOrders', {
-      orderStatusId: "ORDER_APPROVED",
-      originFacilityId: getCurrentFacilityId()
-    });
+    await this.initialiseTransferOrderQuery();
     emitter.emit('dismissLoader');
   },
   methods: {
@@ -146,25 +142,26 @@ export default defineComponent({
       }
     },
     async loadMoreTransferOrders(event: any) {
-       // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
-       if (!(this.isScrollingEnabled && this.isTransferOrdersScrollable())) {
+      if (!(this.isScrollingEnabled && this.isTransferOrdersScrollable())) {
         await event.target.complete();
+        return;
       }
-      const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
-      transferOrdersQuery.viewIndex = this.transferOrders.list?.length / (process.env.VUE_APP_VIEW_SIZE as any);
-      await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
+      const viewSize = Number(process.env.VUE_APP_VIEW_SIZE) || 20;
+      const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query));
+      transferOrdersQuery.viewSize = viewSize;
+      transferOrdersQuery.viewIndex = (transferOrdersQuery.viewIndex || 0) + 1;
+      await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery });
       event.target.complete();
     },
     isTransferOrdersScrollable() {
       return this.transferOrders.list?.length > 0 && this.transferOrders.list?.length < this.transferOrders.total
     },
     async showCompletedTransferOrders() {
-      await this.store.dispatch('transferorder/fetchTransferOrders', {
-        orderStatusId: "ORDER_COMPLETED",
-        originFacilityId: getCurrentFacilityId(),
-        viewIndex: 0,
-        viewSize: 20
-      });
+      const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
+      transferOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
+      transferOrdersQuery.viewSize = 20
+      transferOrdersQuery.orderStatusId = "ORDER_COMPLETED"
+      await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
       this.hasCompletedTransferOrders = this.transferOrders.list.some((order: any) => order.orderStatusId === "ORDER_COMPLETED");
     },
     async updateQueryString(queryString: string) {
@@ -175,6 +172,12 @@ export default defineComponent({
       transferOrdersQuery.queryString = queryString.trim()
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
       this.searchedQuery = queryString;
+    },
+    async initialiseTransferOrderQuery() {
+      const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
+      transferOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
+      transferOrdersQuery.viewSize = 20
+      await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
     },
     async viewTransferOrderDetail(order: any) {
       await this.store.dispatch('transferorder/updateCurrentTransferOrder', order)

@@ -22,7 +22,7 @@
         </ion-item>
       </div>
     </div>
-    <div class="action border-top" v-if="item.quantity > 0">
+    <div class="action border-top" v-if="item.orderedQuantity > 0">
       <div class="pick-all-qty" v-if="!item.shipmentId">
         <ion-button @click="pickAll(item)" slot="start" size="small" fill="outline">
           {{ translate("Pick All") }}
@@ -33,7 +33,12 @@
         <ion-progress-bar :color="getProgressBarColor(item)" :value="getPickedToOrderedFraction(item)" />
       </div>
 
-      <div class="to-item-history" v-if="isRejectionSupported">
+    <div class="to-item-history">
+      <ion-chip outline v-if="getShippedQuantity(item) > 0" @click="shippedHistory(item.productId)">
+        <ion-icon :icon="checkmarkDone" />
+        <ion-label> {{ getShippedQuantity(item) }} {{ translate("shipped") }} </ion-label>
+      </ion-chip>
+      <template v-else-if="isRejectionSupported">
         <ion-chip outline color="danger" v-if="item.rejectReasonId" @click="openRejectReasonPopover($event, item)">
           <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason(item)"/>
           <ion-label>{{ getRejectionReasonDescription(item.rejectReasonId) }}</ion-label>
@@ -47,18 +52,13 @@
           <ion-label>{{ translate("Report an issue") }}</ion-label>
           <ion-icon :icon="caretDownOutline"/>
         </ion-chip>
-      </div>
+      </template>
+    </div>
 
-      <div class="to-item-history" v-else>
-        <ion-chip outline @click="getShippedQuantity(item) && shippedHistory(item.productId)">
-          <ion-icon :icon="checkmarkDone"/>
-          <ion-label> {{ getShippedQuantity(item) }} {{ translate("shipped") }} </ion-label>
-        </ion-chip>
-      </div>
 
       <div class="qty-ordered">
-        <ion-label>{{ item.quantity }} {{ translate("ordered") }}</ion-label>   
-      </div>         
+        <ion-label>{{ item.orderedQuantity }} {{ translate("ordered") }}</ion-label>
+      </div>
     </div>
   </ion-card>
 </template>
@@ -133,10 +133,13 @@ export default defineComponent({
       return 'warning'
     },
     getPickedToOrderedFraction(item: any) {
-      return (parseInt(item.pickedQuantity) + this.getShippedQuantity(item)) / item.quantity;
+      const picked = Number(item.pickedQuantity) || 0;
+      const shipped = this.getShippedQuantity(item);
+      const ordered = Number(item.orderedQuantity) || 1; // avoid division by zero
+      return Math.min((picked + shipped) / ordered, 1);
     },
     getShippedQuantity(item: any) {
-      return this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] ? this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] : 0;
+      return item.totalIssuedQuantity ?? 0;
     },
     async pickAll(item: any) {
       const selectedItem = this.currentOrder.items.find((ele: any) => ele.orderItemSeqId === item.orderItemSeqId);
@@ -174,7 +177,7 @@ export default defineComponent({
 
       if (value === '') return;
 
-      value > (item.quantity - this.getShippedQuantity(item))
+      value > (item.orderedQuantity - this.getShippedQuantity(item))
         ? (this as any).$refs.pickedQuantity.$el.classList.add('ion-invalid')
         : (this as any).$refs.pickedQuantity.$el.classList.add('ion-valid');
     },
