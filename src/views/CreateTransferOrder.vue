@@ -105,12 +105,15 @@
           <div class="item-search">
             <ion-item>
               <ion-icon slot="start" :icon="listOutline"/>
-              <ion-input :label="translate('Add product')" label-placement="floating" :clear-input="true" v-model="queryString" :placeholder="translate('Searching on SKU')" @keyup.enter="handleBarcodeScan(queryString)" />
+              <ion-input ref="addProductInput" :label="translate('Add product')" label-placement="floating" :clear-input="true" v-model="queryString" :placeholder="translate('Searching on SKU')" @keyup.enter="isScanningEnabled ? handleBarcodeScan(queryString) : addProductToCount()" />
+              <ion-button fill="outline" @click="initiateScan()">
+                <ion-icon slot="start" :icon="cameraOutline" />
+                {{ isScanningEnabled ? translate("Stop scanning") :translate("Scan") }}
+              </ion-button>
             </ion-item>
             <ion-item lines="none" v-if="isSearchingProduct">
               <ion-spinner color="secondary" name="crescent"></ion-spinner>
             </ion-item>
-            <!-- TODO: when product is not found, need to handle this, because the searchedProduct value is empty -->
             <ion-item lines="none" v-else-if="searchedProduct.productId">
               <ion-thumbnail slot="start">
                 <Image :src="getProduct(searchedProduct.productId).mainImageUrl"/>
@@ -199,7 +202,7 @@
 
 <script setup lang="ts">
 import { IonBackButton, IonButton, IonCard, IonCardHeader, IonCardTitle, IonCheckbox, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonModal, IonPage, IonSelect, IonSelectOption, IonSpinner, IonThumbnail, IonTitle, IonToolbar, onIonViewDidEnter, alertController, modalController, popoverController } from '@ionic/vue';
-import { addCircleOutline, checkmarkCircle, checkmarkDoneOutline, cloudUploadOutline, downloadOutline, ellipsisVerticalOutline, informationCircleOutline, listOutline, sendOutline, storefrontOutline } from 'ionicons/icons';
+import { addCircleOutline, cameraOutline, checkmarkCircle, checkmarkDoneOutline, cloudUploadOutline, downloadOutline, ellipsisVerticalOutline, informationCircleOutline, listOutline, sendOutline, storefrontOutline } from 'ionicons/icons';
 import { getProductIdentificationValue, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components'
 import { computed, ref, watch } from "vue";
 import { getDateWithOrdinalSuffix, jsonToCsv, parseCsv, showToast } from '@/utils';
@@ -242,8 +245,9 @@ const currentOrder = ref({
 let content = ref([]) as any 
 let fileColumns = ref([]) as any 
 let uploadedFile = ref({}) as any
+let isScanningEnabled = ref(false)
 const fileUploaded = ref(false);
-let scannedValue = ref("");
+const addProductInput = ref("") as any
 
 const getProduct = computed(() => store.getters["product/getProduct"])
 const getProducts = computed(() => store.getters["product/getProducts"])
@@ -260,7 +264,7 @@ watch(queryString, (value) => {
   if(searchedString?.length) {
     isSearchingProduct.value = true
   } else {
-    if(!scannedValue.value) searchedProduct.value = {}
+    searchedProduct.value = {}
     isSearchingProduct.value = false
   }
 
@@ -270,7 +274,7 @@ watch(queryString, (value) => {
 
   // Storing the setTimeoutId in a variable as watcher is invoked multiple times creating multiple setTimeout instance those are all called, but we only need to call the function once.
   timeoutId.value = setTimeout(() => {
-    if(searchedString?.length) handleScannedProduct()
+    if(searchedString?.length && !isScanningEnabled.value) findProduct()
   }, 1000)
 
 }, { deep: true })
@@ -367,10 +371,20 @@ async function findProductFromIdentifier(payload: any) {
   }
 }
 
-async function addProductToCount(product: any, scannedId: any) {
+function initiateScan() {
+  isScanningEnabled.value = !isScanningEnabled.value;
+  isScanningEnabled.value ? addProductInput.value.$el.setFocus() : addProductInput.value.$el.blur();
+}
+
+async function addProductToCount(scannedId?: any, product?: any) {
+  if(!isScanningEnabled.value) {
+    if(!searchedProduct.value.productId ||!queryString.value) return;
+    if(isProductAvailableInOrder()) return;
+  }
+
   let newProduct = { 
-    productId: product.productId,
-    sku: product.sku,
+    productId: product ? product.productId :searchedProduct.value.productId,
+    sku: product ? product.sku : searchedProduct.value.sku,
     quantity: 0,
     isChecked: false,
     isMatching: false,
@@ -381,21 +395,26 @@ async function addProductToCount(product: any, scannedId: any) {
   if(stock?.quantityOnHandTotal || stock?.quantityOnHandTotal === 0) {
     newProduct = { ...newProduct, qoh: stock.quantityOnHandTotal, atp: stock.availableToPromiseTotal }
   }
-
-  currentOrder.value.items = currentOrder.value.items.map((item: any) => {
-    if(item.scannedId === scannedId) {
-      return newProduct;
-    }
-    return item;
-  });
+  
+  if(product) {
+    currentOrder.value.items = currentOrder.value.items.map((item: any) => {
+      if(item.scannedId === scannedId) {
+        return newProduct;
+      }
+      return item;
+    });
+  } else {
+    currentOrder.value.items.push(newProduct);
+  }
 }
 
 async function handleBarcodeScan(barcode: string) {
-  scannedValue.value = barcode;
+  if(!isScanningEnabled.value) return;
   // Check if the product already exists in the order
   const existingItem = currentOrder.value.items.find((item: any) => item.sku === barcode);
   if(existingItem) {
     showToast(translate("Product already added to the order."));
+    queryString.value = "";
     return;
   }
 
@@ -420,7 +439,7 @@ async function handleScannedProduct() {
     const matchedProduct = allProducts.find((product: any) => product.sku === item.scannedId);
     // If a matched product is found, call addProductToCount
     if(matchedProduct) {
-      await addProductToCount(matchedProduct, item.scannedId);
+      await addProductToCount(item.scannedId, matchedProduct);
     } else {
       // If no match found, set the noMatchFound flag for the scanned item
       currentOrder.value.items = currentOrder.value.items.map((existingItem: any) => {
@@ -442,7 +461,7 @@ async function openMatchProductModal(currentItem: any) {
 
   addProductModal.onDidDismiss().then(async (result) => {
     if(result.data?.selectedProduct) {
-      await addProductToCount(result.data.selectedProduct, currentItem.scannedId);
+      await addProductToCount(currentItem.scannedId, result.data.selectedProduct);
     }
   })
 
@@ -733,7 +752,7 @@ async function findProduct() {
     })
     if (!hasError(resp) && resp.data.response?.docs?.length) {
       searchedProduct.value = resp.data.response.docs[0];
-      store.dispatch("product/addProductToCached", searchedProduct.value)
+      store.dispatch("product/addProductToCached", searchedProduct.value)    
     } else {
       throw resp.data
     }
@@ -742,6 +761,7 @@ async function findProduct() {
     logger.error("Product not found", err)
   }
   isSearchingProduct.value = false
+  if(isScanningEnabled.value) await handleScannedProduct()
 }
 
 async function fetchStock(productId: string) {
