@@ -440,7 +440,7 @@ async function validateScannedProduct() {
   const allProducts = Object.values(getProducts.value);
 
   for(const item of itemsWithNoMatch) {
-    const matchedProduct = allProducts.find((product: any) => product.sku === item.scannedId);
+    const matchedProduct = allProducts.find((product: any) => getProductIdentificationValue(barcodeIdentifier.value, getProduct.value(product.productId)) === item.scannedId);
     // If a matched product is found, call addProductToOrder
     if(matchedProduct) {
       await addProductToOrder(item.scannedId, matchedProduct);
@@ -751,12 +751,12 @@ async function findProduct() {
   isSearchingProduct.value = true;
   try {
     const resp = await ProductService.fetchProducts({
-      "filters": ['isVirtual: false', `sku: *${queryString.value}*`],
+      "filters": ['isVirtual: false', `goodIdentifications: ${barcodeIdentifier.value}/${queryString.value}`],
       "viewSize": 1
     })
     if (!hasError(resp) && resp.data.response?.docs?.length) {
       if(!isScanningEnabled.value) searchedProduct.value = resp.data.response.docs[0];
-      store.dispatch("product/addProductToCached", searchedProduct.value)      
+      store.dispatch("product/addProductToCached", resp.data.response.docs[0])      
     } else {
       throw resp.data
     }
