@@ -754,7 +754,7 @@ async function findProduct() {
     })
     if (!hasError(resp) && resp.data.response?.docs?.length) {
       searchedProduct.value = resp.data.response.docs[0];
-      store.dispatch("product/addProductToCached", searchedProduct.value)     
+      store.dispatch("product/addProductToCached", searchedProduct.value)      
     } else {
       throw resp.data
     }
