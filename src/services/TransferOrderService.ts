@@ -37,7 +37,7 @@ const fetchTransferOrderDetail = async (orderId: string): Promise<any> => {
   });
 };
 
-const fetchShippedTransferShipment = async (params: any): Promise<any> => {
+const fetchShippedTransferShipments = async (params: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
@@ -248,7 +248,7 @@ export const TransferOrderService = {
   fetchTransferOrders,
   fetchTransferOrderDetail,
   printTransferOrderPicklist,
-  fetchShippedTransferShipment,
+  fetchShippedTransferShipments,
   fetchTransferShipmentDetails,
   printShippingLabel,
   retryShippingLabel,

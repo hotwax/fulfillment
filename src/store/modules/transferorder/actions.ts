@@ -65,7 +65,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
         const orderData = orderResp.data.order || {};
 
         // Fetch additional shipment data
-        shipmentResp = await TransferOrderService.fetchShippedTransferShipment({ orderId: payload.orderId, shipmentStatusId: "SHIPMENT_SHIPPED" });
+        shipmentResp = await TransferOrderService.fetchShippedTransferShipments({ orderId: payload.orderId, shipmentStatusId: "SHIPMENT_SHIPPED" });
 
         if (!hasError(shipmentResp)) {
           const shipmentData = shipmentResp.data || {};
@@ -75,12 +75,12 @@ const actions: ActionTree<TransferOrderState, RootState> = {
             ...shipmentData
           };
         }
-
         if (orderDetail.items && Array.isArray(orderDetail.items)) {
           orderDetail.items = orderDetail.items.map((item: any) => ({
             ...item,
             orderedQuantity: item.quantity,
-            quantity: item.totalIssuedQuantity
+            shippedQuantity: item.totalIssuedQuantity || 0,
+            pickedQuantity: 0
           }));
         }
 
@@ -159,6 +159,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           items: shipmentItems.map((item: any) => ({
             ...item,
             pickedQuantity: item.quantity,
+            shippedQuantity: item.totalIssuedQuantity || 0,
           })),
           totalQuantityPicked: shipmentItems.reduce((acc: number, curr: any) => acc + curr.quantity, 0)
         };
