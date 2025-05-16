@@ -82,7 +82,7 @@
     mounted() {
       const shippedHistory = [];
       this.currentOrder.shipments.forEach(shipment => {
-        if (shipment.statusId === 'SHIPMENT_SHIPPED') {
+        if (shipment.shipmentStatusId === 'SHIPMENT_SHIPPED') {
           shipment.items.forEach(item => {
             if (item.productId === this.productId) {
               shippedHistory.push({...shipment, ...item});

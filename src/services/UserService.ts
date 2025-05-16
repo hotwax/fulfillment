@@ -41,6 +41,34 @@ const moquiLogin = async (omsRedirectionUrl: string, token: string): Promise <an
   return Promise.resolve(api_key)
 }
 
+const moquiLogin = async (omsRedirectionUrl: string, token: string): Promise <any> => {
+  const baseURL = omsRedirectionUrl.startsWith('http') ? omsRedirectionUrl.includes('/rest/s1/') ? omsRedirectionUrl : `${omsRedirectionUrl}/rest/s1/` : `https://${omsRedirectionUrl}.hotwax.io/rest/s1/`;
+  let api_key = ""
+ 
+  try {
+    const resp = await client({
+      url: "admin/login",
+      method: "post",
+      baseURL,
+      params: {
+        token
+      },
+      headers: {
+        "Content-Type": "application/json"
+      }
+    }) as any;
+    if(!hasError(resp) && (resp.data.api_key || resp.data.token)) {
+      api_key = resp.data.api_key || resp.data.token
+    } else {
+      throw "Sorry, login failed. Please try again";
+    }
+  } catch(err) {
+    logger.error(err)
+    return Promise.resolve("");
+  }
+  return Promise.resolve(api_key)
+}
+
 const getFacilityDetails = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
