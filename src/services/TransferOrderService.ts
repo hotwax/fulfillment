@@ -70,6 +70,38 @@ const fetchTransferShipmentDetails = async (params: Record<string, any>): Promis
   });
 };
 
+const fetchRejectReasons = async(query: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/admin/enums`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params: query,
+  });
+}
+
+const fetchFulfillmentRejectReasons = async (payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/admin/enumGroups/${payload.enumerationGroupId}/members`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params: payload,
+  });
+}
+
 const cancelTransferOrderShipment = async (shipmentId: string): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -241,6 +273,8 @@ export const TransferOrderService = {
   cancelTransferOrderShipment,
   createOutboundTransferShipment,
   fetchTransferOrders,
+  fetchRejectReasons,
+  fetchFulfillmentRejectReasons,
   fetchTransferOrderDetail,
   printTransferOrderPicklist,
   fetchShippedTransferShipments,

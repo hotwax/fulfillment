@@ -5,6 +5,7 @@ import { TransferOrderService } from '@/services/TransferOrderService';
 import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import logger from '@/logger'
+import store from "@/store";
 import { translate } from '@hotwax/dxp-components'
 import { showToast } from "@/utils";
 import { getCurrentFacilityId } from '@/utils'
@@ -204,6 +205,53 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   },
   async clearCurrentTransferShipment({ commit }) {
     commit(types.ORDER_CURRENT_SHIPMENT_CLEARED)
+  },
+  async fetchRejectReasons({ commit }) {
+    let rejectReasons = [];
+
+    const permissions = store.getters["user/getUserPermissions"];
+    const isAdminUser = permissions.some((permission: any) => permission.action === "APP_STOREFULFILLMENT_ADMIN")
+
+    if(isAdminUser) {
+      try {
+        const payload = {
+          parentTypeId: ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
+          parentTypeId_op: "in",
+          pageSize: 20, // keeping view size 20 as considering that we will have max 20 reasons
+          orderBy: "sequenceNum"
+        }
+
+        const resp = await TransferOrderService.fetchRejectReasons(payload)
+
+        if(!hasError(resp)) {
+          rejectReasons = resp.data
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        logger.error("Failed to fetch reject reasons", err)
+      }
+    } else {
+      try {
+        const payload = {
+          enumerationGroupId: "FF_REJ_RSN_GRP",
+          pageSize: 200,
+          orderBy: "sequenceNum"
+        }
+
+        const resp = await TransferOrderService.fetchFulfillmentRejectReasons(payload)
+
+        if(!hasError(resp)) {
+          rejectReasons = resp.data
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        logger.error("Failed to fetch fulfillment reject reasons", err)
+      }
+    }
+
+    commit(types.ORDER_REJECT_REASONS_UPDATED, rejectReasons)
   }
 }
 

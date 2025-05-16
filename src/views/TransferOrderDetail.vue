@@ -208,6 +208,7 @@ export default defineComponent({
   },
   async ionViewWillEnter() {
     emitter.emit('presentLoader');
+    await this.store.dispatch("transferorder/fetchRejectReasons");
     await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
     emitter.emit('dismissLoader');
   },
