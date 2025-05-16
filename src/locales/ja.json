@@ -412,7 +412,6 @@
   "Product": "Product",
   "Product identifier": "Product identifier",
   "Product is already received:": "製品はすでに受け取られています: {itemName}",
-  "Product already added to the order.": "Product already added to the order.",
   "Product Store": "製品ストア",
   "Product store and shipment method association updated successfully.": "製品ストアと出荷方法の関連付けが正常に更新されました。",
   "Provide a value greater than 0": "0より大きい値を入力してください",

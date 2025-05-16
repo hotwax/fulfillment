@@ -111,22 +111,24 @@
                 {{ isScanningEnabled ? translate("Stop scanning") :translate("Scan") }}
               </ion-button>
             </ion-item>
-            <ion-item lines="none" v-if="isSearchingProduct">
-              <ion-spinner color="secondary" name="crescent"></ion-spinner>
-            </ion-item>
-            <ion-item lines="none" v-else-if="searchedProduct.productId">
-              <ion-thumbnail slot="start" v-image-preview="getProduct(searchedProduct.productId)">
-                <Image :src="getProduct(searchedProduct.productId).mainImageUrl"/>
-              </ion-thumbnail>
-              <ion-label>
-                <p class="overline">{{ translate("Search result") }}</p>
-                {{ searchedProduct.internalName || searchedProduct.sku || searchedProduct.productId }}
-              </ion-label>
-              <ion-button size="default" slot="end" fill="clear" @click="addProductToOrder" :color="isProductAvailableInOrder() ? 'success' : 'primary'">
-                <ion-icon slot="icon-only" :icon="isProductAvailableInOrder() ? checkmarkCircle : addCircleOutline"/>
-              </ion-button>
-            </ion-item>
-            <p v-else-if="queryString">{{ translate("No product found") }}</p>
+            <template v-if="!isScanningEnabled">
+              <ion-item lines="none" v-if="isSearchingProduct">
+                <ion-spinner color="secondary" name="crescent"></ion-spinner>
+              </ion-item>
+              <ion-item lines="none" v-else-if="searchedProduct.productId">
+                <ion-thumbnail slot="start" v-image-preview="getProduct(searchedProduct.productId)">
+                  <Image :src="getProduct(searchedProduct.productId).mainImageUrl"/>
+                </ion-thumbnail>
+                <ion-label>
+                  <p class="overline">{{ translate("Search result") }}</p>
+                  {{ searchedProduct.internalName || searchedProduct.sku || searchedProduct.productId }}
+                </ion-label>
+                <ion-button size="default" slot="end" fill="clear" @click="addProductToOrder" :color="isProductAvailableInOrder() ? 'success' : 'primary'">
+                  <ion-icon slot="icon-only" :icon="isProductAvailableInOrder() ? checkmarkCircle : addCircleOutline"/>
+                </ion-button>
+              </ion-item>
+              <p v-else-if="queryString">{{ translate("No product found") }}</p>
+            </template>
           </div>
 
           <hr />
@@ -147,7 +149,7 @@
               </ion-button>
             </div>
 
-            <div class="list-item" v-for="(item, index) in currentOrder.items" :key="index">
+            <div v-for="(item, index) in currentOrder.items" :key="index" :id="item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier, getProduct(item.productId))" :class="(item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier, getProduct(item.productId))) == lastScannedId ? 'list-item scanned-item' : 'list-item'">
               <ion-item lines="none">
                 <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)">
                   <Image :src="getProduct(item.productId)?.mainImageUrl" />
@@ -246,6 +248,7 @@ let content = ref([]) as any
 let fileColumns = ref([]) as any 
 let uploadedFile = ref({}) as any
 let isScanningEnabled = ref(false)
+let lastScannedId = ref("") as any
 const fileUploaded = ref(false);
 const addProductInput = ref("") as any
 
@@ -381,7 +384,10 @@ function toggleScan() {
 async function addProductToOrder(scannedId?: any, product?: any) {
   if(!isScanningEnabled.value) {
     if(!searchedProduct.value.productId ||!queryString.value) return;
-    if(isProductAvailableInOrder()) return;
+    if(isProductAvailableInOrder()) {
+      scrollToProduct(searchedProduct.value)
+      return;  
+    }
   }
 
   let newProduct = { 
@@ -410,18 +416,28 @@ async function addProductToOrder(scannedId?: any, product?: any) {
   }
 }
 
+function scrollToProduct(item: any) {
+  lastScannedId.value = item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier.value, getProduct.value(item.productId))
+  const element = document.getElementById(item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier.value, getProduct.value(item.productId)));
+  if(element) element.scrollIntoView({ behavior: 'smooth' });
+  setTimeout(() => {
+    lastScannedId.value = ''
+  }, 3000)
+}
+
 // Updates the scanned product by checking if it already exists in the order and adding it if not
-async function scanProduct(scannedItem: string) {
+async function scanProduct(scannedValue: string) {
   // Check if the product already exists in the order
-  const existingItem = currentOrder.value.items.some((item: any) => getProductIdentificationValue(barcodeIdentifier.value, getProduct.value(item.productId)) === scannedItem);
+  const existingItem = currentOrder.value.items.find((item: any) => (item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier.value, getProduct.value(item.productId))) === scannedValue);
   if(existingItem) {
-    showToast(translate("Product already added to the order."));
-    queryString.value = "";
+    existingItem.quantity++
+    queryString.value = ""
+    scrollToProduct(existingItem)
     return;
   }
 
   let newProduct = { 
-    scannedId: scannedItem,
+    scannedId: scannedValue,
     quantity: 0,
     isChecked: false,
     isMatching: true,
@@ -852,6 +868,10 @@ which results in distorted label text and thus reduced ion-item width */
 
 .search {
   grid-area: search;
+}
+
+.scanned-item {
+  outline: 2px solid var( --ion-color-medium-tint);
 }
 
 @media (min-width: 991px) {
