@@ -194,17 +194,17 @@ export default defineComponent({
         showToast(translate('Unable to generate shipping label due to missing product store shipping method configuration'))
         return;
       }
-    // if the request to print shipping label is not yet completed, then clicking multiple times on the button
-    // should not do anything
-    if (this.isGeneratingShippingLabel) {
-      return;
-    }
-    await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
-    this.isGeneratingShippingLabel = true;
-    let shippingLabelPdfUrls = this.currentShipment.shipmentPackages
-      ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
-      .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
-    
+      // if the request to print shipping label is not yet completed, then clicking multiple times on the button
+      // should not do anything
+      if (this.isGeneratingShippingLabel) {
+        return;
+      }
+      await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
+      this.isGeneratingShippingLabel = true;
+      let shippingLabelPdfUrls = this.currentShipment.shipmentPackages
+        ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+        .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+      
       if (!this.currentShipment.trackingCode) {
         //regenerate shipping label if missing tracking code
         await TransferOrderService.retryShippingLabel(this.currentShipment.shipmentId)
@@ -259,7 +259,7 @@ export default defineComponent({
       return alert.present();
     },
     async shipOutboundTransferShipment() {
-    try {
+      try {
         if (
           this.trackingCode &&
           this.currentShipment.trackingCode !== this.trackingCode
