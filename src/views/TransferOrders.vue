@@ -142,15 +142,13 @@ export default defineComponent({
       }
     },
     async loadMoreTransferOrders(event: any) {
-      if (!(this.isScrollingEnabled && this.isTransferOrdersScrollable())) {
+       // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
+       if (!(this.isScrollingEnabled && this.isTransferOrdersScrollable())) {
         await event.target.complete();
-        return;
       }
-      const viewSize = Number(process.env.VUE_APP_VIEW_SIZE) || 20;
-      const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query));
-      transferOrdersQuery.viewSize = viewSize;
-      transferOrdersQuery.viewIndex = (transferOrdersQuery.viewIndex || 0) + 1;
-      await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery });
+      const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
+      transferOrdersQuery.viewIndex = this.transferOrders.list?.length / (process.env.VUE_APP_VIEW_SIZE as any);
+      await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
       event.target.complete();
     },
     isTransferOrdersScrollable() {
