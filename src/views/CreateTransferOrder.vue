@@ -692,7 +692,7 @@ async function openOrderItemActionsPopover(event: any, selectedItem: any, isBulk
         selectedItem.quantity = (action === "bookQOH") ? selectedItem.qoh : selectedItem.atp
       }
     } else if(action === "remove") {
-      currentOrder.value.items = isBulkOperation ? currentOrder.value.items.filter((item: any) => !item.isChecked) : selectedItem.noMatchFound ? currentOrder.value.items.filter((item: any) => item.scannedId !== item.scannedId) : currentOrder.value.items.filter((item: any) => selectedItem.productId !== item.productId)
+      currentOrder.value.items = isBulkOperation ? currentOrder.value.items.filter((item: any) => !item.isChecked) : selectedItem.noMatchFound ? currentOrder.value.items.filter((item: any) => selectedItem.scannedId !== item.scannedId) : currentOrder.value.items.filter((item: any) => selectedItem.productId !== item.productId)
     }
   })
 
