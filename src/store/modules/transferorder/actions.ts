@@ -155,12 +155,12 @@ const actions: ActionTree<TransferOrderState, RootState> = {
 
         const shipment = {
           ...shipments[0],
-          items: shipments[0]?.shipmentItems.map((item: any) => ({
+          items: shipments[0]?.items.map((item: any) => ({
             ...item,
             pickedQuantity: item.quantity,
             shippedQuantity: item.totalIssuedQuantity || 0,
           })),
-          totalQuantityPicked: shipments[0]?.shipmentItems.reduce((acc: number, curr: any) => acc + curr.quantity, 0)
+          totalQuantityPicked: shipments[0]?.items.reduce((acc: number, curr: any) => acc + curr.quantity, 0)
         };
 
         commit(types.ORDER_CURRENT_SHIPMENT_UPDATED, shipment);
