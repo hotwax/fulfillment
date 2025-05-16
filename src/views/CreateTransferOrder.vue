@@ -106,7 +106,7 @@
             <ion-item>
               <ion-icon slot="start" :icon="listOutline"/>
               <ion-input ref="addProductInput" :label="translate('Add product')" label-placement="floating" :clear-input="true" v-model="queryString" :placeholder="translate('Search product')" @keyup.enter="isScanningEnabled ? scanProduct(queryString) : addProductToOrder()" />
-              <ion-button fill="outline" @click="toggleScan()">
+              <ion-button slot="end" fill="outline" @click="toggleScan()">
                 <ion-icon slot="start" :icon="isScanningEnabled? stopOutline : cameraOutline" />
                 {{ isScanningEnabled ? translate("Stop scanning") :translate("Scan") }}
               </ion-button>
