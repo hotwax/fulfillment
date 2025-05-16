@@ -93,7 +93,7 @@ const actions: ActionTree<UserState, RootState> = {
       if (userProfile.userTimeZone) {
         Settings.defaultZone = userProfile.userTimeZone;
       }
-      
+            
       if(omsRedirectionUrl) {
         const api_key = await UserService.moquiLogin(omsRedirectionUrl, token)
         if(api_key) {
@@ -288,7 +288,6 @@ const actions: ActionTree<UserState, RootState> = {
   setOmsRedirectionInfo({ commit }, payload) {
     commit(types.USER_OMS_REDIRECTION_INFO_UPDATED, payload)
   },
-
   async getNewRejectionApiConfig ({ commit }) {
     let config = {};
     const params = {

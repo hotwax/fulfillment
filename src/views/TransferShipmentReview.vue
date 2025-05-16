@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-back-button :default-href="`/transfer-order-details/${currentShipment.primaryOrderId}`" slot="start" />
+        <ion-back-button :default-href="`/transfer-order-details/${currentShipment.orderId}`" slot="start" />
         <ion-title>{{ translate("Review Shipment") }}</ion-title>
         
         <ion-buttons slot="end">
@@ -77,16 +77,16 @@ import {
   popoverController
 } from '@ionic/vue';
 import { computed, defineComponent } from 'vue';
-import { add, checkmarkDone, barcodeOutline, documentTextOutline, sendOutline } from 'ionicons/icons';
+import { documentTextOutline, sendOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
-import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 
 import { useRouter } from 'vue-router';
 import Scanner from "@/components/Scanner.vue";
 import { Actions, hasPermission } from '@/authorization'
-import { getFeature, showToast, hasWebcamAccess } from '@/utils';
+import { getFeatures, showToast, hasWebcamAccess } from '@/utils';
 import { hasError } from '@/adapter'
-import { TransferOrderService } from '@/services/TransferOrderService'
+import { TransferOrderService } from '@/services/TransferOrderService' 
 import TransferShipmentActionsPopover from '@/components/TransferShipmentActionsPopover.vue'
 import logger from '@/logger';
 import TransferOrderItem from '@/components/TransferOrderItem.vue'
@@ -118,7 +118,7 @@ export default defineComponent({
     this.shipmentItems = this.currentShipment.items;
   },
   async beforeRouteLeave(to) {
-    if (to.path !== `/transfer-order-details/${this.currentShipment.primaryOrderId}`) return;
+    if (to.path !== `/transfer-order-details/${this.currentShipment.orderId}`) return;
     let canLeave = false;
     const message = translate("Are you sure that you want to discard this shipment?");
     const alert = await alertController.create({
@@ -134,7 +134,7 @@ export default defineComponent({
         {
           text: translate("Discard"),
           handler: async () => {
-          const resp = await TransferOrderService.updateShipment({"shipmentId": this.currentShipment.shipmentId, "statusId": "SHIPMENT_CANCELLED"})
+            const resp = await TransferOrderService.cancelTransferOrderShipment(this.currentShipment.shipmentId)
             if (!hasError(resp)) {
               showToast(translate('Shipment is discarded.'));
             }
@@ -155,7 +155,6 @@ export default defineComponent({
   data() {
     return {
       queryString: '',
-      selectedSegment: 'open',
       isShipped: false,
       trackingCode: '',
       shipmentItems: [] as any,
@@ -195,33 +194,28 @@ export default defineComponent({
         showToast(translate('Unable to generate shipping label due to missing product store shipping method configuration'))
         return;
       }
-
       // if the request to print shipping label is not yet completed, then clicking multiple times on the button
       // should not do anything
       if (this.isGeneratingShippingLabel) {
         return;
       }
-
       await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
       this.isGeneratingShippingLabel = true;
       let shippingLabelPdfUrls = this.currentShipment.shipmentPackages
         ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
         .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
       
-
       if (!this.currentShipment.trackingCode) {
         //regenerate shipping label if missing tracking code
-        const resp = await TransferOrderService.retryShippingLabel([this.currentShipment.shipmentId])
-        if (!hasError(resp)) {
+        await TransferOrderService.retryShippingLabel(this.currentShipment.shipmentId)
+        //retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
+        await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
+        shippingLabelPdfUrls = this.currentShipment?.shipmentPackages
+            ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
+            .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+        if(this.currentShipment.trackingCode) {
           this.showLabelError = false;
           showToast(translate("Shipping Label generated successfully"))
-
-          //retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
-          await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
-          shippingLabelPdfUrls = this.currentShipment?.shipmentPackages
-              ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
-              .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
-
           await TransferOrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
         } else {
           this.showLabelError = true;
@@ -232,7 +226,6 @@ export default defineComponent({
         //print shipping label if label already exists
         await TransferOrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
       }
-
       this.isGeneratingShippingLabel = false;
     },
     async transferShipmentActionsPopover(ev: Event) {
@@ -267,37 +260,24 @@ export default defineComponent({
     },
     async shipOutboundTransferShipment() {
       try {
-        const shipmentPackagesWithMissingLabel = this.currentShipment.shipmentPackagesWithMissingLabel;
-        if (shipmentPackagesWithMissingLabel.length > 0 && this.trackingCode && this.currentShipment.trackingCode !== this.trackingCode) {
-          await TransferOrderService.addTrackingCode({
-            "shipmentId": this.currentShipment.shipmentId,
-            "shipmentRouteSegmentId": shipmentPackagesWithMissingLabel?.[0].shipmentRouteSegmentId,
-            "shipmentPackageSeqId": shipmentPackagesWithMissingLabel?.[0].shipmentPackageSeqId,
-            "trackingCode": this.trackingCode
+        if (
+          this.trackingCode &&
+          this.currentShipment.trackingCode !== this.trackingCode
+        ) {
+          await TransferOrderService.shipTransferOrderShipment({
+            shipmentId: this.currentShipment.shipmentId,
+            trackingIdNumber: this.trackingCode,
+            shipmentRouteSegmentId: this.currentShipment.shipmentRouteSegmentId
           });
-        }
-        
-        let resp = await TransferOrderService.updateShipment({"shipmentId": this.currentShipment.shipmentId, "statusId": "SHIPMENT_PACKED"})
-        if (!hasError(resp)) {
-          resp = await TransferOrderService.updateShipment({"shipmentId": this.currentShipment.shipmentId, "statusId": "SHIPMENT_SHIPPED"})
-          if (hasError(resp)) {
-            throw resp.data;
-          }
-        } else {
-          throw resp.data;
         }
         this.isShipped = true;
         showToast(translate('Shipment shipped successfully.'));
-        this.router.replace({ path: `/transfer-order-details/${this.currentShipment.primaryOrderId}` })
+        this.router.replace({ path: `/transfer-order-details/${this.currentShipment.orderId}` })
       } catch (err) {
         logger.error('Failed to ship the shipment.', err);
         showToast(translate('Something went wrong, could not ship the shipment'))
       }
     },
-    getPickedToOrderedFraction(item: any) {
-      return item.shippedQuantity / item.orderedQuantity;
-    },
-    
     updateProductCount(payload: any){
       if(this.queryString) payload = this.queryString
       this.store.dispatch('transferorder/updateOrderProductCount', payload)
@@ -323,17 +303,11 @@ export default defineComponent({
     const router = useRouter();
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
-
-
     return {
       Actions,
-      add,
-      barcodeOutline,
-      checkmarkDone,
       documentTextOutline,
       sendOutline,
-      getFeature,
-      getProductIdentificationValue,
+      getFeatures,
       hasPermission,
       productIdentificationPref,
       store,
