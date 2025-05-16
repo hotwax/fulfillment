@@ -752,7 +752,7 @@ async function findProduct() {
     const resp = await ProductService.fetchProducts({
       "filters": [
         'isVirtual: false', 
-        `goodIdentifications: ${barcodeIdentifier.value}/${isScanningEnabled.value ? queryString.value : `*${queryString.value}*`}`
+        `goodIdentifications: ${barcodeIdentifier.value}/${isScanningEnabled.value ? queryString.value.trim() : `*${queryString.value.trim()}*`}`
       ],
       "viewSize": 1
     })
