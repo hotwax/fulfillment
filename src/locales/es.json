@@ -344,6 +344,7 @@
   "Order Name": "ID de pedido",
   "Order packed successfully": "Pedido empacado exitosamente",
   "Order packed successfully. Document generation in process": "Pedido empacado con éxito. Proceso de generación de documentos en curso",
+  "Order rejected successfully": "Pedido rechazados exitosamente",
   "Other shipments in this order": "Otros envíos en este pedido",
   "Order shipped successfully": "Pedido enviado exitosamente",
   "Order Shipment ID": "ID de Envío del Pedido",

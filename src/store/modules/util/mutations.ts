@@ -39,9 +39,6 @@ const mutations: MutationTree <UtilState> = {
   [types.UTIL_PRODUCT_STORES_UPDATED](state, payload) {
     state.productStores = payload
   },
-  [types.UTIL_SHIPMENT_GATEWAY_CONFIGS_UPDATED](state, payload) {
-    state.shipmentGatewayConfigs = payload
-  },
   [types.UTIL_FORCE_SCAN_STATUS_UPDATED](state, payload) {
     state.isForceScanEnabled = payload
   },
@@ -53,6 +50,9 @@ const mutations: MutationTree <UtilState> = {
   },
   [types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED](state, payload) {
     state.barcodeIdentificationPref = payload
+  },
+  [types.UTIL_CARRIER_SHIPMENT_BOX_TYPES_UPDATED](state, payload) {
+    state.carrierShipmentBoxTypes = payload
   },
   [types.UTIL_CARRIER_DESC_UPDATED](state, payload) {
     state.carrierDesc = payload

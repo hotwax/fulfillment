@@ -8,14 +8,14 @@ export default interface UtilState {
   statusDesc: any;
   productStoreShipmentMethCount: number;
   rejectReasonEnumTypes: [];
-  enumerations: object;
+  enumerations: any;
   productStores: any;
   facilities: any;
-  shipmentGatewayConfigs: any;
   isForceScanEnabled: boolean;
   fulfillmentRejectReasons: any;
   rejectReasonOptions: any;
   barcodeIdentificationPref: string;
+  carrierShipmentBoxTypes: {};
   carrierDesc: any;
   shipmentMethodsByCarrier: any;
   facilityAddresses: any;

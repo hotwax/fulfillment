@@ -33,6 +33,9 @@ const mutations: MutationTree <CarrierState> = {
   },
   [types.CARRIER_FACILITY_CARRIERS_UPDATED](state, payload) {
     state.facilityCarriers = payload
+  },
+  [types.CARRIER_SHIPMENT_GATEWAY_CONFIGS_UPDATED](state, payload) {
+      state.shipmentGatewayConfigs = payload
   }
 }
 export default mutations;

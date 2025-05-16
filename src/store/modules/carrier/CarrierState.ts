@@ -8,5 +8,6 @@ export default interface TransferOrderState {
     shipmentMethods: any,
     carrierShipmentMethodsByProductStore: any
     facilityCarriers: any,
-    productStoreShipmentMethods: any
+    productStoreShipmentMethods: any,
+    shipmentGatewayConfigs: any;
   }
