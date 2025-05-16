@@ -222,24 +222,19 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
   }
 };
 
-// TODO
-const retryShippingLabel = async (shipmentIds: Array<string>, forceRateShop = false): Promise<any> => {
-  try {
-    const resp = await api({
-      method: 'POST',
-      url: 'retryShippingLabel',  // TODO: update the api
-      data: {
-        shipmentIds,
-        forceRateShop: forceRateShop ? 'Y' : 'N',
-        generateLabel: "Y" // This is needed to generate label after the new changes in backend related to auto generation of label.
-      }
-    })
-    if (hasError(resp)) {
-      throw resp?.data;
-    }
-  } catch (error) {
-    logger.error(error)
-  }
+const retryShippingLabel = async (shipmentId: string): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/poorti/shipments/${shipmentId}/shippingLabels`,
+    method: "get",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+  });
 }
 
 export const TransferOrderService = {

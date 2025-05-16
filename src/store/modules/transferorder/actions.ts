@@ -62,7 +62,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       orderResp = await TransferOrderService.fetchTransferOrderDetail(payload.orderId);
 
       if (!hasError(orderResp)) {
-        const orderData = orderResp.data.order || {};
+        orderDetail = orderResp.data.order || {};
 
         // Fetch additional shipment data
         shipmentResp = await TransferOrderService.fetchShippedTransferShipments({ orderId: payload.orderId, shipmentStatusId: "SHIPMENT_SHIPPED" });
@@ -71,8 +71,8 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           const shipmentData = shipmentResp.data || {};
           // Merge order and shipment data fields into orderDetail
           orderDetail = {
-            ...orderData,
-            ...shipmentData
+            ...orderDetail,
+            shipments: shipmentData.shipments || [],
           };
         }
         if (orderDetail.items && Array.isArray(orderDetail.items)) {
@@ -151,22 +151,20 @@ const actions: ActionTree<TransferOrderState, RootState> = {
 
       const shipments = shipmentResponse.data?.shipments || [];
       if (shipments.length > 0) {
-        const shipmentData = shipments[0];
-        const shipmentItems = shipmentData.items || [];
 
         const shipment = {
-          ...shipmentData,
-          items: shipmentItems.map((item: any) => ({
+          ...shipments[0],
+          items: shipments[0]?.shipmentItems.map((item: any) => ({
             ...item,
             pickedQuantity: item.quantity,
             shippedQuantity: item.totalIssuedQuantity || 0,
           })),
-          totalQuantityPicked: shipmentItems.reduce((acc: number, curr: any) => acc + curr.quantity, 0)
+          totalQuantityPicked: shipments[0]?.shipmentItems.reduce((acc: number, curr: any) => acc + curr.quantity, 0)
         };
 
         commit(types.ORDER_CURRENT_SHIPMENT_UPDATED, shipment);
 
-        const productIds = [...new Set(shipmentItems.map((item: any) => item.productId))];
+        const productIds = [...new Set(shipment.items.map((item: any) => item.productId))];
         const batchSize = 250;
         const productIdBatches = [];
 
@@ -176,8 +174,8 @@ const actions: ActionTree<TransferOrderState, RootState> = {
 
         await Promise.all([
           ...productIdBatches.map((productIds) => this.dispatch('product/fetchProducts', { productIds })),
-          this.dispatch('util/fetchPartyInformation', [shipmentData.carrierPartyId]),
-          this.dispatch('util/fetchShipmentMethodTypeDesc', [shipmentData.shipmentMethodTypeId])
+          this.dispatch('util/fetchPartyInformation', [shipments[0].carrierPartyId]),
+          this.dispatch('util/fetchShipmentMethodTypeDesc', [shipments[0].shipmentMethodTypeId])
         ]);
       }
     } catch (err: any) {
