@@ -105,7 +105,7 @@
           <div class="item-search">
             <ion-item>
               <ion-icon slot="start" :icon="listOutline"/>
-              <ion-input ref="addProductInput" :label="translate('Add product')" label-placement="floating" :clear-input="true" v-model="queryString" :placeholder="translate('Searching on SKU')" @keyup.enter="isScanningEnabled ? scanProduct(queryString) : addProductToOrder()" />
+              <ion-input ref="addProductInput" :label="translate('Add product')" label-placement="floating" :clear-input="true" v-model="queryString" :placeholder="translate('Search product')" @keyup.enter="isScanningEnabled ? scanProduct(queryString) : addProductToOrder()" />
               <ion-button fill="outline" @click="toggleScan()">
                 <ion-icon slot="start" :icon="isScanningEnabled? stopOutline : cameraOutline" />
                 {{ isScanningEnabled ? translate("Stop scanning") :translate("Scan") }}
@@ -412,9 +412,8 @@ async function addProductToOrder(scannedId?: any, product?: any) {
 
 // Updates the scanned product by checking if it already exists in the order and adding it if not
 async function scanProduct(scannedItem: string) {
-  if(!isScanningEnabled.value) return;
   // Check if the product already exists in the order
-  const existingItem = currentOrder.value.items.find((item: any) => item.sku === scannedItem);
+  const existingItem = currentOrder.value.items.some((item: any) => getProductIdentificationValue(barcodeIdentifier.value, getProduct.value(item.productId)) === scannedItem);
   if(existingItem) {
     showToast(translate("Product already added to the order."));
     queryString.value = "";
@@ -751,7 +750,10 @@ async function findProduct() {
   isSearchingProduct.value = true;
   try {
     const resp = await ProductService.fetchProducts({
-      "filters": ['isVirtual: false', `goodIdentifications: ${barcodeIdentifier.value}/${queryString.value}`],
+      "filters": [
+        'isVirtual: false', 
+        `goodIdentifications: ${barcodeIdentifier.value}/${isScanningEnabled.value ? queryString.value : `*${queryString.value}*`}`
+      ],
       "viewSize": 1
     })
     if (!hasError(resp) && resp.data.response?.docs?.length) {
