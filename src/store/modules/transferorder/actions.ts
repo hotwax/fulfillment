@@ -18,7 +18,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
 
     const params: any = {
       orderStatusId: transferOrderQuery.orderStatusId ?? "ORDER_APPROVED",
-      // itemStatusId: "ITEM_PENDING_FULFILL",
+      itemStatusId: "ITEM_PENDING_FULFILL",
       originFacilityId: getCurrentFacilityId(),
       limit: transferOrderQuery.viewSize,
       pageIndex: transferOrderQuery.viewIndex
