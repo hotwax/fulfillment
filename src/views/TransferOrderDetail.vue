@@ -40,7 +40,7 @@
           <div class="segments" v-if="currentOrder">
             <template v-if="selectedSegment === 'open'">
               <template v-if="getTOItems('open')?.length > 0">
-                <TransferOrderItem v-for="item in getTOItems('open')" :key="item.orderItemSeqId" :itemDetail="item" :class="item.internalName === lastScannedId ? 'scanned-item' : '' " :id="item.internalName" isRejectionSupported="true"/>
+                <TransferOrderItem v-for="item in getTOItems('open')" :key="item.orderItemSeqId + item.productId + currentOrder.orderId" :itemDetail="item" :class="item.internalName === lastScannedId ? 'scanned-item' : '' " :id="item.internalName" isRejectionSupported="true"/>
               </template>
               <template v-else>
                 <div class="empty-state">
@@ -73,7 +73,7 @@
                     </div>
                   </div>
 
-                  <div v-for="item in shipment.items" :key="item.shipmentItemSeqId" class="order-item order-line-item">
+                  <div v-for="item in shipment.items" :key="item.shipmentItemSeqId + item.productId + shipment.shipmentId" class="order-item order-line-item">
                     <div class="product-info">
                       <ion-item lines="none">
                         <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)">
