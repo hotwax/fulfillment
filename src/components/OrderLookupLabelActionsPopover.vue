@@ -1,12 +1,12 @@
 <template>
   <ion-content>
     <ion-list>
-      <ion-list-header>{{ currentOrder.shipGroups[shipGroupSeqId][0]?.trackingIdNumber }}</ion-list-header>
-      <ion-item button :disabled="!getCarriersTrackingInfo(carrierPartyId)?.trackingUrl" @click="redirectToTrackingUrl()">
-        {{ getCarriersTrackingInfo(carrierPartyId)?.carrierName ? getCarriersTrackingInfo(carrierPartyId).carrierName : carrierPartyId }}
+      <ion-list-header>{{ shipGroup?.trackingIdNumber }}</ion-list-header>
+      <ion-item button :disabled="!getCarriersTrackingInfo(shipGroup.carrierPartyId)?.trackingUrl" @click="redirectToTrackingUrl()">
+        {{ getCarriersTrackingInfo(shipGroup.carrierPartyId)?.carrierName ? getCarriersTrackingInfo(shipGroup.carrierPartyId).carrierName : shipGroup.carrierPartyId }}
         <ion-icon slot="end" :icon="openOutline" />
       </ion-item>
-      <ion-item button @click="printShippingLabel(shipGroupSeqId)" lines="none">
+      <ion-item button @click="printShippingLabel(shipGroup.shipGroupSeqId)" lines="none">
         {{ translate("View Label") }}
         <ion-icon slot="end" :icon="documentOutline" />
       </ion-item>
@@ -27,7 +27,7 @@ import { defineComponent } from "vue";
 import { documentOutline, openOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
 import { mapGetters, useStore } from "vuex";
-import { OrderService } from '@/services/OrderService';
+import { OrderLookupService } from '@/services/OrderLookupService';
 
 export default defineComponent({
   name: "OrderLookupLabelActionsPopover",
@@ -43,27 +43,27 @@ export default defineComponent({
       getCarriersTrackingInfo: "orderLookup/getCarriersTrackingInfo",
     })
   },
-  props: ["carrierPartyId", "currentOrder", "shipGroupSeqId"],
+  props: ["shipGroup"],
   methods: {
     async printShippingLabel(shipGroupSeqId: any) {
-      const shipmentPackages = this.currentOrder.shipmentPackages[shipGroupSeqId];
-      const shipmentIds = [] as any;
-      const shippingLabelPdfUrls = [] as any;
+      const shipmentPackageRouteSegDetails = this.shipGroup.shipmentPackageRouteSegDetails;
+      const shippingLabelPdfUrls: string[] = Array.from(
+        new Set(
+          (shipmentPackageRouteSegDetails ?? [])
+            .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+            .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+        )
+      );
 
-      shipmentPackages.map((shipmentPackage: any) => {
-        if(!shipmentIds.includes(shipmentPackage.shipmentId)) {
-          shipmentIds.push(shipmentPackage.shipmentId)
-        }
-        shipmentPackage.labelImageUrl && shippingLabelPdfUrls.push(shipmentPackage.labelImageUrl)
-      })
+      const shipmentIds: string[] = Array.from(new Set (shipmentPackageRouteSegDetails.map((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.shipmentId)))
 
-      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentPackages);
+      await OrderLookupService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentPackageRouteSegDetails)
       popoverController.dismiss()
     },
 
     redirectToTrackingUrl() {
-      const trackingUrl = this.getCarriersTrackingInfo(this.carrierPartyId)?.trackingUrl
-      const trackingCode = this.currentOrder.shipGroups[this.shipGroupSeqId][0]?.trackingIdNumber
+      const trackingUrl = this.getCarriersTrackingInfo(this.shipGroup.carrierPartyId)?.trackingUrl
+      const trackingCode = this.shipGroup?.trackingIdNumber
       window.open(trackingUrl.replace("${trackingNumber}", trackingCode), "_blank");
       popoverController.dismiss()
     }
