@@ -607,6 +607,12 @@ const actions: ActionTree<UtilState, RootState> = {
       isSettingExists = await dispatch("createForceScanSetting");
     }
 
+    if(!isSettingExists) {
+      showToast(translate("Failed to update force scan preference."))
+      commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
+      return;
+    }
+
     const params = {
       "productStoreId": eComStoreId,
       "settingTypeEnumId": "FULFILL_FORCE_SCAN",
@@ -722,6 +728,12 @@ const actions: ActionTree<UtilState, RootState> = {
 
     if(!isSettingExists) {
       isSettingExists = await dispatch("createBarcodeIdentificationPref");
+    }
+
+    if(!isSettingExists) {
+      showToast(translate("Failed to update barcode identification preference."))
+      commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, prefValue)
+      return;
     }
 
     const params = {
