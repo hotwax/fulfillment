@@ -3,7 +3,7 @@ import store from '@/store';
 import { getProductIdentificationValue, translate, useUserStore } from '@hotwax/dxp-components';
 import logger from '@/logger'
 import { cogOutline } from 'ionicons/icons';
-import { getCurrentFacilityId, getFeatures, getProductStoreId, jsonToCsv, showToast } from '@/utils'
+import { downloadCsv, getCurrentFacilityId, getFeatures, getProductStoreId, showToast } from '@/utils'
 import { removeKitComponents } from '@/utils/order';
 import { escapeSolrSpecialChars, prepareSolrQuery } from '@/utils/solrHelper';
 import { ZebraPrinterService } from './ZebraPrinterService';
@@ -330,124 +330,22 @@ const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>, ship
   }
 }
 
-const getPicklistData = async (payload: any): Promise<any> => {
-  return api({
-    url: "performFind",
-    method: "GET",
-    params: payload
-  })
-}
-
-const fetchOrderHeader = async (params: any): Promise<any> => {
-  return await api({
-    url: "performFind",
-    method: "get",
-    params
-  })
-}
-
 const downloadPicklist = async (picklistId: string): Promise<any> => {
-  let viewIndex = 0;
-  let docCount = 0;
-  let picklistDate = "";
-  const picklistData: Array<Record<string, string | number>> = []
-  const orderIdentifier: Record<string, Record<string, string>> = {}
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  do {
-    const payload = {
-      inputFields: {
-        picklistId
-      },
-      entityName: "PicklistItemsQuantityCountView",
-      orderBy: "idValue DESC | name",
-      viewSize: 50,
-      viewIndex
-    }
-
-    try {
-      const resp = await OrderService.getPicklistData(payload)
-
-      if(!hasError(resp) && resp.data.docs?.length) {
-        const productIds: Array<string> = []
-        const orderIds: Array<string> = []
-        const party: Record<string, string> = {}
-
-        docCount = resp.data.docs.length;
-        viewIndex++;
-        picklistDate = resp.data.docs[0].picklistDate
-
-        resp.data.docs.map((data: any) => {
-          productIds.push(data.inventoryItemProductId)
-          orderIds.push(data.orderId)
-        })
-
-        await store.dispatch("product/fetchProducts", { productIds })
-
-        try {
-          const orderHeaderResp = await fetchOrderHeader({
-            inputFields: {
-              orderId: [...new Set(orderIds)],
-              orderId_op: "in"
-            },
-            entityName: "OrderHeader",
-            fieldList: ["orderId", "orderName"],
-            viewSize: orderIds.length,
-          })
-
-          if(!hasError(orderHeaderResp) && orderHeaderResp.data.docs?.length) {
-            const orderContactMechAndAddress = await getOrderContactMechAndAddress([...new Set(orderIds)]);
-            orderHeaderResp.data.docs?.map((order: any) => orderIdentifier[order.orderId] = order.orderName)
-
-            orderHeaderResp.data.docs?.map((order: any) => {
-              orderIdentifier[order.orderId] = {
-                orderName: order.orderName,
-                partyName: orderContactMechAndAddress.orderContactMechIds[order.orderId] ? orderContactMechAndAddress.shippingAddress[orderContactMechAndAddress.orderContactMechIds[order.orderId]]?.toName ? orderContactMechAndAddress.shippingAddress[orderContactMechAndAddress.orderContactMechIds[order.orderId]].toName : "" : ""
-              }
-            })
-          } else {
-            throw resp.data;
-          }
-        } catch(err) {
-          logger.error("Failed to fetch order info", err)
-        }
-
-        resp.data.docs.map((data: any) => {
-          const product = store.getters["product/getProduct"](data.inventoryItemProductId)
-          if(!product) {
-            return;
-          }
-
-          const facility = useUserStore().getCurrentFacility as any
-
-          // Preparing data to download as CSV
-          const productName = product.parentProductName || product.productName
-          picklistData.push({
-            "shopify-order-id": orderIdentifier[data.orderId]?.orderName,
-            "hc-order-id": data.orderId,
-            "customer-name": orderIdentifier[data.orderId]?.partyName,
-            "facility-name": facility?.facilityName || facility?.facilityId,
-            "product-identifier": getProductIdentificationValue(store.getters["util/getPicklistItemIdentificationPref"] || "internalName", product),
-            "product-code": `'${data.idValue}`,
-            "product-name": productName,
-            "product-features": getFeatures(product.productFeatures),
-            "to-pick": data.itemQuantity
-          })
-        })
-      } else {
-        docCount = 0;
-      }
-    } catch(err) {
-      docCount = 0;
-      logger.error("Failed to fetch picklist data", err)
-    }
-  } while(docCount >= 50)
-
-  if(picklistData.length) {
-    const fileName = `Picklist-${picklistDate}.csv`
-    await jsonToCsv(picklistData, { download: true, name: fileName });
-  } else {
-    showToast(translate("No items to print"))
-  }
+  const resp = await client({
+    url: `/poorti/Picklist.csv`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params: { picklistId },
+  });
+  const fileName = `Picklist-${picklistId}.csv`
+  await downloadCsv(resp.data, fileName);
 }
 
 const recycleOutstandingOrders = async(payload: any): Promise<any> => {
@@ -859,62 +757,6 @@ const addTrackingCode = async (payload: any): Promise<any> => {
   });
 }
 
-const getOrderContactMechAndAddress = async (orderIds: Array<string>): Promise<any> => {
-  const shippingAddress = {} as any
-  const orderContactMechIds = {} as Record<string, string>
-  try {
-    const resp: any = await api({
-      url: "performFind",
-      method: "get",
-      params: {
-        "entityName": "OrderItemShipGroup",
-        "inputFields": {
-          orderId: orderIds,
-          orderId_op: "in",
-        },
-        "fieldList": ["orderId", "contactMechId"],
-        "distinct": "Y",
-        "viewSize": orderIds.length
-      }
-    })
-
-    if (!hasError(resp) && resp.data.docs?.length) {
-      resp.data.docs.map((contactMech: any) => orderContactMechIds[contactMech.orderId] = contactMech.contactMechId)
-
-      try {
-        const postalAddressResp = await api({
-          url: "performFind",
-          method: "get",
-          params: {
-            entityName: "PostalAddressAndGeo",
-            inputFields: {
-              contactMechId: Object.values(orderContactMechIds),
-              contactMechId_op: "in"
-            },
-            viewSize: Object.values(orderContactMechIds).length
-          }
-        })
-
-        if (!hasError(postalAddressResp) && postalAddressResp?.data.docs?.length) {
-          postalAddressResp?.data.docs.map((postalAddress: any) => shippingAddress[postalAddress.contactMechId] = postalAddress);
-        } else {
-          throw resp?.data;
-        }
-      } catch (err) {
-        logger.error("Failed to fetch postal address info", err)
-      }
-    } else {
-      throw resp.data
-    }
-  } catch (err) {
-    logger.error("Failed to fetch customer shipping address", err)
-  }
-  return {
-    orderContactMechIds,
-    shippingAddress
-  }
-}
-
 const fetchGiftCardItemPriceInfo = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -998,7 +840,6 @@ export const OrderService = {
   fetchGiftCardItemPriceInfo,
   fetchOrderDetail,
   downloadPicklist,
-  fetchOrderHeader,
   fetchOrderItems,
   fetchPicklists,
   fetchShipmentFacets,
@@ -1007,7 +848,6 @@ export const OrderService = {
   findOpenOrders,
   findOrderInvoicingInfo,
   findShipments,
-  getPicklistData,
   packOrder,
   packOrders,
   printCustomDocuments,
