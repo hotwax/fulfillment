@@ -8,6 +8,11 @@
       </ion-buttons>
       <ion-title>{{ translate("Assign Pickers") }}</ion-title>
     </ion-toolbar>
+    <ion-item lines="none" v-if="hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN)">
+      <ion-toggle v-model="allPickersEnabled" @ionChange="findPickers()">
+        {{ translate("Show all pickers") }}
+      </ion-toggle>
+    </ion-item>
   </ion-header>
 
   <ion-content>
@@ -68,6 +73,7 @@ import {
   IonSearchbar,
   IonSpinner,
   IonTitle,
+  IonToggle,
   IonToolbar,
   modalController } from "@ionic/vue";
 import { defineComponent, computed } from "vue";
@@ -80,6 +86,7 @@ import { UtilService } from "@/services/UtilService";
 import emitter from "@/event-bus";
 import logger from "@/logger"
 import { OrderService } from '@/services/OrderService';
+import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
   name: "AssignPickerModal",
@@ -101,6 +108,7 @@ export default defineComponent({
     IonSearchbar,
     IonSpinner,
     IonTitle,
+    IonToggle,
     IonToolbar,
   },
   computed: {
@@ -113,7 +121,8 @@ export default defineComponent({
       selectedPickers: [],
       queryString: '',
       pickers: [],
-      isLoading: false
+      isLoading: false,
+      allPickersEnabled: false
     }
   },
   props: ["order"], // if we have order in props then create picklist for this single order only
@@ -201,6 +210,12 @@ export default defineComponent({
         query = `*:*`
       }
 
+      const facilityFilter = [];
+
+      if(!this.allPickersEnabled) {
+        facilityFilter.push(`facilityIds:${this.currentFacility.facilityId}`)
+      }
+
       const payload = {
         "json": {
           "params": {
@@ -210,7 +225,7 @@ export default defineComponent({
             "qf": "firstName lastName groupName partyId externalId",
             "sort": "firstName asc"
           },
-          "filter": ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true"]
+          "filter": ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true", ...facilityFilter]
         }
       }
 
@@ -242,8 +257,10 @@ export default defineComponent({
     let currentFacility = computed(() => userStore.getCurrentFacility) 
 
     return {
+      Actions,
       closeOutline,
       currentFacility,
+      hasPermission,
       saveOutline,
       closeCircle,
       store,
