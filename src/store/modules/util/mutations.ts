@@ -54,6 +54,9 @@ const mutations: MutationTree <UtilState> = {
   [types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED](state, payload) {
     state.barcodeIdentificationPref = payload
   },
+  [types.UTIL_BOX_UOM_CONVERSIONS_UPDATED](state, payload) {
+    state.boxUomConversions = payload
+  },
   [types.UTIL_CARRIER_DESC_UPDATED](state, payload) {
     state.carrierDesc = payload
   },
@@ -72,6 +75,7 @@ const mutations: MutationTree <UtilState> = {
     state.facilityShippingLabelImageType = {}
     state.picklistItemIdentificationPref = "internalName"
     state.isPicklistDownloadEnabled = false
+    state.boxUomConversions = {}
   },
   [types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED](state, payload) {
     if(payload.facilityId) {

@@ -20,6 +20,14 @@ const fetchCarrierShipmentMethods = async (params: any): Promise<any> => {
   })
 }
 
+const fetchCarrierShipmentBoxTypes = async (params: any): Promise<any> => {
+  return await api({
+    url: "performFind",
+    method: "get",
+    params
+  })
+}
+
 const fetchShipmentMethodTypes = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
@@ -28,6 +36,16 @@ const fetchShipmentMethodTypes = async (payload: any): Promise<any> => {
     cache: true
   })
 }
+
+const fetchShipmentBoxTypes = async (payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "POST",
+    data: payload,
+    cache: true
+  })
+}
+
 const fetchProductStoreShipmentMethods = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
@@ -175,24 +193,62 @@ const fetchCarrierTrackingUrls = async (payload: any): Promise<any> => {
   })
 }
 
+const createShipmentBox = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createShipmentBoxType",
+    method: "POST",
+    data: payload,
+  })
+}
+
+const updateShipmentBox = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateShipmentBoxType",
+    method: "POST",
+    data: payload,
+  })
+}
+
+const addCarrierShipmentBoxType = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createCarrierShipmentBoxType",
+    method: "POST",
+    data: payload,
+  })
+}
+
+const removeCarrierShipmentBoxType = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/deleteCarrierShipmentBoxType",
+    method: "POST",
+    data: payload,
+  })
+}
+
 export const CarrierService = {
+  addCarrierShipmentBoxType,
   addCarrierShipmentMethod,
   addCarrierToFacility,
   createCarrier,
   createProductStoreShipmentMethod,
+  createShipmentBox,
   createShipmentMethod,
   ensurePartyRole,
   fetchCarriers,
   fetchCarrierFacilities,
+  fetchCarrierShipmentBoxTypes,
   fetchCarrierShipmentMethods,
   fetchCarrierTrackingUrls,
   fetchProductStoreShipmentMethods,
+  fetchShipmentBoxTypes,
   fetchShipmentMethodTypes,
   removeCarrierFromFacility,
+  removeCarrierShipmentBoxType,
   removeCarrierShipmentMethod,
   removeProductStoreShipmentMethod,
   updateCarrier,
   updateCarrierShipmentMethod,
   updateProductStoreShipmentMethod,
+  updateShipmentBox,
   updateShipmentMethodType
 }
