@@ -12,7 +12,7 @@
   <ion-content>
     <ion-list v-if="rejectedItems.length">
       <ion-item v-for="(item, index) in rejectedItems" :key="item.val" :lines="rejectedItems.length -1 === index ? 'none' : 'inset'">
-        <ion-thumbnail slot="start" v-image-preview="getProduct(item.val)">
+        <ion-thumbnail slot="start" v-image-preview="getProduct(item.val)" :key="getProduct(item.val)?.mainImageUrl">
           <DxpShopifyImg :src="getProduct(item.val).mainImageUrl" size="small"/>
         </ion-thumbnail>
         <ion-label>
