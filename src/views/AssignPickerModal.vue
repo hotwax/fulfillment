@@ -8,11 +8,6 @@
       </ion-buttons>
       <ion-title>{{ translate("Assign Pickers") }}</ion-title>
     </ion-toolbar>
-    <ion-item lines="none" v-if="hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN)">
-      <ion-toggle v-model="showAllPickers" @ionChange="findPickers()">
-        {{ translate("Show all pickers") }}
-      </ion-toggle>
-    </ion-item>
   </ion-header>
 
   <ion-content>
@@ -25,6 +20,12 @@
     </ion-row>
 
     <ion-list>
+      <ion-item lines="none" v-if="hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN)">
+        <ion-toggle v-model="showAllPickers" @ionChange="refetchPickers()">
+          {{ translate("Show all pickers") }}
+        </ion-toggle>
+      </ion-item>
+
       <ion-list-header>{{ translate("Staff") }}</ion-list-header>
       <!-- TODO: added click event on the item as when using the ionChange event then it's getting
       called every time the v-for loop runs and then removes or adds the currently rendered picker

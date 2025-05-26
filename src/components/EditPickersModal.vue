@@ -8,11 +8,6 @@
       </ion-buttons>
       <ion-title>{{ translate("Edit pickers") }}</ion-title>
     </ion-toolbar>
-    <ion-item lines="none" v-if="hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN)">
-      <ion-toggle v-model="showAllPickers" @ionChange="refetchPickers()">
-        {{ translate("Show all pickers") }}
-      </ion-toggle>
-    </ion-item>
   </ion-header>
   
   <ion-content>
@@ -25,6 +20,12 @@
     </ion-row>
 
     <ion-list>
+      <ion-item lines="none" v-if="hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN)">
+        <ion-toggle v-model="showAllPickers" @ionChange="refetchPickers()">
+          {{ translate("Show all pickers") }}
+        </ion-toggle>
+      </ion-item>
+
       <ion-list-header>{{ translate("Staff") }}</ion-list-header>
 
       <div v-if="isLoading" class="empty-state">
