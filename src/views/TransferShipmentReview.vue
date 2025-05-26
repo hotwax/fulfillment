@@ -45,8 +45,13 @@
         <TransferOrderItem v-for="item in shipmentItems" :key="item.shipmentItemSeqId" :itemDetail="item" />
       </main>
 
-      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <!-- <ion-fab vertical="bottom" horizontal="end" slot="fixed">    //temporarily disabled the fab button so that the user can not ship the order if tracking code is not present
         <ion-fab-button :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !Object.keys(currentShipment).length || (currentShipment.isTrackingRequired &&  !trackingCode?.trim())" @click="confirmShip()">
+          <ion-icon :icon="sendOutline" />
+        </ion-fab-button>
+      </ion-fab> -->
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !Object.keys(currentShipment).length || !trackingCode?.trim()" @click="confirmShip()">
           <ion-icon :icon="sendOutline" />
         </ion-fab-button>
       </ion-fab>
