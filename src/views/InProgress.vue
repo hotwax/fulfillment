@@ -499,7 +499,6 @@ export default defineComponent({
                 if (hasError(resp)) {
                   throw resp.data
                 }
-                emitter.emit('dismissLoader');
 
                 if (data.length) {
                   // additional parameters for dismiss button and manual dismiss ability
@@ -533,7 +532,7 @@ export default defineComponent({
                 }
                 // TODO: handle the case of fetching in progress orders after packing an order
                 // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
-                await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery()]);
+                await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
               } catch (err) {
                 // in case of error, if loader and toast are not dismissed above
                 if (toast) toast.dismiss()
@@ -623,7 +622,6 @@ export default defineComponent({
                 if (hasError(resp)) {
                   throw resp.data
                 }
-                emitter.emit('dismissLoader');
 
                 // TODO: need to check that do we need to pass all the shipmentIds for an order or just need to pass
                 // the associated ids, currently passing the associated shipmentId
@@ -652,13 +650,15 @@ export default defineComponent({
                 }
                   // TODO: handle the case of fetching in progress orders after packing multiple orders
                   // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
-                await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery()])
+                await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
               } catch (err) {
                 // in case of error, if loader and toast are not dismissed above
                 if (toast) toast.dismiss()
                 emitter.emit('dismissLoader');
                 showToast(translate('Failed to pack orders'))
                 logger.error('Failed to pack orders', err)
+              } finally {
+                emitter.emit("dismissLoader")
               }
             }
           }]
@@ -1142,14 +1142,14 @@ export default defineComponent({
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
       this.searchedQuery = queryString;
     },
-    async updateOrderQuery(size?: any, queryString?: any) {
+    async updateOrderQuery(size?: any, queryString?: any, hideLoader = false) {
       const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
 
       size && (inProgressOrdersQuery.viewSize = size)
       queryString && (inProgressOrdersQuery.queryString = '')
       inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       this.selectedPicklistId && (inProgressOrdersQuery.selectedPicklist = this.selectedPicklistId)
-      await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
+      await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery, hideLoader })
     },
     async initialiseOrderQuery() {
       await this.updateOrderQuery(process.env.VUE_APP_VIEW_SIZE, '')
