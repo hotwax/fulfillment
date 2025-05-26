@@ -9,7 +9,7 @@
       <ion-title>{{ translate("Assign Pickers") }}</ion-title>
     </ion-toolbar>
     <ion-item lines="none" v-if="hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN)">
-      <ion-toggle v-model="allPickersEnabled" @ionChange="findPickers()">
+      <ion-toggle v-model="showAllPickers" @ionChange="findPickers()">
         {{ translate("Show all pickers") }}
       </ion-toggle>
     </ion-item>
@@ -122,7 +122,7 @@ export default defineComponent({
       queryString: '',
       pickers: [],
       isLoading: false,
-      allPickersEnabled: false
+      showAllPickers: false
     }
   },
   props: ["order"], // if we have order in props then create picklist for this single order only
@@ -212,7 +212,7 @@ export default defineComponent({
 
       const facilityFilter = [];
 
-      if(!this.allPickersEnabled) {
+      if(!this.showAllPickers) {
         facilityFilter.push(`facilityIds:${this.currentFacility.facilityId}`)
       }
 

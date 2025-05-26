@@ -9,7 +9,7 @@
       <ion-title>{{ translate("Edit pickers") }}</ion-title>
     </ion-toolbar>
     <ion-item lines="none" v-if="hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN)">
-      <ion-toggle v-model="allPickersEnabled" @ionChange="refetchPickers()">
+      <ion-toggle v-model="showAllPickers" @ionChange="refetchPickers()">
         {{ translate("Show all pickers") }}
       </ion-toggle>
     </ion-item>
@@ -116,7 +116,7 @@ export default defineComponent({
       pickers: [] as any,
       editedPicklist: {} as any,
       isLoading: false,
-      allPickersEnabled: false
+      showAllPickers: false
     }
   },
   async mounted() {
@@ -152,7 +152,7 @@ export default defineComponent({
 
       const facilityFilter = [];
 
-      if(!this.allPickersEnabled) {
+      if(!this.showAllPickers) {
         facilityFilter.push(`facilityIds:${this.currentFacility.facilityId}`)
       }
 
