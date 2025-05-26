@@ -242,7 +242,7 @@ export default defineComponent({
       if (orderType === 'completed') {
         return this.currentOrder?.items?.filter((item: any) => item.statusId === 'ITEM_COMPLETED')
       } else {
-        return this.currentOrder?.items?.filter((item: any) => item.statusId !== 'ITEM_COMPLETED' && item.statusId !== 'ITEM_CANCELLED' && item.statusId !== 'ITEM_REJECTED')
+        return this.currentOrder?.items?.filter((item: any) => item.statusId === 'ITEM_PENDING_FULFILL')
       }
     },
     async createShipment() {
