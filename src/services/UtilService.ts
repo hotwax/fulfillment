@@ -531,45 +531,49 @@ const fetchCarriers = async (params: any): Promise <any>  => {
   });
 }
 
-const fetchStoreCarrierAndMethods = async (params: any): Promise <any>  => {
+const fetchStoreCarrierAndMethods = async (payload: any): Promise <any>  => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/oms/productStores/${params.productStoreId}/shipmentMethods`,
-    method: "GET",
+    url: `/oms/entityData`,
+    method: "POST",
     baseURL,
     headers: {
       "api_key": omsRedirectionInfo.token,
       "Content-Type": "application/json"
     },
-    params,
+    data: payload,
   });
 }
 
-const fetchFacilityAddresses = async (params: any): Promise<any> => {
+const fetchFacilityAddresses = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/oms/facilityContactMechs`,
-    method: "GET",
+    url: `/oms/entityData`,
+    method: "POST",
     baseURL,
     headers: {
       "api_key": omsRedirectionInfo.token,
       "Content-Type": "application/json"
     },
-    params,
+    data: payload,
   });
 }
 
 const fetchFacilityZPLGroupInfo = async (facilityId: string): Promise<any> => {
   let isFacilityZPLConfigured = false;
-  const params = {
-    facilityGroupId: "ZPL_SHIPPING_LABEL",
-    facilityGroupTypeId: "SHIPPING_LABEL",
+  const payload = {
+    customParametersMap: {
+      facilityGroupId: "ZPL_SHIPPING_LABEL",
+      facilityGroupTypeId: "SHIPPING_LABEL",
+    },
+    selectedEntity: "co.hotwax.facility.FacilityGroupAndMember",
+    filterByDate: true,
+    pageLimit: 1
     //thruDate_op: "empty",
-    pageSize: 1
   }
 
   try {
@@ -578,17 +582,17 @@ const fetchFacilityZPLGroupInfo = async (facilityId: string): Promise<any> => {
     const baseURL = store.getters['user/getMaargBaseUrl'];
 
     const resp = await client({
-      url: `/oms/facilities/${facilityId}/groups`,
-      method: "GET",
+      url: `/oms/entityData`,
+      method: "POST",
       baseURL,
       headers: {
         "api_key": omsRedirectionInfo.token,
         "Content-Type": "application/json"
       },
-      params
+      data: payload
     });
 
-    if (!hasError(resp) && resp.data?.length > 0) {
+    if (!hasError(resp) && resp.data?.entityValueList?.length > 0) {
       isFacilityZPLConfigured = true
     } else {
       throw resp.data;

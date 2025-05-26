@@ -371,15 +371,19 @@ export default defineComponent({
           // using facilityGroupId as a flag for getting data from getFacilityGroupDetails
           this.facilityGroupDetails.facilityGroupId = resp.data[0].facilityGroupId
           resp = await UserService.getFacilityGroupAndMemberDetails({
-            "facilityId": this.currentFacility?.facilityId,
-            "facilityGroupId": this.facilityGroupDetails.facilityGroupId,
-            "fieldsToSelect": ["facilityId", "fromDate"],
-            "pageSize": 1,
+            customParametersMap:{
+              "facilityId": this.currentFacility?.facilityId,
+              "facilityGroupId": this.facilityGroupDetails.facilityGroupId,
+            },
+            selectedEntity: "co.hotwax.facility.FacilityGroupAndMember",
+            //"fieldsToSelect": ["facilityId", "fromDate"],
+            pageLimit: 1,
+            filterByDate: true,
             //"thruDate_op": 'empty'
           })
 
           if (!hasError(resp)) {
-            this.facilityGroupDetails = { ...this.facilityGroupDetails, ...resp.data[0] }
+            this.facilityGroupDetails = { ...this.facilityGroupDetails, ...resp.data.entityValueList[0] }
 
             // When getting data from group member enabling the eCom inventory
             this.isEComInvEnabled = true

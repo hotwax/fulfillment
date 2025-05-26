@@ -295,8 +295,7 @@ const actions: ActionTree<UserState, RootState> = {
     const params = {
       "productStoreId": getProductStoreId(),
       "settingTypeEnumId": "USE_RES_FACILITY_ID",
-      //"thruDate_op": 'empty',
-      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
       "pageSize": 1
     } as any
 
@@ -317,7 +316,6 @@ const actions: ActionTree<UserState, RootState> = {
     const params = {
       "productStoreId": getProductStoreId(),
       "settingTypeEnumId": "DISABLE_SHIPNOW",
-      //"thruDate_op": 'empty',
       "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
       "pageSize": 1
     } as any
@@ -341,7 +339,6 @@ const actions: ActionTree<UserState, RootState> = {
     const params = {
       "productStoreId": getProductStoreId(),
       "settingTypeEnumId": "DISABLE_UNPACK",
-      //"thruDate_op": 'empty',
       "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
       "pageSize": 1
     } as any
@@ -452,8 +449,7 @@ const actions: ActionTree<UserState, RootState> = {
     const params = {
       "productStoreId": getProductStoreId(),
       "settingTypeEnumId": "FULFILL_PART_ODR_REJ",
-      //"thruDate_op": 'empty',
-      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
       "pageSize": 1
     } as any
 
@@ -474,8 +470,7 @@ const actions: ActionTree<UserState, RootState> = {
     const params = {
       "productStoreId": getProductStoreId(),
       "settingTypeEnumId": "FF_COLLATERAL_REJ",
-      //"thruDate_op": 'empty',
-      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
       "pageSize": 1
     } as any
 
@@ -527,8 +522,7 @@ const actions: ActionTree<UserState, RootState> = {
     const params = {
       "productStoreId": getProductStoreId(),
       "settingTypeEnumId": "AFFECT_QOH_ON_REJ",
-      //"thruDate_op": 'empty',
-      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
+      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
       "pageSize": 1
     } as any
 

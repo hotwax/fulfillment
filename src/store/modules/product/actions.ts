@@ -76,13 +76,17 @@ const actions: ActionTree<ProductState, RootState> = {
     let resp;
     try {
       resp = await ProductService.fetchProductComponents({
-        productId: productId,
-        productAssocTypeId: "PRODUCT_COMPONENT",
+        customParametersMap: {
+          productId: productId,
+          productAssocTypeId: "PRODUCT_COMPONENT",
+        },
+        selectedEntity: "org.apache.ofbiz.product.product.ProductAssoc",
         //thruDate_op: "empty",
-        pageSize: 100,  // maximum records we could have
+        filterByDate: true,
+        pageLimit: 100,  // maximum records we could have
       })
       if (!hasError(resp)) {
-        const productComponents = resp.data;
+        const productComponents = resp.data.entityValueList;
         const componentProductIds = productComponents.map((productComponent: any) => productComponent.productIdTo);
         await dispatch('fetchProducts', { productIds: componentProductIds })
         

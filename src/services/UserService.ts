@@ -142,14 +142,14 @@ const getFacilityGroupAndMemberDetails = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/oms/groupFacilities`,
-    method: "get",
+    url: `/oms/entityData`,
+    method: "post",
     baseURL,
     headers: {
       "api_key": omsRedirectionInfo.token,
       "Content-Type": "application/json"
     },
-    param: payload
+    data: payload
   });
 }
 

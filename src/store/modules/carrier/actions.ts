@@ -102,22 +102,26 @@ const actions: ActionTree<CarrierState, RootState> = {
     try {
       do {
         const params = {
-          "roleTypeId": "CARRIER",
-          "partyId": payload.partyId,
-          "fieldsToSelect": ["productStoreShipMethId", "productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "shipmentGatewayConfigId", "isTrackingRequired", "sequenceNumber", "description", "fromDate"],
-          "pageIndex": viewIndex,
-          "pageSize": 250,
+          customParametersMap: {
+            "roleTypeId": "CARRIER",
+            "partyId": payload.partyId,
+          },
+          //"fieldsToSelect": ["productStoreShipMethId", "productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "shipmentGatewayConfigId", "isTrackingRequired", "sequenceNumber", "description", "fromDate"],
+          selectedEntity: "org.apache.ofbiz.product.store.ProductStoreShipmentMethDetail",
+          pageIndex: viewIndex,
+          pageLimit: 250,
+          filterByDate: true
           //"thruDate_op": "empty",
         }
   
         resp = await CarrierService.fetchProductStoreShipmentMethodsByCarrier(params)
         if (!hasError(resp)) {
-          productStoreShipmentMethods = [...productStoreShipmentMethods, ...resp.data]
+          productStoreShipmentMethods = [...productStoreShipmentMethods, ...resp.data.entityValueList]
           viewIndex++;
         } else {
           throw resp.data
         }
-      } while (resp.data.length >= 250);
+      } while (resp.data?.entityValueList?.length >= 250);
 
       currentCarrier = {
         ...currentCarrier,
@@ -236,18 +240,22 @@ const actions: ActionTree<CarrierState, RootState> = {
     try {
       do {
         const params = {
-          "roleTypeId": "CARRIER",
-          "partyId": currentCarrier.partyId,
-          "fieldsToSelect": ["facilityId", "partyId", "roleTypeId", "fromDate"],
-          "pageIndex": viewIndex,
-          "pageSize": 250,
+          customParametersMap:{
+            "roleTypeId": "CARRIER",
+            "partyId": currentCarrier.partyId,
+          },
+          selectedEntity: "org.apache.ofbiz.product.facility.FacilityPartyNameDetail",
+          //"fieldsToSelect": ["facilityId", "partyId", "roleTypeId", "fromDate"],
+          pageIndex: viewIndex,
+          pageLimit: 250,
+          filterByDate: true
           //"thruDate_op": "empty"
         }
   
         resp = await CarrierService.fetchCarrierFacilities(params)
         if (!hasError(resp)) {
-          carrierFacilities = [...carrierFacilities, ...resp.data]
-          docCount = resp.data.length;
+          carrierFacilities = [...carrierFacilities, ...resp.data.entityValueList]
+          docCount = resp.data.entityValueList.length;
           viewIndex++;
         } else {
           docCount = 0
@@ -334,18 +342,22 @@ const actions: ActionTree<CarrierState, RootState> = {
     try {
       do {
         const params = {
-          "roleTypeId": "CARRIER",
-          "facilityId": getCurrentFacilityId(),
-          "fieldsToSelect": ["facilityId", "partyId", "firstName", "lastName", "groupName", "roleTypeId"],
+          customParametersMap: {
+            "roleTypeId": "CARRIER",
+            "facilityId": getCurrentFacilityId(),
+          },
+          selectedEntity: "org.apache.ofbiz.product.facility.FacilityPartyNameDetail",
+          //"fieldsToSelect": ["facilityId", "partyId", "firstName", "lastName", "groupName", "roleTypeId"],
           "pageIndex": viewIndex,
-          "pageSize": 250,
+          "pageLimit": 250,
+          filterByDate: true
           //"thruDate_op": "empty",
         }
   
         resp = await CarrierService.fetchFacilityCarriers(params)
         if (!hasError(resp)) {
-          facilityCarriers = [...facilityCarriers, ...resp.data]
-          docCount = resp.data.length;
+          facilityCarriers = [...facilityCarriers, ...resp.data.entityValueList]
+          docCount = resp.data.entityValueList.length;
           viewIndex++;
         } else {
           docCount = 0
@@ -396,25 +408,29 @@ const actions: ActionTree<CarrierState, RootState> = {
     try {
       do {
         const params = {
-          "roleTypeId": "CARRIER",
-          "productStoreId": getProductStoreId(),
-          "shipmentMethodTypeId": "STOREPICKUP",
-          "shipmentMethodTypeId_op": "equals",
-          "shipmentMethodTypeId_not": "Y",
-          "fieldsToSelect": ["productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "description", "isTrackingRequired"],
+          customParametersMap:{
+            "roleTypeId": "CARRIER",
+            "productStoreId": getProductStoreId(),
+            "shipmentMethodTypeId": "STOREPICKUP",
+            "shipmentMethodTypeId_op": "equals",
+            "shipmentMethodTypeId_not": "Y",
+          },
+          selectedEntity: "org.apache.ofbiz.product.store.ProductStoreShipmentMethDetail",
+          //"fieldsToSelect": ["productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "description", "isTrackingRequired"],
           "pageIndex": viewIndex,
-          "pageSize": 250,
+          "pageLimit": 250,
+          filterByDate: true
           //"thruDate_op": "empty"
         }
   
         resp = await CarrierService.fetchProductStoreShipmentMethods(params)
         if (!hasError(resp)) {
-          productStoreShipmentMethods = [...productStoreShipmentMethods, ...resp.data]
+          productStoreShipmentMethods = [...productStoreShipmentMethods, ...resp.data.entityValueList]
           viewIndex++;
         } else {
           throw resp.data
         }
-      } while (resp.data.length >= 250);
+      } while (resp.data.entityValueList.length >= 250);
 
     } catch(error) {
       logger.error(error);

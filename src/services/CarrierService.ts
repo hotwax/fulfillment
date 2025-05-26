@@ -48,34 +48,34 @@ const fetchShipmentMethodTypes = async (params: any): Promise<any> => {
     params
   });
 }
-const fetchProductStoreShipmentMethodsByCarrier = async (params: any): Promise<any> => {
+const fetchProductStoreShipmentMethodsByCarrier = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/oms/shippingGateways/carrierParties/${params.partyId}/productStoreShipmentMethods`,
-    method: "GET",
+    url: `/oms/entityData`,
+    method: "POST",
     baseURL,
     headers: {
       "api_key": omsRedirectionInfo.token,
       "Content-Type": "application/json"
     },
-    params
+    data: payload
   });
 }
-const fetchProductStoreShipmentMethods = async (params: any): Promise<any> => {
+const fetchProductStoreShipmentMethods = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/oms/productStores/${params.productStoreId}/shipmentMethods`,
-    method: "GET",
+    url: `/oms/entityData`,
+    method: "POST",
     baseURL,
     headers: {
       "api_key": omsRedirectionInfo.token,
       "Content-Type": "application/json"
     },
-    params
+    data: payload
   });
 }
 const removeCarrierShipmentMethod = async (payload: any): Promise<any> => {
@@ -214,34 +214,34 @@ const removeCarrierFromFacility = async (payload: any): Promise<any> => {
     data: payload
   });
 }
-const fetchCarrierFacilities = async (params: any): Promise<any> => {
+const fetchCarrierFacilities = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/oms/shippingGateways/carrierParties/${params.partyId}/facilities`,
-    method: "GET",
+    url: `/oms/entityData`,
+    method: "POST",
     baseURL,
     headers: {
       "api_key": omsRedirectionInfo.token,
       "Content-Type": "application/json"
     },
-    params
+    data: payload
   });
 }
-const fetchFacilityCarriers = async (params: any): Promise<any> => {
+const fetchFacilityCarriers = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/oms/facilities/${params.facilityId}/parties`,
-    method: "GET",
+    url: `/oms/entityData`,
+    method: "POST",
     baseURL,
     headers: {
       "api_key": omsRedirectionInfo.token,
       "Content-Type": "application/json"
     },
-    params
+    data: payload
   });
 }
 const createShipmentMethod = async (payload: any): Promise<any> => {

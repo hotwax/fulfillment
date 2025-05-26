@@ -448,15 +448,14 @@ const actions: ActionTree<UtilState, RootState> = {
     const payload = {
       productStoreId: eComStoreId,
       settingTypeEnumId: "FULFILL_FORCE_SCAN",
-      fieldsToSelect: ["settingValue", "fromDate", "thruDate"],
+      fieldsToSelect: ["settingValue"],
       pageSize: 1
     }
 
     try {
       const resp = await UtilService.getProductStoreSetting(payload) as any
-      if(!hasError(resp)) {
-        const storeSettings = resp.data?.filter((setting: any) =>  !setting.thruDate)
-        const respValue = storeSettings[0].settingValue === "true"
+      if (!hasError(resp)) {
+        const respValue = resp.data[0]?.settingValue === "true"
         commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, respValue)
       } else {
         dispatch('createForceScanSetting');
@@ -468,8 +467,6 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   async createForceScanSetting({ commit }) {
-    const fromDate = Date.now()
-
     try {
       if(!await UtilService.isEnumExists("FULFILL_FORCE_SCAN")) {
         const resp = await UtilService.createEnumeration({
@@ -486,7 +483,6 @@ const actions: ActionTree<UtilState, RootState> = {
       }
 
       const params = {
-        fromDate,
         "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "FULFILL_FORCE_SCAN",
         "settingValue": "false"
@@ -500,7 +496,6 @@ const actions: ActionTree<UtilState, RootState> = {
     // not checking for resp success and fail case as every time we need to update the state with the
     // default value when creating a scan setting
     commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, false)
-    return fromDate;
   },
 
   async setForceScanSetting({ commit, dispatch, state }, value) {
@@ -514,28 +509,27 @@ const actions: ActionTree<UtilState, RootState> = {
       return;
     }
 
-    let fromDate;
+    let settingTypeEnumId;
 
     try {
       const resp = await UtilService.getProductStoreSetting({
           productStoreId: eComStoreId,
           settingTypeEnumId: "FULFILL_FORCE_SCAN",
-          fieldsToSelect: ["fromDate"],
+          fieldsToSelect: ["settingTypeEnumId"],
           pageSize: 1
       }) as any
       if(!hasError(resp)) {
-        fromDate = resp.data[0]?.fromDate
+        settingTypeEnumId = resp.data[0]?.settingTypeEnumId
       }
     } catch(err) {
       console.error(err)
     }
 
-    if(!fromDate) {
-      fromDate = await dispatch("createForceScanSetting");
+    if(!settingTypeEnumId) {
+      await dispatch("createForceScanSetting");
     }
 
     const params = {
-      "fromDate": fromDate,
       "productStoreId": eComStoreId,
       "settingTypeEnumId": "FULFILL_FORCE_SCAN",
       "settingValue": `${value}`
@@ -544,7 +538,7 @@ const actions: ActionTree<UtilState, RootState> = {
     try {
       const resp = await UtilService.updateForceScanSetting(params) as any
 
-      if((!hasError(resp))) {
+      if ((!hasError(resp))) {
         showToast(translate("Force scan preference updated successfully."))
         prefValue = value
       } else {
@@ -561,7 +555,7 @@ const actions: ActionTree<UtilState, RootState> = {
     const payload = {
       productStoreId: eComStoreId,
       settingTypeEnumId: "BARCODE_IDEN_PREF",
-      fieldToSelect: ["settingValue", "fromDate"],
+      fieldToSelect: ["settingValue"],
       pageSize: 1
     }
 
@@ -626,29 +620,27 @@ const actions: ActionTree<UtilState, RootState> = {
       return;
     }
 
-    let fromDate;
+    let settingTypeEnumId;
 
     try {
       const resp = await UtilService.getProductStoreSetting({
         "productStoreId": eComStoreId,
         "settingTypeEnumId": "BARCODE_IDEN_PREF",
-        "thruDate_not": 'Y',
-        "fieldsToSelect": ["fromDate"],
+        "fieldsToSelect": ["settingTypeEnumId"],
         "pageSize": 1
       }) as any
       if(!hasError(resp)) {
-        fromDate = resp.data[0]?.fromDate
+        settingTypeEnumId = resp.data[0]?.settingTypeEnumId
       }
     } catch(err) {
       console.error(err)
     }
 
-    if(!fromDate) {
-      fromDate = await dispatch("createBarcodeIdentificationPref");
+    if(!settingTypeEnumId) {
+      await dispatch("createBarcodeIdentificationPref");
     }
 
     const params = {
-      "fromDate": fromDate,
       "productStoreId": eComStoreId,
       "settingTypeEnumId": "BARCODE_IDEN_PREF",
       "settingValue": value
@@ -708,21 +700,25 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const payload = {
-        productStoreId,
-        "roleTypeId": "CARRIER",
-        "shipmentMethodTypeId": "STOREPICKUP",
-        "shipmentMethodTypeId_op": "equals",
-        "shipmentMethodTypeId_not": "Y",
-        "fieldsToSelect": ["description", "partyId", "shipmentMethodTypeId"],
+        customParametersMap:{
+          productStoreId,
+          "roleTypeId": "CARRIER",
+          "shipmentMethodTypeId": "STOREPICKUP",
+          "shipmentMethodTypeId_op": "equals",
+          "shipmentMethodTypeId_not": "Y"
+        },
+        selectedEntity: "org.apache.ofbiz.product.store.ProductStoreShipmentMethDetail",
+        //"fieldsToSelect": ["description", "partyId", "shipmentMethodTypeId"],
         //"thruDate_op": "empty",
-        "distinct": "Y",
-        "pageSize": 100
+        //"distinct": "Y",
+        filterByDate: true,
+        pageLimit: 100
       }
 
       const resp = await UtilService.fetchStoreCarrierAndMethods(payload);
 
       if(!hasError(resp)) {
-        const storeCarrierAndMethods = resp.data;
+        const storeCarrierAndMethods = resp.data.entityValueList;
         shipmentMethodsByCarrier = storeCarrierAndMethods.reduce((shipmentMethodsByCarrier: any, storeCarrierAndMethod: any) => {
           const { partyId, shipmentMethodTypeId, description } = storeCarrierAndMethod;
 
@@ -753,21 +749,25 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const resp = await UtilService.fetchFacilityAddresses({
+        customParametersMap: {
           contactMechPurposeTypeId: "PRIMARY_LOCATION",
           contactMechTypeId: "POSTAL_ADDRESS",
           facilityId: remainingFacilityIds,
           facilityId_op: "in",
-        orderByField: 'fromDate DESC',
+        },
+        selectedEntity: "org.apache.ofbiz.product.facility.FacilityContactDetailByPurpose",
+        //orderByField: 'fromDate DESC',
         //thruDate_op: 'empty',
-        fieldsToSelect: ['address1', 'address2', 'city', 'countryGeoName', 'postalCode', 'stateGeoName', 'facilityId', 'facilityName', 'contactMechId'],
-        pageSize: 2
+        //fieldsToSelect: ['address1', 'address2', 'city', 'countryGeoName', 'postalCode', 'stateGeoName', 'facilityId', 'facilityName', 'contactMechId'],
+        pageLimit: 2,
+        filterByDate: true
       }) as any;
   
-      if(!hasError(resp) && resp.data?.length) {
+      if(!hasError(resp) && resp.data.entityValueList?.length) {
         resp.data.map((facility: any) => {
           facilityAddresses[facility.facilityId] = facility;
         })
-        addresses = [...addresses, ...resp.data.docs]
+        addresses = [...addresses, ...resp.data.entityValueList]
       } else {
         throw resp.data;
       }
@@ -826,9 +826,8 @@ const actions: ActionTree<UtilState, RootState> = {
         "productStoreId": eComStoreId,
         "settingTypeEnumId": ["PICK_LST_PROD_IDENT", "FF_DOWNLOAD_PICKLIST"]
       },
-      "filterByDate": "Y",
       "entityName": "ProductStoreSetting",
-      "fieldList": ["settingTypeEnumId", "settingValue", "fromDate"],
+      "fieldList": ["settingTypeEnumId", "settingValue"],
       "viewSize": 20
     }
 
