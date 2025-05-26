@@ -39,7 +39,7 @@
           </ion-card-header>
           <ion-list v-if="getMostRejectedItems().length">
             <ion-item v-for="(item, index) in getMostRejectedItems()" :key="item.val" :lines="getMostRejectedItems().length -1 === index ? 'none' : 'inset'">
-              <ion-thumbnail slot="start" v-image-preview="getProduct(item.val)" :key="item.val">
+              <ion-thumbnail slot="start" v-image-preview="getProduct(item.val)" :key="getProduct(item.val)?.mainImageUrl">
                 <DxpShopifyImg :src="getProduct(item.val).mainImageUrl" :key="getProduct(item.val).mainImageUrl" size="small"/>
               </ion-thumbnail>
               <ion-label>
@@ -111,7 +111,7 @@
           <div v-for="item in order.items" :key="item.orderItemSeqId" class="list-item">
             <div class="product-info">
               <ion-item lines="none">
-                <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)">
+                <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
                   <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                 </ion-thumbnail>
                 <ion-label>

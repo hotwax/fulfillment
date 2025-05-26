@@ -207,7 +207,7 @@
               <div class="product-card">
                 <ion-card v-for="shipGroup in shipGroups" :key="shipGroup.shipGroupSeqId">
                   <ion-item>
-                    <ion-thumbnail slot="start" v-image-preview="getProduct(shipGroup.productId)">
+                    <ion-thumbnail slot="start" v-image-preview="getProduct(shipGroup.productId)" :key="getProduct(shipGroup.productId)?.mainImageUrl">
                       <DxpShopifyImg :src="getProduct(shipGroup.productId)?.mainImageUrl" size="small" />
                     </ion-thumbnail>
                     <ion-label class="ion-text-wrap">
