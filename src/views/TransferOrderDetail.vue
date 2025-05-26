@@ -383,51 +383,47 @@ export default defineComponent({
 
         currentShipment.isGeneratingShippingLabel = false;
       },
-}, 
-async rejectItems() {
-  const alert = await alertController.create({
-    header: translate("Reject transfer order"),
-    message: translate("Rejecting a transfer order will remove it from your facility. Your inventory levels will not be affected from this rejection.", { space: "<br/><br/>" }),
-    buttons: [{
-      text: translate("Cancel"),
-      role: 'cancel',
-    }, {
-      text: translate("Reject"),
-    /*  handler: async() => {
-        emitter.emit("presentLoader")
-        const payload = {
-          orderId: this.currentOrder.orderId,
-          items: []
-        } as any
-        this.currentOrder.items.map((item: any) => {
-          payload.items.push({
-            rejectReason: item.rejectReasonId || this.defaultRejectReasonId,
-            facilityId: this.currentOrder.facilityId,
-            orderItemSeqId: item.orderItemSeqId,
-            shipmentMethodTypeId: this.currentOrder.shipmentMethodTypeId,
-            quantity: parseInt(item.quantity),
-            naFacilityId: "REJECTED_ITM_PARKING"
-          })
-        })
-        try {
-          const resp = await TransferOrderService.rejectOrderItems({ payload });
-          if(!hasError(resp) && resp.data?.rejectedItemsList.length) {
-            showToast(translate("All order items are rejected"))
-            this.$router.replace("/transfer-orders")
-          } else {
-            throw resp;
-          }
-        } catch(err) {
-          logger.error(err);
-          showToast(translate("Failed to reject order"))
-          // If there is any error in rejecting the order, fetch the updated order information
-          await this.store.dispatch("transferorder/fetchTransferOrderDetail", { orderId: this.$route.params.orderId })
-        }
-        emitter.emit("dismissLoader")
-      }*/
-    }]
-  });
-  return alert.present();
+      async rejectItems() {
+        const alert = await alertController.create({
+          header: translate("Reject transfer order"),
+          message: translate("Rejecting a transfer order will remove it from your facility. Your inventory levels will not be affected from this rejection.", { space: "<br/><br/>" }),
+          buttons: [{
+            text: translate("Cancel"),
+            role: 'cancel',
+          }, {
+            text: translate("Reject"),
+            handler: async() => {
+              emitter.emit("presentLoader")
+              const payload = {
+                orderId: this.currentOrder.orderId,
+                items: []
+              } as any
+              this.currentOrder.items.map((item: any) => {
+                payload.items.push({
+                  orderItemSeqId: item.orderItemSeqId,
+                  rejectionReasonId: item.rejectReasonId || this.defaultRejectReasonId
+                })
+              })
+              try {
+                const resp = await TransferOrderService.rejectOrderItems(payload);
+                if(resp?.data?.messages) {
+                  showToast(translate("All order items are rejected"))
+                  this.$router.replace("/transfer-orders")
+                } else {
+                  throw resp;
+                }
+              } catch(err) {
+                console.error(err);
+                showToast(translate("Failed to reject order"))
+                // If there is any error in rejecting the order, fetch the updated order information
+                await this.store.dispatch("transferorder/fetchTransferOrderDetail", { orderId: this.$route.params.orderId })
+              }
+              emitter.emit("dismissLoader")
+            }
+          }]
+        });
+        return alert.present();
+      },
 },
 ionViewDidLeave() {
   const routeTo = this.router.currentRoute;
