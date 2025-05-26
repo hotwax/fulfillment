@@ -396,22 +396,15 @@ export default defineComponent({
               emitter.emit("presentLoader")
               const payload = {
                 orderId: this.currentOrder.orderId,
-                items: []
-              } as any
-              this.currentOrder.items.map((item: any) => {
-                payload.items.push({
+                items: this.currentOrder.items.map((item: any) => ({
                   orderItemSeqId: item.orderItemSeqId,
                   rejectionReasonId: item.rejectReasonId || this.defaultRejectReasonId
-                })
-              })
+                }))
+              };
               try {
-                const resp = await TransferOrderService.rejectOrderItems(payload);
-                if(resp?.data) {
-                  showToast(translate("All order items are rejected"))
-                  this.$router.replace("/transfer-orders")
-                } else {
-                  throw resp;
-                }
+                await TransferOrderService.rejectOrderItems(payload);
+                showToast(translate("All order items are rejected"))
+                this.$router.replace("/transfer-orders")
               } catch(err) {
                 console.error(err);
                 showToast(translate("Failed to reject order"))
@@ -424,7 +417,7 @@ export default defineComponent({
         });
         return alert.present();
       },
-},
+}, 
 ionViewDidLeave() {
   const routeTo = this.router.currentRoute;
   if (routeTo.value.name !== 'Transfer Orders') {
