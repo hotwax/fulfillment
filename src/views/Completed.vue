@@ -487,6 +487,8 @@ export default defineComponent({
           this.carrierPartyIds = resp.data.carrierPartyIds
           await this.store.dispatch('util/fetchShipmentMethodTypeDesc', resp.data.shipmentMethodTypeIds)
           await this.store.dispatch('util/fetchPartyInformation', resp.data.carrierPartyIds)
+          await this.fetchConfiguredCarrierService(resp.data.carrierPartyIds);
+          await this.fetchCarrierManifestInformation(resp.data.carrierPartyIds);
         } else {
           throw resp.data
         }
@@ -675,21 +677,21 @@ export default defineComponent({
     },
     async fetchConfiguredCarrierService(carrierPartyIds: Array<string>) {
       const payload = {
-        inputFields: {
+        customParametersMap: {
           carrierPartyId: carrierPartyIds,
           carrierPartyId_op: "in",
           shipmentMethodTypeId: "_NA_",
           requestType: ["MANIFEST_GEN_REQUEST", "MANIFEST_PRINT"],
           requestType_op: "in"
         },
-        entityName: "ShipmentRequest",
-        viewSize: carrierPartyIds.length * 2
+        selectedEntity: "ShipmentRequest",
+        pageLimit: carrierPartyIds.length * 2
       }
       try {
         const resp = await UtilService.fetchConfiguredCarrierService(payload)
 
-        if(!hasError(resp) && resp.data?.docs?.length) {
-          this.carrierConfiguration = resp.data.docs.reduce((carriers: any, carrier: any) => {
+        if(!hasError(resp) && resp.data.entityValueList?.length) {
+          this.carrierConfiguration = resp.data.entityValueList.reduce((carriers: any, carrier: any) => {
             if(!carriers[carrier.carrierPartyId]) {
               carriers[carrier.carrierPartyId] = {
                 [carrier.requestType]: carrier.serviceName
@@ -711,29 +713,28 @@ export default defineComponent({
       // and thus needs to handle that case as well.
       for(let partyId of carrierPartyIds) {
         const payload = {
-          inputFields: {
+          customParametersMap: {
             partyId,
             facilityContentTypeEnumId: "FAC_DELVER_MANIFEST",
             dataResourceTypeId: "URL_RESOURCE",
             roleTypeId: "CARRIER",
-            fromDate: DateTime.now().startOf("day").minus({ days: 7 }).toMillis(),
-            fromDate_op: "greaterThanEqualTo",
+            fromDate_from: DateTime.now().startOf("day").minus({ days: 7 }).toMillis(),
             facilityId: this.currentFacility.facilityId
           },
-          entityName: "FacilityContentAndDataResource",
-          viewSize: 250,  // Assuming that there will not be more than 250 manifest in last 7 days for a carrier
-          filterByDate: "Y",
-          orderBy: "contentId DESC"
+          selectedEntity: "FacilityContentAndDataResource",
+          pageLimit: 250,  // Assuming that there will not be more than 250 manifest in last 7 days for a carrier
+          filterByDate: true
+          //orderBy: "contentId DESC"
         }
         try {
           const resp = await UtilService.fetchConfiguredCarrierService(payload)
   
-          if(!hasError(resp) && resp.data?.docs?.length) {
+          if(!hasError(resp) && resp.data?.entityValueList?.length) {
             if(this.carrierConfiguration[partyId]) {
-              this.carrierConfiguration[partyId]["manifests"] = resp.data.docs
+              this.carrierConfiguration[partyId]["manifests"] = resp.data.entityValueList
             } else {
               this.carrierConfiguration[partyId] = {
-                ["manifests"]: resp.data.docs
+                ["manifests"]: resp.data.entityValueList
               }
             }
           }

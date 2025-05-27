@@ -10,14 +10,6 @@ const fetchShipmentMethods = async (query: any): Promise <any>  => {
   });
 }
 
-const fetchTransferOrderFacets = async (query: any): Promise <any>  => {
-  return api({
-    url: "solr-query", 
-    method: "post",
-    data: query
-  });
-}
-
 const fetchCarrierShipmentBoxTypes = async(params: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -74,36 +66,51 @@ const getAvailablePickers = async (query: any): Promise <any> => {
   })
 }
 
-const fetchCarrierPartyIds = async (query: any): Promise <any>  => {
-  return api({
-    url: "solr-query",
-    method: "post",
-    data: query
-  });
-}
+const fetchConfiguredCarrierService = async(payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
 
-const fetchConfiguredCarrierService = async(query: any): Promise<any> => {
-  return api({
-    url: "performFind",
-    method: "get",
-    params: query
+  return client({
+    url: `/oms/entityData`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload,
   });
 }
 
 const generateManifest = async(payload: any): Promise<any> => {
-  return api({
-    url: "generateManifests",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/poorti/generateManifest`,
     method: "POST",
-    data: payload
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload,
   });
 }
 
-const downloadCarrierManifest = async(payload: any): Promise<any> => {
-  return api({
-    url: "downloadCarrierManifest",
-    method: "POST",
-    data: payload,
-    responseType: "blob"
+const downloadCarrierManifest = async(params: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/poorti/Manifest.pdf`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params
   });
 }
 
@@ -627,7 +634,6 @@ export const UtilService = {
   createEnumeration,
   downloadCarrierManifest,
   fetchAdjustmentTypeDescription,
-  fetchCarrierPartyIds,
   fetchDefaultShipmentBox,
   fetchEnumeration,
   fetchFacilities,
@@ -649,7 +655,6 @@ export const UtilService = {
   fetchProductStoreFacilities,
   fetchConfiguredCarrierService,
   findProductStoreShipmentMethCount,
-  fetchTransferOrderFacets,
   generateManifest,
   getAvailablePickers,
   getProductStoreSetting,
