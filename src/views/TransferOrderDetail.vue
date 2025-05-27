@@ -406,7 +406,7 @@ export default defineComponent({
               })
               try {
                 const resp = await TransferOrderService.rejectOrderItems(payload);
-                if(resp?.data?.messages) {
+                if(resp?.data) {
                   showToast(translate("All order items are rejected"))
                   this.$router.replace("/transfer-orders")
                 } else {
