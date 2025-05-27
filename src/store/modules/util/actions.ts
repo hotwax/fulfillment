@@ -17,7 +17,7 @@ const actions: ActionTree<UtilState, RootState> = {
         parentTypeId: ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
         parentTypeId_op: "in",
         pageSize: 20, // keeping view size 20 as considering that we will have max 20 reasons
-        orderBy: "sequenceNum"
+        orderByField: "sequenceNum"
       }
 
       const resp = await UtilService.fetchRejectReasons(payload)
@@ -49,7 +49,7 @@ const actions: ActionTree<UtilState, RootState> = {
       const payload = {
         enumerationGroupId: "FF_REJ_RSN_GRP",
         pageSize: 200,
-        orderBy: "sequenceNum"
+        orderByField: "sequenceNum"
       }
 
       const resp = await UtilService.fetchFulfillmentRejectReasons(payload)
