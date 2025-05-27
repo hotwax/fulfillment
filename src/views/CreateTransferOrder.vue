@@ -111,7 +111,7 @@
               <ion-spinner color="secondary" name="crescent"></ion-spinner>
             </ion-item>
             <ion-item lines="none" v-else-if="searchedProduct.productId">
-              <ion-thumbnail slot="start">
+              <ion-thumbnail slot="start" v-image-preview="getProduct(searchedProduct.productId)" :key="searchedProduct.productId">
                 <Image :src="getProduct(searchedProduct.productId).mainImageUrl"/>
               </ion-thumbnail>
               <ion-label>
@@ -145,7 +145,7 @@
 
             <div class="list-item" v-for="(item, index) in currentOrder.items" :key="index">
               <ion-item lines="none">
-                <ion-thumbnail slot="start">
+                <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="item.productId">
                   <Image :src="getProduct(item.productId)?.mainImageUrl" />
                 </ion-thumbnail>
                 <ion-label>
@@ -199,7 +199,7 @@ import SelectFacilityModal from '@/components/SelectFacilityModal.vue';
 import ImportTOItemsCsvModal from '@/components/ImportTOItemsCsvModal.vue';
 import { ProductService } from '@/services/ProductService';
 import { UtilService } from '@/services/UtilService';
-import { OrderService } from '@/services/OrderService';
+import { TransferOrderService } from '@/services/TransferOrderService';
 import router from '@/router';
 import { DateTime } from 'luxon';
 import { hasError } from "@/adapter";
@@ -388,21 +388,20 @@ async function fetchFacilitiesByCurrentStore() {
   let availableFacilities = [];
 
   try {
-    const resp = await UtilService.fetchFacilities({
-      inputFields: {
-        productStoreId: currentOrder.value.productStoreId,
-        facilityTypeId: "VIRTUAL_FACILITY",
-        facilityTypeId_op: "notEqual",
-        parentFacilityTypeId: "VIRTUAL_FACILITY",
-        parentFacilityTypeId_op: "notEqual"
-      },
-      fieldList: ["facilityId", "facilityName"],
-      viewSize: 200,
-      entityName: "FacilityAndProductStore"
+    const resp = await UtilService.fetchProductStoreFacilities({
+      productStoreId: currentOrder.value.productStoreId,
+      facilityTypeId: "VIRTUAL_FACILITY",
+      facilityTypeId_op: "equals",
+      facilityTypeId_not: "Y",
+      parentFacilityTypeId: "VIRTUAL_FACILITY",
+      parentFacilityTypeId_op: "equals",
+      parentFacilityTypeId_not: "Y",
+      fieldsToSelect: ["facilityId", "facilityName"],
+      pageSize: 200,
     })
 
     if(!hasError(resp)) {
-      availableFacilities = resp.data.docs
+      availableFacilities = resp.data
     } else {
       throw resp.data;
     }
@@ -509,7 +508,7 @@ async function createOrder() {
           sku: item.sku,
           status: "ITEM_CREATED",
           quantity: Number(item.quantity),
-          unitPrice: productAverageCostDetail[item.productId] || 0.00
+          unitPrice: (Object.keys(productAverageCostDetail).length && productAverageCostDetail[item.productId]) || 0.00
         }
       })
     }]
@@ -522,7 +521,6 @@ async function createOrder() {
   order["grandTotal"] = grandTotal
 
   const addresses = await store.dispatch("util/fetchFacilityAddresses", [currentOrder.value.originFacilityId, currentOrder.value.destinationFacilityId])
-  
   addresses.map((address: any) => {
     if(address.facilityId === currentOrder.value.originFacilityId) {
       order.shipGroup[0].shipFrom = {
@@ -541,10 +539,10 @@ async function createOrder() {
   })
 
   try {
-    const resp = await OrderService.createOrder({ order })
+    const resp = await TransferOrderService.createOrder({ order })
     if(!hasError(resp) && resp.data?.orderId) {
       const orderId = resp.data.orderId
-      const isApproved = await OrderService.approveOrder({ orderId })
+      const isApproved = await TransferOrderService.approveOrder({ orderId })
       if(!isApproved) {
         router.replace("/transfer-orders");
         const toast = await showToast(translate("Order is created successfully, but approval failed. Please contact administrator.", { orderId }), { canDismiss: true, manualDismiss: true })
@@ -708,12 +706,6 @@ function openDateTimeModal(type: any) {
 .list-item {
   --columns-desktop: 5;
   border-bottom: var(--border-medium);
-}
-
-/* Added width property as after updating to ionic7 min-width is getting applied on ion-label inside ion-item
-which results in distorted label text and thus reduced ion-item width */
-.list-item > ion-item {
-  width: 100%;
 }
 
 .item-qty-actions {

@@ -1,7 +1,7 @@
 <template>
   <ion-content>
     <ion-list>
-      <ion-item v-for="boxType in shipmentPackage.shipmentBoxTypes" :key="boxTypeDesc(boxType)" @click="updateBoxType(boxType)" button>
+      <ion-item v-for="boxType in shipmentBoxTypes" :key="boxTypeDesc(boxType)" @click="updateBoxType(boxType)" button>
         {{ boxTypeDesc(boxType) }}
       </ion-item>
     </ion-list>
@@ -30,7 +30,7 @@ export default defineComponent({
       boxTypeDesc: 'util/getShipmentBoxDesc',
     })
   },
-  props: ["shipmentPackage"],
+  props: ["shipmentBoxTypes"],
   methods: {
     closePopover() {
       popoverController.dismiss();

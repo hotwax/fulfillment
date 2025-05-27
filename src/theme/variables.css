@@ -363,23 +363,6 @@ img {
   display: unset;
 }
 
-.empty-state {
-  max-width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-}
-
-.empty-state > img {
-  object-fit: contain;
-}
-
-.empty-state > p {
-  text-align: center;
-}
-
 .scanner {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(343px, 1fr));
@@ -424,7 +407,7 @@ div:has(> .kit-badge) {
   font-family: inherit;
 }
 
-p:has(a) {
+.pointer, p:has(a) {
   cursor: pointer;
 }
 

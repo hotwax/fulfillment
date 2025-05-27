@@ -93,19 +93,15 @@ const removeKitComponents = (order: any) => {
   const kitItemSeqIds = new Set();
   const itemsWithoutKitComponents = [] as any;
 
-
   order.items.forEach((item:any) => {
-    const product = store.getters['product/getProduct'](item.productId);
-    if (product && product.productTypeId === "MARKETING_PKG_PICK") {
+    if (item.productTypeId === "MARKETING_PKG_PICK") {
       kitItemSeqIds.add(item.orderItemSeqId);
     }
   })
   
   //In current implementation kit product and component product will have the same orderItemSeqId
   order.items.forEach((item:any) => {
-    const product = store.getters['product/getProduct'](item.productId);
-    if ((product && product.productTypeId === "MARKETING_PKG_PICK") || !kitItemSeqIds.has(item.orderItemSeqId)) {
-      item["productTypeId"] = product.productTypeId
+    if (item.productTypeId === "MARKETING_PKG_PICK" || !kitItemSeqIds.has(item.orderItemSeqId)) {
       itemsWithoutKitComponents.push(item)
     }
   })
@@ -115,21 +111,7 @@ const removeKitComponents = (order: any) => {
 
 const retryShippingLabel = async (order: any, showSuccessToast = true) => {
   let isGenerated = false;
-
-  // Getting all the shipmentIds from shipmentPackages for which label is missing
-  const shipmentIds = order.shipmentPackages
-    ?.filter((shipmentPackage: any) => !shipmentPackage.trackingCode)
-    .reduce((uniqueIds: any[], shipmentPackage: any) => {
-      if(!uniqueIds.includes(shipmentPackage.shipmentId)) uniqueIds.push(shipmentPackage.shipmentId);
-      return uniqueIds;
-    }, []);
-
-  if(!shipmentIds?.length) {
-    showToast(translate("Failed to generate shipping label"))
-    return;
-  }
-
-  await OrderService.retryShippingLabel(shipmentIds)
+  await OrderService.retryShippingLabel(order.shipmentId)
   // Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
   // Temporarily handling this in app but should be handled in backend
   // Refetching the order tracking detail irrespective of api response since currently in SHIPHAWK api returns error whether label is generated

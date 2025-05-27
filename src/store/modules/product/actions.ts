@@ -76,20 +76,17 @@ const actions: ActionTree<ProductState, RootState> = {
     let resp;
     try {
       resp = await ProductService.fetchProductComponents({
-        "entityName": "ProductAssoc",
-          "inputFields": {
-            "productId": productId,
-            "productTypeId": "PRODUCT_COMPONENT"
-          },
-          "fieldList": ["productId", "productIdTo", "productAssocTypeId"],
-          "viewIndex": 0,
-          "viewSize": 250,  // maximum records we could have
-          "distinct": "Y",
-          "noConditionFind": "Y",
-          "filterByDate": "Y"
+        customParametersMap: {
+          productId: productId,
+          productAssocTypeId: "PRODUCT_COMPONENT",
+        },
+        selectedEntity: "org.apache.ofbiz.product.product.ProductAssoc",
+        //thruDate_op: "empty",
+        filterByDate: true,
+        pageLimit: 100,  // maximum records we could have
       })
       if (!hasError(resp)) {
-        const productComponents = resp.data.docs;
+        const productComponents = resp.data.entityValueList;
         const componentProductIds = productComponents.map((productComponent: any) => productComponent.productIdTo);
         await dispatch('fetchProducts', { productIds: componentProductIds })
         
@@ -110,17 +107,14 @@ const actions: ActionTree<ProductState, RootState> = {
 
     try {
       const resp = await ProductService.fetchSampleProducts({
-        inputFields: {
-          internalName_op: "not-empty"
-        },
-        entityName: "Product",
-        fieldList: ["internalName", "productId"],
-        noConditionFind: "Y",
-        viewSize: 10
+        internalName_op: "empty",
+        internalName_not: "Y",
+        fieldsToSelect: ["internalName", "productId"],
+        pageSize: 10
       }) as any;
   
-      if(!hasError(resp) && resp.data.docs?.length) {
-        products = resp.data.docs
+      if(!hasError(resp) && resp.data?.length) {
+        products = resp.data
         products.map((product: any) => {
           product.sku = product.internalName
           product.quantity = 2

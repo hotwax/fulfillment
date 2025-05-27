@@ -79,7 +79,7 @@ import { computed, defineComponent } from "vue";
 import { mapGetters, useStore } from "vuex";
 import { cameraOutline, cardOutline, closeOutline, giftOutline, saveOutline, stopOutline } from "ionicons/icons";
 import { getProductIdentificationValue, translate, useProductIdentificationStore } from '@hotwax/dxp-components'
-import { UtilService } from "@/services/UtilService";
+import { OrderService } from "@/services/OrderService";
 import { formatCurrency, formatUtcDate, hasError, showToast, hasWebcamAccess } from '@/utils';
 import logger from "@/logger";
 import { DateTime } from 'luxon';
@@ -121,7 +121,7 @@ export default defineComponent({
   props: ["item"],
   async mounted() {
     this.isLoading = true;
-    this.itemPriceInfo = await UtilService.fetchGiftCardItemPriceInfo({ orderId: this.item.orderId, orderItemSeqId: this.item.orderItemSeqId })
+    this.itemPriceInfo = await OrderService.fetchGiftCardItemPriceInfo({ orderId: this.item.orderId, orderItemSeqId: this.item.orderItemSeqId })
     this.isLoading = false;
   },
   methods: {
@@ -153,7 +153,7 @@ export default defineComponent({
     },
     async activateGitCard() {
       try {
-        const resp = await UtilService.activateGiftCard({
+        const resp = await OrderService.activateGiftCard({
           orderId: this.item.orderId,
           orderItemSeqId: this.item.orderItemSeqId,
           amount: this.itemPriceInfo.unitPrice,

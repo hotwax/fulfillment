@@ -60,26 +60,22 @@ const actions: ActionTree<RejectionState, RootState> = {
           if (usedReasons) {
             const reasonIds = usedReasons.map((usedReason: any) => usedReason.val)
             const payload = {
-              "inputFields": {
-                "enumId": reasonIds,
-                "enumId_op": "in"
-              },
-              "fieldList": ["description", "enumId", "enumName", "enumTypeId", "sequenceNum"],
-              "distinct": "Y",
-              "entityName": "Enumeration",
-              "viewSize": reasonIds.length, //There won't we rejection reasons more than 20, hence fetching detail for all the reasons at once
-              "orderBy": "sequenceNum"
+              "enumId": reasonIds,
+              "enumId_op": "in",
+              "fieldsToSelect": ["description", "enumId", "enumName", "enumTypeId", "sequenceNum"],
+              "pageSize": reasonIds.length, //There won't we rejection reasons more than 20, hence fetching detail for all the reasons at once
+              "orderByField": "sequenceNum"
             }
             const resp = await UtilService.fetchRejectReasons(payload)
 
-            if (!hasError(resp) && resp.data.count > 0) {
+            if (!hasError(resp)) {
               
-              const reasonCountDetail = resp.data.docs.reduce((reasonDetail: any, reason: any) => {
+              const reasonCountDetail = resp.data.reduce((reasonDetail: any, reason: any) => {
                 reasonDetail[reason.enumId] = reason;
                 return reasonDetail;
               }, {});
 
-              await store.dispatch("util/updateRejectReasons", resp.data.docs)
+              await store.dispatch("util/updateRejectReasons", resp.data)
               usedRejectionReasons = usedReasons.map((reason:any) => {
                 return {
                   count: reason.count,

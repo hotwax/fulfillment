@@ -21,15 +21,14 @@ const userModule: Module<UserState, RootState> = {
         registration: null,
       },
       omsRedirectionInfo: {
-         url: "",
-         token: ""
+        url: "",
+        token: ""
       },
       notifications: [],
       notificationPrefs: [],
       firebaseDeviceId: '',
       hasUnreadNotifications: true,
       allNotificationPrefs: [],
-      newRejectionApiConfig: {},
       partialOrderRejectionConfig: {},
       collateralRejectionConfig: {},
       affectQohConfig: {},

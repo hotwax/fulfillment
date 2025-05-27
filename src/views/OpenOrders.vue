@@ -1,5 +1,5 @@
 <template>
-  <ion-page>
+  <ion-page :key="router.currentRoute.value.path">
     <ViewSizeSelector menu-id="view-size-selector-open" content-id="view-size-selector" />
     
     <ion-header :translucent="true">
@@ -59,7 +59,7 @@
 
               <div class="order-metadata">
                 <ion-label>
-                  {{ order.shipmentMethodTypeDesc }}
+                  {{ getShipmentMethodDesc(order.shipmentMethodTypeId) }}
                   <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
                 </ion-label>
               </div>
@@ -69,7 +69,7 @@
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start">
+                    <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="item.productId">
                       <!-- TODO: Currently handled product image mismatch on the order list page — needs to be applied to other pages using DxpShopifyImg  -->
                       <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
@@ -88,7 +88,7 @@
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
-                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                  <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
                   <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
@@ -105,7 +105,7 @@
               <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start">
+                    <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)"  :key="productComponent.productIdTo">
                       <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
@@ -181,7 +181,7 @@ import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationS
 import { formatUtcDate, getFeatures, getFacilityFilter, hasActiveFilters, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
-import { prepareOrderQuery } from '@/utils/solrHelper';
+import { prepareSolrQuery } from '@/utils/solrHelper';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import emitter from '@/event-bus';
 import logger from '@/logger';
@@ -190,7 +190,9 @@ import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import { isKit } from '@/utils/order'
+import { OrderService } from '@/services/OrderService'
 import { useDynamicImport } from "@/utils/moduleFederation";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -315,19 +317,21 @@ export default defineComponent({
     async fetchShipmentMethods() {
       let resp: any;
 
-      const payload = prepareOrderQuery({
-        queryFields: 'orderId',
+      const payload = prepareSolrQuery({
+        docType: 'ORDER',
         viewSize: '0',  // passed viewSize as 0 to not fetch any data
+        isGroupingRequired: false,
         filters: {
-          quantityNotAvailable: { value: 0 },
-          isPicked: { value: 'N' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
           productStoreId: { value: this.currentEComStore.productStoreId },
           ...getFacilityFilter(this.currentFacility?.facilityId)
         },
+        solrFilters: [
+          //it should be explicit what is subtracting the first part of your OR statement from
+          "((*:* -fulfillmentStatus: [* TO *]) OR fulfillmentStatus:Created)"
+        ],
         facet: {
           "shipmentMethodTypeIdFacet":{
             "excludeTags":"shipmentMethodTypeIdFilter",
@@ -393,7 +397,7 @@ export default defineComponent({
             let resp;
 
             try {
-              resp = await UserService.recycleOutstandingOrders({
+              resp = await OrderService.recycleOutstandingOrders({
                 "facilityId": this.currentFacility?.facilityId,
                 "productStoreId": this.currentEComStore.productStoreId,
                 "reasonId": "INACTIVE_STORE"
@@ -433,16 +437,18 @@ export default defineComponent({
   async ionViewWillEnter () {
     this.isScrollingEnabled = false;
     await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
-    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "")
+    // Remove http://, https://, /api, or :port
+    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "")
     this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`});
     emitter.on("updateOrderQuery", this.updateOrderQuery);
   },
-  ionViewWillLeave() {
+  beforeRouteLeave() {
     this.store.dispatch('order/clearOpenOrders');
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   setup() {
     const store = useStore();
+    const router = useRouter();
     const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
@@ -469,6 +475,7 @@ export default defineComponent({
       pricetagOutline,
       printOutline,
       productIdentificationPref,
+      router,
       store,
       translate
     }

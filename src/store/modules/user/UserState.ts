@@ -17,7 +17,6 @@ export default interface UserState {
     firebaseDeviceId: string;
     hasUnreadNotifications: boolean;
     allNotificationPrefs: any;
-    newRejectionApiConfig: any;
     partialOrderRejectionConfig: any;
     collateralRejectionConfig: any;
     affectQohConfig: any;

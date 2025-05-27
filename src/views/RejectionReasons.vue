@@ -114,12 +114,11 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       rejectReasons: 'util/getRejectReasons',
-      rejectReasonEnumTypes: 'util/getRejectReasonEnumTypes',
       fulfillmentRejectReasons: 'util/getFulfillmentRejectReasons'
     })
   },
   async ionViewWillEnter() {
-    await Promise.all([this.store.dispatch('util/fetchRejectReasons'), this.store.dispatch('util/fetchFulfillmentRejectReasons'), this.store.dispatch('util/fetchRejectReasonEnumTypes')])
+    await Promise.all([this.store.dispatch('util/fetchRejectReasons'), this.store.dispatch('util/fetchFulfillmentRejectReasons')])
     this.filteredReasons = this.rejectReasons ? JSON.parse(JSON.stringify(this.rejectReasons)) : []
   },
   async beforeRouteLeave() {
@@ -308,10 +307,6 @@ export default defineComponent({
 
 .list-item:hover {
   cursor: default;
-}
-
-.list-item ion-item {
-  width: 100%;
 }
 
 ion-content {

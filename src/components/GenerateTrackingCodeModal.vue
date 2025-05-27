@@ -133,11 +133,10 @@ export default defineComponent({
   props: ["order", "updateCarrierShipmentDetails", "shipmentLabelErrorMessages", "fetchShipmentLabelError"],
   async mounted() {
     this.isTrackingRequired = this.isTrackingRequiredForAnyShipmentPackage()
-    if(this.facilityCarriers) {
-      const shipmentPackage = this.order.shipmentPackages?.[0];
-      this.carrierPartyId = shipmentPackage?.carrierPartyId ? shipmentPackage?.carrierPartyId : this.facilityCarriers[0].partyId;
+    if (this.facilityCarriers) {
+      this.carrierPartyId = this.order?.carrierPartyId ? this.order?.carrierPartyId : this.facilityCarriers[0].partyId;
       this.carrierMethods = await this.getProductStoreShipmentMethods(this.carrierPartyId);
-      this.shipmentMethodTypeId = shipmentPackage?.shipmentMethodTypeId;
+      this.shipmentMethodTypeId = this.order?.shipmentMethodTypeId;
     }
   },
   methods: {
@@ -148,7 +147,7 @@ export default defineComponent({
       window.open('https://docs.hotwax.co/documents/v/system-admins/fulfillment/shipping-methods/carrier-and-shipment-methods', '_blank');
     },
     isTrackingRequiredForAnyShipmentPackage() {
-      return this.order.shipmentPackages?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y')
+      return this.order.isTrackingRequired === 'Y'
     },
     async getProductStoreShipmentMethods(carrierPartyId: string) { 
       return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId) || [];
@@ -163,7 +162,7 @@ export default defineComponent({
 
       this.isGeneratingShippingLabel = true;
 
-      if (hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)) {
+      if (hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE && (order.carrierPartyId !== this.carrierPartyId || order.shipmentMethodTypeId !== this.shipmentMethodTypeId))) {
         const isUpdated = await this.updateCarrierAndShippingMethod(this.carrierPartyId, this.shipmentMethodTypeId)
         if(!isUpdated) {
           showToast(translate("Failed to update shipment method detail."));
@@ -171,7 +170,7 @@ export default defineComponent({
         }
       }
 
-      if(this.trackingCode.trim()) {
+      if (this.trackingCode.trim()) {
         isRegenerated = await this.addTrackingCode(order);
         //fetching updated shipment packages
         await this.store.dispatch('order/updateShipmentPackageDetail', order)
@@ -187,13 +186,16 @@ export default defineComponent({
     },
     async addTrackingCode(order: any) {
       try {
-        for (const shipmentPackage of order.shipmentPackages) {
-          await OrderService.addTrackingCode({
-            "shipmentId": shipmentPackage.shipmentId,
-            "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-            "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
-            "trackingCode": this.trackingCode.trim()
-          });
+        const shipmentRouteSegmentId = this.order.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
+        const resp = await OrderService.addTrackingCode({
+          shipmentId: this.order.shipmentId,
+          shipmentRouteSegmentId,
+          trackingIdNumber: this.trackingCode.trim()
+        })
+        if (!hasError(resp)) {
+          showToast(translate("Tracking code added successfully."));
+        } else {
+          throw resp.data
         }
       } catch (error: any) {
         logger.error('Failed to add tracking code', error);
@@ -234,33 +236,20 @@ export default defineComponent({
       try{
         const carrierShipmentMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
         shipmentMethodTypeId = shipmentMethodTypeId ? shipmentMethodTypeId : carrierShipmentMethods?.[0]?.shipmentMethodTypeId;
-        const isTrackingRequired = carrierShipmentMethods.find((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)?.isTrackingRequired
+        const shipmentRouteSegmentId = this.order?.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
 
-        for (const shipmentPackage of this.order.shipmentPackages) {
-          resp = await OrderService.updateShipmentRouteSegment({
-            "shipmentId": shipmentPackage.shipmentId,
-            "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-            "carrierPartyId": carrierPartyId,
-            "shipmentMethodTypeId" : shipmentMethodTypeId ? shipmentMethodTypeId : "",
-            "isTrackingRequired": isTrackingRequired ? isTrackingRequired : "Y"
-          }) as any;
-          if(!hasError(resp)) {
-            //on changing the shipment carrier/method, voiding the gatewayMessage and gatewayStatus
-            if (this.shipmentLabelErrorMessages) {
-              resp = await OrderService.updateShipmentPackageRouteSeg({
-                "shipmentId": shipmentPackage.shipmentId,
-                "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-                "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
-                "gatewayMessage": "",
-                "gatewayStatus": ""
-              }) as any;
-              if (hasError(resp)) {
-                throw resp.data
-              }
-            }
-          } else {
-            throw resp.data
-          }
+        const isTrackingRequired = carrierShipmentMethods.find((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)?.isTrackingRequired
+        const params = {
+          shipmentId: this.order.shipmentId,
+          shipmentRouteSegmentId,
+          shipmentMethodTypeId : shipmentMethodTypeId ? shipmentMethodTypeId : "",
+          carrierPartyId,
+          isTrackingRequired: isTrackingRequired ? isTrackingRequired : "Y"
+        }
+
+        resp = await OrderService.updateShipmentCarrierAndMethod(params)
+        if (hasError(resp)) {
+          throw resp.data;
         }
 
         this.isTrackingRequired = isTrackingRequired === "N" ? false : true

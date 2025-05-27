@@ -20,7 +20,7 @@
     <ion-list>
       <ion-list-header>{{ translate("Select the column index for the following information in the uploaded CSV.") }}</ion-list-header>
       <ion-item>
-        <ion-select :label="translate('Identifier')" interface="popover" :placeholder="translate('Select')" v-model="selectedIdentifierColumn">
+        <ion-select :label="translate('Product')" interface="popover" :placeholder="translate('Select')" v-model="selectedIdentifierColumn">
           <ion-select-option v-for="column in fileColumns" :key="column">{{ column }}</ion-select-option>
         </ion-select>
       </ion-item>
