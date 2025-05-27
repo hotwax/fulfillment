@@ -407,7 +407,9 @@ export default defineComponent({
       }
     },
     async bulkShipOrders() {
-      const packedOrdersCount = this.completedOrders.count;
+      const packedOrdersCount = this.completedOrders.list.filter((order: any) => {
+        return this.hasPackedShipments(order);
+      }).length;
       const shipOrderAlert = await alertController
         .create({
            header: translate("Ship orders"),
@@ -422,7 +424,7 @@ export default defineComponent({
               orderList = orderList.filter((order: any) =>  order.statusId === 'SHIPMENT_PACKED')
               // orders with tracking required and missing label must be excluded
               const trackingRequiredOrders = orderList.filter((order: any) => this.isTrackingRequiredForAnyShipmentPackage(order))
-              let trackingRequiredAndMissingCodeOrders: any
+              let trackingRequiredAndMissingCodeOrders = [] as any
               if (trackingRequiredOrders.length) {
                 // filtering and excluding orders having missing label image with tracking required
                 trackingRequiredAndMissingCodeOrders = trackingRequiredOrders.filter((order: any) => !order.trackingIdNumber).map((order: any) => order.shipmentId)
@@ -441,7 +443,7 @@ export default defineComponent({
               try {
                 const resp = await OrderService.bulkShipOrders({shipmentIds})
 
-                if (resp.status == 200 && !hasError(resp)) {
+                if (!hasError(resp)) {
                   !trackingRequiredAndMissingCodeOrders.length
                     ? showToast(translate('Orders shipped successfully'))
                     : showToast(translate('out of cannot be shipped due to missing tracking codes.', { remainingOrders: trackingRequiredAndMissingCodeOrders.length, totalOrders: packedOrdersCount }))
