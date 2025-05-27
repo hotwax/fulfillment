@@ -285,22 +285,6 @@ const rejectOrderItems = async (payload: any): Promise<any> => {
   });
 };
 
-const rejectOrderItems = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return client({
-    url: `poorti/transferOrders/${payload.orderId}/reject`,
-    method: "post",
-    baseURL,
-    headers: {
-      "api_key": omsRedirectionInfo.token,
-      "Content-Type": "application/json"
-    },
-    data: payload
-  });
-};
-
 export const TransferOrderService = {
   cancelTransferOrderShipment,
   createOutboundTransferShipment,
@@ -313,8 +297,6 @@ export const TransferOrderService = {
   fetchTransferShipmentDetails,
   printShippingLabel,
   retryShippingLabel,
-  shipTransferOrderShipment,
-  rejectOrderItems
   shipTransferOrderShipment,
   rejectOrderItems
 };
