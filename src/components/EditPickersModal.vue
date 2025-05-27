@@ -20,6 +20,12 @@
     </ion-row>
 
     <ion-list>
+      <ion-item lines="none" v-if="hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN)">
+        <ion-toggle v-model="showAllPickers" @ionChange="refetchPickers()">
+          {{ translate("Show all pickers") }}
+        </ion-toggle>
+      </ion-item>
+
       <ion-list-header>{{ translate("Staff") }}</ion-list-header>
 
       <div v-if="isLoading" class="empty-state">
@@ -68,16 +74,18 @@ import {
   IonRow,
   IonSearchbar,
   IonSpinner,
+  IonToggle,
   modalController,
   alertController
 } from "@ionic/vue";
-import { defineComponent } from "vue";
+import { defineComponent, computed } from "vue";
 import { close, closeCircle, saveOutline } from "ionicons/icons";
 import { useStore } from "vuex";
 import { hasError, showToast } from '@/utils';
 import logger from "@/logger"
 import { UtilService } from "@/services/UtilService";
-import { translate } from '@hotwax/dxp-components'
+import { translate, useUserStore } from '@hotwax/dxp-components'
+import { Actions, hasPermission } from "@/authorization";
 
 export default defineComponent({
   name: "EditPickersModal",
@@ -99,7 +107,8 @@ export default defineComponent({
     IonListHeader,
     IonRow,
     IonSearchbar,
-    IonSpinner
+    IonSpinner,
+    IonToggle,
   },
   data () {
     return {
@@ -107,7 +116,8 @@ export default defineComponent({
       queryString: '',
       pickers: [] as any,
       editedPicklist: {} as any,
-      isLoading: false
+      isLoading: false,
+      showAllPickers: false
     }
   },
   async mounted() {
@@ -141,6 +151,12 @@ export default defineComponent({
         query = `(${keyword.map(key => `*${key}*`).join(' OR ')}) OR "${this.queryString}"^100`;
       }
 
+      const facilityFilter = [];
+
+      if(!this.showAllPickers) {
+        facilityFilter.push(`facilityIds:${this.currentFacility.facilityId}`)
+      }
+
       const payload = {
         "json": {
           "params": {
@@ -150,7 +166,7 @@ export default defineComponent({
             "qf": "firstName lastName groupName partyId externalId",
             "sort": "firstName asc"
           },
-          "filter": ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true", partyIdsFilter.length ? `partyId:(${partyIdsFilter})` : ""]
+          "filter": ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true", ...facilityFilter, partyIdsFilter.length ? `partyId:(${partyIdsFilter})` : ""]
         }
       }
 
@@ -252,12 +268,22 @@ export default defineComponent({
           id: null
         }]
       }
+    },
+    async refetchPickers() {
+      await this.findPickers()
+      this.selectAlreadyAssociatedPickers()
     }
   },
   setup() {
     const store = useStore();
+    const userStore = useUserStore()
+    let currentFacility = computed(() => userStore.getCurrentFacility) as any
+
     return {
+      Actions,
       close,
+      currentFacility,
+      hasPermission,
       saveOutline,
       closeCircle,
       store,
