@@ -160,7 +160,8 @@ const actions: ActionTree<TransferOrderState, RootState> = {
             pickedQuantity: item.quantity,
             shippedQuantity: item.totalIssuedQuantity || 0,
           })),
-          totalQuantityPicked: shipments[0]?.items.reduce((acc: number, curr: any) => acc + curr.quantity, 0)
+          totalQuantityPicked: shipments[0]?.items.reduce((acc: number, curr: any) => acc + curr.quantity, 0),
+          isTrackingRequired: shipments[0]?.isTrackingRequired ?? 'Y' 
         };
 
         commit(types.ORDER_CURRENT_SHIPMENT_UPDATED, shipment);
