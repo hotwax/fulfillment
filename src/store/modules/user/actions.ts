@@ -207,6 +207,8 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_INFO_UPDATED, userProfile);
 
       if(previousEComStoreId !== preferredStore.productStoreId) {
+        await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
+          .catch((error) => logger.error(error));
         this.dispatch('order/clearOrders')
         await dispatch('getDisableShipNowConfig')
         await dispatch('getDisableUnpackConfig')
