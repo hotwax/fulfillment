@@ -53,7 +53,6 @@ const fetchShippedTransferShipments = async (params: any): Promise<any> => {
   });
 };
 
-
 const fetchTransferShipmentDetails = async (params: Record<string, any>): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
