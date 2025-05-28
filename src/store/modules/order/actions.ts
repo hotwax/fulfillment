@@ -308,12 +308,13 @@ const actions: ActionTree<OrderState, RootState> = {
 
   // get in-progress orders
   async findInProgressOrders ({ commit, dispatch, state }, payload = {}) {
-    emitter.emit('presentLoader');
+    const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
+
+    if(!inProgressQuery.hideLoader) emitter.emit('presentLoader');
     let resp;
     let orders = [];
     let total = 0;
 
-    const inProgressQuery = JSON.parse(JSON.stringify(state.inProgress.query))
 
     try {
       const params = {
