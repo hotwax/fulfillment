@@ -522,7 +522,7 @@ const actions: ActionTree<UtilState, RootState> = {
           fieldsToSelect: ["settingTypeEnumId"],
           pageSize: 1
       }) as any
-      if(!hasError(resp) && resp.data.[0]?.settingTypeEnumId) {
+      if(!hasError(resp) && resp.data[0]?.settingTypeEnumId) {
         isSettingExists = true
       }
     } catch(err) {
