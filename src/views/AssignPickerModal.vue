@@ -21,7 +21,7 @@
 
     <ion-list>
       <ion-item lines="none" v-if="hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN)">
-        <ion-toggle v-model="showAllPickers" @ionChange="refetchPickers()">
+        <ion-toggle v-model="showAllPickers" @ionChange="findPickers()">
           {{ translate("Show all pickers") }}
         </ion-toggle>
       </ion-item>
