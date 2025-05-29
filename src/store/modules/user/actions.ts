@@ -57,8 +57,8 @@ const actions: ActionTree<UserState, RootState> = {
       
       //fetching user facilities
       const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_STOREFULFILLMENT_ADMIN" );
-      const facilities = await useUserStore().getUserFacilities(userProfile?.partyId, "OMS_FULFILLMENT", isAdminUser, null)
-      await useUserStore().getFacilityPreference('SELECTED_FACILITY', null)
+      const facilities = await useUserStore().getUserFacilities(userProfile?.partyId, "OMS_FULFILLMENT", isAdminUser)
+      await useUserStore().getFacilityPreference('SELECTED_FACILITY')
 
       if (!facilities.length) throw 'Unable to login. User is not assocaited with any facility'
 
@@ -85,7 +85,7 @@ const actions: ActionTree<UserState, RootState> = {
       // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
       const currentFacility: any = useUserStore().getCurrentFacility
       userProfile.stores = await useUserStore().getEComStoresByFacility(currentFacility.facilityId);
-      await useUserStore().getEComStorePreference('SELECTED_BRAND', null);
+      await useUserStore().getEComStorePreference('SELECTED_BRAND');
       const preferredStore: any = useUserStore().getCurrentEComStore
       /*  ---- Guard clauses ends here --- */
 
@@ -215,11 +215,13 @@ const actions: ActionTree<UserState, RootState> = {
       const previousEComStoreId = getProductStoreId()
       const userProfile = JSON.parse(JSON.stringify(state.current as any));
       userProfile.stores = await useUserStore().getEComStoresByFacility(facility.facilityId);
-      await useUserStore().getEComStorePreference('SELECTED_BRAND', null);
+      await useUserStore().getEComStorePreference('SELECTED_BRAND');
       const preferredStore: any = useUserStore().getCurrentEComStore
       commit(types.USER_INFO_UPDATED, userProfile);
 
       if(previousEComStoreId !== preferredStore.productStoreId) {
+        await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
+          .catch((error) => logger.error(error));
         this.dispatch('order/clearOrders')
         await dispatch('getDisableShipNowConfig')
         await dispatch('getDisableUnpackConfig')
@@ -373,13 +375,12 @@ const actions: ActionTree<UserState, RootState> = {
         }
       }
 
-      if (!payload.fromDate) {
+      if (!payload.settingTypeEnumId) {
         //Create Product Store Setting
         payload = {
           ...payload, 
           "productStoreId": getProductStoreId(),
-          "settingTypeEnumId": "FULFILL_PART_ODR_REJ",
-          "fromDate": DateTime.now().toMillis()
+          "settingTypeEnumId": "FULFILL_PART_ODR_REJ"
         }
         resp = await UserService.createPartialOrderRejectionConfig(payload) as any
       } else {
@@ -417,13 +418,12 @@ const actions: ActionTree<UserState, RootState> = {
         }
       }
 
-      if (!payload.fromDate) {
+      if (!payload.settingTypeEnumId) {
         //Create Product Store Setting
         payload = {
           ...payload, 
           "productStoreId": getProductStoreId(),
-          "settingTypeEnumId": "FF_COLLATERAL_REJ",
-          "fromDate": DateTime.now().toMillis()
+          "settingTypeEnumId": "FF_COLLATERAL_REJ"
         }
         resp = await UserService.createCollateralRejectionConfig(payload) as any
       } else {
@@ -490,13 +490,12 @@ const actions: ActionTree<UserState, RootState> = {
   async updateAffectQohConfig ({ dispatch }, payload) {  
     let resp = {} as any;
     try {
-      if (!payload.fromDate) {
+      if (!payload.settingTypeEnumId) {
         //Create Product Store Setting
         payload = {
           ...payload, 
           "productStoreId": getProductStoreId(),
-          "settingTypeEnumId": "AFFECT_QOH_ON_REJ",
-          "fromDate": DateTime.now().toMillis()
+          "settingTypeEnumId": "AFFECT_QOH_ON_REJ"
         }
         resp = await UserService.createAffectQohConfig(payload) as any
       } else {

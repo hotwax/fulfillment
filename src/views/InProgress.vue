@@ -90,7 +90,7 @@
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="item.productId">
+                    <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
                       <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
@@ -164,7 +164,7 @@
               <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="productComponent.productIdTo">
+                    <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
                       <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
@@ -726,7 +726,7 @@ export default defineComponent({
                 }
                   // TODO: handle the case of fetching in progress orders after packing multiple orders
                   // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
-                await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)])
+                await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
               } catch (err) {
                 // in case of error, if loader and toast are not dismissed above
                 if (toast) toast.dismiss()

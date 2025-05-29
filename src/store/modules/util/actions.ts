@@ -448,7 +448,7 @@ const actions: ActionTree<UtilState, RootState> = {
     const payload = {
       productStoreId: eComStoreId,
       settingTypeEnumId: "FULFILL_FORCE_SCAN",
-      fieldsToSelect: ["settingValue"],
+      fieldsToSelect: ["settingValue", "settingTypeEnumId"],
       pageSize: 1
     }
 
@@ -467,6 +467,8 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   async createForceScanSetting({ commit }) {
+    let isSettingExists = false
+
     try {
       if(!await UtilService.isEnumExists("FULFILL_FORCE_SCAN")) {
         const resp = await UtilService.createEnumeration({
@@ -489,6 +491,7 @@ const actions: ActionTree<UtilState, RootState> = {
       }
 
       await UtilService.createForceScanSetting(params) as any
+      isSettingExists = true
     } catch(err) {
       console.error(err)
     }
@@ -496,6 +499,7 @@ const actions: ActionTree<UtilState, RootState> = {
     // not checking for resp success and fail case as every time we need to update the state with the
     // default value when creating a scan setting
     commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, false)
+    return isSettingExists;
   },
 
   async setForceScanSetting({ commit, dispatch, state }, value) {
@@ -509,7 +513,7 @@ const actions: ActionTree<UtilState, RootState> = {
       return;
     }
 
-    let settingTypeEnumId;
+    let isSettingExists = false;
 
     try {
       const resp = await UtilService.getProductStoreSetting({
@@ -518,15 +522,21 @@ const actions: ActionTree<UtilState, RootState> = {
           fieldsToSelect: ["settingTypeEnumId"],
           pageSize: 1
       }) as any
-      if(!hasError(resp)) {
-        settingTypeEnumId = resp.data[0]?.settingTypeEnumId
+      if(!hasError(resp) && resp.data.[0]?.settingTypeEnumId) {
+        isSettingExists = true
       }
     } catch(err) {
       console.error(err)
     }
 
-    if(!settingTypeEnumId) {
-      await dispatch("createForceScanSetting");
+    if(!isSettingExists) {
+      isSettingExists = await dispatch("createForceScanSetting");
+    }
+
+    if(!isSettingExists) {
+      showToast(translate("Failed to update force scan preference."))
+      commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
+      return;
     }
 
     const params = {
@@ -555,7 +565,7 @@ const actions: ActionTree<UtilState, RootState> = {
     const payload = {
       productStoreId: eComStoreId,
       settingTypeEnumId: "BARCODE_IDEN_PREF",
-      fieldToSelect: ["settingValue"],
+      fieldToSelect: ["settingValue", "settingTypeEnumId"],
       pageSize: 1
     }
 
@@ -574,7 +584,7 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   async createBarcodeIdentificationPref({ commit }) {
-    const fromDate = Date.now()
+    let isSettingExists = false;
 
     try {
       if(!await UtilService.isEnumExists("BARCODE_IDEN_PREF")) {
@@ -592,13 +602,13 @@ const actions: ActionTree<UtilState, RootState> = {
       }
 
       const params = {
-        fromDate,
         "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "BARCODE_IDEN_PREF",
         "settingValue": "internalName"
       }  
 
       await UtilService.createBarcodeIdentificationPref(params) as any
+      isSettingExists = true
     } catch(err) {
       console.error(err)
     }
@@ -606,7 +616,7 @@ const actions: ActionTree<UtilState, RootState> = {
     // not checking for resp success and fail case as every time we need to update the state with the
     // default value when creating a store setting
     commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, "internalName")
-    return fromDate;
+    return isSettingExists;
   },
 
   async setBarcodeIdentificationPref({ commit, dispatch, state }, value) {
@@ -620,7 +630,7 @@ const actions: ActionTree<UtilState, RootState> = {
       return;
     }
 
-    let settingTypeEnumId;
+    let isSettingExists = false;
 
     try {
       const resp = await UtilService.getProductStoreSetting({
@@ -629,15 +639,21 @@ const actions: ActionTree<UtilState, RootState> = {
         "fieldsToSelect": ["settingTypeEnumId"],
         "pageSize": 1
       }) as any
-      if(!hasError(resp)) {
-        settingTypeEnumId = resp.data[0]?.settingTypeEnumId
+      if(!hasError(resp) && resp.data[0]?.settingTypeEnumId) {
+        isSettingExists = true 
       }
     } catch(err) {
       console.error(err)
     }
 
-    if(!settingTypeEnumId) {
-      await dispatch("createBarcodeIdentificationPref");
+    if(!isSettingExists) {
+      isSettingExists = await dispatch("createBarcodeIdentificationPref");
+    }
+
+    if(!isSettingExists) {
+      showToast(translate("Failed to update barcode identification preference."))
+      commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, prefValue)
+      return;
     }
 
     const params = {
