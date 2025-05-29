@@ -572,7 +572,7 @@ export default defineComponent({
             role: 'confirm',
             handler: async (data) => {
               emitter.emit('presentLoader');
-              let orderList = JSON.parse(JSON.stringify(this.inProgressOrders.list))
+              let orderList = JSON.parse(JSON.stringify(this.inProgressOrders.list.filter((order: any) => order.shipmentPackages?.length)))
               // fetch related shipmentIds when missing
               if (this.isInProgressOrderScrollable()) {
                 const remainingOrderIndex = (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any);
