@@ -16,6 +16,7 @@ export default interface UtilState {
   fulfillmentRejectReasons: any;
   rejectReasonOptions: any;
   barcodeIdentificationPref: string;
+  boxUomConversions: any;
   carrierDesc: any;
   shipmentMethodsByCarrier: any;
   facilityAddresses: any;
