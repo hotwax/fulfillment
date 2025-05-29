@@ -686,7 +686,7 @@ export default defineComponent({
           requestType: ["MANIFEST_GEN_REQUEST", "MANIFEST_PRINT"],
           requestType_op: "in"
         },
-        selectedEntity: "ShipmentRequest",
+        selectedEntity: "co.hotwax.warehouse.packing.ShipmentRequest",
         pageLimit: carrierPartyIds.length * 2
       }
       try {
@@ -723,7 +723,7 @@ export default defineComponent({
             fromDate_from: DateTime.now().startOf("day").minus({ days: 7 }).toMillis(),
             facilityId: this.currentFacility.facilityId
           },
-          selectedEntity: "FacilityContentAndDataResource",
+          selectedEntity: "co.hotwax.facility.FacilityContentAndDataResource",
           pageLimit: 250,  // Assuming that there will not be more than 250 manifest in last 7 days for a carrier
           filterByDate: true
           //orderBy: "contentId DESC"
