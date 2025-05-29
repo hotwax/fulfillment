@@ -780,7 +780,7 @@ const actions: ActionTree<UtilState, RootState> = {
       }) as any;
   
       if(!hasError(resp) && resp.data.entityValueList?.length) {
-        resp.data.map((facility: any) => {
+        resp.data.entityValueList.map((facility: any) => {
           facilityAddresses[facility.facilityId] = facility;
         })
         addresses = [...addresses, ...resp.data.entityValueList]
