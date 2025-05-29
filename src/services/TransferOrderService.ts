@@ -284,6 +284,38 @@ const rejectOrderItems = async (payload: any): Promise<any> => {
   });
 };
 
+const createTransferOrder = async (payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: 'oms/transferOrders',
+    method: "post",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+};
+
+const approveTransferOrder = async (orderId: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `oms/transferOrders/${orderId}/approve`,
+    method: "post",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    }
+  });
+};
+
+
 export const TransferOrderService = {
   cancelTransferOrderShipment,
   createOutboundTransferShipment,
@@ -297,5 +329,7 @@ export const TransferOrderService = {
   printShippingLabel,
   retryShippingLabel,
   shipTransferOrderShipment,
-  rejectOrderItems
+  rejectOrderItems,
+  createTransferOrder,
+  approveTransferOrder
 };
