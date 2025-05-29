@@ -1,4 +1,4 @@
-export default interface OrderState {
+export default interface RejectionState {
     stats:{
       total: number,
       rejectedItems: any,

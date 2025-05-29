@@ -70,6 +70,7 @@ import { defineComponent } from "vue";
 import { close } from "ionicons/icons";
 import { translate } from '@hotwax/dxp-components'
 import logger from "@/logger";
+import { OrderService } from "@/services/OrderService";
 import { UtilService } from "@/services/UtilService";
 import { hasError } from "@/adapter";
 
@@ -121,23 +122,20 @@ export default defineComponent({
   methods: {
     async fetchOrderShipGroupInfo() {
       try {
-        const resp = await UtilService.fetchOrderShipGroupInfo({
-          inputFields: {
-            orderId: this.orderId
-          },
-          entityName: "OrderHeaderItemAndShipGroup",
-          viewSize: 50,
-          fieldList: ["orderId", "grandTotal", "currencyUom", "unitPrice", "shipGroupSeqId"]
+        const resp = await OrderService.fetchOrderItems({
+          orderId: this.orderId,
+          pageSize: 50,
+          fieldsToSelect: ["orderId", "orderItemseqId", "shipGroupSeqId", "unitPrice"]
         })
 
-        if(!hasError(resp) && resp.data?.count) {
-          this.grandTotal = resp.data.docs[0].grandTotal
-          this.currency = resp.data.docs[0].currencyUom
-          resp.data.docs.map((group: any) => {
-            if (group.shipGroupSeqId != this.order.shipGroupSeqId) {
-              this.otherShipmentTotal += group.unitPrice
+        if(!hasError(resp)) {
+          this.grandTotal = this.order.grandTotal
+          this.currency = this.order.currencyUom
+          resp.data.map((item: any) => {
+            if (item.shipGroupSeqId != this.order.shipGroupSeqId) {
+              this.otherShipmentTotal += item.unitPrice
             } else {
-              this.shipmentSubtotal += group.unitPrice
+              this.shipmentSubtotal += item.unitPrice
             }
           })
 
@@ -162,17 +160,14 @@ export default defineComponent({
     async fetchAdjustmentTypeDescription() {
       try {
         const resp = await UtilService.fetchAdjustmentTypeDescription({
-          inputFields: {
-            orderAdjustmentTypeId: this.orderAdjustmentTypeIds,
-            orderAdjustmentTypeId_op: "in"
-          },
-          entityName: "OrderAdjustmentType",
-          viewSize: this.orderAdjustmentTypeIds.length,
-          fieldList: ["orderAdjustmentTypeId", "description"]
+          orderAdjustmentTypeId: this.orderAdjustmentTypeIds,
+          orderAdjustmentTypeId_op: "in",
+          pageSize: this.orderAdjustmentTypeIds.length,
+          fieldsToSelect: ["orderAdjustmentTypeId", "description"]
         })
 
-        if(!hasError(resp) && resp.data?.count) {
-          this.orderAdjustmentTypeDesc = resp.data.docs.reduce((adjustments: any, adjustment: any) => {
+        if(!hasError(resp)) {
+          this.orderAdjustmentTypeDesc = resp.data.reduce((adjustments: any, adjustment: any) => {
             adjustments[adjustment.orderAdjustmentTypeId] = adjustment.description
             return adjustments
           }, {})

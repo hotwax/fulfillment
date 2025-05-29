@@ -96,7 +96,7 @@ export default defineComponent({
         facilityId: this.currentFacility?.facilityId,
         carrierPartyId: this.selectedCarrierPartyId,
         manifestServiceName: this.carrierConfiguration[this.selectedCarrierPartyId]?.["MANIFEST_PRINT"],
-        manifestPdfLink: manifest.objectInfo
+        manifestContentId: manifest.contentId
       }
 
       try {

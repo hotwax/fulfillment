@@ -10,7 +10,11 @@ const mutations: MutationTree <UserState> = {
       state.token = ''
       state.current = {},
       state.permissions = [],
-      state.allNotificationPrefs = []
+      state.allNotificationPrefs = [],
+      state.omsRedirectionInfo = {
+        url: "",
+        token: ""
+      }
     },
     [types.USER_INFO_UPDATED] (state, payload) {
         state.current = { ...state.current,  ...payload}
@@ -43,9 +47,6 @@ const mutations: MutationTree <UserState> = {
     [types.USER_ALL_NOTIFICATION_PREFS_UPDATED] (state, payload) {
         state.allNotificationPrefs = payload
     },
-    [types.USER_NEW_REJECTION_API_CONFIG_UPDATED] (state, payload) {
-        state.newRejectionApiConfig = payload
-    },
     [types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED] (state, payload) {
         state.partialOrderRejectionConfig = payload
     },
@@ -60,6 +61,9 @@ const mutations: MutationTree <UserState> = {
     },
     [types.USER_DISABLE_UNPACK_CONFIG_UPDATED] (state, payload) {
         state.isUnpackDisabled = payload
+    },
+    [types.USER_OMS_REDIRECTION_INFO_UPDATED](state, payload) {
+        state.omsRedirectionInfo = payload;
     },
     [types.USER_RESERVATION_FACILITY_ID_FIELD_CONFIG_UPDATED] (state, payload) {
         state.isReservationFacilityFieldEnabled = payload

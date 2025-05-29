@@ -7,7 +7,7 @@ const getters: GetterTree <UtilState, RootState> = {
     return state.rejectReasons ? state.rejectReasons : []
   },
   getPartyName: (state) => (partyId: string) => {
-    return state.partyNames[partyId] ? state.partyNames[partyId] : ''
+    return state.partyNames[partyId] ? state.partyNames[partyId] : partyId
   },
   getShipmentMethodDesc: (state) => (shipmentMethodId: string) => {
     return state.shipmentMethodTypeDesc[shipmentMethodId] ? state.shipmentMethodTypeDesc[shipmentMethodId] : shipmentMethodId
@@ -33,14 +33,14 @@ const getters: GetterTree <UtilState, RootState> = {
   getEnumerations(state) {
     return state.enumerations
   },
+  getEnumerationDesc: (state) => (enumId: string) => {
+    return state.enumerations[enumId] ? state.enumerations[enumId] :  enumId
+  },
   getProductStores(state) {
     return state.productStores;
   },
   getFacilities(state) {
     return state.facilities
-  },
-  getShipmentGatewayConfigs(state) {
-    return state.shipmentGatewayConfigs
   },
   isForceScanEnabled(state) {
     return state.isForceScanEnabled
@@ -53,6 +53,9 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   getBarcodeIdentificationPref(state) {
     return state.barcodeIdentificationPref
+  },
+  getCarrierShipmentBoxTypes(state) {
+    return state.carrierShipmentBoxTypes
   },
   getCarrierDesc: (state) => (partyId: string) => {
     return state.carrierDesc[partyId] ? state.carrierDesc[partyId] : partyId

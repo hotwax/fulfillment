@@ -59,7 +59,7 @@ import { translate } from "@hotwax/dxp-components";
 import { mapGetters, useStore } from "vuex";
 import { OrderService } from '@/services/OrderService';
 import logger from "@/logger";
-import { showToast } from "@/utils";
+import { hasError, showToast } from "@/utils";
 
 export default defineComponent({
   name: "TrackingCodeModal",
@@ -96,19 +96,19 @@ export default defineComponent({
     },
     async saveTrackingCode() {
       try {
-        for (const shipmentPackage of this.order.shipmentPackages) {
-          await OrderService.addTrackingCode({
-            "shipmentId": shipmentPackage.shipmentId,
-            "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId,
-            "shipmentPackageSeqId": shipmentPackage.shipmentPackageSeqId,
-            "trackingCode": this.trackingCode.trim()
-          });
+        const shipmentRouteSegmentId = this.order.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
+        const resp = await OrderService.addTrackingCode({
+          shipmentId: this.order.shipmentId,
+          shipmentRouteSegmentId,
+          trackingIdNumber: this.trackingCode
+        })
+        if (!hasError(resp)) {
+          showToast(translate("Tracking code added successfully."));
+          await this.store.dispatch('order/updateShipmentPackageDetail', this.order) 
+          this.closeModal();
+        } else {
+          throw resp.data
         }
-
-        //fetching updated shipment packages
-        showToast(translate("Tracking code added successfully."));
-        await this.store.dispatch('order/updateShipmentPackageDetail', this.order) 
-        this.closeModal();
       } catch (error: any) {
         logger.error('Failed to add tracking code', error);
         showToast(translate("Failed to add tracking code."));
