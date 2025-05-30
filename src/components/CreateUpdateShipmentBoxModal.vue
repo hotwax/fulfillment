@@ -33,13 +33,13 @@
         </ion-select>
       </ion-item>
       <ion-item lines="full">
-        <ion-input :label="translate('Length')" placeholder="0.00" v-model="formData.boxLength" />
+        <ion-input :label="translate('Length')" placeholder="0.00" v-model="formData.boxLength" :class="getErrorClass('boxLength')" :error-text="getFieldError('boxLength')" />
       </ion-item>
       <ion-item lines="full">
-        <ion-input :label="translate('Width')" placeholder="0.00" v-model="formData.boxWidth" />
+        <ion-input :label="translate('Width')" placeholder="0.00" v-model="formData.boxWidth" :class="getErrorClass('boxWidth')" :error-text="getFieldError('boxWidth')" />
       </ion-item>
       <ion-item lines="full">
-        <ion-input :label="translate('Height')" placeholder="0.00" v-model="formData.boxHeight" />
+        <ion-input :label="translate('Height')" placeholder="0.00" v-model="formData.boxHeight" :class="getErrorClass('boxHeight')" :error-text="getFieldError('boxHeight')" />
       </ion-item>
     </ion-list>
 
@@ -54,7 +54,7 @@
         </ion-select>
       </ion-item>
       <ion-item lines="full">
-        <ion-input :label="translate('Weight')" placeholder="0.00" v-model="formData.boxWeight" />
+        <ion-input :label="translate('Weight')" placeholder="0.00" v-model="formData.boxWeight" :class="getErrorClass('boxWeight')" :error-text="getFieldError('boxWeight')" />
       </ion-item>
     </ion-list>
 
@@ -76,6 +76,7 @@ import { generateInternalId, showToast } from "@/utils";
 import logger from "@/logger";
 import { CarrierService } from "@/services/CarrierService";
 import { hasError } from "@/adapter";
+import { useFormValidator } from "@hotwax/dxp-components";
 
 export default defineComponent({
   name: "CreateUpdateShipmentBoxModal",
@@ -110,7 +111,8 @@ export default defineComponent({
         boxWeight: ""
       },
       uomById: process.env.VUE_APP_UOM_MEASURES ? JSON.parse(process.env.VUE_APP_UOM_MEASURES) : {},
-      isBoxUpdating: false
+      isBoxUpdating: false,
+      validator: {} as any
     }
   },
   props: ["currentBox"],
@@ -126,12 +128,34 @@ export default defineComponent({
       this.isBoxUpdating = true;
       this.formData = JSON.parse(JSON.stringify(this.currentBox))
     }
+
+    const validator = await useFormValidator({
+      boxLength: ["number"],
+      boxHeight: ["number"],
+      boxWidth: ["number"],
+      boxWeight: ["number"]
+    }, this.formData)
+    this.formData = validator.values
+    this.validator = validator
   },
   methods: {
+    getFieldError(field: string) {
+      return this.validator?.errors ? this.validator.errors[field] : ""
+    },
+    getErrorClass(field: string) {
+      return this.getFieldError(field) ? "ion-touched ion-invalid" : ""
+    },
     closeModal() {
       modalController.dismiss({ dismissed: true });
     },
     async createShipmentBox() {
+      const isFormValid = await this.validator?.isFormValid()
+      if(!isFormValid) {
+        console.log(this.validator)
+        showToast(translate("Some of the form fields are invalid"))
+        return;
+      }
+
       if(!this.formData.description.trim()) {
         showToast(translate("Please fill all the required fields."))
         return;
@@ -162,6 +186,13 @@ export default defineComponent({
       }
     },
     async updateShipmentBoxDimensions() {
+      const isFormValid = await this.validator?.isFormValid()
+      if(!isFormValid) {
+        console.log(this.validator)
+        showToast(translate("Some of the form fields are invalid"))
+        return;
+      }
+
       try {
         const resp = await CarrierService.updateShipmentBox(this.formData)
 
