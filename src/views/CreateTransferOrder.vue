@@ -609,20 +609,24 @@ async function createOrder() {
     customerId: "COMPANY",
     statusId: "ORDER_CREATED",
     productStoreId: currentOrder.value.productStoreId,
-    statusFlowId: "FULFILL_AND_RECEIVE",
-    shipGroup: [{
+    statusFlowId: "TO_Fulfill_And_Receive",
+    orderDate: DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000"),
+    entryDate: DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000"),
+    originFacilityId: currentOrder.value.originFacilityId,
+    shipGroups: [{
       shipGroupSeqId: "00001",
       facilityId: currentOrder.value.originFacilityId,
       orderFacilityId: currentOrder.value.destinationFacilityId,
       carrierPartyId: currentOrder.value.carrierPartyId,
       shipmentMethodTypeId: currentOrder.value.shipmentMethodTypeId,
-      estimatedShipDate: currentOrder.value.shipDate ? DateTime.fromISO(currentOrder.value.shipDate).toFormat("yyyy-mm-dd 23:59:59.000") : "",
-      estimatedDeliveryDate: currentOrder.value.deliveryDate ? DateTime.fromISO(currentOrder.value.deliveryDate).toFormat("yyyy-mm-dd 23:59:59.000") : "",
+      estimatedShipDate: currentOrder.value.shipDate ? DateTime.fromISO(currentOrder.value.shipDate).toFormat("yyyy-MM-dd 23:59:59.000") : "",
+      estimatedDeliveryDate: currentOrder.value.deliveryDate ? DateTime.fromISO(currentOrder.value.deliveryDate).toFormat("yyyy-MM-dd 23:59:59.000") : "",
       items: currentOrder.value.items.map((item: any) => {
         return {
+          orderItemTypeId: "PRODUCT_ORDER_ITEM",
           productId: item.productId,
           sku: item.sku,
-          status: "ITEM_CREATED",
+          statusId: "ITEM_CREATED",
           quantity: Number(item.quantity),
           unitPrice: (Object.keys(productAverageCostDetail).length && productAverageCostDetail[item.productId]) || 0.00
         }
@@ -631,7 +635,7 @@ async function createOrder() {
   } as any;
 
   let grandTotal = 0;
-  order.shipGroup[0].items.map((item: any) => {
+  order.shipGroups[0].items.map((item: any) => {
     grandTotal += Number(item.quantity) * Number(item.unitPrice)
   })
   order["grandTotal"] = grandTotal
@@ -639,14 +643,14 @@ async function createOrder() {
   const addresses = await store.dispatch("util/fetchFacilityAddresses", [currentOrder.value.originFacilityId, currentOrder.value.destinationFacilityId])
   addresses.map((address: any) => {
     if(address.facilityId === currentOrder.value.originFacilityId) {
-      order.shipGroup[0].shipFrom = {
+      order.shipGroups[0].shipFrom = {
         postalAddress: {
           id: address.contactMechId
         }
       }
     }
     if(address.facilityId === currentOrder.value.destinationFacilityId) {
-      order.shipGroup[0].shipTo = {
+      order.shipGroups[0].shipTo = {
         postalAddress: {
           id: address.contactMechId
         }
@@ -655,10 +659,10 @@ async function createOrder() {
   })
 
   try {
-    const resp = await TransferOrderService.createOrder({ order })
+    const resp = await TransferOrderService.createTransferOrder({ payload: order })
     if(!hasError(resp) && resp.data?.orderId) {
       const orderId = resp.data.orderId
-      const isApproved = await TransferOrderService.approveOrder({ orderId })
+      const isApproved = await TransferOrderService.approveTransferOrder(orderId)
       if(!isApproved) {
         router.replace("/transfer-orders");
         const toast = await showToast(translate("Order is created successfully, but approval failed. Please contact administrator.", { orderId }), { canDismiss: true, manualDismiss: true })
