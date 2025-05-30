@@ -251,7 +251,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
           const productIds =  orderItems.map((orderItem: any) => orderItem.productId);
           await this.dispatch("product/fetchProducts", { productIds })    
         }
-        
+
         const shipmentMethodTypeIds = [...new Set([
           ...(order.shipGroups?.map((shipGroup:any) => shipGroup.shipmentMethodTypeId) || []),
           ...(shipments?.map((shipment:any) => shipment.shipmentMethodTypeId) || [])
@@ -260,12 +260,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         this.dispatch("util/fetchShipmentMethodTypeDesc", shipmentMethodTypeIds)
 
         const carrierPartyIds = shipments?.map((shipment: any) => shipment.carrierPartyId);
-        const carrierInfo = await dispatch("fetchCarriersTrackingInfo", Array.from(new Set(carrierPartyIds)));
-        
-        Object.keys(order["shipGroups"]).map((shipGroupId: any) => {
-          const shipGroup = order["shipGroups"][shipGroupId]
-          shipGroup.map((item: any) => item["carrierPartyName"] = carrierInfo[item.carrierPartyId]?.carrierName || "")
-        })
+        await dispatch("fetchCarriersTrackingInfo", Array.from(new Set(carrierPartyIds)));
       }
     } catch(err) {
       logger.error(err)
