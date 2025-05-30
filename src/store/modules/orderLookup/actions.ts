@@ -181,11 +181,10 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         order["approvedDate"] = order.statuses.find((status: any) => status.statusId === "ORDER_APPROVED")?.statusDatetime
         order["completedDate"] = order.statuses.find((status: any) => status.statusId === "ORDER_COMPLETED")?.statusDatetime
 
-
         // preparing payment preference for order
         const paymentMethodTypeIds: Array<string> = [];
         const statusIds: Array<string> = [];
-        order["orderPayments"] = order.paymentPreferences.map((paymentPreference: any) => {
+        order["orderPayments"] = order.paymentPreferences?.map((paymentPreference: any) => {
           paymentMethodTypeIds.push(paymentPreference.paymentMethodTypeId)
           statusIds.push(paymentPreference.statusId)
           return {
