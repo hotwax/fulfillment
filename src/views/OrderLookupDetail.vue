@@ -234,7 +234,7 @@
 
                   <ion-item v-if="item.statusId !== 'ITEM_CANCELLED' && item.statusId !== 'ITEM_COMPLETED'">
                     <ion-label>{{ translate("QOH") }}</ion-label>
-                    <ion-note slot="end" v-if="getProductStock(item.productId, shipGroup.facilityId).quantityOnHandTotal >= 0">
+                    <ion-note slot="end" v-if="getProductStock(item.productId, shipGroup.facilityId).qoh >= 0">
                       {{ getProductStock(item.productId, shipGroup.facilityId).qoh }} {{ translate("pieces in stock") }}
                     </ion-note>
                     <ion-spinner slot="end" v-else-if="isFetchingStock" color="medium" name="crescent" />
