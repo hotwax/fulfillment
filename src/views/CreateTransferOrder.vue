@@ -611,7 +611,7 @@ async function createOrder() {
   }
 
   if(!currentOrder.value.statusFlowId?.length) {
-    showToast(translate("Please select transfer order type."));
+    showToast(translate("Please select transfer order lifecycle."));
     return;
   }
 
