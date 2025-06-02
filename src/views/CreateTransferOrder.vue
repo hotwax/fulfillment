@@ -65,7 +65,7 @@
               <ion-card-title>{{ translate("Plan") }}</ion-card-title>
             </ion-card-header>
             <ion-item>
-              <ion-select :label="translate('Order Type')" placeholder="Select" v-model="currentOrder.statusFlowId">
+              <ion-select :label="translate('Lifecycle')" placeholder="Select" v-model="currentOrder.statusFlowId">
                 <ion-select-option v-for="(value, label) in StatusFlowIds" :key="label" :value="value">{{ translate(label) }}</ion-select-option>
               </ion-select>
             </ion-item>
