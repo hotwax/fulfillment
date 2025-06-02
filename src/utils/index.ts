@@ -231,7 +231,7 @@ const parseCsv = async (file: File, options?: any) => {
       skipEmptyLines: true,
       complete: function (results: any) {
         if (results.errors.length) {
-          reject(results.error)
+          reject(results.errors)
         } else {
           resolve(results.data)
         }
