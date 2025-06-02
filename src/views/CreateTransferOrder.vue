@@ -251,8 +251,7 @@ const currentOrder = ref({
 }) as any;
 const StatusFlowIds = {
   "Fulfill & Receive" : "TO_Fulfill_And_Receive",
-  "Fulfill only" : "TO_Fulfill_Only",
-  "Receive only" : "TO_Receive_Only"
+  "Fulfill only" : "TO_Fulfill_Only"
 }
 
 let content = ref([]) as any 
