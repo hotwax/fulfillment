@@ -1,6 +1,6 @@
 <template>
   <ion-page :key="router.currentRoute.value.path">
-    <ViewSizeSelector menu-id="view-size-selector-completed" content-id="view-size-selector" />
+    <CompletedFilters :carrier-party-ids="carrierPartyIds" :shipment-methods="shipmentMethods" menu-id="completed-filters" content-id="completed-filters"  @update-carrier="selectedCarrierPartyId = $event" @update-shipment-methods="selectedShipmentMethods = $event" />
 
     <ion-header :translucent="true">
       <ion-toolbar>
@@ -9,47 +9,15 @@
         <ion-title v-else>{{ completedOrders.query.viewSize }} {{ translate('of') }} {{ completedOrders.total }} {{ completedOrders.total ? translate('order') : translate('orders') }}</ion-title>
 
         <ion-buttons slot="end">
-          <ion-menu-button menu="view-size-selector-completed" :disabled="!completedOrders.total">
+          <ion-menu-button menu="completed-filters" :disabled="!completedOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
     
-    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
+    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="completed-filters">
       <ion-searchbar class="searchbar" :value="completedOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)" />
-      <ion-radio-group v-if="carrierPartyIds?.length" v-model="selectedCarrierPartyId" @ionChange="updateSelectedCarrierPartyIds($event.detail.value)">
-        <ion-row class="filters">
-          <ion-item lines="none">
-              <!-- empty value '' for 'All orders' radio -->
-            <ion-radio label-placement="end" value="">
-              <ion-label class="ion-text-wrap">
-                {{ translate("All") }}
-                <p>{{ getTotalPackages }} {{ translate("packages") }}</p>
-              </ion-label>
-            </ion-radio>
-          </ion-item>
-          <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId.val">
-            <ion-radio label-placement="end" :value="carrierPartyId.id">
-              <ion-label>
-                {{ getPartyName(carrierPartyId.id) }}
-                <p>{{ carrierPartyId.groups }} {{ carrierPartyId.groups === 1 ? translate('package') : translate("packages") }}</p>
-              </ion-label>
-            </ion-radio>
-          </ion-item>
-        </ion-row>
-      </ion-radio-group>
-
-      <div v-if="shipmentMethods?.length" class="filters">
-        <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod.val">
-          <ion-checkbox label-placement="end" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod.val)" @ionChange="updateSelectedShipmentMethods(shipmentMethod.val)">
-            <ion-label>
-              {{ getShipmentMethodDesc(shipmentMethod.val) }}
-              <p>{{ shipmentMethod.groups }} {{ shipmentMethod.groups > 1 ? translate('orders') : translate('order') }}, {{ shipmentMethod.itemCount }} {{ shipmentMethod.itemCount > 1 ? translate('items') : translate('item') }}</p>
-            </ion-label>
-          </ion-checkbox>
-        </ion-item>
-      </div>
 
       <div v-if="completedOrders.total">
         <div class="results">
@@ -243,7 +211,7 @@ import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIden
 import { UtilService } from '@/services/UtilService';
 import { prepareOrderQuery } from '@/utils/solrHelper';
 import emitter from '@/event-bus';
-import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
+import CompletedFilters from '@/components/CompletedFilters.vue'
 import { OrderService } from '@/services/OrderService';
 import logger from '@/logger';
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
@@ -286,7 +254,7 @@ export default defineComponent({
     IonThumbnail,
     IonTitle,
     IonToolbar,
-    ViewSizeSelector
+    CompletedFilters
   },
   data() {
     return {
@@ -618,32 +586,6 @@ export default defineComponent({
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
       this.searchedQuery = queryString;
     },
-    async updateSelectedShipmentMethods (method: string) {
-      const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
-
-      const selectedShipmentMethods = completedOrdersQuery.selectedShipmentMethods
-      const index = selectedShipmentMethods.indexOf(method)
-      if (index < 0) {
-        selectedShipmentMethods.push(method)
-      } else {
-        selectedShipmentMethods.splice(index, 1)
-      }
-
-      // making view size default when changing the shipment method to correctly fetch orders
-      completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      completedOrdersQuery.selectedShipmentMethods = selectedShipmentMethods
-      this.selectedShipmentMethods = selectedShipmentMethods
-
-      this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
-    },
-    async updateSelectedCarrierPartyIds (carrierPartyId: string) {
-      const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
-
-      // making view size default when changing the shipment method to correctly fetch orders
-      completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      completedOrdersQuery.selectedCarrierPartyId = carrierPartyId
-
-      this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async unpackOrder(order: any) {
       const unpackOrderAlert = await alertController
