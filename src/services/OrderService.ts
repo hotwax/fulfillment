@@ -374,7 +374,7 @@ const findShipments = async (query: any): Promise <any>  => {
 
   try {
     const params = {
-      pageSize: query.viewSize,
+      pageSize: 1,
       orderBy: 'orderDate',
       shipmentTypeId: 'SALES_SHIPMENT', 
       productStoreId: getProductStoreId(),
@@ -622,15 +622,22 @@ const retryShippingLabel = async (shipmentId: string): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
-    url: `/poorti/shipments/${shipmentId}/shippingLabels`,
-    method: "get",
-    baseURL,
-    headers: {
-      "api_key": omsRedirectionInfo.token,
-      "Content-Type": "application/json"
-    },
-  });
+  try {
+    const resp = client({
+      url: `/poorti/shipments/${shipmentId}/shippingLabels`,
+      method: "get",
+      baseURL,
+      headers: {
+        "api_key": omsRedirectionInfo.token,
+        "Content-Type": "application/json"
+      },
+    }) as any;
+    if (hasError(resp)) {
+      throw resp?.data;
+    }
+  } catch(error) {
+    logger.error(error)
+  }
 }
 
 const fetchShipmentLabelError = async (shipmentId: string): Promise<any> => {
