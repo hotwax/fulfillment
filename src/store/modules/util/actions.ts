@@ -120,7 +120,7 @@ const actions: ActionTree<UtilState, RootState> = {
     return partyInformation;
   },
 
-  async fetchCarrierShipmentBoxTypes({ commit, state }) {
+  async fetchCarrierShipmentBoxTypes({ commit, dispatch }) {
     try {
       const resp = await UtilService.fetchCarrierShipmentBoxTypes({
         pageIndex: 0,
@@ -128,8 +128,11 @@ const actions: ActionTree<UtilState, RootState> = {
         fieldsToSelect: ["shipmentBoxTypeId", "partyId"]
       });
 
+      const shipmentBoxTypeIds = new Set();
+
       if (!hasError(resp)) {
         const shipmentBoxTypeDetail = resp.data.reduce((shipmentBoxTypes: any, carrierShipmentBoxType: any) => {
+          shipmentBoxTypeIds.add(carrierShipmentBoxType.shipmentBoxTypeId)
           if (shipmentBoxTypes[carrierShipmentBoxType.partyId]) {
             shipmentBoxTypes[carrierShipmentBoxType.partyId].push(carrierShipmentBoxType.shipmentBoxTypeId)
           } else {
@@ -138,6 +141,7 @@ const actions: ActionTree<UtilState, RootState> = {
           return shipmentBoxTypes
         }, {})
         commit(types.UTIL_CARRIER_SHIPMENT_BOX_TYPES_UPDATED, shipmentBoxTypeDetail)
+        dispatch("fetchShipmentBoxTypeDesc", [...shipmentBoxTypeIds])
       } else {
         throw resp.data;
       }
@@ -197,7 +201,6 @@ const actions: ActionTree<UtilState, RootState> = {
       const payload = {
         "shipmentBoxTypeId": ids,
         "shipmentBoxTypeId_op": "in",
-        "fieldsToSelect": ["shipmentBoxTypeId", "description"],
         "pageSize": ids.length
       }
 
@@ -205,7 +208,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
       if(!hasError(resp)) {
         const shipmentBoxResp = {} as any
-        resp.data.docs.map((shipmentBoxInformation: any) => {
+        resp.data.map((shipmentBoxInformation: any) => {
           shipmentBoxResp[shipmentBoxInformation.shipmentBoxTypeId] = shipmentBoxInformation.description
         })
 
@@ -780,7 +783,7 @@ const actions: ActionTree<UtilState, RootState> = {
       }) as any;
   
       if(!hasError(resp) && resp.data.entityValueList?.length) {
-        resp.data.map((facility: any) => {
+        resp.data.entityValueList.map((facility: any) => {
           facilityAddresses[facility.facilityId] = facility;
         })
         addresses = [...addresses, ...resp.data.entityValueList]
