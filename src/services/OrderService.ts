@@ -413,8 +413,9 @@ const findShipments = async (query: any): Promise <any>  => {
       params.shippedDateFrom = query.shippedDateFrom
     }
 
-    if(query.selectedCarrierPartyIds && query.selectedCarrierPartyIds.length) {
-      params.carrierPartyId = query.selectedCarrierPartyIds
+    console.log("====query==", query)
+    if(query.selectedCarrierPartyId) {
+      params.carrierPartyId = query.selectedCarrierPartyId
     }
 
     // only adding shipmentMethods when a method is selected
