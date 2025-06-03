@@ -16,7 +16,6 @@ import { useAuthStore, useUserStore, useProductIdentificationStore } from '@hotw
 import emitter from '@/event-bus'
 import { generateDeviceId, generateTopicName } from '@/utils/firebase'
 import router from '@/router';
-import Rules from '@/authorization/Rules';
 
 const actions: ActionTree<UserState, RootState> = {
 
