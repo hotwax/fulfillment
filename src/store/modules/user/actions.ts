@@ -29,27 +29,32 @@ const actions: ActionTree<UserState, RootState> = {
 
       // Getting the permissions list from server
       const permissionId = process.env.VUE_APP_PERMISSION_ID;
+      const legacyPermissionId = process.env.VUE_APP_LEGACY_PERMISSION_ID;
       // Prepare permissions list
       const serverPermissionsFromRules = getServerPermissionsFromRules();
       if (permissionId) serverPermissionsFromRules.push(permissionId);
+      if (legacyPermissionId) serverPermissionsFromRules.push(legacyPermissionId);
 
       const serverPermissions = await UserService.getUserPermissions({
         permissionIds: [...new Set(serverPermissionsFromRules)]
       }, token);
       const appPermissions = prepareAppPermissions(serverPermissions);
 
-      // Checking if the user has permission to access the app
+      // Checking if the user has permission to access the app or legacy version of the app
       // If there is no configuration, the permission check is not enabled
-      if (permissionId) {
-        // As the token is not yet set in the state passing token headers explicitly
-        // TODO Abstract this out, how token is handled should be part of the method not the callee
-        const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === permissionId );
+      if (permissionId || legacyPermissionId) {
+        const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === permissionId);
+        const hasLegacyPermission = appPermissions.some((appPermission: any) => appPermission.action === legacyPermissionId);
         // If there are any errors or permission check fails do not allow user to login
-        if (!hasPermission) {
+        if (!hasPermission && !hasLegacyPermission) {
           const permissionError = 'You do not have permission to access the app.';
           showToast(translate(permissionError));
           logger.error("error", permissionError);
           return Promise.reject(new Error(permissionError));
+        } else if(hasPermission) {
+          // If having the permission to access the new app, redirect the user, otherwise use the legacy(current) app
+          // Redirect the user to the same app instance like legacy-uat to uat
+          window.location.href = window.location.href.replace("legacy-", "")
         }
       }
 
@@ -60,7 +65,7 @@ const actions: ActionTree<UserState, RootState> = {
       const facilities = await useUserStore().getUserFacilities(userProfile?.partyId, "OMS_FULFILLMENT", isAdminUser)
       await useUserStore().getFacilityPreference('SELECTED_FACILITY')
 
-      if (!facilities.length) throw 'Unable to login. User is not assocaited with any facility'
+      if (!facilities.length) throw 'Unable to login. User is not associated with any facility'
 
       userProfile.facilities = facilities;
       // Getting unique facilities
