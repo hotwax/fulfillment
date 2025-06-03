@@ -54,7 +54,11 @@ const actions: ActionTree<UserState, RootState> = {
         } else if(hasLegacyPermission && !hasPermission) {
           // If having the legacy permission then redirect the user, otherwise use the new(current) app
           // Redirect the user to the same app instance like uat to legacy-uat
-          window.location.href = window.location.href.replace(".hotwax.io", "-legacy.hotwax.io").replace("-uat.hotwax.io", "-legacy-uat.hotwax.io").replace("-dev.hotwax.io", "-legacy-dev.hotwax.io")
+          if(window.location.href.includes("-uat.hotwax.io") || window.location.href.includes("-dev.hotwax.io")) {
+            window.location.href = window.location.href.replace("-uat.hotwax.io", "-legacy-uat.hotwax.io").replace("-dev.hotwax.io", "-legacy-dev.hotwax.io")
+          } else {
+            window.location.href = window.location.href.replace(".hotwax.io", "-legacy.hotwax.io")
+          }
         }
       }
 
