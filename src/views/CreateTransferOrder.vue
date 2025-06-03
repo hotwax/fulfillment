@@ -66,7 +66,7 @@
             </ion-card-header>
             <ion-item>
               <ion-select :label="translate('Lifecycle')" placeholder="Select" v-model="currentOrder.statusFlowId">
-                <ion-select-option v-for="(value, label) in StatusFlowIds" :key="label" :value="value">{{ translate(label) }}</ion-select-option>
+                <ion-select-option v-for="flow in statusFlows" :key="flow.statusFlowId" :value="flow.statusFlowId">{{ translate(flow.description) }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item>
@@ -249,10 +249,16 @@ const currentOrder = ref({
   items: [],
   statusFlowId: "",
 }) as any;
-const StatusFlowIds = {
-  "Fulfill & Receive" : "TO_Fulfill_And_Receive",
-  "Fulfill only" : "TO_Fulfill_Only"
-}
+const statusFlows = [
+  {
+    statusFlowId: "TO_Fulfill_And_Receive",
+    description: "Fulfill & Receive"
+  },
+  {
+    statusFlowId: "TO_Fulfill_Only",
+    description: "Fulfill only"
+  }
+]
 
 let content = ref([]) as any 
 let fileColumns = ref([]) as any 
