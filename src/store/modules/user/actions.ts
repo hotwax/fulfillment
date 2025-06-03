@@ -16,6 +16,7 @@ import { useAuthStore, useUserStore, useProductIdentificationStore } from '@hotw
 import emitter from '@/event-bus'
 import { generateDeviceId, generateTopicName } from '@/utils/firebase'
 import router from '@/router';
+import Rules from '@/authorization/Rules';
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -28,7 +29,7 @@ const actions: ActionTree<UserState, RootState> = {
       dispatch("setUserInstanceUrl", oms);
 
       // Getting the permissions list from server
-      const permissionId = process.env.VUE_APP_PERMISSION_ID;
+      const permissionId = Rules[process.env.VUE_APP_PERMISSION_ID as string] ?? "";
       // Prepare permissions list
       const serverPermissionsFromRules = getServerPermissionsFromRules();
       if (permissionId) serverPermissionsFromRules.push(permissionId);
@@ -43,7 +44,7 @@ const actions: ActionTree<UserState, RootState> = {
       if (permissionId) {
         // As the token is not yet set in the state passing token headers explicitly
         // TODO Abstract this out, how token is handled should be part of the method not the callee
-        const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === permissionId );
+        const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === process.env.VUE_APP_PERMISSION_ID );
         // If there are any errors or permission check fails do not allow user to login
         if (!hasPermission) {
           const permissionError = 'You do not have permission to access the app.';
@@ -60,7 +61,7 @@ const actions: ActionTree<UserState, RootState> = {
       const facilities = await useUserStore().getUserFacilities(userProfile?.partyId, "OMS_FULFILLMENT", isAdminUser)
       await useUserStore().getFacilityPreference('SELECTED_FACILITY')
 
-      if (!facilities.length) throw 'Unable to login. User is not assocaited with any facility'
+      if (!facilities.length) throw 'Unable to login. User is not associated with any facility'
 
       userProfile.facilities = facilities;
       // Getting unique facilities
