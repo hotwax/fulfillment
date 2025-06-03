@@ -413,7 +413,6 @@ const findShipments = async (query: any): Promise <any>  => {
       params.shippedDateFrom = query.shippedDateFrom
     }
 
-    console.log("====query==", query)
     if(query.selectedCarrierPartyId) {
       params.carrierPartyId = query.selectedCarrierPartyId
     }
