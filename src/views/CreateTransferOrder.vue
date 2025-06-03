@@ -378,8 +378,8 @@ async function findProductFromIdentifier(payload: any) {
             sku: product.sku,
             quantity: quantityField ? (Number(uploadedItemsByIdValue[idValue][quantityField]) || 0) : 0,
             isChecked: false,
-            qoh: stock.quantityOnHandTotal || 0,
-            atp: stock.availableToPromiseTotal || 0
+            qoh: stock.qoh || 0,
+            atp: stock.atp || 0
           })
         }
       })
@@ -416,8 +416,8 @@ async function addProductToOrder(scannedId?: any, product?: any) {
   } as any;
 
   const stock = await fetchStock(newProduct.productId);
-  if(stock?.quantityOnHandTotal || stock?.quantityOnHandTotal === 0) {
-    newProduct = { ...newProduct, qoh: stock.quantityOnHandTotal, atp: stock.availableToPromiseTotal }
+  if(stock?.qoh || stock?.qoh === 0) {
+    newProduct = { ...newProduct, qoh: stock.qoh, atp: stock.atp }
   }
   
   if(product) {
@@ -911,3 +911,6 @@ function openDateTimeModal(type: any) {
   }
 }
 </style>
+
+
+
