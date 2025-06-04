@@ -65,8 +65,8 @@ import {
   IonToolbar,
   menuController
 } from '@ionic/vue';
-import { computed, defineComponent } from 'vue';
-import { useStore } from 'vuex';
+import { defineComponent } from 'vue';
+import { mapGetters, useStore } from 'vuex';
 import { translate } from '@hotwax/dxp-components';
 
 export default defineComponent({
@@ -95,15 +95,11 @@ export default defineComponent({
     }
   },
   computed: {
-    completedOrders() {
-      return this.store.getters['order/getCompletedOrders']
-    },
-    getPartyName() {
-      return this.store.getters['util/getPartyName']
-    },
-    getShipmentMethodDesc() {
-      return this.store.getters['util/getShipmentMethodDesc']
-    }
+    ...mapGetters({
+      completedOrders: 'order/getCompletedOrders',
+      getPartyName: 'util/getPartyName',
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
+    })
   },
   methods: {
     prepareViewSizeOptions () {
@@ -129,15 +125,15 @@ export default defineComponent({
       }
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       completedOrdersQuery.selectedShipmentMethods = selectedShipmentMethods
-      this.$emit("update-shipment-methods", selectedShipmentMethods)
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+      await menuController.close()
     },
     async updateSelectedCarrierPartyIds(carrierPartyId: string) {
       const completedOrdersQuery = JSON.parse(JSON.stringify(this.completedOrders.query))
       completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       completedOrdersQuery.selectedCarrierPartyId = carrierPartyId
-      this.$emit("update-carrier", carrierPartyId)
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
+      await menuController.close()
     }
   },
   setup() {
