@@ -117,6 +117,9 @@
     <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment === 'open'">
       <ion-toolbar>
         <ion-buttons slot="end">
+            <ion-button color="dark" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="receiveAndCloseTO()">
+              {{ translate("Close Items") }}
+            </ion-button>
             <ion-button v-show="areItemsEligibleForRejection" color="danger" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="rejectItems()">
               <ion-icon slot="start" :icon="trashOutline" />
               {{ translate("Reject Items") }}
@@ -173,7 +176,8 @@ import { TransferOrderService } from '@/services/TransferOrderService'
 import TransferOrderItem from '@/components/TransferOrderItem.vue'
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import emitter from "@/event-bus";
-
+import CloseTransferOrderModal from '@/components/CloseTransferOrderModal.vue';
+ 
 export default defineComponent({
   name: "TransferOrderDetail",
   components: {
@@ -416,6 +420,16 @@ export default defineComponent({
           }]
         });
         return alert.present();
+      },
+      async receiveAndCloseTO() {
+        const modal = await modalController.create({
+          component: CloseTransferOrderModal,
+          componentProps: {
+            isEligibileForCreatingShipment: this.isEligibleForCreatingShipment(),
+          }
+        })
+
+        return modal.present();
       },
 }, 
 ionViewDidLeave() {
