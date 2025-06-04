@@ -172,7 +172,6 @@ import {
   IonButton,
   IonButtons,
   IonCard,
-  IonCheckbox,
   IonChip,
   IonContent,
   IonFab,
@@ -187,9 +186,6 @@ import {
   IonMenuButton,
   IonNote,
   IonPage,
-  IonRadio,
-  IonRadioGroup,
-  IonRow,
   IonSearchbar,
   IonSkeletonText,
   IonSpinner,
@@ -230,7 +226,6 @@ export default defineComponent({
     IonButton,
     IonButtons,
     IonCard,
-    IonCheckbox,
     IonChip,
     IonContent,
     IonFab,
@@ -245,9 +240,6 @@ export default defineComponent({
     IonMenuButton,
     IonNote,
     IonPage,
-    IonRadio,
-    IonRadioGroup,
-    IonRow,
     IonSearchbar,
     IonSkeletonText,
     IonSpinner,
@@ -585,7 +577,6 @@ export default defineComponent({
       completedOrdersQuery.queryString = queryString
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
       this.searchedQuery = queryString;
-    },
     },
     async unpackOrder(order: any) {
       const unpackOrderAlert = await alertController
