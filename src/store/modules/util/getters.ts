@@ -54,6 +54,9 @@ const getters: GetterTree <UtilState, RootState> = {
   getBarcodeIdentificationPref(state) {
     return state.barcodeIdentificationPref
   },
+  getShipmentBoxUomConversions(state) {
+    return state.boxUomConversions
+  },
   getCarrierDesc: (state) => (partyId: string) => {
     return state.carrierDesc[partyId] ? state.carrierDesc[partyId] : partyId
   },

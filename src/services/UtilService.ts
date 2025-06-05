@@ -700,6 +700,14 @@ const fetchOrderShipGroupInfo = async(payload: any): Promise<any> => {
   })
 }
 
+const fetchUomConversions = async(payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "post",
+    data: payload
+  })
+}
+
 const fetchCarriers = async (query: any): Promise <any>  => {
   return api({
     url: "performFind",
@@ -806,6 +814,7 @@ export const UtilService = {
   fetchPaymentMethodTypeDesc,
   fetchStatusDesc,
   fetchShipmentRouteSegmentInformation,
+  fetchUomConversions,
   findCarrierPartyIdsForShipment,
   findCarrierShipmentBoxType,
   fetchConfiguredCarrierService,
