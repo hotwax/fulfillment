@@ -64,6 +64,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
 
       if (!hasError(orderResp)) {
         orderDetail = orderResp.data.order || {};
+        orderDetail.maySplit = !orderDetail.maySplit || orderDetail.maySplit === "Y" ? "Y" : orderDetail.maySplit;
 
         // Fetch additional shipment data
         shipmentResp = await TransferOrderService.fetchShippedTransferShipments({ orderId: payload.orderId, shipmentStatusId: "SHIPMENT_SHIPPED" });
