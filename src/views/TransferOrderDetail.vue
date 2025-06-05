@@ -19,7 +19,7 @@
           <ion-badge slot="end">{{ currentOrder.orderStatusDesc ? currentOrder.orderStatusDesc : getStatusDesc(currentOrder.statusId) }}</ion-badge>
         </ion-item>
 
-        <ion-segment scrollable v-model="selectedSegment">
+        <ion-segment scrollable v-model="selectedSegment" v-if="maySplit">
           <ion-segment-button value="open">
             <ion-label>{{ translate("Open") }}</ion-label>
           </ion-segment-button>
@@ -143,7 +143,7 @@
           </ion-button>
           <ion-button  color="primary" fill="solid" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment()" @click="confirmCreateShipment">
             <ion-spinner v-if="isCreatingShipment" slot="start" name="crescent" />
-            {{ translate('Create shipment') }}   
+            {{ maySplit ? translate('Create shipment') : translate('Ship order') }}
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -175,9 +175,10 @@ import {
   IonToolbar,
   alertController,
   modalController,
+  toastController
 } from '@ionic/vue';
 import { computed, defineComponent } from 'vue';
-import { barcodeOutline, pricetagOutline, printOutline, trashOutline } from 'ionicons/icons';
+import { barcodeOutline, pricetagOutline, printOutline, trashOutline, warningOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { useRouter } from 'vue-router';
@@ -230,6 +231,9 @@ export default defineComponent({
     await this.store.dispatch("transferorder/fetchRejectReasons");
     await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
     emitter.emit('dismissLoader');
+    if (!this.maySplit) {
+      this.presentToast();
+    }
   },
   computed: {
     ...mapGetters({
@@ -242,6 +246,9 @@ export default defineComponent({
     }),
     areItemsEligibleForRejection() {
       return this.currentOrder.items?.some((item: any) => item.rejectReasonId);
+    },
+    maySplit(){
+      return !this.currentOrder.maySplit || this.currentOrder.maySplit === 'Y';
     }
   },
   methods: {
@@ -290,11 +297,22 @@ export default defineComponent({
       return alert.present();
     },
     isEligibleForCreatingShipment() {
-      let isEligible = this.currentOrder && this.currentOrder.items?.some((item: any) => item.pickedQuantity > 0);
-      if (isEligible) {
-        isEligible = !this.currentOrder.items?.some((item: any) =>  item.pickedQuantity > 0 && (this.getShippedQuantity(item) + item.pickedQuantity) > item.orderedQuantity);
+      if (this.maySplit) {  // Partial shipment allowed: at least one item should be picked
+        let isEligible = this.currentOrder && this.currentOrder.items?.some((item: any) => item.pickedQuantity > 0);
+        if (isEligible) {
+          isEligible = !this.currentOrder.items?.some((item: any) =>  item.pickedQuantity > 0 && (this.getShippedQuantity(item) + item.pickedQuantity) > item.orderedQuantity);
+        }
+        return isEligible;
+      } else {  // No partial shipment: all items must be fully picked
+        return (
+          this.currentOrder &&
+          this.currentOrder.items?.length > 0 &&
+          this.currentOrder.items.every(
+            (item: any) =>
+              Number(item.pickedQuantity) === Number(item.orderedQuantity)
+          )
+        );
       }
-      return isEligible;
     },
     getShippedQuantity(item: any) {
       return this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] ? this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] : 0;
@@ -433,6 +451,25 @@ export default defineComponent({
         });
         return alert.present();
       },
+      async presentToast() {
+        const toast = await toastController.create({
+          message: 'This transfer order must be fulfilled in a single shipment.',
+          duration: 0,
+          position: 'top',
+          icon: warningOutline,
+          color: 'danger',
+          buttons: [
+            {
+              text: 'Dismiss',
+              role: 'cancel',
+              handler: () => {
+                console.log('Dismiss clicked');
+              },
+            },
+          ],
+        });
+        await toast.present();
+      }
 }, 
 ionViewDidLeave() {
   const routeTo = this.router.currentRoute;
@@ -458,7 +495,8 @@ setup() {
     store,
     router,
     translate,
-    trashOutline
+    trashOutline,
+    warningOutline
   };
 },
 });
