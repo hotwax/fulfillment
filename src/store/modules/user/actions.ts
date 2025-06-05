@@ -54,7 +54,7 @@ const actions: ActionTree<UserState, RootState> = {
         } else if(hasPermission) {
           // If having the permission to access the new app, redirect the user, otherwise use the legacy(current) app
           // Redirect the user to the same app instance like legacy-uat to uat
-          window.location.href = window.location.href.replace("-legacy", "")
+          window.location.href = window.location.href.replaceAll("-legacy", "")
         }
       }
 
