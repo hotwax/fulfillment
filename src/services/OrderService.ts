@@ -374,7 +374,7 @@ const findShipments = async (query: any): Promise <any>  => {
 
   try {
     const params = {
-      pageSize: query.viewSize,
+      pageSize: 1,
       orderBy: 'orderDate',
       shipmentTypeId: 'SALES_SHIPMENT', 
       productStoreId: getProductStoreId(),
@@ -413,8 +413,8 @@ const findShipments = async (query: any): Promise <any>  => {
       params.shippedDateFrom = query.shippedDateFrom
     }
 
-    if(query.selectedCarrierPartyIds && query.selectedCarrierPartyIds.length) {
-      params.carrierPartyId = query.selectedCarrierPartyIds
+    if(query.selectedCarrierPartyId) {
+      params.carrierPartyId = query.selectedCarrierPartyId
     }
 
     // only adding shipmentMethods when a method is selected
@@ -436,8 +436,12 @@ const findShipments = async (query: any): Promise <any>  => {
       total = resp.data.shipmentCount
       orders = resp.data.shipments.map((shipment: any) => {
         const category = shipment.statusId === 'SHIPMENT_APPROVED' ? 'in-progress' : (shipment.statusId === 'SHIPMENT_PACKED' || shipment.statusId === 'SHIPMENT_SHIPPED') ? 'completed' : ""
-        shipment.shipmentPackageRouteSegDetails = shipment?.shipmentPackageRouteSegDetails?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.carrierServiceStatusId !== "SHRSCS_VOIDED")
-        const missingLabelImage = productStoreShipmentMethCount > 0 ? shipment.shipmentPackageRouteSegDetails?.some((shipmentPackageRouteSeg: any) => !shipmentPackageRouteSeg.trackingCode) : false;
+        const shipmentPackageRouteSegDetails = shipment?.shipmentPackageRouteSegDetails?.filter((seg: any) => seg.carrierServiceStatusId !== "SHRSCS_VOIDED") || [];
+        
+        let missingLabelImage = false;
+        if (productStoreShipmentMethCount > 0) {
+          missingLabelImage = shipmentPackageRouteSegDetails.length === 0 || shipmentPackageRouteSegDetails.some((seg: any) => !seg.trackingCode);
+        }
         const customerName = (shipment.firstName && shipment.lastName) ? shipment.firstName + " " + shipment.lastName : shipment.firstName ? shipment.firstName : "";
 
         return {
@@ -622,15 +626,22 @@ const retryShippingLabel = async (shipmentId: string): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
-    url: `/poorti/shipments/${shipmentId}/shippingLabels`,
-    method: "get",
-    baseURL,
-    headers: {
-      "api_key": omsRedirectionInfo.token,
-      "Content-Type": "application/json"
-    },
-  });
+  try {
+    const resp = client({
+      url: `/poorti/shipments/${shipmentId}/shippingLabels`,
+      method: "get",
+      baseURL,
+      headers: {
+        "api_key": omsRedirectionInfo.token,
+        "Content-Type": "application/json"
+      },
+    }) as any;
+    if (hasError(resp)) {
+      throw resp?.data;
+    }
+  } catch(error) {
+    logger.error(error)
+  }
 }
 
 const fetchShipmentLabelError = async (shipmentId: string): Promise<any> => {

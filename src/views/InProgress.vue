@@ -694,7 +694,6 @@ export default defineComponent({
                 const resp = await OrderService.packOrders({
                   shipments
                 });
-                console.log("====bulk pack=resp="+resp+"===")
                 if (hasError(resp)) {
                   throw resp.data
                 }

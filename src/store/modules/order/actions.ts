@@ -363,7 +363,10 @@ const actions: ActionTree<OrderState, RootState> = {
       const resp = await OrderService.fetchShipmentPackageRouteSegDetails(params) as any
       if (!hasError(resp)) {
         const shipmentPackageRouteSegDetails = resp.data
-        const missingLabelImage = this.state.util.productStoreShipmentMethCount > 0 ? shipmentPackageRouteSegDetails.some((shipmentPackageRouteSeg:any) => shipmentPackageRouteSeg.trackingCode === undefined || shipmentPackageRouteSeg.trackingCode === null || shipmentPackageRouteSeg.trackingCode === '') : false;
+        let missingLabelImage = false;
+        if (this.state.util.productStoreShipmentMethCount > 0) {
+          missingLabelImage = shipmentPackageRouteSegDetails.length === 0 || shipmentPackageRouteSegDetails.some((seg: any) => !seg.trackingCode);
+        }
 
         const updateShipmentPackages = (order:any) => {
           order.shipmentPackageRouteSegDetails = shipmentPackageRouteSegDetails

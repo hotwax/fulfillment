@@ -65,6 +65,11 @@
               <ion-card-title>{{ translate("Plan") }}</ion-card-title>
             </ion-card-header>
             <ion-item>
+              <ion-select :label="translate('Lifecycle')" placeholder="Select" v-model="currentOrder.statusFlowId">
+                <ion-select-option v-for="flow in statusFlows" :key="flow.statusFlowId" :value="flow.statusFlowId">{{ translate(flow.description) }}</ion-select-option>
+              </ion-select>
+            </ion-item>
+            <ion-item>
               <ion-label>{{ translate("Ship Date") }}</ion-label>
               <ion-button slot="end" class="date-time-button" @click="openDateTimeModal('shipDate')">{{ currentOrder.shipDate ? formatDateTime(currentOrder.shipDate) : translate("Select date") }}</ion-button>
             </ion-item>
@@ -241,8 +246,19 @@ const currentOrder = ref({
   destinationFacilityId: "",
   carrierPartyId: "",
   shipmentMethodTypeId: "", 
-  items: []
+  items: [],
+  statusFlowId: "",
 }) as any;
+const statusFlows = [
+  {
+    statusFlowId: "TO_Fulfill_And_Receive",
+    description: "Fulfill & Receive"
+  },
+  {
+    statusFlowId: "TO_Fulfill_Only",
+    description: "Fulfill only"
+  }
+]
 
 let content = ref([]) as any 
 let fileColumns = ref([]) as any 
@@ -362,8 +378,8 @@ async function findProductFromIdentifier(payload: any) {
             sku: product.sku,
             quantity: quantityField ? (Number(uploadedItemsByIdValue[idValue][quantityField]) || 0) : 0,
             isChecked: false,
-            qoh: stock.quantityOnHandTotal || 0,
-            atp: stock.availableToPromiseTotal || 0
+            qoh: stock.qoh || 0,
+            atp: stock.atp || 0
           })
         }
       })
@@ -400,8 +416,8 @@ async function addProductToOrder(scannedId?: any, product?: any) {
   } as any;
 
   const stock = await fetchStock(newProduct.productId);
-  if(stock?.quantityOnHandTotal || stock?.quantityOnHandTotal === 0) {
-    newProduct = { ...newProduct, qoh: stock.quantityOnHandTotal, atp: stock.availableToPromiseTotal }
+  if(stock?.qoh || stock?.qoh === 0) {
+    newProduct = { ...newProduct, qoh: stock.qoh, atp: stock.atp }
   }
   
   if(product) {
@@ -600,6 +616,11 @@ async function createOrder() {
     return;
   }
 
+  if(!currentOrder.value.statusFlowId) {
+    showToast(translate("Please select transfer order lifecycle."));
+    return;
+  }
+
   const productIds = currentOrder.value.items?.map((item: any) => item.productId);
   const productAverageCostDetail = await ProductService.fetchProductsAverageCost(productIds, currentOrder.value.originFacilityId)
 
@@ -609,7 +630,7 @@ async function createOrder() {
     customerId: "COMPANY",
     statusId: "ORDER_CREATED",
     productStoreId: currentOrder.value.productStoreId,
-    statusFlowId: "TO_Fulfill_And_Receive",
+    statusFlowId: currentOrder.value.statusFlowId,
     orderDate: DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000"),
     entryDate: DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000"),
     originFacilityId: currentOrder.value.originFacilityId,
@@ -890,3 +911,6 @@ function openDateTimeModal(type: any) {
   }
 }
 </style>
+
+
+
