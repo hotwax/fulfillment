@@ -33,7 +33,7 @@
         <ion-progress-bar :color="getProgressBarColor(item)" :value="getPickedToOrderedFraction(item)" />
       </div>
 
-      <div class="to-item-history" v-if="isRejectionSupported && !isAnyItemShipped">
+      <div class="to-item-history" v-if="isRejectionSupported && !isAnyItemShipped && !maySplit">
         <ion-chip outline color="danger" v-if="item.rejectReasonId" @click="openRejectReasonPopover($event, item)">
           <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason(item)"/>
           <ion-label>{{ getRejectionReasonDescription(item.rejectReasonId) }}</ion-label>
@@ -126,6 +126,9 @@ export default defineComponent({
     },
     isAnyItemShipped() {
       return this.currentOrder.items.some((item: any) => item.shippedQuantity > 0)
+    },
+    maySplit(){
+      return !this.currentOrder.maySplit || this.currentOrder.maySplit === 'Y';
     }
   },
   methods: {
