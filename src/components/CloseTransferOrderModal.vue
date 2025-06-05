@@ -26,6 +26,9 @@
           <h2>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}</h2>
           <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
           <p>{{ getFeatures(getProduct(item.productId).productFeatures) }}</p>
+          <p>
+            <ion-text> {{ translate('Fulfilled qty') }}: {{ Number(item.totalIssuedQuantity) }} </ion-text> | <ion-text color="danger"> {{ translate('Cancel qty') }}: {{ Number(item.orderedQuantity) - Number(item.totalIssuedQuantity) }} </ion-text>
+          </p>
         </ion-label>
         <ion-buttons>
           <ion-checkbox aria-label="itemStatus" slot="end" :modelValue="isTOItemStatusPending(item) ? item.isChecked : true" :disabled="isTOItemStatusPending(item) ? false : true" />
