@@ -374,7 +374,7 @@ const findShipments = async (query: any): Promise <any>  => {
 
   try {
     const params = {
-      pageSize: 1,
+      pageSize: query.viewSize,
       orderBy: 'orderDate',
       shipmentTypeId: 'SALES_SHIPMENT', 
       productStoreId: getProductStoreId(),
