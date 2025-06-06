@@ -14,11 +14,9 @@
   </ion-header>
 
   <ion-content>
-    <ion-item lines="none">
-      <ion-list-header>{{ translate("To close this transfer order, select all items.") }}</ion-list-header>
-    </ion-item>
     <ion-list>
-      <ion-item :button="isTOItemStatusPending(item)" v-for="(item, index) in getTOItems()" :key="index" @click="item.isChecked = !item.isChecked">
+      <ion-list-header>{{ translate("To close this transfer order, select all items.") }}</ion-list-header>
+      <ion-item button v-for="(item, index) in order.items.filter((item: any) => item.statusId === 'ITEM_PENDING_FULFILL')" :key="index" @click="item.isChecked = !item.isChecked">
         <ion-thumbnail slot="start">
           <DxpShopifyImg size="small" :src="getProduct(item.productId).mainImageUrl" />
         </ion-thumbnail>
@@ -30,9 +28,7 @@
             <ion-text> {{ translate('Fulfilled qty') }}: {{ Number(item.totalIssuedQuantity) }} </ion-text> | <ion-text color="danger"> {{ translate('Cancel qty') }}: {{ Number(item.orderedQuantity) - Number(item.totalIssuedQuantity) }} </ion-text>
           </p>
         </ion-label>
-        <ion-buttons>
-          <ion-checkbox aria-label="itemStatus" slot="end" :modelValue="isTOItemStatusPending(item) ? item.isChecked : true" :disabled="isTOItemStatusPending(item) ? false : true" />
-        </ion-buttons>
+        <ion-checkbox aria-label="itemStatus" slot="end" :modelValue="item.isChecked" />
       </ion-item>
     </ion-list>
   </ion-content>
@@ -99,7 +95,6 @@ export default defineComponent({
       order: 'transferorder/getCurrent'
     })
   },
-  props: ['isEligibileForCreatingShipment'],
   methods: {
     closeModal() {
       modalController.dismiss({ dismissed: true });
@@ -126,16 +121,12 @@ export default defineComponent({
       });
       return alert.present();
     },
-    getCurrentFacilityId() {
-      const currentFacility: any = useUserStore().getCurrentFacility;
-      return currentFacility?.facilityId
-    },
     async updateTOItemStatus() {
       // Get only checked and pending items
-      const eligibleItems = this.order.items.filter((item: any) => item.isChecked && this.isTOItemStatusPending(item));
+      const eligibleItems = this.order.items.filter((item: any) => item.isChecked);
       if (!eligibleItems.length) return false;
 
-      // Prepare payload for API, always sending quantityAccepted (default 0)
+      // Prepare payload for API, always sending quantityAccepted (default 0)&& this.isTOItemStatusPending(item)
       const payload = {
         orderId: this.order.orderId,
         items: eligibleItems.map((item: any) => ({
@@ -145,26 +136,19 @@ export default defineComponent({
       try {
         await TransferOrderService.closeOrderItems(payload);
         return true;
-        return true;
       } catch (error) {
         showToast(translate("Failed to update the status of transfer order items."));
         return false;
       }
     },
     isEligibleToCloseTOItems() {
-      return this.order.items.some((item: any) => item.isChecked && this.isTOItemStatusPending(item))
-    },
-    isTOItemStatusPending(item: any) {
-      return item.statusId !== "ITEM_PENDING_RECEIPT"
+      return this.order.items.some((item: any) => item.isChecked)
     },
     selectAllItems() {
       this.order.items.map((item:any) => {
           item.isChecked = true;
     })
-    },
-    getTOItems() {
-      return this.order.items.filter((item: any) => item.orderItemSeqId)
-    },
+    }
   },
   setup() {
     const router = useRouter()
