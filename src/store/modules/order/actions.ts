@@ -39,6 +39,7 @@ const actions: ActionTree<OrderState, RootState> = {
 
     inProgressQuery.statusId = "SHIPMENT_APPROVED"
     inProgressQuery.orderStatusId = "ORDER_APPROVED"
+    console.log("==2===inProgressQuery==", JSON.stringify(inProgressQuery))
     const resp = await OrderService.findShipments(inProgressQuery);
     orders = (resp.orders || []).map((order: any) => ({
       ...order,

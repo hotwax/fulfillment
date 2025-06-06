@@ -486,8 +486,8 @@ export default defineComponent({
 
       if (order.hasAllRejectedItem) {
         await this.rejectEntireOrder(order, updateParameter)
-      } else if (order.missingLabelImage && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)) {
-        await this.generateTrackingCodeForPacking(order, updateParameter, forceScan)
+      /*} else if (order.missingLabelImage && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)) {
+        await this.generateTrackingCodeForPacking(order, updateParameter, forceScan)*/
       } else if (forceScan) {
         await this.scanOrder(order, updateParameter)
       } else {
@@ -520,7 +520,7 @@ export default defineComponent({
         emitter.emit("dismissLoader");
       }
     },
-    async confirmPackOrder(order: any, updateParameter?: string) {
+    async confirmPackOrder(order: any, updateParameter?: string, trackingCode?: string) {
       const confirmPackOrder = await alertController
         .create({
           header: translate("Pack order"),
@@ -556,7 +556,8 @@ export default defineComponent({
                   orderId: order.orderId,
                   facilityId: order.originFacilityId,
                   rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
-                  shipmentPackageContents: updatedOrderDetail.shipmentPackageContents
+                  shipmentPackageContents: updatedOrderDetail.shipmentPackageContents,
+                  trackingCode
                 }
                 const resp = await OrderService.packOrder(params);
                 if (hasError(resp)) {
@@ -613,6 +614,10 @@ export default defineComponent({
                 if (toast) toast.dismiss()
                 showToast(translate('Failed to pack order'))
                 logger.error('Failed to pack order', err)
+                
+                //TODO: Need to figure out error specific to shipping label generation to open the Generate Tracking Code modal
+                //Due to error in packing process, openining Generate Tracking Code modal to edit shipping detail or to enter tracking code manually
+                await this.generateTrackingCodeForPacking(order, updateParameter)
               } finally {
                 emitter.emit("dismissLoader");
               }
@@ -1226,7 +1231,7 @@ export default defineComponent({
           const inProgressOrders = this.getInProgressOrders()
           const updatedOrder = inProgressOrders.find((currentOrder: any) => currentOrder.shipmentId === order.shipmentId);
           if(forceScan) this.scanOrder(updatedOrder, updateParameter);
-          else this.confirmPackOrder(updatedOrder, updateParameter);
+          else this.confirmPackOrder(updatedOrder, updateParameter, result.data?.trackingCode);
         }
       })
 

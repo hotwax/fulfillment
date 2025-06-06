@@ -284,6 +284,22 @@ const rejectOrderItems = async (payload: any): Promise<any> => {
   });
 };
 
+const closeOrderItems = async (payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `poorti/transferOrders/${payload.orderId}/closeFulfillment`,
+    method: "post",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+};
+
 const createTransferOrder = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -330,6 +346,7 @@ export const TransferOrderService = {
   retryShippingLabel,
   shipTransferOrderShipment,
   rejectOrderItems,
+  closeOrderItems,
   createTransferOrder,
   approveTransferOrder
 };
