@@ -15,7 +15,7 @@
       </div>
       <div class="product-count">
         <ion-item v-if="!item.shipmentId" lines="none">
-          <ion-input :label="translate('Qty')" label-placement="floating" ref="pickedQuantity" type="number" min="0" v-model="item.pickedQuantity" @ionInput="updatePickedQuantity($event, item); validatePickedQuantity($event, item); markPickedQuantityTouched()" :errorText="getErrorText(item)" :disabled="isForceScanEnabled" />
+          <ion-input :label="translate('Qty')" label-placement="floating" ref="pickedQuantity" type="number" min="0" v-model="item.pickedQuantity" @ionInput="updatePickedQuantity($event, item); validatePickedQuantity($event, item); markPickedQuantityTouched()" :errorText="getErrorText(item)" :disabled="isForceScanEnabled || !maySplit" />
         </ion-item>
         <ion-item v-else lines="none">
           <ion-label slot="end">{{ item.pickedQuantity }} {{ translate('packed') }}</ion-label>
@@ -33,7 +33,7 @@
         <ion-progress-bar :color="getProgressBarColor(item)" :value="getPickedToOrderedFraction(item)" />
       </div>
 
-      <div class="to-item-history" v-if="isRejectionSupported && !isAnyItemShipped">
+      <div class="to-item-history" v-if="isRejectionSupported && !isAnyItemShipped && !maySplit">
         <ion-chip outline color="danger" v-if="item.rejectReasonId" @click="openRejectReasonPopover($event, item)">
           <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason(item)"/>
           <ion-label>{{ getRejectionReasonDescription(item.rejectReasonId) }}</ion-label>
@@ -43,10 +43,25 @@
           <ion-label>{{ getRejectionReasonDescription(defaultRejectReasonId) }}</ion-label>
           <ion-icon :icon="caretDownOutline"/>
         </ion-chip>
-        <ion-chip outline v-else @click="openRejectReasonPopover($event, item)">
-          <ion-label>{{ translate("Report an issue") }}</ion-label>
-          <ion-icon :icon="caretDownOutline"/>
-        </ion-chip>
+        <div v-else>
+          <template v-if="!maySplit">
+            <ion-button color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item)">
+              <ion-icon slot="icon-only" :icon="trashBinOutline" />
+            </ion-button>
+            <ion-label v-if="getProductStock(item.productId).qoh">
+              {{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}
+            </ion-label>
+            <ion-button v-else color="medium" fill="clear" size="small" @click.stop="fetchProductStock(item.productId)">
+              <ion-icon slot="icon-only" :icon="cubeOutline" />
+            </ion-button>
+          </template>
+          <template v-else>
+            <ion-chip outline @click="openRejectReasonPopover($event, item)">
+              <ion-label>{{ translate("Report an issue") }}</ion-label>
+              <ion-icon :icon="caretDownOutline"/>
+            </ion-chip>
+          </template>
+        </div>
       </div>
 
       <div class="to-item-history" v-else>
@@ -79,7 +94,7 @@ import {
   popoverController,
 } from '@ionic/vue';
 import { computed, defineComponent } from 'vue';
-import { add, caretDownOutline, checkmarkDone, closeCircleOutline, barcodeOutline } from 'ionicons/icons';
+import { add, caretDownOutline, checkmarkDone, closeCircleOutline, barcodeOutline, cubeOutline, trashBinOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 
@@ -119,13 +134,17 @@ export default defineComponent({
       currentOrder: 'transferorder/getCurrent',
       getProduct: 'product/getProduct',
       isForceScanEnabled: 'util/isForceScanEnabled',
-      rejectReasons: "transferorder/getRejectReasons"
+      rejectReasons: "transferorder/getRejectReasons",
+      getProductStock: 'stock/getProductStock',
     }),
     isAnyItemSelectedForRejection() {
       return this.currentOrder.items.some((item: any) => item.rejectReasonId)
     },
     isAnyItemShipped() {
       return this.currentOrder.items.some((item: any) => item.shippedQuantity > 0)
+    },
+    maySplit(){
+      return !this.currentOrder.maySplit || this.currentOrder.maySplit === 'Y';
     }
   },
   methods: {
@@ -211,6 +230,9 @@ export default defineComponent({
       const reason = this.rejectReasons?.find((reason: any) => reason.enumId === rejectionReasonId)
       return reason?.description ? reason.description : reason?.enumDescription ? reason.enumDescription : reason?.enumId;
     },
+    fetchProductStock(productId: string) {
+      this.store.dispatch('stock/fetchStock', { productId })
+    },
   }, 
   setup() {
     const store = useStore(); 
@@ -231,7 +253,9 @@ export default defineComponent({
       productIdentificationPref,
       store,
       router,
-      translate
+      translate,
+      cubeOutline,
+      trashBinOutline
     };
   },
 });

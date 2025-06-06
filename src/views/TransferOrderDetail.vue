@@ -12,14 +12,26 @@
         <ion-item lines="none">
           <ion-label>
             <p class="overline">{{ currentOrder.orderId }}</p>
-            {{ currentOrder.orderName }}
+            <h1>{{ currentOrder.orderName }}</h1>
             <p>{{ currentOrder.externalId }}</p>
-            <p>{{ translate('Item count') }}: {{ getItemCount()}}</p>
+            <sub>{{ translate('Item count') }}: {{ getItemCount()}}</sub>
           </ion-label>
           <ion-badge slot="end">{{ currentOrder.orderStatusDesc ? currentOrder.orderStatusDesc : getStatusDesc(currentOrder.statusId) }}</ion-badge>
         </ion-item>
 
-        <div class="scanner">
+        <ion-segment scrollable v-model="selectedSegment" v-if="maySplit">
+          <ion-segment-button value="open">
+            <ion-label>{{ translate("Open") }}</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="partial">
+            <ion-label>{{ translate("Partially Fulfilled") }}</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="completed">
+            <ion-label>{{ translate("Completed") }}</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+
+        <div class="scanner" v-if="selectedSegment !== 'completed'">
           <ion-item>
             <ion-input :label="translate('Scan items')" autofocus :placeholder="translate('Scan barcodes to pick them')" v-model="queryString" @keyup.enter="updateProductCount()" />
          </ion-item>
@@ -29,14 +41,6 @@
           </ion-button>
         </div>
 
-        <ion-segment scrollable v-model="selectedSegment">
-          <ion-segment-button value="open">
-            <ion-label>{{ translate("Open") }}</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="completed">
-            <ion-label>{{ translate("Completed") }}</ion-label>
-          </ion-segment-button>
-        </ion-segment>
         <div class="segments" v-if="currentOrder">
           <template v-if="selectedSegment === 'open'">
             <template v-if="getTOItems('open')?.length > 0">
@@ -48,6 +52,18 @@
               </div>
             </template>
           </template>
+
+          <template v-else-if="selectedSegment === 'partial'">
+            <template v-if="getTOItems('partial')?.length > 0">
+              <TransferOrderItem v-for="item in getTOItems('partial')" :key="item.orderItemSeqId" :itemDetail="item" :class="item.internalName === lastScannedId ? 'scanned-item' : '' " :id="item.internalName" isRejectionSupported="true"/>
+            </template>
+            <template v-else>
+              <div class="empty-state">
+                <p>{{ translate('No data available') }}</p>
+              </div>
+            </template>
+          </template>
+
           <template v-else>
             <template v-if="currentOrder?.shipments?.length > 0">
               <ion-card class="order" v-for="(shipment, index) in currentOrder.shipments" :key="index">
@@ -114,10 +130,10 @@
         <p>{{ translate('No data available') }}</p>
       </div>
     </ion-content>
-    <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment === 'open'">
+    <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment !== 'completed' ">
       <ion-toolbar>
         <ion-buttons slot="end">
-            <ion-button color="dark" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="closeTOItems()">
+            <ion-button v-if="maySplit" color="dark" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="closeTOItems()">
               {{ translate("Close Items") }}
             </ion-button>
             <ion-button v-show="areItemsEligibleForRejection" color="danger" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="rejectItems()">
@@ -130,7 +146,7 @@
           </ion-button>
           <ion-button  color="primary" fill="solid" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment()" @click="confirmCreateShipment">
             <ion-spinner v-if="isCreatingShipment" slot="start" name="crescent" />
-            {{ translate('Create shipment') }}   
+            {{ maySplit ? translate('Create shipment') : translate('Ship order') }}
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -162,9 +178,10 @@ import {
   IonToolbar,
   alertController,
   modalController,
+  toastController
 } from '@ionic/vue';
 import { computed, defineComponent } from 'vue';
-import { barcodeOutline, pricetagOutline, printOutline, trashOutline } from 'ionicons/icons';
+import { barcodeOutline, pricetagOutline, printOutline, trashOutline, warningOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { useRouter } from 'vue-router';
@@ -218,6 +235,9 @@ export default defineComponent({
     await this.store.dispatch("transferorder/fetchRejectReasons");
     await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
     emitter.emit('dismissLoader');
+    if (!this.maySplit) {
+      this.presentToast();
+    }
   },
   computed: {
     ...mapGetters({
@@ -230,6 +250,9 @@ export default defineComponent({
     }),
     areItemsEligibleForRejection() {
       return this.currentOrder.items?.some((item: any) => item.rejectReasonId);
+    },
+    maySplit(){
+      return !this.currentOrder.maySplit || this.currentOrder.maySplit === 'Y';
     }
   },
   methods: {
@@ -243,10 +266,10 @@ export default defineComponent({
       return DateTime.fromMillis(time).toFormat("dd MMMM yyyy t a")
     },
     getTOItems(orderType: string) {
-      if (orderType === 'completed') {
-        return this.currentOrder?.items?.filter((item: any) => item.statusId === 'ITEM_COMPLETED')
-      } else {
+      if (orderType === 'open') {
         return this.currentOrder?.items?.filter((item: any) => item.statusId === 'ITEM_PENDING_FULFILL')
+      } else if (orderType === 'partial') {
+        return this.currentOrder?.items?.filter((item: any) => item.totalIssuedQuantity > 0 && item.statusId === 'ITEM_PENDING_FULFILL') 
       }
     },
     async createShipment() {
@@ -278,11 +301,22 @@ export default defineComponent({
       return alert.present();
     },
     isEligibleForCreatingShipment() {
-      let isEligible = this.currentOrder && this.currentOrder.items?.some((item: any) => item.pickedQuantity > 0);
-      if (isEligible) {
-        isEligible = !this.currentOrder.items?.some((item: any) =>  item.pickedQuantity > 0 && (this.getShippedQuantity(item) + item.pickedQuantity) > item.orderedQuantity);
+      if (this.maySplit) {  // Partial shipment allowed: at least one item should be picked
+        let isEligible = this.currentOrder && this.currentOrder.items?.some((item: any) => item.pickedQuantity > 0);
+        if (isEligible) {
+          isEligible = !this.currentOrder.items?.some((item: any) =>  item.pickedQuantity > 0 && (this.getShippedQuantity(item) + item.pickedQuantity) > item.orderedQuantity);
+        }
+        return isEligible;
+      } else {  // No partial shipment: all items must be fully picked
+        return (
+          this.currentOrder &&
+          this.currentOrder.items?.length > 0 &&
+          this.currentOrder.items.every(
+            (item: any) =>
+              Number(item.pickedQuantity) === Number(item.orderedQuantity)
+          )
+        );
       }
-      return isEligible;
     },
     getShippedQuantity(item: any) {
       return this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] ? this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] : 0;
@@ -421,6 +455,21 @@ export default defineComponent({
         });
         return alert.present();
       },
+      async presentToast() {
+        showToast(translate("This transfer order must be fulfilled in a single shipment."),  // overriding show toast to show custom styled message and cancel button.
+        {
+          duration: 0,
+          position: 'top',
+          icon: warningOutline,
+          color: 'danger',
+          buttons: [
+            {
+              text: 'Dismiss',
+              role: 'cancel',
+            },
+          ],
+        });
+      },
       async closeTOItems() {
         const modal = await modalController.create({
           component: CloseTransferOrderModal
@@ -453,7 +502,8 @@ setup() {
     store,
     router,
     translate,
-    trashOutline
+    trashOutline,
+    warningOutline
   };
 },
 });
@@ -471,5 +521,8 @@ ion-content > main {
     Done this because currently ion-item inside ion-card is not inheriting highlighted background property.
   */
   outline: 2px solid var( --ion-color-medium-tint);
+}
+.scanner{
+  margin-top: var(--spacer-lg);
 }
 </style>
