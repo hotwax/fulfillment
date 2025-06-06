@@ -6,7 +6,7 @@ import { hasError } from '@/adapter'
 import * as types from './mutation-types'
 import logger from '@/logger'
 import store from "@/store";
-import { translate } from '@hotwax/dxp-components'
+import { getProductIdentificationValue, translate } from '@hotwax/dxp-components'
 import { showToast } from "@/utils";
 import { getCurrentFacilityId } from '@/utils'
 
@@ -254,7 +254,30 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     }
 
     commit(types.ORDER_REJECT_REASONS_UPDATED, rejectReasons)
-  }
+  },
+  async updateOrderProductCount({ commit, state }, payload ) {
+    // When there exists multiple line item for a single product, then may arise discrepancy in scanning
+    // since some items might be completed and some pending. Hence searching is done with status check.
+    const getProduct = store.getters['product/getProduct'];
+    const barcodeIdentifier = store.getters['util/getBarcodeIdentificationPref'];
+
+    const item = state.current.items.find((orderItem: any) => {
+      const itemVal = getProductIdentificationValue(barcodeIdentifier, getProduct(orderItem.productId)) ? getProductIdentificationValue(barcodeIdentifier, getProduct(orderItem.productId)) : getProduct(orderItem.productId)?.internalName;
+      return itemVal === payload && orderItem.statusId !== 'ITEM_COMPLETED' && orderItem.statusId !== 'ITEM_REJECTED' && orderItem.statusId !== 'ITEM_CANCELLED';
+    })
+    if(item){
+      item.pickedQuantity = parseInt(item.pickedQuantity) + 1;
+      commit(types.ORDER_CURRENT_UPDATED, state.current )
+      return { isProductFound: true, orderItem: item }
+    }
+
+    const completedItem = state.current.items.some((item: any) => item.internalName === payload && item.statusId === 'ITEM_COMPLETED');
+    if(completedItem) {
+      return { isCompleted: true }
+    }
+
+    return { isProductFound: false }
+  },
 }
 
 export default actions;
