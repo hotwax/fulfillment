@@ -117,7 +117,7 @@
     <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment === 'open'">
       <ion-toolbar>
         <ion-buttons slot="end">
-            <ion-button color="dark" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="receiveAndCloseTO()">
+            <ion-button color="dark" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="closeTOItems()">
               {{ translate("Close Items") }}
             </ion-button>
             <ion-button v-show="areItemsEligibleForRejection" color="danger" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="rejectItems()">
@@ -421,12 +421,9 @@ export default defineComponent({
         });
         return alert.present();
       },
-      async receiveAndCloseTO() {
+      async closeTOItems() {
         const modal = await modalController.create({
-          component: CloseTransferOrderModal,
-          componentProps: {
-            isEligibileForCreatingShipment: this.isEligibleForCreatingShipment(),
-          }
+          component: CloseTransferOrderModal
         })
 
         return modal.present();
