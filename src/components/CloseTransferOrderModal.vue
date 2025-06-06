@@ -111,7 +111,7 @@ export default defineComponent({
           text: translate('Proceed'),
           role: 'proceed',
           handler: async () => {
-            const success = await this.updateTOItemStatus();
+            const success = await this.closeOrderItems();
             if (success) {
               modalController.dismiss();
               this.router.push('/transfer-orders');
@@ -121,7 +121,7 @@ export default defineComponent({
       });
       return alert.present();
     },
-    async updateTOItemStatus() {
+    async closeOrderItems() {
       // Get only checked and pending items
       const eligibleItems = this.order.items.filter((item: any) => item.isChecked);
       if (!eligibleItems.length) return false;
