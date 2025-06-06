@@ -588,6 +588,7 @@
   "This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.": "Este es el nombre del OMS al que está conectado en este momento. Asegúrese de estar conectado a la instancia correcta antes de continuar.",
   "This shipping label will include order level charges because it is the first label.": "This shipping label will include order level charges because it is the first label.",
   "This shipping label will not include order level charges.": "This shipping label will not include order level charges.",
+  "This transfer order must be fulfilled in a single shipment.": "This transfer order must be fulfilled in a single shipment.",
   "Timeline": "Línea de tiempo",
   "Timezone": "Zona horaria",
   "Time zone updated successfully": "Zona horaria actualizada exitosamente",

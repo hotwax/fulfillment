@@ -595,6 +595,7 @@
   "This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.": "This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.",
   "This shipping label will include order level charges because it is the first label.": "This shipping label will include order level charges because it is the first label.",
   "This shipping label will not include order level charges.": "This shipping label will not include order level charges.",
+  "This transfer order must be fulfilled in a single shipment.": "This transfer order must be fulfilled in a single shipment.",
   "Timeline": "Timeline",
   "Timezone": "Timezone",
   "Time zone updated successfully": "Time zone updated successfully",
