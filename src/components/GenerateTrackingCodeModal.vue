@@ -47,15 +47,10 @@
         </ion-button>
       </ion-item>
     </ion-list>
-
-    <div class="empty-state" v-if="isGeneratingShippingLabel">
-      <ion-spinner name="crescent" />
-      <ion-label>{{ translate("Generating label") }}</ion-label>
-    </div>
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="isGeneratingShippingLabel ? true : !shipmentMethodTypeId" @click="confirmSave()">
+    <ion-fab-button :disabled="!shipmentMethodTypeId" @click="confirmSave()">
       <ion-icon :icon="isForceScanEnabled ? barcodeOutline : saveOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -76,7 +71,6 @@ import {
   IonList,
   IonSelect,
   IonSelectOption,
-  IonSpinner,
   IonTitle,
   IonToolbar,
   modalController,
@@ -108,7 +102,6 @@ export default defineComponent({
     IonList,
     IonSelect,
     IonSelectOption,
-    IonSpinner,
     IonTitle,
     IonToolbar,
   },
@@ -126,8 +119,7 @@ export default defineComponent({
       carrierMethods:[] as any,
       carrierPartyId: "",
       shipmentMethodTypeId: "",
-      trackingCode: "",
-      isGeneratingShippingLabel: false
+      trackingCode: ""
     }
   },
   props: ["order", "updateCarrierShipmentDetails", "shipmentLabelErrorMessages", "fetchShipmentLabelError"],
@@ -158,9 +150,6 @@ export default defineComponent({
     },
     async confirmSave() {
       let order = this.order
-      let isRegenerated = false as any;
-
-      this.isGeneratingShippingLabel = true;
 
       if (hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE && (order.carrierPartyId !== this.carrierPartyId || order.shipmentMethodTypeId !== this.shipmentMethodTypeId))) {
         const isUpdated = await this.updateCarrierAndShippingMethod(this.carrierPartyId, this.shipmentMethodTypeId)
@@ -169,20 +158,7 @@ export default defineComponent({
           return;
         }
       }
-
-      if (this.trackingCode.trim()) {
-        isRegenerated = await this.addTrackingCode(order);
-        //fetching updated shipment packages
-        await this.store.dispatch('order/updateShipmentPackageDetail', order)
-      } else if(this.shipmentMethodTypeId) {
-        isRegenerated = await this.regenerateShippingLabel(order)
-      }
-
-      if(isRegenerated || !this.isTrackingRequired) {
-        this.closeModal({ moveToNext: true });
-      }
-
-      this.isGeneratingShippingLabel = false;
+      this.closeModal({ moveToNext: true, trackingCode: this.trackingCode.trim() });
     },
     async addTrackingCode(order: any) {
       try {
