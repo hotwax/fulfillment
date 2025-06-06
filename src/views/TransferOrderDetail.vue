@@ -452,8 +452,8 @@ export default defineComponent({
         return alert.present();
       },
       async presentToast() {
-        const toast = await toastController.create({
-          message: 'This transfer order must be fulfilled in a single shipment.',
+        showToast(translate("This transfer order must be fulfilled in a single shipment."),  // overriding show toast to show custom styled message and cancel button.
+        {
           duration: 0,
           position: 'top',
           icon: warningOutline,
@@ -462,13 +462,9 @@ export default defineComponent({
             {
               text: 'Dismiss',
               role: 'cancel',
-              handler: () => {
-                console.log('Dismiss clicked');
-              },
             },
           ],
         });
-        await toast.present();
       }
 }, 
 ionViewDidLeave() {
