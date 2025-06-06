@@ -133,7 +133,7 @@
     <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment !== 'completed' ">
       <ion-toolbar>
         <ion-buttons slot="end">
-            <ion-button color="dark" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="closeTOItems()">
+            <ion-button v-if="maySplit" color="dark" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="closeTOItems()">
               {{ translate("Close Items") }}
             </ion-button>
             <ion-button v-show="areItemsEligibleForRejection" color="danger" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="rejectItems()">
