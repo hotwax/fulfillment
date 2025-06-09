@@ -79,7 +79,7 @@ const actions: ActionTree<UtilState, RootState> = {
         })
 
         // If the restricted group has rejection reasons and the facility is not of type warehouse then display restricted rejection reasons otherwise display the reasons from the default rejection reason group
-        fulfillmentRejectReasons = (useUserStore().getCurrentFacility as any).facilityTypeId !== "WAREHOUSE" && Object.keys(rejectionsReasons["FF_REJ_RSN_RES_GRP"]).length ? rejectionsReasons["FF_REJ_RSN_RES_GRP"] : rejectionsReasons["FF_REJ_RSN_GRP"]
+        fulfillmentRejectReasons = (useUserStore().getCurrentFacility as any).facilityTypeId === "WAREHOUSE" && Object.keys(rejectionsReasons["FF_REJ_RSN_RES_GRP"]).length ? rejectionsReasons["FF_REJ_RSN_RES_GRP"] : rejectionsReasons["FF_REJ_RSN_GRP"]
       } else {
         throw resp.data
       }
