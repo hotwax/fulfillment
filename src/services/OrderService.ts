@@ -129,9 +129,9 @@ const printPicklist = async (picklistId: string): Promise <any>  => {
     }
 
     const resp = await client({
-      url: "/poorti/Picklist.pdf",
+      url: "/fop/apps/pdf/PrintPicklist",
       method: "GET",
-      baseURL,
+      baseURL: new URL(baseURL).origin,
       headers: {
         "api_key": omsRedirectionInfo.token,
         "Content-Type": "application/json"
@@ -166,9 +166,9 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
 
     // Get packing slip from the server
     const resp = await client({
-      url: "/poorti/PackingSlip.pdf",
+      url: "/fop/apps/pdf/PrintPackingSlip",
       method: "GET",
-      baseURL,
+      baseURL: new URL(baseURL).origin,
       headers: {
         "api_key": omsRedirectionInfo.token,
         "Content-Type": "application/json"
@@ -223,9 +223,9 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
       }
       // Get packing slip from the server
       const resp = await client({
-        url: "/poorti/Label.pdf",
+        url: "/fop/apps/pdf/PrintLabel",
         method: "GET",
-        baseURL,
+        baseURL: new URL(baseURL).origin,
         headers: {
           "api_key": omsRedirectionInfo.token,
           "Content-Type": "application/json"
@@ -297,9 +297,9 @@ const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>, ship
 
     // Get packing slip from the server
     const resp = await client({
-      url: "/poorti/PackingSlipAndLabel.pdf",
+      url: "/fop/apps/pdf/PrintPackingSlipAndLabel",
       method: "GET",
-      baseURL,
+      baseURL: new URL(baseURL).origin,
       headers: {
         "api_key": omsRedirectionInfo.token,
         "Content-Type": "application/json"
