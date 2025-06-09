@@ -43,18 +43,20 @@ const actions: ActionTree<UtilState, RootState> = {
     const permissions = store.getters['user/getUserPermissions'];
 
     const isAdminUser = permissions.some((permission: any) => permission.action === "APP_STOREFULFILLMENT_ADMIN")
-    const isApiSuccess = isAdminUser ? await dispatch("fetchRejectReasons") : await dispatch("fetchFulfillmentRejectReasons")
+    const isApiSuccess = isAdminUser ? await dispatch("fetchRejectReasons") : await dispatch("fetchFulfillmentRejectReasons", true)
 
     commit(types.UTIL_REJECT_REASON_OPTIONS_UPDATED, ((!isAdminUser && isApiSuccess) ? Object.values(state.fulfillmentRejectReasons) : state.rejectReasons ));
   },
 
-  async fetchFulfillmentRejectReasons({ commit, dispatch }) {
+  // @param fetchRestrictedRejReasons - Defined whether to fetch restricted group enums or not, defined as the same action is used for managing group from rej reasons page
+  async fetchFulfillmentRejectReasons({ commit, dispatch }, fetchRestrictedRejReasons = false) {
     let isApiSuccess = true;
-    const fulfillmentRejectReasons  = {}  as any;
+    let fulfillmentRejectReasons  = {}  as any;
     try {
       const payload = {
         "inputFields": {
-          "enumerationGroupId": "FF_REJ_RSN_GRP"
+          "enumerationGroupId": fetchRestrictedRejReasons ? ["FF_REJ_RSN_GRP", "FF_REJ_RSN_RES_GRP"] : ["FF_REJ_RSN_GRP"],  // FF_REJ_RSN_RES_GRP, Fulfillment restricted rejection reason group
+          "enumerationGroupId_op": "in"
         },
         // We shouldn't fetch description here, as description contains EnumGroup description which we don't wanna show on UI.
         "fieldList": ["enumerationGroupId", "enumId", "fromDate", "sequenceNum", "enumDescription", "enumName"],
@@ -68,9 +70,16 @@ const actions: ActionTree<UtilState, RootState> = {
       const resp = await UtilService.fetchFulfillmentRejectReasons(payload)
 
       if(!hasError(resp)) {
-        resp.data.docs.map((reason: any) => {
-          fulfillmentRejectReasons[reason.enumId] = reason
+        const rejectionsReasons = resp.data?.docs.reduce((rejReasons: any, reason: any) => {
+          rejReasons[reason.enumerationGroupId][reason.enumId] = reason
+          return rejReasons;
+        }, {
+          FF_REJ_RSN_GRP: {},
+          FF_REJ_RSN_RES_GRP: {}
         })
+
+        // If the restricted group has rejection reasons and the facility is of type warehouse then display those rejection reasons otherwise display the reasons from the default rejection reason group
+        fulfillmentRejectReasons = (useUserStore().getCurrentFacility as any).facilityTypeId !== "WAREHOUSE" && Object.keys(rejectionsReasons["FF_REJ_RSN_RES_GRP"]).length ? rejectionsReasons["FF_REJ_RSN_RES_GRP"] : rejectionsReasons["FF_REJ_RSN_GRP"]
       } else {
         throw resp.data
       }
