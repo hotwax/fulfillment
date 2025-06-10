@@ -34,7 +34,8 @@ const getters: GetterTree <UserState, RootState> = {
         return state.pwaState;
     },
     getMaargUrl (state) {
-        return new URL(state.omsRedirectionInfo.url).origin
+        const url = state.omsRedirectionInfo.url;
+        return url.startsWith('http') ? new URL(url).origin : `https://${url}.hotwax.io`;
     },
     getMaargBaseUrl (state) {
         const url = state.omsRedirectionInfo.url
