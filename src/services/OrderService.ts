@@ -118,7 +118,7 @@ const createPicklist = async (payload: any): Promise <any>  => {
 }
 
 const printPicklist = async (picklistId: string): Promise <any>  => {
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const maargUrl = store.getters['user/getMaargUrl'];
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
 
   try {
@@ -131,7 +131,7 @@ const printPicklist = async (picklistId: string): Promise <any>  => {
     const resp = await client({
       url: "/fop/apps/pdf/PrintPicklist",
       method: "GET",
-      baseURL: new URL(baseURL).origin,
+      baseURL: maargUrl,
       headers: {
         "api_key": omsRedirectionInfo.token,
         "Content-Type": "application/json"
@@ -161,14 +161,14 @@ const printPicklist = async (picklistId: string): Promise <any>  => {
 
 const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
   try {
-    const baseURL = store.getters['user/getMaargBaseUrl'];
+    const maargUrl = store.getters['user/getMaargUrl'];
     const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
 
     // Get packing slip from the server
     const resp = await client({
       url: "/fop/apps/pdf/PrintPackingSlip",
       method: "GET",
-      baseURL: new URL(baseURL).origin,
+      baseURL: maargUrl,
       headers: {
         "api_key": omsRedirectionInfo.token,
         "Content-Type": "application/json"
@@ -202,7 +202,7 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
 
 const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string): Promise<any> => {
   try {
-    const baseURL = store.getters['user/getMaargBaseUrl'];
+    const maargUrl = store.getters['user/getMaargUrl'];
     const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
 
     let pdfUrls = shippingLabelPdfUrls;
@@ -225,7 +225,7 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
       const resp = await client({
         url: "/fop/apps/pdf/PrintLabel",
         method: "GET",
-        baseURL: new URL(baseURL).origin,
+        baseURL: maargUrl,
         headers: {
           "api_key": omsRedirectionInfo.token,
           "Content-Type": "application/json"
@@ -292,14 +292,14 @@ const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>, ship
   }
 
   try {
-    const baseURL = store.getters['user/getMaargBaseUrl'];
+    const maargUrl = store.getters['user/getMaargUrl'];
     const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
 
     // Get packing slip from the server
     const resp = await client({
       url: "/fop/apps/pdf/PrintPackingSlipAndLabel",
       method: "GET",
-      baseURL: new URL(baseURL).origin,
+      baseURL: maargUrl,
       headers: {
         "api_key": omsRedirectionInfo.token,
         "Content-Type": "application/json"
