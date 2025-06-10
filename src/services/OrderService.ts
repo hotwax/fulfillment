@@ -628,13 +628,14 @@ const retryShippingLabel = async (shipmentId: string): Promise<any> => {
 
   try {
     const resp = client({
-      url: `/poorti/shipments/${shipmentId}/shippingLabels`,
-      method: "get",
+      url: `/poorti/shipments/retryShippingLabel`,
+      method: "post",
       baseURL,
       headers: {
         "api_key": omsRedirectionInfo.token,
         "Content-Type": "application/json"
       },
+      data: { shipmentIds: [shipmentId], generateLabel: "Y"}
     }) as any;
     if (hasError(resp)) {
       throw resp?.data;
