@@ -862,7 +862,8 @@ export default defineComponent({
                 logger.error('Failed to pack order', err)
                 //TODO: Need to figure out error specific to shipping label generation to open the Generate Tracking Code modal
                 //Due to error in packing process, openining Generate Tracking Code modal to edit shipping detail or to enter tracking code manually
-                await this.generateTrackingCodeForPacking(order, updateParameter)
+                const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', this.order)
+                await this.generateTrackingCodeForPacking(updatedOrder, updateParameter)
               }
             }
           }]

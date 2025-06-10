@@ -151,7 +151,7 @@ export default defineComponent({
     async confirmSave() {
       let order = this.order
 
-      if (hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE && (order.carrierPartyId !== this.carrierPartyId || order.shipmentMethodTypeId !== this.shipmentMethodTypeId))) {
+      if (hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE) && (order.carrierPartyId !== this.carrierPartyId || order.shipmentMethodTypeId !== this.shipmentMethodTypeId)) {
         const isUpdated = await this.updateCarrierAndShippingMethod(this.carrierPartyId, this.shipmentMethodTypeId)
         if(!isUpdated) {
           showToast(translate("Failed to update shipment method detail."));
