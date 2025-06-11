@@ -6,7 +6,7 @@
         <ion-title>{{ translate("Review Shipment") }}</ion-title>
         
         <ion-buttons slot="end">
-          <ion-button  fill="clear" v-if="!currentShipment.trackingCode && showLabelError" @click="transferShipmentActionsPopover($event)">
+          <ion-button  fill="clear" v-if="!currentShipment.trackingIdNumber && showLabelError" @click="transferShipmentActionsPopover($event)">
             <ion-icon :icon="documentTextOutline" />
           </ion-button>
         </ion-buttons>
@@ -22,15 +22,15 @@
               <ion-label>{{ currentShipment.totalQuantityPicked }} {{ translate("items picked") }}</ion-label>
               <ion-button expand="block" fill="outline" @click="generateShippingLabel(currentShipment)">
                 <ion-icon slot="start" :icon="documentTextOutline" />
-                {{ currentShipment.trackingCode ? translate("Regenerate Shipping Label") : translate("Generate shipping label") }}
+                {{ currentShipment.trackingIdNumber ? translate("Regenerate Shipping Label") : translate("Generate shipping label") }}
                 <ion-spinner color="primary" slot="end" v-if="isGeneratingShippingLabel" name="crescent" />
               </ion-button>
             </ion-item>
             <ion-item>
-              <ion-input :label="translate('Tracking Code')" placeholder="add tracking code" v-if="!currentShipment.trackingCode" v-model="trackingCode"></ion-input>
+              <ion-input :label="translate('Tracking Code')" placeholder="add tracking code" v-if="!currentShipment.trackingIdNumber" v-model="trackingCode"></ion-input>
               <template v-else>
                 <ion-label>{{ translate("Tracking Code") }}</ion-label>
-                <p slot="end">{{ currentShipment.trackingCode }}</p>
+                <p slot="end">{{ currentShipment.trackingIdNumber }}</p>
               </template>
             </ion-item>
             <ion-item>
@@ -87,6 +87,7 @@ import { Actions, hasPermission } from '@/authorization'
 import { getFeatures, showToast, hasWebcamAccess } from '@/utils';
 import { hasError } from '@/adapter'
 import { TransferOrderService } from '@/services/TransferOrderService' 
+import { OrderService } from '@/services/OrderService' 
 import TransferShipmentActionsPopover from '@/components/TransferShipmentActionsPopover.vue'
 import logger from '@/logger';
 import TransferOrderItem from '@/components/TransferOrderItem.vue'
@@ -205,15 +206,15 @@ export default defineComponent({
         ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
         .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
       
-      if (!this.currentShipment.trackingCode) {
+      if (!this.currentShipment.trackingIdNumber) {
         //regenerate shipping label if missing tracking code
-        await TransferOrderService.retryShippingLabel(this.currentShipment.shipmentId)
+        await OrderService.retryShippingLabel(this.currentShipment.shipmentId)
         //retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
         await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
         shippingLabelPdfUrls = this.currentShipment?.shipmentPackages
             ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
             .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
-        if(this.currentShipment.trackingCode) {
+        if(this.currentShipment.trackingIdNumber) {
           this.showLabelError = false;
           showToast(translate("Shipping Label generated successfully"))
           await TransferOrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
@@ -262,7 +263,7 @@ export default defineComponent({
       try {
         if (
           this.trackingCode &&
-          this.currentShipment.trackingCode !== this.trackingCode
+          this.currentShipment.trackingIdNumber !== this.trackingCode
         ) {
           await TransferOrderService.shipTransferOrderShipment({
             shipmentId: this.currentShipment.shipmentId,

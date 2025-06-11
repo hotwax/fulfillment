@@ -253,21 +253,6 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
   }
 };
 
-const retryShippingLabel = async (shipmentId: string): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return client({
-    url: `/poorti/shipments/${shipmentId}/shippingLabels`,
-    method: "get",
-    baseURL,
-    headers: {
-      "api_key": omsRedirectionInfo.token,
-      "Content-Type": "application/json"
-    },
-  });
-}
-
 const rejectOrderItems = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -343,7 +328,6 @@ export const TransferOrderService = {
   fetchShippedTransferShipments,
   fetchTransferShipmentDetails,
   printShippingLabel,
-  retryShippingLabel,
   shipTransferOrderShipment,
   rejectOrderItems,
   closeOrderItems,

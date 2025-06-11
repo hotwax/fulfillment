@@ -173,6 +173,7 @@ import { Actions, hasPermission } from '@/authorization'
 import { DateTime } from 'luxon';
 import { getFeatures, showToast, hasWebcamAccess } from '@/utils';
 import { TransferOrderService } from '@/services/TransferOrderService'
+import { OrderService } from '@/services/OrderService'
 import TransferOrderItem from '@/components/TransferOrderItem.vue'
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import emitter from "@/event-bus";
@@ -363,7 +364,7 @@ export default defineComponent({
 
         if (!currentShipment.trackingIdNumber) {
           //regenerate shipping label if missing tracking code
-          await TransferOrderService.retryShippingLabel(currentShipment.shipmentId)
+          await OrderService.retryShippingLabel(currentShipment.shipmentId)
           // retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
           // Refetching the order tracking detail irrespective of api response since currently in SHIPHAWK api returns error whether label is generated
           // Temporarily handling this in app but should be handled in backend        
