@@ -114,6 +114,7 @@ export default defineComponent({
           permissionId: "APP_COMPLETED_ORDERS_VIEW"
         }
       },
+      /* Commenting the Rejection page until Solr indexing for rejections are not properly integrated
       {
         title: "Rejections",
         url: "/rejections",
@@ -122,7 +123,7 @@ export default defineComponent({
         meta: {
           permissionId: "APP_REJECTIONS_VIEW"
         }
-      },
+      },*/
       {
         title: "Transfer Orders",
         url: "/transfer-orders",
