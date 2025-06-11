@@ -29,7 +29,6 @@ const utilModule: Module<UtilState, RootState> = {
     shipmentMethodsByCarrier: {},
     facilityAddresses: {},
     facilityShippingLabelImageType: {},
-    picklistItemIdentificationPref: "internalName",
     isPicklistDownloadEnabled: false
   },
   getters,

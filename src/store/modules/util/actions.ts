@@ -838,36 +838,22 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   async fetchProductStoreSettingPicklist({ commit }, eComStoreId) {
-    let picklistItemIdentificationPref = "internalName"
     let isPicklistDownloadEnabled = false
     const payload = {
-      "inputFields": {
-        "productStoreId": eComStoreId,
-        "settingTypeEnumId": ["PICK_LST_PROD_IDENT", "FF_DOWNLOAD_PICKLIST"]
-      },
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["settingTypeEnumId", "settingValue"],
-      "viewSize": 20
+      "productStoreId": eComStoreId,
+      "settingTypeEnumId": "FF_DOWNLOAD_PICKLIST",
+      "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
+      "pageSize": 1
     }
 
     try {
       const resp = await UtilService.getProductStoreSetting(payload) as any
-      if(!hasError(resp) && resp.data.docs?.length) {
-
-        resp.data.docs.map((setting: any) => {
-          if(setting.settingTypeEnumId === "PICK_LST_PROD_IDENT") {
-            picklistItemIdentificationPref = setting.settingValue
-          }
-
-          if(setting.settingTypeEnumId === "FF_DOWNLOAD_PICKLIST") {
-            isPicklistDownloadEnabled = setting.settingValue == "true"
-          }
-        })
+      if (!hasError(resp) && resp.data?.length) {
+        isPicklistDownloadEnabled = resp.data[0].settingValue == "true"
       }
     } catch(err) {
       logger.error(err)
     }
-    commit(types.UTIL_PICKLIST_ITEM_IDENTIFICATION_PREF_UPDATED, picklistItemIdentificationPref)
     commit(types.UTIL_PICKLIST_DOWNLOAD_STATUS_UPDATED, isPicklistDownloadEnabled)
   },
 }
