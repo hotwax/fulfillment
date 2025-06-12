@@ -118,7 +118,7 @@ export default defineComponent({
     })
   },
   async ionViewWillEnter() {
-    await Promise.all([this.store.dispatch('util/fetchRejectReasons'), this.store.dispatch('util/fetchFulfillmentRejectReasons')])
+    await Promise.all([this.store.dispatch('util/fetchRejectReasons'), this.store.dispatch('util/fetchFulfillmentRejectReasons'), this.store.dispatch('util/fetchRejectReasonEnumTypes')])
     this.filteredReasons = this.rejectReasons ? JSON.parse(JSON.stringify(this.rejectReasons)) : []
   },
   async beforeRouteLeave() {

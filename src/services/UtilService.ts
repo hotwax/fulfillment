@@ -58,6 +58,22 @@ const fetchRejectReasons = async(query: any): Promise<any> => {
   });
 }
 
+const fetchRejectReasonEnumTypes = async (payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/entityData`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
 const getAvailablePickers = async (query: any): Promise <any> => {
   return api({
     url: "solr-query",
@@ -645,6 +661,7 @@ export const UtilService = {
   fetchPartyInformation,
   fetchProductStores,
   fetchRejectReasons,
+  fetchRejectReasonEnumTypes,
   fetchShipmentBoxType,
   fetchShipmentMethods,
   fetchShipmentMethodTypeDesc,

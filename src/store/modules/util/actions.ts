@@ -73,6 +73,36 @@ const actions: ActionTree<UtilState, RootState> = {
     return isApiSuccess
   },
 
+  async fetchRejectReasonEnumTypes({ commit, state }) {
+    if(state.rejectReasonEnumTypes.length) {
+      return;
+    }
+
+    let rejectReasonEnumTypes = [] as any;
+
+    try {
+      const params = {
+        customParametersMap: {
+          "parentTypeId": ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
+          "parentTypeId_op": "in"
+        },
+        selectedEntity: "moqui.basic.EnumerationType",
+        pageIndex: 0,
+        pageLimit: 10,
+      }
+
+      const resp = await UtilService.fetchRejectReasonEnumTypes(params)
+      if (!hasError(resp)) {
+        rejectReasonEnumTypes = resp.data.entityValueList
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error(err)
+    }
+    commit(types.UTIL_REJECT_REASON_ENUM_TYPES_UPDATED, rejectReasonEnumTypes)
+  },
+
   async fetchPartyInformation({ commit, state }, partyIds) {
     let partyInformation = JSON.parse(JSON.stringify(state.partyNames))
     const cachedPartyIds = Object.keys(partyInformation);
