@@ -249,7 +249,6 @@ const parseCsv = async (file: File, options?: any) => {
 
 const hasActiveFilters = (query: any): boolean => {
   const excludedFields = ["viewSize", "viewIndex", "queryString", "hideLoader"];
-  console.log("========query==", query)
   return Object.keys(query).some((key: string) => 
     !excludedFields.includes(key) && (Array.isArray(query[key]) ? query[key].length : query[key].trim())
   );

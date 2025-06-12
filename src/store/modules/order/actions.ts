@@ -39,7 +39,6 @@ const actions: ActionTree<OrderState, RootState> = {
 
     inProgressQuery.statusId = "SHIPMENT_APPROVED"
     inProgressQuery.orderStatusId = "ORDER_APPROVED"
-    console.log("==2===inProgressQuery==", JSON.stringify(inProgressQuery))
     const resp = await OrderService.findShipments(inProgressQuery);
     orders = (resp.orders || []).map((order: any) => ({
       ...order,
@@ -347,6 +346,72 @@ const actions: ActionTree<OrderState, RootState> = {
     }
 
     return isDetailsPage ? orders[0] : orders
+  },
+  async updateCurrentItemGCActivationDetails({ commit, state }, { item, category, isDetailsPage }) {
+    let gcInfo = {};
+    let isGCActivated = false;
+
+    try {
+
+      const resp = await UtilService.fetchGiftCardFulfillmentInfo({
+        orderId: item.orderId,
+        orderItemSeqId: item.orderItemSeqId,
+        fieldsToSelect: ["amount", "cardNumber", "fulfillmentDate", "orderId", "orderItemSeqId"],
+        pageSize: 1
+      })
+
+      if(!hasError(resp)) {
+        isGCActivated = true;
+        gcInfo = resp.data[0];
+      } else {
+        throw resp.data
+      }
+    } catch(error) {
+      logger.error(error)
+    }
+
+    if(!isGCActivated) return;
+
+    const orders = JSON.parse(JSON.stringify(category === "in-progress" ? state.inProgress.list : state.completed.list));
+
+    if(isDetailsPage) {
+      const order = JSON.parse(JSON.stringify(state.current));
+
+      order.items?.map((currentItem: any) => {
+        if(currentItem.orderId === item.orderId && currentItem.orderItemSeqId === item.orderItemSeqId) {
+          currentItem.isGCActivated = true;
+          currentItem.gcInfo = gcInfo
+        }
+      })
+
+      orders.map((currentOrder: any) => {
+        if(currentOrder.orderId === order.orderId) currentOrder.items = order.items
+      })
+
+      if(category === "in-progress") {
+        commit(types.ORDER_INPROGRESS_UPDATED, { orders, total: state.inProgress.total })
+      } else {
+        commit(types.ORDER_COMPLETED_UPDATED, { list: orders, total: state.completed.total })
+      }
+
+      commit(types.ORDER_CURRENT_UPDATED, order)
+      return;
+    }
+
+    orders.map((order: any) => {
+      order.items.map((currentItem: any) => {
+        if(currentItem.orderId === item.orderId && currentItem.orderItemSeqId === item.orderItemSeqId) {
+          currentItem.isGCActivated = true;
+          currentItem.gcInfo = gcInfo;
+        }
+      })
+    })
+
+    if(category === "in-progress") {
+      commit(types.ORDER_INPROGRESS_UPDATED, { orders, total: state.inProgress.total })
+    } else {
+      commit(types.ORDER_COMPLETED_UPDATED, { list: orders, total: state.completed.total })
+    }
   },
 
   async updateShipmentPackageDetail ({ commit, state }, payload) {

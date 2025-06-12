@@ -790,7 +790,7 @@ const fetchGiftCardItemPriceInfo = async (payload: any): Promise<any> => {
     }
 
     resp = await client({
-      url: "/oms/orders/${payload.orderId}/items/${payload.orderItemSeqId}",
+      url: `/oms/orders/${payload.orderId}/items/${payload.orderItemSeqId}`,
       method: "GET",
       baseURL,
       headers: {
