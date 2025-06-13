@@ -23,7 +23,7 @@
         </ion-label>
       </ion-item>
       <ion-item lines="full">
-        <ion-label color="danger">
+        <ion-label>
           <p class="overline">{{ translate("Gateway error") }}</p>
           {{ order.gatewayMessage }}
         </ion-label>
@@ -191,6 +191,7 @@ export default defineComponent({
       facilityCarriers: 'carrier/getFacilityCarriers',
       productStoreShipmentMethods: 'carrier/getProductStoreShipmentMethods',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
+      userProfile: 'user/getUserProfile'
     })
   },
   data() {
@@ -262,6 +263,18 @@ export default defineComponent({
           orderItem.rejectReason = this.shippingRejectionReason
         })
         isSuccess = await this.rejectEntireOrder(order, 'report')
+        if (isSuccess) {
+          try {
+            OrderService.createCommunicationEvent({
+              "communicationEventTypeId": "FULFILLMENT_ERROR",
+              "statusId": "COM_COMPLETE",
+              "partyIdFrom": this.userProfile.partyId,
+              "content": this.rejectionComment
+            })
+          } catch (e) {
+            logger.log("Error in creating communication event for order rejection due to shipping label error")
+          }
+        }
       } else {
         isSuccess = await this.executePackOrder(this.order, this.updateParameter, this.trackingCode.trim(), this.documentOptions);
       }

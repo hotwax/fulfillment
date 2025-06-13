@@ -843,11 +843,28 @@ const fetchOrderItems = async (payload: any): Promise <any>  => {
   });
 }
 
+const createCommunicationEvent = async (payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: "/oms/communicationEvents",
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload,
+  });
+}
+
 export const OrderService = {
   activateGiftCard,
   addShipmentBox,
   addTrackingCode,
   bulkShipOrders,
+  createCommunicationEvent,
   createPicklist,
   fetchGiftCardItemPriceInfo,
   fetchOrderDetail,
