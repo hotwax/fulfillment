@@ -442,6 +442,7 @@ const actions: ActionTree<OrderState, RootState> = {
           order.trackingCode = shipmentPackageRouteSegDetails[0]?.trackingCode
           order.isTrackingRequired = shipmentPackageRouteSegDetails[0]?.isTrackingRequired
           order.missingLabelImage = missingLabelImage
+          order.gatewayMessage = shipmentPackageRouteSegDetails[0]?.gatewayMessage
         };
     
         if (currentOrder && currentOrder.shipmentId === payload.shipmentId) {

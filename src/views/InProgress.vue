@@ -486,8 +486,6 @@ export default defineComponent({
 
       if (order.hasAllRejectedItem) {
         await this.rejectEntireOrder(order, updateParameter)
-      /*} else if (order.missingLabelImage && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)) {
-        await this.generateTrackingCodeForPacking(order, updateParameter, forceScan)*/
       } else if (forceScan) {
         await this.scanOrder(order, updateParameter)
       } else {
@@ -512,6 +510,7 @@ export default defineComponent({
 
         await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
         showToast(translate('Order rejected successfully'));
+        return true
 
       } catch (err) {
         logger.error('Failed to reject order', err)
@@ -519,6 +518,7 @@ export default defineComponent({
       } finally {
         emitter.emit("dismissLoader");
       }
+      return false
     },
     async confirmPackOrder(order: any, updateParameter?: string, trackingCode?: string) {
       const confirmPackOrder = await alertController
@@ -545,87 +545,95 @@ export default defineComponent({
             text: translate("Pack"),
             role: 'confirm',
             handler: async (data) => {
-
-              emitter.emit('presentLoader');
-              let toast: any;
-              const shipmentIds = [order.shipmentId]
-              try {
-                const updatedOrderDetail = await this.getUpdatedOrderDetail(order, updateParameter) as any
-                const params = {
-                  shipmentId: order.shipmentId,
-                  orderId: order.orderId,
-                  facilityId: order.originFacilityId,
-                  rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
-                  shipmentPackageContents: updatedOrderDetail.shipmentPackageContents,
-                  trackingCode
-                }
-                const resp = await OrderService.packOrder(params);
-                if (hasError(resp)) {
-                  throw resp.data
-                }
-
-                if (data.length) {
-                  // additional parameters for dismiss button and manual dismiss ability
-                  toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
-                  toast.present()
-
-                  const shippingLabelPdfUrls: string[] = Array.from(
-                    new Set(
-                      (order.shipmentPackageRouteSegDetails ?? [])
-                        .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
-                        .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
-                    )
-                  );
-
-                  if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
-                    if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
-                      await OrderService.printPackingSlip(shipmentIds)
-                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
-                    } else {
-                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds, order.shipmentPackages)
-                    }
-                  } else if (data.includes('printPackingSlip')) {
-                    await OrderService.printPackingSlip(shipmentIds)
-                  } else if (data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
-                  }
-
-                  const internationalInvoiceUrls: string[] = Array.from(
-                    new Set(
-                      order.shipmentPackageRouteSegDetails
-                        ?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl)
-                        .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) || []
-                    )
-                  );
-
-                  if (internationalInvoiceUrls.length > 0) {
-                    await OrderService.printCustomDocuments(internationalInvoiceUrls);
-                  }
-
-                  toast.dismiss()
-                } else {
-                  showToast(translate('Order packed successfully'));
-                }
-                // TODO: handle the case of fetching in progress orders after packing an order
-                // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
-                await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
-              } catch (err) {
-                // in case of error, if loader and toast are not dismissed above
-                if (toast) toast.dismiss()
-                showToast(translate('Failed to pack order'))
-                logger.error('Failed to pack order', err)
-                
-                //TODO: Need to figure out error specific to shipping label generation to open the Generate Tracking Code modal
-                //Due to error in packing process, openining Generate Tracking Code modal to edit shipping detail or to enter tracking code manually
+              const isPacked = await this.executePackOrder(order, updateParameter, trackingCode, data)
+              if (!isPacked) {
+                //On error in packing, fetching update detail expecially to fetch carrier, shipment method, gteway message etc. If there is error (gatewayMessage not empty) opening Generate tracking code modal to enter tracking detail manually
                 const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
-                await this.generateTrackingCodeForPacking(updatedOrder, updateParameter)
-              } finally {
-                emitter.emit("dismissLoader");
+                if (updatedOrder.gatewayMessage) {
+                  await this.generateTrackingCodeForPacking(updatedOrder, updateParameter, data)
+                }
               }
             }
           }]
         });
       return confirmPackOrder.present();
+    },
+    async executePackOrder(order: any, updateParameter?: string, trackingCode?: string, documentOptions?: any) {
+      emitter.emit('presentLoader');
+      let toast: any;
+      const shipmentIds = [order.shipmentId]
+      try {
+        const updatedOrderDetail = await this.getUpdatedOrderDetail(order, updateParameter) as any
+        const params = {
+          shipmentId: order.shipmentId,
+          orderId: order.orderId,
+          facilityId: order.originFacilityId,
+          rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
+          shipmentPackageContents: updatedOrderDetail.shipmentPackageContents,
+          trackingCode
+        }
+        const resp = await OrderService.packOrder(params);
+        if (hasError(resp)) {
+          throw resp.data
+        }
+        //Fetching updated shipment detail after successful packing
+        const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
+
+        if (documentOptions.length && !trackingCode) {
+          // additional parameters for dismiss button and manual dismiss ability
+          toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
+          toast.present()
+
+          const shippingLabelPdfUrls: string[] = Array.from(
+            new Set(
+              (updatedOrder.shipmentPackageRouteSegDetails ?? [])
+                .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+                .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+            )
+          );
+
+          if (documentOptions.includes('printPackingSlip') && documentOptions.includes('printShippingLabel')) {
+            if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
+              await OrderService.printPackingSlip(shipmentIds)
+              await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, updatedOrder.shipmentPackages);
+            } else {
+              await OrderService.printShippingLabelAndPackingSlip(shipmentIds, updatedOrder.shipmentPackages)
+            }
+          } else if (documentOptions.includes('printPackingSlip')) {
+            await OrderService.printPackingSlip(shipmentIds)
+          } else if (documentOptions.includes('printShippingLabel')) {
+            await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, updatedOrder.shipmentPackages);
+          }
+
+          const internationalInvoiceUrls: string[] = Array.from(
+            new Set(
+              updatedOrder.shipmentPackageRouteSegDetails
+                ?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl)
+                .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) || []
+            )
+          );
+
+          if (internationalInvoiceUrls.length > 0) {
+            await OrderService.printCustomDocuments(internationalInvoiceUrls);
+          }
+
+          toast.dismiss()
+        } else {
+          showToast(translate('Order packed successfully'));
+        }
+        // TODO: handle the case of fetching in progress orders after packing an order
+        // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
+        await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
+        return true
+      } catch (err) {
+        // in case of error, if loader and toast are not dismissed above
+        if (toast) toast.dismiss()
+        showToast(translate('Failed to pack order'))
+        logger.error('Failed to pack order', err)
+      } finally {
+        emitter.emit("dismissLoader");
+      }
+      return false
     },
     async packOrders() {
       const alert = await alertController
@@ -1221,21 +1229,11 @@ export default defineComponent({
 
       modal.present();
     },
-    async generateTrackingCodeForPacking(order: any, updateParameter?: string, forceScan = false) {
+    async generateTrackingCodeForPacking(order: any, updateParameter?: string, documentOptions = {}) {
       const modal = await modalController.create({
         component: GenerateTrackingCodeModal,
-        componentProps: { order }
+        componentProps: { order, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions }
       })
-
-      modal.onDidDismiss().then((result: any) => {
-        if(result.data?.moveToNext) {
-          const inProgressOrders = this.getInProgressOrders()
-          const updatedOrder = inProgressOrders.find((currentOrder: any) => currentOrder.shipmentId === order.shipmentId);
-          if(forceScan) this.scanOrder(updatedOrder, updateParameter);
-          else this.confirmPackOrder(updatedOrder, updateParameter, result.data?.trackingCode);
-        }
-      })
-
       modal.present();
     },
  

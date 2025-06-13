@@ -6,52 +6,123 @@
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
-      <ion-title>{{ translate("Pack order") }}</ion-title>
+      <ion-title>{{ translate("Add tracking details") }}</ion-title>
     </ion-toolbar>
   </ion-header>
 
   <ion-content>
+    <div class="ion-padding">
+      <ion-label>
+        {{ translate("We were unable to automatically fetch a shipping label from", {carrierName: getCarrier() ? getCarrier() : 'carrier'}) }}<br/>
+        {{ translate("To pack this order you must add a tracking details.") }}
+      </ion-label>
+      <br/><br/>
+      <ion-label :color="selectedSegment === 'update-carrier' ? '' : 'medium'">1. {{ translate("Try generating a label with a different carrier.") }}<br/></ion-label>
+      <ion-label :color="selectedSegment === 'update-tracking-detail' ? '' : 'medium'">2. {{ translate("Generate a label externally and add tracking details manually.") }}<br/></ion-label>
+      <ion-label :color="selectedSegment === 'reject-order' ? '' : 'medium'">3. {{ translate("Reject order and share troubleshooting details.") }}<br/></ion-label>
+    </div>
     <ion-list>
-      <ion-item lines="none">
-        <ion-label>{{ translate(isTrackingRequired ? "Tracking details are required in order to pack this shipment. Try generating a label from the selected carrier or enter a tracking code manually." : "Tracking details are missing in order to pack this shipment. Try generating a label from the selected carrier or enter a tracking code manually.") }}</ion-label>
-      </ion-item>
-
-      <ion-item>
-        <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
-          <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
-        </ion-select>
-      </ion-item>
-      <ion-item>
-        <template v-if="carrierMethods && carrierMethods.length > 0">
-          <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
-            <ion-select-option v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
-          </ion-select>
-        </template>
-        <template v-else>
-          <ion-label>
-            {{ translate('No shipment methods linked to', {carrierName: getCarrierName()}) }}
-          </ion-label>
-          <ion-button @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
-            <ion-icon slot="icon-only" :icon="informationCircleOutline" />
-          </ion-button>
-        </template>
-      </ion-item>
-      <ion-item>
-        <ion-input :label="translate('Tracking code')" :placeholder="translate('enter code')" v-model="trackingCode" />
-      </ion-item>
-      <ion-item>
-        <ion-label>{{ generateTrackingUrl() }}</ion-label>
-        <ion-button slot="end" fill="clear" size="default" :disabled="!trackingCode.trim() || !getCarrierTrackingUrl()" @click="redirectToTrackingUrl()">
-          {{ translate("Test") }}
-          <ion-icon :icon="openOutline" slot="end" />
+      <ion-item lines="full">
+        <ion-label>
+          <p class="overline">{{ translate("Gateway error") }}</p>
+          {{ order.gatewayMessage }}
+        </ion-label>
+        <ion-button fill="clear" color="medium" @click="copyToClipboard(order.gatewayMessage, 'Copied to clipboard')"> 
+          <ion-icon slot="icon-only" :icon="copyOutline" />
         </ion-button>
       </ion-item>
     </ion-list>
+    <ion-segment scrollable v-model="selectedSegment" @click="reinitializeData">
+      <ion-segment-button value="update-carrier">
+        <ion-label>{{ translate("Update carrier") }}</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="update-tracking-detail">
+        <ion-label>{{ translate("Manual tracking details") }}</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="reject-order">
+        <ion-label>{{ translate("Reject order") }}</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+    <div class="segments">
+      <template v-if="selectedSegment === 'reject-order'">
+        <ion-list>
+          <ion-item lines="none">
+            <ion-checkbox justify="start" label-placement="end" v-model="rejectOrder">
+              <div>
+                <ion-label>{{ translate('I am unable to provide tracking for this order and need to reject it.') }}</ion-label>
+                <ion-note>{{ translate('This will not affect the inventory for the ordered items at your store.') }}</ion-note>
+              </div>
+            </ion-checkbox>
+          </ion-item>
+          <ion-item lines="none">
+            <ion-textarea fill="outline" placeholder="Add a message" v-model="rejectionComment" />
+          </ion-item>
+        </ion-list>
+      </template>
+      <template v-else-if="selectedSegment === 'update-tracking-detail'">
+        <ion-list>
+          <ion-item>
+            <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
+              <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <template v-if="carrierMethods && carrierMethods.length > 0">
+              <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
+                <ion-select-option v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
+              </ion-select>
+            </template>
+            <template v-else>
+              <ion-label>
+                {{ translate('No shipment methods linked to', {carrierName: getCarrierName()}) }}
+              </ion-label>
+              <ion-button @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
+                <ion-icon slot="icon-only" :icon="informationCircleOutline" />
+              </ion-button>
+            </template>
+          </ion-item>
+          <ion-item>
+            <ion-input :label="translate('Tracking code')" :placeholder="translate('enter code')" v-model="trackingCode" />
+          </ion-item>
+          <ion-item>
+            <ion-label>{{ generateTrackingUrl() }}</ion-label>
+            <ion-button slot="end" fill="clear" size="default" :disabled="!trackingCode.trim() || !getCarrierTrackingUrl()" @click="redirectToTrackingUrl()">
+              {{ translate("Test") }}
+              <ion-icon :icon="openOutline" slot="end" />
+            </ion-button>
+          </ion-item>
+        </ion-list>
+      </template>
+      <template v-else>
+        <ion-list>
+          <ion-item>
+            <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
+              <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <template v-if="carrierMethods && carrierMethods.length > 0">
+              <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
+                <ion-select-option v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
+              </ion-select>
+            </template>
+            <template v-else>
+              <ion-label>
+                {{ translate('No shipment methods linked to', {carrierName: getCarrierName()}) }}
+              </ion-label>
+              <ion-button @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
+                <ion-icon slot="icon-only" :icon="informationCircleOutline" />
+              </ion-button>
+            </template>
+          </ion-item>
+        </ion-list>
+      </template>
+    </div>
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="!shipmentMethodTypeId" @click="confirmSave()">
-      <ion-icon :icon="isForceScanEnabled ? barcodeOutline : saveOutline" />
+    <ion-fab-button :color="selectedSegment === 'reject-order' ? 'danger' : ''" :disabled="(selectedSegment !== 'reject-order' && !shipmentMethodTypeId) || (selectedSegment === 'reject-order' && !rejectOrder)" @click="confirmSave()">
+      <ion-icon :icon="selectedSegment === 'reject-order' ? trashOutline : archiveOutline" />
     </ion-fab-button>
   </ion-fab>
 </template>
@@ -60,6 +131,7 @@
 import {
   IonButton,
   IonButtons,
+  IonCheckbox,
   IonContent,
   IonFab,
   IonFabButton,
@@ -69,19 +141,23 @@ import {
   IonItem,
   IonLabel,
   IonList,
+  IonNote,
+  IonSegment,
+  IonSegmentButton,
   IonSelect,
   IonSelectOption,
+  IonTextarea,
   IonTitle,
   IonToolbar,
   modalController,
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { barcodeOutline, closeOutline, copyOutline, informationCircleOutline, openOutline, saveOutline } from "ionicons/icons";
+import { archiveOutline, barcodeOutline, closeOutline, copyOutline, informationCircleOutline, openOutline, saveOutline, trashOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
 import { mapGetters, useStore } from "vuex";
 import { OrderService } from '@/services/OrderService';
 import logger from "@/logger";
-import { showToast } from "@/utils";
+import { copyToClipboard, showToast } from "@/utils";
 import { hasError } from "@/adapter";
 import { retryShippingLabel } from "@/utils/order";
 import { Actions, hasPermission } from '@/authorization'
@@ -91,6 +167,7 @@ export default defineComponent({
   components: { 
     IonButton,
     IonButtons,
+    IonCheckbox,
     IonContent,
     IonFab,
     IonFabButton,
@@ -100,21 +177,29 @@ export default defineComponent({
     IonItem,
     IonLabel,
     IonList,
+    IonNote,
+    IonSegment,
+    IonSegmentButton,
     IonSelect,
     IonSelectOption,
+    IonTextarea,
     IonTitle,
     IonToolbar,
   },
   computed: {
     ...mapGetters({
       facilityCarriers: 'carrier/getFacilityCarriers',
-      isForceScanEnabled: 'util/isForceScanEnabled',
       productStoreShipmentMethods: 'carrier/getProductStoreShipmentMethods',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
+      userProfile: 'user/getUserProfile'
     })
   },
   data() {
     return {
+      shippingRejectionReason: "NO_VARIANCE_LOG", //TODO: Specifc reason should be used in order to track rejection due to shipping label issues
+      rejectOrder: false,
+      rejectionComment: "",
+      selectedSegment: 'update-carrier',
       isTrackingRequired: false,
       carrierMethods:[] as any,
       carrierPartyId: "",
@@ -122,7 +207,7 @@ export default defineComponent({
       trackingCode: ""
     }
   },
-  props: ["order", "updateCarrierShipmentDetails", "shipmentLabelErrorMessages", "fetchShipmentLabelError"],
+  props: ["order", "updateCarrierShipmentDetails", "executePackOrder", "rejectEntireOrder", "updateParameter", "documentOptions"],
   async mounted() {
     this.isTrackingRequired = this.isTrackingRequiredForAnyShipmentPackage()
     if (this.facilityCarriers) {
@@ -144,55 +229,57 @@ export default defineComponent({
     async getProductStoreShipmentMethods(carrierPartyId: string) { 
       return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId) || [];
     },
+    getCarrierName() {
+      this.order.carrier
+    },
+    getCarrier() {
+      const carrier = this.facilityCarriers.find((facilityCarrier: any) => facilityCarrier.partyId === this.order.carrierPartyId)
+      return carrier?.groupName ? carrier?.groupName : carrier?.carrierPartyId
+    },
     async updateCarrier(carrierPartyId: string) {
       this.carrierMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
       this.shipmentMethodTypeId = this.carrierMethods?.[0]?.shipmentMethodTypeId;
     },
+    reinitializeData(){
+      this.carrierPartyId = this.order.carrierPartyId
+      this.shipmentMethodTypeId = this.order.shipmentMethodTypeId
+      this.trackingCode = ""
+      this.rejectOrder = false;
+      this.rejectionComment = ""
+    },
     async confirmSave() {
       let order = this.order
-
-      if (hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE) && (order.carrierPartyId !== this.carrierPartyId || order.shipmentMethodTypeId !== this.shipmentMethodTypeId)) {
+      let isSuccess = true;
+      if (this.selectedSegment !== 'reject-order' && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE) && (order.carrierPartyId !== this.carrierPartyId || order.shipmentMethodTypeId !== this.shipmentMethodTypeId)) {
         const isUpdated = await this.updateCarrierAndShippingMethod(this.carrierPartyId, this.shipmentMethodTypeId)
         if(!isUpdated) {
           showToast(translate("Failed to update shipment method detail."));
           return;
         }
       }
-      this.closeModal({ moveToNext: true, trackingCode: this.trackingCode.trim() });
-    },
-    async addTrackingCode(order: any) {
-      try {
-        const shipmentRouteSegmentId = this.order.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
-        const resp = await OrderService.addTrackingCode({
-          shipmentId: this.order.shipmentId,
-          shipmentRouteSegmentId,
-          trackingIdNumber: this.trackingCode.trim()
+      const rejectEntireOrder = this.selectedSegment === 'reject-order' && this.rejectOrder
+      if (rejectEntireOrder) {
+        order.items.map((orderItem: any) => {
+          orderItem.rejectReason = this.shippingRejectionReason
         })
-        if (!hasError(resp)) {
-          showToast(translate("Tracking code added successfully."));
-        } else {
-          throw resp.data
+        isSuccess = await this.rejectEntireOrder(order, 'report')
+        if (isSuccess) {
+          try {
+            OrderService.createCommunicationEvent({
+              "communicationEventTypeId": "FULFILLMENT_ERROR",
+              "statusId": "COM_COMPLETE",
+              "partyIdFrom": this.userProfile.partyId,
+              "content": this.rejectionComment
+            })
+          } catch (e) {
+            logger.log("Error in creating communication event for order rejection due to shipping label error")
+          }
         }
-      } catch (error: any) {
-        logger.error('Failed to add tracking code', error);
-        showToast(translate("Failed to add tracking code."));
-        return false;
-      }
-      return true;
-    },
-    async regenerateShippingLabel(order: any) {
-      // If there are no product store shipment method configured, then not generating the label and displaying an error toast
-      if(this.productStoreShipmentMethCount <= 0) {
-        showToast(translate("Unable to generate shipping label due to missing product store shipping method configuration"))
-        return false;
-      }
-
-      const response = await this.retryShippingLabel(order, false);
-      if(response?.isGenerated) {
-        return true;
       } else {
-        this.fetchShipmentLabelError && this.fetchShipmentLabelError()
-        return false;
+        isSuccess = await this.executePackOrder(this.order, this.updateParameter, this.trackingCode.trim(), this.documentOptions);
+      }
+      if (isSuccess) {
+        this.closeModal();
       }
     },
     getCarrierTrackingUrl() {
@@ -203,9 +290,6 @@ export default defineComponent({
         return translate("Tracking URL:", { trackingUrl: this.getCarrierTrackingUrl()?.replace("${trackingNumber}", this.trackingCode) })
       }
       return translate("A tracking URL is not configured for", { carrierName: this.getCarrierName() })
-    },
-    getCarrierName() {
-      return this.facilityCarriers.find((carrier: any) => carrier.partyId === this.carrierPartyId)?.groupName
     },
     async updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMethodTypeId: string) {
       let resp;
@@ -245,7 +329,9 @@ export default defineComponent({
     const store = useStore();
     return {
       Actions,
+      archiveOutline,
       barcodeOutline,
+      copyToClipboard,
       closeOutline,
       copyOutline,
       hasPermission,
@@ -254,8 +340,14 @@ export default defineComponent({
       retryShippingLabel,
       saveOutline,
       store,
-      translate
+      translate,
+      trashOutline
     };
   },
 });
 </script>
+<style scoped>
+ion-content {
+  --padding-bottom: 80px;
+}
+</style>
