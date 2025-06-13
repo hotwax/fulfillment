@@ -11,17 +11,17 @@
   </ion-header>
 
   <ion-content>
+    <div class="ion-padding">
+      <ion-label>
+        {{ translate("We were unable to automatically fetch a shipping label from", {carrierName: getCarrier() ? getCarrier() : 'carrier'}) }}<br/>
+        {{ translate("To pack this order you must add a tracking details.") }}
+      </ion-label>
+      <br/><br/>
+      <ion-label :color="selectedSegment === 'update-carrier' ? 'medium' : ''">1. {{ translate("Try generating a label with a different carrier.") }}<br/></ion-label>
+      <ion-label :color="selectedSegment === 'update-tracking-detail' ? 'medium' : ''">2. {{ translate("Generate a label externally and add tracking details manually.") }}<br/></ion-label>
+      <ion-label :color="selectedSegment === 'reject-order' ? 'medium' : ''">3. {{ translate("Reject order and share troubleshooting details.") }}<br/></ion-label>
+    </div>
     <ion-list>
-      <ion-item lines="none">
-        <ion-label>
-          {{ translate("We were unable to automatically fetch a shipping label from", {carrierName: getCarrier() ? getCarrier() : 'carrier'}) }}<br/>
-          {{ translate("To pack this order you must add a tracking details.") }}
-          <br/><br/>
-            1. {{ translate("Try generating a label with a different carrier.") }}<br/>
-            2. {{ translate("Generate a label externally and add tracking details manually.") }}<br/>
-            3. {{ translate("Reject order and share troubleshooting details.") }}<br/>
-        </ion-label>
-      </ion-item>
       <ion-item lines="full">
         <ion-label>
           <p class="overline">{{ translate("Gateway error") }}</p>
