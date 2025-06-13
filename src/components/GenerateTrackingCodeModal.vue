@@ -22,7 +22,7 @@
             3. {{ translate("Reject order and share troubleshooting details.") }}<br/>
         </ion-label>
       </ion-item>
-      <ion-item>
+      <ion-item lines="full">
         <ion-label color="danger">
           <p class="overline">{{ translate("Gateway error") }}</p>
           {{ order.gatewayMessage }}
