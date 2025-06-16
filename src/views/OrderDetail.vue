@@ -867,7 +867,7 @@ export default defineComponent({
         } else {
           showToast(translate('Order packed successfully'));
         }
-        this.router.replace(`/completed/order-detail/${this.orderId}/${this.shipmentId}`)
+        this.router.replace(`/completed/shipment-detail/${this.orderId}/${this.shipmentId}`)
         return true
       } catch (err) {
         // in case of error, if loader and toast are not dismissed above
@@ -1013,7 +1013,7 @@ export default defineComponent({
           if (!newShipmentId) {
             newShipmentId = result?.data?.value?.shipmentIds[0]
           }
-          this.router.replace(`/in-progress/order-detail/${this.orderId}/${newShipmentId}`)
+          this.router.replace(`/in-progress/shipment-detail/${this.orderId}/${newShipmentId}`)
         }
       });
 
@@ -1419,7 +1419,7 @@ export default defineComponent({
 
                 if(resp.status == 200 && !hasError(resp)) {
                   showToast(translate('Order unpacked successfully'))
-                  this.router.replace(`/in-progress/order-detail/${this.orderId}/${this.shipmentId}`)
+                  this.router.replace(`/in-progress/shipment-detail/${this.orderId}/${this.shipmentId}`)
                 } else {
                   throw resp.data
                 }
