@@ -134,7 +134,7 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/:category/order-detail/:orderId/:shipmentId',
+    path: '/:category/shipment-detail/:orderId/:shipmentId',
     name: 'OrderShipmentDetail',
     component: OrderDetail,
     beforeEnter: authGuard,

@@ -76,7 +76,7 @@ export default defineComponent({
         if (this.order.category === 'open') {
           this.$router.push({ path: `${this.category}/order-detail/${this.order.orderId}/${this.order.shipGroupSeqId}` })
         } else {
-          this.$router.push({ path: `${this.category}/order-detail/${this.order.orderId}/${this.order.shipmentId}` })
+          this.$router.push({ path: `${this.category}/shipment-detail/${this.order.orderId}/${this.order.shipmentId}` })
         }
       })
     },
