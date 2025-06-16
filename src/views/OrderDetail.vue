@@ -833,9 +833,9 @@ export default defineComponent({
         await this.store.dispatch('order/updateShipmentPackageDetail', this.order)
         const shippingLabelPdfUrls: string[] = Array.from(
           new Set(
-            (this.order.shipmentPackageRouteSegDetails ?? [])
-              .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
-              .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+            (this.order.shipmentPackages ?? [])
+              .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+              .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
           )
         );
 
@@ -859,7 +859,7 @@ export default defineComponent({
             await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
           }
           if (order.shipmentPackages?.[0].internationalInvoiceUrl) {
-            await OrderService.printCustomDocuments([order.shipmentPackageRouteSegDetails?.[0].internationalInvoiceUrl]);
+            await OrderService.printCustomDocuments([order.shipmentPackages?.[0].internationalInvoiceUrl]);
           }
 
           toast.dismiss()
@@ -1077,17 +1077,17 @@ export default defineComponent({
       const shipmentIds = [order.shipmentId];
       const shippingLabelPdfUrls: string[] = Array.from(
         new Set(
-          (order.shipmentPackageRouteSegDetails ?? [])
-            .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
-            .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+          (order.shipmentPackages ?? [])
+            .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+            .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
         )
       );
 
       const internationalInvoiceUrls: string[] = Array.from(
         new Set(
-          order.shipmentPackageRouteSegDetails
-            ?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl)
-            .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) || []
+          order.shipmentPackages
+            ?.filter((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl)
+            .map((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl) || []
         )
       );
 
@@ -1096,7 +1096,7 @@ export default defineComponent({
         return;
       }
 
-      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackageRouteSegDetails)
+      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages)
       if (internationalInvoiceUrls.length) {
         await OrderService.printCustomDocuments([internationalInvoiceUrls[0]]);
       }

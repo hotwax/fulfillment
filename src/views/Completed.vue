@@ -585,9 +585,9 @@ export default defineComponent({
 
       const shippingLabelPdfUrls: string[] = Array.from(
         new Set(
-          (order.shipmentPackageRouteSegDetails ?? [])
-            .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
-            .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+          (order.shipmentPackages ?? [])
+            .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+            .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
         )
       );
                   
@@ -596,10 +596,10 @@ export default defineComponent({
         return
       }
 
-      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackageRouteSegDetails)
-      const internationalInvoiceUrls = order.shipmentPackageRouteSegDetails
-          ?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl)
-          .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) || [];
+      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages)
+      const internationalInvoiceUrls = order.shipmentPackages
+          ?.filter((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl)
+          .map((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl) || [];
 
       if (internationalInvoiceUrls.length > 0) {
         await OrderService.printCustomDocuments(internationalInvoiceUrls);
@@ -649,7 +649,7 @@ export default defineComponent({
       return order.isTrackingRequired === 'Y'
     },
     hasAnyShipmentTrackingInfoMissing() {
-      return this.completedOrders.list.some((order: any) => (order.shipmentPackageRouteSegDetails && (this.isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingIdNumber)))
+      return this.completedOrders.list.some((order: any) => this.isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingIdNumber)
     },
     async orderActionsPopover(order: any, ev: Event) {
       const popover = await popoverController.create({

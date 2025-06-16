@@ -586,9 +586,9 @@ export default defineComponent({
 
           const shippingLabelPdfUrls: string[] = Array.from(
             new Set(
-              (updatedOrder.shipmentPackageRouteSegDetails ?? [])
-                .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
-                .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+              (updatedOrder.shipmentPackages ?? [])
+                .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+                .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
             )
           );
 
@@ -607,9 +607,9 @@ export default defineComponent({
 
           const internationalInvoiceUrls: string[] = Array.from(
             new Set(
-              updatedOrder.shipmentPackageRouteSegDetails
-                ?.filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl)
-                .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) || []
+              updatedOrder.shipmentPackages
+                ?.filter((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl)
+                .map((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl) || []
             )
           );
 
@@ -682,18 +682,18 @@ export default defineComponent({
               const internationalInvoiceUrls: string[] = Array.from(
                 new Set(
                   orderList
-                    .flatMap((order: any) => order.shipmentPackageRouteSegDetails ?? []) // Flatten all shipments
-                    .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) // Filter shipments with invoice URL
-                    .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.internationalInvoiceUrl) // Extract URLs
+                    .flatMap((order: any) => order.shipmentPackages ?? []) // Flatten all shipments
+                    .filter((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl) // Filter shipments with invoice URL
+                    .map((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl) // Extract URLs
                 )
               );
 
               const shippingLabelPdfUrls: string[] = Array.from(
                 new Set(
                   orderList
-                    .flatMap((order: any) => order.shipmentPackageRouteSegDetails ?? []) // Flatten all shipments
-                    .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl) // Filter shipments with label image URL
-                    .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl) // Extract URLs
+                    .flatMap((order: any) => order.shipmentPackages ?? []) // Flatten all shipments
+                    .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl) // Filter shipments with label image URL
+                    .map((shipmentPackage: any) => shipmentPackage.labelImageUrl) // Extract URLs
                 )
               );
 

@@ -420,29 +420,34 @@ const actions: ActionTree<OrderState, RootState> = {
     const inProgressOrders = JSON.parse(JSON.stringify(state.inProgress.list));
 
     try {
-      const params = {
-        shipmentId: payload.shipmentId,
-        carrierServiceStatusId: "SHRSCS_VOIDED",
-        carrierServiceStatusId_op: "equals",
-        carrierServiceStatusId_not: "Y"
-      }
-      const resp = await OrderService.fetchShipmentPackageRouteSegDetails(params) as any
+      const resp = await OrderService.fetchShipmentPackageRouteSegDetails({shipmentId: payload.shipmentId}) as any
       if (!hasError(resp)) {
-        const shipmentPackageRouteSegDetails = resp.data
+        const shipmentPackageRouteSegDetails = resp.data.filter((shipmentPackageRouteSegDetail:any) => shipmentPackageRouteSegDetail.carrierServiceStatusId !== "SHRSCS_VOIDED")
+
         let missingLabelImage = false;
         if (this.state.util.productStoreShipmentMethCount > 0) {
           missingLabelImage = shipmentPackageRouteSegDetails.length === 0 || shipmentPackageRouteSegDetails.some((seg: any) => !seg.trackingCode);
         }
 
+        const shipmentPackages = payload.shipmentPackages.map((shipmentPackage: any) => {
+          const shipmentPackageRouteSegDetail = shipmentPackageRouteSegDetails.find(
+            (detail: any) =>
+              shipmentPackage.shipmentId === detail.shipmentId &&
+              shipmentPackage.shipmentPackageSeqId === detail.shipmentPackageSeqId
+          );
+          return { ...shipmentPackage, ...shipmentPackageRouteSegDetail };
+        });
+
         const updateShipmentPackages = (order:any) => {
-          order.shipmentPackageRouteSegDetails = shipmentPackageRouteSegDetails
+          order.shipmentPackageRouteSegDetails = resp.data
+          order.shipmentPackages = shipmentPackages
           order.labelImageUrl = shipmentPackageRouteSegDetails[0]?.labelImageUrl
-          order.carrierPartyId = shipmentPackageRouteSegDetails[0]?.carrierPartyId
-          order.shipmentMethodTypeId = shipmentPackageRouteSegDetails[0]?.shipmentMethodTypeId
+          order.carrierPartyId = resp.data[0]?.carrierPartyId
+          order.shipmentMethodTypeId = resp.data[0]?.shipmentMethodTypeId
           order.trackingCode = shipmentPackageRouteSegDetails[0]?.trackingCode
-          order.isTrackingRequired = shipmentPackageRouteSegDetails[0]?.isTrackingRequired
+          order.isTrackingRequired = resp.data[0]?.isTrackingRequired
           order.missingLabelImage = missingLabelImage
-          order.gatewayMessage = shipmentPackageRouteSegDetails[0]?.gatewayMessage
+          order.gatewayMessage = resp.data[0]?.gatewayMessage
         };
     
         if (currentOrder && currentOrder.shipmentId === payload.shipmentId) {

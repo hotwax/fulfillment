@@ -442,6 +442,16 @@ const findShipments = async (query: any): Promise <any>  => {
         if (productStoreShipmentMethCount > 0) {
           missingLabelImage = shipmentPackageRouteSegDetails.length === 0 || shipmentPackageRouteSegDetails.some((seg: any) => !seg.trackingCode);
         }
+
+        shipment.shipmentPackages = shipment.shipmentPackages.map((shipmentPackage: any) => {
+          const shipmentPackageRouteSegDetail = shipmentPackageRouteSegDetails.find(
+            (detail: any) =>
+              shipmentPackage.shipmentId === detail.shipmentId &&
+              shipmentPackage.shipmentPackageSeqId === detail.shipmentPackageSeqId
+          );
+          return { ...shipmentPackage, ...shipmentPackageRouteSegDetail };
+        });
+
         const customerName = (shipment.firstName && shipment.lastName) ? shipment.firstName + " " + shipment.lastName : shipment.firstName ? shipment.firstName : "";
 
         return {
