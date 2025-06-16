@@ -315,7 +315,7 @@ export default defineComponent({
           // using index 0 as we will only get a single record
           this.currentFacilityDetails = {
             ...this.currentFacilityDetails,
-            ...resp.data[0]
+            ...resp.data
           }
           this.updateOrderLimitType()
         } else {
@@ -334,9 +334,9 @@ export default defineComponent({
           "pageSize": 1,
           "fieldsToSelect": ["entryDate", "lastOrderCount"],
         })
-        if (!hasError(resp)) {          
+        if (!hasError(resp) && resp.data.length) {          
           // using index 0 as we will only get a single record
-          this.currentFacilityDetails.orderCount = resp.data[0].lastOrderCount
+          this.currentFacilityDetails.orderCount = resp.data[0]?.lastOrderCount
         } else {
           throw resp.data
         }
