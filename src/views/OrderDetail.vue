@@ -814,6 +814,7 @@ export default defineComponent({
       emitter.emit('presentLoader');
       let toast: any;
       const shipmentIds = [order.shipmentId]
+      const manualTrackingCode = trackingCode
 
       try {
         const updatedOrderDetail = await this.getUpdatedOrderDetail(order, updateParameter) as any
@@ -823,7 +824,7 @@ export default defineComponent({
           facilityId: order.originFacilityId,
           rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
           shipmentPackageContents: updatedOrderDetail.shipmentPackageContents,
-          trackingCode
+          trackingCode: manualTrackingCode
         }
 
         const resp = await OrderService.packOrder(params);
@@ -841,7 +842,7 @@ export default defineComponent({
 
         emitter.emit('dismissLoader');
 
-        if (documentOptions.length && !trackingCode) {
+        if (documentOptions.length && !manualTrackingCode && !this.order.missingLabelImage) {
           // additional parameters for dismiss button and manual dismiss ability
           toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
           toast.present()
