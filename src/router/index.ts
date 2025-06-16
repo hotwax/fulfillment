@@ -125,7 +125,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/:category/order-detail/:orderId/:shipGroupSeqId',
-    name: 'OrderShipmentDetail',
+    name: 'OrderDetail',
     component: OrderDetail,
     beforeEnter: authGuard,
     props: true,
@@ -135,7 +135,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/:category/shipment-detail/:orderId/:shipmentId',
-    name: 'OrderShipmentDetail',
+    name: 'ShipmentDetail',
     component: OrderDetail,
     beforeEnter: authGuard,
     props: true,
