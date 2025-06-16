@@ -281,12 +281,9 @@ export default defineComponent({
     isEligibleForCreatingShipment() {
       let isEligible = this.currentOrder && this.currentOrder.items?.some((item: any) => item.pickedQuantity > 0);
       if (isEligible) {
-        isEligible = !this.currentOrder.items?.some((item: any) =>  item.pickedQuantity > 0 && (this.getShippedQuantity(item) + item.pickedQuantity) > item.orderedQuantity);
+        isEligible = !this.currentOrder.items?.some((item: any) =>  item.pickedQuantity > 0 && (item.shippedQuantity + item.pickedQuantity) > item.orderedQuantity);
       }
       return isEligible;
-    },
-    getShippedQuantity(item: any) {
-      return this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] ? this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] : 0;
     },
     async updateProductCount(payload: any) {
       if (this.queryString) {
@@ -299,9 +296,8 @@ export default defineComponent({
       }
       else if (result.isProductFound) {
         const item = result.orderItem
-        const shippedQuantity = this.getShippedQuantity(item)
-        if(item.pickedQuantity > item.orderedQuantity - shippedQuantity) {
-          showToast(translate('The picked quantity cannot exceed the ordered quantity.') + " " + translate("already shipped.", {shippedQuantity: shippedQuantity}))
+        if(item.pickedQuantity > item.orderedQuantity - item.shippedQuantity) {
+          showToast(translate('The picked quantity cannot exceed the ordered quantity.') + " " + translate("already shipped.", {shippedQuantity: item.shippedQuantity}))
         } else {
           showToast(translate("Scanned successfully.", { itemName: payload }))
           this.lastScannedId = payload
