@@ -21,17 +21,15 @@
       <ion-label :color="selectedSegment === 'update-tracking-detail' ? '' : 'medium'">2. {{ translate("Generate a label externally and add tracking details manually.") }}<br/></ion-label>
       <ion-label :color="selectedSegment === 'reject-order' ? '' : 'medium'">3. {{ translate("Reject order and share troubleshooting details.") }}<br/></ion-label>
     </div>
-    <ion-list>
-      <ion-item lines="full">
-        <ion-label>
-          <p class="overline">{{ translate("Gateway error") }}</p>
-          {{ order.gatewayMessage }}
-        </ion-label>
-        <ion-button fill="clear" color="medium" @click="copyToClipboard(order.gatewayMessage, 'Copied to clipboard')"> 
-          <ion-icon slot="icon-only" :icon="copyOutline" />
-        </ion-button>
-      </ion-item>
-    </ion-list>
+    <ion-item lines="full" v-if="order.gatewayMessage">
+      <ion-label>
+        <p class="overline">{{ translate("Gateway error") }}</p>
+        {{ order.gatewayMessage }}
+      </ion-label>
+      <ion-button fill="clear" color="medium" @click="copyToClipboard(order.gatewayMessage, 'Copied to clipboard')"> 
+        <ion-icon slot="icon-only" :icon="copyOutline" />
+      </ion-button>
+    </ion-item>
     <ion-segment scrollable v-model="selectedSegment" @click="reinitializeData">
       <ion-segment-button value="update-carrier">
         <ion-label>{{ translate("Update carrier") }}</ion-label>
