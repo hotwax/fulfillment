@@ -21,7 +21,7 @@ const fetchCarrierShipmentMethods = async (params: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return await client({
     url: `/oms/shippingGateways/carrierShipmentMethods`,
     method: "GET",
     baseURL,
@@ -37,7 +37,7 @@ const fetchShipmentMethodTypes = async (params: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return await client({
     url: `/oms/shippingGateways/shipmentMethodTypes`,
     method: "GET",
     baseURL,
@@ -52,7 +52,7 @@ const fetchProductStoreShipmentMethodsByCarrier = async (payload: any): Promise<
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return await client({
     url: `/oms/entityData`,
     method: "POST",
     baseURL,
@@ -63,11 +63,11 @@ const fetchProductStoreShipmentMethodsByCarrier = async (payload: any): Promise<
     data: payload
   });
 }
-const fetchProductStoreShipmentMethods = async (payload: any): Promise<any> => {
+const  fetchProductStoreShipmentMethods = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return await client({
     url: `/oms/entityData`,
     method: "POST",
     baseURL,

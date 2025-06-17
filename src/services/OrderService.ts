@@ -526,7 +526,7 @@ const packOrder = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return await client({
     url: `/poorti/shipments/${payload.shipmentId}/pack`,
     method: "POST",
     baseURL,
