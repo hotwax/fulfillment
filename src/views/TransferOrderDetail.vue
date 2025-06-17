@@ -353,9 +353,7 @@ export default defineComponent({
         }
 
         currentShipment.isGeneratingShippingLabel = true;
-        let shippingLabelPdfUrls = currentShipment.shipmentPackages
-          ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
-          .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+        let shippingLabelPdfUrls = [currentShipment.labelImageUrl];
 
 
         if (!currentShipment.trackingIdNumber) {
@@ -366,9 +364,7 @@ export default defineComponent({
           // Temporarily handling this in app but should be handled in backend        
           await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.currentOrder.orderId })
           currentShipment = this.currentOrder?.shipments?.find((shipment:any) => shipment.shipmentId === currentShipment.shipmentId);
-          shippingLabelPdfUrls = currentShipment?.shipmentPackages
-              ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
-              .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
+          shippingLabelPdfUrls = [currentShipment?.labelImageUrl];
 
 
           if(currentShipment.trackingIdNumber) {
