@@ -637,7 +637,7 @@ const retryShippingLabel = async (shipmentId: string): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   try {
-    const resp = client({
+    const resp = await client({
       url: `/poorti/shipments/retryShippingLabel`,
       method: "post",
       baseURL,
