@@ -797,11 +797,11 @@ export default defineComponent({
             text: translate("Pack"),
             role: 'confirm',
             handler: async (data) => {
-              const isPacked = await this.executePackOrder(order, updateParameter, trackingCode, data)
-              if (!isPacked) {
+              const packingResponse = await this.executePackOrder(order, updateParameter, trackingCode, data)
+              if (!packingResponse.isPacked) {
                 //On error in packing, fetching update detail expecially to fetch carrier, shipment method, gteway message etc. If there is error (gatewayMessage not empty) opening Generate tracking code modal to enter tracking detail manually
                 const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
-                await this.generateTrackingCodeForPacking(updatedOrder, updateParameter, data)
+                await this.generateTrackingCodeForPacking(updatedOrder, updateParameter, data, packingResponse.errors)
               }
             }
           }]
@@ -866,17 +866,17 @@ export default defineComponent({
           showToast(translate('Order packed successfully'));
         }
         this.router.replace(`/completed/shipment-detail/${this.orderId}/${this.shipmentId}`)
-        return true
-      } catch (err) {
+        return {isPacked: true}
+      } catch (err: any) {
         // in case of error, if loader and toast are not dismissed above
         if (toast) toast.dismiss()
         emitter.emit('dismissLoader');
         showToast(translate('Failed to pack order'))
         logger.error('Failed to pack order', err)
+        return {isPacked: false, errors: err?.response?.data?.errors}
       } finally {
         emitter.emit("dismissLoader");
       }
-      return false
     },
     async fetchPickersInformation() {
       const payload = {
@@ -1447,10 +1447,10 @@ export default defineComponent({
 
       modal.present();
     },
-    async generateTrackingCodeForPacking(order: any, updateParameter?: string, documentOptions?: any) {
+    async generateTrackingCodeForPacking(order: any, updateParameter?: string, documentOptions?: any, packingError?: string) {
       const modal = await modalController.create({
         component: GenerateTrackingCodeModal,
-        componentProps: { order, updateCarrierShipmentDetails: this.updateCarrierShipmentDetails, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions }
+        componentProps: { order, updateCarrierShipmentDetails: this.updateCarrierShipmentDetails, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError }
       })
       modal.present();
     },

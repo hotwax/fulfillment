@@ -545,11 +545,11 @@ export default defineComponent({
             text: translate("Pack"),
             role: 'confirm',
             handler: async (data) => {
-              const isPacked = await this.executePackOrder(order, updateParameter, trackingCode, data)
-              if (!isPacked) {
+              const packingResponse = await this.executePackOrder(order, updateParameter, trackingCode, data)
+              if (!packingResponse.isPacked) {
                 //On error in packing, fetching update detail expecially to fetch carrier, shipment method, gteway message etc. If there is error (gatewayMessage not empty) opening Generate tracking code modal to enter tracking detail manually
                 const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
-                await this.generateTrackingCodeForPacking(updatedOrder, updateParameter, data)
+                await this.generateTrackingCodeForPacking(updatedOrder, updateParameter, data, packingResponse.errors)
               }
             }
           }]
@@ -572,9 +572,7 @@ export default defineComponent({
           trackingCode: manualTrackingCode
         }
         const resp = await OrderService.packOrder(params);
-        if (hasError(resp)) {
-          throw resp.data
-        }
+        
         //Fetching updated shipment detail after successful packing
         const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
 
@@ -623,16 +621,16 @@ export default defineComponent({
         // TODO: handle the case of fetching in progress orders after packing an order
         // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
         await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
-        return true
-      } catch (err) {
+        return { isPacked: true }
+      } catch (err: any) {
         // in case of error, if loader and toast are not dismissed above
         if (toast) toast.dismiss()
         showToast(translate('Failed to pack order'))
         logger.error('Failed to pack order', err)
+        return {isPacked: false, errors: err?.response?.data?.errors}
       } finally {
         emitter.emit("dismissLoader");
       }
-      return false
     },
     async packOrders() {
       const alert = await alertController
@@ -1228,10 +1226,10 @@ export default defineComponent({
 
       modal.present();
     },
-    async generateTrackingCodeForPacking(order: any, updateParameter?: string, documentOptions = {}) {
+    async generateTrackingCodeForPacking(order: any, updateParameter?: string, documentOptions = {}, packingError?: string) {
       const modal = await modalController.create({
         component: GenerateTrackingCodeModal,
-        componentProps: { order, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions }
+        componentProps: { order, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError }
       })
       modal.present();
     },

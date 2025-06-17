@@ -21,10 +21,10 @@
       <ion-label :color="selectedSegment === 'update-tracking-detail' ? '' : 'medium'">2. {{ translate("Generate a label externally and add tracking details manually.") }}<br/></ion-label>
       <ion-label :color="selectedSegment === 'reject-order' ? '' : 'medium'">3. {{ translate("Reject order and share troubleshooting details.") }}<br/></ion-label>
     </div>
-    <ion-item lines="full" v-if="order.gatewayMessage">
+    <ion-item lines="full" v-if="order.gatewayMessage || packingErrorMessage">
       <ion-label>
         <p class="overline">{{ translate("Gateway error") }}</p>
-        {{ order.gatewayMessage }}
+        {{ order.gatewayMessage ?? packingErrorMessage }}
       </ion-label>
       <ion-button fill="clear" color="medium" @click="copyToClipboard(order.gatewayMessage, 'Copied to clipboard')"> 
         <ion-icon slot="icon-only" :icon="copyOutline" />
@@ -60,13 +60,13 @@
       <template v-else-if="selectedSegment === 'update-tracking-detail'">
         <ion-list>
           <ion-item>
-            <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
+            <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
               <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item>
             <template v-if="carrierMethods && carrierMethods.length > 0">
-              <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
+              <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
                 <ion-select-option v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
               </ion-select>
             </template>
@@ -94,13 +94,13 @@
       <template v-else>
         <ion-list>
           <ion-item>
-            <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
+            <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
               <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item>
             <template v-if="carrierMethods && carrierMethods.length > 0">
-              <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
+              <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
                 <ion-select-option v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
               </ion-select>
             </template>
@@ -158,7 +158,6 @@ import logger from "@/logger";
 import { copyToClipboard, showToast } from "@/utils";
 import { hasError } from "@/adapter";
 import { retryShippingLabel } from "@/utils/order";
-import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
   name: "GenerateTrackingCodeModal",
@@ -202,10 +201,11 @@ export default defineComponent({
       carrierMethods:[] as any,
       carrierPartyId: "",
       shipmentMethodTypeId: "",
-      trackingCode: ""
+      trackingCode: "",
+      packingErrorMessage: ""
     }
   },
-  props: ["order", "updateCarrierShipmentDetails", "executePackOrder", "rejectEntireOrder", "updateParameter", "documentOptions"],
+  props: ["order", "updateCarrierShipmentDetails", "executePackOrder", "rejectEntireOrder", "updateParameter", "documentOptions", "packingError"],
   async mounted() {
     this.isTrackingRequired = this.isTrackingRequiredForAnyShipmentPackage()
     if (this.facilityCarriers) {
@@ -213,6 +213,8 @@ export default defineComponent({
       this.carrierMethods = await this.getProductStoreShipmentMethods(this.carrierPartyId);
       this.shipmentMethodTypeId = this.order?.shipmentMethodTypeId;
     }
+    this.packingErrorMessage = this.packingError
+    console.log("===this.packingError===", this.packingError)
   },
   methods: {
     closeModal(payload = {}) {
@@ -248,7 +250,7 @@ export default defineComponent({
     async confirmSave() {
       let order = this.order
       let isSuccess = true;
-      if (this.selectedSegment !== 'reject-order' && hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE) && (order.carrierPartyId !== this.carrierPartyId || order.shipmentMethodTypeId !== this.shipmentMethodTypeId)) {
+      if (this.selectedSegment !== 'reject-order' && (order.carrierPartyId !== this.carrierPartyId || order.shipmentMethodTypeId !== this.shipmentMethodTypeId)) {
         const isUpdated = await this.updateCarrierAndShippingMethod(this.carrierPartyId, this.shipmentMethodTypeId)
         if(!isUpdated) {
           showToast(translate("Failed to update shipment method detail."));
@@ -274,7 +276,9 @@ export default defineComponent({
           }
         }
       } else {
-        isSuccess = await this.executePackOrder(this.order, this.updateParameter, this.trackingCode.trim(), this.documentOptions);
+        const packingResponse = await this.executePackOrder(this.order, this.updateParameter, this.trackingCode.trim(), this.documentOptions);
+        isSuccess = packingResponse.isPacked
+        this.packingErrorMessage = packingResponse.errors
       }
       if (isSuccess) {
         this.closeModal();
@@ -326,13 +330,11 @@ export default defineComponent({
   setup() {
     const store = useStore();
     return {
-      Actions,
       archiveOutline,
       barcodeOutline,
       copyToClipboard,
       closeOutline,
       copyOutline,
-      hasPermission,
       informationCircleOutline,
       openOutline,
       retryShippingLabel,
