@@ -801,9 +801,7 @@ export default defineComponent({
               if (!isPacked) {
                 //On error in packing, fetching update detail expecially to fetch carrier, shipment method, gteway message etc. If there is error (gatewayMessage not empty) opening Generate tracking code modal to enter tracking detail manually
                 const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
-                if (updatedOrder.gatewayMessage) {
-                  await this.generateTrackingCodeForPacking(updatedOrder, updateParameter, data)
-                }
+                await this.generateTrackingCodeForPacking(updatedOrder, updateParameter, data)
               }
             }
           }]
