@@ -645,7 +645,7 @@ const retryShippingLabel = async (shipmentId: string): Promise<any> => {
         "api_key": omsRedirectionInfo.token,
         "Content-Type": "application/json"
       },
-      data: { shipmentIds: [shipmentId], generateLabel: "Y"}
+      data: { shipmentIds: [shipmentId]}
     }) as any;
     if (hasError(resp)) {
       throw resp?.data;
