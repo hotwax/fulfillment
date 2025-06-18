@@ -378,8 +378,8 @@ async function findProductFromIdentifier(payload: any) {
             sku: product.sku,
             quantity: quantityField ? (Number(uploadedItemsByIdValue[idValue][quantityField]) || 0) : 0,
             isChecked: false,
-            qoh: stock.qoh || 0,
-            atp: stock.atp || 0
+            qoh: stock?.qoh || 0,
+            atp: stock?.atp || 0
           })
         }
       })
