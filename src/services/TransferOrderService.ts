@@ -289,7 +289,7 @@ const createTransferOrder = async (payload: any): Promise<any> => {
   const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return await client({
     url: 'oms/transferOrders',
     method: "post",
     baseURL,
