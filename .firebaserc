@@ -1,6 +1,7 @@
 {
   "projects": {
     "default": "hotwax-digital-commerce",
+    "uat": "hotwax-digital-commerce-uat",
     "production": "digital-commerce-71eb8"
   },
   "targets": {
@@ -14,10 +15,23 @@
         ]
       }
     },
+    "hotwax-digital-commerce-uat": {
+      "hosting": {
+        "dev-legacy": [
+          "hotwax-fulfillment-legacy-dev"
+        ],
+        "uat-legacy": [
+          "hotwax-fulfillment-legacy-uat"
+        ]
+      }
+    },
     "digital-commerce-71eb8": {
       "hosting": {
         "prod": [
           "hotwax-fulfillment"
+        ],
+        "prod-legacy": [
+          "hotwax-fulfillment-legacy"
         ]
       }
     }

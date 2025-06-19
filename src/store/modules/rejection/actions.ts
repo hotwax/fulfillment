@@ -37,7 +37,7 @@ const actions: ActionTree<RejectionState, RootState> = {
             "limit":-1,
             "type":"terms",
           },
-          "prodductIdFacet":{
+          "productIdFacet":{
             "field":"productId_s",
             "mincount":1,
             "limit":-1,
@@ -51,7 +51,7 @@ const actions: ActionTree<RejectionState, RootState> = {
         if (!hasError(resp)) {
           total = resp.data.facets.total ? resp.data.facets.total : 0
           const usedReasons = resp.data.facets.rejectionReasonIdFacet.buckets
-          rejectedItems = resp.data.facets.prodductIdFacet.buckets
+          rejectedItems = resp.data.facets.productIdFacet.buckets
           if (rejectedItems) {
             const productIds = rejectedItems.map((rejectedItem: any) => rejectedItem.val)
             await this.dispatch('product/fetchProducts', { productIds })

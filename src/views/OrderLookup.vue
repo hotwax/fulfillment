@@ -70,7 +70,7 @@
               <section v-if="showOrderItems">
                 <div class="list-item" v-for="(item, index) in order.doclist.docs" :key="index">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
+                    <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl" @click.stop>
                       <Image :src="getProduct(item.productId)?.mainImageUrl" />
                     </ion-thumbnail>
                     <ion-label class="ion-text-wrap">
