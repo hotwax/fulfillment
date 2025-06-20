@@ -241,8 +241,12 @@ const parseCsv = async (file: File, options?: any) => {
   })
 }
 
+/**
+ * Returns true if the query object contains any active filters, excluding specified fields; 
+ * add future fields to `excludedFields` to ignore them in the check.
+ */
 const hasActiveFilters = (query: any): boolean => {
-  const excludedFields = ["viewSize", "viewIndex", "queryString"];
+  const excludedFields = ["viewSize", "viewIndex", "queryString", "hideLoader"];
   return Object.keys(query).some((key: string) => 
     !excludedFields.includes(key) && (Array.isArray(query[key]) ? query[key].length : query[key].trim())
   );
