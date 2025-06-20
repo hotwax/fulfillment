@@ -21,10 +21,10 @@
 
         <div class="scanner">
           <ion-item>
-            <ion-input :label="translate('Scan items')" autofocus :placeholder="translate('Scan barcodes to pick them')" v-model="queryString" @keyup.enter="updateProductCount()" />
+            <ion-input :disabled="currentOrder.statusId === 'ORDER_COMPLETED'" :label="translate('Scan items')" autofocus :placeholder="translate('Scan barcodes to pick them')" v-model="queryString" @keyup.enter="updateProductCount()" />
          </ion-item>
 
-          <ion-button expand="block" fill="outline" @click="scanCode()">
+          <ion-button expand="block" fill="outline" :disabled="currentOrder.statusId === 'ORDER_COMPLETED'" @click="scanCode()">
             <ion-icon slot="start" :icon="barcodeOutline" />{{ translate("Scan") }}
           </ion-button>
         </div>

@@ -6,10 +6,20 @@
         <ion-title v-if="!transferOrders.total">{{ transferOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-title v-else>{{ transferOrders.list.length }} {{ translate('of') }} {{ transferOrders.total }} {{ translate('orders') }}</ion-title>
       </ion-toolbar>
+      <div>
+        <ion-searchbar class="searchbar" :value="transferOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
+        <ion-segment v-model="selectedSegment" @ionChange="segmentChanged()">
+          <ion-segment-button value="open">
+            <ion-label>{{ translate("Open") }}</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="completed">
+            <ion-label>{{ translate("Completed") }}</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </div>
     </ion-header>
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="transfer-order-filters">
-      <ion-searchbar class="searchbar" :value="transferOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="transferOrders.total">
         <div class="results">
           <ion-list>
@@ -38,7 +48,7 @@
       </div>
       <div v-else class="empty-state">
         <p v-html="getErrorMessage()"></p>
-        <ion-button v-if="!transferOrders.query.queryString && hasCompletedTransferOrders" size="small" fill="outline" color="medium" @click="showCompletedTransferOrders">
+        <ion-button v-if="!transferOrders.query.queryString && hasCompletedTransferOrders && selectedSegment === 'open'" size="small" fill="outline" color="medium" @click="showCompletedTransferOrders">
           <ion-icon slot="end" :icon="checkmarkDoneOutline"/>{{ translate("Show completed transfer orders") }}
         </ion-button>
       </div>
@@ -70,6 +80,8 @@ import {
   IonMenuButton,
   IonPage, 
   IonSearchbar,
+  IonSegment,
+  IonSegmentButton,
   IonTitle, 
   IonToolbar, 
 } from '@ionic/vue';
@@ -100,6 +112,8 @@ export default defineComponent({
     IonMenuButton,
     IonPage,
     IonSearchbar,
+    IonSegment,
+    IonSegmentButton,
     IonTitle,
     IonToolbar
   },
@@ -113,7 +127,8 @@ export default defineComponent({
     return {
       searchedQuery: '',
       isScrollingEnabled: false,
-      hasCompletedTransferOrders: true
+      hasCompletedTransferOrders: true,
+      selectedSegment: "open"
     }
   },
   async ionViewWillEnter() {
@@ -123,9 +138,16 @@ export default defineComponent({
     emitter.emit('dismissLoader');
   },
   methods: {
+    segmentChanged() {
+      this.initialiseTransferOrderQuery();
+    },
     getErrorMessage() {
       if(!this.searchedQuery) {
-        return this.hasCompletedTransferOrders ? translate("doesn't have any open transfer orders right now.", { facilityName: this.currentFacility.facilityName }) : translate("doesn't have any transfer orders right now.", { facilityName: this.currentFacility.facilityName });
+        if (this.selectedSegment === 'completed') {
+          return translate("doesn't have any completed transfer orders right now.", { facilityName: this.currentFacility.facilityName });
+        } else {
+          return this.hasCompletedTransferOrders ? translate("doesn't have any open transfer orders right now.", { facilityName: this.currentFacility.facilityName }) : translate("doesn't have any transfer orders right now.", { facilityName: this.currentFacility.facilityName });
+        }
       } else {
         return translate("No results found for .", { searchedQuery: this.searchedQuery });
       }
@@ -168,6 +190,7 @@ export default defineComponent({
       transferOrdersQuery.viewIndex = 0
       transferOrdersQuery.viewSize = 20
       transferOrdersQuery.queryString = queryString.trim()
+      transferOrdersQuery.orderStatusId = this.selectedSegment === 'completed' ? "ORDER_COMPLETED" : "ORDER_APPROVED"
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
       this.searchedQuery = queryString;
     },
@@ -175,6 +198,7 @@ export default defineComponent({
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
       transferOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       transferOrdersQuery.viewSize = 20
+      transferOrdersQuery.orderStatusId = this.selectedSegment === 'completed' ? "ORDER_COMPLETED" : "ORDER_APPROVED"
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
     },
     async viewTransferOrderDetail(order: any) {
@@ -214,3 +238,10 @@ export default defineComponent({
   }
 });
 </script>
+<style scoped>
+@media (min-width: 991px) {
+  ion-header > div {
+    display: flex;
+  }
+}
+</style>
