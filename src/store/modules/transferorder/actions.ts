@@ -20,7 +20,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     const params: any = {
       orderStatusId: orderStatusId,
       originFacilityId: getCurrentFacilityId(),
-      limit: 10,
+      limit: transferOrderQuery.viewSize,
       pageIndex: transferOrderQuery.viewIndex
     };
     if (orderStatusId === 'ORDER_APPROVED') {
