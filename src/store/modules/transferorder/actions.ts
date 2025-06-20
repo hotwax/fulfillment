@@ -15,14 +15,17 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   async findTransferOrders({ commit, state }, payload = {}) {
     let resp;
     const transferOrderQuery = JSON.parse(JSON.stringify(state.transferOrder.query))
+    const orderStatusId = transferOrderQuery.orderStatusId ?? "ORDER_APPROVED"
 
     const params: any = {
-      orderStatusId: transferOrderQuery.orderStatusId ?? "ORDER_APPROVED",
-      itemStatusId: "ITEM_PENDING_FULFILL",
+      orderStatusId: orderStatusId,
       originFacilityId: getCurrentFacilityId(),
-      limit: transferOrderQuery.viewSize,
+      limit: 10,
       pageIndex: transferOrderQuery.viewIndex
     };
+    if (orderStatusId === 'ORDER_APPROVED') {
+      params.itemStatusId = "ITEM_PENDING_FULFILL"
+    }
 
     // If searching, add queryString
     if (transferOrderQuery.queryString) {
