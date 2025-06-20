@@ -17,6 +17,7 @@
   "A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.": "ストアは会社や製品のユニークなカタログを表します。OMSが異なる製品コレクションを販売する複数のeコマースストアに接続されている場合、HotWax Commerceで複数の製品ストアが設定されることがあります。",
   "already shipped.": "{shippedQuantity}は既に出荷済みです。",
   "doesn't have any completed orders right now.": "{facilityName}には現在完了した注文はありません。",
+  "doesn't have any completed transfer orders right now.": "{facilityName} doesn't have any completed transfer orders right now.",
   "doesn't have any orders in progress right now.": "{facilityName}には現在進行中の注文はありません。",
   "doesn't have any transfer orders right now.": "{facilityName}には現在転送注文はありません。",
   "doesn't have any outstanding orders right now.": "{facilityName}には現在未処理の注文はありません。",
