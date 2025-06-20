@@ -59,7 +59,7 @@
 
               <div class="order-metadata">
                 <ion-label>
-                  {{ order.shipmentMethodTypeDesc }}
+                  {{ getShipmentMethodDesc(order.shipmentMethodTypeId) }}
                   <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
                 </ion-label>
               </div>
@@ -88,7 +88,7 @@
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
-                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                  <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
                   <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
@@ -181,7 +181,7 @@ import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationS
 import { formatUtcDate, getFeatures, getFacilityFilter, hasActiveFilters, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
-import { prepareOrderQuery } from '@/utils/solrHelper';
+import { prepareSolrQuery } from '@/utils/solrHelper';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import emitter from '@/event-bus';
 import logger from '@/logger';
@@ -190,6 +190,7 @@ import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import { isKit } from '@/utils/order'
+import { OrderService } from '@/services/OrderService'
 import { useDynamicImport } from "@/utils/moduleFederation";
 import { useRouter } from "vue-router";
 
@@ -316,19 +317,21 @@ export default defineComponent({
     async fetchShipmentMethods() {
       let resp: any;
 
-      const payload = prepareOrderQuery({
-        queryFields: 'orderId',
+      const payload = prepareSolrQuery({
+        docType: 'ORDER',
         viewSize: '0',  // passed viewSize as 0 to not fetch any data
+        isGroupingRequired: false,
         filters: {
-          quantityNotAvailable: { value: 0 },
-          isPicked: { value: 'N' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          '-fulfillmentStatus': { value: ['Cancelled', 'Rejected', 'Completed']},
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
           productStoreId: { value: this.currentEComStore.productStoreId },
           ...getFacilityFilter(this.currentFacility?.facilityId)
         },
+        solrFilters: [
+          //it should be explicit what is subtracting the first part of your OR statement from
+          "((*:* -fulfillmentStatus: [* TO *]) OR fulfillmentStatus:Created)"
+        ],
         facet: {
           "shipmentMethodTypeIdFacet":{
             "excludeTags":"shipmentMethodTypeIdFilter",
@@ -394,7 +397,7 @@ export default defineComponent({
             let resp;
 
             try {
-              resp = await UserService.recycleOutstandingOrders({
+              resp = await OrderService.recycleOutstandingOrders({
                 "facilityId": this.currentFacility?.facilityId,
                 "productStoreId": this.currentEComStore.productStoreId,
                 "reasonId": "INACTIVE_STORE"

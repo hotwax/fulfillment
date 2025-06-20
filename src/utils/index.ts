@@ -71,6 +71,12 @@ const getFeatures = (productFeatures: any) => {
   return features || "";
 }
 
+const downloadCsv = (csv: any, fileName: any) => {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  saveAs(blob, fileName ? fileName : "default.csv");
+  return blob;
+};
+
 const jsonToCsv = (file: any, options: JsonToCsvOption = {}) => {
   const csv = Papa.unparse(file, {
     ...options.parse
@@ -259,4 +265,4 @@ const getFacilityFilter = (value: any): any => {
   return facilityFilter 
 }
 
-export { copyToClipboard, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getFacilityFilter, getFeatures, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getIdentificationId, handleDateTimeInput, hasActiveFilters, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv }
+export { copyToClipboard, downloadCsv, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getFacilityFilter, getFeatures, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getIdentificationId, handleDateTimeInput, hasActiveFilters, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv }

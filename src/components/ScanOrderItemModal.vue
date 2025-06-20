@@ -112,7 +112,8 @@ export default defineComponent({
   },
   props: ["order"],
   mounted() {
-    this.orderItems = this.order.items.length ? JSON.parse(JSON.stringify(this.order.items)) : []
+    const orderItems = this.order.items.length ? JSON.parse(JSON.stringify(this.order.items)) : []
+    this.orderItems = orderItems ? orderItems.filter((item: any) => !item.rejectReason) : []
   },
   methods: {
     closeModal(payload= {}) {

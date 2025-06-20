@@ -1,10 +1,19 @@
-import { api } from '@/adapter';
+import { client } from '@/adapter';
+import store from '@/store';
 
 const getInventoryAvailableByFacility = async (query: any): Promise <any> => {
-  return api({
-    url: "service/getInventoryAvailableByFacility", 
-    method: "post",
-    data: query
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/poorti/getInventoryAvailableByFacility`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params: query,
   });
 }
 

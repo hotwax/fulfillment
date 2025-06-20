@@ -33,6 +33,17 @@ const getters: GetterTree <UserState, RootState> = {
     getPwaState(state) {
         return state.pwaState;
     },
+    getMaargUrl (state) {
+        const url = state.omsRedirectionInfo.url;
+        return url.startsWith('http') ? new URL(url).origin : `https://${url}.hotwax.io`;
+    },
+    getMaargBaseUrl (state) {
+        const url = state.omsRedirectionInfo.url
+        return url.startsWith('http') ? url.includes('/rest/s1') ? url : `${url}/rest/s1/` : `https://${url}.hotwax.io/rest/s1`;
+    },
+    getOmsRedirectionInfo(state) {
+        return state.omsRedirectionInfo
+    },
     getNotifications(state) {
         return state.notifications.sort((a: any, b: any) => b.time - a.time)
     },
@@ -47,9 +58,6 @@ const getters: GetterTree <UserState, RootState> = {
     },
     getAllNotificationPrefs(state) {
         return state.allNotificationPrefs
-    },
-    getNewRejectionApiConfig(state) {
-        return  state.newRejectionApiConfig;
     },
     getPartialOrderRejectionConfig(state) {
         return  state.partialOrderRejectionConfig;

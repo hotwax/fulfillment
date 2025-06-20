@@ -65,6 +65,11 @@
               <ion-card-title>{{ translate("Plan") }}</ion-card-title>
             </ion-card-header>
             <ion-item>
+              <ion-select :label="translate('Lifecycle')" placeholder="Select" v-model="currentOrder.statusFlowId" interface="popover">
+                <ion-select-option v-for="flow in statusFlows" :key="flow.statusFlowId" :value="flow.statusFlowId">{{ translate(flow.description) }}</ion-select-option>
+              </ion-select>
+            </ion-item>
+            <ion-item>
               <ion-label>{{ translate("Ship Date") }}</ion-label>
               <ion-button slot="end" class="date-time-button" @click="openDateTimeModal('shipDate')">{{ currentOrder.shipDate ? formatDateTime(currentOrder.shipDate) : translate("Select date") }}</ion-button>
             </ion-item>
@@ -216,7 +221,7 @@ import SelectFacilityModal from '@/components/SelectFacilityModal.vue';
 import ImportTOItemsCsvModal from '@/components/ImportTOItemsCsvModal.vue';
 import { ProductService } from '@/services/ProductService';
 import { UtilService } from '@/services/UtilService';
-import { OrderService } from '@/services/OrderService';
+import { TransferOrderService } from '@/services/TransferOrderService';
 import router from '@/router';
 import { DateTime } from 'luxon';
 import { hasError } from "@/adapter";
@@ -241,8 +246,19 @@ const currentOrder = ref({
   destinationFacilityId: "",
   carrierPartyId: "",
   shipmentMethodTypeId: "", 
-  items: []
+  items: [],
+  statusFlowId: "",
 }) as any;
+const statusFlows = [
+  {
+    statusFlowId: "TO_Fulfill_And_Receive",
+    description: "Fulfill & Receive"
+  },
+  {
+    statusFlowId: "TO_Fulfill_Only",
+    description: "Fulfill only"
+  }
+]
 
 let content = ref([]) as any 
 let fileColumns = ref([]) as any 
@@ -362,8 +378,8 @@ async function findProductFromIdentifier(payload: any) {
             sku: product.sku,
             quantity: quantityField ? (Number(uploadedItemsByIdValue[idValue][quantityField]) || 0) : 0,
             isChecked: false,
-            qoh: stock.quantityOnHandTotal || 0,
-            atp: stock.availableToPromiseTotal || 0
+            qoh: stock?.qoh || 0,
+            atp: stock?.atp || 0
           })
         }
       })
@@ -400,8 +416,8 @@ async function addProductToOrder(scannedId?: any, product?: any) {
   } as any;
 
   const stock = await fetchStock(newProduct.productId);
-  if(stock?.quantityOnHandTotal || stock?.quantityOnHandTotal === 0) {
-    newProduct = { ...newProduct, qoh: stock.quantityOnHandTotal, atp: stock.availableToPromiseTotal }
+  if(stock?.qoh || stock?.qoh === 0) {
+    newProduct = { ...newProduct, qoh: stock.qoh, atp: stock.atp }
   }
   
   if(product) {
@@ -504,21 +520,20 @@ async function fetchFacilitiesByCurrentStore() {
   let availableFacilities = [];
 
   try {
-    const resp = await UtilService.fetchFacilities({
-      inputFields: {
-        productStoreId: currentOrder.value.productStoreId,
-        facilityTypeId: "VIRTUAL_FACILITY",
-        facilityTypeId_op: "notEqual",
-        parentFacilityTypeId: "VIRTUAL_FACILITY",
-        parentFacilityTypeId_op: "notEqual"
-      },
-      fieldList: ["facilityId", "facilityName"],
-      viewSize: 200,
-      entityName: "FacilityAndProductStore"
+    const resp = await UtilService.fetchProductStoreFacilities({
+      productStoreId: currentOrder.value.productStoreId,
+      facilityTypeId: "VIRTUAL_FACILITY",
+      facilityTypeId_op: "equals",
+      facilityTypeId_not: "Y",
+      parentFacilityTypeId: "VIRTUAL_FACILITY",
+      parentFacilityTypeId_op: "equals",
+      parentFacilityTypeId_not: "Y",
+      fieldsToSelect: ["facilityId", "facilityName"],
+      pageSize: 200,
     })
 
     if(!hasError(resp)) {
-      availableFacilities = resp.data.docs
+      availableFacilities = resp.data
     } else {
       throw resp.data;
     }
@@ -601,6 +616,11 @@ async function createOrder() {
     return;
   }
 
+  if(!currentOrder.value.statusFlowId) {
+    showToast(translate("Please select transfer order lifecycle."));
+    return;
+  }
+
   const productIds = currentOrder.value.items?.map((item: any) => item.productId);
   const productAverageCostDetail = await ProductService.fetchProductsAverageCost(productIds, currentOrder.value.originFacilityId)
 
@@ -610,45 +630,48 @@ async function createOrder() {
     customerId: "COMPANY",
     statusId: "ORDER_CREATED",
     productStoreId: currentOrder.value.productStoreId,
-    statusFlowId: "FULFILL_AND_RECEIVE",
-    shipGroup: [{
+    statusFlowId: currentOrder.value.statusFlowId,
+    orderDate: DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000"),
+    entryDate: DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000"),
+    originFacilityId: currentOrder.value.originFacilityId,
+    shipGroups: [{
       shipGroupSeqId: "00001",
       facilityId: currentOrder.value.originFacilityId,
       orderFacilityId: currentOrder.value.destinationFacilityId,
       carrierPartyId: currentOrder.value.carrierPartyId,
       shipmentMethodTypeId: currentOrder.value.shipmentMethodTypeId,
-      estimatedShipDate: currentOrder.value.shipDate ? DateTime.fromISO(currentOrder.value.shipDate).toFormat("yyyy-mm-dd 23:59:59.000") : "",
-      estimatedDeliveryDate: currentOrder.value.deliveryDate ? DateTime.fromISO(currentOrder.value.deliveryDate).toFormat("yyyy-mm-dd 23:59:59.000") : "",
+      estimatedShipDate: currentOrder.value.shipDate ? DateTime.fromISO(currentOrder.value.shipDate).toFormat("yyyy-MM-dd 23:59:59.000") : "",
+      estimatedDeliveryDate: currentOrder.value.deliveryDate ? DateTime.fromISO(currentOrder.value.deliveryDate).toFormat("yyyy-MM-dd 23:59:59.000") : "",
       items: currentOrder.value.items.map((item: any) => {
         return {
+          orderItemTypeId: "PRODUCT_ORDER_ITEM",
           productId: item.productId,
           sku: item.sku,
-          status: "ITEM_CREATED",
+          statusId: "ITEM_CREATED",
           quantity: Number(item.quantity),
-          unitPrice: productAverageCostDetail[item.productId] || 0.00
+          unitPrice: (Object.keys(productAverageCostDetail).length && productAverageCostDetail[item.productId]) || 0.00
         }
       })
     }]
   } as any;
 
   let grandTotal = 0;
-  order.shipGroup[0].items.map((item: any) => {
+  order.shipGroups[0].items.map((item: any) => {
     grandTotal += Number(item.quantity) * Number(item.unitPrice)
   })
   order["grandTotal"] = grandTotal
 
   const addresses = await store.dispatch("util/fetchFacilityAddresses", [currentOrder.value.originFacilityId, currentOrder.value.destinationFacilityId])
-  
   addresses.map((address: any) => {
     if(address.facilityId === currentOrder.value.originFacilityId) {
-      order.shipGroup[0].shipFrom = {
+      order.shipGroups[0].shipFrom = {
         postalAddress: {
           id: address.contactMechId
         }
       }
     }
     if(address.facilityId === currentOrder.value.destinationFacilityId) {
-      order.shipGroup[0].shipTo = {
+      order.shipGroups[0].shipTo = {
         postalAddress: {
           id: address.contactMechId
         }
@@ -657,10 +680,10 @@ async function createOrder() {
   })
 
   try {
-    const resp = await OrderService.createOrder({ order })
+    const resp = await TransferOrderService.createTransferOrder({ payload: order })
     if(!hasError(resp) && resp.data?.orderId) {
       const orderId = resp.data.orderId
-      const isApproved = await OrderService.approveOrder({ orderId })
+      const isApproved = await TransferOrderService.approveTransferOrder(orderId)
       if(!isApproved) {
         router.replace("/transfer-orders");
         const toast = await showToast(translate("Order is created successfully, but approval failed. Please contact administrator.", { orderId }), { canDismiss: true, manualDismiss: true })
@@ -888,3 +911,6 @@ function openDateTimeModal(type: any) {
   }
 }
 </style>
+
+
+

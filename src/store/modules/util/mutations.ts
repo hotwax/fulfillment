@@ -39,9 +39,6 @@ const mutations: MutationTree <UtilState> = {
   [types.UTIL_PRODUCT_STORES_UPDATED](state, payload) {
     state.productStores = payload
   },
-  [types.UTIL_SHIPMENT_GATEWAY_CONFIGS_UPDATED](state, payload) {
-    state.shipmentGatewayConfigs = payload
-  },
   [types.UTIL_FORCE_SCAN_STATUS_UPDATED](state, payload) {
     state.isForceScanEnabled = payload
   },
@@ -53,6 +50,9 @@ const mutations: MutationTree <UtilState> = {
   },
   [types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED](state, payload) {
     state.barcodeIdentificationPref = payload
+  },
+  [types.UTIL_CARRIER_SHIPMENT_BOX_TYPES_UPDATED](state, payload) {
+    state.carrierShipmentBoxTypes = payload
   },
   [types.UTIL_CARRIER_DESC_UPDATED](state, payload) {
     state.carrierDesc = payload
@@ -70,16 +70,12 @@ const mutations: MutationTree <UtilState> = {
     state.carrierDesc = {}
     state.facilityAddresses = {}
     state.facilityShippingLabelImageType = {}
-    state.picklistItemIdentificationPref = "internalName"
     state.isPicklistDownloadEnabled = false
   },
   [types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED](state, payload) {
     if(payload.facilityId) {
       state.facilityShippingLabelImageType[payload.facilityId] = payload.labelImageType
     }
-  },
-  [types.UTIL_PICKLIST_ITEM_IDENTIFICATION_PREF_UPDATED](state, payload) {
-    state.picklistItemIdentificationPref = payload
   },
   [types.UTIL_PICKLIST_DOWNLOAD_STATUS_UPDATED](state, payload) {
     state.isPicklistDownloadEnabled = payload

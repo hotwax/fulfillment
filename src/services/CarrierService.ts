@@ -1,178 +1,327 @@
-import { api } from '@/adapter';
-import { translate } from "@hotwax/dxp-components";
-import { showToast } from "@/utils";
-import { hasError } from '@/adapter'
-import logger from '@/logger';
+import { client } from '@/adapter';
+import store from '@/store';
   
 
 const fetchCarriers = async (params: any): Promise<any> => {
-    return await api({
-      url: "performFind",
-      method: "get",
-      params
-    })
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/shippingGateways/carrierShipmentMethods/counts`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params
+  });
 }
 const fetchCarrierShipmentMethods = async (params: any): Promise<any> => {
-  return await api({
-    url: "performFind",
-    method: "get",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await client({
+    url: `/oms/shippingGateways/carrierShipmentMethods`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     params
-  })
+  });
 }
 
-const fetchShipmentMethodTypes = async (payload: any): Promise<any> => {
-  return api({
-    url: "performFind",
-    method: "POST",
-    data: payload,
-    cache: true
-  })
+const fetchShipmentMethodTypes = async (params: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await client({
+    url: `/oms/shippingGateways/shipmentMethodTypes`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params
+  });
 }
-const fetchProductStoreShipmentMethods = async (payload: any): Promise<any> => {
-  return api({
-    url: "performFind",
+const fetchProductStoreShipmentMethodsByCarrier = async (payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await client({
+    url: `/oms/entityData`,
     method: "POST",
-    data: payload,
-    cache: true
-  })
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+const  fetchProductStoreShipmentMethods = async (payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await client({
+    url: `/oms/entityData`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
 }
 const removeCarrierShipmentMethod = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/deleteCarrierShipmentMethod",
-    method: "POST",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/shippingGateways/carrierShipmentMethods`,
+    method: "DELETE",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     data: payload
-  })
+  });
 }
 const addCarrierShipmentMethod = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/createCarrierShipmentMethod",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/shippingGateways/carrierShipmentMethods`,
     method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     data: payload
-  })
+  });
 }
 const updateShipmentMethodType = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/updateShipmentMethodType",
-    method: "POST",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/shippingGateways/shipmentMethodTypes/${payload.shipmentMethodTypeId}`,
+    method: "PUT",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     data: payload
-  })
+  });
 }
 const updateCarrierShipmentMethod = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/updateCarrierShipmentMethod",
-    method: "POST",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/shippingGateways/carrierShipmentMethods`,
+    method: "PUT",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     data: payload
-  })
+  });
 }
 
 const createProductStoreShipmentMethod = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/createProductStoreShipMeth",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/productStores/${payload.productStoreId}/shipmentMethods`,
     method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     data: payload
-  })
+  });
 }
 const updateProductStoreShipmentMethod = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/updateProductStoreShipMeth",
-    method: "POST",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/productStores/${payload.productStoreId}/shipmentMethods`,
+    method: "PUT",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     data: payload
-  })
+  });
 }
 const removeProductStoreShipmentMethod = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/updateProductStoreShipMeth",
-    method: "POST",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/productStores/${payload.productStoreId}/shipmentMethods`,
+    method: "PUT",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     data: payload
-  })
+  });
 }
 const addCarrierToFacility = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/addPartyToFacility",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/facilities/${payload.facilityId}/parties`,
     method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     data: payload
-  })
+  });
 }
 const removeCarrierFromFacility = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/removePartyFromFacility",
-    method: "POST",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/facilities/${payload.facilityId}/parties`,
+    method: "PUT",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     data: payload
-  })
+  });
 }
 const fetchCarrierFacilities = async (payload: any): Promise<any> => {
-  return api({
-    url: "performFind",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/entityData`,
     method: "POST",
-    data: payload,
-  })
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+const fetchFacilityCarriers = async (payload: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/entityData`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
 }
 const createShipmentMethod = async (payload: any): Promise<any> => {
-  return api({
-    url: "service/createShipmentMethodType",
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/shippingGateways/shipmentMethodTypes`,
     method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
     data: payload
-  })
+  });
 }
 
 const createCarrier = async (payload: any): Promise <any> => {
-  try {
-    let resp = await api({
-      url: "service/createPartyGroup", 
-      method: "post",
-      data: payload
-    }) as any;
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
 
-    if (!hasError(resp)) {
-      const partyId = resp.data.partyId;
-      if (partyId) {
-        resp = await api({
-          url: "service/ensurePartyRole", 
-          method: "post",
-          data: {partyId, "roleTypeId": "CARRIER"}
-        }) as any;
-        if (hasError(resp)) {
-          throw resp.data
-        }
-      }
-
-      showToast(translate("Carrier created successfully"));
-      return partyId;
-    } else {
-      throw resp.data
-    }
-  } catch (err:any) {
-    let errorMessage = translate('Failed to create carrier.');
-    if (err?.response?.data?.error?.message) {
-      errorMessage = err.response.data.error.message
-    }
-    logger.error('error', err)
-    showToast(errorMessage);
-  }
+  return client({
+    url: `/oms/shippingGateways/carrierParties`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
 }
 
 const updateCarrier = async (payload: any): Promise <any> => {
-  return api({
-    url: "service/updatePartyGroup", 
-    method: "post",
-    data: payload
-  });
-}
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
 
-const ensurePartyRole = async (payload: any): Promise <any> => {
-  return api({
-    url: "service/ensurePartyRole", 
-    method: "post",
-    data: payload
-  });
-}
-
-const fetchCarrierTrackingUrls = async (payload: any): Promise<any> => {
-  return api({
-    url: "performFind",
+  return client({
+    url: `/admin/organization/${payload.partyId}`,
     method: "POST",
-    data: payload,
-  })
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
+const fetchCarrierTrackingUrls = async (params: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await client({
+    url: `/admin/systemProperties`, //should handle the update of OISG, SRG, SPRG if needed
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params
+  });
+}
+
+const fetchShipmentGatewayConfigs = async (params: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return client({
+    url: `/oms/shippingGateways/config`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": omsRedirectionInfo.token,
+      "Content-Type": "application/json"
+    },
+    params
+  });
 }
 
 export const CarrierService = {
@@ -181,12 +330,14 @@ export const CarrierService = {
   createCarrier,
   createProductStoreShipmentMethod,
   createShipmentMethod,
-  ensurePartyRole,
   fetchCarriers,
   fetchCarrierFacilities,
   fetchCarrierShipmentMethods,
   fetchCarrierTrackingUrls,
+  fetchFacilityCarriers,
   fetchProductStoreShipmentMethods,
+  fetchProductStoreShipmentMethodsByCarrier,
+  fetchShipmentGatewayConfigs,
   fetchShipmentMethodTypes,
   removeCarrierFromFacility,
   removeCarrierShipmentMethod,

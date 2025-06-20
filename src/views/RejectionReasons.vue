@@ -114,7 +114,6 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       rejectReasons: 'util/getRejectReasons',
-      rejectReasonEnumTypes: 'util/getRejectReasonEnumTypes',
       fulfillmentRejectReasons: 'util/getFulfillmentRejectReasons'
     })
   },

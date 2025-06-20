@@ -134,6 +134,16 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
+    path: '/:category/shipment-detail/:orderId/:shipmentId',
+    name: 'ShipmentDetail',
+    component: OrderDetail,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_ORDER_DETAIL_VIEW"
+    }
+  },
+  {
     path: '/login',
     name: 'Login',
     component: DxpLogin,

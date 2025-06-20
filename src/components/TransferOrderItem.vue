@@ -8,7 +8,7 @@
           </ion-thumbnail>
           <ion-label class="ion-text-wrap">
             <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-            {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
+            {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productId }}
             <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
           </ion-label>
         </ion-item>
@@ -22,7 +22,6 @@
         </ion-item>
       </div>
     </div>
-
     <div class="action border-top" v-if="item.orderedQuantity > 0">
       <div class="pick-all-qty" v-if="!item.shipmentId">
         <ion-button @click="pickAll(item)" slot="start" size="small" fill="outline">
@@ -51,15 +50,16 @@
       </div>
 
       <div class="to-item-history" v-else>
-        <ion-chip outline @click="getShippedQuantity(item) && shippedHistory(item.productId)">
+        <ion-chip outline @click="item.shippedQuantity && shippedHistory(item.productId)">
           <ion-icon :icon="checkmarkDone"/>
-          <ion-label> {{ getShippedQuantity(item) }} {{ translate("shipped") }} </ion-label>
+          <ion-label> {{ item.shippedQuantity }} {{ translate("shipped") }} </ion-label>
         </ion-chip>
       </div>
 
+
       <div class="qty-ordered">
-        <ion-label>{{ item.orderedQuantity }} {{ translate("ordered") }}</ion-label>   
-      </div>         
+        <ion-label>{{ item.orderedQuantity }} {{ translate("ordered") }}</ion-label>
+      </div>
     </div>
   </ion-card>
 </template>
@@ -125,7 +125,7 @@ export default defineComponent({
       return this.currentOrder.items.some((item: any) => item.rejectReasonId)
     },
     isAnyItemShipped() {
-      return !!Object.keys(this.currentOrder?.shippedQuantityInfo)?.length
+      return this.currentOrder.items.some((item: any) => item.shippedQuantity > 0)
     }
   },
   methods: {
@@ -137,15 +137,12 @@ export default defineComponent({
       return 'warning'
     },
     getPickedToOrderedFraction(item: any) {
-      return (parseInt(item.pickedQuantity) + this.getShippedQuantity(item)) / item.orderedQuantity;
-    },
-    getShippedQuantity(item: any) {
-      return this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] ? this.currentOrder?.shippedQuantityInfo?.[item.orderItemSeqId] : 0;
+      return (parseInt(item.pickedQuantity) + this.item.shippedQuantity) / item.orderedQuantity;
     },
     async pickAll(item: any) {
       const selectedItem = this.currentOrder.items.find((ele: any) => ele.orderItemSeqId === item.orderItemSeqId);
       if (selectedItem) {
-        this.pickedQuantity = this.getShippedQuantity(item) ? selectedItem.quantity - this.getShippedQuantity(item) : selectedItem.quantity;
+        this.pickedQuantity = this.item.shippedQuantity ? selectedItem.quantity - this.item.shippedQuantity : selectedItem.quantity;
         selectedItem.pickedQuantity = this.pickedQuantity
         selectedItem.progress = selectedItem.pickedQuantity / selectedItem.quantity
       }
@@ -178,7 +175,7 @@ export default defineComponent({
 
       if (value === '') return;
 
-      value > (item.orderedQuantity - this.getShippedQuantity(item))
+      value > (item.orderedQuantity - this.item.shippedQuantity)
         ? (this as any).$refs.pickedQuantity.$el.classList.add('ion-invalid')
         : (this as any).$refs.pickedQuantity.$el.classList.add('ion-valid');
     },
@@ -186,7 +183,7 @@ export default defineComponent({
       (this as any).$refs.pickedQuantity.$el.classList.add('ion-touched');
     },
     getErrorText(item: any) {
-      return translate('The picked quantity cannot exceed the ordered quantity.') + " " + (this.getShippedQuantity(item) > 0 ? translate("already shipped.", {shippedQuantity: this.getShippedQuantity(item)}): '')
+      return translate('The picked quantity cannot exceed the ordered quantity.') + " " + (this.item.shippedQuantity > 0 ? translate("already shipped.", {shippedQuantity: this.item.shippedQuantity}): '')
     },
     async openRejectReasonPopover(ev: Event, item: any) {
       const reportIssuePopover = await popoverController.create({
