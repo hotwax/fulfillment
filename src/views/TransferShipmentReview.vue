@@ -202,15 +202,14 @@ export default defineComponent({
       }
       await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
       this.isGeneratingShippingLabel = true;
-      let shippingLabelPdfUrls = [this.currentShipment?.labelImageUrl];
-      await TransferOrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
+      let shippingLabelPdfUrls = this.currentShipment?.labelImageUrl ? [this.currentShipment?.labelImageUrl] : [];
       
       if (!this.currentShipment.trackingIdNumber) {
         //regenerate shipping label if missing tracking code
         await OrderService.retryShippingLabel(this.currentShipment.shipmentId)
         //retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
         await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
-        shippingLabelPdfUrls = this.currentShipment?.labelImageUrl;
+        shippingLabelPdfUrls = this.currentShipment?.labelImageUrl ? [this.currentShipment?.labelImageUrl] : [];
         if(this.currentShipment.trackingIdNumber) {
           this.showLabelError = false;
           showToast(translate("Shipping Label generated successfully"))
