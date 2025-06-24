@@ -1253,9 +1253,6 @@ export default defineComponent({
     this.isScrollingEnabled = false;
     await Promise.all([
       this.store.dispatch('util/fetchRejectReasonOptions'),
-      this.store.dispatch('util/fetchCarrierShipmentBoxTypes'),
-      this.store.dispatch('carrier/fetchFacilityCarriers'),
-      this.store.dispatch('carrier/fetchProductStoreShipmentMeths'),
       this.fetchPickersInformation(),
       this.initialiseOrderQuery()
     ]);

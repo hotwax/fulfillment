@@ -161,6 +161,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async fetchCarrierShipmentBoxTypes({ commit, dispatch }) {
     try {
+      const shipmentBoxTypeDesc = {} as any;
       const resp = await UtilService.fetchCarrierShipmentBoxTypes({
         pageIndex: 0,
         pageSize: 100, //considerting there won't be more than 100 carrier shipment box types
@@ -173,14 +174,17 @@ const actions: ActionTree<UtilState, RootState> = {
         const shipmentBoxTypeDetail = resp.data.reduce((shipmentBoxTypes: any, carrierShipmentBoxType: any) => {
           shipmentBoxTypeIds.add(carrierShipmentBoxType.shipmentBoxTypeId)
           if (shipmentBoxTypes[carrierShipmentBoxType.partyId]) {
-            shipmentBoxTypes[carrierShipmentBoxType.partyId].push(carrierShipmentBoxType.shipmentBoxTypeId)
+            shipmentBoxTypeDesc[carrierShipmentBoxType.shipmentBoxTypeId] = carrierShipmentBoxType?.shipmentBoxType?.description
+            shipmentBoxTypes[carrierShipmentBoxType.partyId].push({shipmentBoxTypeId: carrierShipmentBoxType.shipmentBoxTypeId, description: carrierShipmentBoxType?.shipmentBoxType?.description})
           } else {
-            shipmentBoxTypes[carrierShipmentBoxType.partyId] = [carrierShipmentBoxType.shipmentBoxTypeId]
+            shipmentBoxTypeDesc[carrierShipmentBoxType.shipmentBoxTypeId] = carrierShipmentBoxType?.shipmentBoxType?.description
+            shipmentBoxTypes[carrierShipmentBoxType.partyId] = [{shipmentBoxTypeId: carrierShipmentBoxType.shipmentBoxTypeId, description: carrierShipmentBoxType?.shipmentBoxType?.description}]
           }
           return shipmentBoxTypes
         }, {})
+
+        commit(types.UTIL_SHIPMENT_BOXES_UPDATED, shipmentBoxTypeDesc)
         commit(types.UTIL_CARRIER_SHIPMENT_BOX_TYPES_UPDATED, shipmentBoxTypeDetail)
-        dispatch("fetchShipmentBoxTypeDesc", [...shipmentBoxTypeIds])
       } else {
         throw resp.data;
       }
@@ -227,44 +231,6 @@ const actions: ActionTree<UtilState, RootState> = {
     }
 
     return shipmentMethodTypeDesc;
-  },
-
-  async fetchShipmentBoxTypeDesc({ commit, state }, shipmentBoxIds) {
-    let shipmentBoxTypeDesc = JSON.parse(JSON.stringify(state.shipmentBoxTypeDesc))
-    const cachedShipmentBoxIds = Object.keys(shipmentBoxTypeDesc);
-    const ids = shipmentBoxIds.filter((boxId: string) => !cachedShipmentBoxIds.includes(boxId))
-
-    if(!ids.length) return shipmentBoxTypeDesc;
-
-    try {
-      const payload = {
-        "shipmentBoxTypeId": ids,
-        "shipmentBoxTypeId_op": "in",
-        "pageSize": ids.length
-      }
-
-      const resp = await UtilService.fetchShipmentBoxType(payload);
-
-      if(!hasError(resp)) {
-        const shipmentBoxResp = {} as any
-        resp.data.map((shipmentBoxInformation: any) => {
-          shipmentBoxResp[shipmentBoxInformation.shipmentBoxTypeId] = shipmentBoxInformation.description
-        })
-
-        shipmentBoxTypeDesc = {
-          ...shipmentBoxTypeDesc,
-          ...shipmentBoxResp
-        }
-
-        commit(types.UTIL_SHIPMENT_BOXES_UPDATED, shipmentBoxTypeDesc)
-      } else {
-        throw resp.data
-      }
-    } catch(err) {
-      logger.error('Error fetching shipment boxes description', err)
-    }
-
-    return shipmentBoxTypeDesc;
   },
 
   async fetchFacilityTypeInformation({ commit, state }, facilityTypeIds) {

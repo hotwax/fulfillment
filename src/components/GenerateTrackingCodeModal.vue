@@ -207,6 +207,7 @@ export default defineComponent({
   },
   props: ["order", "updateCarrierShipmentDetails", "executePackOrder", "rejectEntireOrder", "updateParameter", "documentOptions", "packingError"],
   async mounted() {
+    await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths')])
     this.isTrackingRequired = this.isTrackingRequiredForAnyShipmentPackage()
     if (this.facilityCarriers) {
       this.carrierPartyId = this.order?.carrierPartyId ? this.order?.carrierPartyId : this.facilityCarriers[0].partyId;
