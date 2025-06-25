@@ -435,7 +435,7 @@
   "Print supplementary documents with the shipment for package identification.": "Print supplementary documents with the shipment for package identification.",
   "Product": "Product",
   "Product identifier": "Product identifier",
-  "Product is already received:": "Product is already received: {itemName}",
+  "Product is already scanned:": "Product is already scanned: {itemName}",
   "Product Store": "Product Store",
   "Product store and shipment method association updated successfully.": "Product store and shipment method association updated successfully.",
   "Provide a value greater than 0": "Provide a value greater than 0",

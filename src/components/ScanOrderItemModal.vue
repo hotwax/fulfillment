@@ -160,7 +160,7 @@ export default defineComponent({
           this.lastScannedId = ''
         }, 3000)
       } else {
-        showToast(translate((currentItem.productSku ? "Product is already received:" : "Scanned item is not present within the shipment:"), { itemName: payload }))
+        showToast(translate((currentItem.productId ? "Product is already scanned:" : "Scanned item is not present within the shipment:"), { itemName: payload }))
       }
       this.queryString = ''
     },
