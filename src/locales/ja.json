@@ -569,7 +569,6 @@
   "Show all pickers": "Show all pickers",
   "Show label error": "ラベルエラーを表示",
   "Show order items": "注文アイテムを表示",
-  "Show completed transfer orders": "Show completed transfer orders",
   "Single variance": "単一変動",
   "Something went wrong while fetching order details, please check the orderId and try again.": "注文詳細の取得中にエラーが発生しました。注文IDを確認して再試行してください。",
   "Something went wrong": "エラーが発生しました",

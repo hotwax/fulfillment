@@ -48,9 +48,6 @@
       </div>
       <div v-else class="empty-state">
         <p v-html="getErrorMessage()"></p>
-        <ion-button v-if="!transferOrders.query.queryString && hasCompletedTransferOrders && selectedSegment === 'open'" size="small" fill="outline" color="medium" @click="showCompletedTransferOrders">
-          <ion-icon slot="end" :icon="checkmarkDoneOutline"/>{{ translate("Show completed transfer orders") }}
-        </ion-button>
       </div>
     </ion-content>
 
@@ -66,7 +63,6 @@
 <script lang="ts">
 import { 
   IonBadge,
-  IonButton,
   IonIcon,
   IonContent, 
   IonFab,
@@ -98,7 +94,6 @@ export default defineComponent({
   name: 'TransferOrders',
   components: {
     IonBadge,
-    IonButton,
     IonIcon,  
     IonContent,
     IonFab,
