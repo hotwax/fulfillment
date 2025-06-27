@@ -592,11 +592,11 @@ const fetchFacilityZPLGroupInfo = async (facilityId: string): Promise<any> => {
     customParametersMap: {
       facilityGroupId: "ZPL_SHIPPING_LABEL",
       facilityGroupTypeId: "SHIPPING_LABEL",
+      pageIndex: 0,
+      pageSize: 1
     },
     selectedEntity: "co.hotwax.facility.FacilityGroupAndMember",
     filterByDate: true,
-    pageLimit: 1
-    //thruDate_op: "empty",
   }
 
   try {
