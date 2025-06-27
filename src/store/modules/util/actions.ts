@@ -93,11 +93,11 @@ const actions: ActionTree<UtilState, RootState> = {
       const params = {
         customParametersMap: {
           "parentTypeId": ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
-          "parentTypeId_op": "in"
+          "parentTypeId_op": "in",
+          pageIndex: 0,
+          pageSize: 10
         },
-        selectedEntity: "moqui.basic.EnumerationType",
-        pageIndex: 0,
-        pageLimit: 10,
+        selectedEntity: "moqui.basic.EnumerationType"
       }
 
       const resp = await UtilService.fetchRejectReasonEnumTypes(params)
@@ -763,14 +763,12 @@ const actions: ActionTree<UtilState, RootState> = {
           "roleTypeId": "CARRIER",
           "shipmentMethodTypeId": "STOREPICKUP",
           "shipmentMethodTypeId_op": "equals",
-          "shipmentMethodTypeId_not": "Y"
+          "shipmentMethodTypeId_not": "Y",
+          pageIndex: 0,
+          pageSize: 100
         },
         selectedEntity: "org.apache.ofbiz.product.store.ProductStoreShipmentMethDetail",
-        //"fieldsToSelect": ["description", "partyId", "shipmentMethodTypeId"],
-        //"thruDate_op": "empty",
-        //"distinct": "Y",
-        filterByDate: true,
-        pageLimit: 100
+        filterByDate: true
       }
 
       const resp = await UtilService.fetchStoreCarrierAndMethods(payload);
@@ -812,12 +810,11 @@ const actions: ActionTree<UtilState, RootState> = {
           contactMechTypeId: "POSTAL_ADDRESS",
           facilityId: remainingFacilityIds,
           facilityId_op: "in",
+          orderByField: '-fromDate',
+          pageIndex: 0,
+          pageSize: 2
         },
         selectedEntity: "org.apache.ofbiz.product.facility.FacilityContactDetailByPurpose",
-        //orderByField: 'fromDate DESC',
-        //thruDate_op: 'empty',
-        //fieldsToSelect: ['address1', 'address2', 'city', 'countryGeoName', 'postalCode', 'stateGeoName', 'facilityId', 'facilityName', 'contactMechId'],
-        pageLimit: 2,
         filterByDate: true
       }) as any;
   
