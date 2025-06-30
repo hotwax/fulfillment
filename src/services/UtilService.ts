@@ -543,7 +543,7 @@ const fetchCarriers = async (params: any): Promise <any>  => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/oms/carrierParties`,
+    url: `/oms/shippingGateways/carrierParties`,
     method: "GET",
     baseURL,
     headers: {
