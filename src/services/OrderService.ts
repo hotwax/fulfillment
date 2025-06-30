@@ -460,7 +460,7 @@ const findShipments = async (query: any): Promise <any>  => {
           customerName,
           items: removeKitComponents(shipment),
           missingLabelImage,
-          trackingCode: shipment?.trackingIdNumber,
+          trackingCode: shipmentPackageRouteSegDetails[0]?.trackingCode,
         };
       });
     } else {

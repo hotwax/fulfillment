@@ -192,8 +192,8 @@ const createOutboundTransferShipment = async (query: any): Promise<any> => {
 
 const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string): Promise<any> => {
   try {
+    const maargUrl = store.getters['user/getMaargUrl'];
     const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
-    const baseURL = store.getters['user/getMaargBaseUrl'];
 
     let pdfUrls = shippingLabelPdfUrls?.filter((pdfUrl: any) => pdfUrl);
     if (!pdfUrls || pdfUrls.length == 0) {
@@ -215,12 +215,12 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
       // Get packing slip from the server
       const resp: any = await client({
         method: "get",
-        url: "ShippingLabel.pdf",
+        url: "/fop/apps/pdf/PrintLabel",
         params: {
           shipmentId: shipmentIds[0]
         },
         responseType: "blob",
-        baseURL,
+        baseURL: maargUrl,
         headers: {
           "api_key": omsRedirectionInfo.token,
         }

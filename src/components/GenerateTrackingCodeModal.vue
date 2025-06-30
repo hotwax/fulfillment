@@ -52,9 +52,7 @@
               </div>
             </ion-checkbox>
           </ion-item>
-          <ion-item lines="none">
-            <ion-textarea fill="outline" placeholder="Add a message" v-model="rejectionComment" />
-          </ion-item>
+          <ion-textarea class="ion-padding" fill="outline" placeholder="Add a message" v-model="rejectionComment" />
         </ion-list>
       </template>
       <template v-else-if="selectedSegment === 'update-tracking-detail'">

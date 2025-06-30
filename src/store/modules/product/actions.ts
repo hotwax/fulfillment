@@ -79,11 +79,11 @@ const actions: ActionTree<ProductState, RootState> = {
         customParametersMap: {
           productId: productId,
           productAssocTypeId: "PRODUCT_COMPONENT",
+          pageIndex: 0,
+          pageSize: 100,  // maximum records we could have
         },
         selectedEntity: "org.apache.ofbiz.product.product.ProductAssoc",
-        //thruDate_op: "empty",
-        filterByDate: true,
-        pageLimit: 100,  // maximum records we could have
+        filterByDate: true
       })
       if (!hasError(resp)) {
         const productComponents = resp.data.entityValueList;

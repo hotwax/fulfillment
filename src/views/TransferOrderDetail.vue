@@ -40,7 +40,7 @@
         <div class="segments" v-if="currentOrder">
           <template v-if="selectedSegment === 'open'">
             <template v-if="getTOItems('open')?.length > 0">
-              <TransferOrderItem v-for="item in getTOItems('open')" :key="item.orderItemSeqId" :itemDetail="item" :class="item.internalName === lastScannedId ? 'scanned-item' : '' " :id="item.internalName" isRejectionSupported="true"/>
+              <TransferOrderItem v-for="item in getTOItems('open')" :key="currentOrder.orderId + item.orderItemSeqId" :itemDetail="item" :class="item.internalName === lastScannedId ? 'scanned-item' : '' " :id="item.internalName" isRejectionSupported="true"/>
             </template>
             <template v-else>
               <div class="empty-state">

@@ -72,7 +72,7 @@
                 <ion-label>
                   {{ getShipmentMethodDesc(order.shipmentMethodTypeId) }}
                   <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ getTime(order.reservedDatetime) }}</p>
-                  <p v-if="order.trackingIdNumber">{{ translate("Tracking Code") }} {{ order.trackingIdNumber }}</p>
+                  <p v-if="order.trackingCode">{{ translate("Tracking Code") }} {{ order.trackingCode }}</p>
                 </ion-label>
               </div>
             </div>
@@ -135,7 +135,7 @@
             <!-- TODO: implement functionality to mobile view -->
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingIdNumber) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
+                <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -146,7 +146,7 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
-                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingIdNumber) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate(order.missingLabelImage ? "Regenerate Shipping Label" : "Print Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
@@ -427,7 +427,7 @@ export default defineComponent({
               let trackingRequiredAndMissingCodeOrders = [] as any
               if (trackingRequiredOrders.length) {
                 // filtering and excluding orders having missing label image with tracking required
-                trackingRequiredAndMissingCodeOrders = trackingRequiredOrders.filter((order: any) => !order.trackingIdNumber).map((order: any) => order.shipmentId)
+                trackingRequiredAndMissingCodeOrders = trackingRequiredOrders.filter((order: any) => !order.trackingCode).map((order: any) => order.shipmentId)
                 if (trackingRequiredAndMissingCodeOrders.length) {
                   orderList = orderList.filter((order: any) => !trackingRequiredAndMissingCodeOrders.includes(order.shipmentId))
                 }
@@ -649,7 +649,7 @@ export default defineComponent({
       return order.isTrackingRequired === 'Y'
     },
     hasAnyShipmentTrackingInfoMissing() {
-      return this.completedOrders.list.some((order: any) => this.isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingIdNumber)
+      return this.completedOrders.list.some((order: any) => this.isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode)
     },
     async orderActionsPopover(order: any, ev: Event) {
       const popover = await popoverController.create({
@@ -684,10 +684,11 @@ export default defineComponent({
           carrierPartyId_op: "in",
           shipmentMethodTypeId: "_NA_",
           requestType: ["MANIFEST_GEN_REQUEST", "MANIFEST_PRINT"],
-          requestType_op: "in"
+          requestType_op: "in",
+          pageIndex: 0,
+          pageSize: carrierPartyIds.length * 2
         },
-        selectedEntity: "co.hotwax.warehouse.packing.ShipmentRequest",
-        pageLimit: carrierPartyIds.length * 2
+        selectedEntity: "co.hotwax.warehouse.packing.ShipmentRequest"
       }
       try {
         const resp = await UtilService.fetchConfiguredCarrierService(payload)
@@ -721,12 +722,13 @@ export default defineComponent({
             dataResourceTypeId: "URL_RESOURCE",
             roleTypeId: "CARRIER",
             fromDate_from: DateTime.now().startOf("day").minus({ days: 7 }).toMillis(),
-            facilityId: this.currentFacility.facilityId
+            facilityId: this.currentFacility.facilityId,
+            orderByField: "-contentId",
+            pageIndex: 0,
+            pageSize: 250,  // Assuming that there will not be more than 250 manifest in last 7 days for a carrier
           },
           selectedEntity: "co.hotwax.facility.FacilityContentAndDataResource",
-          pageLimit: 250,  // Assuming that there will not be more than 250 manifest in last 7 days for a carrier
           filterByDate: true
-          //orderBy: "contentId DESC"
         }
         try {
           const resp = await UtilService.fetchConfiguredCarrierService(payload)

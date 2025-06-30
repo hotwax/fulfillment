@@ -105,13 +105,12 @@ const actions: ActionTree<CarrierState, RootState> = {
           customParametersMap: {
             "roleTypeId": "CARRIER",
             "partyId": payload.partyId,
+            pageIndex: viewIndex,
+            pageSize: 250
           },
           //"fieldsToSelect": ["productStoreShipMethId", "productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "shipmentGatewayConfigId", "isTrackingRequired", "sequenceNumber", "description", "fromDate"],
           selectedEntity: "org.apache.ofbiz.product.store.ProductStoreShipmentMethDetail",
-          pageIndex: viewIndex,
-          pageLimit: 250,
           filterByDate: true
-          //"thruDate_op": "empty",
         }
   
         resp = await CarrierService.fetchProductStoreShipmentMethodsByCarrier(params)
@@ -243,13 +242,11 @@ const actions: ActionTree<CarrierState, RootState> = {
           customParametersMap:{
             "roleTypeId": "CARRIER",
             "partyId": currentCarrier.partyId,
+            pageIndex: viewIndex,
+            pageSize: 250,
           },
           selectedEntity: "org.apache.ofbiz.product.facility.FacilityPartyNameDetail",
-          //"fieldsToSelect": ["facilityId", "partyId", "roleTypeId", "fromDate"],
-          pageIndex: viewIndex,
-          pageLimit: 250,
           filterByDate: true
-          //"thruDate_op": "empty"
         }
   
         resp = await CarrierService.fetchCarrierFacilities(params)
@@ -345,13 +342,11 @@ const actions: ActionTree<CarrierState, RootState> = {
           customParametersMap: {
             "roleTypeId": "CARRIER",
             "facilityId": getCurrentFacilityId(),
+            "pageIndex": viewIndex,
+            "pageSize": 250
           },
           selectedEntity: "org.apache.ofbiz.product.facility.FacilityPartyNameDetail",
-          //"fieldsToSelect": ["facilityId", "partyId", "firstName", "lastName", "groupName", "roleTypeId"],
-          "pageIndex": viewIndex,
-          "pageLimit": 250,
           filterByDate: true
-          //"thruDate_op": "empty",
         }
   
         resp = await CarrierService.fetchFacilityCarriers(params)
@@ -414,13 +409,11 @@ const actions: ActionTree<CarrierState, RootState> = {
             "shipmentMethodTypeId": "STOREPICKUP",
             "shipmentMethodTypeId_op": "equals",
             "shipmentMethodTypeId_not": "Y",
+            "pageIndex": viewIndex,
+            "pageSize": 250
           },
           selectedEntity: "org.apache.ofbiz.product.store.ProductStoreShipmentMethDetail",
-          //"fieldsToSelect": ["productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "description", "isTrackingRequired"],
-          "pageIndex": viewIndex,
-          "pageLimit": 250,
           filterByDate: true
-          //"thruDate_op": "empty"
         }
   
         resp = await CarrierService.fetchProductStoreShipmentMethods(params)

@@ -374,12 +374,11 @@ export default defineComponent({
             customParametersMap:{
               "facilityId": this.currentFacility?.facilityId,
               "facilityGroupId": this.facilityGroupDetails.facilityGroupId,
+              pageIndex: 0,
+              pageSize: 1
             },
             selectedEntity: "co.hotwax.facility.FacilityGroupAndMember",
-            //"fieldsToSelect": ["facilityId", "fromDate"],
-            pageLimit: 1,
-            filterByDate: true,
-            //"thruDate_op": 'empty'
+            filterByDate: true
           })
 
           if (!hasError(resp)) {

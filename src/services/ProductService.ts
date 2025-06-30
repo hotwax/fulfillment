@@ -59,14 +59,12 @@ const fetchProductsAverageCost = async (productIds: any, facilityId: any): Promi
         productId: productIds,
         productId_op: "in",
         productAverageCostTypeId: "WEIGHTED_AVG_COST",
-        orderByField: "-fromDate"
+        orderByField: "-fromDate",
+        pageIndex: 0,
+        pageSize: 100 //There should be more than one active record per product
       },
       selectedEntity: "org.apache.ofbiz.accounting.ledger.ProductAverageCost",
-      filterByDate: true,
-      pageLimit: 100, //There should be one active record per product
-      //thruDate_op: "empty",
-      //orderByField: "fromDate DESC",
-      //fieldsToSelect: ["productId", "averageCost"]
+      filterByDate: true
     }
     requests.push(params)
   }
