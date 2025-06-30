@@ -1,8 +1,8 @@
 <template>
   <ion-content>
     <ion-list>
-      <ion-item v-for="boxType in shipmentBoxTypes" :key="boxTypeDesc(boxType)" @click="updateBoxType(boxType)" button>
-        {{ boxTypeDesc(boxType) }}
+      <ion-item v-for="boxType in shipmentBoxTypes" :key="boxType.shipmentBoxTypeId" @click="updateBoxType(boxType.shipmentBoxTypeId)" button>
+        {{ boxType.description ? boxType.description : boxType.shipmentBoxTypeId }}
       </ion-item>
     </ion-list>
   </ion-content>

@@ -127,6 +127,7 @@ const actions: ActionTree<UserState, RootState> = {
       await dispatch('getAffectQohConfig')
       await dispatch('getDisableShipNowConfig')
       await dispatch('getDisableUnpackConfig')
+      await this.dispatch('util/fetchCarrierShipmentBoxTypes')
 
       const orderId = router.currentRoute.value.query.orderId
       if (isQueryFacilityFound && orderId) {
