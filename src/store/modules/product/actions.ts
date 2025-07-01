@@ -115,13 +115,10 @@ const actions: ActionTree<ProductState, RootState> = {
   
       if(!hasError(resp) && resp.data?.length) {
         products = resp.data
-        products.map((product: any) => {
-          product.sku = product.internalName
-          product.quantity = 2
-          delete product["internalName"]
-          delete product["productId"]
-        })
-        
+        products = products.map((product: any) => ({
+          sku: product.internalName,
+          quantity: 2
+        }))
       } else {
         throw resp.data;
       }
