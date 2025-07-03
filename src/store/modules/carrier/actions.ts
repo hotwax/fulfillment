@@ -108,8 +108,7 @@ const actions: ActionTree<CarrierState, RootState> = {
             pageIndex: viewIndex,
             pageSize: 250
           },
-          //"fieldsToSelect": ["productStoreShipMethId", "productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "shipmentGatewayConfigId", "isTrackingRequired", "sequenceNumber", "description", "fromDate"],
-          selectedEntity: "org.apache.ofbiz.product.store.ProductStoreShipmentMethDetail",
+          dataDocumentId: "ProductStoreShipmentMethod",
           filterByDate: true
         }
   
@@ -245,7 +244,7 @@ const actions: ActionTree<CarrierState, RootState> = {
             pageIndex: viewIndex,
             pageSize: 250,
           },
-          selectedEntity: "org.apache.ofbiz.product.facility.FacilityPartyNameDetail",
+          dataDocumentId: "FacilityAndParty",
           filterByDate: true
         }
   
@@ -345,7 +344,7 @@ const actions: ActionTree<CarrierState, RootState> = {
             "pageIndex": viewIndex,
             "pageSize": 250
           },
-          selectedEntity: "org.apache.ofbiz.product.facility.FacilityPartyNameDetail",
+          dataDocumentId: "FacilityAndParty",
           filterByDate: true
         }
   
@@ -412,7 +411,7 @@ const actions: ActionTree<CarrierState, RootState> = {
             "pageIndex": viewIndex,
             "pageSize": 250
           },
-          selectedEntity: "org.apache.ofbiz.product.store.ProductStoreShipmentMethDetail",
+          dataDocumentId: "ProductStoreShipmentMethod",
           filterByDate: true
         }
   

@@ -679,22 +679,19 @@ export default defineComponent({
     },
     async fetchConfiguredCarrierService(carrierPartyIds: Array<string>) {
       const payload = {
-        customParametersMap: {
-          carrierPartyId: carrierPartyIds,
-          carrierPartyId_op: "in",
-          shipmentMethodTypeId: "_NA_",
-          requestType: ["MANIFEST_GEN_REQUEST", "MANIFEST_PRINT"],
-          requestType_op: "in",
-          pageIndex: 0,
-          pageSize: carrierPartyIds.length * 2
-        },
-        selectedEntity: "co.hotwax.warehouse.packing.ShipmentRequest"
+        carrierPartyId: carrierPartyIds,
+        carrierPartyId_op: "in",
+        shipmentMethodTypeId: "_NA_",
+        requestType: ["MANIFEST_GEN_REQUEST", "MANIFEST_PRINT"],
+        requestType_op: "in",
+        pageIndex: 0,
+        pageSize: carrierPartyIds.length * 2
       }
       try {
         const resp = await UtilService.fetchConfiguredCarrierService(payload)
 
-        if(!hasError(resp) && resp.data.entityValueList?.length) {
-          this.carrierConfiguration = resp.data.entityValueList.reduce((carriers: any, carrier: any) => {
+        if(!hasError(resp) && resp.data?.length) {
+          this.carrierConfiguration = resp.data.reduce((carriers: any, carrier: any) => {
             if(!carriers[carrier.carrierPartyId]) {
               carriers[carrier.carrierPartyId] = {
                 [carrier.requestType]: carrier.serviceName
@@ -727,7 +724,7 @@ export default defineComponent({
             pageIndex: 0,
             pageSize: 250,  // Assuming that there will not be more than 250 manifest in last 7 days for a carrier
           },
-          selectedEntity: "co.hotwax.facility.FacilityContentAndDataResource",
+          dataDocumentId: "FacilityContentAndDataResource",
           filterByDate: true
         }
         try {

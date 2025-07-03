@@ -91,18 +91,15 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const params = {
-        customParametersMap: {
-          "parentTypeId": ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
-          "parentTypeId_op": "in",
-          pageIndex: 0,
-          pageSize: 10
-        },
-        selectedEntity: "moqui.basic.EnumerationType"
+        parentTypeId: ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
+        parentTypeId_op: "in",
+        pageIndex: 0,
+        pageSize: 10
       }
 
       const resp = await UtilService.fetchRejectReasonEnumTypes(params)
       if (!hasError(resp)) {
-        rejectReasonEnumTypes = resp.data.entityValueList
+        rejectReasonEnumTypes = resp.data
       } else {
         throw resp.data
       }
@@ -733,7 +730,7 @@ const actions: ActionTree<UtilState, RootState> = {
           pageIndex: 0,
           pageSize: 100
         },
-        selectedEntity: "org.apache.ofbiz.product.store.ProductStoreShipmentMethDetail",
+        dataDocumentId: "ProductStoreShipmentMethod",
         filterByDate: true
       }
 
@@ -760,7 +757,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async fetchFacilityAddresses ({ commit, state }, facilityIds) {
     const facilityAddresses = state.facilityAddresses ? JSON.parse(JSON.stringify(state.facilityAddresses)) : {}
-    let addresses = [] as any;
+    const addresses = [] as any;
     const remainingFacilityIds = [] as any;
 
     facilityIds.map((facilityId: string) => {
@@ -770,28 +767,29 @@ const actions: ActionTree<UtilState, RootState> = {
     if(!remainingFacilityIds?.length) return addresses;
 
     try {
-      const resp = await UtilService.fetchFacilityAddresses({
-        customParametersMap: {
-          contactMechPurposeTypeId: "PRIMARY_LOCATION",
-          contactMechTypeId: "POSTAL_ADDRESS",
-          facilityId: remainingFacilityIds,
-          facilityId_op: "in",
-          orderByField: '-fromDate',
-          pageIndex: 0,
-          pageSize: 2
-        },
-        selectedEntity: "org.apache.ofbiz.product.facility.FacilityContactDetailByPurpose",
-        filterByDate: true
-      }) as any;
-  
-      if(!hasError(resp) && resp.data.entityValueList?.length) {
-        resp.data.entityValueList.map((facility: any) => {
-          facilityAddresses[facility.facilityId] = facility;
-        })
-        addresses = [...addresses, ...resp.data.entityValueList]
-      } else {
-        throw resp.data;
+      const responses = await Promise.all(
+        remainingFacilityIds.map((facilityId:any) =>
+          UtilService.fetchFacilityAddresses({
+            contactMechPurposeTypeId: "PRIMARY_LOCATION",
+            contactMechTypeId: "POSTAL_ADDRESS",
+            facilityId,
+          })
+        )
+      ); 
+
+      const hasFailedResponse = responses.some((response: any) => response.status === 'rejected')
+      if (hasFailedResponse) {
+        throw responses
       }
+
+      responses.map((response: any) => {
+        if(response.value.data?.length) {
+          response.value.data.map((facilityAddress: any) => {
+            facilityAddresses[facilityAddress.facilityId] = facilityAddress;
+            addresses.push(facilityAddress)
+          })
+        }
+      })
     } catch (error) {
       logger.error(error);
     }

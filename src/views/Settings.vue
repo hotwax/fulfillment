@@ -377,7 +377,7 @@ export default defineComponent({
               pageIndex: 0,
               pageSize: 1
             },
-            selectedEntity: "co.hotwax.facility.FacilityGroupAndMember",
+            dataDocumentId: "FacilityGroupMemberAndGroup",
             filterByDate: true
           })
 

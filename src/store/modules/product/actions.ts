@@ -82,7 +82,7 @@ const actions: ActionTree<ProductState, RootState> = {
           pageIndex: 0,
           pageSize: 100,  // maximum records we could have
         },
-        selectedEntity: "org.apache.ofbiz.product.product.ProductAssoc",
+        dataDocumentId: "ProductAssoc",
         filterByDate: true
       })
       if (!hasError(resp)) {

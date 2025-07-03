@@ -63,8 +63,8 @@ const fetchRejectReasonEnumTypes = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/oms/entityData`,
-    method: "POST",
+    url: `/admin/enumTypes`,
+    method: "GET",
     baseURL,
     headers: {
       "api_key": omsRedirectionInfo.token,
@@ -87,8 +87,8 @@ const fetchConfiguredCarrierService = async(payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/oms/entityData`,
-    method: "POST",
+    url: `/poorti/shipmentRequests`,
+    method: "get",
     baseURL,
     headers: {
       "api_key": omsRedirectionInfo.token,
@@ -559,7 +559,7 @@ const fetchStoreCarrierAndMethods = async (payload: any): Promise <any>  => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/oms/entityData`,
+    url: `/oms/dataDocumentView`,
     method: "POST",
     baseURL,
     headers: {
@@ -575,7 +575,7 @@ const fetchFacilityAddresses = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/oms/entityData`,
+    url: `/oms/dataDocumentView`,
     method: "POST",
     baseURL,
     headers: {
@@ -595,7 +595,7 @@ const fetchFacilityZPLGroupInfo = async (facilityId: string): Promise<any> => {
       pageIndex: 0,
       pageSize: 1
     },
-    selectedEntity: "co.hotwax.facility.FacilityGroupAndMember",
+    dataDocumentId: "FacilityGroupMemberAndGroup",
     filterByDate: true,
   }
 
@@ -605,7 +605,7 @@ const fetchFacilityZPLGroupInfo = async (facilityId: string): Promise<any> => {
     const baseURL = store.getters['user/getMaargBaseUrl'];
 
     const resp = await client({
-      url: `/oms/entityData`,
+      url: `/oms/dataDocumentView`,
       method: "POST",
       baseURL,
       headers: {
