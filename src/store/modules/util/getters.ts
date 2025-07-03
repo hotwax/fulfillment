@@ -65,6 +65,9 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   isPicklistDownloadEnabled(state) {
     return state.isPicklistDownloadEnabled
+  },
+  getExcludeOrderBrokerDays(state) {
+    return state.excludeOrderBrokerDays
   }
 }
 export default getters;

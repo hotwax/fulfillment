@@ -368,7 +368,8 @@ export default defineComponent({
       newRejectionApiConfig: 'user/getNewRejectionApiConfig',
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
-      affectQohConfig: 'user/getAffectQohConfig'
+      affectQohConfig: 'user/getAffectQohConfig',
+      excludeOrderBrokerDays: "util/getExcludeOrderBrokerDays"
     }),
   },
   data() {
@@ -809,20 +810,29 @@ export default defineComponent({
 
       form.append('picklistBinId', order.picklistBinId)
 
+      // Only pass the exclude order duration when the update order type is report
+      if(updateParameter === "report" && this.excludeOrderBrokerDays !== undefined) {
+        form.append("excludeOrderFacilityDuration", this.excludeOrderBrokerDays)
+      }
+
       try {
         let resp;
         //Rejection of items will now be handled by the logic below.
         if (rejectedOrderItems.length > 0) {
-          resp = await OrderService.rejectFulfillmentReadyOrderItem({
-            data: {
-              facilityId : this.currentFacility?.facilityId,
-              rejectEntireShipment: this.isEntierOrderRejectionEnabled(order) ? "Y" : "N",
-              rejectAllRelatedShipment: this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
-              affectQOH: this.affectQohConfig && this.affectQohConfig?.settingValue ? this.affectQohConfig?.settingValue : false,
-              defaultReason: this.rejectEntireOrderReasonId, //default reason for items for which reason is not selected but rejecting due to entire order rejection config.
-              items: rejectedOrderItems
-            }
-          });
+          const data = {
+            facilityId : this.currentFacility?.facilityId,
+            rejectEntireShipment: this.isEntierOrderRejectionEnabled(order) ? "Y" : "N",
+            rejectAllRelatedShipment: this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
+            affectQOH: this.affectQohConfig && this.affectQohConfig?.settingValue ? this.affectQohConfig?.settingValue : false,
+            defaultReason: this.rejectEntireOrderReasonId, //default reason for items for which reason is not selected but rejecting due to entire order rejection config.
+            items: rejectedOrderItems,
+          } as any
+
+          if(this.excludeOrderBrokerDays !== undefined) {
+            data["excludeOrderFacilityDuration"] = this.excludeOrderBrokerDays
+          }
+
+          resp = await OrderService.rejectFulfillmentReadyOrderItem({ data });
         }
 
         //Run this logic only when entire order rejection is disabled. This logic will now be used only to update shipment boxes, not to reject items.

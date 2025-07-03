@@ -30,7 +30,8 @@ const utilModule: Module<UtilState, RootState> = {
     facilityAddresses: {},
     facilityShippingLabelImageType: {},
     picklistItemIdentificationPref: "internalName",
-    isPicklistDownloadEnabled: false
+    isPicklistDownloadEnabled: false,
+    excludeOrderBrokerDays: undefined
   },
   getters,
   actions,
