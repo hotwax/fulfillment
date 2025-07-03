@@ -281,7 +281,7 @@ const updateCarrier = async (payload: any): Promise <any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return client({
-    url: `/admin/organization/${payload.partyId}`,
+    url: `/admin/organizations/${payload.partyId}`,
     method: "POST",
     baseURL,
     headers: {
