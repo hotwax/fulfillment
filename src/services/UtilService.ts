@@ -770,6 +770,14 @@ const fetchLabelImageType = async (carrierId : string): Promise<any> => {
   })
 }
 
+const fetchExcludeOrderBrokerDays = async(payload: any): Promise<any> => {
+  return api({
+    url: "performFind",
+    method: "post",
+    data: payload
+  })
+}
+
 export const UtilService = {
   activateGiftCard,
   createBarcodeIdentificationPref,
@@ -783,6 +791,7 @@ export const UtilService = {
   fetchCarrierPartyIds,
   fetchDefaultShipmentBox,
   fetchEnumeration,
+  fetchExcludeOrderBrokerDays,
   fetchFacilities,
   fetchFacilityAddresses,
   fetchFacilityZPLGroupInfo,
