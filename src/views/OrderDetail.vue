@@ -1252,7 +1252,6 @@ export default defineComponent({
             items: rejectedOrderItems
           } as any
 
-          // Only pass the exclude order duration when the update order type is report
           if(this.excludeOrderBrokerDays !== undefined) {
             data["excludeOrderFacilityDuration"] = this.excludeOrderBrokerDays
           }
