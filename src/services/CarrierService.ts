@@ -53,7 +53,7 @@ const fetchProductStoreShipmentMethodsByCarrier = async (payload: any): Promise<
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return await apiClient({
-    url: `/oms/entityData`,
+    url: `/oms/dataDocumentView`,
     method: "POST",
     baseURL,
     headers: {
@@ -68,7 +68,7 @@ const  fetchProductStoreShipmentMethods = async (payload: any): Promise<any> => 
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return await apiClient({
-    url: `/oms/entityData`,
+    url: `/oms/dataDocumentView`,
     method: "POST",
     baseURL,
     headers: {
@@ -219,7 +219,7 @@ const fetchCarrierFacilities = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/entityData`,
+    url: `/oms/dataDocumentView`,
     method: "POST",
     baseURL,
     headers: {
@@ -234,7 +234,7 @@ const fetchFacilityCarriers = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/entityData`,
+    url: `/oms/dataDocumentView`,
     method: "POST",
     baseURL,
     headers: {

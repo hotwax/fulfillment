@@ -17,7 +17,7 @@ const fetchProductComponents = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/entityData`,
+    url: `/oms/dataDocumentView`,
     method: "post",
     baseURL,
     headers: {
@@ -58,19 +58,18 @@ const fetchProductsAverageCost = async (productIds: any, facilityId: any): Promi
         facilityId,
         productId: productIds,
         productId_op: "in",
-        productAverageCostTypeId: "WEIGHTED_AVG_COST",
         orderByField: "-fromDate",
         pageIndex: 0,
         pageSize: 100 //There should be more than one active record per product
       },
-      selectedEntity: "org.apache.ofbiz.accounting.ledger.ProductAverageCost",
+      dataDocumentId: "ProductWeightedAverageCost",
       filterByDate: true
     }
     requests.push(params)
   }
 
   const productAverageCostResps = await Promise.allSettled(requests.map((payload) => apiClient({
-    url: `/oms/entityData`,
+    url: `/oms/dataDocumentView`,
     method: "post",
     baseURL,
     headers: {
