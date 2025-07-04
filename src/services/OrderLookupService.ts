@@ -1,4 +1,4 @@
-import { api, client, hasError } from "@/adapter"
+import { api, apiClient, hasError } from "@/adapter"
 import store from '@/store';
 import logger from '@/logger';
 import { showToast } from '@/utils';
@@ -15,30 +15,30 @@ const findOrder = async (payload: any): Promise<any> => {
 }
 
 const fetchOrderDetail = async (orderId: string): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return await client({
+  return await apiClient({
     url: `/oms/orders/${orderId}`, //should handle the update of OISG, SRG, SPRG if needed
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
   });
 }
 
 const fetchCarrierTrackingUrls = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return await client({
+  return await apiClient({
     url: `/admin/systemProperties`, //should handle the update of OISG, SRG, SPRG if needed
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params: payload
@@ -46,15 +46,15 @@ const fetchCarrierTrackingUrls = async (payload: any): Promise<any> => {
 }
 
 const fetchPartyInformation = async (payload: any): Promise <any>  => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/parties`,
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params: payload
@@ -62,15 +62,15 @@ const fetchPartyInformation = async (payload: any): Promise <any>  => {
 }
 
 const fetchOrderFacilityChange = async (payload: any): Promise <any>  => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/orders/${payload.orderId}/facilityChange`,
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params: payload
@@ -78,15 +78,15 @@ const fetchOrderFacilityChange = async (payload: any): Promise <any>  => {
 }
 
 const fetchOrderItems = async (payload: any): Promise <any>  => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/orders/${payload.orderId}/items`,
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params: payload
@@ -94,7 +94,7 @@ const fetchOrderItems = async (payload: any): Promise <any>  => {
 }
 
 const findShipments = async (orderId: string): Promise <any>  => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   const params = {
@@ -106,12 +106,12 @@ const findShipments = async (orderId: string): Promise <any>  => {
     shipmentTypeId: 'SALES_SHIPMENT', 
   } as any
 
-  return await client({
+  return await apiClient({
     url: `/poorti/shipments`,
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params
@@ -119,15 +119,15 @@ const findShipments = async (orderId: string): Promise <any>  => {
 }
 
 const fetchFacilities = async (payload: any): Promise <any>  => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/facilities`,
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params: payload
@@ -145,7 +145,7 @@ const findOrderInvoicingInfo = async (query: any): Promise<any> => {
 const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string): Promise<any> => {
   try {
     const baseURL = store.getters['user/getMaargBaseUrl'];
-    const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+    const omstoken = store.getters['user/getUserToken'];
 
     let pdfUrls = shippingLabelPdfUrls?.filter((pdfUrl: any) => pdfUrl);
     if (!pdfUrls || pdfUrls.length == 0) {
@@ -164,12 +164,12 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
         return;
       }
       // Get packing slip from the server
-      const resp = await client({
+      const resp = await apiClient({
         url: "/poorti/Label.pdf",
         method: "GET",
         baseURL,
         headers: {
-          "api_key": omsRedirectionInfo.token,
+          "Authorization": "Bearer " + omstoken,
           "Content-Type": "application/json"
         },
         params: {

@@ -1,4 +1,4 @@
-import { api, hasError, client } from "@/adapter";
+import { apiClient, hasError } from "@/adapter";
 import logger from "@/logger";
 import store from "@/store";
 import { translate } from "@hotwax/dxp-components";
@@ -7,78 +7,78 @@ import { cogOutline } from "ionicons/icons";
 import { ZebraPrinterService } from './ZebraPrinterService';
 
 const fetchTransferOrders = async (params: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: "oms/transferOrders/",
     method: "get",
     baseURL,
     params,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     }
   });
 }
 
 const fetchTransferOrderDetail = async (orderId: string): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/transferOrders/${orderId}`,
     method: "get",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     }
   });
 };
 
 const fetchShippedTransferShipments = async (params: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: "poorti/transferShipments",
     method: "get",
     baseURL,
     params,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     }
   });
 };
 
 const fetchTransferShipmentDetails = async (params: Record<string, any>): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: "poorti/transferShipments",
     method: "get",
     baseURL,
     params,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     }
   });
 };
 
 const fetchRejectReasons = async(query: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/admin/enums`,
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params: query,
@@ -86,15 +86,15 @@ const fetchRejectReasons = async(query: any): Promise<any> => {
 }
 
 const fetchFulfillmentRejectReasons = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/admin/enumGroups/${payload.enumerationGroupId}/members`,
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params: payload,
@@ -102,15 +102,15 @@ const fetchFulfillmentRejectReasons = async (payload: any): Promise<any> => {
 }
 
 const cancelTransferOrderShipment = async (shipmentId: string): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `poorti/shipments/${shipmentId}`,
     method: "put",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: {
@@ -120,15 +120,15 @@ const cancelTransferOrderShipment = async (shipmentId: string): Promise<any> => 
 };
 
 const shipTransferOrderShipment = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `poorti/transferShipments/${payload.shipmentId}/ship`,
     method: "post",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload
@@ -137,17 +137,17 @@ const shipTransferOrderShipment = async (payload: any): Promise<any> => {
 
 const printTransferOrderPicklist = async (orderId: string): Promise<any> => {
   try {
-    const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+    const omstoken = store.getters['user/getUserToken'];
     const baseURL = store.getters['user/getMaargBaseUrl'];
 
     // Get packing slip from the server
-    const resp: any = await client({
+    const resp: any = await apiClient({
       method: "get",
       url: `poorti/transferOrders/${orderId}/printPicklist`,
       responseType: "blob",
       baseURL,
       headers: {
-        "api_key": omsRedirectionInfo.token,
+        "Authorization": "Bearer " + omstoken,
       }
     })
 
@@ -175,16 +175,16 @@ const printTransferOrderPicklist = async (orderId: string): Promise<any> => {
 };
 
 const createOutboundTransferShipment = async (query: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return await client({
+  return await apiClient({
     method: "post",
     url: "poorti/transferShipments",
     baseURL,
     data: query,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     }
   })
@@ -193,7 +193,7 @@ const createOutboundTransferShipment = async (query: any): Promise<any> => {
 const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string): Promise<any> => {
   try {
     const maargUrl = store.getters['user/getMaargUrl'];
-    const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+    const omstoken = store.getters['user/getUserToken'];
 
     let pdfUrls = shippingLabelPdfUrls?.filter((pdfUrl: any) => pdfUrl);
     if (!pdfUrls || pdfUrls.length == 0) {
@@ -213,7 +213,7 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
       }
 
       // Get packing slip from the server
-      const resp: any = await client({
+      const resp: any = await apiClient({
         method: "get",
         url: "/fop/apps/pdf/PrintLabel",
         params: {
@@ -222,7 +222,7 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
         responseType: "blob",
         baseURL: maargUrl,
         headers: {
-          "api_key": omsRedirectionInfo.token,
+          "Authorization": "Bearer " + omstoken,
         }
       });
 
@@ -254,15 +254,15 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
 };
 
 const rejectOrderItems = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `poorti/transferOrders/${payload.orderId}/reject`,
     method: "post",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload
@@ -270,15 +270,15 @@ const rejectOrderItems = async (payload: any): Promise<any> => {
 };
 
 const closeOrderItems = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `poorti/transferOrders/${payload.orderId}/closeFulfillment`,
     method: "post",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload
@@ -286,15 +286,15 @@ const closeOrderItems = async (payload: any): Promise<any> => {
 };
 
 const createTransferOrder = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return await client({
+  return await apiClient({
     url: 'oms/transferOrders',
     method: "post",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload
@@ -302,15 +302,15 @@ const createTransferOrder = async (payload: any): Promise<any> => {
 };
 
 const approveTransferOrder = async (orderId: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `oms/transferOrders/${orderId}/approve`,
     method: "post",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     }
   });
