@@ -1,4 +1,4 @@
-import { api, client, hasError } from '@/adapter';
+import { api, apiClient, hasError } from '@/adapter';
 import store from '@/store';
 import logger from '@/logger'
 
@@ -17,7 +17,7 @@ const moquiLogin = async (omsRedirectionUrl: string, token: string): Promise <an
   let api_key = ""
 
   try {
-    const resp = await client({
+    const resp = await apiClient({
       url: "login",
       method: "post",
       baseURL,
@@ -42,15 +42,15 @@ const moquiLogin = async (omsRedirectionUrl: string, token: string): Promise <an
 }
 
 const getFacilityDetails = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/facilities/${payload.facilityId}`,
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params: payload
@@ -58,15 +58,15 @@ const getFacilityDetails = async (payload: any): Promise<any> => {
 }
 
 const getFacilityOrderCount = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/facilities/facilityOrderCounts`,
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params: payload
@@ -74,15 +74,15 @@ const getFacilityOrderCount = async (payload: any): Promise<any> => {
 }
 
 const updateFacility = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/facilities/${payload.facilityId}`,
     method: "PUT",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload
@@ -90,15 +90,15 @@ const updateFacility = async (payload: any): Promise<any> => {
 }
 
 const updateFacilityToGroup = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/facilities/${payload.facilityId}/groups`,
     method: "POST",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload
@@ -106,15 +106,15 @@ const updateFacilityToGroup = async (payload: any): Promise<any> => {
 }
 
 const addFacilityToGroup = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/facilities/${payload.facilityId}/groups`,
     method: "POST",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload
@@ -122,15 +122,15 @@ const addFacilityToGroup = async (payload: any): Promise<any> => {
 }
 
 const getFacilityGroupDetails = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/facilityGroups/${payload.facilityGroupId}`,
     method: "get",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     param: payload
@@ -138,15 +138,15 @@ const getFacilityGroupDetails = async (payload: any): Promise<any> => {
 }
 
 const getFacilityGroupAndMemberDetails = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/dataDocumentView`,
     method: "post",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload
@@ -157,7 +157,7 @@ const getPreferredStore = async (token: any): Promise<any> => {
   const baseURL = store.getters['user/getBaseUrl'];
   try {
     const baseURL = store.getters['user/getMaargBaseUrl'];
-    const resp = await client({
+    const resp = await apiClient({
       url: `/oms/userPreferences`,
       method: "GET",
       baseURL,
@@ -198,7 +198,7 @@ const getUserPermissions = async (payload: any, token: any): Promise<any> => {
       viewSize,
       permissionIds: payload.permissionIds
     }
-    resp = await client({
+    resp = await apiClient({
       url: "getPermissions",
       method: "post",
       baseURL,
@@ -216,7 +216,7 @@ const getUserPermissions = async (payload: any, token: any): Promise<any> => {
         // We need to get all the remaining permissions
         const apiCallsNeeded = Math.floor(remainingPermissions / viewSize) + (remainingPermissions % viewSize != 0 ? 1 : 0);
         const responses = await Promise.all([...Array(apiCallsNeeded).keys()].map(async (index: any) => {
-          const response = await client({
+          const response = await apiClient({
             url: "getPermissions",
             method: "post",
             baseURL,
@@ -270,7 +270,7 @@ const getUserPermissions = async (payload: any, token: any): Promise<any> => {
 const getUserProfile = async (token: any): Promise<any> => {
   const baseURL = store.getters['user/getBaseUrl'];
   try {
-    const resp = await client({
+    const resp = await apiClient({
       url: "user-profile",
       method: "get",
       baseURL,
@@ -287,15 +287,15 @@ const getUserProfile = async (token: any): Promise<any> => {
 }
 
 const setUserPreference = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/userPreferences`,
     method: "POST",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload
@@ -303,15 +303,15 @@ const setUserPreference = async (payload: any): Promise<any> => {
 }
 
 const getPartialOrderRejectionConfig = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/productStores/${payload.productStoreId}/settings`,
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params: payload
@@ -319,15 +319,15 @@ const getPartialOrderRejectionConfig = async (payload: any): Promise<any> => {
 }
 
 const createEnumeration = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/admin/enums`,
     method: "POST",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload
@@ -336,15 +336,15 @@ const createEnumeration = async (payload: any): Promise<any> => {
 
 const isEnumExists = async (enumId: string): Promise<any> => {
   try {
-    const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+    const omstoken = store.getters['user/getUserToken'];
     const baseURL = store.getters['user/getMaargBaseUrl'];
 
-    const resp = await client({
+    const resp = await apiClient({
       url: `/admin/enums`,
       method: "GET",
       baseURL,
       headers: {
-        "api_key": omsRedirectionInfo.token,
+        "Authorization": "Bearer " + omstoken,
         "Content-Type": "application/json"
       },
       params: { enumId }
@@ -359,15 +359,15 @@ const isEnumExists = async (enumId: string): Promise<any> => {
 }
 
 const getReservationFacilityIdFieldConfig = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/productStores/${payload.productStoreId}/settings`,
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params: payload
@@ -375,15 +375,15 @@ const getReservationFacilityIdFieldConfig = async (payload: any): Promise<any> =
 }
 
 const getDisableShipNowConfig = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/productStores/${payload.productStoreId}/settings`,
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params: payload
@@ -391,15 +391,15 @@ const getDisableShipNowConfig = async (payload: any): Promise<any> => {
 }
 
 const getDisableUnpackConfig = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/productStores/${payload.productStoreId}/settings`,
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params: payload
@@ -407,15 +407,15 @@ const getDisableUnpackConfig = async (payload: any): Promise<any> => {
 }
 
 const createPartialOrderRejectionConfig = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/productStores/${payload.productStoreId}/settings`,
     method: "POST",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload
@@ -423,15 +423,15 @@ const createPartialOrderRejectionConfig = async (payload: any): Promise<any> => 
 }
 
 const updatePartialOrderRejectionConfig = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/productStores/${payload.productStoreId}/settings`,
     method: "POST",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload
@@ -439,90 +439,90 @@ const updatePartialOrderRejectionConfig = async (payload: any): Promise<any> => 
 }
 
 const getCollateralRejectionConfig = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/productStores/${payload.productStoreId}/settings`,
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params: payload
   });
 }
 const createCollateralRejectionConfig = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/productStores/${payload.productStoreId}/settings`,
     method: "POST",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload
   });
 }
 const updateCollateralRejectionConfig = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/productStores/${payload.productStoreId}/settings`,
     method: "POST",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload
   });
 }
 const getAffectQohConfig = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/productStores/${payload.productStoreId}/settings`,
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params: payload
   });
 }
 const createAffectQohConfig = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/productStores/${payload.productStoreId}/settings`,
     method: "POST",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload
   });
 }
 const updateAffectQohConfig = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/productStores/${payload.productStoreId}/settings`,
     method: "POST",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload

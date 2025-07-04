@@ -1,4 +1,4 @@
-import { api, client } from '@/adapter';
+import { api, apiClient } from '@/adapter';
 import store from '@/store';
 
 
@@ -13,15 +13,15 @@ const fetchProducts = async (query: any): Promise <any>  => {
 }
 
 const fetchProductComponents = async (payload: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/dataDocumentView`,
     method: "post",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload,
@@ -29,15 +29,15 @@ const fetchProductComponents = async (payload: any): Promise<any> => {
 }
 
 const fetchSampleProducts = async (params: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/oms/products`,
     method: "get",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params,
@@ -45,7 +45,7 @@ const fetchSampleProducts = async (params: any): Promise<any> => {
 }
 
 const fetchProductsAverageCost = async (productIds: any, facilityId: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
   
   if(!productIds.length) return []
@@ -69,12 +69,12 @@ const fetchProductsAverageCost = async (productIds: any, facilityId: any): Promi
     requests.push(params)
   }
 
-  const productAverageCostResps = await Promise.allSettled(requests.map((payload) => client({
+  const productAverageCostResps = await Promise.allSettled(requests.map((payload) => apiClient({
     url: `/oms/dataDocumentView`,
     method: "post",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     data: payload,
