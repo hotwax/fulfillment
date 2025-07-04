@@ -377,7 +377,7 @@ export default defineComponent({
               pageIndex: 0,
               pageSize: 1
             },
-            dataDocumentId: "FacilityGroupMemberAndGroup",
+            dataDocumentId: "FacilityGroupAndMember",
             filterByDate: true
           })
 

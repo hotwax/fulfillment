@@ -783,8 +783,8 @@ const actions: ActionTree<UtilState, RootState> = {
       }
 
       responses.map((response: any) => {
-        if(response.value.data?.length) {
-          response.value.data.map((facilityAddress: any) => {
+        if(response.data?.facilityContactMechs?.length) {
+          response.data.facilityContactMechs.map((facilityAddress: any) => {
             facilityAddresses[facilityAddress.facilityId] = facilityAddress;
             addresses.push(facilityAddress)
           })

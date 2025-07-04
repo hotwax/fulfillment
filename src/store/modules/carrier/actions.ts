@@ -239,12 +239,11 @@ const actions: ActionTree<CarrierState, RootState> = {
       do {
         const params = {
           customParametersMap:{
-            "roleTypeId": "CARRIER",
             "partyId": currentCarrier.partyId,
             pageIndex: viewIndex,
             pageSize: 250,
           },
-          dataDocumentId: "FacilityAndParty",
+          dataDocumentId: "FacilityCarrier",
           filterByDate: true
         }
   
@@ -339,12 +338,11 @@ const actions: ActionTree<CarrierState, RootState> = {
       do {
         const params = {
           customParametersMap: {
-            "roleTypeId": "CARRIER",
             "facilityId": getCurrentFacilityId(),
             "pageIndex": viewIndex,
             "pageSize": 250
           },
-          dataDocumentId: "FacilityAndParty",
+          dataDocumentId: "FacilityCarrier",
           filterByDate: true
         }
   

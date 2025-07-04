@@ -58,7 +58,6 @@ const fetchProductsAverageCost = async (productIds: any, facilityId: any): Promi
         facilityId,
         productId: productIds,
         productId_op: "in",
-        //productAverageCostTypeId: "WEIGHTED_AVG_COST",
         orderByField: "-fromDate",
         pageIndex: 0,
         pageSize: 100 //There should be more than one active record per product

@@ -575,14 +575,14 @@ const fetchFacilityAddresses = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/dataDocumentView`,
-    method: "POST",
+    url: `/oms/facilityContactMechs`,
+    method: "GET",
     baseURL,
     headers: {
       "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
-    data: payload,
+    params: payload,
   });
 }
 
@@ -595,7 +595,7 @@ const fetchFacilityZPLGroupInfo = async (facilityId: string): Promise<any> => {
       pageIndex: 0,
       pageSize: 1
     },
-    dataDocumentId: "FacilityGroupMemberAndGroup",
+    dataDocumentId: "FacilityGroupAndMember",
     filterByDate: true,
   }
 

@@ -715,16 +715,13 @@ export default defineComponent({
         const payload = {
           customParametersMap: {
             partyId,
-            facilityContentTypeEnumId: "FAC_DELVER_MANIFEST",
-            dataResourceTypeId: "URL_RESOURCE",
-            roleTypeId: "CARRIER",
             fromDate_from: DateTime.now().startOf("day").minus({ days: 7 }).toMillis(),
             facilityId: this.currentFacility.facilityId,
             orderByField: "-contentId",
             pageIndex: 0,
             pageSize: 250,  // Assuming that there will not be more than 250 manifest in last 7 days for a carrier
           },
-          dataDocumentId: "FacilityContentAndDataResource",
+          dataDocumentId: "ManifestContent",
           filterByDate: true
         }
         try {

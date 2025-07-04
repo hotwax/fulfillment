@@ -126,14 +126,14 @@ const getFacilityGroupDetails = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/facilityGroups/${payload.facilityGroupId}`,
+    url: `/oms/facilityGroups`,
     method: "get",
     baseURL,
     headers: {
       "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
-    param: payload
+    params: payload
   });
 }
 
