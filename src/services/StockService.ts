@@ -1,16 +1,16 @@
-import { client } from '@/adapter';
+import { apiClient } from '@/adapter';
 import store from '@/store';
 
 const getInventoryAvailableByFacility = async (query: any): Promise <any> => {
-  const omsRedirectionInfo = store.getters['user/getOmsRedirectionInfo'];
+  const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return client({
+  return apiClient({
     url: `/poorti/getInventoryAvailableByFacility`,
     method: "GET",
     baseURL,
     headers: {
-      "api_key": omsRedirectionInfo.token,
+      "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
     params: query,
