@@ -63,14 +63,14 @@ const fetchRejectReasonEnumTypes = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/entityData`,
-    method: "POST",
+    url: `/admin/enumTypes`,
+    method: "GET",
     baseURL,
     headers: {
       "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
-    data: payload
+    params: payload
   });
 }
 
@@ -87,14 +87,14 @@ const fetchConfiguredCarrierService = async(payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/entityData`,
-    method: "POST",
+    url: `/poorti/shipmentRequests`,
+    method: "get",
     baseURL,
     headers: {
       "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
-    data: payload,
+    params: payload,
   });
 }
 
@@ -559,7 +559,7 @@ const fetchStoreCarrierAndMethods = async (payload: any): Promise <any>  => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/entityData`,
+    url: `/oms/dataDocumentView`,
     method: "POST",
     baseURL,
     headers: {
@@ -575,14 +575,14 @@ const fetchFacilityAddresses = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/entityData`,
-    method: "POST",
+    url: `/oms/facilityContactMechs`,
+    method: "GET",
     baseURL,
     headers: {
       "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
-    data: payload,
+    params: payload,
   });
 }
 
@@ -595,7 +595,7 @@ const fetchFacilityZPLGroupInfo = async (facilityId: string): Promise<any> => {
       pageIndex: 0,
       pageSize: 1
     },
-    selectedEntity: "co.hotwax.facility.FacilityGroupAndMember",
+    dataDocumentId: "FacilityGroupAndMember",
     filterByDate: true,
   }
 
@@ -605,7 +605,7 @@ const fetchFacilityZPLGroupInfo = async (facilityId: string): Promise<any> => {
     const baseURL = store.getters['user/getMaargBaseUrl'];
 
     const resp = await apiClient({
-      url: `/oms/entityData`,
+      url: `/oms/dataDocumentView`,
       method: "POST",
       baseURL,
       headers: {

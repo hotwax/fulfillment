@@ -108,8 +108,7 @@ const actions: ActionTree<CarrierState, RootState> = {
             pageIndex: viewIndex,
             pageSize: 250
           },
-          //"fieldsToSelect": ["productStoreShipMethId", "productStoreId", "partyId", "roleTypeId", "shipmentMethodTypeId", "shipmentGatewayConfigId", "isTrackingRequired", "sequenceNumber", "description", "fromDate"],
-          selectedEntity: "org.apache.ofbiz.product.store.ProductStoreShipmentMethDetail",
+          dataDocumentId: "ProductStoreShipmentMethod",
           filterByDate: true
         }
   
@@ -240,12 +239,11 @@ const actions: ActionTree<CarrierState, RootState> = {
       do {
         const params = {
           customParametersMap:{
-            "roleTypeId": "CARRIER",
             "partyId": currentCarrier.partyId,
             pageIndex: viewIndex,
             pageSize: 250,
           },
-          selectedEntity: "org.apache.ofbiz.product.facility.FacilityPartyNameDetail",
+          dataDocumentId: "FacilityCarrier",
           filterByDate: true
         }
   
@@ -340,12 +338,11 @@ const actions: ActionTree<CarrierState, RootState> = {
       do {
         const params = {
           customParametersMap: {
-            "roleTypeId": "CARRIER",
             "facilityId": getCurrentFacilityId(),
             "pageIndex": viewIndex,
             "pageSize": 250
           },
-          selectedEntity: "org.apache.ofbiz.product.facility.FacilityPartyNameDetail",
+          dataDocumentId: "FacilityCarrier",
           filterByDate: true
         }
   
@@ -412,7 +409,7 @@ const actions: ActionTree<CarrierState, RootState> = {
             "pageIndex": viewIndex,
             "pageSize": 250
           },
-          selectedEntity: "org.apache.ofbiz.product.store.ProductStoreShipmentMethDetail",
+          dataDocumentId: "ProductStoreShipmentMethod",
           filterByDate: true
         }
   
