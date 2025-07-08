@@ -78,11 +78,10 @@ const actions: ActionTree<ProductState, RootState> = {
       resp = await ProductService.fetchProductComponents({
         customParametersMap: {
           productId: productId,
-          productAssocTypeId: "PRODUCT_COMPONENT",
           pageIndex: 0,
           pageSize: 100,  // maximum records we could have
         },
-        selectedEntity: "org.apache.ofbiz.product.product.ProductAssoc",
+        dataDocumentId: "ProductComponent",
         filterByDate: true
       })
       if (!hasError(resp)) {
