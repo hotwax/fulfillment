@@ -840,7 +840,7 @@ export default defineComponent({
 
         emitter.emit('dismissLoader');
 
-        if (documentOptions.length && !manualTrackingCode && !this.order.missingLabelImage) {
+        if (documentOptions.length) {
           // additional parameters for dismiss button and manual dismiss ability
           toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
           toast.present()
@@ -854,7 +854,7 @@ export default defineComponent({
             }
           } else if (documentOptions.includes('printPackingSlip')) {
             await OrderService.printPackingSlip(shipmentIds)
-          } else if (documentOptions.includes('printShippingLabel')) {
+          } else if (documentOptions.includes('printShippingLabel') && !manualTrackingCode && !this.order.missingLabelImage) {
             await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
           }
           if (order.shipmentPackages?.[0].internationalInvoiceUrl) {

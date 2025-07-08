@@ -576,7 +576,7 @@ export default defineComponent({
         //Fetching updated shipment detail after successful packing
         const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
 
-        if (documentOptions.length && !manualTrackingCode && !updatedOrder.missingLabelImage) {
+        if (documentOptions.length) {
           // additional parameters for dismiss button and manual dismiss ability
           toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
           toast.present()
@@ -598,7 +598,7 @@ export default defineComponent({
             }
           } else if (documentOptions.includes('printPackingSlip')) {
             await OrderService.printPackingSlip(shipmentIds)
-          } else if (documentOptions.includes('printShippingLabel')) {
+          } else if (documentOptions.includes('printShippingLabel') && !manualTrackingCode && !updatedOrder.missingLabelImage) {
             await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, updatedOrder.shipmentPackages);
           }
 
