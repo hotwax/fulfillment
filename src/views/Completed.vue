@@ -314,7 +314,13 @@ export default defineComponent({
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
-    await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentFacets()]);
+    await this.fetchShipmentFacets()
+    //Remove the selected shipment methods and carriers that are no longer valid after editing the order detail page.
+    this.selectedShipmentMethods = this.selectedShipmentMethods?.filter((shipmentMethod: any) => this.shipmentMethods.includes(shipmentMethod));
+    const selectedCarrier = this.carrierPartyIds?.find((carrierPartyId: any) => carrierPartyId === this.selectedCarrierPartyId)
+    this.selectedCarrierPartyId = selectedCarrier ? selectedCarrier : ""
+
+    await this.initialiseOrderQuery()
     emitter.on('updateOrderQuery', this.updateOrderQuery)
     this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
   },
