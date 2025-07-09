@@ -896,7 +896,7 @@ export default defineComponent({
 
           if (!hasError(resp)) {
             resp.data?.forEach((shipment: any) => {
-              if (shipment?.order?.statusId === "ORDER_APPROVED") {
+              if (shipment?.order?.statusId === "ORDER_APPROVED" && shipment?.order?.productStoreId === this.currentEComStore.productStoreId) {
                 shipment?.picklistShipment?.forEach((picklistShipment: any) => {
                   if (!picklistInfo[picklistShipment.picklistId]) {
                     const picklistRoles = picklistShipment?.picklist?.roles.filter((role: any) => !role.thruDate)
@@ -1251,9 +1251,15 @@ export default defineComponent({
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
+    await this.fetchPickersInformation()
+    //Cross checking if the selected picklist is still valid, as user can pack the order from order detail page
+    if (this.selectedPicklistId) {
+      const selectedPicklist = this.picklists.find((picklist: any) => picklist.id === this.selectedPicklistId)
+      this.selectedPicklistId = selectedPicklist ? selectedPicklist.id : ""
+    }
+
     await Promise.all([
       this.store.dispatch('util/fetchRejectReasonOptions'),
-      this.fetchPickersInformation(),
       this.initialiseOrderQuery()
     ]);
     emitter.on('updateOrderQuery', this.updateOrderQuery)
