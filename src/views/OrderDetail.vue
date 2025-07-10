@@ -501,6 +501,7 @@ export default defineComponent({
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
       affectQohConfig: 'user/getAffectQohConfig',
+      excludeOrderBrokerDays: "util/getExcludeOrderBrokerDays",
       isForceScanEnabled: 'util/isForceScanEnabled',
       productStoreShipmentMethods: 'carrier/getProductStoreShipmentMethods',
       facilityCarriers: 'carrier/getFacilityCarriers',
@@ -1273,7 +1274,7 @@ export default defineComponent({
       items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
         if (updateParameter === 'report' && item.rejectReason) {
-          rejectedOrderItems.push({
+          const rejectedItemInfo = {
             "orderId": item.orderId,
             "orderItemSeqId": item.orderItemSeqId,
             "shipmentId": item.shipmentId,
@@ -1286,7 +1287,12 @@ export default defineComponent({
             "rejectionReasonId": item.rejectReason,
             "kitComponents": item.kitComponents,
             "comments": "Store Rejected Inventory"
-          })
+          } as any
+
+          if (this.excludeOrderBrokerDays !== undefined) {
+            rejectedItemInfo["excludeOrderFacilityDuration"] = this.excludeOrderBrokerDays
+          }
+          rejectedOrderItems.push(rejectedItemInfo)
         } else if (item.selectedBox !== item.currentBox) {
           shipmentPackageContents.push({
             shipmentId: item.shipmentId,

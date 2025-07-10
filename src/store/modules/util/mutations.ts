@@ -73,6 +73,7 @@ const mutations: MutationTree <UtilState> = {
     state.isPicklistDownloadEnabled = false
     state.shipmentBoxTypeDesc = {}
     state.carrierShipmentBoxTypes = {}
+    state.excludeOrderBrokerDays = undefined
   },
   [types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED](state, payload) {
     if(payload.facilityId) {
@@ -81,6 +82,9 @@ const mutations: MutationTree <UtilState> = {
   },
   [types.UTIL_PICKLIST_DOWNLOAD_STATUS_UPDATED](state, payload) {
     state.isPicklistDownloadEnabled = payload
+  },
+  [types.UTIL_EXCLUDE_ORDER_BROKER_DAYS_UPDATED](state, payload) {
+    state.excludeOrderBrokerDays = payload
   },
 }
 export default mutations;

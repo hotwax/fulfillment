@@ -121,6 +121,7 @@ const actions: ActionTree<UserState, RootState> = {
       this.dispatch('util/getForceScanSetting', preferredStore.productStoreId);
       this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
       this.dispatch('util/fetchProductStoreSettingPicklist', preferredStore.productStoreId);
+      this.dispatch('util/fetchExcludeOrderBrokerDays', preferredStore.productStoreId);
       await dispatch('getReservationFacilityIdFieldConfig')
       await dispatch('getPartialOrderRejectionConfig')
       await dispatch('getCollateralRejectionConfig')
@@ -232,6 +233,7 @@ const actions: ActionTree<UserState, RootState> = {
         this.dispatch('util/getForceScanSetting', preferredStore.productStoreId)
         this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
         this.dispatch('util/fetchProductStoreSettingPicklist', preferredStore.productStoreId);
+        this.dispatch('util/fetchExcludeOrderBrokerDays', preferredStore.productStoreId);
       }
     } catch(error: any) {
       logger.error(error);
@@ -274,6 +276,7 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch('util/getForceScanSetting', productStoreId)
     this.dispatch('util/fetchBarcodeIdentificationPref', productStoreId);
     this.dispatch('util/fetchProductStoreSettingPicklist', productStoreId);
+    this.dispatch('util/fetchExcludeOrderBrokerDays', productStoreId);
   },
 
   setUserPreference({ commit }, payload){
