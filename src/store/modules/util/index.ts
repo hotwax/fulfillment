@@ -29,7 +29,8 @@ const utilModule: Module<UtilState, RootState> = {
     shipmentMethodsByCarrier: {},
     facilityAddresses: {},
     facilityShippingLabelImageType: {},
-    isPicklistDownloadEnabled: false
+    isPicklistDownloadEnabled: false,
+    excludeOrderBrokerDays: undefined
   },
   getters,
   actions,

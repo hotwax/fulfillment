@@ -433,6 +433,22 @@ const getProductStoreSetting = async (params: any): Promise<any> => {
   });
 }
 
+const fetchExcludeOrderBrokerDays = async (params: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${params.productStoreId}/settings`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    params
+  });
+}
+
 const fetchGiftCardFulfillmentInfo = async (payload: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -652,6 +668,7 @@ export const UtilService = {
   fetchAdjustmentTypeDescription,
   fetchDefaultShipmentBox,
   fetchEnumeration,
+  fetchExcludeOrderBrokerDays,
   fetchFacilities,
   fetchFacilityAddresses,
   fetchFacilityZPLGroupInfo,

@@ -856,6 +856,22 @@ const actions: ActionTree<UtilState, RootState> = {
     }
     commit(types.UTIL_PICKLIST_DOWNLOAD_STATUS_UPDATED, isPicklistDownloadEnabled)
   },
+  async fetchExcludeOrderBrokerDays({ commit }, productStoreId) {
+    let excludeOrderBrokerDays = undefined
+    try {
+      const resp = await UtilService.fetchExcludeOrderBrokerDays({
+        "productStoreId": productStoreId,
+        "settingTypeEnumId": "EXCLUDE_ODR_BKR_DAYS"
+      })
+
+      if (!hasError(resp) && resp.data[0]?.settingTypeEnumId && resp.data[0]?.settingValue !== null) {
+        excludeOrderBrokerDays = Number(resp.data[0]?.settingValue)
+      }
+    } catch(err) {
+      logger.error("Failed to get the exclude order broker days", err)
+    }
+    commit(types.UTIL_EXCLUDE_ORDER_BROKER_DAYS_UPDATED, excludeOrderBrokerDays)
+  }
 }
 
 export default actions;

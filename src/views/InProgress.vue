@@ -365,8 +365,9 @@ export default defineComponent({
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
       affectQohConfig: 'user/getAffectQohConfig',
+      excludeOrderBrokerDays: "util/getExcludeOrderBrokerDays",
       carrierShipmentBoxTypes: 'util/getCarrierShipmentBoxTypes',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
     }),
   },
   data() {
@@ -734,8 +735,6 @@ export default defineComponent({
                 } else {
                   showToast(translate('Order packed successfully'));
                 }
-                  // TODO: handle the case of fetching in progress orders after packing multiple orders
-                  // when packing multiple orders the API runs too fast and the solr index does not update resulting in having the packed orders in the inProgress section
                 await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
               } catch (err) {
                 // in case of error, if loader and toast are not dismissed above
@@ -814,7 +813,7 @@ export default defineComponent({
       items.map((item: any, index: number) => {
         const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
         if (updateParameter === 'report' && item.rejectReason) {
-          rejectedOrderItems.push({
+          const rejectedItemInfo = {
             "orderId": item.orderId,
             "orderItemSeqId": item.orderItemSeqId,
             "shipmentId": item.shipmentId,
@@ -827,7 +826,12 @@ export default defineComponent({
             "rejectionReasonId": item.rejectReason,
             "kitComponents": item.kitComponents,
             "comments": "Store Rejected Inventory"
-          })
+          } as any
+          
+          if (this.excludeOrderBrokerDays !== undefined) {
+            rejectedItemInfo["excludeOrderFacilityDuration"] = this.excludeOrderBrokerDays
+          }
+          rejectedOrderItems.push(rejectedItemInfo)
         } else if (item.selectedBox !== item.currentBox) {
           shipmentPackageContents.push({
             shipmentId: item.shipmentId,

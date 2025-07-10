@@ -21,4 +21,5 @@ export default interface UtilState {
   facilityAddresses: any;
   facilityShippingLabelImageType: any;
   isPicklistDownloadEnabled: boolean;
+  excludeOrderBrokerDays: any;
 }
