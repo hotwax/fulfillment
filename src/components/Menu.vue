@@ -46,7 +46,7 @@ import {
 } from "@ionic/vue";
 import { computed, defineComponent } from "vue";
 import { mapGetters } from "vuex";
-import { arrowBackOutline, backspaceOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
+import { backspaceOutline, businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 import { hasPermission } from "@/authorization";
@@ -127,8 +127,8 @@ export default defineComponent({
       {
         title: "Transfer Orders",
         url: "/transfer-orders",
-        iosIcon: arrowBackOutline,
-        mdIcon: arrowBackOutline,
+        iosIcon: businessOutline,
+        mdIcon: businessOutline,
         childRoutes: ["/transfer-order-details", "/transfer-shipment-review", "/create-transfer-order"],
         meta: {
           permissionId: "APP_TRANSFER_ORDERS_VIEW"
@@ -181,10 +181,10 @@ export default defineComponent({
     return {
       appPages,
       backspaceOutline,
+      businessOutline,
       checkmarkDoneOutline,
       currentFacility,
       hasPermission,
-      arrowBackOutline,
       mailUnreadOutline,
       mailOpenOutline,
       selectedIndex,
