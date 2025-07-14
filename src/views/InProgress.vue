@@ -709,24 +709,24 @@ export default defineComponent({
                 if (hasError(resp)) {
                   throw resp.data
                 }
+                //Generate documents only for successfully packed shipments, not for those where packing failed.
+                const packedShipmentIds = resp.data?.packedShipmentIds ? resp.data?.packedShipmentIds : [];
 
-                // TODO: need to check that do we need to pass all the shipmentIds for an order or just need to pass
-                // the associated ids, currently passing the associated shipmentId
                 if (data.length) {
                   // additional parameters for dismiss button and manual dismiss ability
                   toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
                   toast.present()
                   if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
                     if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
-                      await OrderService.printPackingSlip(shipmentIds)
-                      await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentPackages);
+                      await OrderService.printPackingSlip(packedShipmentIds)
+                      await OrderService.printShippingLabel(packedShipmentIds, shippingLabelPdfUrls, shipmentPackages);
                     } else {
-                      await OrderService.printShippingLabelAndPackingSlip(shipmentIds, shipmentPackages)
+                      await OrderService.printShippingLabelAndPackingSlip(packedShipmentIds, shipmentPackages)
                     }
                   } else if (data.includes('printPackingSlip')) {
-                    await OrderService.printPackingSlip(shipmentIds)
+                    await OrderService.printPackingSlip(packedShipmentIds)
                   } else if (data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentPackages);
+                    await OrderService.printShippingLabel(packedShipmentIds, shippingLabelPdfUrls, shipmentPackages);
                   }
                   //print custom documents like international invoice 
                   await OrderService.printCustomDocuments(internationalInvoiceUrls);
