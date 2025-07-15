@@ -20,11 +20,11 @@
     </ion-row>
 
     <ion-list>
-      <ion-item lines="none" v-if="hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN)">
+      <!--<ion-item lines="none" v-if="hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN)">
         <ion-toggle v-model="showAllPickers" @ionChange="refetchPickers()">
           {{ translate("Show all pickers") }}
         </ion-toggle>
-      </ion-item>
+      </ion-item>-->
 
       <ion-list-header>{{ translate("Staff") }}</ion-list-header>
 
@@ -74,7 +74,6 @@ import {
   IonRow,
   IonSearchbar,
   IonSpinner,
-  IonToggle,
   modalController,
   alertController
 } from "@ionic/vue";
@@ -110,7 +109,6 @@ export default defineComponent({
     IonRow,
     IonSearchbar,
     IonSpinner,
-    IonToggle,
   },
   data () {
     return {
@@ -119,7 +117,7 @@ export default defineComponent({
       pickers: [] as any,
       editedPicklist: {} as any,
       isLoading: false,
-      showAllPickers: false
+      //showAllPickers: false
     }
   },
   async mounted() {
@@ -153,11 +151,11 @@ export default defineComponent({
         query = `(${keyword.map(key => `*${key}*`).join(' OR ')}) OR "${this.queryString}"^100`;
       }
 
-      const facilityFilter = [];
+      /*const facilityFilter = [];
 
       if(!this.showAllPickers) {
         facilityFilter.push(`facilityIds:${this.currentFacility.facilityId}`)
-      }
+      }*/
 
       const payload = {
         "json": {
@@ -168,7 +166,7 @@ export default defineComponent({
             "qf": "firstName lastName groupName partyId externalId",
             "sort": "firstName asc"
           },
-          "filter": ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true", ...facilityFilter, partyIdsFilter.length ? `partyId:(${partyIdsFilter})` : ""]
+          "filter": ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true", partyIdsFilter.length ? `partyId:(${partyIdsFilter})` : ""]
         }
       }
 
