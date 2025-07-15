@@ -330,7 +330,8 @@ export default defineComponent({
         },
         solrFilters: [
           //it should be explicit what is subtracting the first part of your OR statement from
-          "((*:* -fulfillmentStatus: [* TO *]) OR fulfillmentStatus:Created)"
+          "((*:* -fulfillmentStatus: [* TO *]) OR fulfillmentStatus:Created)",
+          "entryDate:[2025-01-01T00:00:00Z TO *]"
         ],
         facet: {
           "shipmentMethodTypeIdFacet":{

@@ -185,7 +185,9 @@ export default defineComponent({
           showToast(translate('Picklist created successfully'))
 
           // generating picklist after creating a new picklist
-          await OrderService.printPicklist(resp.data.picklistId)
+          if (resp.data.picklistId) {
+            await OrderService.printPicklist(resp.data.picklistId)
+          }
 
           await this.store.dispatch('order/findOpenOrders')
           //Removing orders if the solr doc is not updated after picking

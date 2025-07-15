@@ -26,7 +26,8 @@ const findOpenOrders = async (payload: any): Promise<any> => {
     },
     solrFilters: [
       //it should be explicit what is subtracting the first part of your OR statement from
-      "((*:* -fulfillmentStatus: [* TO *]) OR fulfillmentStatus:Created)"
+      "((*:* -fulfillmentStatus: [* TO *]) OR fulfillmentStatus:Created)",
+      "entryDate:[2025-01-01T00:00:00Z TO *]"
     ]
   } as any
   if (!openOrderQuery.excludeFacilityFilter) {
