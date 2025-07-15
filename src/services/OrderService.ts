@@ -658,15 +658,16 @@ const retryShippingLabel = async (shipmentId: string): Promise<any> => {
 const fetchShipmentLabelError = async (shipmentId: string): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
-  let shipmentLabelError = []
+  let shipmentLabelError = [] as any
 
   try {
+    if (!shipmentId) {
+      return shipmentLabelError
+    }
+
     const payload = {
       shipmentId,
-      fieldsToSelect: ["shipmentId", "gatewayMessage"],
-      getewayMessage_op: 'empty',
-      getewayMessage_not: 'Y'
-
+      pageSize: 10
     }
 
     const resp = await apiClient({
@@ -677,13 +678,14 @@ const fetchShipmentLabelError = async (shipmentId: string): Promise<any> => {
         "Authorization": "Bearer " + omstoken,
         "Content-Type": "application/json"
       },
-      params: payload,
+      params: payload
     });
 
     if (hasError(resp)) {
       throw resp.data;
     }
-    shipmentLabelError = resp.data
+    const responseData = resp.data?.shipmentPackageRouteSegDetails || resp.data;
+    shipmentLabelError = responseData
       .filter((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.gatewayMessage)
       .map((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.gatewayMessage);
 

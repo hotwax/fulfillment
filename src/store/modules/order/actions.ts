@@ -420,9 +420,14 @@ const actions: ActionTree<OrderState, RootState> = {
     const inProgressOrders = JSON.parse(JSON.stringify(state.inProgress.list));
 
     try {
-      const resp = await OrderService.fetchShipmentPackageRouteSegDetails({shipmentId: payload.shipmentId}) as any
+      if (!payload.shipmentId) {
+        return currentOrder
+      }
+
+      const resp = await OrderService.fetchShipmentPackageRouteSegDetails({shipmentId: payload.shipmentId, pageSize: 10}) as any
       if (!hasError(resp)) {
-        const shipmentPackageRouteSegDetails = resp.data.filter((shipmentPackageRouteSegDetail:any) => shipmentPackageRouteSegDetail.carrierServiceStatusId !== "SHRSCS_VOIDED")
+        const responseData = resp.data?.shipmentPackageRouteSegDetails || resp.data;
+        const shipmentPackageRouteSegDetails = responseData.filter((shipmentPackageRouteSegDetail:any) => shipmentPackageRouteSegDetail.carrierServiceStatusId !== "SHRSCS_VOIDED")
 
         let missingLabelImage = false;
         if (this.state.util.productStoreShipmentMethCount > 0) {
@@ -439,15 +444,15 @@ const actions: ActionTree<OrderState, RootState> = {
         });
 
         const updateShipmentPackages = (order:any) => {
-          order.shipmentPackageRouteSegDetails = resp.data
+          order.shipmentPackageRouteSegDetails = responseData
           order.shipmentPackages = shipmentPackages
           order.labelImageUrl = shipmentPackageRouteSegDetails[0]?.labelImageUrl
-          order.carrierPartyId = resp.data[0]?.carrierPartyId
-          order.shipmentMethodTypeId = resp.data[0]?.shipmentMethodTypeId
+          order.carrierPartyId = responseData[0]?.carrierPartyId
+          order.shipmentMethodTypeId = responseData[0]?.shipmentMethodTypeId
           order.trackingCode = shipmentPackageRouteSegDetails[0]?.trackingCode
-          order.isTrackingRequired = resp.data[0]?.isTrackingRequired
+          order.isTrackingRequired = responseData[0]?.isTrackingRequired
           order.missingLabelImage = missingLabelImage
-          order.gatewayMessage = resp.data[0]?.gatewayMessage
+          order.gatewayMessage = responseData[0]?.gatewayMessage
         };
     
         if (currentOrder && currentOrder.shipmentId === payload.shipmentId) {
