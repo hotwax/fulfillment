@@ -34,7 +34,7 @@
           </ion-checkbox>
         </ion-item>
       </div>
-      <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentEComStore="currentEComStore" @updateOpenQuery="updateOpenQuery" />
+      <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentEComStore="currentEComStore" @updateOpenQuery="updateOpenQuery" :isLegacyApp="true"/>
       <div v-if="openOrders.total">
 
         <div class="results">
