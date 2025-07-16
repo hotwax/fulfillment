@@ -1328,33 +1328,31 @@ export default defineComponent({
     },
     async fetchOrderInvoicingStatus() {
       let orderInvoicingInfo = {} as any, resp;
+
       const params = {
-        viewSize: 1,
-        sort: "createdDate_dt desc",
-        filters: {
-          id: { value: this.order.orderName }
+        customParametersMap:{
+          "orderId": this.order.orderId,
+          "orderByField": "-entryDate",
+          "pageSize": 1
         },
-        docType: "ORDER_TO_INVOICE_API",
-        coreName: "logInsights"
+        dataDocumentId: "ApiCommunicationEventAndOrder"
       }
 
-      const orderInvoicingQueryPayload = prepareSolrQuery(params)
-
       try {
-        resp = await OrderService.findOrderInvoicingInfo(orderInvoicingQueryPayload);
+        resp = await OrderService.findOrderInvoicingInfo(params);
 
-        if(!hasError(resp) && resp.data?.response?.docs?.length) {
-          const response = resp.data.response.docs[0];
+        if(!hasError(resp)) {
+          const response = resp.data[0];
 
-          const request = Object.keys(response.request_txt_en).length ? JSON.parse(response.request_txt_en) : {}
-          const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === request.InvoicingStore)
+          const content = Object.keys(response.content).length ? JSON.parse(response.content) : {}
+          const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === content.request.InvoicingStore)
 
           orderInvoicingInfo = {
-            id: response.id,
-            createdDate: response.createdDate_dt,
-            response : Object.keys(response.response_txt_en).length ? JSON.parse(response.response_txt_en) : {},
-            status: response.status_txt_en,
-            statusCode: response.statusCode_txt_en,
+            // id: response.id,
+            createdDate: response.entryDate,
+            response : Object.keys(content.request).length ? JSON.parse(content.request) : {},
+            status: content.status,
+            statusCode: content.statusCode,
             invoicingFacility
           }
 

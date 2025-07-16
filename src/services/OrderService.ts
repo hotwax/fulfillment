@@ -742,11 +742,19 @@ const updateShipmentCarrierAndMethod = async (payload: any): Promise<any> => {
     data: payload,
   });
 }
-const findOrderInvoicingInfo = async (query: any): Promise<any> => {
-  return api({
-    url: "solr-query",
+const findOrderInvoicingInfo = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/dataDocumentView`,
     method: "post",
-    data: query
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload,
   });
 }
 

@@ -384,28 +384,27 @@ export default defineComponent({
     },
     async fetchOrderInvoicingFacility() {
       const params = {
-        viewSize: 1,
-        sort: "createdDate_dt desc",
-        filters: {
-          id: { value: this.order.orderName }
+        customParametersMap:{
+          "orderId": this.order.orderId,
+          "orderByField": "-entryDate",
+          "pageSize": 1
         },
-        docType: "ORDER_TO_INVOICE_API",
-        coreName: "logInsights"
+        dataDocumentId: "ApiCommunicationEventAndOrder"
       }
 
-      const orderInvoicingQueryPayload = prepareSolrQuery(params)
-
       try {
-        const resp = await OrderLookupService.findOrderInvoicingInfo(orderInvoicingQueryPayload);
+        const resp = await OrderLookupService.findOrderInvoicingInfo(params);
 
-        if(!hasError(resp) && resp.data?.response?.docs?.length) {
-          const response = resp.data.response.docs[0];
+        if(!hasError(resp)) {
+          const response = resp.data[0];
 
-          const request = Object.keys(response.request_txt_en).length ? JSON.parse(response.request_txt_en) : {}
+          const request = Object.keys(response.content.request).length ? JSON.parse(response.content.request) : {}
           const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === request.InvoicingStore)
           if(invoicingFacility) {
             this.invoicingFacility = invoicingFacility
           }
+        } else {
+          throw resp.data
         }
       } catch(error: any) {
         logger.error(error);
