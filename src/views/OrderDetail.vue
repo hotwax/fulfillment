@@ -1341,7 +1341,7 @@ export default defineComponent({
       try {
         resp = await OrderService.findOrderInvoicingInfo(params);
 
-        if(!hasError(resp)) {
+        if(!hasError(resp) && resp.data?.length) {
           const response = resp.data[0];
 
           const content = Object.keys(response.content).length ? JSON.parse(response.content) : {}

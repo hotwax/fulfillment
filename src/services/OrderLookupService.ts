@@ -139,7 +139,7 @@ const findOrderInvoicingInfo = async (payload: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/dataDocumentView`,
+    url: "/oms/dataDocumentView",
     method: "post",
     baseURL,
     headers: {
