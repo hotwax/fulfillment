@@ -389,17 +389,16 @@ export default defineComponent({
           "orderByField": "-entryDate",
           "pageSize": 1
         },
-        dataDocumentId: "ApiCommunicationEventAndOrder"
+        dataDocumentId: "ApiCommunicationEventOrder"
       }
 
       try {
         const resp = await OrderLookupService.findOrderInvoicingInfo(params);
 
-        if(!hasError(resp) && resp.data?.length) {
-          const response = resp.data[0];
-
-          const request = Object.keys(response.content.request).length ? JSON.parse(response.content.request) : {}
-          const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === request.InvoicingStore)
+        if(!hasError(resp) && resp.data?.entityValueList?.length) {
+          const response = resp.data?.entityValueList[0]
+          const content = Object.keys(response.content).length ? JSON.parse(response.content) : {}
+          const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === content?.request?.InvoicingStore)
           if(invoicingFacility) {
             this.invoicingFacility = invoicingFacility
           }

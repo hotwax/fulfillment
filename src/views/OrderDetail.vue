@@ -1335,22 +1335,23 @@ export default defineComponent({
           "orderByField": "-entryDate",
           "pageSize": 1
         },
-        dataDocumentId: "ApiCommunicationEventAndOrder"
+        dataDocumentId: "ApiCommunicationEventOrder"
       }
 
       try {
         resp = await OrderService.findOrderInvoicingInfo(params);
 
-        if(!hasError(resp) && resp.data?.length) {
-          const response = resp.data[0];
+        if(!hasError(resp) && resp.data?.entityValueList?.length) {
+          const response = resp.data?.entityValueList[0]
 
           const content = Object.keys(response.content).length ? JSON.parse(response.content) : {}
-          const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === content.request.InvoicingStore)
+
+          const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === content?.request?.InvoicingStore)
 
           orderInvoicingInfo = {
             // id: response.id,
-            createdDate: response.entryDate,
-            response : Object.keys(content.response).length ? JSON.parse(content.response) : {},
+            // createdDate: response.entryDate,
+            response : Object.keys(content.response).length ? content?.response : {},
             status: content.status,
             statusCode: content.statusCode,
             invoicingFacility
