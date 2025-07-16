@@ -1350,7 +1350,7 @@ export default defineComponent({
           orderInvoicingInfo = {
             // id: response.id,
             createdDate: response.entryDate,
-            response : Object.keys(content.request).length ? JSON.parse(content.request) : {},
+            response : Object.keys(content.response).length ? JSON.parse(content.response) : {},
             status: content.status,
             statusCode: content.statusCode,
             invoicingFacility
