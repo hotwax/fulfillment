@@ -741,11 +741,14 @@ export default defineComponent({
       }
 
       if (order.hasAllRejectedItem) {
-        await this.rejectEntireOrder(order, updateParameter)
+        const isSuccess = await this.rejectEntireOrder(order, updateParameter)
+        if (isSuccess) {
+          this.router.push('/in-progress')
+        }
       } else if (forceScan) {
         await this.scanOrder(order, updateParameter)
       } else {
-        this.confirmPackOrder(order, updateParameter);
+        await this.confirmPackOrder(order, updateParameter);
       }
     },
     async rejectEntireOrder(order: any, updateParameter?: string) {
@@ -1252,15 +1255,7 @@ export default defineComponent({
             text: translate("Report"),
             role: 'confirm',
             handler: async() => {
-              await this.initiatePackOrder(order, 'report').then(async () => {
-                // redirect user to inProgress list page only when the order has a single item, and the user initiated report action on the same
-                // update the current order only when order contains multiple items in it.
-                if(order.items.length === 1 ||  this.isEntierOrderRejectionEnabled(order)) {
-                  this.router.push('/in-progress')
-                } else {
-                  await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipmentId: this.shipmentId})
-                }
-              }).catch(err => err);
+              await this.initiatePackOrder(order, 'report')
             }
           }]
         });
@@ -1457,7 +1452,7 @@ export default defineComponent({
     async generateTrackingCodeForPacking(order: any, updateParameter?: string, documentOptions?: any, packingError?: string) {
       const modal = await modalController.create({
         component: GenerateTrackingCodeModal,
-        componentProps: { order, updateCarrierShipmentDetails: this.updateCarrierShipmentDetails, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError }
+        componentProps: { order, updateCarrierShipmentDetails: this.updateCarrierShipmentDetails, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError, isDetailPage: "Y" }
       })
       modal.present();
     },

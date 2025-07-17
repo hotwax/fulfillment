@@ -156,6 +156,7 @@ import logger from "@/logger";
 import { copyToClipboard, showToast } from "@/utils";
 import { hasError } from "@/adapter";
 import { retryShippingLabel } from "@/utils/order";
+import { useRouter } from 'vue-router'
 
 export default defineComponent({
   name: "GenerateTrackingCodeModal",
@@ -203,7 +204,7 @@ export default defineComponent({
       packingErrorMessage: ""
     }
   },
-  props: ["order", "updateCarrierShipmentDetails", "executePackOrder", "rejectEntireOrder", "updateParameter", "documentOptions", "packingError"],
+  props: ["order", "updateCarrierShipmentDetails", "executePackOrder", "rejectEntireOrder", "updateParameter", "documentOptions", "packingError", "isDetailPage"],
   async mounted() {
     await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths')])
     this.isTrackingRequired = this.isTrackingRequiredForAnyShipmentPackage()
@@ -213,7 +214,6 @@ export default defineComponent({
       this.shipmentMethodTypeId = this.order?.shipmentMethodTypeId;
     }
     this.packingErrorMessage = this.packingError
-    console.log("===this.packingError===", this.packingError)
   },
   methods: {
     closeModal(payload = {}) {
@@ -270,6 +270,9 @@ export default defineComponent({
           } catch (e) {
             logger.log("Error in creating communication event for order rejection due to shipping label error")
           }
+          if (this.isDetailPage) {
+            this.router.push('/in-progress')
+          }
         }
       } else {
         const packingResponse = await this.executePackOrder(this.order, this.updateParameter, this.trackingCode.trim(), this.documentOptions);
@@ -325,6 +328,7 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const router = useRouter();
     return {
       archiveOutline,
       barcodeOutline,
@@ -334,6 +338,7 @@ export default defineComponent({
       informationCircleOutline,
       openOutline,
       retryShippingLabel,
+      router,
       saveOutline,
       store,
       translate,
