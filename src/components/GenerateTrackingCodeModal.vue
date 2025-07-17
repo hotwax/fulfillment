@@ -58,7 +58,7 @@
       <template v-else-if="selectedSegment === 'update-tracking-detail'">
         <ion-list>
           <ion-item>
-            <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
+            <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" :selectedText="getCarrier()" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
               <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -70,7 +70,7 @@
             </template>
             <template v-else>
               <ion-label>
-                {{ translate('No shipment methods linked to', {carrierName: getCarrierName()}) }}
+                {{ translate('No shipment methods linked to', {carrierName: getCarrier()}) }}
               </ion-label>
               <ion-button @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
                 <ion-icon slot="icon-only" :icon="informationCircleOutline" />
@@ -92,7 +92,7 @@
       <template v-else>
         <ion-list>
           <ion-item>
-            <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
+            <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" :selectedText="getCarrier()" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
               <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -104,7 +104,7 @@
             </template>
             <template v-else>
               <ion-label>
-                {{ translate('No shipment methods linked to', {carrierName: getCarrierName()}) }}
+                {{ translate('No shipment methods linked to', {carrierName: getCarrier()}) }}
               </ion-label>
               <ion-button @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
                 <ion-icon slot="icon-only" :icon="informationCircleOutline" />
@@ -228,12 +228,9 @@ export default defineComponent({
     async getProductStoreShipmentMethods(carrierPartyId: string) { 
       return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId) || [];
     },
-    getCarrierName() {
-      this.order.carrier
-    },
     getCarrier() {
-      const carrier = this.facilityCarriers.find((facilityCarrier: any) => facilityCarrier.partyId === this.order.carrierPartyId)
-      return carrier?.groupName ? carrier?.groupName : carrier?.carrierPartyId
+      const carrier = this.facilityCarriers.find((facilityCarrier: any) => facilityCarrier.partyId === this.carrierPartyId)
+      return carrier?.groupName ? carrier?.groupName : carrier?.carrierPartyId ? carrier.carrierPartyId : this.carrierPartyId
     },
     async updateCarrier(carrierPartyId: string) {
       this.carrierMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
@@ -290,7 +287,7 @@ export default defineComponent({
       if(this.getCarrierTrackingUrl()) {
         return translate("Tracking URL:", { trackingUrl: this.getCarrierTrackingUrl()?.replace("${trackingNumber}", this.trackingCode) })
       }
-      return translate("A tracking URL is not configured for", { carrierName: this.getCarrierName() })
+      return translate("A tracking URL is not configured for", { carrierName: this.getCarrier() })
     },
     async updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMethodTypeId: string) {
       let resp;
