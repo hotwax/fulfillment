@@ -302,7 +302,7 @@
             </ion-item>
           </ion-card>
 
-          <Component v-if="hasPermission(Actions.APP_INVOICING_STATUS_VIEW)" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfile" />
+          <Component v-if="hasPermission(Actions.APP_INVOICING_STATUS_VIEW)" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfile" :maargBaseUrl="getMaargBaseUrl" :userToken="getUserToken" />
         </div>
         
         <h4 class="ion-padding-top ion-padding-start" v-if="order.otherShipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
@@ -511,6 +511,8 @@ export default defineComponent({
       instanceUrl: "user/getInstanceUrl",
       carrierShipmentBoxTypes: 'util/getCarrierShipmentBoxTypes',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
+      getUserToken: 'user/getUserToken',
+      getMaargBaseUrl: 'user/getMaargBaseUrl'
     })
   },
   data() {
@@ -1349,8 +1351,8 @@ export default defineComponent({
           const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === content?.request?.InvoicingStore)
 
           orderInvoicingInfo = {
-            // id: response.id,
-            // createdDate: response.entryDate,
+            id: response.orderId,
+            createdDate: this.getInvoicingConfirmationDate(response.entryDate),
             response : Object.keys(content.response).length ? content?.response : {},
             status: content.status,
             statusCode: content.statusCode,
@@ -1380,7 +1382,7 @@ export default defineComponent({
       let isMessageRequired = false;
 
       if(this.orderInvoicingInfo.status === "success") {
-        message = "Successfully sent to Retail Pro Server. This order will be completed once the invoicing is done in Retail Pro."
+        message = "Successfully sent to Retail Pro Server."
       } else {
         if(!this.orderInvoicingInfo.statusCode && !Object.keys(this.orderInvoicingInfo.response).length) {
           message = "Failed to send to Retail Pro Server due to connection issues with Retail Pro, please try again."
