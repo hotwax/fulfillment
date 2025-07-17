@@ -302,7 +302,7 @@
             </ion-item>
           </ion-card>
 
-          <Component v-if="hasPermission(Actions.APP_INVOICING_STATUS_VIEW)" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfile" />
+          <Component v-if="hasPermission(Actions.APP_INVOICING_STATUS_VIEW)" :is="orderInvoiceExt" :category="category" :order="order" :userProfile="userProfile" :maargBaseUrl="getMaargBaseUrl" :userToken="getUserToken" />
         </div>
         
         <h4 class="ion-padding-top ion-padding-start" v-if="order.otherShipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
@@ -511,6 +511,8 @@ export default defineComponent({
       instanceUrl: "user/getInstanceUrl",
       carrierShipmentBoxTypes: 'util/getCarrierShipmentBoxTypes',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
+      getUserToken: 'user/getUserToken',
+      getMaargBaseUrl: 'user/getMaargBaseUrl'
     })
   },
   data() {
@@ -1328,33 +1330,32 @@ export default defineComponent({
     },
     async fetchOrderInvoicingStatus() {
       let orderInvoicingInfo = {} as any, resp;
+
       const params = {
-        viewSize: 1,
-        sort: "createdDate_dt desc",
-        filters: {
-          id: { value: this.order.orderName }
+        customParametersMap:{
+          "orderId": this.order.orderId,
+          "orderByField": "-entryDate",
+          "pageSize": 1
         },
-        docType: "ORDER_TO_INVOICE_API",
-        coreName: "logInsights"
+        dataDocumentId: "ApiCommunicationEventOrder"
       }
 
-      const orderInvoicingQueryPayload = prepareSolrQuery(params)
-
       try {
-        resp = await OrderService.findOrderInvoicingInfo(orderInvoicingQueryPayload);
+        resp = await OrderService.findOrderInvoicingInfo(params);
 
-        if(!hasError(resp) && resp.data?.response?.docs?.length) {
-          const response = resp.data.response.docs[0];
+        if(!hasError(resp) && resp.data?.entityValueList?.length) {
+          const response = resp.data?.entityValueList[0]
 
-          const request = Object.keys(response.request_txt_en).length ? JSON.parse(response.request_txt_en) : {}
-          const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === request.InvoicingStore)
+          const content = Object.keys(response.content).length ? JSON.parse(response.content) : {}
+
+          const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === content?.request?.InvoicingStore)
 
           orderInvoicingInfo = {
-            id: response.id,
-            createdDate: response.createdDate_dt,
-            response : Object.keys(response.response_txt_en).length ? JSON.parse(response.response_txt_en) : {},
-            status: response.status_txt_en,
-            statusCode: response.statusCode_txt_en,
+            id: response.orderId,
+            createdDate: this.getInvoicingConfirmationDate(response.entryDate),
+            response : Object.keys(content.response).length ? content?.response : {},
+            status: content.status,
+            statusCode: content.statusCode,
             invoicingFacility
           }
 
@@ -1381,7 +1382,7 @@ export default defineComponent({
       let isMessageRequired = false;
 
       if(this.orderInvoicingInfo.status === "success") {
-        message = "Successfully sent to Retail Pro Server. This order will be completed once the invoicing is done in Retail Pro."
+        message = "Successfully sent to Retail Pro Server."
       } else {
         if(!this.orderInvoicingInfo.statusCode && !Object.keys(this.orderInvoicingInfo.response).length) {
           message = "Failed to send to Retail Pro Server due to connection issues with Retail Pro, please try again."
