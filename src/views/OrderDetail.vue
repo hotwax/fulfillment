@@ -181,7 +181,7 @@
               <template v-if="category === 'in-progress'">
                 <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" @click="packOrder(order)">
                   <ion-icon slot="start" :icon="archiveOutline" />
-                  {{ translate(order.hasAllRejectedItem ? "Reject order" : "Pack order") }}
+                  {{ translate(order.hasAllRejectedItem ? "Reject order" : order.hasRejectedItem ? "Save and Pack Order" : "Pack order") }}
                 </ion-button>
                 <Component :is="printDocumentsExt" :category="category" :order="order" :currentFacility="currentFacility" :hasMissingInfo="order.missingLabelImage"/>
               </template>  
