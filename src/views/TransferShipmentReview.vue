@@ -27,11 +27,7 @@
               </ion-button>
             </ion-item>
             <ion-item>
-              <ion-input :label="translate('Tracking Code')" placeholder="add tracking code" v-if="!currentShipment.trackingIdNumber" v-model="trackingCode"></ion-input>
-              <template v-else>
-                <ion-label>{{ translate("Tracking Code") }}</ion-label>
-                <p slot="end">{{ currentShipment.trackingIdNumber }}</p>
-              </template>
+              <ion-input :label="translate('Tracking Code')" placeholder="add tracking code" v-model="trackingCode"></ion-input>
             </ion-item>
             <ion-item>
               <ion-label>{{ translate('Carrier') }}</ion-label>
@@ -115,7 +111,7 @@ export default defineComponent({
   },
   async ionViewWillEnter() {
     await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
-    this.trackingCode = this.currentShipment?.trackingCode;
+    this.trackingCode = this.currentShipment?.trackingIdNumber;
     this.shipmentItems = this.currentShipment.items;
   },
   async beforeRouteLeave(to) {
@@ -203,6 +199,7 @@ export default defineComponent({
       await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
       this.isGeneratingShippingLabel = true;
       let shippingLabelPdfUrls = this.currentShipment?.labelImageUrl ? [this.currentShipment?.labelImageUrl] : [];
+      this.trackingCode = this.currentShipment.trackingIdNumber
       
       if (!this.currentShipment.trackingIdNumber) {
         //regenerate shipping label if missing tracking code
@@ -211,6 +208,7 @@ export default defineComponent({
         await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
         shippingLabelPdfUrls = this.currentShipment?.labelImageUrl ? [this.currentShipment?.labelImageUrl] : [];
         if(this.currentShipment.trackingIdNumber) {
+          this.trackingCode = this.currentShipment.trackingIdNumber
           this.showLabelError = false;
           showToast(translate("Shipping Label generated successfully"))
           await TransferOrderService.printShippingLabel([this.currentShipment.shipmentId], shippingLabelPdfUrls)
@@ -248,7 +246,7 @@ export default defineComponent({
           {
             text: translate("Ship"),
             handler: async () => {
-              this.shipOutboundTransferShipment();
+              await this.shipOutboundTransferShipment();
             }
           }
         ],
@@ -257,16 +255,12 @@ export default defineComponent({
     },
     async shipOutboundTransferShipment() {
       try {
-        if (
-          this.trackingCode &&
-          this.currentShipment.trackingIdNumber !== this.trackingCode
-        ) {
-          await TransferOrderService.shipTransferOrderShipment({
-            shipmentId: this.currentShipment.shipmentId,
-            trackingIdNumber: this.trackingCode,
-            shipmentRouteSegmentId: this.currentShipment.shipmentRouteSegmentId
-          });
-        }
+        await TransferOrderService.shipTransferOrderShipment({
+          shipmentId: this.currentShipment.shipmentId,
+          trackingIdNumber: this.trackingCode,
+          shipmentRouteSegmentId: this.currentShipment.shipmentRouteSegmentId
+        });
+        
         this.isShipped = true;
         showToast(translate('Shipment shipped successfully.'));
         this.router.replace({ path: `/transfer-order-details/${this.currentShipment.orderId}` })
