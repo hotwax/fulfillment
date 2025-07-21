@@ -32,7 +32,7 @@
 
         <!-- Orders Pending Fulfillment Card -->
         <ion-card class="orders">
-          <p class="overline ion-margin">Orders Pending Fulfillment</p>
+          <p class="overline title">Orders Pending Fulfillment</p>
           <div class="pending">
             <h1>3</h1>
             <ion-item lines="none">
@@ -114,21 +114,23 @@ import FulfillmentProgressBar from '@/components/FulfillmentProgressBar.vue'
                        "fill-rate progress-bar"
                        "fill-rate scheduling";
   grid-template-columns: 1fr 3fr;
-  margin: var(--spacer-xs);
+  grid-template-rows: 1fr auto auto;
+  gap: var(--spacer-base);
+  padding: var(--spacer-base);
+}
+
+.fulfillment > * {
+  margin: 0;
 }
 
 .fill-rate {
   grid-area: fill-rate;
 }
 
-FulfillmentProgressBar {
-  grid-area: progress-bar;
-}
-
 .fill-rate h1, .orders h1 {
   font-size: 78px;
   padding-inline: var(--spacer-sm);
-  margin: 0px;
+  margin: 0;
 }
 
 .orders {
@@ -138,28 +140,40 @@ FulfillmentProgressBar {
                        "pending fulfill";
   grid-template-columns: auto 343px;
   grid-template-rows: min-content auto;
-}
-
-.pending {
-  grid-area: pending;
-  display: grid;
-  grid-template-columns: min-content auto;
   align-items: end;
 }
 
 .title {
   grid-area: title;
+  margin-inline: var(--spacer-sm);
+}
+
+.pending {
+  grid-area: pending;
+  display: flex;
+  align-items: center;
+}
+
+.pending ion-item {
+  flex: 1;
 }
 
 .fulfill {
   grid-area: fulfill;
 }
 
+FulfillmentProgressBar {
+  grid-area: progress-bar;
+}
+
 .scheduling {
   grid-area: scheduling;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--spacer-xs);
+  display: flex;
+  gap: var(--spacer-base);
+}
+
+.scheduling ion-item {
+  flex: 1;
 }
 
 .scheduling ion-item::part(native) {
