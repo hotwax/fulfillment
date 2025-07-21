@@ -32,7 +32,7 @@
 
         <!-- Orders Pending Fulfillment Card -->
         <ion-card class="orders">
-          <p class="overline tile ion-margin">Orders Pending Fulfillment</p>
+          <p class="overline ion-margin">Orders Pending Fulfillment</p>
           <div class="pending">
             <h1 class="count">3</h1>
             <ion-item class="details" lines="none">
