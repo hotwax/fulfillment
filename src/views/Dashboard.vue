@@ -5,7 +5,7 @@
         <ion-title>Dashboard</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content>
+    <ion-content class="ion-margin">
       <!-- Fill Rate Card -->
       <div class="fulfillment">
         <ion-card class="fill-rate">
@@ -32,14 +32,14 @@
 
         <!-- Orders Pending Fulfillment Card -->
         <ion-card class="orders">
-          <p class="overline">Orders Pending Fulfillment</p>
+          <p class="overline tile ion-margin">Orders Pending Fulfillment</p>
           <div class="pending">
-            <h1>3</h1>
-            <ion-item>
-                <ion-label>
-                  <p>Oldest order assigned</p>
-                  1 hour 10 minutes ago
-                </ion-label>
+            <h1 class="count">3</h1>
+            <ion-item class="details" lines="none">
+              <ion-label>
+                <p>Oldest order assigned</p>
+                1 hour 10 minutes ago
+              </ion-label>
             </ion-item>
           </div>
           <div class="fulfill">
@@ -54,7 +54,7 @@
           </div>
         </ion-card>
 
-        <OrderStatusBar 
+        <FulfillmentProgressBar
           :total="14"
           :dataSegments="{
             Packed: { value: 6, color: '#3FBF60' },
@@ -62,7 +62,6 @@
             Allocated: { value: 4, color: '#3880FF' }
           }"
         />
-        <!-- rename component to "FulfillmentProgressBar" -->
 
         <!-- Scheduling -->
         <div class="scheduling">
@@ -102,49 +101,65 @@ import {
   IonIcon
 } from '@ionic/vue';
 import { informationCircleOutline, mailUnreadOutline, mailOpenOutline, sendOutline, storefrontOutline } from 'ionicons/icons';
-import OrderStatusBar from '@/components/OrderStatusBar.vue'
+import FulfillmentProgressBar from '@/components/FulfillmentProgressBar.vue'
 
 </script>
 
 <style scoped>
 
-
 /* add media query for desktop only */
 .fulfillment {
   display: grid;
-  grid-template-areas: 
-  "fill-rate orders"
-  "fill-rate progress-bar"
-  "fill-rate scheduling";
+  grid-template-areas: "fill-rate orders"
+                       "fill-rate progress-bar"
+                       "fill-rate scheduling";
   grid-template-columns: 1fr 3fr;
-  grid-template-rows: 1fr auto auto;
+  margin: var(--spacer-xs);
 }
 
 .fill-rate {
   grid-area: fill-rate;
 }
 
+FulfillmentProgressBar {
+  grid-area: progress-bar;
+}
+
 .fill-rate h1, .orders h1 {
   font-size: 78px;
-  padding-inline: var(--spacer-sm);
+  padding-inline: var(--spacer-xs);
+  margin: 0px;
 }
 
 .orders {
   grid-area: orders;
   display: grid;
-  grid-template-areas:
-  "title title"
-  "pending fulfill";
+  grid-template-areas: "title title"
+                       "pending fulfill";
   grid-template-columns: auto 343px;
   grid-template-rows: min-content auto;
 }
 
-OrderStatusBar {
-  grid-area: progress-bar;
+.pending {
+  grid-area: pending;
+  display: grid;
+  grid-template-columns: min-content auto;
+  align-items: end;
+}
+
+.title {
+  grid-area: title;
+}
+
+.fulfill {
+  grid-area: fulfill;
 }
 
 .scheduling {
   grid-area: scheduling;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacer-xs);
 }
 
 .scheduling ion-item::part(native) {
