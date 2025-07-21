@@ -5,7 +5,7 @@
         <ion-title>Dashboard</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content class="ion-margin">
+    <ion-content>
       <!-- Fill Rate Card -->
       <div class="fulfillment">
         <ion-card class="fill-rate">
@@ -34,8 +34,8 @@
         <ion-card class="orders">
           <p class="overline ion-margin">Orders Pending Fulfillment</p>
           <div class="pending">
-            <h1 class="count">3</h1>
-            <ion-item class="details" lines="none">
+            <h1>3</h1>
+            <ion-item lines="none">
               <ion-label>
                 <p>Oldest order assigned</p>
                 1 hour 10 minutes ago
@@ -127,7 +127,7 @@ FulfillmentProgressBar {
 
 .fill-rate h1, .orders h1 {
   font-size: 78px;
-  padding-inline: var(--spacer-xs);
+  padding-inline: var(--spacer-sm);
   margin: 0px;
 }
 
