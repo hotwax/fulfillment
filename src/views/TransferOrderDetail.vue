@@ -8,7 +8,7 @@
     </ion-header>
 
     <ion-content>
-      <main v-if="currentOrder.orderId">
+      <main v-if="hasAccessToFacility && currentOrder.orderId">
         <ion-item lines="none">
           <ion-label>
             <p class="overline">{{ currentOrder.orderId }}</p>
@@ -110,6 +110,9 @@
           </template>
         </div>
       </main>
+      <div class="empty-state" v-else-if="!hasAccessToFacility">
+        <p>{{ translate('Access denied. You do not have permission to view this transfer order.') }}</p>
+      </div>
       <div class="empty-state" v-else>
         <p>{{ translate('No data available') }}</p>
       </div>
@@ -166,7 +169,7 @@ import {
 import { computed, defineComponent } from 'vue';
 import { barcodeOutline, pricetagOutline, printOutline, trashOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
-import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import { useRouter } from 'vue-router';
 import Scanner from "@/components/Scanner.vue";
 import { Actions, hasPermission } from '@/authorization'
@@ -211,7 +214,8 @@ export default defineComponent({
       selectedSegment: 'open',
       isCreatingShipment: false,
       lastScannedId: '',
-      defaultRejectReasonId: "NO_VARIANCE_LOG"  // default variance reason, to be used when any other item is selected for rejection
+      defaultRejectReasonId: "NO_VARIANCE_LOG",  // default variance reason, to be used when any other item is selected for rejection
+      hasAccessToFacility:false
     }
   },
   async ionViewWillEnter() {
@@ -228,6 +232,7 @@ export default defineComponent({
       productIdentificationPref: 'user/getProductIdentificationPref',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
+      getUserFacilities:'user/getUserProfile'
     }),
     areItemsEligibleForRejection() {
       return this.currentOrder.items?.some((item: any) => item.rejectReasonId);
@@ -421,7 +426,25 @@ export default defineComponent({
 
         return modal.present();
       },
+      async isCurrentFacilityIncluded() {
+        const currentOrderFacilityId = this.currentOrder?.facilityId;
+        const isIncludedFacility = this.getUserFacilities.facilities.some((facility: any) => {
+          return facility.facilityId === currentOrderFacilityId;
+        });
+        this.hasAccessToFacility = isIncludedFacility;
+        if (!isIncludedFacility) {
+          const accessDeniedAlert = await alertController.create({
+            header: translate('Access Denied'),
+            message: translate('This transfer order is assigned to a facility that you do not have access to.'),
+            buttons: ["Dismiss"]
+          });
+          await accessDeniedAlert.present();
+        }
+      }
 }, 
+async mounted(){
+  await this.isCurrentFacilityIncluded()
+},
 ionViewDidLeave() {
   const routeTo = this.router.currentRoute;
   if (routeTo.value.name !== 'Transfer Orders') {
@@ -446,7 +469,7 @@ setup() {
     store,
     router,
     translate,
-    trashOutline
+    trashOutline,
   };
 },
 });
