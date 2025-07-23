@@ -24,8 +24,9 @@ const actions: ActionTree<UserState, RootState> = {
  */
   async login ({ commit, dispatch }, payload) {
     try {
-      const {token, oms, omsRedirectionUrl} = payload;
+      const {token, oms, omsRedirectionUrl, isExternal} = payload;
       dispatch("setUserInstanceUrl", oms);
+      dispatch("setIsExternal", isExternal);
 
       // Getting the permissions list from server
       const permissionId = process.env.VUE_APP_PERMISSION_ID;
@@ -618,7 +619,12 @@ const actions: ActionTree<UserState, RootState> = {
   },
   clearCollateralRejectionConfig ({ commit }) {
     commit(types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED, {})
-  }
+  },
+  async setIsExternal ({ state, commit }, isExternal) {
+    const current: any = state.current;
+    current.isExternal = isExternal;
+    commit(types.USER_IS_EXTERNAL, isExternal);
+  },
 }
 
 export default actions;

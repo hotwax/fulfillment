@@ -76,6 +76,9 @@ const getters: GetterTree <UserState, RootState> = {
     },
     isReservationFacilityFieldEnabled(state) {
         return state.isReservationFacilityFieldEnabled;
-    }
+    },
+    isUserExternal: (state) => {
+        return state.isExternal;
+    },
 }
 export default getters;

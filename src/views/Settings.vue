@@ -22,7 +22,7 @@
               <ion-card-title>{{ userProfile?.partyName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
+          <ion-button color="danger" v-if="Boolean(isUserExternal) == true" @click="logout()">{{ translate("Logout") }}</ion-button>
           <ion-button fill="outline" @click="goToLaunchpad()">
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
@@ -284,7 +284,8 @@ export default defineComponent({
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
       affectQohConfig: 'user/getAffectQohConfig',
-      barcodeIdentificationPref: 'util/getBarcodeIdentificationPref'
+      barcodeIdentificationPref: 'util/getBarcodeIdentificationPref',
+      isUserExternal: 'user/isUserExternal'
     })
   },
   async ionViewWillEnter() {
@@ -417,7 +418,11 @@ export default defineComponent({
       })
     },
     goToLaunchpad() {
-      window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
+      if (this.isUserExternal && Boolean(this.isUserExternal)) {
+        window.location.href = `${process.env.VUE_APP_EMBEDDED_LAUNCHPAD_URL}`
+      } else {
+        window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
+      }
     },
     async changeOrderLimitPopover(ev: Event) {
       const popover = await popoverController.create({

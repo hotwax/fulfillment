@@ -14,7 +14,8 @@ const mutations: MutationTree <UserState> = {
       state.omsRedirectionInfo = {
         url: "",
         token: ""
-      }
+      },
+      state.isExternal = false
     },
     [types.USER_INFO_UPDATED] (state, payload) {
         state.current = { ...state.current,  ...payload}
@@ -68,5 +69,8 @@ const mutations: MutationTree <UserState> = {
     [types.USER_RESERVATION_FACILITY_ID_FIELD_CONFIG_UPDATED] (state, payload) {
         state.isReservationFacilityFieldEnabled = payload
     },
+    [types.USER_IS_EXTERNAL] (state, payload) {
+        state.isExternal = payload;
+    }
 }
 export default mutations;

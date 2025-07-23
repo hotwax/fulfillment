@@ -45,7 +45,8 @@ export default defineComponent({
       userProfile: 'user/getUserProfile',
       locale: 'user/getLocale',
       currentEComStore: 'user/getCurrentEComStore',
-      allNotificationPrefs: 'user/getAllNotificationPrefs'
+      allNotificationPrefs: 'user/getAllNotificationPrefs',
+      isExternal: 'user/isUserExternal'
     })
   },
   methods: {
