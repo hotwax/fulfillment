@@ -484,8 +484,7 @@ export default defineComponent({
         orderTypeId: "SALES_ORDER",
         statusId: "SHIPMENT_PACKED",
         shippedDateFrom: DateTime.now().startOf('day').toMillis(),
-        originFacilityId: this.currentFacility?.facilityId,
-        productStoreId: this.currentEComStore.productStoreId
+        originFacilityId: this.currentFacility?.facilityId
       }
       try {
         const resp = await OrderService.fetchShipmentFacets(params)
