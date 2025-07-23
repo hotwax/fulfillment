@@ -22,7 +22,7 @@
               <ion-card-title>{{ userProfile?.partyName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" v-if="Boolean(isUserExternal) == true" @click="logout()">{{ translate("Logout") }}</ion-button>
+          <ion-button color="danger" v-if="isUserExternal == true" @click="logout()">{{ translate("Logout") }}</ion-button>
           <ion-button fill="outline" @click="goToLaunchpad()">
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
@@ -418,7 +418,7 @@ export default defineComponent({
       })
     },
     goToLaunchpad() {
-      if (this.isUserExternal && Boolean(this.isUserExternal)) {
+      if (this.isUserExternal) {
         window.location.href = `${process.env.VUE_APP_EMBEDDED_LAUNCHPAD_URL}`
       } else {
         window.location.href = `${process.env.VUE_APP_LOGIN_URL}`

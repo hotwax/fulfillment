@@ -621,9 +621,11 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED, {})
   },
   async setIsExternal ({ state, commit }, isExternal) {
-    const current: any = state.current;
-    current.isExternal = isExternal;
-    commit(types.USER_IS_EXTERNAL, isExternal);
+    if (isExternal) {
+      const current: any = state.current;
+      current.isExternal = Boolean(isExternal);
+      commit(types.USER_IS_EXTERNAL, isExternal);
+    } 
   },
 }
 
