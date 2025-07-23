@@ -456,8 +456,6 @@ setup() {
   const router = useRouter();
   const productIdentificationStore = useProductIdentificationStore();
   let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
-  const userStore = useUserStore()
-  let currentFacility: any = computed(() => userStore.getCurrentFacility)
   return {
     Actions,
     barcodeOutline,
