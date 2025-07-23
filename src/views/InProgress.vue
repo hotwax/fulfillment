@@ -86,7 +86,7 @@
               </ion-row>
             </div>
 
-            <div v-for="item in order.items" :key="item.shipmentItemSeqId" class="order-line-item">
+            <div v-for="item in order.items" :key="order.shipmentId + item.shipmentItemSeqId" class="order-line-item">
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
