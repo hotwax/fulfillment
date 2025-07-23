@@ -427,9 +427,15 @@ export default defineComponent({
         return modal.present();
       },
       async isCurrentFacilityIncluded() {
+<<<<<<< HEAD
         const currentOrderFacilityId = this.currentOrder?.facilityId;
         const isIncludedFacility = this.getUserFacilities.facilities.some((facility: any) => {
           return facility.facilityId === currentOrderFacilityId;
+=======
+        const currentFacilityId = this.currentFacility?.facilityId;
+        const isIncludedFacility = this.getUserFacilities.facilities.some((facility: any) => {
+          return facility.facilityId === currentFacilityId;
+>>>>>>> origin/fulfillment/issue#720
         });
         this.hasAccessToFacility = isIncludedFacility;
         if (!isIncludedFacility) {
@@ -442,8 +448,14 @@ export default defineComponent({
         }
       }
 }, 
+<<<<<<< HEAD
 async mounted(){
   await this.isCurrentFacilityIncluded()
+=======
+mounted(){
+  this.isCurrentFacilityIncluded()
+
+>>>>>>> origin/fulfillment/issue#720
 },
 ionViewDidLeave() {
   const routeTo = this.router.currentRoute;
@@ -456,6 +468,8 @@ setup() {
   const router = useRouter();
   const productIdentificationStore = useProductIdentificationStore();
   let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+  const userStore = useUserStore()
+  let currentFacility: any = computed(() => userStore.getCurrentFacility)
   return {
     Actions,
     barcodeOutline,
@@ -470,6 +484,10 @@ setup() {
     router,
     translate,
     trashOutline,
+<<<<<<< HEAD
+=======
+    currentFacility
+>>>>>>> origin/fulfillment/issue#720
   };
 },
 });
