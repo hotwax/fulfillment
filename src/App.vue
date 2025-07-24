@@ -46,7 +46,7 @@ export default defineComponent({
       locale: 'user/getLocale',
       currentEComStore: 'user/getCurrentEComStore',
       allNotificationPrefs: 'user/getAllNotificationPrefs',
-      isExternal: 'user/isUserExternal'
+      isEmbedded: 'user/isEmbedded'
     })
   },
   methods: {

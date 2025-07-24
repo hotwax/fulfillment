@@ -15,7 +15,7 @@ const mutations: MutationTree <UserState> = {
         url: "",
         token: ""
       },
-      state.isExternal = false
+      state.isEmbedded = false
     },
     [types.USER_INFO_UPDATED] (state, payload) {
         state.current = { ...state.current,  ...payload}
@@ -69,8 +69,8 @@ const mutations: MutationTree <UserState> = {
     [types.USER_RESERVATION_FACILITY_ID_FIELD_CONFIG_UPDATED] (state, payload) {
         state.isReservationFacilityFieldEnabled = payload
     },
-    [types.USER_IS_EXTERNAL] (state, payload) {
-        state.isExternal = payload;
+    [types.USER_IS_EMBEDDED_UPDATED] (state, payload) {
+        state.isEmbedded = payload;
     }
 }
 export default mutations;

@@ -24,9 +24,9 @@ const actions: ActionTree<UserState, RootState> = {
  */
   async login ({ commit, dispatch }, payload) {
     try {
-      const {token, oms, omsRedirectionUrl, isExternal} = payload;
+      const {token, oms, omsRedirectionUrl, isEmbedded} = payload;
       dispatch("setUserInstanceUrl", oms);
-      dispatch("setIsExternal", isExternal);
+      dispatch("setIsEmbedded", isEmbedded);
 
       // Getting the permissions list from server
       const permissionId = process.env.VUE_APP_PERMISSION_ID;
@@ -620,12 +620,9 @@ const actions: ActionTree<UserState, RootState> = {
   clearCollateralRejectionConfig ({ commit }) {
     commit(types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED, {})
   },
-  async setIsExternal ({ state, commit }, isExternal) {
-    if (isExternal) {
-      const current: any = state.current;
-      current.isExternal = Boolean(isExternal);
-      commit(types.USER_IS_EXTERNAL, isExternal);
-    } 
+  async setIsEmbedded ({ commit }, isEmbedded) {
+    const isEmbeddedFlag = isEmbedded === 'true' ? true : false;
+    commit(types.USER_IS_EMBEDDED_UPDATED, isEmbeddedFlag);
   },
 }
 
