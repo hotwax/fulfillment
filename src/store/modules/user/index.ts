@@ -34,7 +34,7 @@ const userModule: Module<UserState, RootState> = {
       affectQohConfig: {},
       isShipNowDisabled: false,
       isUnpackDisabled: false,
-      isReservationFacilityFieldEnabled: false,
+      isReservationFacilityFieldEnabled: false
     },
     getters,
     actions,

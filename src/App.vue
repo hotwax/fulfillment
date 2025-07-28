@@ -76,7 +76,7 @@ export default defineComponent({
       // Mark the user as unauthorised, this will help in not making the logout api call in actions
       this.store.dispatch("user/logout", { isUserUnauthorised: true });
       const redirectUrl = window.location.origin + '/login';
-      window.location.href = isEmbedded? appLoginUrl :`${appLoginUrl}?redirectUrl=${redirectUrl}`;
+      window.location.href = isEmbedded ? appLoginUrl :`${appLoginUrl}?redirectUrl=${redirectUrl}`;
     },
     playAnimation() {
       const aside = document.querySelector('aside') as Element

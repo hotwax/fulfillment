@@ -57,7 +57,7 @@ const app = createApp(App)
     login,
     logout,
     loader,
-    // appLoginUrl: process.env.VUE_APP_LOGIN_URL as string,
+    appLoginUrl: process.env.VUE_APP_LOGIN_URL as string,
     appFirebaseConfig: JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any),
     appFirebaseVapidKey: process.env.VUE_APP_FIREBASE_VAPID_KEY,
     getConfig,
