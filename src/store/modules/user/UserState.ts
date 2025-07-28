@@ -23,5 +23,4 @@ export default interface UserState {
     isShipNowDisabled: boolean;
     isUnpackDisabled: boolean;
     isReservationFacilityFieldEnabled: boolean;
-    isEmbedded: boolean;
 }

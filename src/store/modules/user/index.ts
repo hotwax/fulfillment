@@ -35,7 +35,6 @@ const userModule: Module<UserState, RootState> = {
       isShipNowDisabled: false,
       isUnpackDisabled: false,
       isReservationFacilityFieldEnabled: false,
-      isEmbedded: false
     },
     getters,
     actions,
