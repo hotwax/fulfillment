@@ -218,6 +218,7 @@ export default defineComponent({
     emitter.emit('presentLoader');
     await this.store.dispatch("transferorder/fetchRejectReasons");
     await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
+    this.selectedSegment = this.$route.params.category === 'completed' ? "completed" : "open" 
     emitter.emit('dismissLoader');
   },
   computed: {
