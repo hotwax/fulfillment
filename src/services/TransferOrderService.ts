@@ -21,6 +21,21 @@ const fetchTransferOrders = async (params: any): Promise<any> => {
     }
   });
 }
+const fetchCompletedTransferOrders = async (params: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: "poorti/transferShipments/orders/",
+    method: "get",
+    baseURL,
+    params,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    }
+  });
+}
 
 const fetchTransferOrderDetail = async (orderId: string): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
@@ -320,6 +335,7 @@ const approveTransferOrder = async (orderId: any): Promise<any> => {
 export const TransferOrderService = {
   cancelTransferOrderShipment,
   createOutboundTransferShipment,
+  fetchCompletedTransferOrders,
   fetchTransferOrders,
   fetchRejectReasons,
   fetchFulfillmentRejectReasons,

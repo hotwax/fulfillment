@@ -27,9 +27,9 @@
               <ion-label>
                 <p class="overline">{{ order.orderId }}</p>
                 {{ order.orderName }}
-                <p>{{ order.orderExternalId }}</p>
+                <p>{{ order.orderExternalId ? order.orderExternalId : order.externalId }}</p>
               </ion-label>
-              <ion-badge slot="end">{{ order.orderStatusDesc }}</ion-badge>
+              <ion-badge slot="end">{{ (selectedSegment === 'completed' && order.shipmentShippedDate) ? getTime(order.shipmentShippedDate) : order.orderStatusDesc }}</ion-badge>
             </ion-item>
           </ion-list>
              <!--
@@ -88,7 +88,7 @@ import { useRouter } from 'vue-router';
 import { translate, useUserStore } from '@hotwax/dxp-components';
 import { Actions } from '@/authorization'
 import emitter from '@/event-bus';
-import { getCurrentFacilityId } from '@/utils'
+import { DateTime } from 'luxon';
 
 export default defineComponent({
   name: 'TransferOrders',
@@ -171,21 +171,20 @@ export default defineComponent({
     isTransferOrdersScrollable() {
       return this.transferOrders.list?.length > 0 && this.transferOrders.list?.length < this.transferOrders.total
     },
-    async showCompletedTransferOrders() {
-      const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
-      transferOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
-      transferOrdersQuery.viewSize = 20
-      transferOrdersQuery.orderStatusId = "ORDER_COMPLETED"
-      await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
-      this.hasCompletedTransferOrders = this.transferOrders.list.some((order: any) => order.orderStatusId === "ORDER_COMPLETED");
-    },
     async updateQueryString(queryString: string) {
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
 
       transferOrdersQuery.viewIndex = 0
       transferOrdersQuery.viewSize = 20
       transferOrdersQuery.queryString = queryString.trim()
-      transferOrdersQuery.orderStatusId = this.selectedSegment === 'completed' ? "ORDER_COMPLETED" : "ORDER_APPROVED"
+      if (this.selectedSegment === 'completed') {
+        transferOrdersQuery.orderStatusId = ""
+        transferOrdersQuery.shipmentStatusId = "SHIPMENT_SHIPPED"
+      } else {
+        transferOrdersQuery.orderStatusId = "ORDER_APPROVED"
+        transferOrdersQuery.shipmentStatusId = ""
+      }
+      
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
       this.searchedQuery = queryString;
     },
@@ -193,13 +192,22 @@ export default defineComponent({
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
       transferOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       transferOrdersQuery.viewSize = 20
-      transferOrdersQuery.orderStatusId = this.selectedSegment === 'completed' ? "ORDER_COMPLETED" : "ORDER_APPROVED"
+      if (this.selectedSegment === 'completed') {
+        transferOrdersQuery.orderStatusId = ""
+        transferOrdersQuery.shipmentStatusId = "SHIPMENT_SHIPPED"
+      } else {
+        transferOrdersQuery.orderStatusId = "ORDER_APPROVED"
+        transferOrdersQuery.shipmentStatusId = ""
+      }
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
     },
     async viewTransferOrderDetail(order: any) {
       await this.store.dispatch('transferorder/updateCurrentTransferOrder', order)
-      this.router.push({ path: `/transfer-order-details/${order.orderId}` })
+      this.router.push({ path: `/transfer-order-details/${order.orderId}/${this.selectedSegment}` })
     },
+    getTime(time: any) {
+      return DateTime.fromMillis(time).toFormat("dd MMMM yyyy t a")
+    }
   },
   ionViewDidLeave() {
     const routeTo = this.router.currentRoute;

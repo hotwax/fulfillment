@@ -18,15 +18,11 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     const orderStatusId = transferOrderQuery.orderStatusId ?? "ORDER_APPROVED"
 
     const params: any = {
-      orderStatusId: orderStatusId,
       originFacilityId: getCurrentFacilityId(),
       limit: transferOrderQuery.viewSize,
       pageIndex: transferOrderQuery.viewIndex
     };
-    if (orderStatusId === 'ORDER_APPROVED') {
-      params.itemStatusId = "ITEM_PENDING_FULFILL"
-    }
-
+    
     // If searching, add queryString
     if (transferOrderQuery.queryString) {
       params.orderName = transferOrderQuery.queryString;
@@ -36,7 +32,17 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     let total = 0;
 
     try {
-      resp = await TransferOrderService.fetchTransferOrders(params);
+      if (transferOrderQuery.shipmentStatusId) {
+        //fetching orders having shipment in shipped status for the completed TOs tab
+        params.shipmentStatusId = transferOrderQuery.shipmentStatusId
+        resp = await TransferOrderService.fetchCompletedTransferOrders(params);
+      } else {
+        //fetching open transfer orders
+        params.orderStatusId = orderStatusId
+        params.itemStatusId = "ITEM_PENDING_FULFILL"
+        resp = await TransferOrderService.fetchTransferOrders(params);
+      }
+      
       if (!hasError(resp) && resp.data.ordersCount > 0) {
         total = resp.data.ordersCount;
         if (transferOrderQuery.viewIndex > 0) {
