@@ -104,7 +104,7 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/transfer-order-details/:orderId',
+    path: '/transfer-order-details/:orderId/:category',
     name: 'TransferOrderDetail',
     component: TransferOrderDetail,
     beforeEnter: authGuard,

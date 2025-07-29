@@ -690,7 +690,7 @@ async function createOrder() {
         toast?.present();
         return;
       }
-      router.replace(`/transfer-order-details/${orderId}`)
+      router.replace(`/transfer-order-details/${orderId}/open`)
       showToast(translate("Transfer order created successfully."))
     } else {
       throw resp.data;

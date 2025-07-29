@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-back-button :default-href="`/transfer-order-details/${currentShipment.orderId}`" slot="start" />
+        <ion-back-button :default-href="`/transfer-order-details/${currentShipment.orderId}/open`" slot="start" />
         <ion-title>{{ translate("Review Shipment") }}</ion-title>
         
         <ion-buttons slot="end">
@@ -115,7 +115,7 @@ export default defineComponent({
     this.shipmentItems = this.currentShipment.items;
   },
   async beforeRouteLeave(to) {
-    if (to.path !== `/transfer-order-details/${this.currentShipment.orderId}`) return;
+    if (to.path !== `/transfer-order-details/${this.currentShipment.orderId}/open`) return;
     let canLeave = false;
     const message = translate("Are you sure that you want to discard this shipment?");
     const alert = await alertController.create({
@@ -263,7 +263,7 @@ export default defineComponent({
         
         this.isShipped = true;
         showToast(translate('Shipment shipped successfully.'));
-        this.router.replace({ path: `/transfer-order-details/${this.currentShipment.orderId}` })
+        this.router.replace({ path: `/transfer-order-details/${this.currentShipment.orderId}/open` })
       } catch (err) {
         logger.error('Failed to ship the shipment.', err);
         showToast(translate('Something went wrong, could not ship the shipment'))
