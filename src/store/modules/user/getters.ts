@@ -27,24 +27,22 @@ const getters: GetterTree <UserState, RootState> = {
         if (!baseURL) baseURL = state.instanceUrl;
         return baseURL.startsWith('http') ? baseURL.includes('/api') ? baseURL : `${baseURL}/api/` : `https://${baseURL}.hotwax.io/api/`;
     },
-    getCurrentEComStore(state) {
-        return state.currentEComStore
-    },
     getUserPreference(state) {
         return state.preference
     },
-    getFieldMappings: (state) => (type?: string) => {
-        if (type) {
-            const fieldMapping = (state.fieldMappings as any)[type];
-            return fieldMapping ? fieldMapping : {} 
-        }
-        return state.fieldMappings;
-    },  
-    getCurrentMapping(state) {
-        return JSON.parse(JSON.stringify(state.currentMapping))
-    },
     getPwaState(state) {
         return state.pwaState;
+    },
+    getMaargUrl (state) {
+        const url = state.omsRedirectionInfo.url;
+        return url.startsWith('http') ? new URL(url).origin : `https://${url}.hotwax.io`;
+    },
+    getMaargBaseUrl (state) {
+        const url = state.omsRedirectionInfo.url
+        return url.startsWith('http') ? url.includes('/rest/s1') ? url : `${url}/rest/s1/` : `https://${url}.hotwax.io/rest/s1`;
+    },
+    getOmsRedirectionInfo(state) {
+        return state.omsRedirectionInfo
     },
     getNotifications(state) {
         return state.notifications.sort((a: any, b: any) => b.time - a.time)
@@ -61,20 +59,23 @@ const getters: GetterTree <UserState, RootState> = {
     getAllNotificationPrefs(state) {
         return state.allNotificationPrefs
     },
-    getNewRejectionApiConfig(state) {
-        return  state.newRejectionApiConfig;
-    },
     getPartialOrderRejectionConfig(state) {
         return  state.partialOrderRejectionConfig;
     },
     getCollateralRejectionConfig(state) {
         return  state.collateralRejectionConfig;
     },
+    getAffectQohConfig(state) {
+        return  state.affectQohConfig;
+    },
     isShipNowDisabled(state) {
         return state.isShipNowDisabled;
     },
     isUnpackDisabled(state) {
         return state.isUnpackDisabled;
+    },
+    isReservationFacilityFieldEnabled(state) {
+        return state.isReservationFacilityFieldEnabled;
     }
 }
 export default getters;

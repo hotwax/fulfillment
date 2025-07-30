@@ -8,6 +8,7 @@ import { escapeSolrSpecialChars, prepareSolrQuery } from '@/utils/solrHelper'
 import { UtilService } from '@/services/UtilService'
 import logger from '@/logger'
 import { getCurrentFacilityId } from '@/utils'
+import store from '@/store'
 
 const actions: ActionTree<RejectionState, RootState> = {
   async fetchRejectionStats({ commit, state }) {
@@ -31,17 +32,15 @@ const actions: ActionTree<RejectionState, RootState> = {
         facet: {
           "total":"unique(orderId_s)",
           "rejectionReasonIdFacet":{
-            "field":"rejectionReasonId_txt_en",
+            "field":"rejectionReasonId_s",
             "mincount":1,
             "limit":-1,
-            "sort":"index",
             "type":"terms",
           },
-          "prodductIdFacet":{
+          "productIdFacet":{
             "field":"productId_s",
             "mincount":1,
             "limit":-1,
-            "sort":"index",
             "type":"terms",
           }
         }
@@ -52,7 +51,7 @@ const actions: ActionTree<RejectionState, RootState> = {
         if (!hasError(resp)) {
           total = resp.data.facets.total ? resp.data.facets.total : 0
           const usedReasons = resp.data.facets.rejectionReasonIdFacet.buckets
-          rejectedItems = resp.data.facets.prodductIdFacet.buckets
+          rejectedItems = resp.data.facets.productIdFacet.buckets
           if (rejectedItems) {
             const productIds = rejectedItems.map((rejectedItem: any) => rejectedItem.val)
             await this.dispatch('product/fetchProducts', { productIds })
@@ -61,26 +60,27 @@ const actions: ActionTree<RejectionState, RootState> = {
           if (usedReasons) {
             const reasonIds = usedReasons.map((usedReason: any) => usedReason.val)
             const payload = {
-              "inputFields": {
-                "enumId": reasonIds,
-                "enumId_op": "in"
-              },
-              "fieldList": ["description", "enumId", "enumName", "enumTypeId", "sequenceNum"],
-              "distinct": "Y",
-              "entityName": "EnumTypeChildAndEnum",
-              "viewSize": reasonIds.length, //There won't we rejection reasons more than 20, hence fetching detail for all the reasons at once
-              "orderBy": "sequenceNum"
+              "enumId": reasonIds,
+              "enumId_op": "in",
+              "fieldsToSelect": ["description", "enumId", "enumName", "enumTypeId", "sequenceNum"],
+              "pageSize": reasonIds.length, //There won't we rejection reasons more than 20, hence fetching detail for all the reasons at once
+              "orderByField": "sequenceNum"
             }
             const resp = await UtilService.fetchRejectReasons(payload)
 
-            if (!hasError(resp) && resp.data.count > 0) {
-              const reasonCountDetail = usedReasons.reduce((reasonDetail: any, reason: any) => {
-                reasonDetail[reason.val.trim().toUpperCase()] = reason;
+            if (!hasError(resp)) {
+              
+              const reasonCountDetail = resp.data.reduce((reasonDetail: any, reason: any) => {
+                reasonDetail[reason.enumId] = reason;
                 return reasonDetail;
               }, {});
-              usedRejectionReasons = resp.data.docs
-              usedRejectionReasons.map((rejectionReason: any) => {
-                rejectionReason.count = reasonCountDetail[rejectionReason.enumId]?.count
+
+              await store.dispatch("util/updateRejectReasons", resp.data)
+              usedRejectionReasons = usedReasons.map((reason:any) => {
+                return {
+                  count: reason.count,
+                  ...reasonCountDetail[reason.val.toUpperCase()]
+                }
               })
             } else {
               throw resp.data
@@ -98,8 +98,6 @@ const actions: ActionTree<RejectionState, RootState> = {
   async fetchRejectedOrders({ commit, dispatch, state }, payload) {
     let orders = [] as any, orderList = [] as any, total = 0
     const rejectedOrderQuery = JSON.parse(JSON.stringify(state.rejectedOrders.query))
-    
-    
 
     const filters = {
       rejectedFrom_txt_en: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
@@ -114,7 +112,7 @@ const actions: ActionTree<RejectionState, RootState> = {
       filters.rejectedAt_dt = {value: rejectionPeriodFilter}
     }
     if (rejectedOrderQuery.rejectionReasons.length) {
-      filters.rejectionReasonId_txt_en = {value: rejectedOrderQuery.rejectionReasons}
+      filters.rejectionReasonId_s = {value: rejectedOrderQuery.rejectionReasons}
     }
 
     const query = prepareSolrQuery({
@@ -136,6 +134,8 @@ const actions: ActionTree<RejectionState, RootState> = {
         total = resp.data.grouped.orderId_s.ngroups
         orders = resp.data.grouped.orderId_s.groups
 
+        const rejectionReasons = store.getters["util/getRejectReasons"]
+
         orders = orders.map((order: any) => {
           const orderItemDocs = order.doclist.docs.map((doc: any) => {
             return {
@@ -148,7 +148,7 @@ const actions: ActionTree<RejectionState, RootState> = {
               rejectedBy: doc.rejectedBy_txt_en,
               rejectedAt: doc.rejectedAt_dt,
               rejectionReasonId: doc.rejectionReasonId_txt_en,
-              rejectionReasonDesc: doc.rejectionReasonDesc_txt_en,
+              rejectionReasonDesc: rejectionReasons?.find((reason: any) => reason.enumId === doc.rejectionReasonId_txt_en)?.description || doc.rejectionReasonId_txt_en,
               brokeredAt: doc.brokeredAt_dt,
               brokeredBy: doc.brokeredBy_txt_en,
             };

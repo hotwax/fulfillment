@@ -4,7 +4,7 @@ import RootState from '@/store/RootState'
 import store from '@/store';
 import UserState from './UserState'
 import * as types from './mutation-types'
-import { showToast, getCurrentFacilityId } from '@/utils'
+import { showToast, getCurrentFacilityId, getProductStoreId } from '@/utils'
 import { hasError } from '@/adapter'
 import { translate } from '@hotwax/dxp-components'
 import { DateTime, Settings } from 'luxon';
@@ -15,6 +15,7 @@ import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions,
 import { useAuthStore, useUserStore, useProductIdentificationStore } from '@hotwax/dxp-components'
 import emitter from '@/event-bus'
 import { generateDeviceId, generateTopicName } from '@/utils/firebase'
+import router from '@/router';
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -23,7 +24,7 @@ const actions: ActionTree<UserState, RootState> = {
  */
   async login ({ commit, dispatch }, payload) {
     try {
-      const {token, oms} = payload;
+      const {token, oms, omsRedirectionUrl} = payload;
       dispatch("setUserInstanceUrl", oms);
 
       // Getting the permissions list from server
@@ -40,9 +41,7 @@ const actions: ActionTree<UserState, RootState> = {
       // Checking if the user has permission to access the app
       // If there is no configuration, the permission check is not enabled
       if (permissionId) {
-        // As the token is not yet set in the state passing token headers explicitly
-        // TODO Abstract this out, how token is handled should be part of the method not the callee
-        const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === permissionId );
+        const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === permissionId);
         // If there are any errors or permission check fails do not allow user to login
         if (!hasPermission) {
           const permissionError = 'You do not have permission to access the app.';
@@ -69,47 +68,72 @@ const actions: ActionTree<UserState, RootState> = {
         return uniqueFacilities
       }, []);
 
+      const facilityId = router.currentRoute.value.query.facilityId
+      let isQueryFacilityFound = false
+      if (facilityId) {
+        const facility = userProfile.facilities.find((facility: any) => facility.facilityId === facilityId);
+        if (facility) {
+          isQueryFacilityFound = true
+          useUserStore().currentFacility = facility
+        } else {
+          showToast(translate("Redirecting to home page due to incorrect information being passed."))
+        }
+      }
+
       // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
       const currentFacility: any = useUserStore().getCurrentFacility
-      userProfile.stores = await UserService.getEComStores(token, currentFacility);
-
-      let preferredStore = userProfile.stores[0]
-
-      const preferredStoreId =  await UserService.getPreferredStore(token);
-      if (preferredStoreId) {
-        const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
-        store && (preferredStore = store)
-      }
+      userProfile.stores = await useUserStore().getEComStoresByFacility(currentFacility.facilityId);
+      await useUserStore().getEComStorePreference('SELECTED_BRAND');
+      const preferredStore: any = useUserStore().getCurrentEComStore
       /*  ---- Guard clauses ends here --- */
 
       setPermissions(appPermissions);
       if (userProfile.userTimeZone) {
         Settings.defaultZone = userProfile.userTimeZone;
       }
+      
+      if(omsRedirectionUrl) {
+        const api_key = await UserService.moquiLogin(omsRedirectionUrl, token)
+        if (api_key) {
+          dispatch("setOmsRedirectionInfo", { url: omsRedirectionUrl, token: api_key })
+        } else {
+          showToast(translate("Some of the app functionality will not work due to missing configuration."))
+          logger.error("Some of the app functionality will not work due to missing configuration.");
+        }
+      } else {
+        showToast(translate("Some of the app functionality will not work due to missing configuration."))
+        logger.error("Some of the app functionality will not work due to missing configuration.")
+      }
+
       updateToken(token)
 
-      dispatch('getFieldMappings')
-
       // TODO user single mutation
-      commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
       commit(types.USER_INFO_UPDATED, userProfile);
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       commit(types.USER_TOKEN_CHANGED, { newToken: token })
 
       // Get product identification from api using dxp-component
-      await useProductIdentificationStore().getIdentificationPref(preferredStoreId ? preferredStoreId : preferredStore.productStoreId)
+      await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
         .catch((error) => logger.error(error));
 
       await dispatch("fetchAllNotificationPrefs");
       this.dispatch('util/findProductStoreShipmentMethCount')
       this.dispatch('util/getForceScanSetting', preferredStore.productStoreId);
       this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
-      await dispatch('getNewRejectionApiConfig')
+      this.dispatch('util/fetchProductStoreSettingPicklist', preferredStore.productStoreId);
+      this.dispatch('util/fetchExcludeOrderBrokerDays', preferredStore.productStoreId);
+      await dispatch('getReservationFacilityIdFieldConfig')
       await dispatch('getPartialOrderRejectionConfig')
       await dispatch('getCollateralRejectionConfig')
+      await dispatch('getAffectQohConfig')
       await dispatch('getDisableShipNowConfig')
       await dispatch('getDisableUnpackConfig')
-    
+      await this.dispatch('util/fetchCarrierShipmentBoxTypes')
+
+      const orderId = router.currentRoute.value.query.orderId
+      if (isQueryFacilityFound && orderId) {
+        return `/transfer-order-details/${orderId}/open`;
+      }
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
       // TODO Check if handling of specific status codes is required.
@@ -155,14 +179,14 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch('order/clearOrders')
     this.dispatch("orderLookup/clearOrderLookup")
     this.dispatch('user/clearNotificationState')
-    this.dispatch('util/updateForceScanStatus', false)
-    this.dispatch('util/updateBarcodeIdentificationPref', "internalName")
     this.dispatch('user/clearPartialOrderRejectionConfig')
     this.dispatch('user/clearCollateralRejectionConfig')
     this.dispatch('transferorder/clearTransferOrdersList')
     this.dispatch('transferorder/clearTransferOrderFilters')
     this.dispatch('transferorder/clearCurrentTransferOrder')
     this.dispatch('transferorder/clearCurrentTransferShipment')
+    this.dispatch('product/clearProductState')
+    this.dispatch('util/clearUtilState')
     resetConfig();
     resetPermissions();
 
@@ -188,24 +212,29 @@ const actions: ActionTree<UserState, RootState> = {
     emitter.emit('presentLoader', {message: 'Updating facility', backdropDismiss: false})
 
     try {
-      const token = store.getters['user/getUserToken'];
+      const previousEComStoreId = getProductStoreId()
       const userProfile = JSON.parse(JSON.stringify(state.current as any));
-      userProfile.stores = await UserService.getEComStores(token, facility);
-
-      let preferredStore = userProfile.stores[0];
-      const preferredStoreId =  await UserService.getPreferredStore(token);
-
-      if (preferredStoreId) {
-        const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
-        store && (preferredStore = store)
-      }
+      userProfile.stores = await useUserStore().getEComStoresByFacility(facility.facilityId);
+      await useUserStore().getEComStorePreference('SELECTED_BRAND');
+      const preferredStore: any = useUserStore().getCurrentEComStore
       commit(types.USER_INFO_UPDATED, userProfile);
-      commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore);
-      this.dispatch('order/clearOrders')
-      await dispatch('getDisableShipNowConfig')
-      await dispatch('getDisableUnpackConfig')
-      this.dispatch('util/getForceScanSetting', preferredStore.productStoreId)
-      this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
+
+      if(previousEComStoreId !== preferredStore.productStoreId) {
+        await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
+          .catch((error) => logger.error(error));
+        this.dispatch('order/clearOrders')
+        await dispatch('getDisableShipNowConfig')
+        await dispatch('getDisableUnpackConfig')
+        await dispatch('getReservationFacilityIdFieldConfig')
+        await dispatch('getPartialOrderRejectionConfig')
+        await dispatch('getCollateralRejectionConfig')
+        await dispatch('getAffectQohConfig')
+        this.dispatch('util/findProductStoreShipmentMethCount');
+        this.dispatch('util/getForceScanSetting', preferredStore.productStoreId)
+        this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
+        this.dispatch('util/fetchProductStoreSettingPicklist', preferredStore.productStoreId);
+        this.dispatch('util/fetchExcludeOrderBrokerDays', preferredStore.productStoreId);
+      }
     } catch(error: any) {
       logger.error(error);
       showToast(error?.message ? error.message : translate("Something went wrong"))
@@ -232,245 +261,74 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    *  update current eComStore information
   */
-  async setEComStore({ commit, dispatch }, payload) {
-    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, payload.eComStore);
-    await UserService.setUserPreference({
-      'userPrefTypeId': 'SELECTED_BRAND',
-      'userPrefValue': payload.eComStore.productStoreId
-    });
-
+  async setEComStore({ commit, dispatch }, productStoreId) {
     // Get product identification from api using dxp-component
-    await useProductIdentificationStore().getIdentificationPref(payload.eComStore.productStoreId)
+    await useProductIdentificationStore().getIdentificationPref(productStoreId)
       .catch((error) => logger.error(error));
 
     await dispatch('getDisableShipNowConfig')
     await dispatch('getDisableUnpackConfig')
-    this.dispatch('util/findProductStoreShipmentMethCount')
-    this.dispatch('util/getForceScanSetting', payload.eComStore.productStoreId)
-    this.dispatch('util/fetchBarcodeIdentificationPref', payload.eComStore.productStoreId);
+    await dispatch('getReservationFacilityIdFieldConfig')
+    await dispatch('getPartialOrderRejectionConfig')
+    await dispatch('getCollateralRejectionConfig')
+    await dispatch('getAffectQohConfig')
+    this.dispatch('util/findProductStoreShipmentMethCount');
+    this.dispatch('util/getForceScanSetting', productStoreId)
+    this.dispatch('util/fetchBarcodeIdentificationPref', productStoreId);
+    this.dispatch('util/fetchProductStoreSettingPicklist', productStoreId);
+    this.dispatch('util/fetchExcludeOrderBrokerDays', productStoreId);
   },
 
   setUserPreference({ commit }, payload){
     commit(types.USER_PREFERENCE_UPDATED, payload)
   },
-
-  async getFieldMappings({ commit }) {
-    let fieldMappings = {} as any;
-    try {
-      const payload = {
-        "inputFields": {
-          "mappingPrefTypeEnumId": Object.values(JSON.parse(process.env.VUE_APP_MAPPING_TYPES as string)),
-          "mappingPrefTypeEnumId_op": "in"
-        },
-        "fieldList": ["mappingPrefName", "mappingPrefId", "mappingPrefValue", "mappingPrefTypeEnumId"],
-        "filterByDate": "Y",
-        "viewSize": 20, // considered a user won't have more than 20 saved mappings
-        "entityName": "DataManagerMapping"
-      }
-
-      const mappingTypes = JSON.parse(process.env.VUE_APP_MAPPING_TYPES as string)
-      
-      // This is needed as it would easy to get app name to categorize mappings
-      const mappingTypesFlip = Object.keys(mappingTypes).reduce((mappingTypesFlip: any, mappingType) => {
-        // Updating fieldMpaaings here in case the API fails 
-        fieldMappings[mappingType] = {};
-        mappingTypesFlip[mappingTypes[mappingType]] = mappingType;
-        return mappingTypesFlip;
-      }, {});
-
-      const resp = await UserService.getFieldMappings(payload);
-      if(resp.status == 200 && !hasError(resp) && resp.data.count > 0) {
-        // updating the structure for mappings so as to directly store it in state
-        fieldMappings = resp.data.docs.reduce((mappings: any, fieldMapping: any) => {
-          const mappingType = mappingTypesFlip[fieldMapping.mappingPrefTypeEnumId]
-          const mapping = mappings[mappingType];
-
-          mapping[fieldMapping.mappingPrefId] = {
-            name: fieldMapping.mappingPrefName,
-            value: JSON.parse(fieldMapping.mappingPrefValue)
-          }
-
-          fieldMappings[mappingType] = mapping;
-          return mappings;
-        }, fieldMappings)
-
-      } else {
-        logger.error('error', 'No field mapping preference found')
-      }
-    } catch(err) {
-      logger.error('error', err)
-    }
-    commit(types.USER_FIELD_MAPPINGS_UPDATED, fieldMappings)
-  },
-
-  async createFieldMapping({ commit }, payload) {
-    try {
-
-      const mappingTypes = JSON.parse(process.env.VUE_APP_MAPPING_TYPES as string)
-      const mappingPrefTypeEnumId = mappingTypes[payload.mappingType];
-
-      const params = {
-        mappingPrefId: payload.id,
-        mappingPrefName: payload.name,
-        mappingPrefValue: JSON.stringify(payload.value),
-        mappingPrefTypeEnumId
-      }
-
-      const resp = await UserService.createFieldMapping(params);
-
-      if(resp.status == 200 && !hasError(resp)) {
-
-        // using id coming from server, as the random generated id sent in payload is not set as mapping id
-        // and an auto generated mapping from server is set as id
-        const fieldMapping = {
-          id: resp.data.mappingPrefId,
-          name: payload.name,
-          value: payload.value,
-          type: payload.mappingType
-        }
-
-        commit(types.USER_FIELD_MAPPING_CREATED, fieldMapping)
-        showToast(translate('This CSV mapping has been saved.'))
-      } else {
-        logger.error('error', 'Failed to save CSV mapping.')
-        showToast(translate('Failed to save CSV mapping.'))
-      }
-    } catch(err) {
-      logger.error('error', err)
-      showToast(translate('Failed to save CSV mapping.'))
-    }
-  },
-
-  async updateFieldMapping({ commit, state }, payload) {
-    try {
-
-      const mappingTypes = JSON.parse(process.env.VUE_APP_MAPPING_TYPES as string)
-      const mappingPrefTypeEnumId = mappingTypes[payload.mappingType];
-
-      const params = {
-        mappingPrefId: payload.id,
-        mappingPrefName: payload.name,
-        mappingPrefValue: JSON.stringify(payload.value),
-        mappingPrefTypeEnumId
-      }
-
-      const resp = await UserService.updateFieldMapping(params);
-
-      if(resp.status == 200 && !hasError(resp)) {
-        const mappings = JSON.parse(JSON.stringify(state.fieldMappings))
-
-        mappings[payload.mappingType][payload.id] = {
-          name: payload.name,
-          value: payload.value
-        }
-
-        commit(types.USER_FIELD_MAPPINGS_UPDATED, mappings)
-        showToast(translate('Changes to the CSV mapping has been saved.'))
-      } else {
-        logger.error('error', 'Failed to update CSV mapping.')
-        showToast(translate('Failed to update CSV mapping.'))
-      }
-    } catch(err) {
-      logger.error('error', err)
-      showToast(translate('Failed to update CSV mapping.'))
-    }
-  },
-
-  async deleteFieldMapping({ commit, state }, payload) {
-    try {
-      const resp = await UserService.deleteFieldMapping({
-        'mappingPrefId': payload.id
-      });
-
-      if(resp.status == 200 && !hasError(resp)) {
-
-        const mappings = JSON.parse(JSON.stringify(state.fieldMappings))
-        delete mappings[payload.mappingType][payload.id]
-
-        commit(types.USER_FIELD_MAPPINGS_UPDATED, mappings)
-        commit(types.USER_CURRENT_FIELD_MAPPING_UPDATED, {
-          id: '',
-          mappingType: '',
-          name: '',
-          value: {}
-        })
-        showToast(translate('This CSV mapping has been deleted.'))
-      } else {
-        logger.error('error', 'Failed to delete CSV mapping.')
-        showToast(translate('Failed to delete CSV mapping.'))
-      }
-    } catch(err) {
-      logger.error('error', err)
-      showToast(translate('Failed to delete CSV mapping.'))
-    }
-  },
-
-  async updateCurrentMapping({ commit, state }, payload) {
-    const currentMapping = {
-      id: payload.id,
-      mappingType: payload.mappingType,
-      ...(state.fieldMappings as any)[payload.mappingType][payload.id]
-    }
-    commit(types.USER_CURRENT_FIELD_MAPPING_UPDATED, currentMapping)
-  },
-
-  async clearCurrentMapping({ commit }) {
-    commit(types.USER_CURRENT_FIELD_MAPPING_UPDATED, {
-      id: '',
-      mappingType: '',
-      name: '',
-      value: {}
-    })
-  },
   
   updatePwaState({ commit }, payload) {
     commit(types.USER_PWA_STATE_UPDATED, payload);
   },
+  setOmsRedirectionInfo({ commit }, payload) {
+    commit(types.USER_OMS_REDIRECTION_INFO_UPDATED, payload)
+  },
 
-  async getNewRejectionApiConfig ({ commit }) {
-    let config = {};
+  // This setting is intended for temporary use to enable a more controlled rollout of the
+  // reservationFacilityId Solr field changes on a client-by-client basis.
+  // It should be removed once all clients' OMS instances have been upgraded to a version that includes this change.
+  async getReservationFacilityIdFieldConfig ({ commit }) {
+    let isEnabled = false;
+
     const params = {
-      "inputFields": {
-        "productStoreId": this.state.user.currentEComStore.productStoreId,
-        "settingTypeEnumId": "FF_USE_NEW_REJ_API"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
-      "viewSize": 1
+      "productStoreId": getProductStoreId(),
+      "settingTypeEnumId": "USE_RES_FACILITY_ID",
+      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
+      "pageSize": 1
     } as any
 
     try {
-      const resp = await UserService.getNewRejectionApiConfig(params)
-      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
-        config = resp.data?.docs[0];
+      const resp = await UserService.getReservationFacilityIdFieldConfig(params)
+      if (!hasError(resp)) {
+        isEnabled = resp.data[0]?.settingValue === "Y" ? true : false
       } else {
-        logger.error('Failed to fetch new rejection API configuration');
+        throw resp.data;
       }
     } catch (err) {
-      logger.error(err);
+      logger.error('Failed to fetch reservation facility id field configuration');
     } 
-    commit(types.USER_NEW_REJECTION_API_CONFIG_UPDATED, config);   
+    commit(types.USER_RESERVATION_FACILITY_ID_FIELD_CONFIG_UPDATED, isEnabled);   
   },
-
   async getDisableShipNowConfig ({ commit }) {
     let isShipNowDisabled = false;
     const params = {
-      "inputFields": {
-        "productStoreId": this.state.user.currentEComStore.productStoreId,
-        "settingTypeEnumId": "DISABLE_SHIPNOW"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["settingTypeEnumId", "settingValue"],
-      "viewSize": 1
+      "productStoreId": getProductStoreId(),
+      "settingTypeEnumId": "DISABLE_SHIPNOW",
+      "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
+      "pageSize": 1
     } as any
 
     try { 
       const resp = await UserService.getDisableShipNowConfig(params)
 
       if (!hasError(resp)) {
-        isShipNowDisabled = resp.data?.docs[0]?.settingValue === "true";
+        isShipNowDisabled = resp.data[0]?.settingValue === "true";
       } else {
         logger.error('Failed to fetch disable ship now config.');
       }
@@ -483,21 +341,17 @@ const actions: ActionTree<UserState, RootState> = {
   async getDisableUnpackConfig ({ commit }) {
     let isUnpackDisabled = false;
     const params = {
-      "inputFields": {
-        "productStoreId": this.state.user.currentEComStore.productStoreId,
-        "settingTypeEnumId": "DISABLE_UNPACK"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["settingTypeEnumId", "settingValue"],
-      "viewSize": 1
+      "productStoreId": getProductStoreId(),
+      "settingTypeEnumId": "DISABLE_UNPACK",
+      "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
+      "pageSize": 1
     } as any
 
     try {
       const resp = await UserService.getDisableUnpackConfig(params)
 
       if (!hasError(resp)) {
-        isUnpackDisabled = resp.data?.docs[0]?.settingValue === "true";
+        isUnpackDisabled = resp.data[0]?.settingValue === "true";
       } else {
         logger.error('Failed to fetch disable unpack config.');
       }
@@ -523,13 +377,12 @@ const actions: ActionTree<UserState, RootState> = {
         }
       }
 
-      if (!payload.fromDate) {
+      if (!payload.settingTypeEnumId) {
         //Create Product Store Setting
         payload = {
           ...payload, 
-          "productStoreId": this.state.user.currentEComStore.productStoreId,
-          "settingTypeEnumId": "FULFILL_PART_ODR_REJ",
-          "fromDate": DateTime.now().toMillis()
+          "productStoreId": getProductStoreId(),
+          "settingTypeEnumId": "FULFILL_PART_ODR_REJ"
         }
         resp = await UserService.createPartialOrderRejectionConfig(payload) as any
       } else {
@@ -567,13 +420,12 @@ const actions: ActionTree<UserState, RootState> = {
         }
       }
 
-      if (!payload.fromDate) {
+      if (!payload.settingTypeEnumId) {
         //Create Product Store Setting
         payload = {
           ...payload, 
-          "productStoreId": this.state.user.currentEComStore.productStoreId,
-          "settingTypeEnumId": "FF_COLLATERAL_REJ",
-          "fromDate": DateTime.now().toMillis()
+          "productStoreId": getProductStoreId(),
+          "settingTypeEnumId": "FF_COLLATERAL_REJ"
         }
         resp = await UserService.createCollateralRejectionConfig(payload) as any
       } else {
@@ -597,20 +449,16 @@ const actions: ActionTree<UserState, RootState> = {
   async getPartialOrderRejectionConfig ({ commit }) {
     let config = {};
     const params = {
-      "inputFields": {
-        "productStoreId": this.state.user.currentEComStore.productStoreId,
-        "settingTypeEnumId": "FULFILL_PART_ODR_REJ"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
-      "viewSize": 1
+      "productStoreId": getProductStoreId(),
+      "settingTypeEnumId": "FULFILL_PART_ODR_REJ",
+      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
+      "pageSize": 1
     } as any
 
     try {
       const resp = await UserService.getPartialOrderRejectionConfig(params)
-      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
-        config = resp.data?.docs[0];
+      if (!hasError(resp)) {
+        config = resp.data[0];
       } else {
         logger.error('Failed to fetch partial order rejection configuration');
       }
@@ -622,20 +470,16 @@ const actions: ActionTree<UserState, RootState> = {
   async getCollateralRejectionConfig ({ commit }) {
     let config = {};
     const params = {
-      "inputFields": {
-        "productStoreId": this.state.user.currentEComStore.productStoreId,
-        "settingTypeEnumId": "FF_COLLATERAL_REJ"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["productStoreId", "settingTypeEnumId", "settingValue", "fromDate"],
-      "viewSize": 1
+      "productStoreId": getProductStoreId(),
+      "settingTypeEnumId": "FF_COLLATERAL_REJ",
+      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
+      "pageSize": 1
     } as any
 
     try {
       const resp = await UserService.getCollateralRejectionConfig(params)
-      if (resp.status === 200 && !hasError(resp) && resp.data?.docs) {
-        config = resp.data?.docs[0];
+      if (!hasError(resp)) {
+        config = resp.data[0];
       } else {
         logger.error('Failed to fetch collateral rejection configuration');
       }
@@ -643,6 +487,57 @@ const actions: ActionTree<UserState, RootState> = {
       logger.error(err);
     } 
     commit(types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED, config);   
+  },
+
+  async updateAffectQohConfig ({ dispatch }, payload) {  
+    let resp = {} as any;
+    try {
+      if (!payload.settingTypeEnumId) {
+        //Create Product Store Setting
+        payload = {
+          ...payload, 
+          "productStoreId": getProductStoreId(),
+          "settingTypeEnumId": "AFFECT_QOH_ON_REJ"
+        }
+        resp = await UserService.createAffectQohConfig(payload) as any
+      } else {
+        //Update Product Store Setting
+        resp = await UserService.updateAffectQohConfig(payload) as any
+      }
+
+      if (!hasError(resp)) {
+        showToast(translate('Configuration updated'))
+      } else {
+        showToast(translate('Failed to update configuration'))
+      }
+    } catch(err) {
+      showToast(translate('Failed to update configuration'))
+      logger.error(err)
+    }
+
+    // Fetch the updated configuration
+    await dispatch("getAffectQohConfig");
+  },
+  async getAffectQohConfig ({ commit }) {
+    let config = {};
+    const params = {
+      "productStoreId": getProductStoreId(),
+      "settingTypeEnumId": "AFFECT_QOH_ON_REJ",
+      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
+      "pageSize": 1
+    } as any
+
+    try {
+      const resp = await UserService.getAffectQohConfig(params)
+      if (!hasError(resp)) {
+        config = resp.data[0];
+      } else {
+        logger.error('Failed to fetch affect QOH configuration');
+      }
+    } catch (err) {
+      logger.error(err);
+    } 
+    commit(types.USER_AFFECT_QOH_CONFIG_UPDATED, config);   
   },
 
   addNotification({ state, commit }, payload) {

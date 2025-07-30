@@ -8,9 +8,6 @@ import RejectionReasons from '@/views/RejectionReasons.vue';
 import Carriers from '@/views/Carriers.vue'
 import CarrierDetail from '@/views/CarrierDetail.vue'
 import store from '@/store'
-import Exim from "@/views/Exim.vue"
-import UploadImportOrders from "@/views/UploadImportOrders.vue"
-import DownloadPackedOrders from "@/views/DownloadPackedOrders.vue"
 import OrderDetail from "@/views/OrderDetail.vue"
 import TransferOrders from "@/views/TransferOrders.vue"
 import TransferOrderDetail from "@/views/TransferOrderDetail.vue"
@@ -29,12 +26,12 @@ declare module 'vue-router' {
     permissionId?: string;
   }
 }
-import SavedMappings from "@/views/SavedMappings.vue"
-import { useAuthStore, DxpLogin } from '@hotwax/dxp-components'
+import { useAuthStore, DxpLogin, getAppLoginUrl } from '@hotwax/dxp-components'
 import { loader } from '@/utils/user';
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 import Rejections from '@/views/Rejections.vue';
+import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
 
 const authGuard = async (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
@@ -42,7 +39,7 @@ const authGuard = async (to: any, from: any, next: any) => {
     await loader.present('Authenticating')
     // TODO use authenticate() when support is there
     const redirectUrl = window.location.origin + '/login'
-    window.location.href = `${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`
+    window.location.href = authStore.isEmbedded? getAppLoginUrl() : `${getAppLoginUrl()}?redirectUrl=${redirectUrl}`
     loader.dismiss()
   }
   next()
@@ -98,7 +95,16 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/transfer-order-details/:orderId',
+    path: '/create-transfer-order',
+    name: 'CreateTransferOrder',
+    component: CreateTransferOrder,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: ""
+    }
+  },
+  {
+    path: '/transfer-order-details/:orderId/:category',
     name: 'TransferOrderDetail',
     component: TransferOrderDetail,
     beforeEnter: authGuard,
@@ -128,30 +134,13 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: "/exim",
-    name: "EXIM",
-    component: Exim,
+    path: '/:category/shipment-detail/:orderId/:shipmentId',
+    name: 'ShipmentDetail',
+    component: OrderDetail,
     beforeEnter: authGuard,
+    props: true,
     meta: {
-      permissionId: "APP_EXIM_VIEW"
-    }
-  },
-  {
-    path: "/upload-import-orders",
-    name: "UploadImportOrders",
-    component: UploadImportOrders,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_UPLOAD_IMPORT_ORDERS_VIEW"
-    }
-  },
-  {
-    path: "/download-packed-orders",
-    name: "DownloadPackedOrders",
-    component: DownloadPackedOrders,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_DOWNLOAD_PACKED_ORDERS_VIEW"
+      permissionId: "APP_ORDER_DETAIL_VIEW"
     }
   },
   {
@@ -159,12 +148,6 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Login',
     component: DxpLogin,
     beforeEnter: loginGuard
-  },
-  {
-    path: "/saved-mappings",
-    name: "SavedMappings",
-    component: SavedMappings,
-    beforeEnter: authGuard
   },
   {
     path: "/settings",

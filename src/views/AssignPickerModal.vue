@@ -15,10 +15,17 @@
     <ion-row>
       <ion-chip v-for="picker in selectedPickers" :key="picker.id">
         <ion-label>{{ picker.name }}</ion-label>
+        <ion-icon :icon="closeCircle" @click="selectPicker(picker.id)" />
       </ion-chip>
     </ion-row>
 
     <ion-list>
+      <!--<ion-item lines="none" v-if="hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN)">
+        <ion-toggle v-model="showAllPickers" @ionChange="findPickers()">
+          {{ translate("Show all pickers") }}
+        </ion-toggle>
+      </ion-item>-->
+
       <ion-list-header>{{ translate("Staff") }}</ion-list-header>
       <!-- TODO: added click event on the item as when using the ionChange event then it's getting
       called every time the v-for loop runs and then removes or adds the currently rendered picker
@@ -70,7 +77,7 @@ import {
   IonToolbar,
   modalController } from "@ionic/vue";
 import { defineComponent, computed } from "vue";
-import { closeOutline, saveOutline } from "ionicons/icons";
+import { closeOutline, closeCircle, saveOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { showToast } from "@/utils";
 import { hasError } from "@/adapter";
@@ -79,6 +86,7 @@ import { UtilService } from "@/services/UtilService";
 import emitter from "@/event-bus";
 import logger from "@/logger"
 import { OrderService } from '@/services/OrderService';
+import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
   name: "AssignPickerModal",
@@ -112,7 +120,8 @@ export default defineComponent({
       selectedPickers: [],
       queryString: '',
       pickers: [],
-      isLoading: false
+      isLoading: false,
+      //showAllPickers: false
     }
   },
   props: ["order"], // if we have order in props then create picklist for this single order only
@@ -120,8 +129,8 @@ export default defineComponent({
     isPickerSelected(id) {
       return this.selectedPickers.some((picker) => picker.id == id)
     },
-    closeModal(picklistId) {
-      modalController.dismiss({ dismissed: true, value: { picklistId } });
+    closeModal(responseData) {
+      modalController.dismiss({ dismissed: true, value: responseData });
     },
     selectPicker(id) {
       const picker = this.selectedPickers.some((picker) => picker.id == id)
@@ -135,48 +144,61 @@ export default defineComponent({
     async printPicklist () {
       emitter.emit("presentLoader")
       let resp;
+      const orderIdsToPick = []
 
       // creating picklist for orders that are currently in the list, means those are currently in the selected viewSize
       const orderItems = []
 
       if(this.order) {
         this.order.items.map((item) => orderItems.push(item))
+        orderIdsToPick.push(this.order.orderId)
       } else {
         this.openOrders.list.map((order) => {
           order.items.map((item) => orderItems.push(item))
+          orderIdsToPick.push(order.orderId)
         });
       }
 
-      const formData = new FormData();
-      formData.append("facilityId", this.currentFacility?.facilityId);
-      orderItems.map((item, index) => {
-        formData.append("facilityId_o_"+index, this.currentFacility?.facilityId)
-        formData.append("shipmentMethodTypeId_o_"+index, item.shipmentMethodTypeId)
-        formData.append("itemStatusId_o_"+index, "PICKITEM_PENDING")
-        formData.append("shipGroupSeqId_o_"+index, item.shipGroupSeqId)
-        formData.append("orderId_o_"+index, item.orderId)
-        formData.append("orderItemSeqId_o_"+index, item.orderItemSeqId)
-        formData.append("productId_o_"+index, item.productId)
-        formData.append("quantity_o_"+index, item.itemQuantity)
-        formData.append("inventoryItemId_o_"+index, item.inventoryItemId)
-        formData.append("picked_o_"+index, item.itemQuantity)
-        formData.append("_rowSubmit_o_"+index, "Y")
-      })
-
-      // Adding all the pickers selected in FormData
-      // TODO: check if we need to only allow selection of 3 or less pickers as in the current fulfillment app we can only select 3 pickers
-      this.selectedPickers.map((picker) => formData.append("pickerIds", picker.id))
+      
+      const payload = {
+        packageName: "A", //default package name
+        facilityId: this.currentFacility?.facilityId,
+        shipmentMethodTypeId: orderItems[0]?.shipmentMethodTypeId,
+        statusId: "PICKLIST_ASSIGNED",
+        pickers: this.selectedPickers?.map(selectedPicker => ({
+          partyId: selectedPicker.id,
+          roleTypeId: "WAREHOUSE_PICKER"
+        })) || [],
+        orderItems: orderItems.map(({ orderId, orderItemSeqId, shipGroupSeqId, productId, quantity }) => ({
+          orderId,
+          orderItemSeqId,
+          shipGroupSeqId,
+          productId,
+          quantity
+        }))
+      };
 
       try {
-        resp = await UtilService.createPicklist(formData);
+        resp = await OrderService.createPicklist(payload);
         if (resp.status === 200 && !hasError(resp)) {
-          this.closeModal(resp.data.picklistId);
+          this.closeModal({picklistId: resp.data.picklistId, shipmentIds: resp.data.shipmentIds});
           showToast(translate('Picklist created successfully'))
 
           // generating picklist after creating a new picklist
-          await OrderService.printPicklist(resp.data.picklistId)
+          if (resp.data.picklistId) {
+            await OrderService.printPicklist(resp.data.picklistId)
+          }
 
           await this.store.dispatch('order/findOpenOrders')
+          //Removing orders if the solr doc is not updated after picking
+          if (orderIdsToPick.length) {
+            const updatedOpenOrders = this.openOrders?.list.filter(openOrder => !orderIdsToPick.includes(openOrder.orderId))
+            const outdatedOpenOrderCount = this.openOrders.list.reduce((count, openOrder) => 
+              orderIdsToPick.includes(openOrder.orderId) ? count + 1 : count, 0
+            );
+            await this.store.dispatch('order/updateOpenOrderQuery', {...this.openOrders.query, viewSize: updatedOpenOrders.length})
+            await this.store.dispatch('order/updateOpenOrders', {orders: updatedOpenOrders, total: this.openOrders.total - outdatedOpenOrderCount})
+          }
         } else {
           throw resp.data
         }
@@ -200,6 +222,12 @@ export default defineComponent({
         query = `*:*`
       }
 
+      /*const facilityFilter = [];
+
+      if(!this.showAllPickers) {
+        facilityFilter.push(`facilityIds:${this.currentFacility.facilityId}`)
+      }*/
+
       const payload = {
         "json": {
           "params": {
@@ -209,7 +237,7 @@ export default defineComponent({
             "qf": "firstName lastName groupName partyId externalId",
             "sort": "firstName asc"
           },
-          "filter": ["docType:EMPLOYEE", "WAREHOUSE_PICKER_role:true"]
+          "filter": ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true"]
         }
       }
 
@@ -241,9 +269,12 @@ export default defineComponent({
     let currentFacility = computed(() => userStore.getCurrentFacility) 
 
     return {
+      Actions,
       closeOutline,
       currentFacility,
+      hasPermission,
       saveOutline,
+      closeCircle,
       store,
       translate
     };
@@ -256,7 +287,6 @@ ion-row {
   flex-wrap: nowrap;
   overflow: scroll;
 }
-
 ion-chip {
   flex-shrink: 0;
 }

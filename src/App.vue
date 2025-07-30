@@ -17,8 +17,10 @@ import { mapGetters, useStore } from 'vuex';
 import { initialise, resetConfig } from '@/adapter'
 import { useRouter } from 'vue-router';
 import { Settings } from 'luxon'
-import { translate, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { useAuthStore, getAppLoginUrl, initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import logger from '@/logger'
+import { init, loadRemote } from '@module-federation/runtime';
+import { addNotification, storeClientRegistrationToken } from '@/utils/firebase';
 
 export default defineComponent({
   name: 'App',
@@ -31,7 +33,9 @@ export default defineComponent({
   data() {
     return {
       loader: null as any,
-      maxAge: process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0
+      maxAge: process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0,
+      appFirebaseConfig: JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any),
+      appFirebaseVapidKey: process.env.VUE_APP_FIREBASE_VAPID_KEY,
     }
   },
   computed: {
@@ -40,20 +44,21 @@ export default defineComponent({
       instanceUrl: 'user/getInstanceUrl',
       userProfile: 'user/getUserProfile',
       locale: 'user/getLocale',
-      currentEComStore: 'user/getCurrentEComStore'
+      currentEComStore: 'user/getCurrentEComStore',
+      allNotificationPrefs: 'user/getAllNotificationPrefs',
     })
   },
   methods: {
-    async presentLoader(options = { message: '', backdropDismiss: true }) {
+    async presentLoader(options = { message: '', backdropDismiss: false }) {
       // When having a custom message remove already existing loader
       if(options.message && this.loader) this.dismissLoader();
 
       if (!this.loader) {
         this.loader = await loadingController
           .create({
-            message: options.message ? translate(options.message) : translate("Click the backdrop to dismiss."),
+            message: options.message ? translate(options.message) : (options.backdropDismiss ? translate("Click the backdrop to dismiss.") : translate("Loading...")),
             translucent: true,
-            backdropDismiss: options.backdropDismiss
+            backdropDismiss: options.backdropDismiss || false
           });
       }
       this.loader.present();
@@ -65,10 +70,13 @@ export default defineComponent({
       }
     },
     async unauthorised() {
+      const authStore = useAuthStore();
+      const isEmbedded = authStore.isEmbedded;
+      const appLoginUrl = getAppLoginUrl();
       // Mark the user as unauthorised, this will help in not making the logout api call in actions
       this.store.dispatch("user/logout", { isUserUnauthorised: true });
       const redirectUrl = window.location.origin + '/login';
-      window.location.href = `${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`;
+      window.location.href = isEmbedded ? appLoginUrl :`${appLoginUrl}?redirectUrl=${redirectUrl}`;
     },
     playAnimation() {
       const aside = document.querySelector('aside') as Element
@@ -111,11 +119,21 @@ export default defineComponent({
     })
   },
   async mounted() {
+    init({
+      name: "fulfillment",
+      remotes: [
+        {
+          name: "fulfillment_extensions",
+          entry: process.env.VUE_APP_REMOTE_ENTRY as string,
+        }
+      ],
+    });
+
     this.loader = await loadingController
       .create({
-        message: translate("Click the backdrop to dismiss."),
+        message: translate("Loading..."),
         translucent: true,
-        backdropDismiss: true
+        backdropDismiss: false
       });
     emitter.on('presentLoader', this.presentLoader);
     emitter.on('dismissLoader', this.dismissLoader);
@@ -127,12 +145,24 @@ export default defineComponent({
       Settings.defaultZone = this.userProfile.userTimeZone;
     }
 
+    const currentEComStore: any = useUserStore().getCurrentEComStore;
     // If fetching identifier without checking token then on login the app stucks in a loop, as the mounted hook runs before
     // token is available which results in api failure as unauthenticated, thus making logout call and then login call again and so on.
-    if(this.userToken) {
+    if(this.userToken && currentEComStore?.productStoreId) {
       // Get product identification from api using dxp-component
-      await useProductIdentificationStore().getIdentificationPref(this.currentEComStore?.productStoreId)
+      await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId)
         .catch((error) => logger.error(error));
+
+      // check if firebase configurations are there.
+      if (this.appFirebaseConfig && this.appFirebaseConfig.apiKey && this.allNotificationPrefs?.length) {
+        // initialising and connecting firebase app for notification support
+        await initialiseFirebaseApp(
+          this.appFirebaseConfig,
+          this.appFirebaseVapidKey,
+          storeClientRegistrationToken,
+          addNotification,
+        )
+      }
     }
   },
   unmounted() {

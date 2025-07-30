@@ -188,8 +188,7 @@
       emitter.emit('presentLoader');
       await this.store.dispatch('carrier/fetchCarrierDetail', { partyId: this.$route.params.partyId });
       await Promise.all([this.store.dispatch('carrier/fetchShipmentMethodTypes'), this.store.dispatch('util/fetchProductStores'),
-       this.store.dispatch('util/fetchShipmentGatewayConfigs'),
-        this.store.dispatch('carrier/fetchCarrierShipmentMethods', {partyId: this.$route.params.partyId}),
+       /*this.store.dispatch('carrier/fetchShipmentGatewayConfigs'),*/
          this.store.dispatch('carrier/fetchProductStoreShipmentMethods', {partyId: this.$route.params.partyId}),
           this.store.dispatch('util/fetchFacilities')])
       await this.store.dispatch('carrier/checkAssociatedShipmentMethods')
@@ -205,7 +204,7 @@
         productStores : 'util/getProductStores',
         shipmentMethods: "carrier/getShipmentMethods",
         carrierShipmentMethodsByProductStore: "carrier/getCarrierShipmentMethodsByProductStore",
-        shipmentGatewayConfigs : "util/getShipmentGatewayConfigs"
+        shipmentGatewayConfigs : "carrier/getShipmentGatewayConfigs"
       }),
     },
     methods: {
@@ -270,7 +269,8 @@
         return createShipmentMethodModal.present();
       },
       async updateCarrierFacility(event: any, facility: any) {
-        event.stopPropagation();
+        event.preventDefault();
+        event.stopImmediatePropagation();
 
         try {
           const payload = {
@@ -354,7 +354,7 @@
             let resp = {} as any;
             const productStoreShipmentMethods = this.currentCarrier.productStoreShipmentMethods ? JSON.parse(JSON.stringify(this.currentCarrier.productStoreShipmentMethods)) : {}
             try {
-              const payload = {productStoreShipMethId: shipmentMethod.productStoreShipMethId} as any
+              const payload = {productStoreId: shipmentMethod.productStoreId, productStoreShipMethId: shipmentMethod.productStoreShipMethId} as any
               if (modifiedData.fieldName === 'isTrackingRequired') {
                 payload.isTrackingRequired = modifiedData.fieldValue ? "Y" : "N"
               } else {
@@ -378,7 +378,8 @@
       },
       
       async updateProductStoreShipmentMethodAssociation(event: any, shipmentMethod: any, productStore: any) {
-        event.stopPropagation();
+        event.preventDefault();
+        event.stopImmediatePropagation();
 
         let resp = {} as any;
         const payload = {

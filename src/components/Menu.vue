@@ -46,7 +46,7 @@ import {
 } from "@ionic/vue";
 import { computed, defineComponent } from "vue";
 import { mapGetters } from "vuex";
-import { arrowBackOutline, backspaceOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, swapVerticalOutline } from "ionicons/icons";
+import { backspaceOutline, businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 import { hasPermission } from "@/authorization";
@@ -114,6 +114,7 @@ export default defineComponent({
           permissionId: "APP_COMPLETED_ORDERS_VIEW"
         }
       },
+      /* Commenting the Rejection page until Solr indexing for rejections are not properly integrated
       {
         title: "Rejections",
         url: "/rejections",
@@ -122,25 +123,15 @@ export default defineComponent({
         meta: {
           permissionId: "APP_REJECTIONS_VIEW"
         }
-      },
+      },*/
       {
         title: "Transfer Orders",
         url: "/transfer-orders",
-        iosIcon: arrowBackOutline,
-        mdIcon: arrowBackOutline,
-        childRoutes: ["/transfer-order-details", "/transfer-shipment-review"],
+        iosIcon: businessOutline,
+        mdIcon: businessOutline,
+        childRoutes: ["/transfer-order-details", "/transfer-shipment-review", "/create-transfer-order"],
         meta: {
           permissionId: "APP_TRANSFER_ORDERS_VIEW"
-        }
-      },
-      {
-        title: "EXIM",
-        url: "/exim",
-        iosIcon: swapVerticalOutline,
-        mdIcon: swapVerticalOutline,
-        childRoutes: ["/download-packed-orders", "/upload-import-orders", "/saved-mappings"], // defined child routes as to enable the correct menu when we are on a route that is not listed in the menu
-        meta: {
-          permissionId: "APP_EXIM_VIEW"
         }
       },
       {
@@ -183,16 +174,17 @@ export default defineComponent({
 
     const selectedIndex = computed(() => {
       const path = router.currentRoute.value.path
-      return appPages.findIndex((screen) => screen.url === path || screen.childRoutes?.includes(path) || screen.childRoutes?.some((route) => path.includes(route)))
+      const validPages = appPages.filter((appPage: any) => (!appPage.meta || !appPage.meta.permissionId) || hasPermission(appPage.meta.permissionId))
+      return validPages.findIndex((screen) => screen.url === path || screen.childRoutes?.includes(path) || screen.childRoutes?.some((route) => path.includes(route)))
     })
 
     return {
       appPages,
       backspaceOutline,
+      businessOutline,
       checkmarkDoneOutline,
       currentFacility,
       hasPermission,
-      arrowBackOutline,
       mailUnreadOutline,
       mailOpenOutline,
       selectedIndex,

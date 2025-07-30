@@ -16,14 +16,15 @@ const orderModule: Module<TransferOrderState, RootState> = {
         viewSize: process.env.VUE_APP_VIEW_SIZE,
         queryString: '',
         selectedShipmentMethods: [],
-        selectedStatuses: ['ORDER_APPROVED']
+        orderStatusId: 'ORDER_APPROVED'
       }
     },
     current: {},
     shipment:{
       current: {},
       list: []
-    }
+    },
+    rejectReasons: []
   },
   getters,
   actions,

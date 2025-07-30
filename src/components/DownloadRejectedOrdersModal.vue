@@ -213,7 +213,7 @@
           filters.rejectedAt_dt = {value: rejectionPeriodFilter}
         }
         if (rejectedOrderQuery.rejectionReasons.length) {
-          filters.rejectionReasonId_txt_en = {value: rejectedOrderQuery.rejectionReasons}
+          filters.rejectionReasonId_s = {value: rejectedOrderQuery.rejectionReasons}
         }
 
         const query = prepareSolrQuery({
@@ -273,18 +273,15 @@
         let facilityDetail  = {} as any;
         try {
           const payload = {
-            "inputFields": {
-              "facilityId": this.currentFacility.facilityId,
-            },
-            "entityName": "Facility",
-            "fieldList": ["facilityId", "facilityName", "externalId"],
-            "viewSize": 1
+            "facilityId": this.currentFacility.facilityId,
+            "fieldsToSelect": ["facilityId", "facilityName", "externalId"],
+            "pageSize": 1
           }
 
           const resp = await UtilService.fetchFacilities(payload)
 
-          if (!hasError(resp) && resp.data.count > 0) {
-            facilityDetail = resp.data.docs[0]
+          if (!hasError(resp)) {
+            facilityDetail = resp.data[0]
           } else {
             throw resp.data
           }

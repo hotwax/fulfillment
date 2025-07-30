@@ -23,7 +23,7 @@ const mutations: MutationTree <TransferOrderState> = {
       viewSize: process.env.VUE_APP_VIEW_SIZE,
       queryString: '',
       selectedShipmentMethods: [],
-      selectedStatuses: ['ORDER_APPROVED']
+      orderStatusId: 'ORDER_APPROVED'
     }
   },
   [types.ORDER_CURRENT_SHIPMENT_UPDATED](state, payload) {
@@ -34,6 +34,9 @@ const mutations: MutationTree <TransferOrderState> = {
   },
   [types.ORDER_CURRENT_CLEARED](state) {
     state.current = {}
+  },
+  [types.ORDER_REJECT_REASONS_UPDATED](state, payload) {
+    state.rejectReasons = payload
   }
 }
 export default mutations;

@@ -2,7 +2,7 @@
     <ion-page>
       <ion-header>
         <ion-toolbar>
-          <ion-back-button default-href="/tabs/users" slot="start"></ion-back-button>
+          <ion-back-button default-href="/carriers" slot="start"></ion-back-button>
           <ion-title>{{ translate("Create carrier") }}</ion-title>
         </ion-toolbar>
       </ion-header>
@@ -49,6 +49,9 @@
   import { translate } from "@hotwax/dxp-components";
   import { generateInternalId, showToast } from "@/utils";
   import { CarrierService } from '@/services/CarrierService';
+  import { hasError } from '@/adapter'
+  import logger from '@/logger'
+
 
   export default defineComponent({
     name: "CreateCarrier",
@@ -95,11 +98,16 @@
           partyId: this.carrier.partyId.trim(),
           partyTypeId: "PARTY_GROUP"
         }
-        const partyId = await CarrierService.createCarrier(payload);
-        if (partyId) {
-          this.store.dispatch('carrier/clearShipmentMethodQuery')
-          this.$router.replace({ path: `/shipment-methods-setup/${partyId}` })
-        }
+        try {
+          const response = await CarrierService.createCarrier(payload);
+          if (!hasError(response)) {
+            this.store.dispatch('carrier/clearShipmentMethodQuery')
+            this.$router.replace({ path: `/shipment-methods-setup/${response.data.partyId}` })
+          }
+        } catch (err: any) {
+          logger.error("error", err);
+          showToast("Failed to create carrier.")
+        }        
       }
     },
     setup() {

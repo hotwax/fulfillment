@@ -6,7 +6,8 @@ export default interface OrderState {
       viewIndex: number,
       viewSize: any,
       queryString: string,
-      selectedShipmentMethods: Array<string>
+      selectedShipmentMethods: Array<string>,
+      selectedCategories: Array<string>
     }
   },
   completed: {
@@ -16,7 +17,7 @@ export default interface OrderState {
       viewIndex: number,
       viewSize: any,
       queryString: string,
-      selectedCarrierPartyIds: Array<string>,
+      selectedCarrierPartyId: string,
       selectedShipmentMethods: Array<string>
     }
   },  
@@ -31,4 +32,5 @@ export default interface OrderState {
     }
   },
   current: any,
+  
 }

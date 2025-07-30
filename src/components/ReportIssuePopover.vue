@@ -1,8 +1,9 @@
 <template>
   <ion-content>
     <ion-list>
-      <ion-item v-for="reason in rejectReasonOptions" :key="reason.enumId" @click="updateIssue(reason.enumId)" button>
-        {{ reason.description ? translate(reason.description) : reason.enumDescription ? translate(reason.enumDescription) : reason.enumId  }}
+      <!-- If getting reject reasons in props, then use the same otherwise get the reasons from the util state -->
+      <ion-item v-for="reason in (rejectReasons?.length ? rejectReasons : rejectReasonOptions)" :key="reason.enumId" @click="updateIssue(reason.enumId)" button>
+        {{ reason.enumDescription ? translate(reason.enumDescription) : reason.description ? translate(reason.description) : reason.enumId  }}
       </ion-item>
     </ion-list>
   </ion-content>
@@ -31,7 +32,7 @@ export default defineComponent({
       rejectReasonOptions: 'util/getRejectReasonOptions'
     })
   },
-  props: ["shipmentPackages"],
+  props: ["rejectReasons"],
   methods: {
     closePopover() {
       popoverController.dismiss();

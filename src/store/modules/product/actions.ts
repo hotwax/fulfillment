@@ -76,20 +76,16 @@ const actions: ActionTree<ProductState, RootState> = {
     let resp;
     try {
       resp = await ProductService.fetchProductComponents({
-        "entityName": "ProductAssoc",
-          "inputFields": {
-            "productId": productId,
-            "productTypeId": "PRODUCT_COMPONENT"
-          },
-          "fieldList": ["productId", "productIdTo", "productAssocTypeId"],
-          "viewIndex": 0,
-          "viewSize": 250,  // maximum records we could have
-          "distinct": "Y",
-          "noConditionFind": "Y",
-          "filterByDate": "Y"
+        customParametersMap: {
+          productId: productId,
+          pageIndex: 0,
+          pageSize: 100,  // maximum records we could have
+        },
+        dataDocumentId: "ProductComponent",
+        filterByDate: true
       })
       if (!hasError(resp)) {
-        const productComponents = resp.data.docs;
+        const productComponents = resp.data.entityValueList;
         const componentProductIds = productComponents.map((productComponent: any) => productComponent.productIdTo);
         await dispatch('fetchProducts', { productIds: componentProductIds })
         
@@ -102,6 +98,45 @@ const actions: ActionTree<ProductState, RootState> = {
       logger.error('Failed to fetch product components information', err)
     }
     return resp;
+  },
+
+  async fetchSampleProducts ({ commit, state }) {
+    let products = state.sampleProducts ? JSON.parse(JSON.stringify(state.sampleProducts)) : []
+    if(products.length) return;
+
+    try {
+      const resp = await ProductService.fetchSampleProducts({
+        internalName_op: "empty",
+        internalName_not: "Y",
+        fieldsToSelect: ["internalName", "productId"],
+        pageSize: 10
+      }) as any;
+  
+      if(!hasError(resp) && resp.data?.length) {
+        products = resp.data
+        products = products.map((product: any) => ({
+          sku: product.internalName,
+          quantity: 2
+        }))
+      } else {
+        throw resp.data;
+      }
+    } catch (error) {
+      logger.error(error);
+    }
+    commit(types.PRODUCT_SAMPLE_PRODUCTS_UPDATED, products)
+  },
+
+  async addProductToCached ( { commit }, payload) {
+    commit(types.PRODUCT_ADD_TO_CACHED, payload);
+  },
+
+  async addProductToCachedMultiple ( { commit }, payload) {
+    commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, payload);
+  },
+
+  async clearProductState ({ commit }) {
+    commit(types.PRODUCT_CLEARED)
   }
 }
 

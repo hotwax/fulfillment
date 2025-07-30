@@ -39,8 +39,8 @@
           </ion-card-header>
           <ion-list v-if="getMostRejectedItems().length">
             <ion-item v-for="(item, index) in getMostRejectedItems()" :key="item.val" :lines="getMostRejectedItems().length -1 === index ? 'none' : 'inset'">
-              <ion-thumbnail slot="start">
-                <DxpShopifyImg :src="getProduct(item.val).mainImageUrl" size="small"/>
+              <ion-thumbnail slot="start" v-image-preview="getProduct(item.val)" :key="getProduct(item.val)?.mainImageUrl">
+                <DxpShopifyImg :src="getProduct(item.val).mainImageUrl" :key="getProduct(item.val).mainImageUrl" size="small"/>
               </ion-thumbnail>
               <ion-label>
                 <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.val)) }}</p>
@@ -79,43 +79,40 @@
           
       <div class="rejection-search">
         <ion-searchbar class="searchbar" :placeholder="translate('Search orders')" v-model="queryString" @keyup.enter="updateQueryString($event.target.value)"/>
-        <ion-label>
-          {{ rejectedOrders.total }} {{translate("rejections") }}
-        </ion-label>
-        
+        <div></div>
         <ion-button :disabled="!rejectedOrders.list.length" expand="block" fill="outline" @click="downloadRejections()" class="ion-margin-end">
           <ion-icon slot="end" :icon="cloudDownloadOutline" />{{ translate("Download rejections") }}
         </ion-button>
       </div>
-      <ion-card class="order" v-for="order in rejectedOrders.list" :key="order.orderId">
-        <div class="order-header">
-          <div class="order-primary-info">
-            <ion-label>
-              <strong>{{ order.customerName }}</strong>
-              <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
-            </ion-label>
-          </div>
+      <div v-if="rejectedOrders.list.length">
+        <ion-card class="order" v-for="order in rejectedOrders.list" :key="order.orderId">
+          <div class="order-header">
+            <div class="order-primary-info">
+              <ion-label>
+                <strong>{{ order.customerName }}</strong>
+                <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+              </ion-label>
+            </div>
 
-          <div class="order-tags">
-            <ion-chip outline>
-              <ion-icon :icon="pricetagOutline" />
-              <ion-label>{{ order.orderId }}</ion-label>
-            </ion-chip>
-          </div>
+            <div class="order-tags">
+              <ion-chip outline>
+                <ion-icon :icon="pricetagOutline" />
+                <ion-label>{{ order.orderId }}</ion-label>
+              </ion-chip>
+            </div>
 
-          <div class="order-metadata">
-            <ion-label>
-              {{ order.shipmentMethod }}
-              <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
-            </ion-label>
+            <div class="order-metadata">
+              <ion-label>
+                {{ order.shipmentMethod }}
+                <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+              </ion-label>
+            </div>
           </div>
-        </div>
-        <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-line-item">
-          <div class="rejected-order-item">
+          <div v-for="item in order.items" :key="item.orderItemSeqId" class="list-item">
             <div class="product-info">
               <ion-item lines="none">
-                <ion-thumbnail slot="start">
-                  <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
+                  <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                 </ion-thumbnail>
                 <ion-label>
                   <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -123,39 +120,28 @@
                 </ion-label>
               </ion-item>
             </div>
-            <div>
-              <ion-item lines="none">
-                <ion-label>
-                  {{ formatUtcDate(item.rejectedAt, 'dd MMMM yyyy t a ZZZZ')}}
-                  <p>{{ translate('rejected time') }}</p>
-                </ion-label>
-              </ion-item>
-            </div>
-            <div>
-              <ion-item lines="none">
-                <ion-label lines="none">
-                  {{ item.availableToPromise}}
-                  <p>{{ translate('ATP') }}</p>
-                </ion-label>
-              </ion-item>
-            </div>
-            <div>
-              <ion-item lines="none">
-                <ion-label>
-                  {{ item.rejectionReasonDesc }}
-                  <p>{{ translate('rejection reason') }}</p>
-                </ion-label>
-              </ion-item>
-            </div>
-            <div>
-              <ion-chip outline>
-                <ion-icon :icon="personCircleOutline" />
-                <ion-label>{{ item.rejectedBy }}</ion-label>
-              </ion-chip>
-            </div>
+            <ion-label>
+              {{ formatUtcDate(item.rejectedAt, 'dd MMMM yyyy hh:mm a ZZZZ')}}
+              <p>{{ translate('rejected time') }}</p>
+            </ion-label>
+            <ion-label lines="none">
+              {{ item.availableToPromise}}
+              <p>{{ translate('ATP') }}</p>
+            </ion-label>
+            <ion-label>
+              {{ item.rejectionReasonDesc }}
+              <p>{{ translate('rejection reason') }}</p>
+            </ion-label>
+            <ion-chip outline>
+              <ion-icon :icon="personCircleOutline" />
+              <ion-label>{{ item.rejectedBy }}</ion-label>
+            </ion-chip>
           </div>
-        </div>
-      </ion-card>
+        </ion-card>
+      </div>
+      <div v-else class="empty-state">
+        <p>{{ translate("No orders found.") }}</p>
+      </div>
       <ion-infinite-scroll @ionInfinite="loadMoreRejectedOrders($event)" threshold="100px"  v-show="isRejectedOrdersScrollable()" ref="infiniteScrollRef">
         <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
       </ion-infinite-scroll>
@@ -370,15 +356,15 @@ export default defineComponent({
   margin-bottom: var(--spacer-lg);
   align-items: center;
 }
-.rejected-order-item {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  align-items: center;
-  padding: var(--spacer-xs) 0;
+.list-item {
+  --columns-desktop: 5;
 }
+
 .searchbar{
   padding-top: 0;
+  padding-bottom: 0;
 }
+
 ion-card-header {
   display: flex;
   flex-direction: row;

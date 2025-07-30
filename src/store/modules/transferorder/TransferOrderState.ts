@@ -7,12 +7,13 @@ export default interface TransferOrderState {
       viewSize: any,
       queryString: string,
       selectedShipmentMethods: Array<string>,
-      selectedStatuses: Array<string>
+      orderStatusId: string
     }
   },
   current: any,
   shipment: {
     current: any,
     list: any
-  }
+  },
+  rejectReasons: Array<any>;
 }

@@ -1,5 +1,5 @@
 <template>
-  <ion-page>
+  <ion-page :key="router.currentRoute.value.path">
     <ViewSizeSelector menu-id="view-size-selector-open" content-id="view-size-selector" />
     
     <ion-header :translucent="true">
@@ -24,17 +24,18 @@
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
       <ion-searchbar class="searchbar" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)"/>
+      <div class="filters">
+        <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
+          <ion-checkbox label-placement="end" :checked="openOrders.query.selectedShipmentMethods.includes(method.val)" @ionChange="updateSelectedShipmentMethods(method.val)">
+            <ion-label>
+              {{ getShipmentMethodDesc(method.val) }}
+              <p>{{ method.ordersCount }} {{ translate("orders") }}, {{ method.count }} {{ translate("items") }}</p>
+            </ion-label>
+          </ion-checkbox>
+        </ion-item>
+      </div>
+      <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentEComStore="currentEComStore" @updateOpenQuery="updateOpenQuery" />
       <div v-if="openOrders.total">
-        <div class="filters">
-          <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
-            <ion-checkbox label-placement="end" @ionChange="updateSelectedShipmentMethods(method.val)">
-              <ion-label>
-                {{ getShipmentMethodDesc(method.val) }}
-                <p>{{ method.ordersCount }} {{ translate("orders") }}, {{ method.count }} {{ translate("items") }}</p>
-              </ion-label>
-            </ion-checkbox>
-          </ion-item>
-        </div>
 
         <div class="results">
           <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picklist") }}</ion-button>
@@ -44,7 +45,7 @@
               <div class="order-primary-info">
                 <ion-label>
                   <strong>{{ order.customerName }}</strong>
-                  <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                  <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
                 </ion-label>
               </div>
 
@@ -58,24 +59,27 @@
 
               <div class="order-metadata">
                 <ion-label>
-                  {{ order.shipmentMethodTypeDesc }}
-                  <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy t a ZZZZ') }}</p>
+                  {{ getShipmentMethodDesc(order.shipmentMethodTypeId) }}
+                  <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
                 </ion-label>
               </div>
             </div>
 
-            <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-line-item">
+            <div v-for="item in order.items" :key="order.orderId + item.orderItemSeqId" class="order-line-item">
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                    <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
+                      <!-- TODO: Currently handled product image mismatch on the order list page — needs to be applied to other pages using DxpShopifyImg  -->
+                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                      <ion-badge color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
-                      <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+                      <div>
+                        {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                        <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                      </div>
+                      <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
                     </ion-label>
                   </ion-item>
                 </div>
@@ -84,7 +88,7 @@
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
-                  <ion-note v-if="getProductStock(item.productId).quantityOnHandTotal">{{ getProductStock(item.productId).quantityOnHandTotal }} {{ translate('pieces in stock') }}</ion-note>
+                  <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
                   <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
@@ -101,13 +105,13 @@
               <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start">
-                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
+                    <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
+                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
                       {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
-                      <p>{{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(productComponent.productIdTo).featureHierarchy, '1/SIZE/')}}</p>
+                      <p>{{ getFeatures(getProduct(productComponent.productIdTo).productFeatures)}}</p>
                     </ion-label>
                   </ion-item>
                 </ion-card>
@@ -174,10 +178,10 @@ import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificat
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { formatUtcDate, getFeature, showToast } from '@/utils'
+import { formatUtcDate, getFeatures, getFacilityFilter, hasActiveFilters, showToast } from '@/utils'
 import { hasError } from '@/adapter';
 import { UtilService } from '@/services/UtilService';
-import { prepareOrderQuery } from '@/utils/solrHelper';
+import { prepareSolrQuery } from '@/utils/solrHelper';
 import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import emitter from '@/event-bus';
 import logger from '@/logger';
@@ -186,6 +190,9 @@ import { UserService } from '@/services/UserService';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import { isKit } from '@/utils/order'
+import { OrderService } from '@/services/OrderService'
+import { useDynamicImport } from "@/utils/moduleFederation";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   name: 'OpenOrders',
@@ -220,11 +227,11 @@ export default defineComponent({
     ...mapGetters({
       openOrders: 'order/getOpenOrders',
       getProduct: 'product/getProduct',
-      currentEComStore: 'user/getCurrentEComStore',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       getProductStock: 'stock/getProductStock',
       notifications: 'user/getNotifications',
-      unreadNotificationsStatus: 'user/getUnreadNotificationsStatus'
+      unreadNotificationsStatus: 'user/getUnreadNotificationsStatus',
+      instanceUrl: "user/getInstanceUrl"
     })
   },
   data () {
@@ -232,15 +239,17 @@ export default defineComponent({
       shipmentMethods: [] as Array<any>,
       searchedQuery: '',
       isScrollingEnabled: false,
-      isRejecting: false
+      isRejecting: false,
+      productCategoryFilterExt: "" as any,
+      selectedShipmentMethods: [] as any
     }
   },
-  async ionViewWillEnter() {
-    this.isScrollingEnabled = false;
-  },
   methods: {
+    updateOpenQuery(payload: any) {
+      this.store.dispatch("order/updateOpenQuery", payload)
+    },
     getErrorMessage() {
-      return this.searchedQuery === '' ? translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility?.facilityName }) : translate( "No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })
+      return this.searchedQuery ? (hasActiveFilters(this.openOrders.query) ? translate("No results found for . Try using different filters.", { searchedQuery: this.searchedQuery }) : translate("No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })) : translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility?.facilityName });
     },
     viewNotifications() {
       this.store.dispatch('user/setUnreadNotificationsStatus', false)
@@ -287,6 +296,7 @@ export default defineComponent({
       // making view size default when changing the shipment method to correctly fetch orders
       openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
       openOrdersQuery.selectedShipmentMethods = selectedShipmentMethods
+      this.selectedShipmentMethods = selectedShipmentMethods
 
       this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
     },
@@ -307,19 +317,21 @@ export default defineComponent({
     async fetchShipmentMethods() {
       let resp: any;
 
-      const payload = prepareOrderQuery({
-        queryFields: 'orderId',
+      const payload = prepareSolrQuery({
+        docType: 'ORDER',
         viewSize: '0',  // passed viewSize as 0 to not fetch any data
+        isGroupingRequired: false,
         filters: {
-          quantityNotAvailable: { value: 0 },
-          isPicked: { value: 'N' },
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
-          '-fulfillmentStatus': { value: 'Cancelled' },
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
-          facilityId: { value: this.currentFacility?.facilityId },
-          productStoreId: { value: this.currentEComStore.productStoreId }
+          ...getFacilityFilter(this.currentFacility?.facilityId)
         },
+        solrFilters: [
+          //it should be explicit what is subtracting the first part of your OR statement from
+          "((*:* -fulfillmentStatus: [* TO *]) OR fulfillmentStatus:Created)",
+          "entryDate:[2025-01-01T00:00:00Z TO *]"
+        ],
         facet: {
           "shipmentMethodTypeIdFacet":{
             "excludeTags":"shipmentMethodTypeIdFilter",
@@ -365,6 +377,7 @@ export default defineComponent({
       const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
       openOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      if(this.selectedShipmentMethods?.length) openOrdersQuery.selectedShipmentMethods = this.selectedShipmentMethods
       await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
     },
     async recycleOutstandingOrders() {
@@ -384,7 +397,7 @@ export default defineComponent({
             let resp;
 
             try {
-              resp = await UserService.recycleOutstandingOrders({
+              resp = await OrderService.recycleOutstandingOrders({
                 "facilityId": this.currentFacility?.facilityId,
                 "productStoreId": this.currentEComStore.productStoreId,
                 "reasonId": "INACTIVE_STORE"
@@ -421,30 +434,39 @@ export default defineComponent({
       this.store.dispatch('stock/fetchStock', { productId })
     }
   },
-  async mounted () {
-    emitter.on('updateOrderQuery', this.updateOrderQuery)
+  async ionViewWillEnter () {
+    this.isScrollingEnabled = false;
     await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
+    // Remove http://, https://, /api, or :port
+    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "")
+    this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`});
+    emitter.on("updateOrderQuery", this.updateOrderQuery);
   },
-  unmounted() {
+  beforeRouteLeave() {
     this.store.dispatch('order/clearOpenOrders');
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   setup() {
     const store = useStore();
+    const router = useRouter();
     const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
     let currentFacility: any = computed(() => userStore.getCurrentFacility) 
+    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
 
     return{
       Actions,
       caretDownOutline,
       chevronUpOutline,
       cubeOutline,
+      currentEComStore,
       currentFacility,
       formatUtcDate,
-      getFeature,
+      getFeatures,
+      getFacilityFilter,
       getProductIdentificationValue,
+      hasActiveFilters,
       hasPermission,
       isKit,
       listOutline,
@@ -453,6 +475,7 @@ export default defineComponent({
       pricetagOutline,
       printOutline,
       productIdentificationPref,
+      router,
       store,
       translate
     }

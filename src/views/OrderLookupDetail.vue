@@ -112,11 +112,11 @@
                 <ion-list>
                   <ion-item>
                     <ion-label class="ion-text-wrap">{{ translate("Brand") }}</ion-label>
-                    <ion-label class="ion-text-wrap" slot="end">{{ currentEcomStore.storeName || "-" }}</ion-label>
+                    <ion-label class="ion-text-wrap" slot="end">{{ getProductStoreName(order.productStoreId) || "-" }}</ion-label>
                   </ion-item>
                   <ion-item lines="none">
                     <ion-label class="ion-text-wrap">{{ translate("Channel") }}</ion-label>
-                    <ion-label class="ion-text-wrap" slot="end">{{ order.salesChannel || "-" }}</ion-label>
+                    <ion-label class="ion-text-wrap" slot="end">{{ getEnumerationDesc(order.salesChannelEnumId) || "-" }}</ion-label>
                   </ion-item>
                 </ion-list>
               </ion-card>
@@ -179,46 +179,47 @@
                   <ion-label class="ion-text-wrap">{{ translate("Municipio") }}</ion-label>
                   <ion-label slot="end">{{ order.orderAttributes.municipio || "-" }}</ion-label>
                 </ion-item>
-                <ion-item lines="none">
+                <ion-item>
                   <ion-label class="ion-text-wrap">{{ translate("Invoicing facility") }}</ion-label>
                   <ion-label class="ion-text-wrap" slot="end">{{ (invoicingFacility.facilityName ? invoicingFacility.facilityName : invoicingFacility.facilityId) || '-'  }}</ion-label>
                 </ion-item>
+                <Component :is="additionalDetailItemExt" :order="order" :invoicingFacilityId="invoicingFacility.facilityId"/>
               </ion-list>
             </ion-card>
           </div>
         </section>
         <section>
-          <div v-if="order.shipGroups && Object.values(order.shipGroups).length">
-            <div v-for="(shipGroups, index) in Object.values(order.shipGroups) as Array<any>" :key="index" class="ship-group-info ion-margin-vertical">
+          <div v-if="order.shipGroups && order.shipGroups.length">
+            <div v-for="shipGroup in order.shipGroups as Array<any>" :key="shipGroup.shipGroupSeqId" class="ship-group-info ion-margin-vertical">
               <ion-item lines="none">
-                <ion-icon slot="start" :icon="shipGroups[0].facilityTypeId === 'RETAIL_STORE' ? storefrontOutline : golfOutline" />
+                <ion-icon slot="start" :icon="shipGroup.facilityTypeId === 'RETAIL_STORE' ? storefrontOutline : golfOutline" />
                 <ion-label>
-                  <p class="overline" v-if="shipGroups[0].facilityId !== '_NA_'">{{ shipGroups[0].facilityId }}</p>
-                  <h1>{{ shipGroups[0].facilityName || shipGroups[0].facilityId }}</h1>
-                  <p v-if="shipGroups[0].facilityId !== '_NA_'">{{ getShipmentMethodDesc(shipGroups[0].shipmentMethodTypeId) || shipGroups[0].shipmentMethodTypeId }}</p>
+                  <p class="overline" v-if="shipGroup.facilityId !== '_NA_'">{{ shipGroup.facilityId }}</p>
+                  <h1>{{ shipGroup.facilityName || shipGroup.facilityId }}</h1>
+                  <p v-if="shipGroup.facilityId !== '_NA_'">{{ getShipmentMethodDesc(shipGroup.shipmentMethodTypeId) || shipGroup.shipmentMethodTypeId }}</p>
                 </ion-label>
-                <ion-label slot="end" v-if="shipGroups[0].trackingIdNumber">{{ translate("Tracking Code") }}{{ ":" }} {{ shipGroups[0].trackingIdNumber }}</ion-label>
-                <ion-button :disabled="order.hasMissingInfo" slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, shipGroups[0])" v-if="shipGroups[0].trackingIdNumber">
+                <ion-label slot="end" v-if="shipGroup.trackingIdNumber">{{ translate("Tracking Code") }}{{ ":" }} {{ shipGroup.trackingIdNumber }}</ion-label>
+                <ion-button slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, shipGroup)" v-if="shipGroup.trackingIdNumber">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
     
               <div class="product-card">
-                <ion-card v-for="shipGroup in shipGroups" :key="shipGroup.shipGroupSeqId">
+                <ion-card v-for="item in shipGroup.items" :key="item.orderItemSeqId">
                   <ion-item>
-                    <ion-thumbnail slot="start">
+                    <ion-thumbnail slot="start" v-image-preview="getProduct(shipGroup.productId)" :key="getProduct(shipGroup.productId)?.mainImageUrl">
                       <DxpShopifyImg :src="getProduct(shipGroup.productId)?.mainImageUrl" size="small" />
                     </ion-thumbnail>
                     <ion-label class="ion-text-wrap">
-                      <h1>{{ shipGroup.productId }}</h1>
-                      <p>{{ getProduct(shipGroup.productId)?.productName }}</p>
+                      <h1>{{ item.productId }}</h1>
+                      <p>{{ getProduct(item.productId)?.productName }}</p>
                     </ion-label>
-                    <ion-badge slot="end" :color="getColorByDesc(itemStatuses[shipGroup.statusId].label) || getColorByDesc('default')">{{ translate(itemStatuses[shipGroup.statusId].label) }}</ion-badge>
+                    <ion-badge slot="end" :color="getColorByDesc(itemStatuses[item.statusId].label) || getColorByDesc('default')">{{ translate(itemStatuses[item.statusId].label) }}</ion-badge>
                   </ion-item>
 
                   <ion-item>
                     <ion-label class="ion-text-wrap">{{ translate("Price") }}</ion-label>
-                    <ion-label slot="end">{{ formatCurrency(shipGroup.unitPrice, order.currencyUom) }}</ion-label>
+                    <ion-label slot="end">{{ formatCurrency(item.unitPrice, order.currencyUom) }}</ion-label>
                   </ion-item>
 
                   <ion-item v-if="shipGroup.facilityId !== '_NA_'">
@@ -228,16 +229,16 @@
 
                   <ion-item v-if="shipGroup.facilityId !== '_NA_'">
                     <ion-label class="ion-text-wrap">{{ translate("Fulfillment Status") }}</ion-label>
-                    <ion-label slot="end">{{ translate(shipGroup.statusId === "ITEM_COMPLETED" ? shipGroup.shipmentMethodTypeId === "STOREPICKUP" ? "Picked up" : "Shipped" : order?.shipGroupFulfillmentStatus?.[shipGroup.shipGroupSeqId] || "Reserved") }}</ion-label>
+                    <ion-label slot="end">{{ translate(item.statusId === "ITEM_COMPLETED" ? shipGroup.shipmentMethodTypeId === "STOREPICKUP" ? "Picked up" : "Shipped" : shipGroup.fulfillmentStatus || "Reserved") }}</ion-label>
                   </ion-item>
 
-                  <ion-item v-if="shipGroup.statusId !== 'ITEM_CANCELLED' && shipGroup.statusId !== 'ITEM_COMPLETED'">
+                  <ion-item v-if="item.statusId !== 'ITEM_CANCELLED' && item.statusId !== 'ITEM_COMPLETED'">
                     <ion-label>{{ translate("QOH") }}</ion-label>
-                    <ion-note slot="end" v-if="getProductStock(shipGroup.productId, shipGroup.facilityId).quantityOnHandTotal >= 0">
-                      {{ getProductStock(shipGroup.productId, shipGroup.facilityId).quantityOnHandTotal }} {{ translate("pieces in stock") }}
+                    <ion-note slot="end" v-if="getProductStock(item.productId, shipGroup.facilityId).qoh >= 0">
+                      {{ getProductStock(item.productId, shipGroup.facilityId).qoh }} {{ translate("pieces in stock") }}
                     </ion-note>
                     <ion-spinner slot="end" v-else-if="isFetchingStock" color="medium" name="crescent" />
-                    <ion-button v-else fill="clear" @click.stop="fetchProductStock(shipGroup.productId, shipGroup.facilityId)">
+                    <ion-button v-else fill="clear" @click.stop="fetchProductStock(item.productId, shipGroup.facilityId)">
                       <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                     </ion-button>
                   </ion-item>
@@ -279,8 +280,8 @@ import {
   IonToolbar,
   popoverController
 } from "@ionic/vue";
-import { defineComponent } from "vue";
-import { translate } from '@hotwax/dxp-components';
+import { computed, defineComponent } from "vue";
+import { translate, useUserStore } from '@hotwax/dxp-components';
 import { cubeOutline, golfOutline, callOutline, cashOutline, closeCircleOutline, ellipsisVerticalOutline, informationCircleOutline, ribbonOutline, mailOutline, ticketOutline, timeOutline, pulseOutline, storefrontOutline, sunnyOutline, checkmarkDoneOutline, downloadOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { DateTime } from "luxon";
@@ -289,7 +290,8 @@ import { prepareSolrQuery } from '@/utils/solrHelper';
 import OrderLookupLabelActionsPopover from '@/components/OrderLookupLabelActionsPopover.vue';
 import { hasError } from "@hotwax/oms-api";
 import logger from "@/logger";
-import { OrderService } from "@/services/OrderService";
+import { OrderLookupService } from "@/services/OrderLookupService";
+import { useDynamicImport } from "@/utils/moduleFederation";
 
 export default defineComponent({
   name: "OrderLookupDetail",
@@ -320,25 +322,32 @@ export default defineComponent({
       itemStatuses: JSON.parse(process.env.VUE_APP_ITEM_STATUS as any),
       isFetchingStock: false,
       isFetchingOrderInfo: false,
-      invoicingFacility: {} as any
+      invoicingFacility: {} as any,
+      additionalDetailItemExt: "" as any
     }
   },
   computed: {
     ...mapGetters({
       order: "orderLookup/getCurrentOrder",
-      currentEcomStore: "user/getCurrentEComStore",
       getProduct: "product/getProduct",
       getProductStock: "stock/getProductStock",
       getStatusDesc: "util/getStatusDesc",
       getShipmentMethodDesc: "util/getShipmentMethodDesc",
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
       userProfile: 'user/getUserProfile',
+      instanceUrl: "user/getInstanceUrl",
+      productStores: "util/getProductStores",
+      getEnumerationDesc: "util/getEnumerationDesc"
     })
   },
   async ionViewWillEnter() {
     this.isFetchingOrderInfo = true
     await this.store.dispatch("orderLookup/getOrderDetails", this.orderId)
+    await this.store.dispatch("util/fetchProductStores")
     await this.fetchOrderInvoicingFacility()
+    // Remove http://, https://, /api, or :port
+    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "")
+    this.additionalDetailItemExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderLookupAdditionalDetailItem`})
     this.isFetchingOrderInfo = false
   },
   methods: {
@@ -365,9 +374,7 @@ export default defineComponent({
       const popover = await popoverController.create({
         component: OrderLookupLabelActionsPopover,
         componentProps: {
-          currentOrder: this.order,
-          shipGroupSeqId: shipGroup.shipGroupSeqId,
-          carrierPartyId: shipGroup.carrierPartyId
+          shipGroup: shipGroup,
         },
         event: ev,
         showBackdrop: false
@@ -377,36 +384,38 @@ export default defineComponent({
     },
     async fetchOrderInvoicingFacility() {
       const params = {
-        viewSize: 1,
-        sort: "createdDate_dt desc",
-        filters: {
-          id: { value: this.order.orderName }
+        customParametersMap:{
+          "orderId": this.order.orderId,
+          "orderByField": "-entryDate",
+          "pageSize": 1
         },
-        docType: "ORDER_TO_INVOICE_API",
-        coreName: "logInsights"
+        dataDocumentId: "ApiCommunicationEventOrder"
       }
 
-      const orderInvoicingQueryPayload = prepareSolrQuery(params)
-
       try {
-        const resp = await OrderService.findOrderInvoicingInfo(orderInvoicingQueryPayload);
+        const resp = await OrderLookupService.findOrderInvoicingInfo(params);
 
-        if(!hasError(resp) && resp.data?.response?.docs?.length) {
-          const response = resp.data.response.docs[0];
-
-          const request = Object.keys(response.request_txt_en).length ? JSON.parse(response.request_txt_en) : {}
-          const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === request.InvoicingStore)
+        if(!hasError(resp) && resp.data?.entityValueList?.length) {
+          const response = resp.data?.entityValueList[0]
+          const content = Object.keys(response.content).length ? JSON.parse(response.content) : {}
+          const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === content?.request?.InvoicingStore)
           if(invoicingFacility) {
             this.invoicingFacility = invoicingFacility
           }
+        } else {
+          throw resp.data
         }
       } catch(error: any) {
         logger.error(error);
       }
+    },
+    getProductStoreName(productStoreId: string) {
+      return this.productStores.find((store: any) => store.productStoreId === productStoreId)?.storeName || productStoreId
     }
   },
   setup() {
     const store = useStore();
+    const userStore = useUserStore()
 
     return {
       callOutline,
