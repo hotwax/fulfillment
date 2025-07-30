@@ -164,7 +164,7 @@ export default defineComponent({
         await event.target.complete();
       }
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
-      transferOrdersQuery.viewIndex = this.transferOrders.list?.length / (process.env.VUE_APP_VIEW_SIZE as any);
+      transferOrdersQuery.viewIndex = this.transferOrders.list?.length / 20;
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
       event.target.complete();
     },
