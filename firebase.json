@@ -14,13 +14,10 @@
       } ],
       "headers": [ {
         "source": "**",
-        "headers": [ {
-          "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
-        },
+        "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self';font-src 'self' data: *;script-src 'self' 'unsafe-inline' 'unsafe-eval' fonts.googleapis.com https://www.gstatic.com *.firebaseapp.com;img-src 'self' 'unsafe-inline' *.shopify.com javascript: ;style-src 'self' 'unsafe-inline' *;connect-src 'self' *"
+          "value": "default-src 'self';font-src 'self' data: *;script-src 'self' 'unsafe-inline' 'unsafe-eval' fonts.googleapis.com https://www.gstatic.com *.firebaseapp.com;img-src 'self' 'unsafe-inline' *.shopify.com javascript: ;style-src 'self' 'unsafe-inline' *;connect-src 'self' *; frame-ancestors https://admin.shopify.com https://*.myshopify.com;"
         },
         {
           "key": "strict-transport-security",
@@ -45,13 +42,10 @@
       } ],
       "headers": [ {
         "source": "**",
-        "headers": [ {
-          "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
-        },
+        "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self';font-src 'self' data: *;script-src 'self' 'unsafe-inline' 'unsafe-eval' fonts.googleapis.com https://www.gstatic.com *.firebaseapp.com;img-src 'self' 'unsafe-inline' *.shopify.com javascript: ;style-src 'self' 'unsafe-inline' *;connect-src 'self' *"
+          "value": "default-src 'self';font-src 'self' data: *;script-src 'self' 'unsafe-inline' 'unsafe-eval' fonts.googleapis.com https://www.gstatic.com *.firebaseapp.com;img-src 'self' 'unsafe-inline' *.shopify.com javascript: ;style-src 'self' 'unsafe-inline' *;connect-src 'self' *; frame-ancestors https://admin.shopify.com https://*.myshopify.com;"
         },
         {
           "key": "strict-transport-security",
@@ -76,13 +70,10 @@
       } ],
       "headers": [ {
         "source": "**",
-        "headers": [ {
-          "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
-        },
+        "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self';font-src 'self' data: *;script-src 'self' 'unsafe-inline' 'unsafe-eval' fonts.googleapis.com https://www.gstatic.com *.firebaseapp.com;img-src 'self' 'unsafe-inline' *.shopify.com javascript: ;style-src 'self' 'unsafe-inline' *;connect-src 'self' *"
+          "value": "default-src 'self';font-src 'self' data: *;script-src 'self' 'unsafe-inline' 'unsafe-eval' fonts.googleapis.com https://www.gstatic.com *.firebaseapp.com;img-src 'self' 'unsafe-inline' *.shopify.com javascript: ;style-src 'self' 'unsafe-inline' *;connect-src 'self' *; frame-ancestors https://admin.shopify.com https://*.myshopify.com;"
         },
         {
           "key": "strict-transport-security",
@@ -107,13 +98,10 @@
       } ],
       "headers": [ {
         "source": "**",
-        "headers": [ {
-          "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
-        },
+        "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self';font-src 'self' data: *;script-src 'self' 'unsafe-inline' 'unsafe-eval' fonts.googleapis.com https://www.gstatic.com *.firebaseapp.com;img-src 'self' 'unsafe-inline' *.shopify.com javascript: ;style-src 'self' 'unsafe-inline' *;connect-src 'self' *"
+          "value": "default-src 'self';font-src 'self' data: *;script-src 'self' 'unsafe-inline' 'unsafe-eval' fonts.googleapis.com https://www.gstatic.com *.firebaseapp.com;img-src 'self' 'unsafe-inline' *.shopify.com javascript: ;style-src 'self' 'unsafe-inline' *;connect-src 'self' *; frame-ancestors https://admin.shopify.com https://*.myshopify.com;"
         },
         {
           "key": "strict-transport-security",
@@ -138,13 +126,10 @@
       } ],
       "headers": [ {
         "source": "**",
-        "headers": [ {
-          "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
-        },
+        "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self';font-src 'self' data: *;script-src 'self' 'unsafe-inline' 'unsafe-eval' fonts.googleapis.com https://www.gstatic.com *.firebaseapp.com;img-src 'self' 'unsafe-inline' *.shopify.com javascript: ;style-src 'self' 'unsafe-inline' *;connect-src 'self' *"
+          "value": "default-src 'self';font-src 'self' data: *;script-src 'self' 'unsafe-inline' 'unsafe-eval' fonts.googleapis.com https://www.gstatic.com *.firebaseapp.com;img-src 'self' 'unsafe-inline' *.shopify.com javascript: ;style-src 'self' 'unsafe-inline' *;connect-src 'self' *; frame-ancestors https://admin.shopify.com https://*.myshopify.com;"
         },
         {
           "key": "strict-transport-security",
@@ -169,13 +154,10 @@
       } ],
       "headers": [ {
         "source": "**",
-        "headers": [ {
-          "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
-        },
+        "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self';font-src 'self' data: *;script-src 'self' 'unsafe-inline' 'unsafe-eval' fonts.googleapis.com https://www.gstatic.com *.firebaseapp.com;img-src 'self' 'unsafe-inline' *.shopify.com javascript: ;style-src 'self' 'unsafe-inline' *;connect-src 'self' *"
+          "value": "default-src 'self';font-src 'self' data: *;script-src 'self' 'unsafe-inline' 'unsafe-eval' fonts.googleapis.com https://www.gstatic.com *.firebaseapp.com;img-src 'self' 'unsafe-inline' *.shopify.com javascript: ;style-src 'self' 'unsafe-inline' *;connect-src 'self' *; frame-ancestors https://admin.shopify.com https://*.myshopify.com;"
         },
         {
           "key": "strict-transport-security",
