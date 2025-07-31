@@ -68,6 +68,9 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   getExcludeOrderBrokerDays(state) {
     return state.excludeOrderBrokerDays
+  },
+  getProductStoreSettings(state) {
+  return state.productStoreSettings || {};
   }
 }
 export default getters;

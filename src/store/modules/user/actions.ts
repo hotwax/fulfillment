@@ -116,19 +116,22 @@ const actions: ActionTree<UserState, RootState> = {
       await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
         .catch((error) => logger.error(error));
 
-      await dispatch("fetchAllNotificationPrefs");
-      this.dispatch('util/findProductStoreShipmentMethCount')
-      this.dispatch('util/getForceScanSetting', preferredStore.productStoreId);
-      this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
-      this.dispatch('util/fetchProductStoreSettingPicklist', preferredStore.productStoreId);
-      this.dispatch('util/fetchExcludeOrderBrokerDays', preferredStore.productStoreId);
-      await dispatch('getReservationFacilityIdFieldConfig')
-      await dispatch('getPartialOrderRejectionConfig')
-      await dispatch('getCollateralRejectionConfig')
-      await dispatch('getAffectQohConfig')
-      await dispatch('getDisableShipNowConfig')
-      await dispatch('getDisableUnpackConfig')
-      await this.dispatch('util/fetchCarrierShipmentBoxTypes')
+      // await dispatch("fetchAllNotificationPrefs");
+      // this.dispatch('util/findProductStoreShipmentMethCount')
+      // this.dispatch('util/getForceScanSetting', preferredStore.productStoreId);
+      // this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
+      // this.dispatch('util/fetchProductStoreSettingPicklist', preferredStore.productStoreId);
+      // this.dispatch('util/fetchExcludeOrderBrokerDays', preferredStore.productStoreId);
+      // await dispatch('getReservationFacilityIdFieldConfig')
+      // await dispatch('getPartialOrderRejectionConfig')
+      // await dispatch('getCollateralRejectionConfig')
+      // await dispatch('getAffectQohConfig')
+      // await dispatch('getDisableShipNowConfig')
+      // await dispatch('getDisableUnpackConfig')
+      // await this.dispatch('util/fetchCarrierShipmentBoxTypes')
+      //my code-------------------------------------------------------------------------------------------------------
+      await this.dispatch("util/fetchAllSettings",preferredStore.productStoreId)
+      //my code-------------------------------------------------------------------------------------------------------
 
       const orderId = router.currentRoute.value.query.orderId
       if (isQueryFacilityFound && orderId) {

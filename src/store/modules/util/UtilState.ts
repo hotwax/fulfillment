@@ -22,4 +22,5 @@ export default interface UtilState {
   facilityShippingLabelImageType: any;
   isPicklistDownloadEnabled: boolean;
   excludeOrderBrokerDays: any;
+  productStoreSettings: Record<string, any>;
 }
