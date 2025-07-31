@@ -8,7 +8,7 @@
     </ion-header>
 
     <ion-content>
-      <main v-if="hasAccessToFacility && currentOrder.orderId">
+      <main v-if="hasOrderAccess && currentOrder.orderId">
         <ion-item lines="none">
           <ion-label>
             <p class="overline">{{ currentOrder.orderId }}</p>
@@ -110,7 +110,7 @@
           </template>
         </div>
       </main>
-      <div class="empty-state" v-else-if="!hasAccessToFacility">
+      <div class="empty-state" v-else-if="!hasOrderAccess">
         <p>{{ translate('Access denied. You do not have permission to view this transfer order.') }}</p>
       </div>
       <div class="empty-state" v-else>
@@ -215,7 +215,7 @@ export default defineComponent({
       isCreatingShipment: false,
       lastScannedId: '',
       defaultRejectReasonId: "NO_VARIANCE_LOG",  // default variance reason, to be used when any other item is selected for rejection
-      hasAccessToFacility:false
+      hasOrderAccess:false
     }
   },
   async ionViewWillEnter() {
@@ -429,7 +429,7 @@ export default defineComponent({
       async validateOrderDetailAccess() {
         const currentOrderFacilityId = this.currentOrder?.facilityId;
         const isUserFacility = this.getUserFacilities.facilities.some((facility: any) =>  facility.facilityId === currentOrderFacilityId);
-        this.hasAccessToFacility = isUserFacility;
+        this.hasOrderAccess = isUserFacility;
         if (!isUserFacility) {
           const accessDeniedAlert = await alertController.create({
             header: translate('Access Denied'),
