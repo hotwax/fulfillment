@@ -164,18 +164,19 @@ const actions: ActionTree<TransferOrderState, RootState> = {
 
         const shipment = {
           ...shipments[0],
-          items: shipments[0]?.items.map((item: any) => ({
+          items: shipments[0]?.packages[0]?.items.map((item: any) => ({
             ...item,
             pickedQuantity: item.quantity,
             shippedQuantity: item.totalIssuedQuantity || 0,
           })),
-          totalQuantityPicked: shipments[0]?.items.reduce((acc: number, curr: any) => acc + curr.quantity, 0),
+          totalQuantityPicked: shipments[0]?.packages[0]?.items.reduce((acc: number, curr: any) => acc + curr.quantity, 0),
           isTrackingRequired: shipments[0]?.isTrackingRequired ?? 'Y' 
         };
 
         commit(types.ORDER_CURRENT_SHIPMENT_UPDATED, shipment);
 
-        const productIds = [...new Set(shipment.items.map((item: any) => item.productId))];
+        // Added to fetch product details for shipment items
+        const productIds = [...new Set(shipment.packages[0].items.map((item: any) => item.productId))];
         const batchSize = 250;
         const productIdBatches = [];
 
