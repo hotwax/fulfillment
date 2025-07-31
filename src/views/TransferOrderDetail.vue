@@ -426,13 +426,11 @@ export default defineComponent({
 
         return modal.present();
       },
-      async isCurrentFacilityIncluded() {
+      async validateOrderDetailAccess() {
         const currentOrderFacilityId = this.currentOrder?.facilityId;
-        const isIncludedFacility = this.getUserFacilities.facilities.some((facility: any) => {
-          return facility.facilityId === currentOrderFacilityId;
-        });
-        this.hasAccessToFacility = isIncludedFacility;
-        if (!isIncludedFacility) {
+        const isUserFacility = this.getUserFacilities.facilities.some((facility: any) =>  facility.facilityId === currentOrderFacilityId);
+        this.hasAccessToFacility = isUserFacility;
+        if (!isUserFacility) {
           const accessDeniedAlert = await alertController.create({
             header: translate('Access Denied'),
             message: translate('This transfer order is assigned to a facility that you do not have access to.'),
@@ -443,7 +441,7 @@ export default defineComponent({
       }
 }, 
 async mounted(){
-  await this.isCurrentFacilityIncluded()
+  await this.validateOrderDetailAccess()
 },
 ionViewDidLeave() {
   const routeTo = this.router.currentRoute;
