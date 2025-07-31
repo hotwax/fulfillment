@@ -162,6 +162,10 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       const shipments = shipmentResponse.data?.shipments || [];
       if (shipments.length > 0) {
 
+        // Currently fetching shipment items from the first shipment package,
+        // as all items are stored in the first package by default.
+        // Multiple shipment package records exist only in the case of warehouse fulfillment,
+        // where there are multiple tracking numbers. 
         const shipment = {
           ...shipments[0],
           items: shipments[0]?.packages[0]?.items.map((item: any) => ({
@@ -175,7 +179,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
 
         commit(types.ORDER_CURRENT_SHIPMENT_UPDATED, shipment);
 
-        // Added to fetch product details for shipment items
+        // currenly fetching shipment items from first pacakge.
         const productIds = [...new Set(shipment.packages[0].items.map((item: any) => item.productId))];
         const batchSize = 250;
         const productIdBatches = [];
