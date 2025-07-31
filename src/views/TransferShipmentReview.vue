@@ -109,10 +109,11 @@ export default defineComponent({
     IonToolbar,
     TransferOrderItem
   },
+
   async ionViewWillEnter() {
     await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
     this.trackingCode = this.currentShipment?.trackingIdNumber;
-    this.shipmentItems = this.currentShipment.items;
+    this.shipmentItems = this.currentShipment?.packages[0]?.items;
   },
   async beforeRouteLeave(to) {
     if (to.path !== `/transfer-order-details/${this.currentShipment.orderId}/open`) return;
@@ -173,7 +174,7 @@ export default defineComponent({
     searchItems(queryString: string) {
       if (queryString) {
         const lowerCaseQueryString = queryString.trim().toLowerCase();
-        this.shipmentItems = this.currentShipment.items.filter((item: any) =>
+        this.shipmentItems = this.currentShipment.packages[0]?.items.filter((item: any) =>
               Object.values(item).some((value: any) =>
                   typeof value === 'string' && value.toLowerCase().includes(queryString)
               ) || (item.productId && item.productId.toLowerCase().includes(lowerCaseQueryString)) ||
@@ -181,7 +182,7 @@ export default defineComponent({
               (item.internalName && item.internalName.toLowerCase().includes(lowerCaseQueryString))
           );
       } else {
-        this.shipmentItems = this.currentShipment.items;
+        this.shipmentItems = this.currentShipment.packages[0]?.items;
       }
     },
     async generateShippingLabel(currentShipment: any) {

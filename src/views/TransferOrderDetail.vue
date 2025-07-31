@@ -70,7 +70,7 @@
                   </ion-label>
                 </div>
               </div>
-                <div v-for="item in shipment.items" :key="item.shipmentItemSeqId" class="order-item order-line-item">
+                <div v-for="item in shipment.packages[0]?.items" :key="item.shipmentItemSeqId" class="order-item order-line-item">
                   <div class="product-info">
                     <ion-item lines="none">
                       <ion-thumbnail slot="start">
