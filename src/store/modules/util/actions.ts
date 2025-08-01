@@ -10,54 +10,45 @@ import { showToast, getProductStoreId } from '@/utils'
 import { translate, useUserStore } from '@hotwax/dxp-components'
 
 const actions: ActionTree<UtilState, RootState> = {
-  async fetchAllSettings({dispatch,commit},productStoreId){
-    const settings:any = {};
-    const payload = {
-      productStoreId: productStoreId,
-      settingTypeEnumId: "FULFILL_FORCE_SCAN,BARCODE_IDEN_PREF,FF_DOWNLOAD_PICKLIST,EXCLUDE_ODR_BKR_DAYS,USE_RES_FACILITY_ID,FULFILL_PART_ODR_REJ,FF_COLLATERAL_REJ,AFFECT_QOH_ON_REJ,DISABLE_SHIPNOW,DISABLE_UNPACK",
-      settingTypeEnumId_op: "in",
-      fieldsToSelect: ["settingValue", "settingTypeEnumId"],
-      pageSize: 15
-    }
+  async fetchAllProductStoreSettings({ commit },productStoreId){
+    // const defaultProductStoreSettings = {
+    //     FULFILL_FORCE_SCAN: false,
+    //     BARCODE_IDEN_PREF: "SKU",
+    //     FF_DOWNLOAD_PICKLIST: false,
+    //     EXCLUDE_ODR_BKR_DAYS: "0",
+    //     USE_RES_FACILITY_ID: "N",
+    //     FULFILL_PART_ODR_REJ: false,
+    //     FF_COLLATERAL_REJ: false,
+    //     AFFECT_QOH_ON_REJ: false,
+    //     DISABLE_SHIPNOW: "N",
+    //     DISABLE_UNPACK: "N"
+    // };
+    const defaultProductStoreSettings= JSON.parse(process.env.VUE_APP_DEFAULT_PRODUCT_STORE_SETTINGS as any)
+    console.log(defaultProductStoreSettings)
+    const productStoreSettings:any = {...defaultProductStoreSettings};
+      const payload = {
+        productStoreId,
+        settingTypeEnumId: Object.keys(defaultProductStoreSettings),
+        settingTypeEnumId_op: "in",
+        pageIndex: 0,
+        pageSize: 50
+      };
     try {
       const resp = await UtilService.getProductStoreSetting(payload) as any
-
-    resp.data?.forEach((productSetting: any) => {
-      settings[productSetting?.settingTypeEnumId] = productSetting?.settingValue;
-    });
-
-    console.log("🚀 ~ fetchAllSettings ~ settings:", settings);
-  } catch (error) {
-    console.log('error')
-  }
-  commit(types.UTIL_PRODUCT_STORE_SETTINGS_UPDATED,settings);
-  },
-
-async fetchAllProductStoreSettings({ dispatch, commit }, productStoreId) {
-    try {
-       await Promise.all([
-          await dispatch("user/fetchAllNotificationPrefs"),
-          await dispatch("findProductStoreShipmentMethCount"),
-          await dispatch("getForceScanSetting", productStoreId),
-          await dispatch("fetchBarcodeIdentificationPref", productStoreId),
-          await dispatch("fetchProductStoreSettingPicklist", productStoreId),
-          await dispatch("fetchExcludeOrderBrokerDays", productStoreId),
-          await dispatch("user/getReservationFacilityIdFieldConfig"),
-          await dispatch("user/getPartialOrderRejectionConfig"),
-          await dispatch("user/getCollateralRejectionConfig"),
-          await dispatch("user/getAffectQohConfig"),
-          await dispatch("user/getDisableShipNowConfig"),
-          await dispatch("user/getDisableUnpackConfig"),
-          await dispatch("fetchCarrierShipmentBoxTypes")
-      ]).then((value)=>console.log('promise values',value))
       
-      // commit(types.UTIL_PRODUCT_STORE_SETTINGS_UPDATED, );
+      resp?.data?.entityValueList?.forEach((productSetting: any) => {
+      const key = productSetting?.settingTypeEnumId;
+      const value = productSetting?.settingValue;
 
-    } catch (err) {
-      console.log("🚀 ~ fetchAllProductStoreSettings ~ err:", err)
-      logger.error("Error fetching product store settings:", err);
-      throw err;
+      if (key in productStoreSettings) {
+        productStoreSettings[key] = value;
+      }
+    });
+    } catch (error) {
+      logger.error('Failed to fetch settings', error)
     }
+    console.log('product store settings updated with new api url',productStoreSettings)
+    commit(types.UTIL_PRODUCT_STORE_SETTINGS_UPDATED, productStoreSettings);
   },
   async fetchRejectReasons({ commit }) {
     let rejectReasons  = [];

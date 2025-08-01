@@ -528,6 +528,21 @@ const updateAffectQohConfig = async (payload: any): Promise<any> => {
     data: payload
   });
 }
+const updateProductStoreSetting = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
 
 
 export const UserService = {
@@ -557,5 +572,6 @@ export const UserService = {
     updateFacility,
     updateFacilityToGroup,
     updateCollateralRejectionConfig,
-    updatePartialOrderRejectionConfig
+    updatePartialOrderRejectionConfig,
+    updateProductStoreSetting
 }

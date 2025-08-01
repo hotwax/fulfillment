@@ -88,6 +88,24 @@ const mutations: MutationTree <UtilState> = {
   },
   [types.UTIL_PRODUCT_STORE_SETTINGS_UPDATED](state, payload) {
   state.productStoreSettings = payload
-  }
+  },
+  [types.UTIL_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED] (state, payload) {
+    state.partialOrderRejectionConfig = payload
+  },
+  [types.UTIL_COLLATERAL_REJECTION_CONFIG_UPDATED] (state, payload) {
+    state.collateralRejectionConfig = payload
+  },
+  [types.UTIL_AFFECT_QOH_CONFIG_UPDATED] (state, payload) {
+    state.affectQohConfig = payload
+  },
+  [types.UTIL_DISABLE_SHIP_NOW_CONFIG_UPDATED] (state, payload) {
+    state.isShipNowDisabled = payload
+  },
+  [types.UTIL_DISABLE_UNPACK_CONFIG_UPDATED] (state, payload) {
+    state.isUnpackDisabled = payload
+  },
+  [types.UTIL_RESERVATION_FACILITY_ID_FIELD_CONFIG_UPDATED] (state, payload) {
+    state.isReservationFacilityFieldEnabled = payload
+  },
 }
 export default mutations;

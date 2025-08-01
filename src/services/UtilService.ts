@@ -417,21 +417,40 @@ const createBarcodeIdentificationPref = async (payload: any): Promise<any> => {
   });
 }
 
-const getProductStoreSetting = async (params: any): Promise<any> => {
+// const getProductStoreSetting = async (params: any): Promise<any> => {
+//   const omstoken = store.getters['user/getUserToken'];
+//   const baseURL = store.getters['user/getMaargBaseUrl'];
+
+//   return apiClient({
+//     url: `/oms/productStores/${params.productStoreId}/settings`,
+//     method: "GET",
+//     baseURL,
+//     headers: {
+//       "Authorization": "Bearer " + omstoken,
+//       "Content-Type": "application/json"
+//     },
+//     params
+//   });
+// }
+  const getProductStoreSetting = async (params: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/productStores/${params.productStoreId}/settings`,
-    method: "GET",
+    url: `/oms/dataDocumentView`,
+    method: "POST",
     baseURL,
     headers: {
       "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
-    params
+    data: {
+      dataDocumentId: "ProductStoreSetting",
+      customParametersMap: params
+    }
   });
 }
+
 
 const fetchExcludeOrderBrokerDays = async (params: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];

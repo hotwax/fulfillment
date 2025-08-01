@@ -116,7 +116,6 @@ export default defineComponent({
     ...mapGetters({
       transferOrders: 'transferorder/getTransferOrders',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
-      getAllSettingInOneGo:'util/getProductStoreSettings'
     })
   },
   data () {
@@ -128,7 +127,6 @@ export default defineComponent({
     }
   },
   async ionViewWillEnter() {
-    console.log('all setting with new methods',this.getAllSettingInOneGo)
     emitter.emit('presentLoader');
     this.isScrollingEnabled = false;
     await this.initialiseTransferOrderQuery();
