@@ -131,7 +131,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     try {
       const eligibleItems = payload.items.filter((item: any) => item.pickedQuantity > 0);
 
-      // Group items into packages — assuming you're sending one package for now
+      // Group items into packages — assuming we're sending one package for now
       const packages = [{
         items: eligibleItems.map((item: any) => ({
           orderItemSeqId: item.orderItemSeqId,
@@ -142,9 +142,9 @@ const actions: ActionTree<TransferOrderState, RootState> = {
       }];
 
       const params = {
-        payload: {
-          orderId: payload.orderId,
-          packages: packages
+       "payload": {
+          "orderId": payload.orderId,
+          "packages": packages
         }
       };
       const resp = await TransferOrderService.createOutboundTransferShipment(params);
