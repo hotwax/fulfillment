@@ -5,6 +5,7 @@ import ProductState from './ProductState'
 import * as types from './mutation-types'
 import { hasError } from '@/adapter'
 import logger from "@/logger";
+import { useUserStore } from "@hotwax/dxp-components";
 
 const actions: ActionTree<ProductState, RootState> = {
 
@@ -113,11 +114,16 @@ const actions: ActionTree<ProductState, RootState> = {
       }) as any;
   
       if(!hasError(resp) && resp.data?.length) {
+        const currentEComStore = useUserStore()?.getCurrentEComStore as any;
+        let fieldName = currentEComStore?.productIdentifierEnumId || "SKU";
+        if(fieldName === "SHOPIFY_BARCODE") fieldName = "UPCA"
         products = resp.data
-        products = products.map((product: any) => ({
-          sku: product.internalName,
-          quantity: 2
-        }))
+        products = products.map((product: any) => {
+          return {
+            [fieldName]: product.internalName,
+            quantity:2
+          }
+        })
       } else {
         throw resp.data;
       }
