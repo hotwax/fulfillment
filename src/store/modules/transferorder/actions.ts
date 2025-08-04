@@ -128,18 +128,23 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   async createOutboundTransferShipment({ commit }, payload) {
     let shipmentId;
 
-    try {
-      let eligibleItems = payload.items.filter((item: any) => item.pickedQuantity > 0)
-      eligibleItems = eligibleItems.map((item: any) => ({
-        orderItemSeqId: item.orderItemSeqId, //This is needed to map shipment item with order item correctly if multiple order items for the same product are there in the TO.
-        productId: item.productId,
-        quantity: parseInt(item.pickedQuantity), // Using parseInt to convert to an integer
-        shipGroupSeqId: item.shipGroupSeqId
-      }));
+     try {
+      const eligibleItems = payload.items.filter((item: any) => item.pickedQuantity > 0);
+
+      // Group items into packages — assuming we're sending one package for now
+      const packages = [{
+        items: eligibleItems.map((item: any) => ({
+          orderItemSeqId: item.orderItemSeqId,
+          productId: item.productId,
+          quantity: parseInt(item.pickedQuantity),
+          shipGroupSeqId: item.shipGroupSeqId
+        }))
+      }];
+
       const params = {
         "payload": {
           "orderId": payload.orderId,
-          "items": eligibleItems
+          "packages": packages
         }
       }
       const resp = await TransferOrderService.createOutboundTransferShipment(params)
