@@ -79,10 +79,22 @@ const actions: ActionTree<TransferOrderState, RootState> = {
 
         if (!hasError(shipmentResp)) {
           const shipmentData = shipmentResp.data || {};
-          // Merge order and shipment data fields into orderDetail
+          const shipments = shipmentData.shipments || [];
+
+          const updatedShipments = shipments.map((shipment: any) => {
+            const packages = shipment.packages || [];
+            const items = packages.flatMap((pkg: any) => pkg.items || []);
+
+            return {
+              ...shipment,
+              items: items
+            };
+          });
+
+          // Merge shipment data into orderDetail
           orderDetail = {
             ...orderDetail,
-            shipments: shipmentData.shipments || [],
+            shipments: updatedShipments
           };
         }
         if (orderDetail.items && Array.isArray(orderDetail.items)) {
@@ -166,21 +178,28 @@ const actions: ActionTree<TransferOrderState, RootState> = {
 
       const shipments = shipmentResponse.data?.shipments || [];
       if (shipments.length > 0) {
+        const firstShipment = shipments[0];
+        const packages = firstShipment.packages || [];
 
-        const shipment = {
-          ...shipments[0],
-          items: shipments[0]?.items.map((item: any) => ({
+        // Flatten package items and add pickedQuantity/shippedQuantity
+        const items = packages.flatMap((pkg: any) =>
+          (pkg.items || []).map((item: any) => ({
             ...item,
             pickedQuantity: item.quantity,
             shippedQuantity: item.totalIssuedQuantity || 0,
-          })),
-          totalQuantityPicked: shipments[0]?.items.reduce((acc: number, curr: any) => acc + curr.quantity, 0),
-          isTrackingRequired: shipments[0]?.isTrackingRequired ?? 'Y' 
+          }))
+        );
+
+        const shipment = {
+          ...firstShipment,
+          items,
+          totalQuantityPicked: items.reduce((acc: number, curr: any) => acc + curr.pickedQuantity, 0),
+          isTrackingRequired: firstShipment.isTrackingRequired ?? 'Y',
         };
 
         commit(types.ORDER_CURRENT_SHIPMENT_UPDATED, shipment);
 
-        const productIds = [...new Set(shipment.items.map((item: any) => item.productId))];
+        const productIds = [...new Set(items.map((item: any) => item.productId))];
         const batchSize = 250;
         const productIdBatches = [];
 
@@ -190,8 +209,8 @@ const actions: ActionTree<TransferOrderState, RootState> = {
 
         await Promise.all([
           ...productIdBatches.map((productIds) => this.dispatch('product/fetchProducts', { productIds })),
-          this.dispatch('util/fetchPartyInformation', [shipments[0].carrierPartyId]),
-          this.dispatch('util/fetchShipmentMethodTypeDesc', [shipments[0].shipmentMethodTypeId])
+          this.dispatch('util/fetchPartyInformation', [firstShipment.carrierPartyId]),
+          this.dispatch('util/fetchShipmentMethodTypeDesc', [firstShipment.shipmentMethodTypeId])
         ]);
       }
     } catch (err: any) {
