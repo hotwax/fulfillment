@@ -83,19 +83,15 @@ const actions: ActionTree<TransferOrderState, RootState> = {
 
           const updatedShipments = shipments.map((shipment: any) => {
             const packages = shipment.packages || [];
-            const flattenedItems = packages.flatMap((pkg: any) =>
+            const items = packages.flatMap((pkg: any) =>
               (pkg.items || []).map((item: any) => ({
-                ...item,
-                pickedQuantity: 0,
-                shippedQuantity: item.totalIssuedQuantity || 0,
-                trackingCode: pkg.trackingCode,
-                shipmentPackageSeqId: pkg.shipmentPackageSeqId
+                ...item
               }))
             );
 
             return {
               ...shipment,
-              items: flattenedItems
+              items: items
             };
           });
 
