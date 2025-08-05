@@ -432,7 +432,9 @@ export default defineComponent({
           const accessDeniedAlert = await alertController.create({
             header: translate('Access Denied'),
             message: translate('This transfer order is assigned to a facility that you do not have access to.'),
-            buttons: ["Dismiss"]
+            buttons: [{
+              text: translate("Dismiss")
+            }]
           });
           await accessDeniedAlert.present();
           await accessDeniedAlert.onDidDismiss();
