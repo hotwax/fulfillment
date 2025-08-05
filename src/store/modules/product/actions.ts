@@ -118,12 +118,10 @@ const actions: ActionTree<ProductState, RootState> = {
         let fieldName = currentEComStore?.productIdentifierEnumId || "SKU";
         if(fieldName === "SHOPIFY_BARCODE") fieldName = "UPCA"
         products = resp.data
-        products = products.map((product: any) => {
-          return {
+        products = products.map((product: any) => ({
             [fieldName]: product.internalName,
             quantity:2
-          }
-        })
+          }))
       } else {
         throw resp.data;
       }
