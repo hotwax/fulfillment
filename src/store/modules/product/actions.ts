@@ -119,9 +119,9 @@ const actions: ActionTree<ProductState, RootState> = {
         if(fieldName === "SHOPIFY_BARCODE") fieldName = "UPCA"
         products = resp.data
         products = products.map((product: any) => ({
-            [fieldName]: product.internalName,
-            quantity:2
-          }))
+          [fieldName]: product.internalName,
+          quantity:2
+        }))
       } else {
         throw resp.data;
       }
