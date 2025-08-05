@@ -110,14 +110,11 @@
           </template>
         </div>
       </main>
-      <div v-else-if="!hasOrderAccess">
-        <p>{{ translate('Access denied. You do not have permission to view this transfer order.') }}</p>
-      </div>
       <div class="empty-state" v-else>
         <p>{{ translate('No data available') }}</p>
       </div>
     </ion-content>
-    <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment === 'open'">
+    <ion-footer v-if="hasOrderAccess && currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment === 'open'">
       <ion-toolbar>
         <ion-buttons slot="end">
             <ion-button color="dark" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="closeTOItems()">
@@ -439,7 +436,7 @@ export default defineComponent({
           });
           await accessDeniedAlert.present();
           await accessDeniedAlert.onDidDismiss();
-            this.router.push({ name: 'Transfer Orders' });
+            this.router.push({ path: '/transfer-orders' });
           }
       }
 },
