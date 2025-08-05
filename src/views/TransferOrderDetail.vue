@@ -110,7 +110,7 @@
           </template>
         </div>
       </main>
-      <div class="empty-state" v-else-if="!hasOrderAccess">
+      <div v-else-if="!hasOrderAccess">
         <p>{{ translate('Access denied. You do not have permission to view this transfer order.') }}</p>
       </div>
       <div class="empty-state" v-else>
@@ -223,6 +223,7 @@ export default defineComponent({
     await this.store.dispatch("transferorder/fetchRejectReasons");
     await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
     emitter.emit('dismissLoader');
+    await this.validateOrderDetailAccess();
   },
   computed: {
     ...mapGetters({
@@ -437,11 +438,10 @@ export default defineComponent({
             buttons: ["Dismiss"]
           });
           await accessDeniedAlert.present();
-        }
+          await accessDeniedAlert.onDidDismiss();
+            this.router.push({ name: 'Transfer Orders' });
+          }
       }
-}, 
-async mounted(){
-  await this.validateOrderDetailAccess()
 },
 ionViewDidLeave() {
   const routeTo = this.router.currentRoute;
