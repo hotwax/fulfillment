@@ -357,7 +357,7 @@ export default defineComponent({
         }
 
         currentShipment.isGeneratingShippingLabel = true;
-        let shippingLabelPdfUrls = [currentShipment.labelImageUrl];
+        let shippingLabelPdfUrls = currentShipment?.labelImageUrls;
 
 
         if (!currentShipment.trackingIdNumber) {
@@ -366,9 +366,9 @@ export default defineComponent({
           // retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
           // Refetching the order tracking detail irrespective of api response since currently in SHIPHAWK api returns error whether label is generated
           // Temporarily handling this in app but should be handled in backend        
-          await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.currentOrder.orderId })
+          await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.currentOrder.orderId })
           currentShipment = this.currentOrder?.shipments?.find((shipment:any) => shipment.shipmentId === currentShipment.shipmentId);
-          shippingLabelPdfUrls = [currentShipment?.labelImageUrl];
+          shippingLabelPdfUrls = currentShipment?.labelImageUrls;
 
 
           if(currentShipment.trackingIdNumber) {
