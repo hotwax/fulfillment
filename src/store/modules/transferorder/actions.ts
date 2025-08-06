@@ -84,10 +84,15 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           const updatedShipments = shipments.map((shipment: any) => {
             const packages = shipment.packages || [];
             const items = packages.flatMap((pkg: any) => pkg.items || []);
+            const labelImageUrls = 
+              shipment.packages
+                .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+                .map((shipmentPackage: any) => shipmentPackage.labelImageUrl);
 
             return {
               ...shipment,
-              items: items
+              items: items,
+              labelImageUrls
             };
           });
 
@@ -190,11 +195,17 @@ const actions: ActionTree<TransferOrderState, RootState> = {
           }))
         );
 
+        const labelImageUrls = 
+              packages
+                .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+                .map((shipmentPackage: any) => shipmentPackage.labelImageUrl);
+
         const shipment = {
           ...firstShipment,
           items,
           totalQuantityPicked: items.reduce((acc: number, curr: any) => acc + curr.pickedQuantity, 0),
           isTrackingRequired: firstShipment.isTrackingRequired ?? 'Y',
+          labelImageUrls
         };
 
         commit(types.ORDER_CURRENT_SHIPMENT_UPDATED, shipment);
