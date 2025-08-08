@@ -28,7 +28,7 @@ declare module 'vue-router' {
     permissionId?: string;
   }
 }
-import { useAuthStore, DxpLogin } from '@hotwax/dxp-components'
+import { useAuthStore, DxpLogin, getAppLoginUrl } from '@hotwax/dxp-components'
 import { loader } from '@/utils/user';
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
@@ -41,7 +41,7 @@ const authGuard = async (to: any, from: any, next: any) => {
     await loader.present('Authenticating')
     // TODO use authenticate() when support is there
     const redirectUrl = window.location.origin + '/login'
-    window.location.href = `${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`
+    window.location.href = authStore.isEmbedded? getAppLoginUrl() : `${getAppLoginUrl()}?redirectUrl=${redirectUrl}`
     loader.dismiss()
   }
   next()
@@ -116,7 +116,17 @@ const routes: Array<RouteRecordRaw> = [
     component: ShipTransferOrder
   },
   {
-    path: '/transfer-order-details/:orderId',
+    path: '/create-transfer-order-new',
+    name: 'CreateTransferOrderNew',
+    component: CreateTransferOrderNew,
+  },
+  {
+    path: '/ship-transfer-order',
+    name: 'ShipTransferOrder',
+    component: ShipTransferOrder
+  },
+  {
+    path: '/transfer-order-details/:orderId/:category',
     name: 'TransferOrderDetail',
     component: TransferOrderDetail,
     beforeEnter: authGuard,

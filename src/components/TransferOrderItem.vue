@@ -24,7 +24,7 @@
     </div>
     <div class="action border-top" v-if="item.orderedQuantity > 0">
       <div class="pick-all-qty" v-if="!item.shipmentId">
-        <ion-button @click="pickAll(item)" slot="start" size="small" fill="outline">
+        <ion-button @click="pickAll(item)" slot="start" size="small" fill="outline" :disabled="isForceScanEnabled">
           {{ translate("Pick All") }}
         </ion-button>
       </div>

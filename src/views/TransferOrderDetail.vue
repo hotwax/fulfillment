@@ -8,7 +8,7 @@
     </ion-header>
 
     <ion-content>
-      <main v-if="currentOrder.orderId">
+      <main v-if="hasOrderAccess && currentOrder.orderId">
         <ion-item lines="none">
           <ion-label>
             <p class="overline">{{ currentOrder.orderId }}</p>
@@ -114,7 +114,7 @@
         <p>{{ translate('No data available') }}</p>
       </div>
     </ion-content>
-    <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment === 'open'">
+    <ion-footer v-if="hasOrderAccess && currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment === 'open'">
       <ion-toolbar>
         <ion-buttons slot="end">
             <ion-button color="dark" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="closeTOItems()">
@@ -166,7 +166,7 @@ import {
 import { computed, defineComponent } from 'vue';
 import { barcodeOutline, pricetagOutline, printOutline, trashOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
-import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import { useRouter } from 'vue-router';
 import Scanner from "@/components/Scanner.vue";
 import { Actions, hasPermission } from '@/authorization'
@@ -211,14 +211,17 @@ export default defineComponent({
       selectedSegment: 'open',
       isCreatingShipment: false,
       lastScannedId: '',
-      defaultRejectReasonId: "NO_VARIANCE_LOG"  // default variance reason, to be used when any other item is selected for rejection
+      defaultRejectReasonId: "NO_VARIANCE_LOG",  // default variance reason, to be used when any other item is selected for rejection
+      hasOrderAccess:false
     }
   },
   async ionViewWillEnter() {
     emitter.emit('presentLoader');
     await this.store.dispatch("transferorder/fetchRejectReasons");
     await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
+    this.selectedSegment = this.$route.params.category === 'completed' ? "completed" : "open" 
     emitter.emit('dismissLoader');
+    await this.validateOrderDetailAccess();
   },
   computed: {
     ...mapGetters({
@@ -228,6 +231,7 @@ export default defineComponent({
       productIdentificationPref: 'user/getProductIdentificationPref',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
+      getUserFacilities:'user/getUserProfile'
     }),
     areItemsEligibleForRejection() {
       return this.currentOrder.items?.some((item: any) => item.rejectReasonId);
@@ -353,7 +357,7 @@ export default defineComponent({
         }
 
         currentShipment.isGeneratingShippingLabel = true;
-        let shippingLabelPdfUrls = [currentShipment.labelImageUrl];
+        let shippingLabelPdfUrls = currentShipment?.labelImageUrls;
 
 
         if (!currentShipment.trackingIdNumber) {
@@ -362,9 +366,9 @@ export default defineComponent({
           // retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
           // Refetching the order tracking detail irrespective of api response since currently in SHIPHAWK api returns error whether label is generated
           // Temporarily handling this in app but should be handled in backend        
-          await this.store.dispatch('transferorder/fetchOrderShipments', { orderId: this.currentOrder.orderId })
+          await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.currentOrder.orderId })
           currentShipment = this.currentOrder?.shipments?.find((shipment:any) => shipment.shipmentId === currentShipment.shipmentId);
-          shippingLabelPdfUrls = [currentShipment?.labelImageUrl];
+          shippingLabelPdfUrls = currentShipment?.labelImageUrls;
 
 
           if(currentShipment.trackingIdNumber) {
@@ -421,7 +425,24 @@ export default defineComponent({
 
         return modal.present();
       },
-}, 
+      async validateOrderDetailAccess() {
+        const currentOrderFacilityId = this.currentOrder?.facilityId;
+        const isUserFacility = this.getUserFacilities.facilities.some((facility: any) =>  facility.facilityId === currentOrderFacilityId);
+        this.hasOrderAccess = isUserFacility;
+        if (!isUserFacility) {
+          const accessDeniedAlert = await alertController.create({
+            header: translate('Access Denied'),
+            message: translate('This transfer order is assigned to a facility that you do not have access to.'),
+            buttons: [{
+              text: translate("Dismiss")
+            }]
+          });
+          await accessDeniedAlert.present();
+          await accessDeniedAlert.onDidDismiss();
+            this.router.push({ path: '/transfer-orders' });
+          }
+      }
+},
 ionViewDidLeave() {
   const routeTo = this.router.currentRoute;
   if (routeTo.value.name !== 'Transfer Orders') {
@@ -446,7 +467,7 @@ setup() {
     store,
     router,
     translate,
-    trashOutline
+    trashOutline,
   };
 },
 });

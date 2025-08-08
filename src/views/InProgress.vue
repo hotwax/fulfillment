@@ -86,7 +86,7 @@
               </ion-row>
             </div>
 
-            <div v-for="item in order.items" :key="item.shipmentItemSeqId" class="order-line-item">
+            <div v-for="item in order.items" :key="order.shipmentId + item.shipmentItemSeqId" class="order-line-item">
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
@@ -900,7 +900,7 @@ export default defineComponent({
 
           if (!hasError(resp)) {
             resp.data?.forEach((shipment: any) => {
-              if (shipment?.order?.statusId === "ORDER_APPROVED" && shipment?.order?.productStoreId === this.currentEComStore.productStoreId) {
+              if (shipment?.order?.statusId === "ORDER_APPROVED") {
                 shipment?.picklistShipment?.forEach((picklistShipment: any) => {
                   if (!picklistInfo[picklistShipment.picklistId]) {
                     const picklistRoles = picklistShipment?.picklist?.roles.filter((role: any) => !role.thruDate)

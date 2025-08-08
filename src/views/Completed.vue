@@ -77,7 +77,7 @@
               </div>
             </div>
 
-            <div v-for="item in order.items" :key="item.shipmentItemSeqId" class="order-line-item">
+            <div v-for="item in order.items" :key="order.shipmentId + item.shipmentItemSeqId" class="order-line-item">
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
@@ -484,8 +484,7 @@ export default defineComponent({
         orderTypeId: "SALES_ORDER",
         statusId: "SHIPMENT_PACKED",
         shippedDateFrom: DateTime.now().startOf('day').toMillis(),
-        originFacilityId: this.currentFacility?.facilityId,
-        productStoreId: this.currentEComStore.productStoreId
+        originFacilityId: this.currentFacility?.facilityId
       }
       try {
         const resp = await OrderService.fetchShipmentFacets(params)
