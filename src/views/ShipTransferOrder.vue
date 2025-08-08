@@ -148,7 +148,8 @@ import { checkmarkDoneOutline, openOutline, printOutline, storefrontOutline } fr
 </script>
 
 <style scoped >
-.transfer-order {
+
+main {
   display: flex;
   gap: var(--spacer-base);
   padding: var(--spacer-base);
