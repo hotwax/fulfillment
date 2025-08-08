@@ -11,10 +11,10 @@
   </ion-header>
 
   <ion-content>
-    <ion-item lines="none">
+    <ion-item lines="full">
       <ion-input :label="translate('Transfer name')" :placeholder="translate('Add a name')" />
     </ion-item>
-    <hr/>
+
     <ion-searchbar :placeholder="translate('Search facilites')"/>
     <ion-list>
       <ion-list-header>{{ translate("Select destination facility") }}</ion-list-header>
