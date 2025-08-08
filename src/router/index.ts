@@ -19,6 +19,8 @@ import { showToast } from '@/utils'
 import { translate } from '@hotwax/dxp-components'
 import 'vue-router'
 import Notifications from '@/views/Notifications.vue'
+import CreateTransferOrderNew from '@/views/CreateTransferOrderNew.vue';
+import ShipTransferOrder from '@/views/ShipTransferOrder.vue';
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -102,6 +104,16 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       permissionId: ""
     }
+  },
+  {
+    path: '/create-transfer-order-new',
+    name: 'CreateTransferOrderNew',
+    component: CreateTransferOrderNew,
+  },
+  {
+    path: '/ship-transfer-order',
+    name: 'ShipTransferOrder',
+    component: ShipTransferOrder
   },
   {
     path: '/transfer-order-details/:orderId',

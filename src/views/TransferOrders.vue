@@ -53,7 +53,7 @@
 
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-      <ion-fab-button @click="router.push('/create-transfer-order')">
+      <ion-fab-button @click="openCreateTransferOrderModal()">
         <ion-icon :icon="addOutline" />
       </ion-fab-button>
     </ion-fab>
@@ -80,6 +80,7 @@ import {
   IonSegmentButton,
   IonTitle, 
   IonToolbar, 
+  modalController
 } from '@ionic/vue';
 import { defineComponent, computed } from 'vue';
 import { addOutline, caretDownOutline, checkmarkDoneOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
@@ -89,6 +90,7 @@ import { translate, useUserStore } from '@hotwax/dxp-components';
 import { Actions } from '@/authorization'
 import emitter from '@/event-bus';
 import { getCurrentFacilityId } from '@/utils'
+import CreateTransferOrderModal from '@/components/CreateTransferOrderModal.vue';
 
 export default defineComponent({
   name: 'TransferOrders',
@@ -133,6 +135,13 @@ export default defineComponent({
     emitter.emit('dismissLoader');
   },
   methods: {
+    async openCreateTransferOrderModal() {
+      const createTransferOrderModal = await modalController.create({
+        component: CreateTransferOrderModal,
+      });
+
+      return createTransferOrderModal.present();
+    },
     segmentChanged() {
       this.initialiseTransferOrderQuery();
     },
