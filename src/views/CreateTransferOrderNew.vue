@@ -22,7 +22,7 @@
             <ion-item>
               <ion-icon :icon="storefrontOutline" slot="start"/>
               <ion-label>Store name</ion-label>
-              <ion-button slot="end" color="medium" fill="outline">Edit</ion-button>
+              <ion-button slot="end" color="medium" fill="outline" size="small">Edit</ion-button>
             </ion-item>
             <ion-item>
               <ion-icon :icon="checkmarkDoneOutline" slot="start"/>
@@ -31,11 +31,10 @@
           </ion-list>
         </ion-card>
 
-        <!-- seraching/adding product card -->
-        <ion-card class="searching">
-          <ion-list>
-            <ion-item lines="full">
-              <ion-label slot="start">Add items</ion-label>
+        <!-- adding product card -->
+        <ion-card class="add items">
+            <div class="search-type">
+              <h4>Add items</h4>
               <ion-segment>
                 <ion-segment-button value="scan" content-id="scan">
                   <ion-icon :icon="barcodeOutline"/>
@@ -44,7 +43,7 @@
                   <ion-icon :icon="searchOutline"/>
                 </ion-segment-button>
               </ion-segment>
-            </ion-item>
+            </div>
           <!-- for barcode scanning -->
             <ion-item lines="full">
               <ion-input label="Scan barcode" placeholder="UPC" />
@@ -59,8 +58,8 @@
                 <p>Scanning is set to UPC</p>
                 <p>Swap to SKU from the settings page</p>
               </ion-label>
-              <ion-button slot="end" color="warning">
-                <ion-icon :icon="locateOutline"/>
+              <ion-button slot="end" color="warning" size="small">
+                <ion-icon slot="start" :icon="locateOutline"/>
                 Focus scanning
               </ion-button>
             </ion-item>
@@ -90,18 +89,18 @@
                 <p>primary identifier</p>
                 <p>secondary identifer</p>
               </ion-label>
-              <ion-icon :icon="checkmarkDoneOutline" color="success"/>
+              <ion-icon :icon="checkmarkDoneOutline" color="success" slot="end"/>
             </ion-item> -->
 
-          <!-- when product does not found -->
+          <!-- when product does not match -->
             <!-- <ion-item lines="none">
               <ion-icon :icon="cloudOfflineOutline" slot="start"/>
               <ion-label>
                 Scanned value not found
                 <p>Try searching using a keyword instead</p>
               </ion-label>
-              <ion-button slot="end" color="primary">
-                <ion-icon :icon="searchOutline"/>
+              <ion-button size="small" slot="end" color="primary">
+                <ion-icon slot="start" :icon="searchOutline"/>
                 Search
               </ion-button>
             </ion-item> -->
@@ -129,18 +128,18 @@
             <ion-item lines="none" detail>
               View result count more results
             </ion-item> -->
-          </ion-list> 
         </ion-card>
       </div>
 
       <!-- content below the card before searching -->
+       <!-- do we have an empty state class which automatically does this cenetering logic? -->
       <div class="ion-text-center">
         <p>Add items to this transfer by scanning or searching for products using keywords</p>
         <ion-button color="primary" fill="solid">
           <ion-icon :icon="barcodeOutline" slot="start"/>
           Starts scanning
         </ion-button>
-        <ion-button color="primary" fill="solid">
+        <ion-button color="outline" fill="solid">
           <ion-icon :icon="searchOutline" slot="start"/>
           Search products
         </ion-button>
@@ -157,13 +156,13 @@
     <ion-footer>
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button color="danger" fill="outline">
+          <ion-button size="small" color="danger" fill="outline">
             Discard order
           </ion-button>
-          <ion-button fill="outline">
+          <ion-button size="small" fill="outline">
             Ship later
           </ion-button>
-          <ion-button color="primary" fill="solid">
+          <ion-button size="small" color="primary" fill="solid">
             Pack and ship order          
           </ion-button>
         </ion-buttons>
@@ -184,9 +183,7 @@ import { DxpShopifyImg } from '@hotwax/dxp-components';
 
 /* add media query for desktop only */
 .transfer-order {
-  display: grid;
-  grid-template-areas: "order-info searching";
-  grid-template-columns: 1fr 3fr;
+  display: flex;
   gap: var(--spacer-base);
   padding: var(--spacer-base);
 }
@@ -196,14 +193,14 @@ import { DxpShopifyImg } from '@hotwax/dxp-components';
 }
 
 .order-info {
-  grid-area: order-info;
+  flex: 1;
 }
 
-.searching {
-  grid-area: searching;
+.add-items {
+  flex: 3;
 }
 
-hr {
-  margin: 0;
+.search-type {
+  display: flex;
 }
 </style>
