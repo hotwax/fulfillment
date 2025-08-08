@@ -8,17 +8,18 @@
     </ion-header>
     <ion-content>
       <!--Transfer order cards -->
-      <div class="transfer-order">
+      <main>
         <!-- order details -->
-        <ion-card class="order-info">
-          <ion-list>
-            <ion-item lines="none">
-              <ion-label>
-                <p class="overline">Order Id</p>
-                <h1>Order name</h1>
-              </ion-label>
-            </ion-item>
-            <ion-item lines="full">
+        <ion-card class="desktop only order-info">
+          <ion-card-header>
+            <ion-card-subtitle>
+              Order Id
+            </ion-card-subtitle>
+            <ion-card-title>
+              Order name
+            </ion-card-title>
+          </ion-card-header>
+          <ion-item lines="full">
               <ion-icon :icon="storefrontOutline" slot="start"/>
               <ion-label>
                 <p class="overline">Sending to</p>
@@ -26,6 +27,7 @@
                 <p>50 miles</p>
               </ion-label>
             </ion-item>
+          <ion-list>
             <ion-list-header>Items</ion-list-header>
             <ion-item>
               <ion-thumbnail>
@@ -37,9 +39,9 @@
               </ion-label>
               <ion-label slot="end">Qty</ion-label>
             </ion-item>
-            <ion-item lines="none">
+            <div actions>
               <ion-button fill="clear">Edit</ion-button>
-            </ion-item>
+            </div>
           </ion-list>
         </ion-card>
 
@@ -52,9 +54,9 @@
           <!-- purchase shipping segment -->
           <!-- <ion-list>
             <ion-item>
-              <ion-thumbnail>
-                <DxpShopifyImg/>
-              </ion-thumbnail>
+                <ion-avatar slot="start">
+                  <img src="" alt="carrier-logo" />
+                </ion-avatar>
               <ion-label>
                 Rate name
                 <p>estimated delivery date</p>
@@ -62,9 +64,9 @@
               <ion-button slot="end" color="primary" fill="outline">Purchase label</ion-button>
             </ion-item>
             <ion-item>
-              <ion-thumbnail>
-                <DxpShopifyImg/>
-              </ion-thumbnail>
+              <ion-avatar slot="start">
+                <img src="" alt="carrier-logo" />
+              </ion-avatar>
               <ion-label>
                 Rate name
                 <p>estimated delivery date</p>
@@ -103,26 +105,26 @@
           <!-- card after purchase shipping label generated -->
           <ion-card>
             <ion-item lines="full">
-              <ion-thumbnail>
-                <DxpShopifyImg/>
-              </ion-thumbnail>
+              <ion-avatar slot="start">
+                <img src="" alt="carrier-logo" />
+              </ion-avatar>
               <ion-label>
                 Rate name
                 <p>estimated delivery date</p>
               </ion-label>
-              <ion-note class="ion-margin">tracking code</ion-note>
-              <ion-icon :icon="openOutline"/>
+              <ion-note slot="end" class="ion-margin">tracking code</ion-note>
+              <ion-icon slot="end" :icon="openOutline"/>
             </ion-item>
-            <ion-card-content>
+            <ion-card-footer>
               <ion-button fill="outline" color="primary">
                 <ion-icon :icon="printOutline" slot="start"/>
                 Re-print shipping label
               </ion-button>
               <ion-button fill="outline" color="warning">Void shipping label</ion-button>
-            </ion-card-content>
+            </ion-card-footer>
           </ion-card>
         </div>
-      </div>
+      </main>
     </ion-content>
 
     <ion-footer>
@@ -147,9 +149,7 @@ import { checkmarkDoneOutline, openOutline, printOutline, storefrontOutline } fr
 
 <style scoped >
 .transfer-order {
-  display: grid;
-  grid-template-areas: "order-info shipping";
-  grid-template-columns: 1fr 3fr;
+  display: flex;
   gap: var(--spacer-base);
   padding: var(--spacer-base);
 }
@@ -159,11 +159,11 @@ import { checkmarkDoneOutline, openOutline, printOutline, storefrontOutline } fr
 }
 
 .order-info {
-  grid-area: order-info;
+  flex: 1;
 }
 
 .shipping {
-  grid-area: shipping;
+  flex: 3;
 }
 
 hr {
