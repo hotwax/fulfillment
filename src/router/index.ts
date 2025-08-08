@@ -116,16 +116,6 @@ const routes: Array<RouteRecordRaw> = [
     component: ShipTransferOrder
   },
   {
-    path: '/create-transfer-order-new',
-    name: 'CreateTransferOrderNew',
-    component: CreateTransferOrderNew,
-  },
-  {
-    path: '/ship-transfer-order',
-    name: 'ShipTransferOrder',
-    component: ShipTransferOrder
-  },
-  {
     path: '/transfer-order-details/:orderId/:category',
     name: 'TransferOrderDetail',
     component: TransferOrderDetail,
