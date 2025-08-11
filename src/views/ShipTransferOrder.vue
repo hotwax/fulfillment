@@ -20,13 +20,13 @@
             </ion-card-title>
           </ion-card-header>
           <ion-item lines="full">
-              <ion-icon :icon="storefrontOutline" slot="start"/>
-              <ion-label>
-                <p class="overline">Sending to</p>
-                Store name
-                <p>50 miles</p>
-              </ion-label>
-            </ion-item>
+            <ion-icon :icon="storefrontOutline" slot="start"/>
+            <ion-label>
+              <p class="overline">Sending to</p>
+              Store name
+              <p>50 miles</p>
+            </ion-label>
+          </ion-item>
           <ion-list>
             <ion-list-header>Items</ion-list-header>
             <ion-item>
@@ -54,16 +54,6 @@
           <!-- purchase shipping segment -->
           <!-- <ion-list>
             <ion-item>
-                <ion-avatar slot="start">
-                  <img src="" alt="carrier-logo" />
-                </ion-avatar>
-              <ion-label>
-                Rate name
-                <p>estimated delivery date</p>
-              </ion-label>
-              <ion-button slot="end" color="primary" fill="outline">Purchase label</ion-button>
-            </ion-item>
-            <ion-item>
               <ion-avatar slot="start">
                 <img src="" alt="carrier-logo" />
               </ion-avatar>
@@ -89,10 +79,9 @@
                 <ion-select-option>DHL</ion-select-option>
               </ion-select>
             </ion-item>
-            <ion-item lines="none">
+            <ion-item lines="full">
               <ion-input label="Tracking code" placeholder="enter code" />
             </ion-item>
-            <hr/>
             <ion-item lines="none">
               Tracking URL: fedex.com/tracking/12344
               <ion-button slot="end" color="primary" fill="clear">
@@ -115,13 +104,13 @@
               <ion-note slot="end" class="ion-margin">tracking code</ion-note>
               <ion-icon slot="end" :icon="openOutline"/>
             </ion-item>
-            <ion-card-footer>
+            <ion-card-content>
               <ion-button fill="outline" color="primary">
-                <ion-icon :icon="printOutline" slot="start"/>
+                <ion-icon :icon="printOutline" slot="start"  size="small"/>
                 Re-print shipping label
               </ion-button>
               <ion-button fill="outline" color="warning">Void shipping label</ion-button>
-            </ion-card-footer>
+            </ion-card-content>
           </ion-card>
         </div>
       </main>
@@ -143,14 +132,15 @@
 </template>
 
 <script setup>
-import { IonBackButton, IonButton, IonButtons, IonCard, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonSegment, IonSegmentButton, IonTitle, IonToggle, IonToolbar } from '@ionic/vue'
-import { checkmarkDoneOutline, openOutline, printOutline, storefrontOutline } from 'ionicons/icons'
+import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonSegment, IonSegmentButton, IonTitle, IonToolbar } from '@ionic/vue'
+import { openOutline, printOutline, storefrontOutline } from 'ionicons/icons'
 </script>
 
 <style scoped >
 
 main {
   display: flex;
+  align-items: start;
   gap: var(--spacer-base);
   padding: var(--spacer-base);
 }
