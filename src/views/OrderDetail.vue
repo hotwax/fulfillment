@@ -250,7 +250,7 @@
                   </ion-label>
                   <div slot="end" class="ion-text-end">
                     <ion-badge v-if="order.paymentPreferences.length > 1 && index === 0" color="dark">{{ translate("Latest") }}</ion-badge>
-                    <ion-label slot="end">{{ formatCurrency(orderPayment.presentmentAmount, orderPayment.presentmentCurrencyUom) }}</ion-label>
+                    <ion-label slot="end">{{ formatCurrency(orderPayment.maxAmount, order.currencyUom) }}</ion-label>
                   </div>
                 </ion-item>
               </ion-list>
