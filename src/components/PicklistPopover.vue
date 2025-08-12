@@ -16,13 +16,14 @@
 
 <script lang="ts">
 import { translate } from '@hotwax/dxp-components';
-import { IonContent, IonItem, IonLabel, IonListHeader, popoverController } from '@ionic/vue';
+import { IonContent, IonItem, IonLabel, IonList, IonListHeader, popoverController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 
 export default defineComponent({
   name: "PicklistPopover",
   components: { 
     IonContent,
+    IonList,
     IonItem,
     IonLabel,
     IonListHeader
