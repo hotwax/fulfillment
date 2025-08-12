@@ -17,9 +17,9 @@
               <ion-icon :icon="pricetagOutline" />
               <ion-label>{{ order.orderId }}</ion-label>
             </ion-chip>
-            <ion-chip v-if="category !== 'open'" outline @click="printPicklist(order)">
+            <ion-chip v-if="category !== 'open'" outline @click="openPickListPopup(order,$event)">
               <ion-icon :icon="documentTextOutline" />
-              <ion-label>{{ translate('Linked picklist') }}: {{ order.picklistId }}</ion-label>
+              <ion-label>{{ translate('Picked by') }} {{ order.picklistId }}</ion-label>
             </ion-chip>
             <ion-chip outline v-if="order?.paymentPreferences?.length > 0" :color="statusColor[order?.paymentPreferences[0]?.statusId]">
               <ion-icon :icon="cashOutline" />
@@ -452,6 +452,7 @@ import TrackingCodeModal from '@/components/TrackingCodeModal.vue';
 import GiftCardActivationModal from '@/components/GiftCardActivationModal.vue';
 import { useDynamicImport } from "@/utils/moduleFederation";
 import OrderAdjustmentModal from "@/components/OrderAdjustmentModal.vue";
+import PicklistPopover from "@/components/PicklistPopover.vue";
 
 export default defineComponent({
   name: "OrderDetail",
@@ -549,6 +550,9 @@ export default defineComponent({
       orderAdjustmentShipmentId: "",
       printDocumentsExt: "" as any
     }
+  },
+  ionViewWillEnter() {
+    console.log('current order-----',this.order)
   },
   async ionViewDidEnter() {
     this.store.dispatch('util/fetchRejectReasonOptions')
@@ -686,6 +690,19 @@ export default defineComponent({
     },
     async printPicklist (order: any) {
       await OrderService.printPicklist(order.picklistId)
+    },
+    async openPickListPopup (order: any, ev: Event) {
+      const picklistPopup = await popoverController.create({
+        component: PicklistPopover,
+        showBackdrop: false,
+        event : ev,
+        componentProps: {
+          onViewPicklist: () => {
+            this.printPicklist(order)
+          }
+        }
+      })
+      picklistPopup.present()
     },
     async openShipmentBoxPopover(ev: Event, item: any, order: any, kitProducts?: any, orderItemSeqId?: number) {
       const popover = await popoverController.create({
