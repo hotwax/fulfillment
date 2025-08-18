@@ -241,7 +241,7 @@
               <ion-card-title>{{ translate("Payment") }}</ion-card-title>
             </ion-card-header>
             <div v-if="order.paymentPreferences?.length">
-              <ion-list v-for="(orderPayment, index) in order.paymentPreferences" :key="index">
+              <ion-list v-for="(orderPayment, index) in order.paymentPreferences" :key="orderPayment.paymentMethodTypeId">
                 <ion-item lines="none">
                   <ion-label class="ion-text-wrap">
                     <p class="overline">{{ orderPayment.paymentMethodTypeId }}</p>
