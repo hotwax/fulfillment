@@ -24,7 +24,8 @@ const actions: ActionTree<UserState, RootState> = {
  */
   async login ({ commit, dispatch }, payload) {
     try {
-      const {token, oms, omsRedirectionUrl} = payload;
+      const {token, oms} = payload;
+      const omsRedirectionUrl = 'dev-maarg'
       dispatch("setUserInstanceUrl", oms);
 
       // Getting the permissions list from server
@@ -126,12 +127,11 @@ const actions: ActionTree<UserState, RootState> = {
       // await dispatch('getPartialOrderRejectionConfig')
       // await dispatch('getCollateralRejectionConfig')
       // await dispatch('getAffectQohConfig')
-      // await dispatch('getDisableShipNowConfig')
-      // await dispatch('getDisableUnpackConfig')
+      await dispatch('getDisableShipNowConfig')
+      await dispatch('getDisableUnpackConfig')
       await this.dispatch('util/fetchCarrierShipmentBoxTypes')
-      //my code-------------------------------------------------------------------------------------------------------
+      //Generic call for fetching all the Product store settings in one go.
       await this.dispatch("util/fetchAllProductStoreSettings",preferredStore.productStoreId)
-      //my code-------------------------------------------------------------------------------------------------------
 
       const orderId = router.currentRoute.value.query.orderId
       if (isQueryFacilityFound && orderId) {
@@ -226,12 +226,12 @@ const actions: ActionTree<UserState, RootState> = {
         await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
           .catch((error) => logger.error(error));
         this.dispatch('order/clearOrders')
-        await dispatch('getDisableShipNowConfig')
-        await dispatch('getDisableUnpackConfig')
-        await dispatch('getReservationFacilityIdFieldConfig')
-        await dispatch('getPartialOrderRejectionConfig')
-        await dispatch('getCollateralRejectionConfig')
-        await dispatch('getAffectQohConfig')
+        this.dispatch('util/getDisableShipNowConfig')
+        this.dispatch('util/getDisableUnpackConfig')
+        this.dispatch('util/getReservationFacilityIdFieldConfig')
+        this.dispatch('util/getPartialOrderRejectionConfig')
+        this.dispatch('util/getCollateralRejectionConfig')
+        this.dispatch('util/getAffectQohConfig')
         this.dispatch('util/findProductStoreShipmentMethCount');
         this.dispatch('util/getForceScanSetting', preferredStore.productStoreId)
         this.dispatch('util/fetchBarcodeIdentificationPref', preferredStore.productStoreId);
@@ -269,12 +269,12 @@ const actions: ActionTree<UserState, RootState> = {
     await useProductIdentificationStore().getIdentificationPref(productStoreId)
       .catch((error) => logger.error(error));
 
-    await dispatch('getDisableShipNowConfig')
-    await dispatch('getDisableUnpackConfig')
-    await dispatch('getReservationFacilityIdFieldConfig')
-    await dispatch('getPartialOrderRejectionConfig')
-    await dispatch('getCollateralRejectionConfig')
-    await dispatch('getAffectQohConfig')
+    this.dispatch('util/getDisableShipNowConfig')
+    this.dispatch('util/getDisableUnpackConfig')
+    this.dispatch('util/getReservationFacilityIdFieldConfig')
+    this.dispatch('util/getPartialOrderRejectionConfig')
+    this.dispatch('util/getCollateralRejectionConfig')
+    this.dispatch('util/getAffectQohConfig')
     this.dispatch('util/findProductStoreShipmentMethCount');
     this.dispatch('util/getForceScanSetting', productStoreId)
     this.dispatch('util/fetchBarcodeIdentificationPref', productStoreId);
@@ -296,278 +296,278 @@ const actions: ActionTree<UserState, RootState> = {
   // This setting is intended for temporary use to enable a more controlled rollout of the
   // reservationFacilityId Solr field changes on a client-by-client basis.
   // It should be removed once all clients' OMS instances have been upgraded to a version that includes this change.
-  async getReservationFacilityIdFieldConfig ({ commit }) {
-    let isEnabled = false;
+  // async getReservationFacilityIdFieldConfig ({ commit }) {
+  //   let isEnabled = false;
 
-    const params = {
-      "productStoreId": getProductStoreId(),
-      "settingTypeEnumId": "USE_RES_FACILITY_ID",
-      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
-      "pageSize": 1
-    } as any
+  //   const params = {
+  //     "productStoreId": getProductStoreId(),
+  //     "settingTypeEnumId": "USE_RES_FACILITY_ID",
+  //     "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
+  //     "pageSize": 1
+  //   } as any
 
-    try {
-      const resp = await UserService.getReservationFacilityIdFieldConfig(params)
-      if (!hasError(resp)) {
-        isEnabled = resp.data[0]?.settingValue === "Y" ? true : false
-      } else {
-        throw resp.data;
-      }
-    } catch (err) {
-      logger.error('Failed to fetch reservation facility id field configuration');
-    } 
-    commit(types.USER_RESERVATION_FACILITY_ID_FIELD_CONFIG_UPDATED, isEnabled);   
-  },
-  async getDisableShipNowConfig ({ commit }) {
-    let isShipNowDisabled = false;
-    const params = {
-      "productStoreId": getProductStoreId(),
-      "settingTypeEnumId": "DISABLE_SHIPNOW",
-      "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
-      "pageSize": 1
-    } as any
+  //   try {
+  //     const resp = await UserService.getReservationFacilityIdFieldConfig(params)
+  //     if (!hasError(resp)) {
+  //       isEnabled = resp.data[0]?.settingValue === "Y" ? true : false
+  //     } else {
+  //       throw resp.data;
+  //     }
+  //   } catch (err) {
+  //     logger.error('Failed to fetch reservation facility id field configuration');
+  //   } 
+  //   commit(types.USER_RESERVATION_FACILITY_ID_FIELD_CONFIG_UPDATED, isEnabled);   
+  // },
+  // async getDisableShipNowConfig ({ commit }) {
+  //   let isShipNowDisabled = false;
+  //   const params = {
+  //     "productStoreId": getProductStoreId(),
+  //     "settingTypeEnumId": "DISABLE_SHIPNOW",
+  //     "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
+  //     "pageSize": 1
+  //   } as any
 
-    try { 
-      const resp = await UserService.getDisableShipNowConfig(params)
+  //   try { 
+  //     const resp = await UserService.getDisableShipNowConfig(params)
 
-      if (!hasError(resp)) {
-        isShipNowDisabled = resp.data[0]?.settingValue === "true";
-      } else {
-        logger.error('Failed to fetch disable ship now config.');
-      }
-    } catch (err) {
-      logger.error(err);
-    }
-    commit(types.USER_DISABLE_SHIP_NOW_CONFIG_UPDATED, isShipNowDisabled);
-  },
+  //     if (!hasError(resp)) {
+  //       isShipNowDisabled = resp.data[0]?.settingValue === "true";
+  //     } else {
+  //       logger.error('Failed to fetch disable ship now config.');
+  //     }
+  //   } catch (err) {
+  //     logger.error(err);
+  //   }
+  //   commit(types.USER_DISABLE_SHIP_NOW_CONFIG_UPDATED, isShipNowDisabled);
+  // },
 
-  async getDisableUnpackConfig ({ commit }) {
-    let isUnpackDisabled = false;
-    const params = {
-      "productStoreId": getProductStoreId(),
-      "settingTypeEnumId": "DISABLE_UNPACK",
-      "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
-      "pageSize": 1
-    } as any
+  // async getDisableUnpackConfig ({ commit }) {
+  //   let isUnpackDisabled = false;
+  //   const params = {
+  //     "productStoreId": getProductStoreId(),
+  //     "settingTypeEnumId": "DISABLE_UNPACK",
+  //     "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
+  //     "pageSize": 1
+  //   } as any
 
-    try {
-      const resp = await UserService.getDisableUnpackConfig(params)
+  //   try {
+  //     const resp = await UserService.getDisableUnpackConfig(params)
 
-      if (!hasError(resp)) {
-        isUnpackDisabled = resp.data[0]?.settingValue === "true";
-      } else {
-        logger.error('Failed to fetch disable unpack config.');
-      }
-    } catch (err) {
-      logger.error(err);
-    }
-    commit(types.USER_DISABLE_UNPACK_CONFIG_UPDATED, isUnpackDisabled);
-  },
-  async updatePartialOrderRejectionConfig ({ dispatch }, payload) {  
-    // let resp = {} as any;
-    // try {
-    //   if(!await UserService.isEnumExists("FULFILL_PART_ODR_REJ")) {
-    //     resp = await UserService.createEnumeration({
-    //       "enumId": "FULFILL_PART_ODR_REJ",
-    //       "enumTypeId": "PROD_STR_STNG",
-    //       "description": "Fulfillment Partial Order Rejection",
-    //       "enumName": "Fulfillment Partial Order Rejection",
-    //       "enumCode": "FULFILL_PART_ODR_REJ"
-    //     })
+  //     if (!hasError(resp)) {
+  //       isUnpackDisabled = resp.data[0]?.settingValue === "true";
+  //     } else {
+  //       logger.error('Failed to fetch disable unpack config.');
+  //     }
+  //   } catch (err) {
+  //     logger.error(err);
+  //   }
+  //   commit(types.USER_DISABLE_UNPACK_CONFIG_UPDATED, isUnpackDisabled);
+  // },
+//   async updatePartialOrderRejectionConfig ({ dispatch }, payload) {  
+//     // let resp = {} as any;
+//     // try {
+//     //   if(!await UserService.isEnumExists("FULFILL_PART_ODR_REJ")) {
+//     //     resp = await UserService.createEnumeration({
+//     //       "enumId": "FULFILL_PART_ODR_REJ",
+//     //       "enumTypeId": "PROD_STR_STNG",
+//     //       "description": "Fulfillment Partial Order Rejection",
+//     //       "enumName": "Fulfillment Partial Order Rejection",
+//     //       "enumCode": "FULFILL_PART_ODR_REJ"
+//     //     })
 
-    //     if(hasError(resp)) {
-    //       throw resp.data;
-    //     }
-    //   }
+//     //     if(hasError(resp)) {
+//     //       throw resp.data;
+//     //     }
+//     //   }
 
-    //   if (!payload.settingTypeEnumId) {
-    //     //Create Product Store Setting
-    //     payload = {
-    //       ...payload, 
-    //       "productStoreId": getProductStoreId(),
-    //       "settingTypeEnumId": "FULFILL_PART_ODR_REJ"
-    //     }
-    //     resp = await UserService.createPartialOrderRejectionConfig(payload) as any
-    //   } else {
-    //     //Update Product Store Setting
-    //     resp = await UserService.updateProductStoreSetting(payload) as any
-    //   }
+//     //   if (!payload.settingTypeEnumId) {
+//     //     //Create Product Store Setting
+//     //     payload = {
+//     //       ...payload, 
+//     //       "productStoreId": getProductStoreId(),
+//     //       "settingTypeEnumId": "FULFILL_PART_ODR_REJ"
+//     //     }
+//     //     resp = await UserService.createPartialOrderRejectionConfig(payload) as any
+//     //   } else {
+//     //     //Update Product Store Setting
+//     //     resp = await UserService.updateProductStoreSetting(payload) as any
+//     //   }
 
-    //   if (!hasError(resp)) {
-    //     showToast(translate('Configuration updated'))
-    //   } else {
-    //     showToast(translate('Failed to update configuration'))
-    //   }
-    // } catch(err) {
-    //   showToast(translate('Failed to update configuration'))
-    //   logger.error(err)
-    // }
+//     //   if (!hasError(resp)) {
+//     //     showToast(translate('Configuration updated'))
+//     //   } else {
+//     //     showToast(translate('Failed to update configuration'))
+//     //   }
+//     // } catch(err) {
+//     //   showToast(translate('Failed to update configuration'))
+//     //   logger.error(err)
+//     // }
 
-    await dispatch("updateStoreSetting", {
-  payload,
-  settingTypeEnumId: "FULFILL_PART_ODR_REJ",
-  enumDetails: {
-    description: "Fulfillment Partial Order Rejection",
-    enumName: "Fulfillment Partial Order Rejection"
-  },
-  createSettingFn: UserService.createPartialOrderRejectionConfig,
-  fetchAction: "getPartialOrderRejectionConfig"
-});
+//     await dispatch("updateStoreSetting", {
+//   payload,
+//   settingTypeEnumId: "FULFILL_PART_ODR_REJ",
+//   enumDetails: {
+//     description: "Fulfillment Partial Order Rejection",
+//     enumName: "Fulfillment Partial Order Rejection"
+//   },
+//   createSettingFn: UserService.createPartialOrderRejectionConfig,
+//   fetchAction: "getPartialOrderRejectionConfig"
+// });
 
 
-    // Fetch the updated configuration
-    // await dispatch("getPartialOrderRejectionConfig");
-  },
-  async updateCollateralRejectionConfig ({ dispatch }, payload) {  
-    // let resp = {} as any;
-    // try {
-    //   if(!await UserService.isEnumExists("FF_COLLATERAL_REJ")) {
-    //     resp = await UserService.createEnumeration({
-    //       "enumId": "FF_COLLATERAL_REJ",
-    //       "enumTypeId": "PROD_STR_STNG",
-    //       "description": "Fulfillment Collateral Rejection",
-    //       "enumName": "Fulfillment Collateral Rejection",
-    //       "enumCode": "FF_COLLATERAL_REJ"
-    //     })
+//     // Fetch the updated configuration
+//     // await dispatch("getPartialOrderRejectionConfig");
+//   },
+  // async updateCollateralRejectionConfig ({ dispatch }, payload) {  
+  //   // let resp = {} as any;
+  //   // try {
+  //   //   if(!await UserService.isEnumExists("FF_COLLATERAL_REJ")) {
+  //   //     resp = await UserService.createEnumeration({
+  //   //       "enumId": "FF_COLLATERAL_REJ",
+  //   //       "enumTypeId": "PROD_STR_STNG",
+  //   //       "description": "Fulfillment Collateral Rejection",
+  //   //       "enumName": "Fulfillment Collateral Rejection",
+  //   //       "enumCode": "FF_COLLATERAL_REJ"
+  //   //     })
 
-    //     if(hasError(resp)) {
-    //       throw resp.data;
-    //     }
-    //   }
+  //   //     if(hasError(resp)) {
+  //   //       throw resp.data;
+  //   //     }
+  //   //   }
 
-    //   if (!payload.settingTypeEnumId) {
-    //     //Create Product Store Setting
-    //     payload = {
-    //       ...payload, 
-    //       "productStoreId": getProductStoreId(),
-    //       "settingTypeEnumId": "FF_COLLATERAL_REJ"
-    //     }
-    //     resp = await UserService.createCollateralRejectionConfig(payload) as any
-    //   } else {
-    //     //Update Product Store Setting
-    //     resp = await UserService.updateProductStoreSetting(payload) as any
-    //   }
+  //   //   if (!payload.settingTypeEnumId) {
+  //   //     //Create Product Store Setting
+  //   //     payload = {
+  //   //       ...payload, 
+  //   //       "productStoreId": getProductStoreId(),
+  //   //       "settingTypeEnumId": "FF_COLLATERAL_REJ"
+  //   //     }
+  //   //     resp = await UserService.createCollateralRejectionConfig(payload) as any
+  //   //   } else {
+  //   //     //Update Product Store Setting
+  //   //     resp = await UserService.updateProductStoreSetting(payload) as any
+  //   //   }
 
-    //   if (!hasError(resp)) {
-    //     showToast(translate('Configuration updated'))
-    //   } else {
-    //     showToast(translate('Failed to update configuration'))
-    //   }
-    // } catch(err) {
-    //   showToast(translate('Failed to update configuration'))
-    //   logger.error(err)
-    // }
-     await dispatch("updateStoreSetting", {
-        payload,
-        settingTypeEnumId: "FF_COLLATERAL_REJ",
-        enumDetails: {
-          description: "Fulfillment Collateral Rejection",
-          enumName: "Fulfillment Collateral Rejection"
-        },
-        createSettingFn: UserService.createCollateralRejectionConfig,
-        fetchAction: "getCollateralRejectionConfig"
-      });
-    // Fetch the updated configuration
-    // await dispatch("getCollateralRejectionConfig");
-  },
-  async getPartialOrderRejectionConfig ({ commit }) {
-    let config = {};
-    const params = {
-      "productStoreId": getProductStoreId(),
-      "settingTypeEnumId": "FULFILL_PART_ODR_REJ",
-      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
-      "pageSize": 1
-    } as any
+  //   //   if (!hasError(resp)) {
+  //   //     showToast(translate('Configuration updated'))
+  //   //   } else {
+  //   //     showToast(translate('Failed to update configuration'))
+  //   //   }
+  //   // } catch(err) {
+  //   //   showToast(translate('Failed to update configuration'))
+  //   //   logger.error(err)
+  //   // }
+  //    await dispatch("updateStoreSetting", {
+  //       payload,
+  //       settingTypeEnumId: "FF_COLLATERAL_REJ",
+  //       enumDetails: {
+  //         description: "Fulfillment Collateral Rejection",
+  //         enumName: "Fulfillment Collateral Rejection"
+  //       },
+  //       createSettingFn: UserService.createCollateralRejectionConfig,
+  //       fetchAction: "getCollateralRejectionConfig"
+  //     });
+  //   // Fetch the updated configuration
+  //   // await dispatch("getCollateralRejectionConfig");
+  // },
+  // async getPartialOrderRejectionConfig ({ commit }) {
+  //   let config = {};
+  //   const params = {
+  //     "productStoreId": getProductStoreId(),
+  //     "settingTypeEnumId": "FULFILL_PART_ODR_REJ",
+  //     "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
+  //     "pageSize": 1
+  //   } as any
 
-    try {
-      const resp = await UserService.getPartialOrderRejectionConfig(params)
-      if (!hasError(resp)) {
-        config = resp.data[0];
-      } else {
-        logger.error('Failed to fetch partial order rejection configuration');
-      }
-    } catch (err) {
-      logger.error(err);
-    } 
-    commit(types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED, config);   
-  },
-  async getCollateralRejectionConfig ({ commit }) {
-    let config = {};
-    const params = {
-      "productStoreId": getProductStoreId(),
-      "settingTypeEnumId": "FF_COLLATERAL_REJ",
-      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
-      "pageSize": 1
-    } as any
+  //   try {
+  //     const resp = await UserService.getPartialOrderRejectionConfig(params)
+  //     if (!hasError(resp)) {
+  //       config = resp.data[0];
+  //     } else {
+  //       logger.error('Failed to fetch partial order rejection configuration');
+  //     }
+  //   } catch (err) {
+  //     logger.error(err);
+  //   } 
+  //   commit(types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED, config);   
+  // },
+  // async getCollateralRejectionConfig ({ commit }) {
+  //   let config = {};
+  //   const params = {
+  //     "productStoreId": getProductStoreId(),
+  //     "settingTypeEnumId": "FF_COLLATERAL_REJ",
+  //     "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
+  //     "pageSize": 1
+  //   } as any
 
-    try {
-      const resp = await UserService.getCollateralRejectionConfig(params)
-      if (!hasError(resp)) {
-        config = resp.data[0];
-      } else {
-        logger.error('Failed to fetch collateral rejection configuration');
-      }
-    } catch (err) {
-      logger.error(err);
-    } 
-    commit(types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED, config);   
-  },
+  //   try {
+  //     const resp = await UserService.getCollateralRejectionConfig(params)
+  //     if (!hasError(resp)) {
+  //       config = resp.data[0];
+  //     } else {
+  //       logger.error('Failed to fetch collateral rejection configuration');
+  //     }
+  //   } catch (err) {
+  //     logger.error(err);
+  //   } 
+  //   commit(types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED, config);   
+  // },
 
-  async updateAffectQohConfig ({ dispatch }, payload) {  
-    // let resp = {} as any;
-    // try {
-    //   if (!payload.settingTypeEnumId) {
-    //     //Create Product Store Setting
-    //     payload = {
-    //       ...payload, 
-    //       "productStoreId": getProductStoreId(),
-    //       "settingTypeEnumId": "AFFECT_QOH_ON_REJ"
-    //     }
-    //     resp = await UserService.createAffectQohConfig(payload) as any
-    //   } else {
-    //     //Update Product Store Setting
-    //     resp = await UserService.updateProductStoreSetting(payload) as any
-    //   }
+  // async updateAffectQohConfig ({ dispatch }, payload) {  
+  //   // let resp = {} as any;
+  //   // try {
+  //   //   if (!payload.settingTypeEnumId) {
+  //   //     //Create Product Store Setting
+  //   //     payload = {
+  //   //       ...payload, 
+  //   //       "productStoreId": getProductStoreId(),
+  //   //       "settingTypeEnumId": "AFFECT_QOH_ON_REJ"
+  //   //     }
+  //   //     resp = await UserService.createAffectQohConfig(payload) as any
+  //   //   } else {
+  //   //     //Update Product Store Setting
+  //   //     resp = await UserService.updateProductStoreSetting(payload) as any
+  //   //   }
 
-    //   if (!hasError(resp)) {
-    //     showToast(translate('Configuration updated'))
-    //   } else {
-    //     showToast(translate('Failed to update configuration'))
-    //   }
-    // } catch(err) {
-    //   showToast(translate('Failed to update configuration'))
-    //   logger.error(err)
-    // }
-  await dispatch("updateStoreSetting", {
-    payload,
-    settingTypeEnumId: "AFFECT_QOH_ON_REJ",
-    createSettingFn: UserService.createAffectQohConfig,
-    fetchAction: "getAffectQohConfig"
-  });
-    // Fetch the updated configuration
-    // await dispatch("getAffectQohConfig");
-  },
-  async getAffectQohConfig ({ commit }) {
-    let config = {};
-    const params = {
-      "productStoreId": getProductStoreId(),
-      "settingTypeEnumId": "AFFECT_QOH_ON_REJ",
-      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
-      "pageSize": 1
-    } as any
+  //   //   if (!hasError(resp)) {
+  //   //     showToast(translate('Configuration updated'))
+  //   //   } else {
+  //   //     showToast(translate('Failed to update configuration'))
+  //   //   }
+  //   // } catch(err) {
+  //   //   showToast(translate('Failed to update configuration'))
+  //   //   logger.error(err)
+  //   // }
+  // await dispatch("updateStoreSetting", {
+  //   payload,
+  //   settingTypeEnumId: "AFFECT_QOH_ON_REJ",
+  //   createSettingFn: UserService.createAffectQohConfig,
+  //   fetchAction: "getAffectQohConfig"
+  // });
+  //   // Fetch the updated configuration
+  //   // await dispatch("getAffectQohConfig");
+  // },
+  // async getAffectQohConfig ({ commit }) {
+  //   let config = {};
+  //   const params = {
+  //     "productStoreId": getProductStoreId(),
+  //     "settingTypeEnumId": "AFFECT_QOH_ON_REJ",
+  //     "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
+  //     "pageSize": 1
+  //   } as any
 
-    try {
-      const resp = await UserService.getAffectQohConfig(params)
-      if (!hasError(resp)) {
-        config = resp.data[0];
-      } else {
-        logger.error('Failed to fetch affect QOH configuration');
-      }
-    } catch (err) {
-      logger.error(err);
-    } 
-    commit(types.USER_AFFECT_QOH_CONFIG_UPDATED, config);   
-  },
+  //   try {
+  //     const resp = await UserService.getAffectQohConfig(params)
+  //     if (!hasError(resp)) {
+  //       config = resp.data[0];
+  //     } else {
+  //       logger.error('Failed to fetch affect QOH configuration');
+  //     }
+  //   } catch (err) {
+  //     logger.error(err);
+  //   } 
+  //   commit(types.USER_AFFECT_QOH_CONFIG_UPDATED, config);   
+  // },
 
   addNotification({ state, commit }, payload) {
     const notifications = JSON.parse(JSON.stringify(state.notifications))
@@ -648,59 +648,7 @@ const actions: ActionTree<UserState, RootState> = {
   clearCollateralRejectionConfig ({ commit }) {
     commit(types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED, {})
   },
-  async updateStoreSetting({ dispatch }, {
-  payload,
-  settingTypeEnumId,
-  enumDetails = null,
-  createSettingFn,
-  fetchAction
-}) {
-  let resp = {} as any;
-  try {
-    // Step 1: Create enum if needed
-    if (enumDetails) {
-      const exists = await UserService.isEnumExists(settingTypeEnumId);
-      if (!exists) {
-        resp = await UserService.createEnumeration({
-          enumId: settingTypeEnumId,
-          enumTypeId: "PROD_STR_STNG",
-          description: enumDetails.description || settingTypeEnumId,
-          enumName: enumDetails.enumName || settingTypeEnumId,
-          enumCode: settingTypeEnumId
-        });
 
-        if (hasError(resp)) {
-          throw resp.data;
-        }
-      }
-    }
-
-    // Step 2: Create or update setting
-    if (!payload.settingTypeEnumId) {
-      payload = {
-        ...payload,
-        productStoreId: getProductStoreId(),
-        settingTypeEnumId
-      };
-      resp = await createSettingFn(payload); // Passes correct creation API
-    } else {
-      resp = await UserService.updateProductStoreSetting(payload);
-    }
-
-    // Step 3: Toast & error handling
-    if (!hasError(resp)) {
-      showToast(translate('Configuration updated'));
-    } else {
-      showToast(translate('Failed to update configuration'));
-    }
-  } catch (err) {
-    showToast(translate('Failed to update configuration'));
-    logger.error(err);
-  }
-
-  // Step 4: Fetch updated setting
-  await dispatch(fetchAction);
-}
 } 
 
 export default actions;

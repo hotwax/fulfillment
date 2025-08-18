@@ -43,8 +43,7 @@ const getters: GetterTree <UtilState, RootState> = {
     return state.facilities
   },
   isForceScanEnabled(state) {
-    // return state.isForceScanEnabled //previously stored from individual state
-    return state.productStoreSettings.FULFILL_FORCE_SCAN ?? false
+    return state.productStoreSettings.FULFILL_FORCE_SCAN
   },
   getFulfillmentRejectReasons(state) {
     return state.fulfillmentRejectReasons
@@ -53,7 +52,6 @@ const getters: GetterTree <UtilState, RootState> = {
     return state.rejectReasonOptions
   },
   getBarcodeIdentificationPref(state) {
-    // return state.barcodeIdentificationPref //previously stored from individual state
     return state.productStoreSettings.BARCODE_IDEN_PREF
   },
   getCarrierShipmentBoxTypes(state) {
@@ -66,39 +64,31 @@ const getters: GetterTree <UtilState, RootState> = {
     return state.shipmentMethodsByCarrier
   },
   isPicklistDownloadEnabled(state) {
-    // return state.isPicklistDownloadEnabled
-    return state.productStoreSettings.FF_DOWNLOAD_PICKLIST ?? false
+    return state.productStoreSettings.FF_DOWNLOAD_PICKLIST
   },
   getExcludeOrderBrokerDays(state) {
-    // return state.excludeOrderBrokerDays 
-    return state.productStoreSettings.EXCLUDE_ODR_BKR_DAYS ?? '0'
+    return state.productStoreSettings.EXCLUDE_ODR_BKR_DAYS
   },
   getPartialOrderRejectionConfig(state) {
-    // return  state.partialOrderRejectionConfig;
-    return state.productStoreSettings.FULFILL_PART_ODR_REJ ?? false
+    return state.productStoreSettings.FULFILL_PART_ODR_REJ
   },
   getCollateralRejectionConfig(state) {
-    // return  state.collateralRejectionConfig;
-    return state.productStoreSettings.FF_COLLATERAL_REJ ?? false
+    return state.productStoreSettings.FF_COLLATERAL_REJ 
   },
   getAffectQohConfig(state) {
-    // return  state.affectQohConfig;
-    return state.productStoreSettings.AFFECT_QOH_ON_REJ ?? false
+    return state.productStoreSettings.AFFECT_QOH_ON_REJ
   },
   isShipNowDisabled(state) {
-    // return state.isShipNowDisabled;
-    return state.productStoreSettings.DISABLE_SHIPNOW ?? false
+    return state.productStoreSettings.DISABLE_SHIPNOW
   },
   isUnpackDisabled(state) {
-    // return state.isUnpackDisabled;
-    return state.productStoreSettings.DISABLE_UNPACK ?? false
+    return state.productStoreSettings.DISABLE_UNPACK
   },
   isReservationFacilityFieldEnabled(state) {
-    // return state.isReservationFacilityFieldEnabled;
-    return state.productStoreSettings.USE_RES_FACILITY_ID ?? false
+    return state.productStoreSettings.USE_RES_FACILITY_ID
+  },
+  getProductStoreSetting(state){
+    return state.productStoreSettings 
   }
-  // getProductStoreSetting: (state) => (settingTypeEnumId: string) => {
-  //   return state.productStoreSettings[settingTypeEnumId] ?? null;
-  // }
 }
 export default getters;

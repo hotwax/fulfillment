@@ -151,7 +151,7 @@
             {{ translate("Individual items within an order will be rejected without affecting the other items in the order.") }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="partialOrderRejectionConfig?.settingValue" @click.prevent="confirmPartialOrderRejection(partialOrderRejectionConfig, $event)">{{ translate("Partial rejections") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="partialOrderRejectionConfig" @click.prevent="confirmPartialOrderRejection(partialOrderRejectionConfig, $event)">{{ translate("Partial rejections") }}</ion-toggle>
           </ion-item>
         </ion-card>
         <ion-card>
@@ -164,7 +164,7 @@
             {{ translate('When rejecting an item, automatically reject all other orders for that item as well.') }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_COLLATERAL_REJECTION_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="'true' === collateralRejectionConfig?.settingValue" @click.prevent="confirmCollateralRejection(collateralRejectionConfig, $event)">{{ translate("Auto reject related items") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="'true' === collateralRejectionConfig" @click.prevent="confirmCollateralRejection(collateralRejectionConfig, $event)">{{ translate("Auto reject related items") }}</ion-toggle>
           </ion-item>
         </ion-card>
         <ion-card>
@@ -177,7 +177,7 @@
             {{ translate('Adjust the QOH along with ATP on rejection.') }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_AFFECT_QOH_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="'true' === affectQohConfig?.settingValue" @click.prevent="confirmAffectQohConfig(affectQohConfig, $event)">{{ translate("Affect QOH") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="'true' === affectQohConfig" @click.prevent="confirmAffectQohConfig(affectQohConfig, $event)">{{ translate("Affect QOH") }}</ion-toggle>
           </ion-item>
         </ion-card>
       </section>
@@ -281,9 +281,9 @@ export default defineComponent({
       allNotificationPrefs: 'user/getAllNotificationPrefs',
       firebaseDeviceId: 'user/getFirebaseDeviceId',
       isForceScanEnabled: 'util/isForceScanEnabled',
-      partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
-      collateralRejectionConfig: 'user/getCollateralRejectionConfig',
-      affectQohConfig: 'user/getAffectQohConfig',
+      partialOrderRejectionConfig: 'util/getPartialOrderRejectionConfig',//previously imported from user
+      collateralRejectionConfig: 'util/getCollateralRejectionConfig',//previously imported from user
+      affectQohConfig: 'util/getAffectQohConfig',//previously imported from user
       barcodeIdentificationPref: 'util/getBarcodeIdentificationPref'
     })
   },
@@ -291,8 +291,8 @@ export default defineComponent({
     Promise.all([this.getCurrentFacilityDetails(), this.getFacilityOrderCount(), this.getEcomInvStatus()]);
 
     // fetching partial order rejection when entering setting page to have latest information
-    await this.store.dispatch('user/getPartialOrderRejectionConfig')
-    await this.store.dispatch('user/getCollateralRejectionConfig')
+    await this.store.dispatch('util/getPartialOrderRejectionConfig')//previously imported from user
+    await this.store.dispatch('util/getCollateralRejectionConfig')//previously imported from user
     
     // as notification prefs can also be updated from the notification pref modal,
     // latest state is fetched each time we open the settings page
@@ -640,7 +640,7 @@ export default defineComponent({
         ...config,
         "settingValue": value
       }
-      await this.store.dispatch('user/updatePartialOrderRejectionConfig', params)
+      await this.store.dispatch('util/updatePartialOrderRejectionConfig', params)
     },
     async confirmCollateralRejection(config: any, event: any) {
       event.stopImmediatePropagation();
@@ -673,7 +673,7 @@ export default defineComponent({
         ...config,
         "settingValue": value
       }
-      await this.store.dispatch('user/updateCollateralRejectionConfig', params)
+      await this.store.dispatch('util/updateCollateralRejectionConfig', params)
     },
     async confirmAffectQohConfig(config: any, event: any) {
       event.stopImmediatePropagation();
@@ -706,7 +706,7 @@ export default defineComponent({
         ...config,
         "settingValue": value
       }
-      await this.store.dispatch('user/updateAffectQohConfig', params)
+      await this.store.dispatch('util/updateAffectQohConfig', params)
     },
     setBarcodeIdentificationPref(value: string) {
       this.store.dispatch('util/setBarcodeIdentificationPref', value)
