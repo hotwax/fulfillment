@@ -39,18 +39,12 @@ const mutations: MutationTree <UtilState> = {
   [types.UTIL_PRODUCT_STORES_UPDATED](state, payload) {
     state.productStores = payload
   },
-  // [types.UTIL_FORCE_SCAN_STATUS_UPDATED](state, payload) {
-  //   state.isForceScanEnabled = payload
-  // },
   [types.UTIL_FULFILLMENT_REJECT_REASONS_UPDATED](state, payload) {
     state.fulfillmentRejectReasons = payload
   },
   [types.UTIL_REJECT_REASON_OPTIONS_UPDATED](state, payload) {
     state.rejectReasonOptions = payload
   },
-  // [types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED](state, payload) {
-  //   state.barcodeIdentificationPref = payload
-  // },
   [types.UTIL_CARRIER_SHIPMENT_BOX_TYPES_UPDATED](state, payload) {
     state.carrierShipmentBoxTypes = payload
   },
@@ -80,12 +74,6 @@ const mutations: MutationTree <UtilState> = {
       state.facilityShippingLabelImageType[payload.facilityId] = payload.labelImageType
     }
   },
-  // [types.UTIL_PICKLIST_DOWNLOAD_STATUS_UPDATED](state, payload) {
-  //   state.isPicklistDownloadEnabled = payload
-  // },
-  // [types.UTIL_EXCLUDE_ORDER_BROKER_DAYS_UPDATED](state, payload) {
-  //   state.excludeOrderBrokerDays = payload
-  // },
   [types.UTIL_PRODUCT_STORE_SETTINGS_UPDATED](state, payload) {
   state.productStoreSettings = payload
   },
@@ -94,24 +82,6 @@ const mutations: MutationTree <UtilState> = {
       ...state.productStoreSettings,
       [key]: value
     };
-  },  
-  // [types.UTIL_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED] (state, payload) {
-  //   state.partialOrderRejectionConfig = payload
-  // },
-  // [types.UTIL_COLLATERAL_REJECTION_CONFIG_UPDATED] (state, payload) {
-  //   state.collateralRejectionConfig = payload
-  // },
-  // [types.UTIL_AFFECT_QOH_CONFIG_UPDATED] (state, payload) {
-  //   state.affectQohConfig = payload
-  // },
-  // [types.UTIL_DISABLE_SHIP_NOW_CONFIG_UPDATED] (state, payload) {
-  //   state.isShipNowDisabled = payload
-  // },
-  // [types.UTIL_DISABLE_UNPACK_CONFIG_UPDATED] (state, payload) {
-  //   state.isUnpackDisabled = payload
-  // },
-  // [types.UTIL_RESERVATION_FACILITY_ID_FIELD_CONFIG_UPDATED] (state, payload) {
-  //   state.isReservationFacilityFieldEnabled = payload
-  // },
+  }
 }
 export default mutations;

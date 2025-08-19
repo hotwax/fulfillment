@@ -132,7 +132,7 @@
           </ion-card-header>
           <ion-card-content v-html="barcodeContentMessage"></ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_UPDT_FULFILL_FORCE_SCAN_CONFIG)">
-            <ion-toggle label-placement="start" :checked="isForceScanEnabled" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="!isForceScanEnabled" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
           </ion-item>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_BARCODE_IDENTIFIER_UPDATE)">
             <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="barcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
@@ -640,7 +640,17 @@ export default defineComponent({
         ...config,
         "settingValue": value
       }
-      await this.store.dispatch('util/updatePartialOrderRejectionConfig', params)
+      await this.store.dispatch("util/updateProductStoreSettingConfig", {
+        enumId: "FULFILL_PART_ODR_REJ",
+        payload: params,
+        createService: UserService.createPartialOrderRejectionConfig,
+        fetchAction: "getPartialOrderRejectionConfig",
+        requireEnum: true,
+        enumMeta: {
+          description: "Fulfillment Partial Order Rejection",
+          enumName: "Fulfillment Partial Order Rejection"
+        }
+      });
     },
     async confirmCollateralRejection(config: any, event: any) {
       event.stopImmediatePropagation();
@@ -673,7 +683,17 @@ export default defineComponent({
         ...config,
         "settingValue": value
       }
-      await this.store.dispatch('util/updateCollateralRejectionConfig', params)
+      await this.store.dispatch("util/updateProductStoreSettingConfig", {
+        enumId: "FF_COLLATERAL_REJ",
+        payload: params,
+        createService: UserService.createCollateralRejectionConfig,
+        fetchAction: "getCollateralRejectionConfig",
+        requireEnum: true,
+        enumMeta: {
+          description: "Fulfillment Collateral Rejection",
+          enumName: "Fulfillment Collateral Rejection"
+        }
+      });
     },
     async confirmAffectQohConfig(config: any, event: any) {
       event.stopImmediatePropagation();
@@ -706,7 +726,13 @@ export default defineComponent({
         ...config,
         "settingValue": value
       }
-      await this.store.dispatch('util/updateAffectQohConfig', params)
+      await this.store.dispatch("util/updateProductStoreSettingConfig", {
+        enumId: "AFFECT_QOH_ON_REJ",
+        payload: params,
+        createService: UserService.createAffectQohConfig,
+        fetchAction: "getAffectQohConfig",
+        requireEnum: false
+      });
     },
     setBarcodeIdentificationPref(value: string) {
       this.store.dispatch('util/setBarcodeIdentificationPref', value)

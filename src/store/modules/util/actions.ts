@@ -11,7 +11,7 @@ import { translate, useUserStore } from '@hotwax/dxp-components'
 import { UserService } from '@/services/UserService'
 
 const actions: ActionTree<UtilState, RootState> = {
-  async fetchAllProductStoreSettings({ commit },productStoreId){
+  async fetchProductStoreSettings({ commit },productStoreId){
     const defaultProductStoreSettings= JSON.parse(process.env.VUE_APP_DEFAULT_PRODUCT_STORE_SETTINGS as any)
     const productStoreSettings:any = {...defaultProductStoreSettings};
       const payload = {
@@ -22,7 +22,7 @@ const actions: ActionTree<UtilState, RootState> = {
         pageSize: 50
       };
     try {
-      const resp = await UtilService.getProductStoreSetting(payload) as any
+      const resp = await UtilService.fetchProductStoreSetting(payload) as any
       
       resp?.data?.entityValueList?.forEach((productSetting: any) => {
       const key = productSetting?.settingTypeEnumId;
@@ -486,14 +486,23 @@ const actions: ActionTree<UtilState, RootState> = {
     };
 
     try {
-      const resp = await UtilService.getProductStoreSetting(payload) as any;
+      const resp = await UtilService.fetchProductStoreSetting(payload) as any;
       if (!hasError(resp) && resp.data.length) {
         commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
           key: settingTypeEnumId,
           value: resp.data[0]?.settingValue === "true"
         });
       } else {
-        dispatch("createForceScanSetting");
+        await dispatch("createProductStoreSettingConfig", {
+          enumId: "FULFILL_FORCE_SCAN",
+          createService: UtilService.createForceScanSetting,
+          defaultValue: "false",
+          requireEnum: true,
+          enumMeta: {
+            description: "Impose force scanning of items while packing from fulfillment app",
+            enumName: "Fulfillment Force Scan"
+          }
+        });
       }
     } catch (err) {
       console.error(err);
@@ -557,7 +566,7 @@ const actions: ActionTree<UtilState, RootState> = {
     let isSettingExists = false;
 
     try {
-      const resp = await UtilService.getProductStoreSetting({
+      const resp = await UtilService.fetchProductStoreSetting({
         productStoreId: eComStoreId,
         settingTypeEnumId,
         fieldsToSelect: ["settingTypeEnumId"],
@@ -572,7 +581,16 @@ const actions: ActionTree<UtilState, RootState> = {
     }
 
     if (!isSettingExists) {
-      isSettingExists = await dispatch("createForceScanSetting");
+      isSettingExists = await dispatch("createProductStoreSettingConfig", {
+        enumId: "FULFILL_FORCE_SCAN",
+        createService: UtilService.createForceScanSetting,
+        defaultValue: "false",
+        requireEnum: true,
+        enumMeta: {
+          description: "Impose force scanning of items while packing from fulfillment app",
+          enumName: "Fulfillment Force Scan"
+        }
+      });
     }
 
     if (!isSettingExists) {
@@ -619,7 +637,7 @@ const actions: ActionTree<UtilState, RootState> = {
     };
 
     try {
-      const resp = await UtilService.getProductStoreSetting(payload) as any;
+      const resp = await UtilService.fetchProductStoreSetting(payload) as any;
       if (!hasError(resp)) {
         const respValue = resp.data[0].settingValue;
         commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
@@ -627,7 +645,16 @@ const actions: ActionTree<UtilState, RootState> = {
           value: respValue
         });
       } else {
-        dispatch("createBarcodeIdentificationPref");
+        dispatch("createProductStoreSettingConfig", {
+          enumId: "BARCODE_IDEN_PREF",
+          createService: UtilService.createBarcodeIdentificationPref,
+          defaultValue: "internalName",
+          requireEnum: true,
+          enumMeta: {
+            description: "Identification preference to be used for scanning items.",
+            enumName: "Barcode Identification Preference"
+          }
+        });
       }
     } catch (err) {
       console.error(err);
@@ -693,7 +720,7 @@ const actions: ActionTree<UtilState, RootState> = {
     let isSettingExists = false;
 
     try {
-      const resp = await UtilService.getProductStoreSetting({
+      const resp = await UtilService.fetchProductStoreSetting({
         productStoreId: eComStoreId,
         settingTypeEnumId: "BARCODE_IDEN_PREF",
         fieldsToSelect: ["settingTypeEnumId"],
@@ -707,7 +734,16 @@ const actions: ActionTree<UtilState, RootState> = {
     }
 
     if (!isSettingExists) {
-      isSettingExists = await dispatch("createBarcodeIdentificationPref");
+      isSettingExists = await dispatch("createProductStoreSettingConfig", {
+        enumId: "BARCODE_IDEN_PREF",
+        createService: UtilService.createBarcodeIdentificationPref,
+        defaultValue: "internalName",
+        requireEnum: true,
+        enumMeta: {
+          description: "Identification preference to be used for scanning items.",
+          enumName: "Barcode Identification Preference"
+        }
+      });
     }
 
     if (!isSettingExists) {
@@ -907,7 +943,7 @@ const actions: ActionTree<UtilState, RootState> = {
     }
 
     try {
-      const resp = await UtilService.getProductStoreSetting(payload) as any
+      const resp = await UtilService.fetchProductStoreSetting(payload) as any
       if (!hasError(resp) && resp.data?.length) {
         isPicklistDownloadEnabled = resp.data[0].settingValue == "true"
       }
@@ -941,62 +977,6 @@ const actions: ActionTree<UtilState, RootState> = {
       });
   },
 
-  //actions of user modules to be moved in util module
-  //partial order rejection
-  async updatePartialOrderRejectionConfig ({ dispatch }, payload) {  
-    await dispatch("updateProductStoreSettingConfig", {
-      enumId: "FULFILL_PART_ODR_REJ",
-      payload,
-      createService: UserService.createPartialOrderRejectionConfig,
-      fetchAction: "getPartialOrderRejectionConfig",
-      requireEnum: true,
-      enumMeta: {
-        description: "Fulfillment Partial Order Rejection",
-        enumName: "Fulfillment Partial Order Rejection"
-      }
-    });
-
-    // let resp = {} as any;
-    // try {
-    //   if(!await UserService.isEnumExists("FULFILL_PART_ODR_REJ")) {
-    //     resp = await UserService.createEnumeration({
-    //       "enumId": "FULFILL_PART_ODR_REJ",
-    //       "enumTypeId": "PROD_STR_STNG",
-    //       "description": "Fulfillment Partial Order Rejection",
-    //       "enumName": "Fulfillment Partial Order Rejection",
-    //       "enumCode": "FULFILL_PART_ODR_REJ"
-    //     })
-
-    //     if(hasError(resp)) {
-    //       throw resp.data;
-    //     }
-    //   }
-
-    //   if (!payload.settingTypeEnumId) {
-    //     //Create Product Store Setting
-    //     payload = {
-    //       ...payload, 
-    //       "productStoreId": getProductStoreId(),
-    //       "settingTypeEnumId": "FULFILL_PART_ODR_REJ"
-    //     }
-    //     resp = await UserService.createPartialOrderRejectionConfig(payload) as any
-    //   } else {
-    //     //Update Product Store Setting
-    //     resp = await UserService.updateProductStoreSetting(payload) as any
-    //   }
-
-    //   if (!hasError(resp)) {
-    //     showToast(translate('Configuration updated'))
-    //   } else {
-    //     showToast(translate('Failed to update configuration'))
-    //   }
-    // } catch(err) {
-    //   showToast(translate('Failed to update configuration'))
-    //   logger.error(err)
-    // }
-    // // Fetch the updated configuration
-    // await dispatch("getPartialOrderRejectionConfig");
-  },
   async getPartialOrderRejectionConfig ({ commit }) {
     const settingTypeEnumId = "FULFILL_PART_ODR_REJ"
     let config = {} as any;
@@ -1022,60 +1002,7 @@ const actions: ActionTree<UtilState, RootState> = {
       logger.error(err);
     }
   },
-  //collateral rejection config 
-  async updateCollateralRejectionConfig ({ dispatch }, payload) {  
-    await dispatch("updateProductStoreSettingConfig", {
-      enumId: "FF_COLLATERAL_REJ",
-      payload,
-      createService: UserService.createCollateralRejectionConfig,
-      fetchAction: "getCollateralRejectionConfig",
-      requireEnum: true,
-      enumMeta: {
-        description: "Fulfillment Collateral Rejection",
-        enumName: "Fulfillment Collateral Rejection"
-      }
-    });
-  // let resp = {} as any;
-  // try {
-  //   if(!await UserService.isEnumExists("FF_COLLATERAL_REJ")) {
-  //     resp = await UserService.createEnumeration({
-  //       "enumId": "FF_COLLATERAL_REJ",
-  //       "enumTypeId": "PROD_STR_STNG",
-  //       "description": "Fulfillment Collateral Rejection",
-  //       "enumName": "Fulfillment Collateral Rejection",
-  //       "enumCode": "FF_COLLATERAL_REJ"
-  //     })
 
-  //     if(hasError(resp)) {
-  //       throw resp.data;
-  //     }
-  //   }
-
-  //   if (!payload.settingTypeEnumId) {
-  //     //Create Product Store Setting
-  //     payload = {
-  //       ...payload, 
-  //       "productStoreId": getProductStoreId(),
-  //       "settingTypeEnumId": "FF_COLLATERAL_REJ"
-  //     }
-  //     resp = await UserService.createCollateralRejectionConfig(payload) as any
-  //   } else {
-  //     //Update Product Store Setting
-  //     resp = await UserService.updateProductStoreSetting(payload) as any
-  //   }
-
-  //   if (!hasError(resp)) {
-  //     showToast(translate('Configuration updated'))
-  //   } else {
-  //     showToast(translate('Failed to update configuration'))
-  //   }
-  // } catch(err) {
-  //   showToast(translate('Failed to update configuration'))
-  //   logger.error(err)
-  // }
-  // // Fetch the updated configuration
-  // await dispatch("getCollateralRejectionConfig");
-  },
   async getCollateralRejectionConfig({ commit }) {
     const settingTypeEnumId = "FF_COLLATERAL_REJ";
     const params = {
@@ -1100,43 +1027,7 @@ const actions: ActionTree<UtilState, RootState> = {
       logger.error(err);
     }
   },
-  //Affect Qoh config
-  async updateAffectQohConfig ({ dispatch }, payload) {  
-    await dispatch("updateProductStoreSettingConfig", {
-      enumId: "AFFECT_QOH_ON_REJ",
-      payload,
-      createService: UserService.createAffectQohConfig,
-      fetchAction: "getAffectQohConfig",
-      requireEnum: false
-    });
 
-    // let resp = {} as any;
-    // try {
-    //   if (!payload.settingTypeEnumId) {
-    //     //Create Product Store Setting
-    //     payload = {
-    //       ...payload, 
-    //       "productStoreId": getProductStoreId(),
-    //       "settingTypeEnumId": "AFFECT_QOH_ON_REJ"
-    //     }
-    //     resp = await UserService.createAffectQohConfig(payload) as any
-    //   } else {
-    //     //Update Product Store Setting
-    //     resp = await UserService.updateProductStoreSetting(payload) as any
-    //   }
-
-    //   if (!hasError(resp)) {
-    //     showToast(translate('Configuration updated'))
-    //   } else {
-    //     showToast(translate('Failed to update configuration'))
-    //   }
-    // } catch(err) {
-    //   showToast(translate('Failed to update configuration'))
-    //   logger.error(err)
-    // }
-    // // Fetch the updated configuration
-    // await dispatch("getAffectQohConfig");
-  },
   async getAffectQohConfig ({ commit }) {
     const settingTypeEnumId = "AFFECT_QOH_ON_REJ"
     let config = {} as any;
@@ -1162,6 +1053,7 @@ const actions: ActionTree<UtilState, RootState> = {
       logger.error(err);
     } 
   },
+
    async getReservationFacilityIdFieldConfig ({ commit }) {
     let isEnabled = false;
 
@@ -1188,6 +1080,7 @@ const actions: ActionTree<UtilState, RootState> = {
       value: isEnabled
     })  
   },
+
   async getDisableShipNowConfig ({ commit }) {
     let isShipNowDisabled = false;
     const params = {
@@ -1214,6 +1107,7 @@ const actions: ActionTree<UtilState, RootState> = {
       value: isShipNowDisabled
     })  
   },
+
   async getDisableUnpackConfig ({ commit }) {
     let isUnpackDisabled = false;
     const params = {
@@ -1263,7 +1157,7 @@ const actions: ActionTree<UtilState, RootState> = {
       }
 
       const response = await (payload?.settingTypeEnumId
-        ? UserService.updateProductStoreSetting(payload)
+        ? UtilService.updateProductStoreSetting(payload)
         : createService({ ...payload, productStoreId: getProductStoreId(), settingTypeEnumId: enumId }));
 
       const toastMessage = hasError(response)
@@ -1271,12 +1165,60 @@ const actions: ActionTree<UtilState, RootState> = {
         : "Configuration updated";
       showToast(toastMessage);
 
-      // 4) Dispatch fetch action if provided
       if (fetchAction) await dispatch(fetchAction);
 
     } catch (error) {
       showToast("Failed to update configuration");
       logger.error("Error updating product store setting:", error);
+    }
+  },
+
+  async createProductStoreSettingConfig({ commit },{ enumId, createService, defaultValue, requireEnum = true, enumMeta = { description: enumId, enumName: enumId } }) {
+    try {
+      // Ensure enum exists
+      if (requireEnum) {
+        const enumExists = await UtilService.isEnumExists(enumId);
+        if (!enumExists) {
+          const enumPayload = {
+            enumId,
+            enumTypeId: "PROD_STR_STNG",
+            enumCode: enumId,
+            description: enumMeta.description,
+            enumName: enumMeta.enumName
+          };
+          const enumResponse = await UtilService.createEnumeration(enumPayload);
+          if (hasError(enumResponse)) {
+            throw new Error("Failed to create enumeration");
+          }
+        }
+      }
+
+      // Create setting
+      const params = {
+        productStoreId: getProductStoreId(),
+        settingTypeEnumId: enumId,
+        settingValue: defaultValue
+      };
+
+      const resp = await createService(params);
+      if (hasError(resp)) {
+        throw new Error("Failed to create product store setting");
+      }
+
+      // Commit default to store
+      commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
+        key: enumId,
+        value: defaultValue
+      });
+
+      return true;
+    } catch (err) {
+      logger.error("Error creating product store setting:", err);
+      commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
+        key: enumId,
+        value: defaultValue
+      });
+      return false;
     }
   }
 }

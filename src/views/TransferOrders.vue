@@ -115,7 +115,7 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       transferOrders: 'transferorder/getTransferOrders',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
     })
   },
   data () {
