@@ -44,7 +44,7 @@ export default defineComponent({
         component: QRCodeModal,
         componentProps: { picklistId, link }
       });
-      popoverController.dismiss()
+      await popoverController.dismiss()
       return qrCodeModal.present();
     },
   },
