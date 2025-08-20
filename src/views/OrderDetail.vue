@@ -17,7 +17,7 @@
               <ion-icon :icon="pricetagOutline" />
               <ion-label>{{ order.orderId }}</ion-label>
             </ion-chip>
-            <ion-chip v-if="category !== 'open'" outline @click="openPickListPopup(order,$event)">
+            <ion-chip v-if="category !== 'open'" outline @click="openPickListPopover(order,$event)">
               <ion-icon :icon="documentTextOutline" />
               <ion-label>{{ translate('Picked by') }} {{ order.picklistId }}</ion-label>
             </ion-chip>
@@ -551,9 +551,6 @@ export default defineComponent({
       printDocumentsExt: "" as any
     }
   },
-  ionViewWillEnter() {
-    console.log('current order-----',this.order)
-  },
   async ionViewDidEnter() {
     this.store.dispatch('util/fetchRejectReasonOptions')
     this.category === 'open'
@@ -691,7 +688,7 @@ export default defineComponent({
     async printPicklist (order: any) {
       await OrderService.printPicklist(order.picklistId)
     },
-    async openPickListPopup (order: any, ev: Event) {
+    async openPickListPopover (order: any, ev: Event) {
       const picklistPopup = await popoverController.create({
         component: PicklistPopover,
         showBackdrop: false,
@@ -699,7 +696,8 @@ export default defineComponent({
         componentProps: {
           onViewPicklist: () => {
             this.printPicklist(order)
-          }
+          },
+          picklistId: order.picklistId
         }
       })
       picklistPopup.present()
