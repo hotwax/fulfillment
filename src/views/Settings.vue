@@ -132,7 +132,7 @@
           </ion-card-header>
           <ion-card-content v-html="barcodeContentMessage"></ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_UPDT_FULFILL_FORCE_SCAN_CONFIG)">
-            <ion-toggle label-placement="start" :checked="!isForceScanEnabled" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="isForceScanEnabled" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
           </ion-item>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_BARCODE_IDENTIFIER_UPDATE)">
             <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="barcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
