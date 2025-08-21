@@ -228,6 +228,7 @@ import Image from '@/components/Image.vue';
 import OrderLimitPopover from '@/components/OrderLimitPopover.vue'
 import emitter from "@/event-bus"
 import { addNotification, generateTopicName, isFcmConfigured, storeClientRegistrationToken } from "@/utils/firebase";
+import { UtilService } from '@/services/UtilService';
 
 
 
@@ -643,7 +644,7 @@ export default defineComponent({
       await this.store.dispatch("util/updateProductStoreSettingConfig", {
         enumId: "FULFILL_PART_ODR_REJ",
         payload: params,
-        createService: UserService.createPartialOrderRejectionConfig,
+        createService: UtilService.createPartialOrderRejectionConfig,
         fetchAction: "getPartialOrderRejectionConfig",
         requireEnum: true,
         enumMeta: {
@@ -686,7 +687,7 @@ export default defineComponent({
       await this.store.dispatch("util/updateProductStoreSettingConfig", {
         enumId: "FF_COLLATERAL_REJ",
         payload: params,
-        createService: UserService.createCollateralRejectionConfig,
+        createService: UtilService.createCollateralRejectionConfig,
         fetchAction: "getCollateralRejectionConfig",
         requireEnum: true,
         enumMeta: {
@@ -729,7 +730,7 @@ export default defineComponent({
       await this.store.dispatch("util/updateProductStoreSettingConfig", {
         enumId: "AFFECT_QOH_ON_REJ",
         payload: params,
-        createService: UserService.createAffectQohConfig,
+        createService: UtilService.createAffectQohConfig,
         fetchAction: "getAffectQohConfig",
         requireEnum: false
       });

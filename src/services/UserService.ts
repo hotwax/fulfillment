@@ -302,21 +302,7 @@ const setUserPreference = async (payload: any): Promise<any> => {
   });
 }
 
-const getPartialOrderRejectionConfig = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    params: payload
-  });
-}
 
 const createEnumeration = async (payload: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
@@ -358,220 +344,20 @@ const isEnumExists = async (enumId: string): Promise<any> => {
   }
 }
 
-const getReservationFacilityIdFieldConfig = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    params: payload
-  });
-}
-
-const getDisableShipNowConfig = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    params: payload
-  });
-}
-
-const getDisableUnpackConfig = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    params: payload
-  });
-}
-
-const createPartialOrderRejectionConfig = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "POST",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    data: payload
-  });
-}
-
-const updatePartialOrderRejectionConfig = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "POST",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    data: payload
-  });
-}
-
-const getCollateralRejectionConfig = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    params: payload
-  });
-}
-const createCollateralRejectionConfig = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "POST",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    data: payload
-  });
-}
-const updateCollateralRejectionConfig = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "POST",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    data: payload
-  });
-}
-const getAffectQohConfig = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    params: payload
-  });
-}
-const createAffectQohConfig = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "POST",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    data: payload
-  });
-}
-const updateAffectQohConfig = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "POST",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    data: payload
-  });
-}
-const updateProductStoreSetting = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "POST",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    data: payload
-  });
-}
-
-
 export const UserService = {
     addFacilityToGroup,
-    createAffectQohConfig,
-    createCollateralRejectionConfig,
     createEnumeration,
-    createPartialOrderRejectionConfig,
     login,
-    getAffectQohConfig,
-    getCollateralRejectionConfig,
-    getDisableShipNowConfig,
-    getDisableUnpackConfig,
     getFacilityDetails,
     getFacilityOrderCount,
     getFacilityGroupDetails,
     getFacilityGroupAndMemberDetails,
-    getPartialOrderRejectionConfig,
-    getReservationFacilityIdFieldConfig,
     getUserProfile,
     getPreferredStore,
     isEnumExists,
     moquiLogin,
     setUserPreference,
     getUserPermissions,
-    updateAffectQohConfig,
     updateFacility,
     updateFacilityToGroup,
-    updateCollateralRejectionConfig,
-    updatePartialOrderRejectionConfig,
-    updateProductStoreSetting
 }

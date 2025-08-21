@@ -8,7 +8,6 @@ import logger from '@/logger'
 import store from '@/store';
 import { showToast, getProductStoreId } from '@/utils'
 import { translate, useUserStore } from '@hotwax/dxp-components'
-import { UserService } from '@/services/UserService'
 
 const actions: ActionTree<UtilState, RootState> = {
   async fetchProductStoreSettings({ commit },productStoreId){
@@ -606,7 +605,7 @@ const actions: ActionTree<UtilState, RootState> = {
     };
 
     try {
-      const resp = await UtilService.updateForceScanSetting(params) as any;
+      const resp = await UtilService.updateProductStoreSetting(params) as any;
       if (!hasError(resp)) {
         showToast(translate("Force scan preference updated successfully."));
         prefValue = value;
@@ -988,7 +987,7 @@ const actions: ActionTree<UtilState, RootState> = {
     } as any
 
     try {
-      const resp = await UserService.getPartialOrderRejectionConfig(params)
+      const resp = await UtilService.getPartialOrderRejectionConfig(params)
       if (!hasError(resp)) {
         config = resp.data[0];
         commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
@@ -1013,7 +1012,7 @@ const actions: ActionTree<UtilState, RootState> = {
     };
 
     try {
-      const resp = await UserService.getCollateralRejectionConfig(params);
+      const resp = await UtilService.getCollateralRejectionConfig(params);
       if (!hasError(resp) && resp.data.length) {
         const config = resp.data[0];
         commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
@@ -1039,7 +1038,7 @@ const actions: ActionTree<UtilState, RootState> = {
     } as any
 
     try {
-      const resp = await UserService.getAffectQohConfig(params)
+      const resp = await UtilService.getAffectQohConfig(params)
       if (!hasError(resp)) {
         config = resp.data[0];
         commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
@@ -1065,7 +1064,7 @@ const actions: ActionTree<UtilState, RootState> = {
     } as any
 
     try {
-      const resp = await UserService.getReservationFacilityIdFieldConfig(params)
+      const resp = await UtilService.getReservationFacilityIdFieldConfig(params)
       if (!hasError(resp)) {
         isEnabled = resp.data[0]?.settingValue === "Y" ? true : false
       } else {
@@ -1073,8 +1072,7 @@ const actions: ActionTree<UtilState, RootState> = {
       }
     } catch (err) {
       logger.error('Failed to fetch reservation facility id field configuration');
-    } 
-    // commit(types.UTIL_RESERVATION_FACILITY_ID_FIELD_CONFIG_UPDATED, isEnabled); 
+    }
     commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
       key: "USE_RES_FACILITY_ID",
       value: isEnabled
@@ -1091,7 +1089,7 @@ const actions: ActionTree<UtilState, RootState> = {
     } as any
 
     try { 
-      const resp = await UserService.getDisableShipNowConfig(params)
+      const resp = await UtilService.getDisableShipNowConfig(params)
 
       if (!hasError(resp)) {
         isShipNowDisabled = resp.data[0]?.settingValue === "true";
@@ -1101,7 +1099,6 @@ const actions: ActionTree<UtilState, RootState> = {
     } catch (err) {
       logger.error(err);
     }
-    // commit(types.UTIL_DISABLE_SHIP_NOW_CONFIG_UPDATED, isShipNowDisabled);
     commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
       key: "DISABLE_SHIPNOW",
       value: isShipNowDisabled
@@ -1118,7 +1115,7 @@ const actions: ActionTree<UtilState, RootState> = {
     } as any
 
     try {
-      const resp = await UserService.getDisableUnpackConfig(params)
+      const resp = await UtilService.getDisableUnpackConfig(params)
 
       if (!hasError(resp)) {
         isUnpackDisabled = resp.data[0]?.settingValue === "true";
@@ -1128,7 +1125,6 @@ const actions: ActionTree<UtilState, RootState> = {
     } catch (err) {
       logger.error(err);
     }
-    // commit(types.UTIL_DISABLE_UNPACK_CONFIG_UPDATED, isUnpackDisabled);
     commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
       key: "DISABLE_UNPACK",
       value: isUnpackDisabled
@@ -1137,45 +1133,17 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   // Generic update action for any product store setting
-  async updateProductStoreSettingConfig({ dispatch }, { enumId, payload, createService, fetchAction, requireEnum = false , enumMeta = { description: enumId, enumName: enumId } }) {
+  async updateProductStoreSettingConfig({ dispatch }, config) {
     try {
-      if (requireEnum) {
-        const enumExists = await UserService.isEnumExists(enumId);
-        if (!enumExists) {
-          const enumPayload = {
-            enumId,
-            enumTypeId: "PROD_STR_STNG",
-            enumCode: enumId,
-            description: enumMeta.description,
-            enumName: enumMeta.enumName
-          };
-          const enumResponse = await UserService.createEnumeration(enumPayload);
-          if (hasError(enumResponse)) {
-            throw new Error("Failed to create enumeration");
-          }
-        }
-      }
+      const {
+        enumId,
+        payload,
+        createService,
+        fetchAction,
+        requireEnum = false,
+        enumMeta = { description: enumId, enumName: enumId }
+      } = config;
 
-      const response = await (payload?.settingTypeEnumId
-        ? UtilService.updateProductStoreSetting(payload)
-        : createService({ ...payload, productStoreId: getProductStoreId(), settingTypeEnumId: enumId }));
-
-      const toastMessage = hasError(response)
-        ? "Failed to update configuration"
-        : "Configuration updated";
-      showToast(toastMessage);
-
-      if (fetchAction) await dispatch(fetchAction);
-
-    } catch (error) {
-      showToast("Failed to update configuration");
-      logger.error("Error updating product store setting:", error);
-    }
-  },
-
-  async createProductStoreSettingConfig({ commit },{ enumId, createService, defaultValue, requireEnum = true, enumMeta = { description: enumId, enumName: enumId } }) {
-    try {
-      // Ensure enum exists
       if (requireEnum) {
         const enumExists = await UtilService.isEnumExists(enumId);
         if (!enumExists) {
@@ -1193,7 +1161,46 @@ const actions: ActionTree<UtilState, RootState> = {
         }
       }
 
-      // Create setting
+      const response = await (payload?.settingTypeEnumId ? UtilService.updateProductStoreSetting(payload) : createService({ ...payload, productStoreId: getProductStoreId(), settingTypeEnumId: enumId }));
+
+      const toastMessage = hasError(response) ? "Failed to update configuration" : "Configuration updated";
+      showToast(toastMessage);
+
+      if (fetchAction) await dispatch(fetchAction);
+
+    } catch (error) {
+      showToast("Failed to update configuration");
+      logger.error("Error updating product store setting:", error);
+    }
+  },
+
+  async createProductStoreSettingConfig({ commit }, config) {
+    try {
+      const {
+        enumId,
+        createService,
+        defaultValue,
+        requireEnum = true,
+        enumMeta = { description: enumId, enumName: enumId }
+      } = config;
+
+      if (requireEnum) {
+        const enumExists = await UtilService.isEnumExists(enumId);
+        if (!enumExists) {
+          const enumPayload = {
+            enumId,
+            enumTypeId: "PROD_STR_STNG",
+            enumCode: enumId,
+            description: enumMeta.description,
+            enumName: enumMeta.enumName
+          };
+          const enumResponse = await UtilService.createEnumeration(enumPayload);
+          if (hasError(enumResponse)) {
+            throw new Error("Failed to create enumeration");
+          }
+        }
+      }
+
       const params = {
         productStoreId: getProductStoreId(),
         settingTypeEnumId: enumId,
@@ -1204,8 +1211,6 @@ const actions: ActionTree<UtilState, RootState> = {
       if (hasError(resp)) {
         throw new Error("Failed to create product store setting");
       }
-
-      // Commit default to store
       commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
         key: enumId,
         value: defaultValue
@@ -1215,8 +1220,8 @@ const actions: ActionTree<UtilState, RootState> = {
     } catch (err) {
       logger.error("Error creating product store setting:", err);
       commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
-        key: enumId,
-        value: defaultValue
+        key: config.enumId,
+        value: config.defaultValue
       });
       return false;
     }
