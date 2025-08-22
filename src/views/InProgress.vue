@@ -891,7 +891,7 @@ export default defineComponent({
 
           if (!hasError(resp)) {
             resp.data?.forEach((shipment: any) => {
-              if (shipment?.order?.statusId === "ORDER_APPROVED") {
+              if (shipment?.order?.statusId === "ORDER_APPROVED" && shipment?.order?.productStoreId === this.currentEComStore.productStoreId) {
                 shipment?.picklistShipment?.forEach((picklistShipment: any) => {
                   if (!picklistInfo[picklistShipment.picklistId]) {
                     const picklistRoles = picklistShipment?.picklist?.roles.filter((role: any) => !role.thruDate)
