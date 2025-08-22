@@ -417,21 +417,25 @@ const createBarcodeIdentificationPref = async (payload: any): Promise<any> => {
   });
 }
 
-const getProductStoreSetting = async (params: any): Promise<any> => {
+const fetchProductStoreSetting = async (params: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/productStores/${params.productStoreId}/settings`,
-    method: "GET",
+    url: `/oms/dataDocumentView`,
+    method: "POST",
     baseURL,
     headers: {
       "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
-    params
+    data: {
+      dataDocumentId: "ProductStoreSetting",
+      customParametersMap: params
+    }
   });
 }
+
 
 const fetchExcludeOrderBrokerDays = async (params: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
@@ -518,7 +522,7 @@ const isEnumExists = async (enumId: string): Promise<any> => {
     const omstoken = store.getters['user/getUserToken'];
     const baseURL = store.getters['user/getMaargBaseUrl'];
   
-    const resp = apiClient({
+    const resp = await apiClient({
       url: `/admin/enums`,
       method: "GET",
       baseURL,
@@ -658,6 +662,166 @@ const fetchLabelImageType = async (carrierId : string): Promise<any> => {
   });
 }
 
+const updateProductStoreSetting = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
+const getPartialOrderRejectionConfig = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    params: payload
+  });
+}
+
+const getCollateralRejectionConfig = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    params: payload
+  });
+}
+
+const getAffectQohConfig = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    params: payload
+  });
+}
+
+const getReservationFacilityIdFieldConfig = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    params: payload
+  });
+}
+
+const getDisableShipNowConfig = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    params: payload
+  });
+}
+
+const getDisableUnpackConfig = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    params: payload
+  });
+}
+
+const createCollateralRejectionConfig = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
+const createPartialOrderRejectionConfig = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
+const createAffectQohConfig = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
 export const UtilService = {
   createBarcodeIdentificationPref,
   fetchCarriers,
@@ -691,12 +855,22 @@ export const UtilService = {
   findProductStoreShipmentMethCount,
   generateManifest,
   getAvailablePickers,
-  getProductStoreSetting,
+  fetchProductStoreSetting,
   isEnumExists,
   deleteEnumeration,
   updateEnumeration,
   updateBarcodeIdentificationPref,
   updateEnumerationGroupMember,
   updateForceScanSetting,
-  fetchLabelImageType
+  fetchLabelImageType,
+  updateProductStoreSetting,
+  getPartialOrderRejectionConfig,
+  getReservationFacilityIdFieldConfig,
+  getAffectQohConfig,
+  getCollateralRejectionConfig,
+  getDisableShipNowConfig,
+  getDisableUnpackConfig,
+  createPartialOrderRejectionConfig,
+  createAffectQohConfig,
+  createCollateralRejectionConfig,
 }

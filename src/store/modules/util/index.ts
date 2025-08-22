@@ -30,7 +30,14 @@ const utilModule: Module<UtilState, RootState> = {
     facilityAddresses: {},
     facilityShippingLabelImageType: {},
     isPicklistDownloadEnabled: false,
-    excludeOrderBrokerDays: undefined
+    excludeOrderBrokerDays: undefined,
+    partialOrderRejectionConfig: {},
+    collateralRejectionConfig: {},
+    affectQohConfig: {},
+    isShipNowDisabled: false,
+    isUnpackDisabled: false,
+    isReservationFacilityFieldEnabled:false,
+    productStoreSettings: {}
   },
   getters,
   actions,

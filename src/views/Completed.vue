@@ -305,8 +305,8 @@ export default defineComponent({
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       getProductStock: 'stock/getProductStock',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
-      isShipNowDisabled: 'user/isShipNowDisabled',
-      isUnpackDisabled: 'user/isUnpackDisabled'
+      isShipNowDisabled: 'util/isShipNowDisabled',
+      isUnpackDisabled: 'util/isUnpackDisabled'
     }),
     getTotalPackages() {
       return this.carrierPartyIds.reduce((total: number, carrier: any) => total + Number(carrier.groups), 0);

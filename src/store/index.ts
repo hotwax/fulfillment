@@ -26,7 +26,7 @@ const state: any = {
 }
 
 const persistState = createPersistedState({
-    paths: ['user', 'util.productStoreShipmentMethCount', 'util.isForceScanEnabled', 'util.isPicklistDownloadEnabled', 'util.barcodeIdentificationPref', 'util.carrierDesc', 'util.facilityAddresses', 'util.shipmentBoxTypeDesc', 'util.carrierShipmentBoxTypes', 'product.sampleProducts', 'util.excludeOrderBrokerDays'],
+    paths: ['user', 'util.productStoreShipmentMethCount', 'util.isForceScanEnabled', 'util.isPicklistDownloadEnabled', 'util.barcodeIdentificationPref', 'util.carrierDesc', 'util.facilityAddresses', 'util.shipmentBoxTypeDesc', 'util.carrierShipmentBoxTypes', 'product.sampleProducts', 'util.excludeOrderBrokerDays', 'util.productStoreSettings'],
     fetchBeforeUse: true
 })
 
