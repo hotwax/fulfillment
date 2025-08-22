@@ -21,7 +21,8 @@ const findOpenOrders = async (payload: any): Promise<any> => {
     filters: {
       '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
       orderStatusId: { value: 'ORDER_APPROVED' },
-      orderTypeId: { value: 'SALES_ORDER' }
+      orderTypeId: { value: 'SALES_ORDER' },
+      productStoreId: { value: getProductStoreId() }
     },
     solrFilters: [
       //it should be explicit what is subtracting the first part of your OR statement from
@@ -376,7 +377,8 @@ const findShipments = async (query: any): Promise <any>  => {
     const params = {
       pageSize: query.viewSize,
       orderBy: 'orderDate',
-      shipmentTypeId: 'SALES_SHIPMENT'
+      shipmentTypeId: 'SALES_SHIPMENT', 
+      productStoreId: getProductStoreId(),
     } as any
 
     if (query.queryString) {

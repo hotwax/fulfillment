@@ -325,6 +325,7 @@ export default defineComponent({
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
+          productStoreId: { value: this.currentEComStore.productStoreId },
           ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         solrFilters: [
