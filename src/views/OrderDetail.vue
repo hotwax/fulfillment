@@ -581,12 +581,7 @@ export default defineComponent({
     : this.category === 'in-progress'
     ? await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipmentId: this.shipmentId })
     : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipmentId: this.shipmentId })
-    await Promise.all([
-      this.store.dispatch('util/fetchCarrierShipmentBoxTypes'),
-      this.store.dispatch('carrier/fetchFacilityCarriers'),
-      this.store.dispatch('carrier/fetchProductStoreShipmentMeths', this.order.productStoreId),
-      this.fetchOrderInvoicingStatus()
-    ]);
+    await Promise.all([this.store.dispatch('util/fetchCarrierShipmentBoxTypes'), this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths'), this.fetchOrderInvoicingStatus()]);
     if (this.facilityCarriers) {
       const shipmentPackageRouteSegDetail = this.order.shipmentPackageRouteSegDetails?.[0];
       this.carrierPartyId = shipmentPackageRouteSegDetail?.carrierPartyId ? shipmentPackageRouteSegDetail?.carrierPartyId : this.facilityCarriers[0].partyId;
