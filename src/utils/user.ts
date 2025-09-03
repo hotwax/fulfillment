@@ -1,10 +1,13 @@
 import { translate } from '@hotwax/dxp-components'
 import store from '@/store'
 import { loadingController } from '@ionic/vue'
+import { ProductService } from '@/services/ProductService';
 
 const login = async (payload: any) => store.dispatch('user/login', payload);
 
 const logout = async (payload: any) => store.dispatch('user/logout', payload);
+
+const fetchProduct = async (payload: any) => ProductService.fetchProducts(payload)
 
 const loader = {
   value: null as any,
@@ -30,5 +33,6 @@ const loader = {
 export {
   login,
   loader,
-  logout
+  logout,
+  fetchProduct
 }
