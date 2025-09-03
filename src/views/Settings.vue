@@ -151,7 +151,7 @@
             {{ translate("Individual items within an order will be rejected without affecting the other items in the order.") }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="partialOrderRejectionConfig" @click.prevent="confirmPartialOrderRejection(partialOrderRejectionConfig, $event)">{{ translate("Partial rejections") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="isPartialOrderRejectionEnabled" @click.prevent="confirmPartialOrderRejection(isPartialOrderRejectionEnabled, $event)">{{ translate("Partial rejections") }}</ion-toggle>
           </ion-item>
         </ion-card>
         <ion-card>
@@ -164,7 +164,7 @@
             {{ translate('When rejecting an item, automatically reject all other orders for that item as well.') }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_COLLATERAL_REJECTION_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="'true' === collateralRejectionConfig" @click.prevent="confirmCollateralRejection(collateralRejectionConfig, $event)">{{ translate("Auto reject related items") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="'true' === isCollateralRejectionEnabled" @click.prevent="confirmCollateralRejection(isCollateralRejectionEnabled, $event)">{{ translate("Auto reject related items") }}</ion-toggle>
           </ion-item>
         </ion-card>
         <ion-card>
@@ -177,7 +177,7 @@
             {{ translate('Adjust the QOH along with ATP on rejection.') }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_AFFECT_QOH_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="'true' === affectQohConfig" @click.prevent="confirmAffectQohConfig(affectQohConfig, $event)">{{ translate("Affect QOH") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="'true' === affectQoh" @click.prevent="confirmAffectQohConfig(affectQoh, $event)">{{ translate("Affect QOH") }}</ion-toggle>
           </ion-item>
         </ion-card>
       </section>
@@ -282,18 +282,17 @@ export default defineComponent({
       allNotificationPrefs: 'user/getAllNotificationPrefs',
       firebaseDeviceId: 'user/getFirebaseDeviceId',
       isForceScanEnabled: 'util/isForceScanEnabled',
-      partialOrderRejectionConfig: 'util/getPartialOrderRejectionConfig',//previously imported from user
-      collateralRejectionConfig: 'util/getCollateralRejectionConfig',//previously imported from user
-      affectQohConfig: 'util/getAffectQohConfig',//previously imported from user
+      isPartialOrderRejectionEnabled: 'util/getPartialOrderRejectionConfig',
+      isCollateralRejectionEnabled: 'util/getCollateralRejectionConfig',
+      affectQoh: 'util/getAffectQohConfig',
       barcodeIdentificationPref: 'util/getBarcodeIdentificationPref'
     })
   },
   async ionViewWillEnter() {
     Promise.all([this.getCurrentFacilityDetails(), this.getFacilityOrderCount(), this.getEcomInvStatus()]);
 
-    // fetching partial order rejection when entering setting page to have latest information
-    await this.store.dispatch('util/getPartialOrderRejectionConfig')//previously imported from user
-    await this.store.dispatch('util/getCollateralRejectionConfig')//previously imported from user
+    // fetching all settings when entering setting page to have latest information
+    await this.store.dispatch("util/fetchProductStoreSettings",this.preferredStore.productStoreId)
     
     // as notification prefs can also be updated from the notification pref modal,
     // latest state is fetched each time we open the settings page
@@ -644,7 +643,7 @@ export default defineComponent({
       await this.store.dispatch("util/updateProductStoreSettingConfig", {
         enumId: "FULFILL_PART_ODR_REJ",
         payload: params,
-        createService: UtilService.createPartialOrderRejectionConfig,
+        createService: UtilService.createProductStoreSetting,
         fetchAction: "getPartialOrderRejectionConfig",
         requireEnum: true,
         enumMeta: {
@@ -687,7 +686,7 @@ export default defineComponent({
       await this.store.dispatch("util/updateProductStoreSettingConfig", {
         enumId: "FF_COLLATERAL_REJ",
         payload: params,
-        createService: UtilService.createCollateralRejectionConfig,
+        createService: UtilService.createProductStoreSetting,
         fetchAction: "getCollateralRejectionConfig",
         requireEnum: true,
         enumMeta: {
@@ -730,7 +729,7 @@ export default defineComponent({
       await this.store.dispatch("util/updateProductStoreSettingConfig", {
         enumId: "AFFECT_QOH_ON_REJ",
         payload: params,
-        createService: UtilService.createAffectQohConfig,
+        createService: UtilService.createProductStoreSetting,
         fetchAction: "getAffectQohConfig",
         requireEnum: false
       });
@@ -745,6 +744,7 @@ export default defineComponent({
     const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let currentFacility: any = computed(() => userStore.getCurrentFacility) 
+    let preferredStore: any = computed(() => userStore.currentEComStore)
     let barcodeIdentificationOptions = computed(() => productIdentificationStore.getGoodIdentificationOptions)
 
     return {
@@ -759,7 +759,8 @@ export default defineComponent({
       router,
       store,
       hasPermission,
-      translate
+      translate,
+      preferredStore
     }
   }
 });

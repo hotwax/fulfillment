@@ -494,7 +494,7 @@ const actions: ActionTree<UtilState, RootState> = {
       } else {
         await dispatch("createProductStoreSettingConfig", {
           enumId: "FULFILL_FORCE_SCAN",
-          createService: UtilService.createForceScanSetting,
+          createService: UtilService.createProductStoreSetting,
           defaultValue: "false",
           requireEnum: true,
           enumMeta: {
@@ -537,7 +537,7 @@ const actions: ActionTree<UtilState, RootState> = {
         settingValue: "false"
       };
 
-      await UtilService.createForceScanSetting(params) as any;
+      await UtilService.createProductStoreSetting(params) as any;
       isSettingExists = true;
     } catch (err) {
       console.error(err);
@@ -582,7 +582,7 @@ const actions: ActionTree<UtilState, RootState> = {
     if (!isSettingExists) {
       isSettingExists = await dispatch("createProductStoreSettingConfig", {
         enumId: "FULFILL_FORCE_SCAN",
-        createService: UtilService.createForceScanSetting,
+        createService: UtilService.createProductStoreSetting,
         defaultValue: "false",
         requireEnum: true,
         enumMeta: {
@@ -646,7 +646,7 @@ const actions: ActionTree<UtilState, RootState> = {
       } else {
         dispatch("createProductStoreSettingConfig", {
           enumId: "BARCODE_IDEN_PREF",
-          createService: UtilService.createBarcodeIdentificationPref,
+          createService: UtilService.createProductStoreSetting,
           defaultValue: "internalName",
           requireEnum: true,
           enumMeta: {
@@ -688,7 +688,7 @@ const actions: ActionTree<UtilState, RootState> = {
         settingValue: "internalName"
       };
 
-      await UtilService.createBarcodeIdentificationPref(params) as any;
+      await UtilService.createProductStoreSetting(params) as any;
       isSettingExists = true;
     } catch (err) {
       console.error(err);
@@ -735,7 +735,7 @@ const actions: ActionTree<UtilState, RootState> = {
     if (!isSettingExists) {
       isSettingExists = await dispatch("createProductStoreSettingConfig", {
         enumId: "BARCODE_IDEN_PREF",
-        createService: UtilService.createBarcodeIdentificationPref,
+        createService: UtilService.createProductStoreSetting,
         defaultValue: "internalName",
         requireEnum: true,
         enumMeta: {
@@ -761,7 +761,7 @@ const actions: ActionTree<UtilState, RootState> = {
     };
 
     try {
-      const resp = await UtilService.updateBarcodeIdentificationPref(params) as any;
+      const resp = await UtilService.updateProductStoreSetting(params) as any;
       if (!hasError(resp)) {
         showToast(translate("Barcode identification preference updated successfully."));
         prefValue = value;
@@ -958,13 +958,13 @@ const actions: ActionTree<UtilState, RootState> = {
   async fetchExcludeOrderBrokerDays({ commit }, productStoreId) {
     let excludeOrderBrokerDays = undefined
     try {
-      const resp = await UtilService.fetchExcludeOrderBrokerDays({
+      const resp = await UtilService.fetchProductStoreSetting({
         "productStoreId": productStoreId,
         "settingTypeEnumId": "EXCLUDE_ODR_BKR_DAYS"
       })
 
-      if (!hasError(resp) && resp.data[0]?.settingTypeEnumId && resp.data[0]?.settingValue !== null) {
-        excludeOrderBrokerDays = Number(resp.data[0]?.settingValue)
+      if (!hasError(resp) && resp.data.entityValueList[0]?.settingTypeEnumId && resp.data.entityValueList[0]?.settingValue !== null) {
+        excludeOrderBrokerDays = Number(resp.data.entityValueList[0]?.settingValue)
       }
     } catch(err) {
       logger.error("Failed to get the exclude order broker days", err)
@@ -987,9 +987,9 @@ const actions: ActionTree<UtilState, RootState> = {
     } as any
 
     try {
-      const resp = await UtilService.getPartialOrderRejectionConfig(params)
-      if (!hasError(resp)) {
-        config = resp.data[0];
+      const resp = await UtilService.fetchProductStoreSetting(params)
+      if (!hasError(resp) && resp.data.entityValueList.length) {
+        config = resp.data.entityValueList[0];
         commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
         key: settingTypeEnumId,
         value: config.settingValue
@@ -1012,9 +1012,9 @@ const actions: ActionTree<UtilState, RootState> = {
     };
 
     try {
-      const resp = await UtilService.getCollateralRejectionConfig(params);
-      if (!hasError(resp) && resp.data.length) {
-        const config = resp.data[0];
+      const resp = await UtilService.fetchProductStoreSetting(params);
+      if (!hasError(resp) && resp.data.entityValueList.length) {
+        const config = resp.data.entityValueList[0];
         commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
           key: settingTypeEnumId,
           value: config.settingValue
@@ -1038,9 +1038,9 @@ const actions: ActionTree<UtilState, RootState> = {
     } as any
 
     try {
-      const resp = await UtilService.getAffectQohConfig(params)
-      if (!hasError(resp)) {
-        config = resp.data[0];
+      const resp = await UtilService.fetchProductStoreSetting(params)
+      if (!hasError(resp) && resp.data.entityValueList.length) {
+        config = resp.data.entityValueList[0];
         commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
         key: settingTypeEnumId,
         value: config.settingValue
@@ -1064,9 +1064,9 @@ const actions: ActionTree<UtilState, RootState> = {
     } as any
 
     try {
-      const resp = await UtilService.getReservationFacilityIdFieldConfig(params)
+      const resp = await UtilService.fetchProductStoreSetting(params)
       if (!hasError(resp)) {
-        isEnabled = resp.data[0]?.settingValue === "Y" ? true : false
+        isEnabled = resp.data.entityValueList[0]?.settingValue === "Y" ? true : false
       } else {
         throw resp.data;
       }
@@ -1089,10 +1089,10 @@ const actions: ActionTree<UtilState, RootState> = {
     } as any
 
     try { 
-      const resp = await UtilService.getDisableShipNowConfig(params)
+      const resp = await UtilService.fetchProductStoreSetting(params)
 
       if (!hasError(resp)) {
-        isShipNowDisabled = resp.data[0]?.settingValue === "true";
+        isShipNowDisabled = resp.data.entityValueList[0]?.settingValue === "true";
       } else {
         logger.error('Failed to fetch disable ship now config.');
       }
@@ -1115,10 +1115,10 @@ const actions: ActionTree<UtilState, RootState> = {
     } as any
 
     try {
-      const resp = await UtilService.getDisableUnpackConfig(params)
+      const resp = await UtilService.fetchProductStoreSetting(params)
 
       if (!hasError(resp)) {
-        isUnpackDisabled = resp.data[0]?.settingValue === "true";
+        isUnpackDisabled = resp.data.entityValueList[0]?.settingValue === "true";
       } else {
         logger.error('Failed to fetch disable unpack config.');
       }
