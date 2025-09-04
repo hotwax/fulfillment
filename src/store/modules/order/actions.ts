@@ -498,6 +498,7 @@ const actions: ActionTree<OrderState, RootState> = {
           ...order,
           shipGroups: resp.data.shipGroups,
           paymentPreferences: resp.data.paymentPreferences,
+          currencyUom:resp.data.currencyUom,
           adjustments: resp.data.adjustments,
           attributes: resp.data.attributes,
           shippingAddress: resp.data.contactMechs?.find((contactMech:any) => contactMech.contactMechPurposeTypeId === "SHIPPING_LOCATION")?.postalAddress,
