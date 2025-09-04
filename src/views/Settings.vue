@@ -151,7 +151,7 @@
             {{ translate("Individual items within an order will be rejected without affecting the other items in the order.") }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="isPartialOrderRejectionEnabled" @click.prevent="confirmPartialOrderRejection(isPartialOrderRejectionEnabled, $event)">{{ translate("Partial rejections") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="isPartialOrderRejectionEnabled" @click.prevent="confirmPartialOrderRejection($event)">{{ translate("Partial rejections") }}</ion-toggle>
           </ion-item>
         </ion-card>
         <ion-card>
@@ -164,7 +164,7 @@
             {{ translate('When rejecting an item, automatically reject all other orders for that item as well.') }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_COLLATERAL_REJECTION_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="'true' === isCollateralRejectionEnabled" @click.prevent="confirmCollateralRejection(isCollateralRejectionEnabled, $event)">{{ translate("Auto reject related items") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="'true' === isCollateralRejectionEnabled" @click.prevent="confirmCollateralRejection($event)">{{ translate("Auto reject related items") }}</ion-toggle>
           </ion-item>
         </ion-card>
         <ion-card>
@@ -177,7 +177,7 @@
             {{ translate('Adjust the QOH along with ATP on rejection.') }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_AFFECT_QOH_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="'true' === affectQoh" @click.prevent="confirmAffectQohConfig(affectQoh, $event)">{{ translate("Affect QOH") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="'true' === affectQoh" @click.prevent="confirmAffectQohConfig($event)">{{ translate("Affect QOH") }}</ion-toggle>
           </ion-item>
         </ion-card>
       </section>
@@ -535,9 +535,21 @@ export default defineComponent({
 
     },
     async updateForceScanStatus(event: any) {
-      event.stopImmediatePropagation();
-
-      this.store.dispatch("util/setForceScanSetting", !this.isForceScanEnabled)
+      event.stopImmediatePropagation()
+      const params = {
+        settingValue: !this.isForceScanEnabled
+      };
+      await this.store.dispatch("util/updateProductStoreSettingConfig", {
+        enumId: "FULFILL_FORCE_SCAN",
+        payload: params,
+        createService: UtilService.createProductStoreSetting,
+        fetchAction: "getForceScanSetting",
+        requireEnum: true,
+        enumMeta: {
+          description: "Impose force scanning of items while packing from fulfillment app",
+          enumName: "Fulfillment Force Scan"
+        }
+      });
     },
     setPrintShippingLabelPreference (ev: any) {
       this.store.dispatch('user/setUserPreference', { printShippingLabel: ev.detail.checked })
@@ -610,7 +622,7 @@ export default defineComponent({
       });
       return alert.present();
     },
-    async confirmPartialOrderRejection(config: any, event: any) {
+    async confirmPartialOrderRejection(event: any) {
       event.stopImmediatePropagation();
       const isChecked = !event.target.checked;
       const message = translate("Are you sure you want to perform this action?");
@@ -628,16 +640,15 @@ export default defineComponent({
             text: translate("Confirm"),
             handler: async () => {
               alertController.dismiss()
-              await this.updatePartialOrderRejectionConfig(config, isChecked)
+              await this.updatePartialOrderRejectionConfig(isChecked)
             }
           }
         ],
       });
       return alert.present();
     },
-    async updatePartialOrderRejectionConfig(config: any, value: any) {
+    async updatePartialOrderRejectionConfig(value: any) {
       const params = {
-        ...config,
         "settingValue": value
       }
       await this.store.dispatch("util/updateProductStoreSettingConfig", {
@@ -652,7 +663,7 @@ export default defineComponent({
         }
       });
     },
-    async confirmCollateralRejection(config: any, event: any) {
+    async confirmCollateralRejection(event: any) {
       event.stopImmediatePropagation();
 
       const isChecked = !event.target.checked;
@@ -671,16 +682,15 @@ export default defineComponent({
             text: translate("Confirm"),
             handler: async () => {
               alertController.dismiss()
-              await this.updateCollateralRejectionConfig(config, !event.target.checked)
+              await this.updateCollateralRejectionConfig(!event.target.checked)
             }
           }
         ],
       });
       return alert.present();
     },
-    async updateCollateralRejectionConfig(config: any, value: any) {
+    async updateCollateralRejectionConfig(value: any) {
       const params = {
-        ...config,
         "settingValue": value
       }
       await this.store.dispatch("util/updateProductStoreSettingConfig", {
@@ -695,7 +705,7 @@ export default defineComponent({
         }
       });
     },
-    async confirmAffectQohConfig(config: any, event: any) {
+    async confirmAffectQohConfig(event: any) {
       event.stopImmediatePropagation();
 
       const isChecked = !event.target.checked;
@@ -714,16 +724,15 @@ export default defineComponent({
             text: translate("Confirm"),
             handler: async () => {
               alertController.dismiss()
-              await this.updateAffectQohConfig(config, !event.target.checked)
+              await this.updateAffectQohConfig(!event.target.checked)
             }
           }
         ],
       });
       return alert.present();
     },
-    async updateAffectQohConfig(config: any, value: any) {
+    async updateAffectQohConfig(value: any) {
       const params = {
-        ...config,
         "settingValue": value
       }
       await this.store.dispatch("util/updateProductStoreSettingConfig", {
@@ -735,8 +744,19 @@ export default defineComponent({
       });
     },
     setBarcodeIdentificationPref(value: string) {
-      this.store.dispatch('util/setBarcodeIdentificationPref', value)
-    },
+      this.store.dispatch('util/updateProductStoreSettingConfig', {
+        enumId: 'BARCODE_IDEN_PREF',
+        payload: { settingValue: value},
+        createService: UtilService.createProductStoreSetting,
+        fetchAction: 'getBarcodeIdentificationPref',
+        requireEnum: true,
+        enumMeta: {
+          description: 'Identification preference to be used for scanning items.',
+          enumName: 'Barcode Identification Preference'
+        }
+      })
+    }
+
   },
   setup() {
     const store = useStore();
