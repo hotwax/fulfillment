@@ -780,7 +780,7 @@ export default defineComponent({
       store,
       hasPermission,
       translate,
-      preferredStore
+      preferredStore,
       authStore
     }
   }
