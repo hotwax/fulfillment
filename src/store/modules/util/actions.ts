@@ -892,9 +892,12 @@ const actions: ActionTree<UtilState, RootState> = {
   
         if (!hasError(resp) && resp.data?.entityValueList?.length > 0) {
           commit(types.SET_AUTO_SHIPPING_LABEL_ENABLED, true); 
+        }else {
+        commit(types.SET_AUTO_SHIPPING_LABEL_ENABLED, false);
         }
       } catch (err) {
-        logger.error('Failed to check auto shipping label group', err)
+        logger.error('Failed to check auto shipping label group', err);
+        commit(types.SET_AUTO_SHIPPING_LABEL_ENABLED, false);
       }
   }
 
