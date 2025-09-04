@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-back-button :default-href="`/transfer-order-details/${currentShipment.orderId}`" slot="start" />
+        <ion-back-button :default-href="`/transfer-order-details/${currentShipment.orderId}/open`" slot="start" />
         <ion-title>{{ translate("Review Shipment") }}</ion-title>
         
         <ion-buttons slot="end">
@@ -115,7 +115,7 @@ export default defineComponent({
     this.shipmentItems = this.currentShipment.items;
   },
   async beforeRouteLeave(to) {
-    if (to.path !== `/transfer-order-details/${this.currentShipment.orderId}`) return;
+    if (to.path !== `/transfer-order-details/${this.currentShipment.orderId}/open`) return;
     let canLeave = false;
     const message = translate("Are you sure that you want to discard this shipment?");
     const alert = await alertController.create({
@@ -198,7 +198,7 @@ export default defineComponent({
       }
       await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
       this.isGeneratingShippingLabel = true;
-      let shippingLabelPdfUrls = this.currentShipment?.labelImageUrl ? [this.currentShipment?.labelImageUrl] : [];
+      let shippingLabelPdfUrls = this.currentShipment?.labelImageUrls
       this.trackingCode = this.currentShipment.trackingIdNumber
       
       if (!this.currentShipment.trackingIdNumber) {
@@ -206,7 +206,7 @@ export default defineComponent({
         await OrderService.retryShippingLabel(this.currentShipment.shipmentId)
         //retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
         await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
-        shippingLabelPdfUrls = this.currentShipment?.labelImageUrl ? [this.currentShipment?.labelImageUrl] : [];
+        shippingLabelPdfUrls = this.currentShipment?.labelImageUrls
         if(this.currentShipment.trackingIdNumber) {
           this.trackingCode = this.currentShipment.trackingIdNumber
           this.showLabelError = false;
@@ -263,7 +263,7 @@ export default defineComponent({
         
         this.isShipped = true;
         showToast(translate('Shipment shipped successfully.'));
-        this.router.replace({ path: `/transfer-order-details/${this.currentShipment.orderId}` })
+        this.router.replace({ path: `/transfer-order-details/${this.currentShipment.orderId}/open` })
       } catch (err) {
         logger.error('Failed to ship the shipment.', err);
         showToast(translate('Something went wrong, could not ship the shipment'))

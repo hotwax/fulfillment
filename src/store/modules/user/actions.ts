@@ -124,7 +124,7 @@ const actions: ActionTree<UserState, RootState> = {
 
       const orderId = router.currentRoute.value.query.orderId
       if (isQueryFacilityFound && orderId) {
-        return `/transfer-order-details/${orderId}`;
+        return `/transfer-order-details/${orderId}/open`;
       }
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
