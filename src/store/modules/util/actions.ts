@@ -871,7 +871,33 @@ const actions: ActionTree<UtilState, RootState> = {
       logger.error("Failed to get the exclude order broker days", err)
     }
     commit(types.UTIL_EXCLUDE_ORDER_BROKER_DAYS_UPDATED, excludeOrderBrokerDays)
+  },
+
+  async checkAutoShippingLabelGroup({commit}) {
+      let resp: any;
+      try {     
+        const currentFacility: any = useUserStore().getCurrentFacility;
+        const facilityId=currentFacility?.facilityId;
+        // 1. Check if current facility is part of Auto shipping group
+        resp = await UtilService.getFacilityGroupAndMemberDetails({
+          customParametersMap: {
+            "facilityId": facilityId,
+            "facilityGroupId": "AUTO_SHIPPING_LABEL",
+            pageIndex: 0,
+            pageSize: 1
+          },
+          dataDocumentId: "FacilityGroupAndMember",
+          filterByDate: true
+        })
+  
+        if (!hasError(resp) && resp.data?.entityValueList?.length > 0) {
+          commit(types.SET_AUTO_SHIPPING_LABEL_ENABLED, true); 
+        }
+      } catch (err) {
+        logger.error('Failed to check auto shipping label group', err)
+      }
   }
+
 }
 
 export default actions;

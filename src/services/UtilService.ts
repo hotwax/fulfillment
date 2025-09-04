@@ -657,6 +657,21 @@ const fetchLabelImageType = async (carrierId : string): Promise<any> => {
     params: {"systemResourceId": carrierId, "systemPropertyId": "shipment.carrier.labelImageType", "pageSize": 1}
   });
 }
+const getFacilityGroupAndMemberDetails = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/dataDocumentView`,
+    method: "post",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
 
 export const UtilService = {
   createBarcodeIdentificationPref,
@@ -698,5 +713,6 @@ export const UtilService = {
   updateBarcodeIdentificationPref,
   updateEnumerationGroupMember,
   updateForceScanSetting,
-  fetchLabelImageType
+  fetchLabelImageType,
+  getFacilityGroupAndMemberDetails
 }

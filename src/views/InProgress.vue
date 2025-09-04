@@ -193,7 +193,7 @@
               </div>
 
               <div class="desktop-only">
-                <ion-button v-if="order.missingLabelImage" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
+                <ion-button v-if="order.missingLabelImage&&isAutoShippingLabelEnabled" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -367,7 +367,8 @@ export default defineComponent({
       affectQohConfig: 'user/getAffectQohConfig',
       excludeOrderBrokerDays: "util/getExcludeOrderBrokerDays",
       carrierShipmentBoxTypes: 'util/getCarrierShipmentBoxTypes',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
+      isAutoShippingLabelEnabled: 'util/getAutoShippingLabel',
     }),
   },
   data() {
@@ -1256,6 +1257,7 @@ export default defineComponent({
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
     await this.fetchPickersInformation()
+    await this.store.dispatch('util/checkAutoShippingLabelGroup');
     //Cross checking if the selected picklist is still valid, as user can pack the order from order detail page
     if (this.selectedPicklistId) {
       const selectedPicklist = this.picklists.find((picklist: any) => picklist.id === this.selectedPicklistId)
