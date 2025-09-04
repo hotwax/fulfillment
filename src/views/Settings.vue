@@ -441,6 +441,7 @@ export default defineComponent({
       this.getCurrentFacilityDetails();
       this.getFacilityOrderCount();
       this.getEcomInvStatus();
+      await this.store.dispatch('util/checkAutoShippingLabelGroup');
     },
     async timeZoneUpdated(tzId: string) {
       await this.store.dispatch("user/setUserTimeZone", tzId)

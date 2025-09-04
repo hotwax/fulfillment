@@ -86,5 +86,8 @@ const mutations: MutationTree <UtilState> = {
   [types.UTIL_EXCLUDE_ORDER_BROKER_DAYS_UPDATED](state, payload) {
     state.excludeOrderBrokerDays = payload
   },
+  [types.SET_AUTO_SHIPPING_LABEL_ENABLED](state, payload) {
+    state.isAutoShippingLabelEnabled = payload;
+  }
 }
 export default mutations;
