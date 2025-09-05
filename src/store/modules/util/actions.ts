@@ -616,30 +616,6 @@ const actions: ActionTree<UtilState, RootState> = {
     }
   },
 
-  async fetchProductStoreSettingPicklist({ commit }, eComStoreId) {
-    let isPicklistDownloadEnabled = false
-    const payload = {
-      "productStoreId": eComStoreId,
-      "settingTypeEnumId": "FF_DOWNLOAD_PICKLIST",
-      "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
-      "pageSize": 1
-    }
-
-    try {
-      const resp = await UtilService.fetchProductStoreSetting(payload) as any
-      if (!hasError(resp) && resp.data?.length) {
-        isPicklistDownloadEnabled = resp.data[0].settingValue == "true"
-      }
-    } catch(err) {
-      logger.error(err)
-    }
-    // commit(types.UTIL_PICKLIST_DOWNLOAD_STATUS_UPDATED, isPicklistDownloadEnabled)
-    commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
-        key: "FF_DOWNLOAD_PICKLIST",
-        value: isPicklistDownloadEnabled
-      });
-  },
-
   // Generic update action for any product store setting
   async updateProductStoreSettingConfig({ dispatch }, config) {
     try {
