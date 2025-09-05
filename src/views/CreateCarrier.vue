@@ -14,7 +14,7 @@
             </ion-input>
           </ion-item>
           <ion-item>
-            <ion-input label-placement="floating" :label="translate('ID')" v-model="carrier.partyId"/>
+            <ion-input label-placement="floating" ref="partyId" :label="translate('ID')" v-model="carrier.partyId" @ionChange="validateFacilityId" @ionBlur="markFacilityIdTouched" :error-text="translate('Party ID cannot be more than 20 characters.')"/>
           </ion-item>
           <ion-button class="ion-margin-top" @click="createCarrier()">
             {{ translate("Setup methods") }}
@@ -75,7 +75,8 @@
     },
     data() {
       return {
-        carrier: {} as any
+        carrier: {} as any,
+        isAutoGenerateId: true,
       }
     },
     async ionViewWillEnter() {
@@ -84,14 +85,34 @@
     methods: {
       clearCarrierData() {
         this.carrier = {}
+        this.isAutoGenerateId = true
       },
       setCarrierPartyId(event: any) {
-        this.carrier.partyId = generateInternalId(event.target.value)
+        if (this.isAutoGenerateId) {
+          this.carrier.partyId = generateInternalId(event.target.value)
+        }
+      },
+      validateFacilityId(event: any) {
+        const value = event.target.value;
+        (this as any).$refs.partyId.$el.classList.remove('ion-valid');
+        (this as any).$refs.partyId.$el.classList.remove('ion-invalid');
+
+        if (value === '') return;
+
+        this.carrier.partyId.length <= 20 ? (this as any).$refs.partyId.$el.classList.add('ion-valid') : (this as any).$refs.partyId.$el.classList.add('ion-invalid');
+        this.isAutoGenerateId = false;
+      },
+      markFacilityIdTouched() {
+        (this as any).$refs.partyId.$el.classList.add('ion-touched');
       },
       async createCarrier() {
         if (!this.carrier.groupName.trim()) {
           showToast(translate("Carrier name can not be empty."));
           return;
+        }
+        if (this.carrier.partyId.length > 20) {
+          showToast(translate('Party ID cannot be more than 20 characters.'))
+          return
         }
         const payload = {
           groupName: this.carrier.groupName.trim(),

@@ -396,6 +396,7 @@
   "Pack using default packaging": "Pack using default packaging",
   "Packed": "Packed",
   "Partial rejections": "Partial rejections",
+  "Party ID cannot be more than 20 characters.": "Party ID cannot be more than 20 characters.",
   "Password": "Password",
   "Payment": "Payment",
   "PAYMENT_AUTHORIZED": "PAYMENT_AUTHORIZED",

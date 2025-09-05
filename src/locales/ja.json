@@ -391,6 +391,7 @@
   "Pack using default packaging": "デフォルトの梱包材を使用して梱包",
   "Packed": "梱包済み",
   "Partial rejections": "Partial rejections",
+  "Party ID cannot be more than 20 characters.": "Party ID cannot be more than 20 characters.",
   "Password": "パスワード",
   "Payment": "支払い",
   "PAYMENT_AUTHORIZED": "支払い承認済み",
