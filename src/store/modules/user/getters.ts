@@ -58,24 +58,6 @@ const getters: GetterTree <UserState, RootState> = {
     },
     getAllNotificationPrefs(state) {
         return state.allNotificationPrefs
-    },
-    getPartialOrderRejectionConfig(state) {
-        return  state.partialOrderRejectionConfig;
-    },
-    getCollateralRejectionConfig(state) {
-        return  state.collateralRejectionConfig;
-    },
-    getAffectQohConfig(state) {
-        return  state.affectQohConfig;
-    },
-    isShipNowDisabled(state) {
-        return state.isShipNowDisabled;
-    },
-    isUnpackDisabled(state) {
-        return state.isUnpackDisabled;
-    },
-    isReservationFacilityFieldEnabled(state) {
-        return state.isReservationFacilityFieldEnabled;
     }
 }
 export default getters;

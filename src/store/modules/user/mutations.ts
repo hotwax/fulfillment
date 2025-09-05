@@ -47,26 +47,8 @@ const mutations: MutationTree <UserState> = {
     [types.USER_ALL_NOTIFICATION_PREFS_UPDATED] (state, payload) {
         state.allNotificationPrefs = payload
     },
-    [types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED] (state, payload) {
-        state.partialOrderRejectionConfig = payload
-    },
-    [types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED] (state, payload) {
-        state.collateralRejectionConfig = payload
-    },
-    [types.USER_AFFECT_QOH_CONFIG_UPDATED] (state, payload) {
-        state.affectQohConfig = payload
-    },
-    [types.USER_DISABLE_SHIP_NOW_CONFIG_UPDATED] (state, payload) {
-        state.isShipNowDisabled = payload
-    },
-    [types.USER_DISABLE_UNPACK_CONFIG_UPDATED] (state, payload) {
-        state.isUnpackDisabled = payload
-    },
     [types.USER_OMS_REDIRECTION_INFO_UPDATED](state, payload) {
         state.omsRedirectionInfo = payload;
-    },
-    [types.USER_RESERVATION_FACILITY_ID_FIELD_CONFIG_UPDATED] (state, payload) {
-        state.isReservationFacilityFieldEnabled = payload
     },
 }
 export default mutations;
