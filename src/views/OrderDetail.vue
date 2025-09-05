@@ -364,6 +364,10 @@
           </ion-card>
         </div>
       </div>
+      <div v-else-if="!Object.keys(order).length " class="empty-state">
+        <ion-spinner name="crescent" />
+        <ion-label>{{ translate("Loading...") }}</ion-label>
+      </div>
       <div v-else class="empty-state">
         <p>{{ translate("Unable to fetch the order details. Either the order has been shipped or something went wrong. Please try again after some time.")}}</p>
       </div>
