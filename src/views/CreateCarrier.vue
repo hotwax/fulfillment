@@ -14,7 +14,7 @@
             </ion-input>
           </ion-item>
           <ion-item>
-            <ion-input label-placement="floating" ref="partyId" :label="translate('ID')" v-model="carrier.partyId" @ionChange="validateFacilityId" @ionBlur="markFacilityIdTouched" :error-text="translate('Party ID cannot be more than 20 characters.')"/>
+            <ion-input label-placement="floating" ref="partyId" :label="translate('ID')" v-model="carrier.partyId" @ionChange="validatePartyId" @ionBlur="markPartyIdTouched" :error-text="translate('Party ID cannot be more than 20 characters.')"/>
           </ion-item>
           <ion-button class="ion-margin-top" @click="createCarrier()">
             {{ translate("Setup methods") }}
@@ -92,7 +92,7 @@
           this.carrier.partyId = generateInternalId(event.target.value)
         }
       },
-      validateFacilityId(event: any) {
+      validatePartyId(event: any) {
         const value = event.target.value;
         (this as any).$refs.partyId.$el.classList.remove('ion-valid');
         (this as any).$refs.partyId.$el.classList.remove('ion-invalid');
@@ -102,7 +102,7 @@
         this.carrier.partyId.length <= 20 ? (this as any).$refs.partyId.$el.classList.add('ion-valid') : (this as any).$refs.partyId.$el.classList.add('ion-invalid');
         this.isAutoGenerateId = false;
       },
-      markFacilityIdTouched() {
+      markPartyIdTouched() {
         (this as any).$refs.partyId.$el.classList.add('ion-touched');
       },
       async createCarrier() {
