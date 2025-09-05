@@ -171,8 +171,6 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch('order/clearOrders')
     this.dispatch("orderLookup/clearOrderLookup")
     this.dispatch('user/clearNotificationState')
-    this.dispatch('user/clearPartialOrderRejectionConfig')
-    this.dispatch('user/clearCollateralRejectionConfig')
     this.dispatch('transferorder/clearTransferOrdersList')
     this.dispatch('transferorder/clearTransferOrderFilters')
     this.dispatch('transferorder/clearCurrentTransferOrder')
@@ -336,13 +334,7 @@ const actions: ActionTree<UserState, RootState> = {
 
   setUnreadNotificationsStatus({ commit }, payload) {
     commit(types.USER_UNREAD_NOTIFICATIONS_STATUS_UPDATED, payload)
-  },
-  clearPartialOrderRejectionConfig ({ commit }) {
-    commit(types.USER_PARTIAL_ORDER_REJECTION_CONFIG_UPDATED, {})
-  },
-  clearCollateralRejectionConfig ({ commit }) {
-    commit(types.USER_COLLATERAL_REJECTION_CONFIG_UPDATED, {})
-  },
+  }
 
 } 
 

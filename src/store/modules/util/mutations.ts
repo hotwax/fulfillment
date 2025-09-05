@@ -68,6 +68,7 @@ const mutations: MutationTree <UtilState> = {
     state.shipmentBoxTypeDesc = {}
     state.carrierShipmentBoxTypes = {}
     state.excludeOrderBrokerDays = undefined
+    state.productStoreSettings = JSON.parse(process.env.VUE_APP_DEFAULT_PRODUCT_STORE_SETTINGS as any)
   },
   [types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED](state, payload) {
     if(payload.facilityId) {

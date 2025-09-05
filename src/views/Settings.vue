@@ -543,7 +543,7 @@ export default defineComponent({
         enumId: "FULFILL_FORCE_SCAN",
         payload: params,
         createService: UtilService.createProductStoreSetting,
-        fetchAction: "getForceScanSetting",
+        fetchAction: "getProductStoreSettingConfig",
         requireEnum: true,
         enumMeta: {
           description: "Impose force scanning of items while packing from fulfillment app",
@@ -655,7 +655,7 @@ export default defineComponent({
         enumId: "FULFILL_PART_ODR_REJ",
         payload: params,
         createService: UtilService.createProductStoreSetting,
-        fetchAction: "getPartialOrderRejectionConfig",
+        fetchAction: "getProductStoreSettingConfig",
         requireEnum: true,
         enumMeta: {
           description: "Fulfillment Partial Order Rejection",
@@ -697,7 +697,7 @@ export default defineComponent({
         enumId: "FF_COLLATERAL_REJ",
         payload: params,
         createService: UtilService.createProductStoreSetting,
-        fetchAction: "getCollateralRejectionConfig",
+        fetchAction: "getProductStoreSettingConfig",
         requireEnum: true,
         enumMeta: {
           description: "Fulfillment Collateral Rejection",
@@ -739,7 +739,7 @@ export default defineComponent({
         enumId: "AFFECT_QOH_ON_REJ",
         payload: params,
         createService: UtilService.createProductStoreSetting,
-        fetchAction: "getAffectQohConfig",
+        fetchAction: "getProductStoreSettingConfig",
         requireEnum: false
       });
     },
@@ -748,7 +748,7 @@ export default defineComponent({
         enumId: 'BARCODE_IDEN_PREF',
         payload: { settingValue: value},
         createService: UtilService.createProductStoreSetting,
-        fetchAction: 'getBarcodeIdentificationPref',
+        fetchAction: 'getProductStoreSettingConfig',
         requireEnum: true,
         enumMeta: {
           description: 'Identification preference to be used for scanning items.',

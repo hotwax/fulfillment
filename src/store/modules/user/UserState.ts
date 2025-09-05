@@ -17,10 +17,4 @@ export default interface UserState {
     firebaseDeviceId: string;
     hasUnreadNotifications: boolean;
     allNotificationPrefs: any;
-    partialOrderRejectionConfig: any;
-    collateralRejectionConfig: any;
-    affectQohConfig: any;
-    isShipNowDisabled: boolean;
-    isUnpackDisabled: boolean;
-    isReservationFacilityFieldEnabled: boolean;
 }

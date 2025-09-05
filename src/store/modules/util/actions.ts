@@ -6,7 +6,7 @@ import { UtilService } from '@/services/UtilService'
 import { hasError } from '@/adapter'
 import logger from '@/logger'
 import store from '@/store';
-import { showToast, getProductStoreId } from '@/utils'
+import { showToast, getProductStoreId, productStoreSettingTransforms } from '@/utils'
 import { translate, useUserStore } from '@hotwax/dxp-components'
 
 const actions: ActionTree<UtilState, RootState> = {
@@ -470,56 +470,6 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_PRODUCT_STORES_UPDATED, stores)
   },
 
-  async getForceScanSetting({ commit }) {
-    let isforceScanDisabled = false;
-    const settingTypeEnumId = "FULFILL_FORCE_SCAN";
-    const params = {
-      productStoreId: getProductStoreId(),
-      settingTypeEnumId,
-      fieldsToSelect: ["productStoreId", "settingTypeEnumId", "settingValue"],
-      pageSize: 1
-    };
-
-    try {
-      const resp = await UtilService.fetchProductStoreSetting(params);
-      if (!hasError(resp) && resp.data.entityValueList.length) {
-        isforceScanDisabled = resp.data.entityValueList[0]?.settingValue === "true";
-        commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
-          key: settingTypeEnumId,
-          value: isforceScanDisabled
-        });
-      } else {
-        logger.error("Failed to fetch force scan configuration");
-      }
-    } catch (err) {
-      logger.error(err);
-    }
-  },
- async getBarcodeIdentificationPref({ commit }) {
-    const settingTypeEnumId = "BARCODE_IDEN_PREF";
-    const params = {
-      productStoreId: getProductStoreId(),
-      settingTypeEnumId,
-      fieldsToSelect: ["productStoreId", "settingTypeEnumId", "settingValue"],
-      pageSize: 1
-    };
-
-    try {
-      const resp = await UtilService.fetchProductStoreSetting(params);
-      if (!hasError(resp) && resp.data.entityValueList.length) {
-        const config = resp.data.entityValueList[0];
-        commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
-          key: settingTypeEnumId,
-          value: config.settingValue
-        });
-      } else {
-        logger.error("Failed to fetch barcode identification preference");
-      }
-    } catch (err) {
-      logger.error(err);
-    }
-  },
-
   async fetchCarriersDetail ({ commit, state }) {
     if(Object.keys(state.carrierDesc)?.length) return;
     const carrierDesc = {} as any;
@@ -689,182 +639,6 @@ const actions: ActionTree<UtilState, RootState> = {
         value: isPicklistDownloadEnabled
       });
   },
-  async fetchExcludeOrderBrokerDays({ commit }, productStoreId) {
-    let excludeOrderBrokerDays = undefined
-    try {
-      const resp = await UtilService.fetchProductStoreSetting({
-        "productStoreId": productStoreId,
-        "settingTypeEnumId": "EXCLUDE_ODR_BKR_DAYS"
-      })
-
-      if (!hasError(resp) && resp.data.entityValueList[0]?.settingTypeEnumId && resp.data.entityValueList[0]?.settingValue !== null) {
-        excludeOrderBrokerDays = Number(resp.data.entityValueList[0]?.settingValue)
-      }
-    } catch(err) {
-      logger.error("Failed to get the exclude order broker days", err)
-    }
-    // commit(types.UTIL_EXCLUDE_ORDER_BROKER_DAYS_UPDATED, excludeOrderBrokerDays)
-    commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
-        key: "EXCLUDE_ODR_BKR_DAYS",
-        value: excludeOrderBrokerDays
-      });
-  },
-
-  async getPartialOrderRejectionConfig ({ commit }) {
-    const settingTypeEnumId = "FULFILL_PART_ODR_REJ"
-    let config = {} as any;
-    const params = {
-      "productStoreId": getProductStoreId(),
-      "settingTypeEnumId": "FULFILL_PART_ODR_REJ",
-      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
-      "pageSize": 1
-    } as any
-
-    try {
-      const resp = await UtilService.fetchProductStoreSetting(params)
-      if (!hasError(resp) && resp.data.entityValueList.length) {
-        config = resp.data.entityValueList[0];
-        commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
-        key: settingTypeEnumId,
-        value: config.settingValue
-      });
-      } else {
-        logger.error('Failed to fetch partial order rejection configuration');
-      }
-    } catch (err) {
-      logger.error(err);
-    }
-  },
-
-  async getCollateralRejectionConfig({ commit }) {
-    const settingTypeEnumId = "FF_COLLATERAL_REJ";
-    const params = {
-      productStoreId: getProductStoreId(),
-      settingTypeEnumId,
-      fieldsToSelect: ["productStoreId", "settingTypeEnumId", "settingValue"],
-      pageSize: 1
-    };
-
-    try {
-      const resp = await UtilService.fetchProductStoreSetting(params);
-      if (!hasError(resp) && resp.data.entityValueList.length) {
-        const config = resp.data.entityValueList[0];
-        commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
-          key: settingTypeEnumId,
-          value: config.settingValue
-        });
-      } else {
-        logger.error("Failed to fetch collateral rejection configuration");
-      }
-    } catch (err) {
-      logger.error(err);
-    }
-  },
-
-  async getAffectQohConfig ({ commit }) {
-    const settingTypeEnumId = "AFFECT_QOH_ON_REJ"
-    let config = {} as any;
-    const params = {
-      "productStoreId": getProductStoreId(),
-      "settingTypeEnumId": "AFFECT_QOH_ON_REJ",
-      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
-      "pageSize": 1
-    } as any
-
-    try {
-      const resp = await UtilService.fetchProductStoreSetting(params)
-      if (!hasError(resp) && resp.data.entityValueList.length) {
-        config = resp.data.entityValueList[0];
-        commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
-        key: settingTypeEnumId,
-        value: config.settingValue
-      });
-      } else {
-        logger.error('Failed to fetch affect QOH configuration');
-      }
-    } catch (err) {
-      logger.error(err);
-    } 
-  },
-
-  async getReservationFacilityIdFieldConfig ({ commit }) {
-    let isEnabled = false;
-
-    const params = {
-      "productStoreId": getProductStoreId(),
-      "settingTypeEnumId": "USE_RES_FACILITY_ID",
-      "fieldsToSelect": ["productStoreId", "settingTypeEnumId", "settingValue"],
-      "pageSize": 1
-    } as any
-
-    try {
-      const resp = await UtilService.fetchProductStoreSetting(params)
-      if (!hasError(resp)) {
-        isEnabled = resp.data.entityValueList[0]?.settingValue === "Y" ? true : false
-      } else {
-        throw resp.data;
-      }
-    } catch (err) {
-      logger.error('Failed to fetch reservation facility id field configuration');
-    }
-    commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
-      key: "USE_RES_FACILITY_ID",
-      value: isEnabled
-    })  
-  },
-
-  async getDisableShipNowConfig ({ commit }) {
-    let isShipNowDisabled = false;
-    const params = {
-      "productStoreId": getProductStoreId(),
-      "settingTypeEnumId": "DISABLE_SHIPNOW",
-      "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
-      "pageSize": 1
-    } as any
-
-    try { 
-      const resp = await UtilService.fetchProductStoreSetting(params)
-
-      if (!hasError(resp)) {
-        isShipNowDisabled = resp.data.entityValueList[0]?.settingValue === "true";
-      } else {
-        logger.error('Failed to fetch disable ship now config.');
-      }
-    } catch (err) {
-      logger.error(err);
-    }
-    commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
-      key: "DISABLE_SHIPNOW",
-      value: isShipNowDisabled
-    })  
-  },
-
-  async getDisableUnpackConfig ({ commit }) {
-    let isUnpackDisabled = false;
-    const params = {
-      "productStoreId": getProductStoreId(),
-      "settingTypeEnumId": "DISABLE_UNPACK",
-      "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
-      "pageSize": 1
-    } as any
-
-    try {
-      const resp = await UtilService.fetchProductStoreSetting(params)
-
-      if (!hasError(resp)) {
-        isUnpackDisabled = resp.data.entityValueList[0]?.settingValue === "true";
-      } else {
-        logger.error('Failed to fetch disable unpack config.');
-      }
-    } catch (err) {
-      logger.error(err);
-    }
-    commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
-      key: "DISABLE_UNPACK",
-      value: isUnpackDisabled
-    })
-    
-  },
 
   // Generic update action for any product store setting
   async updateProductStoreSettingConfig({ dispatch }, config) {
@@ -900,7 +674,7 @@ const actions: ActionTree<UtilState, RootState> = {
       const toastMessage = hasError(response) ? "Failed to update configuration" : "Configuration updated";
       showToast(toastMessage);
 
-      if (fetchAction) await dispatch(fetchAction);
+      if (fetchAction) await dispatch(fetchAction,  enumId);
 
     } catch (error) {
       showToast("Failed to update configuration");
@@ -908,28 +682,34 @@ const actions: ActionTree<UtilState, RootState> = {
     }
   },
 
+  // Generic action to get single product store setting
   async getProductStoreSettingConfig({ commit }, enumId) {
     const params = {
-      "productStoreId": getProductStoreId(),
-      "settingTypeEnumId": enumId,
-      "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
-      "pageSize": 1
+      productStoreId: getProductStoreId(),
+      settingTypeEnumId: enumId,
+      fieldsToSelect: ["settingTypeEnumId", "settingValue"],
+      pageSize: 1
     } as any
 
     try {
       const resp = await UtilService.fetchProductStoreSetting(params)
 
-      if(!hasError(resp)) {
-        const updatedSetting = resp.data.entityValueList[0]?.settingValue
+      if (!hasError(resp)) {
+        const rawSettingValue = resp.data.entityValueList[0]?.settingValue
+
+        // Apply transform if defined, else fallback to raw value
+        const finalSettingValue = productStoreSettingTransforms[enumId] ? productStoreSettingTransforms[enumId](rawSettingValue) : rawSettingValue
+
         commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
           key: enumId,
-          value: updatedSetting
+          value: finalSettingValue
         })
       }
     } catch (error) {
-      console.log(error)
+      logger.error(error)
     }
   }
+
 }
 
 export default actions;
