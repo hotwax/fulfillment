@@ -7,7 +7,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <div v-if="Object.keys(order).length">
+      <div v-if="order && Object.keys(order).length">
         <div class="order-header">
           <div class="order-primary-info">
             <h3>{{ order.orderName }}</h3>
@@ -364,7 +364,7 @@
           </ion-card>
         </div>
       </div>
-      <div v-else-if="!Object.keys(order).length " class="empty-state">
+      <div v-else-if="order" class="empty-state">
         <ion-spinner name="crescent" />
         <ion-label>{{ translate("Loading...") }}</ion-label>
       </div>
