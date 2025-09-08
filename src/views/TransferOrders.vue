@@ -53,7 +53,7 @@
 
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-      <ion-fab-button @click="openCreateTransferOrderModal()">
+      <ion-fab-button @click="openCreateTransferOrderModal">
         <ion-icon :icon="addOutline" />
       </ion-fab-button>
     </ion-fab>

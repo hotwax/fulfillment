@@ -690,7 +690,8 @@ const actions: ActionTree<UtilState, RootState> = {
   async updateBarcodeIdentificationPref({ commit }, payload) { 
     commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, payload)
   },
-
+  
+  // this action is not in use currently, keeping it for future use case
   async fetchCarriersDetail ({ commit, state }) {
     if(Object.keys(state.carrierDesc)?.length) return;
     const carrierDesc = {} as any;
@@ -716,6 +717,7 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_CARRIER_DESC_UPDATED, carrierDesc)
   },
 
+  // this action is not in use currently, keeping it for future use case
   async fetchStoreCarrierAndMethods({ commit }, productStoreId) {
     let shipmentMethodsByCarrier = {};
 

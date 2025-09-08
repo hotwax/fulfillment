@@ -19,7 +19,7 @@ import { showToast } from '@/utils'
 import { translate } from '@hotwax/dxp-components'
 import 'vue-router'
 import Notifications from '@/views/Notifications.vue'
-import CreateTransferOrderNew from '@/views/CreateTransferOrderNew.vue';
+import CreateTransferOrderUpdated from '@/views/CreateTransferOrderUpdated.vue';
 import ShipTransferOrder from '@/views/ShipTransferOrder.vue';
 
 // Defining types for the meta values
@@ -97,23 +97,16 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/create-transfer-order',
-    name: 'CreateTransferOrder',
-    component: CreateTransferOrder,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: ""
-    }
+    path: '/create-transfer-order/:orderId',
+    name: 'CreateTransferOrderUpdated',
+    component: CreateTransferOrderUpdated,
+    props: true
   },
   {
-    path: '/create-transfer-order-new',
-    name: 'CreateTransferOrderNew',
-    component: CreateTransferOrderNew,
-  },
-  {
-    path: '/ship-transfer-order',
+    path: '/ship-transfer-order/:shipmentId',
     name: 'ShipTransferOrder',
-    component: ShipTransferOrder
+    component: ShipTransferOrder,
+    props: true
   },
   {
     path: '/transfer-order-details/:orderId/:category',

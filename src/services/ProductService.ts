@@ -28,22 +28,6 @@ const fetchProductComponents = async (payload: any): Promise<any> => {
   });
 }
 
-const fetchSampleProducts = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/products`,
-    method: "get",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    params,
-  });
-}
-
 const fetchProductsAverageCost = async (productIds: any, facilityId: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -96,6 +80,5 @@ const fetchProductsAverageCost = async (productIds: any, facilityId: any): Promi
 export const ProductService = {
   fetchProducts,
   fetchProductComponents,
-  fetchProductsAverageCost,
-  fetchSampleProducts
+  fetchProductsAverageCost
 }

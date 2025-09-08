@@ -331,8 +331,24 @@ const approveTransferOrder = async (orderId: any): Promise<any> => {
   });
 };
 
+const cancelTransferOrder = async (orderId: string): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `oms/transferOrders/${orderId}/cancel`,
+    method: "post",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    }
+  });
+}
+
 
 export const TransferOrderService = {
+  cancelTransferOrder,
   cancelTransferOrderShipment,
   createOutboundTransferShipment,
   fetchCompletedTransferOrders,

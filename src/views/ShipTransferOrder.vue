@@ -3,7 +3,7 @@
     <ion-header>
       <ion-toolbar>
         <ion-back-button default-href="/" slot="start"/>
-        <ion-title>Ship transfer order</ion-title>
+        <ion-title>{{ translate("Ship transfer order") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content>
@@ -12,48 +12,46 @@
         <!-- order details -->
         <ion-card class="desktop only order-info">
           <ion-card-header>
-            <ion-card-subtitle>
-              Order Id
-            </ion-card-subtitle>
-            <ion-card-title>
-              Order name
-            </ion-card-title>
+            <ion-card-subtitle>{{ shipmentDetails.orderId }}</ion-card-subtitle>
+            <ion-card-title>{{ shipmentDetails.orderName }}</ion-card-title>
           </ion-card-header>
           <ion-item lines="full">
             <ion-icon :icon="storefrontOutline" slot="start"/>
             <ion-label>
-              <p class="overline">Sending to</p>
-              Store name
-              <p>50 miles</p>
+              <p class="overline">{{ translate("Sending to") }}</p>
+              {{ shipmentDetails.originFacilityId }}
+              <!-- this field is not coming in the api resposne -->
+              <!-- <p>50 miles</p> -->
             </ion-label>
           </ion-item>
           <ion-list>
-            <ion-list-header>Items</ion-list-header>
-            <ion-item>
+            <ion-list-header>{{ translate("Items") }}</ion-list-header>
+            <ion-item v-for="item in shipmentItems" :key="item.shipmentItemSeqId">
               <ion-thumbnail>
-                <DxpShopifyImg/>
+                <DxpShopifyImg size="small" :src="getProduct(item.productId).mainImageUrl"/>
               </ion-thumbnail>
               <ion-label>
-                primary identifier
-                <p>secondary identifer</p>
+                {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) }}
+                <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
               </ion-label>
-              <ion-label slot="end">Qty</ion-label>
+              <ion-label slot="end">{{ item.quantity }}</ion-label>
             </ion-item>
             <div actions>
-              <ion-button fill="clear">Edit</ion-button>
+              <ion-button fill="clear" @click="router.push(`/create-transfer-order/${shipmentDetails.orderId}`)">{{ translate("Edit") }}</ion-button>
             </div>
           </ion-list>
         </ion-card>
 
         <!-- Shipping label  -->
         <div class="shipping">
-          <ion-segment>
-            <ion-segment-button value="first" content-id="first">Purchase shipping label</ion-segment-button>
-            <ion-segment-button value="second" content-id="second">Manual tracking</ion-segment-button>
+          <ion-segment v-model="selectedSegment">
+            <ion-segment-button value="purchase">{{ translate("Purchase shipping label") }}</ion-segment-button>
+            <ion-segment-button value="manual">{{ translate("Manual tracking") }}</ion-segment-button>
           </ion-segment>
           <!-- purchase shipping segment -->
-          <!-- <ion-list>
-            <ion-item>
+          <ion-list v-if="selectedSegment === 'purchase'">
+            <!-- we will remove this check after making the purchase shipping label functional -->
+            <ion-item :disabled="selectedSegment === 'purchase'">
               <ion-avatar slot="start">
                 <img src="" alt="carrier-logo" />
               </ion-avatar>
@@ -61,38 +59,37 @@
                 Rate name
                 <p>estimated delivery date</p>
               </ion-label>
-              <ion-button slot="end" color="primary" fill="outline">Purchase label</ion-button>
+              <ion-button slot="end" color="primary" fill="outline">{{ translate("Purchase label") }}</ion-button>
             </ion-item>
-          </ion-list> -->
+          </ion-list>
 
           <!-- manual tracking segment -->
-          <!-- <ion-list>
+          <ion-list v-if="selectedSegment === 'manual'">
             <ion-item>
-              <ion-select label="Carrier" interface="popover" placeholder="Select">
-                <ion-select-option>Fedex</ion-select-option>
-                <ion-select-option>DHL</ion-select-option>
+              <ion-select :value="selectedCarrier" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedCarrier = $event.detail.value">
+                <ion-select-option v-for="carrier in carriersList.list" :key="carrier.partyId" :value="carrier.partyId">{{ carrier.groupName ? carrier.groupName : carrier.partyId }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item>
-              <ion-select label="Method" interface="popover" placeholder="Select">
-                <ion-select-option>Ground</ion-select-option>
-                <ion-select-option>DHL</ion-select-option>
+              <ion-select :value="selectedMethod" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedMethod = $event.detail.value">
+                <ion-select-option v-for="method in shipmentMethods" :key="method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ method.description ? method.description : method.shipmentMethodTypeId }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item lines="full">
-              <ion-input label="Tracking code" placeholder="enter code" />
+              <ion-input :label="translate('Tracking code')" :placeholder="translate('Enter code')" :value="trackingCode" @ionInput="trackingCode = $event.target.value"/>
             </ion-item>
-            <ion-item lines="none">
+            <!-- no related data available for this field in the api response -->
+            <!-- <ion-item lines="none">
               Tracking URL: fedex.com/tracking/12344
               <ion-button slot="end" color="primary" fill="clear">
                 Test
                 <ion-icon :icon="openOutline" slot="end"/>
               </ion-button>
-            </ion-item>
-          </ion-list> -->
+            </ion-item> -->
+          </ion-list>
 
           <!-- card after purchase shipping label generated -->
-          <ion-card>
+          <!-- <ion-card>
             <ion-item lines="full">
               <ion-avatar slot="start">
                 <img src="" alt="carrier-logo" />
@@ -111,7 +108,7 @@
               </ion-button>
               <ion-button fill="outline" color="warning">Void shipping label</ion-button>
             </ion-card-content>
-          </ion-card>
+          </ion-card> -->
         </div>
       </main>
     </ion-content>
@@ -119,12 +116,8 @@
     <ion-footer>
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button fill="outline" color="primary">
-            Ship later
-          </ion-button>
-          <ion-button fill="solid" color="primary">
-            Ship order
-          </ion-button>
+          <ion-button fill="outline" color="primary" @click="shipLater">{{ translate("Ship later") }}</ion-button>
+          <ion-button fill="solid" color="primary" @click="shipOrder">{{ translate("Ship order") }}</ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-footer>
@@ -132,8 +125,115 @@
 </template>
 
 <script setup>
-import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonSegment, IonSegmentButton, IonTitle, IonToolbar } from '@ionic/vue'
+import { computed, ref } from 'vue'
+import { useStore } from 'vuex';
+import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonSegment, IonSegmentButton, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from '@ionic/vue'
 import { openOutline, printOutline, storefrontOutline } from 'ionicons/icons'
+import { DxpShopifyImg, getProductIdentificationValue, useProductIdentificationStore, translate } from '@hotwax/dxp-components';
+import { TransferOrderService } from '@/services/TransferOrderService';
+import { useRoute } from 'vue-router';
+import { showToast } from '@/utils';
+import logger from '@/logger';
+import { hasError } from '@hotwax/oms-api';
+import { useRouter } from 'vue-router'
+
+const store = useStore()
+const route = useRoute();
+const router = useRouter()
+
+const productIdentificationStore = useProductIdentificationStore();
+let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+
+const carriersList = computed(() => store.getters['carrier/getCarriers'])
+const getProduct = computed(() => store.getters['product/getProduct'])
+
+const shipmentItems = computed(() => {
+  if(!shipmentDetails.value?.packages) return []
+  return shipmentDetails.value.packages.flatMap((pkg) => pkg.items || [])
+})
+
+const selectedSegment = ref('manual')
+const selectedCarrier = ref('')
+const shipmentMethods = ref([])
+const selectedMethod = ref('')
+const trackingCode = ref('')
+const shipmentDetails = ref({})
+
+onIonViewWillEnter(async() => {
+  await fetchShipmentOrderDetail(route.params.shipmentId);
+  await store.dispatch('carrier/fetchCarriers')
+  shipmentMethods.value = await store.dispatch('carrier/fetchShipmentMethodTypes');
+})
+
+async function fetchShipmentOrderDetail(shipmentId) {
+  try {
+    const resp = await TransferOrderService.fetchTransferShipmentDetails({ shipmentId: shipmentId });
+    if(!hasError(resp)) {
+      shipmentDetails.value = resp.data.shipments[0]
+      const items = shipmentDetails.value?.packages?.flatMap(pkg => pkg.items || []) || []
+      const productIds = [...new Set(items.map(item => item.productId))]
+      if(productIds.length) {
+        await store.dispatch('product/fetchProducts', { productIds })
+      }
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    logger.error('Failed to fetch shipment details.', err);
+  }
+}
+
+async function shipLater() {
+  const message = translate("Save this order without tracking details to ship later.");
+  const alert = await alertController.create({
+    header: translate("Ship later"),
+    message,
+    buttons: [
+      {
+        text: translate("Go back"),
+      },
+      {
+        text: translate("Continue"),
+        handler: async () => {
+          router.push({ path: '/transfer-orders' })
+        }
+      }
+    ],
+  });
+  return alert.present();
+}
+
+async function shipOrder() {
+  if(!selectedCarrier.value) {
+    showToast(translate('Please select a carrier'))
+    return
+  }
+  if(!selectedMethod.value) {
+    showToast(translate('Please select a shipping method'))
+    return
+  }
+  if(!trackingCode.value) {
+    showToast(translate('Please enter a tracking number'));
+    return;
+  }
+
+  try {
+    await TransferOrderService.shipTransferOrderShipment({
+      shipmentId: shipmentDetails.value.shipmentId,
+      trackingIdNumber: trackingCode.value,
+      shipmentRouteSegmentId: shipmentDetails.value.shipmentRouteSegmentId,
+      carrierPartyId: selectedCarrier.value,
+      shipmentMethodTypeId: selectedMethod.value
+    });
+    
+    // this.isShipped = true;
+    showToast(translate('Shipment shipped successfully.'));
+    router.replace({ path: '/transfer-orders' })
+  } catch (err) {
+    logger.error('Failed to ship the shipment.', err);
+    showToast(translate('Something went wrong, could not ship the shipment'))
+  }
+}
 </script>
 
 <style scoped >
