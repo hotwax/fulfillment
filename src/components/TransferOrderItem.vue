@@ -15,7 +15,7 @@
       </div>
       <div class="product-count">
         <ion-item v-if="!item.shipmentId" lines="none">
-          <ion-input :label="translate('Qty')" label-placement="floating" ref="pickedQuantity" type="number" min="0" :v-model="item.pickedQuantity" :value="item.pickedQuantity" @ionInput="updatePickedQuantity($event, item); validatePickedQuantity($event, item); markPickedQuantityTouched()" @ionBlur="updateItemQuantity(item)" :errorText="getErrorText(item)" :disabled="isForceScanEnabled" />
+          <ion-input :label="translate('Qty')" label-placement="floating" ref="pickedQuantity" type="number" min="0" v-model="item.pickedQuantity" :value="item.pickedQuantity" @ionInput="updatePickedQuantity($event, item); validatePickedQuantity($event, item); markPickedQuantityTouched()" @ionBlur="updateItemQuantity(item)" :errorText="getErrorText(item)" :disabled="isForceScanEnabled" />
         </ion-item>
         <ion-item v-else lines="none">
           <ion-label slot="end">{{ item.pickedQuantity }} {{ translate('packed') }}</ion-label>
@@ -90,7 +90,7 @@ import { computed, defineComponent, onMounted } from 'vue';
 import { add, caretDownOutline, checkmarkDone, closeCircleOutline, barcodeOutline, removeCircleOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
-import { OrderService } from '@/services/OrderService';``
+import { OrderService } from '@/services/OrderService';
 import { useRouter } from 'vue-router';
 import { Actions } from '@/authorization'
 import { getFeatures } from '@/utils';

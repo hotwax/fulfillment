@@ -124,7 +124,7 @@
   </ion-page>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useStore } from 'vuex';
 import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonSegment, IonSegmentButton, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from '@ionic/vue'
@@ -149,7 +149,7 @@ const getProduct = computed(() => store.getters['product/getProduct'])
 
 const shipmentItems = computed(() => {
   if(!shipmentDetails.value?.packages) return []
-  return shipmentDetails.value.packages.flatMap((pkg) => pkg.items || [])
+  return shipmentDetails.value.packages.flatMap((pkg: any) => pkg.items || [])
 })
 
 const selectedSegment = ref('manual')
@@ -157,21 +157,21 @@ const selectedCarrier = ref('')
 const shipmentMethods = ref([])
 const selectedMethod = ref('')
 const trackingCode = ref('')
-const shipmentDetails = ref({})
+const shipmentDetails = ref({}) as any
 
 onIonViewWillEnter(async() => {
-  await fetchShipmentOrderDetail(route.params.shipmentId);
+  await fetchShipmentOrderDetail(route.params.shipmentId as any);
   await store.dispatch('carrier/fetchCarriers')
   shipmentMethods.value = await store.dispatch('carrier/fetchShipmentMethodTypes');
 })
 
-async function fetchShipmentOrderDetail(shipmentId) {
+async function fetchShipmentOrderDetail(shipmentId: string) {
   try {
     const resp = await TransferOrderService.fetchTransferShipmentDetails({ shipmentId: shipmentId });
     if(!hasError(resp)) {
       shipmentDetails.value = resp.data.shipments[0]
       const items = shipmentDetails.value?.packages?.flatMap(pkg => pkg.items || []) || []
-      const productIds = [...new Set(items.map(item => item.productId))]
+      const productIds = [...new Set(items.map((item: any) => item.productId))]
       if(productIds.length) {
         await store.dispatch('product/fetchProducts', { productIds })
       }
@@ -226,7 +226,6 @@ async function shipOrder() {
       shipmentMethodTypeId: selectedMethod.value
     });
     
-    // this.isShipped = true;
     showToast(translate('Shipment shipped successfully.'));
     router.replace({ path: '/transfer-orders' })
   } catch (err) {

@@ -37,7 +37,7 @@
 
         <!-- adding product card -->
         <ion-card class="add-items">
-          <div class="search-type">
+          <div class="search-type ion-margin-start">
             <h4>{{ translate("Add items") }}</h4>
             <ion-segment v-model="mode" @ionChange="segmentChange($event.target.value)">
               <ion-segment-button value="scan" content-id="scan">
@@ -139,7 +139,7 @@
                   <ion-icon slot="end" :icon="checkmarkCircle" color="success" />
                 </template>
               </ion-item>
-              <ion-item detail @click="openAddProductModal">
+              <ion-item detail v-if=!isItemAlreadyInOrder(searchedProduct.productId) @click="openAddProductModal">
                 {{ translate("View result count more results") }}
               </ion-item>
             </ion-list>
@@ -234,7 +234,7 @@ import AddProductModal from "@/components/AddProductModal.vue";
 const store = useStore();
 const route = useRoute();
 const productIdentificationStore = useProductIdentificationStore();
-let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+const productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
 
 const mode = ref('scan');
 const queryString = ref('');
@@ -550,9 +550,9 @@ async function discardOrder() {
   }
 }
 
-async function approveOrder(orderid: string) {
+async function approveOrder(orderId: string) {
   try {
-    const resp = await TransferOrderService.approveTransferOrder(currentOrder.value.orderId);
+    const resp = await TransferOrderService.approveTransferOrder(orderId);
     if(!hasError(resp)) {
       return true;
     } else {
@@ -636,16 +636,8 @@ async function packAndShipOrder() {
   flex: 3;
 }
 
-/* need to correct this css */
-.search-type {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-}
-
-.search-type h4,
-.search-type ion-segment {
-  grid-column: 1;
+.search-type { 
+  display: flex;
 }
 
 .order-items{

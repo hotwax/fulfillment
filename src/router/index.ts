@@ -100,12 +100,14 @@ const routes: Array<RouteRecordRaw> = [
     path: '/create-transfer-order/:orderId',
     name: 'CreateTransferOrderUpdated',
     component: CreateTransferOrderUpdated,
+    beforeEnter: authGuard,
     props: true
   },
   {
     path: '/ship-transfer-order/:shipmentId',
     name: 'ShipTransferOrder',
     component: ShipTransferOrder,
+    beforeEnter: authGuard,
     props: true
   },
   {
