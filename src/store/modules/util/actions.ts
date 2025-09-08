@@ -878,6 +878,10 @@ const actions: ActionTree<UtilState, RootState> = {
       try {     
         const currentFacility: any = useUserStore().getCurrentFacility;
         const facilityId=currentFacility?.facilityId;
+        if(!facilityId) {
+          commit(types.SET_AUTO_SHIPPING_LABEL_ENABLED, false);
+          return;
+        }
         // 1. Check if current facility is part of Auto shipping group
         resp = await UtilService.getFacilityGroupAndMemberDetails({
           customParametersMap: {
