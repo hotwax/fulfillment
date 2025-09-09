@@ -17,8 +17,7 @@
                 <p class="overline">{{ currentOrder.orderId }}</p>
                 <h1>{{ currentOrder.orderName }}</h1>
               </ion-label>
-              <!-- need to make this dynamic  -->
-              <ion-button slot="end" color="medium" fill="outline">{{ translate("Edit") }}</ion-button>
+              <ion-button slot="end" color="medium" fill="outline" @click="editOrderName">{{ translate("Edit") }}</ion-button>
             </ion-item>
             <ion-item>
               <ion-icon :icon="storefrontOutline" slot="start"/>
@@ -205,7 +204,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonCard, IonList, IonItem, IonLabel, IonButton, IonIcon, IonToggle, IonSegment, IonSegmentButton, IonThumbnail, IonBadge, IonSearchbar, IonSpinner, IonFooter, IonButtons, onIonViewWillEnter, modalController } from '@ionic/vue';
+import { IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonCard, IonList, IonItem, IonLabel, IonButton, IonIcon, IonToggle, IonSegment, IonSegmentButton, IonThumbnail, IonBadge, IonSearchbar, IonSpinner, IonFooter, IonButtons, onIonViewWillEnter, alertController, modalController } from '@ionic/vue';
 import {
   barcodeOutline,
   checkmarkDoneOutline,
@@ -302,28 +301,65 @@ async function fetchProductInformation() {
   }
 }
 
+async function editOrderName() {
+  const alert = await alertController.create({
+    header: translate("Edit order name"),
+    inputs: [
+      {
+        name: 'orderName',
+        value: currentOrder.value?.orderName || '',
+        placeholder: translate('Enter order name')
+      }
+    ],
+    buttons: [
+      {
+        text: translate("Cancel"),
+        role: 'cancel'
+      },
+      {
+        text: translate("Save"),
+        handler: async(data: any) => {
+          const newName = (data.orderName || '').trim();
+          if(!newName) {
+            showToast(translate('Please enter a valid order name'));
+            return false;
+          }
+          await updateOrderProperty("orderName", newName);
+          return true;
+        }
+      }
+    ]
+  });
+  await alert.present();
+}
+
 async function toggleStatusFlow(event: any) {
   const updatedStatusFlowId = event.detail.checked ? 'TO_Fulfill_Only' : 'TO_Fulfill_And_Receive';
+  await updateOrderProperty("statusFlowId", updatedStatusFlowId);
+}
 
+async function updateOrderProperty(property: string, value: any) {
   try {
     const payload = {
       orderId: currentOrder.value.orderId,
-      statusFlowId: updatedStatusFlowId
+      [property]: value
     };
+
     const resp = await OrderService.updateOrderHeader(payload);
 
     if(!hasError(resp)) {
-      currentOrder.value.statusFlowId = updatedStatusFlowId;
       await store.dispatch('transferorder/updateCurrentTransferOrder', {
         ...currentOrder.value,
-        statusFlowId: updatedStatusFlowId
+        [property]: value
       });
+
+      property === "orderName" ? showToast(translate("Order name updated successfully")) : showToast(translate("Order flow updated successfully"));
     } else {
       throw resp.data;
     }
   } catch (err) {
-    logger.error("Failed to update order header", err);
-    showToast(translate("Failed to update order flow"));
+    logger.error(`Failed to update order ${property}`, err);
+    property === "orderName" ? showToast(translate("Failed to update order name")) : showToast(translate("Failed to update order flow"));
   }
 }
 
