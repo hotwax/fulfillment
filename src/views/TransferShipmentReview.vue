@@ -75,7 +75,7 @@ import {
 import { computed, defineComponent } from 'vue';
 import { documentTextOutline, sendOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
-import { translate, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { translate, useAuthStore, useProductIdentificationStore } from '@hotwax/dxp-components';
 
 import { useRouter } from 'vue-router';
 import Scanner from "@/components/Scanner.vue";
@@ -274,6 +274,16 @@ export default defineComponent({
       this.store.dispatch('transferorder/updateOrderProductCount', payload)
     },
     async scanCode () {
+      if (useAuthStore().isEmbedded) {
+        console.log("This is pos scanner");
+        const scanData = await openPosScanner();
+        if(scanData) {
+          this.updateProductCount(scanData);
+        } else {
+          showToast(translate("No data received from scanner"));
+        }
+        return;
+      }
       if (!(await hasWebcamAccess())) {
         showToast(translate("Camera access not allowed, please check permissons."));
         return;
@@ -294,6 +304,7 @@ export default defineComponent({
     const router = useRouter();
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+    const authStore = useAuthStore();
     return {
       Actions,
       documentTextOutline,

@@ -72,7 +72,7 @@ import {
 } from "@ionic/vue";
 import { computed, defineComponent } from "vue";
 import { cameraOutline, closeOutline, copyOutline, saveOutline } from "ionicons/icons";
-import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useAuthStore } from '@hotwax/dxp-components';
 import { mapGetters } from 'vuex';
 import { getFeatures, showToast, hasWebcamAccess } from "@/utils"
 import Scanner from "@/components/Scanner.vue"
@@ -120,6 +120,16 @@ export default defineComponent({
       modalController.dismiss({ dismissed: true, ...payload });
     },
     async scan() {
+      if (useAuthStore().isEmbedded) {
+        console.log("This is pos scanner");
+        const scanData = await openPosScanner();
+        if(scanData) {
+          this.updateProductScannedStatus(scanData);
+        } else {
+          showToast(translate("No data received from scanner"));
+        }
+        return;
+      }
       if (!(await hasWebcamAccess())) {
         showToast(translate("Camera access not allowed, please check permissons."));
         return;
