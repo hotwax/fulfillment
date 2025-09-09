@@ -184,6 +184,7 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
+      inProgressOrders: 'order/getInProgressOrders',
       facilityCarriers: 'carrier/getFacilityCarriers',
       productStoreShipmentMethods: 'carrier/getProductStoreShipmentMethods',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
@@ -204,7 +205,7 @@ export default defineComponent({
       packingErrorMessage: ""
     }
   },
-  props: ["order", "updateCarrierShipmentDetails", "executePackOrder", "rejectEntireOrder", "updateParameter", "documentOptions", "packingError", "isDetailPage"],
+  props: ["selectPickerToAll","order", "updateCarrierShipmentDetails", "executePackOrder", "rejectEntireOrder", "updateParameter", "documentOptions", "packingError", "isDetailPage"],
   async mounted() {
     await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths')])
     this.isTrackingRequired = this.isTrackingRequiredForAnyShipmentPackage()
@@ -280,6 +281,9 @@ export default defineComponent({
         this.packingErrorMessage = packingResponse.errors
       }
       if (isSuccess) {
+        if(!this.inProgressOrders.total) {
+          this.selectPickerToAll();
+        }
         this.closeModal();
       }
     },

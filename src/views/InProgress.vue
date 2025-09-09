@@ -521,6 +521,10 @@ export default defineComponent({
       }
       return false
     },
+    async selectPicklistToAll() {
+      this.selectedPicklistId = "";
+      this.updateSelectedPicklist(this.selectedPicklistId);
+    },
     async confirmPackOrder(order: any, updateParameter?: string, trackingCode?: string) {
       const confirmPackOrder = await alertController
         .create({
@@ -551,6 +555,9 @@ export default defineComponent({
                 //On error in packing, fetching update detail expecially to fetch carrier, shipment method, gteway message etc. If there is error (gatewayMessage not empty) opening Generate tracking code modal to enter tracking detail manually
                 const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
                 await this.generateTrackingCodeForPacking(updatedOrder, updateParameter, data, packingResponse.errors)
+              }else if(!this.inProgressOrders.total){
+                //if there is only one order and it is packed, resetting the selected picklist to 'All orders'
+                  this.selectPicklistToAll();
               }
             }
           }]
@@ -576,7 +583,7 @@ export default defineComponent({
         
         //Fetching updated shipment detail after successful packing
         const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
-
+       
         if (documentOptions.length) {
           // additional parameters for dismiss button and manual dismiss ability
           toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
@@ -660,7 +667,7 @@ export default defineComponent({
             handler: async (data) => {
               emitter.emit('presentLoader');
               let orderList = JSON.parse(JSON.stringify(this.inProgressOrders.list))
-
+              
               let toast: any;
               // Considering only unique shipment IDs
               // TODO check reason for redundant shipment IDs
@@ -736,6 +743,10 @@ export default defineComponent({
                   showToast(translate('Order packed successfully'));
                 }
                 await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
+                if(!this.inProgressOrders.total){
+                  //if there are no more orders left after packing, resetting the selected picklist to 'All orders'
+                  this.selectPicklistToAll();
+                }
               } catch (err) {
                 // in case of error, if loader and toast are not dismissed above
                 if (toast) toast.dismiss()
@@ -1233,11 +1244,11 @@ export default defineComponent({
     async generateTrackingCodeForPacking(order: any, updateParameter?: string, documentOptions = {}, packingError?: string) {
       const modal = await modalController.create({
         component: GenerateTrackingCodeModal,
-        componentProps: { order, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError }
+        componentProps: {selectPickerToAll:this.selectPicklistToAll, order, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError }
       })
       modal.present();
     },
- 
+
     async openGiftCardActivationModal(item: any) {
       const modal = await modalController.create({
         component: GiftCardActivationModal,
