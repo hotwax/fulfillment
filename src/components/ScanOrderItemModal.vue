@@ -121,7 +121,6 @@ export default defineComponent({
     },
     async scan() {
       if (useAuthStore().isEmbedded) {
-        console.log("This is pos scanner");
         const scanData = await openPosScanner();
         if(scanData) {
           this.updateProductScannedStatus(scanData);

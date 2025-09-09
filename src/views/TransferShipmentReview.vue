@@ -275,7 +275,6 @@ export default defineComponent({
     },
     async scanCode () {
       if (useAuthStore().isEmbedded) {
-        console.log("This is pos scanner");
         const scanData = await openPosScanner();
         if(scanData) {
           this.updateProductCount(scanData);
