@@ -331,6 +331,38 @@ const approveTransferOrder = async (orderId: any): Promise<any> => {
   });
 };
 
+const addProductToOrder = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: 'oms/transferOrders/orderItem',
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
+const updateOrderItem = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: 'oms/transferOrders/orderItem',
+    method: "PUT",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
 const cancelTransferOrder = async (orderId: string): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -348,6 +380,7 @@ const cancelTransferOrder = async (orderId: string): Promise<any> => {
 
 
 export const TransferOrderService = {
+  addProductToOrder,
   cancelTransferOrder,
   cancelTransferOrderShipment,
   createOutboundTransferShipment,
@@ -364,5 +397,6 @@ export const TransferOrderService = {
   rejectOrderItems,
   closeOrderItems,
   createTransferOrder,
-  approveTransferOrder
+  approveTransferOrder,
+  updateOrderItem
 };

@@ -511,16 +511,16 @@ async function commitProductToOrder(product: any, scannedId?: string) {
 
 async function addProductToOrderApi(product: any, newItem: any) {
   const payload = {
-    statusId: "ITEM_CREATED",
     orderId: currentOrder.value.orderId,
     productId: product.productId,
     quantity: newItem.quantity,
     shipGroupSeqId: newItem.shipGroupSeqId,
     unitListPrice: product.LIST_PRICE_PURCHASE_USD_STORE_GROUP_price,
     unitPrice: product.LIST_PRICE_PURCHASE_USD_STORE_GROUP_price,
+    grandTotal: currentOrder.value.grandTotal
   }
 
-  return await OrderService.addProductToOrder(payload)
+  return await TransferOrderService.addProductToOrder(payload)
 }
 
 // Stock fetch helper

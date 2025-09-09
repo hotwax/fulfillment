@@ -878,22 +878,6 @@ const createCommunicationEvent = async (payload: any): Promise<any> => {
   });
 }
 
-const addProductToOrder = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/orders/${payload.orderId}/items`,
-    method: "POST",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    data: payload
-  });
-}
-
 const deleteProductFromOrder = async (payload: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -925,25 +909,8 @@ const updateOrderHeader = async (payload: any): Promise<any> => {
   });
 }
 
-const updateOrderItem = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/orders/${payload.orderId}/items/${payload.orderItemSeqId}`,
-    method: "PUT",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    data: payload
-  });
-}
-
 export const OrderService = {
   activateGiftCard,
-  addProductToOrder,
   addShipmentBox,
   addTrackingCode,
   bulkShipOrders,
@@ -975,7 +942,6 @@ export const OrderService = {
   shipOrder,
   unpackOrder,
   updateOrderHeader,
-  updateOrderItem,
   updateShipmentCarrierAndMethod,
   voidShipmentLabel
 }

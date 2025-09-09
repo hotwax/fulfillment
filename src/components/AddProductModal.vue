@@ -53,9 +53,9 @@ import { IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonCon
 import { checkmarkCircle, closeOutline } from "ionicons/icons";
 import { computed, defineProps, onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
+import { TransferOrderService } from '@/services/TransferOrderService';
 import { modalController } from '@ionic/vue';
 import { ProductService } from '@/services/ProductService';
-import { OrderService } from '@/services/OrderService';
 import { StockService } from '@/services/StockService';
 import { hasError, showToast } from '@/utils';
 import { DxpShopifyImg, getProductIdentificationValue, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
@@ -148,8 +148,9 @@ async function addProductToOrderApi(product: any, newItem: any) {
     shipGroupSeqId: newItem.shipGroupSeqId,
     unitListPrice: product.LIST_PRICE_PURCHASE_USD_STORE_GROUP_price,
     unitPrice: product.LIST_PRICE_PURCHASE_USD_STORE_GROUP_price,
+    grandTotal: currentOrder.value.grandTotal
   }
-  return await OrderService.addProductToOrder(payload)
+  return await TransferOrderService.addProductToOrder(payload)
 }
 
 // product search

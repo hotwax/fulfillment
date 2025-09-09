@@ -90,6 +90,7 @@ import { computed, defineComponent, onMounted } from 'vue';
 import { add, caretDownOutline, checkmarkDone, closeCircleOutline, barcodeOutline, removeCircleOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { TransferOrderService } from '@/services/TransferOrderService';
 import { OrderService } from '@/services/OrderService';
 import { useRouter } from 'vue-router';
 import { Actions } from '@/authorization'
@@ -99,7 +100,6 @@ import logger from '@/logger';
 import { showToast } from '@/utils';
 import ShippedHistoryModal from '@/components/ShippedHistoryModal.vue'
 import ReportIssuePopover from './ReportIssuePopover.vue';
-
 
 export default defineComponent({
   name: "TransferOrderItem",
@@ -231,7 +231,7 @@ export default defineComponent({
     },
     async updateItemQuantity(item: any) {
       try {
-        const resp = await OrderService.updateOrderItem({
+        const resp = await TransferOrderService.updateOrderItem({
           orderId: this.currentOrder.orderId,
           orderItemSeqId: item.orderItemSeqId,
           quantity: item.pickedQuantity
