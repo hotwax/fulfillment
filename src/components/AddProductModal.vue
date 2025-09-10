@@ -102,7 +102,7 @@ async function fetchStock(productId: string) {
 }
 
 // Add product to order
-async function commitProductToOrder(product: any, scannedId?: string) {
+async function commitProductToOrder(product: any) {
   if (!product?.productId) return
 
   const newItem: any = {
@@ -122,7 +122,7 @@ async function commitProductToOrder(product: any, scannedId?: string) {
   }
 
   try {
-    const resp = await addProductToOrderApi(product, newItem)
+    const resp = await addProductToOrderApi(newItem)
     if (!hasError(resp)) {
       newItem.orderId = currentOrder.value.orderId
       newItem.orderItemSeqId = resp.data?.orderItemSeqId
@@ -139,16 +139,15 @@ async function commitProductToOrder(product: any, scannedId?: string) {
   queryString.value = ''
 }
 
-async function addProductToOrderApi(product: any, newItem: any) {
+async function addProductToOrderApi(newItem: any) {
+  const unitPrice = await ProductService.fetchProductAverageCost(newItem.productId, currentOrder.value.orderFacilityId)
+
   const payload = {
-    statusId: "ITEM_CREATED",
     orderId: currentOrder.value.orderId,
-    productId: product.productId,
+    productId: newItem.productId,
     quantity: newItem.quantity,
     shipGroupSeqId: newItem.shipGroupSeqId,
-    unitListPrice: product.LIST_PRICE_PURCHASE_USD_STORE_GROUP_price,
-    unitPrice: product.LIST_PRICE_PURCHASE_USD_STORE_GROUP_price,
-    grandTotal: currentOrder.value.grandTotal
+    unitPrice: unitPrice,
   }
   return await TransferOrderService.addProductToOrder(payload)
 }

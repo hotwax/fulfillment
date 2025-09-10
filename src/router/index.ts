@@ -19,7 +19,7 @@ import { showToast } from '@/utils'
 import { translate } from '@hotwax/dxp-components'
 import 'vue-router'
 import Notifications from '@/views/Notifications.vue'
-import CreateTransferOrderUpdated from '@/views/CreateTransferOrderUpdated.vue';
+import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
 import ShipTransferOrder from '@/views/ShipTransferOrder.vue';
 
 // Defining types for the meta values
@@ -33,7 +33,6 @@ import { loader } from '@/utils/user';
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 import Rejections from '@/views/Rejections.vue';
-import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
 
 const authGuard = async (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
@@ -98,8 +97,8 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/create-transfer-order/:orderId',
-    name: 'CreateTransferOrderUpdated',
-    component: CreateTransferOrderUpdated,
+    name: 'CreateTransferOrder',
+    component: CreateTransferOrder,
     beforeEnter: authGuard,
     props: true
   },
