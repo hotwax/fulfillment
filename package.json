@@ -27,6 +27,7 @@
     "@ionic/vue-router": "^7.6.0",
     "@module-federation/enhanced": "^0.7.7",
     "@module-federation/runtime": "^0.7.7",
+    "@shopify/app-bridge-utils": "^3.5.1",
     "@types/encoding-japanese": "^2.0.5",
     "@types/file-saver": "^2.0.5",
     "@types/luxon": "^2.3.2",

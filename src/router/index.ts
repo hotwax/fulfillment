@@ -32,6 +32,7 @@ import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 import Rejections from '@/views/Rejections.vue';
 import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
+import Shopify from '@/views/Shopify.vue';
 
 const authGuard = async (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
@@ -240,6 +241,11 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       permissionId: "APP_REJECTIONS_VIEW"
     }
+  },
+  {
+    path: '/shopify',
+    name: 'Shopify',
+    component: Shopify
   }
 ]
 
