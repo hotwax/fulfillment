@@ -164,7 +164,7 @@
             {{ translate('When rejecting an item, automatically reject all other orders for that item as well.') }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_COLLATERAL_REJECTION_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="'true' === isCollateralRejectionEnabled" @click.prevent="confirmCollateralRejection($event)">{{ translate("Auto reject related items") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="isCollateralRejectionEnabled" @click.prevent="confirmCollateralRejection($event)">{{ translate("Auto reject related items") }}</ion-toggle>
           </ion-item>
         </ion-card>
         <ion-card>
@@ -177,7 +177,7 @@
             {{ translate('Adjust the QOH along with ATP on rejection.') }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_AFFECT_QOH_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="'true' === affectQoh" @click.prevent="confirmAffectQohConfig($event)">{{ translate("Affect QOH") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="affectQoh" @click.prevent="confirmAffectQohConfig($event)">{{ translate("Affect QOH") }}</ion-toggle>
           </ion-item>
         </ion-card>
       </section>
@@ -543,7 +543,6 @@ export default defineComponent({
         enumId: "FULFILL_FORCE_SCAN",
         payload: params,
         createService: UtilService.createProductStoreSetting,
-        fetchAction: "getProductStoreSettingConfig",
         requireEnum: true,
         enumMeta: {
           description: "Impose force scanning of items while packing from fulfillment app",
@@ -655,7 +654,6 @@ export default defineComponent({
         enumId: "FULFILL_PART_ODR_REJ",
         payload: params,
         createService: UtilService.createProductStoreSetting,
-        fetchAction: "getProductStoreSettingConfig",
         requireEnum: true,
         enumMeta: {
           description: "Fulfillment Partial Order Rejection",
@@ -697,7 +695,6 @@ export default defineComponent({
         enumId: "FF_COLLATERAL_REJ",
         payload: params,
         createService: UtilService.createProductStoreSetting,
-        fetchAction: "getProductStoreSettingConfig",
         requireEnum: true,
         enumMeta: {
           description: "Fulfillment Collateral Rejection",
@@ -739,22 +736,20 @@ export default defineComponent({
         enumId: "AFFECT_QOH_ON_REJ",
         payload: params,
         createService: UtilService.createProductStoreSetting,
-        fetchAction: "getProductStoreSettingConfig",
         requireEnum: false
       });
     },
-    setBarcodeIdentificationPref(value: string) {
-      this.store.dispatch('util/updateProductStoreSettingConfig', {
+    async setBarcodeIdentificationPref(value: string) {
+      await this.store.dispatch('util/updateProductStoreSettingConfig', {
         enumId: 'BARCODE_IDEN_PREF',
-        payload: { settingValue: value},
+        payload: { settingValue: value },
         createService: UtilService.createProductStoreSetting,
-        fetchAction: 'getProductStoreSettingConfig',
         requireEnum: true,
         enumMeta: {
           description: 'Identification preference to be used for scanning items.',
           enumName: 'Barcode Identification Preference'
         }
-      })
+      });
     }
 
   },

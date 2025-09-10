@@ -265,12 +265,4 @@ const getFacilityFilter = (value: any): any => {
   return facilityFilter 
 }
 
-const productStoreSettingTransforms: Record<string, (val: any) => any> = {
-  DISABLE_SHIPNOW: (val) => val === "true",
-  DISABLE_UNPACK: (val) => val === "true",
-  USE_RES_FACILITY_ID: (val) => val === "Y",
-  FULFILL_FORCE_SCAN: (val) => val === "true",
-  FF_DOWNLOAD_PICKLIST: (val) => val === "true"
-}
-
-export { copyToClipboard, downloadCsv, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getFacilityFilter, getFeatures, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getIdentificationId, handleDateTimeInput, hasActiveFilters, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv, productStoreSettingTransforms }
+export { copyToClipboard, downloadCsv, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getFacilityFilter, getFeatures, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getIdentificationId, handleDateTimeInput, hasActiveFilters, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv }

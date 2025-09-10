@@ -6,7 +6,7 @@ import { UtilService } from '@/services/UtilService'
 import { hasError } from '@/adapter'
 import logger from '@/logger'
 import store from '@/store';
-import { showToast, getProductStoreId, productStoreSettingTransforms } from '@/utils'
+import { showToast, getProductStoreId } from '@/utils'
 import { translate, useUserStore } from '@hotwax/dxp-components'
 
 const actions: ActionTree<UtilState, RootState> = {
@@ -617,13 +617,12 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   // Generic update action for any product store setting
-  async updateProductStoreSettingConfig({ dispatch }, config) {
+  async updateProductStoreSettingConfig({ commit }, config) {
     try {
       const {
         enumId,
         payload,
         createService,
-        fetchAction,
         requireEnum = false,
         enumMeta = { description: enumId, enumName: enumId }
       } = config;
@@ -645,46 +644,51 @@ const actions: ActionTree<UtilState, RootState> = {
         }
       }
 
-      const response = await (payload?.settingTypeEnumId ? UtilService.updateProductStoreSetting(payload) : createService({ ...payload, productStoreId: getProductStoreId(), settingTypeEnumId: enumId }));
+      //Check if product store setting already exists
+      let isSettingAlreadyExists = false;
+      try {
+        const fetchSetting = await UtilService.fetchProductStoreSetting({
+          productStoreId: getProductStoreId(),
+          settingTypeEnumId: enumId,
+          fieldsToSelect: ["settingTypeEnumId"],
+          pageSize: 1
+        });
+        isSettingAlreadyExists = fetchSetting?.data?.entityValueList?.length > 0;
+      } catch (err) {
+        logger.error(`Unable to check existence for ${enumId}`, err);
+      }
 
-      const toastMessage = hasError(response) ? "Failed to update configuration" : "Configuration updated";
-      showToast(toastMessage);
+      //Update or create setting on the basis of isSettingAlreadyExists
+      let response;
+      if (isSettingAlreadyExists) {
+        console.log('inside exist block')
+        response = await UtilService.updateProductStoreSetting({
+          productStoreId: getProductStoreId(),
+          settingTypeEnumId: enumId,
+          ...payload
+        });
+      } else {
+        response = await createService({
+          productStoreId: getProductStoreId(),
+          settingTypeEnumId: enumId,
+          ...payload
+        });
+      }
 
-      if (fetchAction) await dispatch(fetchAction,  enumId);
-
+      if (!hasError(response)) {
+        commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
+          key: enumId,
+          value: payload.settingValue
+        });
+        showToast("Configuration updated");
+      } else {
+        showToast("Failed to update configuration");
+      }
     } catch (error) {
       showToast("Failed to update configuration");
       logger.error("Error updating product store setting:", error);
     }
   },
-
-  // Generic action to get single product store setting
-  async getProductStoreSettingConfig({ commit }, enumId) {
-    const params = {
-      productStoreId: getProductStoreId(),
-      settingTypeEnumId: enumId,
-      fieldsToSelect: ["settingTypeEnumId", "settingValue"],
-      pageSize: 1
-    } as any
-
-    try {
-      const resp = await UtilService.fetchProductStoreSetting(params)
-
-      if (!hasError(resp)) {
-        const rawSettingValue = resp.data.entityValueList[0]?.settingValue
-
-        // Apply transform if defined, else fallback to raw value
-        const finalSettingValue = productStoreSettingTransforms[enumId] ? productStoreSettingTransforms[enumId](rawSettingValue) : rawSettingValue
-
-        commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
-          key: enumId,
-          value: finalSettingValue
-        })
-      }
-    } catch (error) {
-      logger.error(error)
-    }
-  }
 
 }
 
