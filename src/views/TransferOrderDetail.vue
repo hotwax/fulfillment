@@ -166,7 +166,7 @@ import {
 import { computed, defineComponent } from 'vue';
 import { barcodeOutline, pricetagOutline, printOutline, trashOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
-import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useAuthStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useAuthStore, openPosScanner } from '@hotwax/dxp-components';
 import { useRouter } from 'vue-router';
 import Scanner from "@/components/Scanner.vue";
 import { Actions, hasPermission } from '@/authorization'

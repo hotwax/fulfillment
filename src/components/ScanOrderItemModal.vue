@@ -72,7 +72,7 @@ import {
 } from "@ionic/vue";
 import { computed, defineComponent } from "vue";
 import { cameraOutline, closeOutline, copyOutline, saveOutline } from "ionicons/icons";
-import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useAuthStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useAuthStore, openPosScanner } from '@hotwax/dxp-components';
 import { mapGetters } from 'vuex';
 import { getFeatures, showToast, hasWebcamAccess } from "@/utils"
 import Scanner from "@/components/Scanner.vue"

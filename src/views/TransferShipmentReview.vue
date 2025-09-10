@@ -75,7 +75,7 @@ import {
 import { computed, defineComponent } from 'vue';
 import { documentTextOutline, sendOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
-import { translate, useAuthStore, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { openPosScanner, translate, useAuthStore, useProductIdentificationStore } from '@hotwax/dxp-components';
 
 import { useRouter } from 'vue-router';
 import Scanner from "@/components/Scanner.vue";
