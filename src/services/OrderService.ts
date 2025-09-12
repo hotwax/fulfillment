@@ -762,7 +762,7 @@ const fetchOrderDetail = async (orderId: string): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return await apiClient({
-    url: `/oms/orders/${orderId}`, //should handle the update of OISG, SRG, SPRG if needed
+    url: `/poorti/orders/${orderId}`, //should handle the update of OISG, SRG, SPRG if needed
     method: "GET",
     baseURL,
     headers: {
