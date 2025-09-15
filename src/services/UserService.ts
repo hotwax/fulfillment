@@ -137,22 +137,6 @@ const getFacilityGroupDetails = async (payload: any): Promise<any> => {
   });
 }
 
-const getFacilityGroupAndMemberDetails = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/dataDocumentView`,
-    method: "post",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    data: payload
-  });
-}
-
 const getPreferredStore = async (token: any): Promise<any> => {
   const baseURL = store.getters['user/getBaseUrl'];
   try {
@@ -544,7 +528,6 @@ export const UserService = {
     getFacilityDetails,
     getFacilityOrderCount,
     getFacilityGroupDetails,
-    getFacilityGroupAndMemberDetails,
     getPartialOrderRejectionConfig,
     getReservationFacilityIdFieldConfig,
     getUserProfile,

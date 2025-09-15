@@ -217,7 +217,7 @@ import { computed, defineComponent } from 'vue';
 import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, openOutline, timeOutline } from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import { UserService } from '@/services/UserService';
+import { UserService} from '@/services/UserService';
 import { showToast } from '@/utils';
 import { hasError, removeClientRegistrationToken, subscribeTopic, unsubscribeTopic } from '@/adapter'
 import { initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore, useAuthStore, getAppLoginUrl } from '@hotwax/dxp-components';
@@ -228,6 +228,7 @@ import Image from '@/components/Image.vue';
 import OrderLimitPopover from '@/components/OrderLimitPopover.vue'
 import emitter from "@/event-bus"
 import { addNotification, generateTopicName, isFcmConfigured, storeClientRegistrationToken } from "@/utils/firebase";
+import { UtilService } from '@/services/UtilService';
 
 
 
@@ -370,7 +371,7 @@ export default defineComponent({
         if (!hasError(resp)) {
           // using facilityGroupId as a flag for getting data from getFacilityGroupDetails
           this.facilityGroupDetails.facilityGroupId = resp.data[0].facilityGroupId
-          resp = await UserService.getFacilityGroupAndMemberDetails({
+          resp = await UtilService.getFacilityGroupAndMemberDetails({
             customParametersMap:{
               "facilityId": this.currentFacility?.facilityId,
               "facilityGroupId": this.facilityGroupDetails.facilityGroupId,
