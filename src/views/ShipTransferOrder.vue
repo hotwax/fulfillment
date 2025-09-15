@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button default-href="/" slot="start"/>
+        <ion-back-button slot="start" defaultHref="" @click="shipLater" />
         <ion-title>{{ translate("Ship transfer order") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -36,9 +36,10 @@
               </ion-label>
               <ion-label slot="end">{{ item.quantity }}</ion-label>
             </ion-item>
-            <div actions>
+            <!-- need to discuss about this buttons functionality -->
+            <!-- <div actions>
               <ion-button fill="clear" @click="router.push(`/create-transfer-order/${shipmentDetails.orderId}`)">{{ translate("Edit") }}</ion-button>
-            </div>
+            </div> -->
           </ion-list>
         </ion-card>
 
@@ -66,13 +67,13 @@
           <!-- manual tracking segment -->
           <ion-list v-if="selectedSegment === 'manual'">
             <ion-item>
-              <ion-select :value="selectedCarrier" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedCarrier = $event.detail.value">
-                <ion-select-option v-for="carrier in carriersList.list" :key="carrier.partyId" :value="carrier.partyId">{{ carrier.groupName ? carrier.groupName : carrier.partyId }}</ion-select-option>
+              <ion-select :value="selectedCarrier" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedCarrier = $event.detail.value; updateShipmentMethodsForCarrier(selectedCarrier)">
+                <ion-select-option v-for="(carrierPartyId, index) in Object.keys(shipmentMethodsByCarrier)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) ? getCarrierDesc(carrierPartyId) : carrierPartyId }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item>
-              <ion-select :value="selectedMethod" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedMethod = $event.detail.value">
-                <ion-select-option v-for="method in shipmentMethods" :key="method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ method.description ? method.description : method.shipmentMethodTypeId }}</ion-select-option>
+              <ion-select :disabled="!selectedCarrier" :value="selectedMethod" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedMethod = $event.detail.value">
+                <ion-select-option v-for="(method, index) in shipmentMethods" :key="index" :value="method.shipmentMethodTypeId">{{ method.description ? method.description : method.shipmentMethodTypeId }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item lines="full">
@@ -116,6 +117,7 @@
     <ion-footer>
       <ion-toolbar>
         <ion-buttons slot="end">
+          <!-- need to add check here that after we print shiping label we need to disable this button. -->
           <ion-button fill="outline" color="primary" @click="shipLater">{{ translate("Ship later") }}</ion-button>
           <ion-button fill="solid" color="primary" @click="shipOrder">{{ translate("Ship order") }}</ion-button>
         </ion-buttons>
@@ -144,8 +146,9 @@ const router = useRouter()
 const productIdentificationStore = useProductIdentificationStore();
 let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
 
-const carriersList = computed(() => store.getters['carrier/getCarriers'])
 const getProduct = computed(() => store.getters['product/getProduct'])
+const shipmentMethodsByCarrier = computed(() => store.getters["util/getShipmentMethodsByCarrier"])
+const getCarrierDesc = computed(() => store.getters["util/getCarrierDesc"])
 
 const shipmentItems = computed(() => {
   if(!shipmentDetails.value?.packages) return []
@@ -154,16 +157,19 @@ const shipmentItems = computed(() => {
 
 const selectedSegment = ref('manual')
 const selectedCarrier = ref('')
-const shipmentMethods = ref([])
+const shipmentMethods = ref([]) as any;
 const selectedMethod = ref('')
 const trackingCode = ref('')
 const shipmentDetails = ref({}) as any
 
 onIonViewWillEnter(async() => {
-  await fetchShipmentOrderDetail(route.params.shipmentId as any);
-  await store.dispatch('carrier/fetchCarriers')
-  shipmentMethods.value = await store.dispatch('carrier/fetchShipmentMethodTypes');
-})
+  await Promise.allSettled([fetchShipmentOrderDetail(route.params.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail")])
+});
+
+function updateShipmentMethodsForCarrier(carrierPartyId: string) {
+  shipmentMethods.value = shipmentMethodsByCarrier.value[carrierPartyId] || [];
+  selectedMethod.value = shipmentMethods.value[0].shipmentMethodTypeId;
+}
 
 async function fetchShipmentOrderDetail(shipmentId: string) {
   try {
@@ -195,7 +201,11 @@ async function shipLater() {
       {
         text: translate("Continue"),
         handler: async () => {
-          router.push({ path: '/transfer-orders' })
+          const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId)
+          if(!hasError(resp)) {
+            alertController.dismiss()
+            router.push({ path: '/transfer-orders' })
+          }
         }
       }
     ],

@@ -22,7 +22,7 @@
             <ion-item>
               <ion-icon :icon="storefrontOutline" slot="start"/>
               <!-- currently the facility name is coming in the api -->
-              <ion-label>Store name</ion-label>
+              <ion-label>{{ getFacilityName(currentOrder.orderFacilityId) }}</ion-label>
               <ion-button slot="end" color="medium" fill="outline" size="small">{{ translate("Edit") }}</ion-button>
             </ion-item>
             <ion-item>
@@ -248,6 +248,7 @@ let timeoutId: any = null;
 const barcodeIdentifier = computed(() => store.getters["util/getBarcodeIdentificationPref"]);
 const getProduct = computed(() => store.getters["product/getProduct"]);
 const currentOrder = computed(() => store.getters["transferorder/getCurrent"]);
+const facilities = computed(() => store.getters["util/getFacilities"])
 
 watch(queryString, (value) => {
   if(mode.value === 'scan') return;
@@ -269,6 +270,7 @@ onIonViewWillEnter(async () => {
   emitter.emit('presentLoader');
   await fetchTransferOrderDetail(route.params.orderId as string);
   await fetchProductInformation();
+  await store.dispatch('util/fetchFacilities')
   emitter.emit('dismissLoader');
 });
 
@@ -276,17 +278,37 @@ async function fetchTransferOrderDetail(orderId: string) {
   try {
     const orderResp = await TransferOrderService.fetchTransferOrderDetail(orderId);
     if(!hasError(orderResp)) {
-      const order = orderResp.data.order;
-      order.items = order.items.map((item: any) => ({
-        ...item,
-        pickedQuantity: item.pickedQuantity ?? item.quantity
-      }))
+      const order = orderResp.data[0];
+      // Fetch items and attach to order
+      const items = await fetchOrderItems(order.orderId);
+      order.items = items;
+
+      // Dispatch to store
       await store.dispatch('transferorder/updateCurrentTransferOrder', order)
     } else {
       throw orderResp.data;
     }
   } catch (error) {
     logger.error('Error fetching transfer order details:', error);
+  }
+}
+
+async function fetchOrderItems(orderId: string) {
+  try {
+    const payload = { orderId };
+    const resp = await TransferOrderService.findTransferOrderItems(payload);
+
+    if(!hasError(resp) && resp?.data?.transferOrderItems?.length) {
+      return resp.data.transferOrderItems.map((item: any) => ({
+        ...item,
+        pickedQuantity: item.pickedQuantity ?? item.quantity
+      }));
+    } else {
+      throw resp.data;
+    }
+  } catch (error) {
+    logger.error('Error fetching order items:', error);
+    return [];
   }
 }
 
@@ -400,6 +422,11 @@ async function openAddProductModal() {
     await fetchProductInformation();
   })
   await addProductModal.present();
+}
+
+function getFacilityName(facilityId: string) {
+  const facility = facilities.value.find((facility: any) => facility.facilityId === facilityId)
+  return facility ? facility.facilityName || facility.facilityId : facilityId
 }
 
 async function scanProduct() {
@@ -517,7 +544,7 @@ async function addProductToOrderApi(newItem: any) {
     productId: newItem.productId,
     quantity: newItem.quantity,
     shipGroupSeqId: newItem.shipGroupSeqId,
-    unitPrice: unitPrice
+    unitPrice: unitPrice || 0
   }
   return await TransferOrderService.addProductToOrder(payload)
 }

@@ -42,7 +42,7 @@ const fetchTransferOrderDetail = async (orderId: string): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/transferOrders/${orderId}`,
+    url: `/oms/transferOrders/${orderId}/shipgroups`,
     method: "get",
     baseURL,
     headers: {
@@ -50,7 +50,23 @@ const fetchTransferOrderDetail = async (orderId: string): Promise<any> => {
       "Content-Type": "application/json"
     }
   });
-};
+}
+
+const findTransferOrderItems = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `oms/transferOrders/items`,
+    method: "GET",
+    params: payload,
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    }
+  });
+}
 
 const fetchShippedTransferShipments = async (params: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
@@ -386,6 +402,7 @@ export const TransferOrderService = {
   createOutboundTransferShipment,
   fetchCompletedTransferOrders,
   fetchTransferOrders,
+  findTransferOrderItems,
   fetchRejectReasons,
   fetchFulfillmentRejectReasons,
   fetchTransferOrderDetail,

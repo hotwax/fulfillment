@@ -691,7 +691,6 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, payload)
   },
   
-  // this action is not in use currently, keeping it for future use case
   async fetchCarriersDetail ({ commit, state }) {
     if(Object.keys(state.carrierDesc)?.length) return;
     const carrierDesc = {} as any;
@@ -717,14 +716,13 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_CARRIER_DESC_UPDATED, carrierDesc)
   },
 
-  // this action is not in use currently, keeping it for future use case
-  async fetchStoreCarrierAndMethods({ commit }, productStoreId) {
+  async fetchStoreCarrierAndMethods({ commit }) {
     let shipmentMethodsByCarrier = {};
 
     try {
       const payload = {
         customParametersMap:{
-          productStoreId,
+          "productStoreId": getProductStoreId(),
           "roleTypeId": "CARRIER",
           "shipmentMethodTypeId": "STOREPICKUP",
           "shipmentMethodTypeId_op": "equals",

@@ -141,6 +141,7 @@ async function createTransferOrder() {
     customerId: 'COMPANY',
     statusId: 'ORDER_CREATED',
     statusFlowId: 'TO_Fulfill_And_Receive',
+    grandTotal: 0,
     productStoreId,
     originFacilityId,
     shipGroups: [{
