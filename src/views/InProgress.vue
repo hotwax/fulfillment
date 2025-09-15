@@ -509,7 +509,7 @@ export default defineComponent({
           throw resp.data
         }
 
-        await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
+        await this.updateOrderAndPickerInformation();
         showToast(translate('Order rejected successfully'));
         return true
 
@@ -520,10 +520,6 @@ export default defineComponent({
         emitter.emit("dismissLoader");
       }
       return false
-    },
-    async selectPicklistToAll() {
-      this.selectedPicklistId = "";
-      this.updateSelectedPicklist(this.selectedPicklistId);
     },
     async confirmPackOrder(order: any, updateParameter?: string, trackingCode?: string) {
       const confirmPackOrder = await alertController
@@ -555,9 +551,6 @@ export default defineComponent({
                 //On error in packing, fetching update detail expecially to fetch carrier, shipment method, gteway message etc. If there is error (gatewayMessage not empty) opening Generate tracking code modal to enter tracking detail manually
                 const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
                 await this.generateTrackingCodeForPacking(updatedOrder, updateParameter, data, packingResponse.errors)
-              }else if(!this.inProgressOrders.total){
-                //if there is only one order and it is packed, resetting the selected picklist to 'All orders'
-                  this.selectPicklistToAll();
               }
             }
           }]
@@ -628,7 +621,7 @@ export default defineComponent({
         }
         // TODO: handle the case of fetching in progress orders after packing an order
         // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
-        await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
+        await this.updateOrderAndPickerInformation();
         return { isPacked: true }
       } catch (err: any) {
         // in case of error, if loader and toast are not dismissed above
@@ -742,11 +735,7 @@ export default defineComponent({
                 } else {
                   showToast(translate('Order packed successfully'));
                 }
-                await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
-                if(!this.inProgressOrders.total){
-                  //if there are no more orders left after packing, resetting the selected picklist to 'All orders'
-                  this.selectPicklistToAll();
-                }
+                await this.updateOrderAndPickerInformation();
               } catch (err) {
                 // in case of error, if loader and toast are not dismissed above
                 if (toast) toast.dismiss()
@@ -903,6 +892,9 @@ export default defineComponent({
           const payload = {
             originFacilityId: this.currentFacility?.facilityId,
             statusId: "SHIPMENT_APPROVED",
+            "shipmentMethodTypeId": "STOREPICKUP",
+            "shipmentMethodTypeId_op": "equals",
+            "shipmentMethodTypeId_not": "Y",
             pageIndex, // Ensure updated pageIndex is used
             pageSize: 50
           };
@@ -953,6 +945,11 @@ export default defineComponent({
 
         // Assign the processed picklists to `this.picklists`
         this.picklists = Object.values(picklistInfo);
+        if (this.selectedPicklistId) {
+          const selectedPicklist = this.picklists.find((picklist: any) => picklist.id === this.selectedPicklistId)
+          this.selectedPicklistId = selectedPicklist ? selectedPicklist.id : ""
+        }
+        this.updateSelectedPicklist(this.selectedPicklistId);
       } catch (err) {
         logger.error('Failed to fetch picklists', err);
       }
@@ -1100,7 +1097,7 @@ export default defineComponent({
       size && (inProgressOrdersQuery.viewSize = size)
       queryString && (inProgressOrdersQuery.queryString = '')
       inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
-      this.selectedPicklistId && (inProgressOrdersQuery.selectedPicklist = this.selectedPicklistId)
+      inProgressOrdersQuery.selectedPicklist = this.selectedPicklistId
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery, hideLoader })
     },
     async initialiseOrderQuery() {
@@ -1244,7 +1241,7 @@ export default defineComponent({
     async generateTrackingCodeForPacking(order: any, updateParameter?: string, documentOptions = {}, packingError?: string) {
       const modal = await modalController.create({
         component: GenerateTrackingCodeModal,
-        componentProps: {selectPickerToAll:this.selectPicklistToAll, order, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError }
+        componentProps: {order, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError }
       })
       modal.present();
     },
@@ -1262,21 +1259,18 @@ export default defineComponent({
       })
 
       modal.present();
-    }
+    },
+    async updateOrderAndPickerInformation(){
+      await this.fetchPickersInformation();
+    },
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
-    await this.fetchPickersInformation()
-    //Cross checking if the selected picklist is still valid, as user can pack the order from order detail page
-    if (this.selectedPicklistId) {
-      const selectedPicklist = this.picklists.find((picklist: any) => picklist.id === this.selectedPicklistId)
-      this.selectedPicklistId = selectedPicklist ? selectedPicklist.id : ""
-    }
-
     await Promise.all([
       this.store.dispatch('util/fetchRejectReasonOptions'),
       this.initialiseOrderQuery()
     ]);
+    await this.fetchPickersInformation()
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
   beforeRouteLeave() {
