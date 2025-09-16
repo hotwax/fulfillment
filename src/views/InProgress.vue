@@ -698,10 +698,14 @@ export default defineComponent({
                   shipments
                 });
 
+                if (hasError(resp)) {
+                  throw resp.data
+                }
+
                 //Generate documents only for successfully packed shipments, not for those where packing failed.
                 const packedShipmentIds = resp.data?.packedShipmentIds ? resp.data.packedShipmentIds : [];
 
-                if (hasError(resp) || !packedShipmentIds.length) {
+                if (!packedShipmentIds.length) {
                   throw resp.data
                 }
 
