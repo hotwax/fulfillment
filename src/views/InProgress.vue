@@ -193,7 +193,7 @@
               </div>
 
               <div class="desktop-only">
-                <ion-button v-if="order.missingLabelImage" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
+                <ion-button v-if="order.missingLabelImage && isAutoShippingLabelEnabled" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -358,7 +358,8 @@ export default defineComponent({
       affectQohConfig: 'user/getAffectQohConfig',
       excludeOrderBrokerDays: "util/getExcludeOrderBrokerDays",
       carrierShipmentBoxTypes: 'util/getCarrierShipmentBoxTypes',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
+      isAutoShippingLabelEnabled: 'util/isAutoShippingLabelEnabled',
     }),
   },
   data() {
