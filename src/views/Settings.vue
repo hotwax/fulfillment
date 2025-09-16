@@ -442,7 +442,7 @@ export default defineComponent({
       this.getCurrentFacilityDetails();
       this.getFacilityOrderCount();
       this.getEcomInvStatus();
-      await this.store.dispatch('util/checkAutoShippingLabelGroup');
+      await this.store.dispatch('util/fetchAutoShippingLabelConfig');
     },
     async timeZoneUpdated(tzId: string) {
       await this.store.dispatch("user/setUserTimeZone", tzId)

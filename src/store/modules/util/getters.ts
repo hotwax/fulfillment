@@ -69,7 +69,7 @@ const getters: GetterTree <UtilState, RootState> = {
   getExcludeOrderBrokerDays(state) {
     return state.excludeOrderBrokerDays
   },
-  getAutoShippingLabel(state){
+  isAutoShippingLabelEnabled(state){
   return state.isAutoShippingLabelEnabled
   }
 }
