@@ -697,11 +697,17 @@ export default defineComponent({
                 const resp = await OrderService.packOrders({
                   shipments
                 });
+
                 if (hasError(resp)) {
                   throw resp.data
                 }
+
                 //Generate documents only for successfully packed shipments, not for those where packing failed.
-                const packedShipmentIds = resp.data?.packedShipmentIds ? resp.data?.packedShipmentIds : [];
+                const packedShipmentIds = resp.data?.packedShipmentIds ?? [];
+
+                if (!packedShipmentIds.length) {
+                  throw resp.data
+                }
 
                 if (data.length) {
                   // additional parameters for dismiss button and manual dismiss ability
