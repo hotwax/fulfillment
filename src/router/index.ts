@@ -16,7 +16,7 @@ import CreateCarrier from "@/views/CreateCarrier.vue"
 import CarrierShipmentMethods from "@/views/CarrierShipmentMethods.vue"
 import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
-import { translate } from '@hotwax/dxp-components'
+import { translate, useUserStore } from '@hotwax/dxp-components'
 import 'vue-router'
 import Notifications from '@/views/Notifications.vue'
 
@@ -53,8 +53,10 @@ const authGuard = async (to: any, from: any, next: any) => {
 
 const loginGuard = (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
+  const userStore = useUserStore();
   if (to.query?.embedded === '1') {
     authStore.$reset();
+    userStore.$reset();
   }
   if (authStore.isAuthenticated && !to.query?.token && !to.query?.oms) {
     next('/')
