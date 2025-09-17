@@ -7,7 +7,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <div v-if="Object.keys(order).length">
+      <div v-if="order && Object.keys(order).length">
         <div class="order-header">
           <div class="order-primary-info">
             <h3>{{ order.orderName }}</h3>
@@ -236,6 +236,30 @@
             </ion-item>
           </ion-card>
 
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>{{ translate("Payment") }}</ion-card-title>
+            </ion-card-header>
+            <div v-if="order.paymentPreferences?.length">
+              <ion-list v-for="(orderPayment, index) in order.paymentPreferences" :key="`${order.orderId}-${orderPayment.orderPaymentPreferenceId}`">
+                <ion-item lines="none">
+                  <ion-label class="ion-text-wrap">
+                    <p class="overline">{{ orderPayment.paymentMethodTypeId }}</p>
+                    <ion-label>{{ translate(getPaymentMethodDesc(orderPayment.paymentMethodTypeId)) || orderPayment.paymentMethodTypeId }}</ion-label>
+                    <ion-note :color="getColorByDesc(getStatusDesc(orderPayment.statusId))">{{ translate(getStatusDesc(orderPayment.statusId)) }}</ion-note>
+                  </ion-label>
+                  <div slot="end" class="ion-text-end">
+                    <ion-badge v-if="order.paymentPreferences.length > 1 && index === 0" color="dark">{{ translate("Latest") }}</ion-badge>
+                    <ion-label slot="end">{{ formatCurrency(orderPayment.maxAmount, order.currencyUom) }}</ion-label>
+                  </div>
+                </ion-item>
+              </ion-list>
+            </div>
+            <p v-else class="empty-state">
+              {{ translate("No payments found") }}
+            </p>
+          </ion-card>
+
           <ion-card v-if="['in-progress', 'completed'].includes(order.category)">
             <ion-card-header>
               <ion-card-title>
@@ -364,6 +388,10 @@
           </ion-card>
         </div>
       </div>
+      <div v-else-if="order" class="empty-state">
+        <ion-spinner name="crescent" />
+        <ion-label>{{ translate("Loading...") }}</ion-label>
+      </div>
       <div v-else class="empty-state">
         <p>{{ translate("Unable to fetch the order details. Either the order has been shipped or something went wrong. Please try again after some time.")}}</p>
       </div>
@@ -428,7 +456,7 @@ import {
   checkmarkCircleOutline
 } from 'ionicons/icons';
 import { getProductIdentificationValue, translate, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { copyToClipboard, formatUtcDate, getFeatures, getFacilityFilter, showToast } from '@/utils'
+import { copyToClipboard, formatUtcDate, getFeatures, getFacilityFilter, showToast, getColorByDesc, formatCurrency } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import emitter from '@/event-bus';
@@ -1610,7 +1638,9 @@ export default defineComponent({
       store,
       trashBinOutline,
       translate,
-      ribbonOutline
+      ribbonOutline,
+      getColorByDesc,
+      formatCurrency
     };
   }
 });

@@ -65,7 +65,7 @@
               </div>
             </div>
 
-            <div v-for="item in order.items" :key="item.orderItemSeqId" class="order-line-item">
+            <div v-for="item in order.items" :key="order.orderId + item.orderItemSeqId" class="order-line-item">
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">

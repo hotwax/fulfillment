@@ -8,6 +8,7 @@ import logger from '@/logger'
 import store from '@/store';
 import { showToast, getProductStoreId } from '@/utils'
 import { translate, useUserStore } from '@hotwax/dxp-components'
+import { getCurrentFacilityId } from '@/utils';
 
 const actions: ActionTree<UtilState, RootState> = {
   async fetchRejectReasons({ commit }) {
@@ -705,7 +706,8 @@ const actions: ActionTree<UtilState, RootState> = {
 
       if (!hasError(resp)) {
         resp.data.map((carrier: any) => {
-          carrierDesc[carrier.partyId] = carrier.partyTypeId === "PERSON" ? `${carrier.firstName} ${carrier.lastName}` : carrier.groupName
+          const personName = [carrier.firstName, carrier.lastName].filter(Boolean).join(' ');
+          carrierDesc[carrier.partyId] = carrier.partyTypeId === "PERSON"? (personName || carrier.partyId): (carrier.groupName || carrier.partyId);
         })
       } else {
         throw resp.data;
@@ -871,7 +873,35 @@ const actions: ActionTree<UtilState, RootState> = {
       logger.error("Failed to get the exclude order broker days", err)
     }
     commit(types.UTIL_EXCLUDE_ORDER_BROKER_DAYS_UPDATED, excludeOrderBrokerDays)
+  },
+
+  async fetchAutoShippingLabelConfig({commit}) {
+      let resp: any;
+      try {     
+        const currentFacility: any = getCurrentFacilityId();
+        // 1. Check if current facility is part of Auto shipping group
+        resp = await UtilService.getFacilityGroupAndMemberDetails({
+          customParametersMap: {
+            "facilityId": currentFacility,
+            "facilityGroupId": "AUTO_SHIPPING_LABEL",
+            pageIndex: 0,
+            pageSize: 1
+          },
+          dataDocumentId: "FacilityGroupAndMember",
+          filterByDate: true
+        })
+  
+        if (!hasError(resp) && resp.data?.entityValueList?.length > 0) {
+          commit(types.SET_AUTO_SHIPPING_LABEL_ENABLED, true);
+        } else {
+          commit(types.SET_AUTO_SHIPPING_LABEL_ENABLED, false);
+        }
+      } catch (err) {
+        logger.error('Failed to check auto shipping label group', err);
+        commit(types.SET_AUTO_SHIPPING_LABEL_ENABLED, false);
+      }
   }
+
 }
 
 export default actions;

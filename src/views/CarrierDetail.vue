@@ -189,7 +189,6 @@
       await this.store.dispatch('carrier/fetchCarrierDetail', { partyId: this.$route.params.partyId });
       await Promise.all([this.store.dispatch('carrier/fetchShipmentMethodTypes'), this.store.dispatch('util/fetchProductStores'),
        /*this.store.dispatch('carrier/fetchShipmentGatewayConfigs'),*/
-        this.store.dispatch('carrier/fetchCarrierShipmentMethods', {partyId: this.$route.params.partyId}),
          this.store.dispatch('carrier/fetchProductStoreShipmentMethods', {partyId: this.$route.params.partyId}),
           this.store.dispatch('util/fetchFacilities')])
       await this.store.dispatch('carrier/checkAssociatedShipmentMethods')
