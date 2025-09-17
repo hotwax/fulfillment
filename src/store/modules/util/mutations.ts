@@ -69,6 +69,7 @@ const mutations: MutationTree <UtilState> = {
     state.carrierShipmentBoxTypes = {}
     state.excludeOrderBrokerDays = undefined
     state.productStoreSettings = JSON.parse(process.env.VUE_APP_DEFAULT_PRODUCT_STORE_SETTINGS as any)
+    state.isAutoShippingLabelEnabled = false;
   },
   [types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED](state, payload) {
     if(payload.facilityId) {
@@ -83,6 +84,9 @@ const mutations: MutationTree <UtilState> = {
       ...state.productStoreSettings,
       [key]: value
     };
+  },
+  [types.SET_AUTO_SHIPPING_LABEL_ENABLED](state, payload) {
+    state.isAutoShippingLabelEnabled = payload;
   }
 }
 export default mutations;

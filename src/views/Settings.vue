@@ -217,7 +217,7 @@ import { computed, defineComponent } from 'vue';
 import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, openOutline, timeOutline } from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import { UserService } from '@/services/UserService';
+import { UserService} from '@/services/UserService';
 import { showToast } from '@/utils';
 import { hasError, removeClientRegistrationToken, subscribeTopic, unsubscribeTopic } from '@/adapter'
 import { initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore, useAuthStore, getAppLoginUrl } from '@hotwax/dxp-components';
@@ -370,7 +370,7 @@ export default defineComponent({
         if (!hasError(resp)) {
           // using facilityGroupId as a flag for getting data from getFacilityGroupDetails
           this.facilityGroupDetails.facilityGroupId = resp.data[0].facilityGroupId
-          resp = await UserService.getFacilityGroupAndMemberDetails({
+          resp = await UtilService.getFacilityGroupAndMemberDetails({
             customParametersMap:{
               "facilityId": this.currentFacility?.facilityId,
               "facilityGroupId": this.facilityGroupDetails.facilityGroupId,
@@ -441,6 +441,7 @@ export default defineComponent({
       this.getCurrentFacilityDetails();
       this.getFacilityOrderCount();
       this.getEcomInvStatus();
+      await this.store.dispatch('util/fetchAutoShippingLabelConfig');
     },
     async timeZoneUpdated(tzId: string) {
       await this.store.dispatch("user/setUserTimeZone", tzId)

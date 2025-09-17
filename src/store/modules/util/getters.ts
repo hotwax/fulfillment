@@ -88,7 +88,10 @@ const getters: GetterTree <UtilState, RootState> = {
     return state.productStoreSettings.USE_RES_FACILITY_ID
   },
   getProductStoreSetting(state){
-    return state.productStoreSettings 
+    return state.productStoreSettings
+  },
+  isAutoShippingLabelEnabled(state){
+  return state.isAutoShippingLabelEnabled
   }
 }
 export default getters;

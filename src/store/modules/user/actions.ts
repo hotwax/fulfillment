@@ -121,6 +121,7 @@ const actions: ActionTree<UserState, RootState> = {
       await this.dispatch('util/fetchCarrierShipmentBoxTypes')
       //Generic call for fetching all the Product store settings in one go.
       await this.dispatch("util/fetchProductStoreSettings",preferredStore.productStoreId)
+      await this.dispatch('util/fetchAutoShippingLabelConfig')
 
       const orderId = router.currentRoute.value.query.orderId
       if (isQueryFacilityFound && orderId) {

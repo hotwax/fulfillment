@@ -29,4 +29,6 @@ export default interface UtilState {
   isUnpackDisabled: boolean;
   isReservationFacilityFieldEnabled:boolean;
   productStoreSettings: Record<string, any>;
+  isAutoShippingLabelEnabled: boolean;
+
 }

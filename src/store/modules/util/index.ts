@@ -37,7 +37,8 @@ const utilModule: Module<UtilState, RootState> = {
     isShipNowDisabled: false,
     isUnpackDisabled: false,
     isReservationFacilityFieldEnabled:false,
-    productStoreSettings: {}
+    productStoreSettings: {},
+    isAutoShippingLabelEnabled: false,
   },
   getters,
   actions,
