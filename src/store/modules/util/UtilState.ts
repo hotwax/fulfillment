@@ -22,6 +22,13 @@ export default interface UtilState {
   facilityShippingLabelImageType: any;
   isPicklistDownloadEnabled: boolean;
   excludeOrderBrokerDays: any;
+  partialOrderRejectionConfig: any;
+  collateralRejectionConfig: any;
+  affectQohConfig: any;
+  isShipNowDisabled: boolean;
+  isUnpackDisabled: boolean;
+  isReservationFacilityFieldEnabled:boolean;
+  productStoreSettings: Record<string, any>;
   isAutoShippingLabelEnabled: boolean;
 
 }
