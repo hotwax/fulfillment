@@ -909,6 +909,22 @@ const updateOrderHeader = async (payload: any): Promise<any> => {
   });
 }
 
+const updateOrderFacility = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/orders/${payload.orderId}/shipGroups/${payload.shipGroupSeqId}`,
+    method: "PUT",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
 export const OrderService = {
   activateGiftCard,
   addShipmentBox,
@@ -942,6 +958,7 @@ export const OrderService = {
   shipOrder,
   unpackOrder,
   updateOrderHeader,
+  updateOrderFacility,
   updateShipmentCarrierAndMethod,
   voidShipmentLabel
 }

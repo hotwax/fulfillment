@@ -133,11 +133,12 @@ import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonContent, I
 import { openOutline, printOutline, storefrontOutline } from 'ionicons/icons'
 import { DxpShopifyImg, getProductIdentificationValue, useProductIdentificationStore, translate } from '@hotwax/dxp-components';
 import { TransferOrderService } from '@/services/TransferOrderService';
+import { CarrierService } from '@/services/CarrierService';
 import { useRoute } from 'vue-router';
 import { showToast } from '@/utils';
-import logger from '@/logger';
 import { hasError } from '@hotwax/oms-api';
 import { useRouter } from 'vue-router'
+import logger from '@/logger';
 
 const store = useStore()
 const route = useRoute();
@@ -161,9 +162,11 @@ const shipmentMethods = ref([]) as any;
 const selectedMethod = ref('')
 const trackingCode = ref('')
 const shipmentDetails = ref({}) as any
+const shippingRates = ref({}) as any
 
 onIonViewWillEnter(async() => {
   await Promise.allSettled([fetchShipmentOrderDetail(route.params.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail")])
+  await fetchShippingRates();
 });
 
 function updateShipmentMethodsForCarrier(carrierPartyId: string) {
@@ -183,6 +186,19 @@ async function fetchShipmentOrderDetail(shipmentId: string) {
       }
     } else {
       throw resp.data;
+    }
+  } catch (err) {
+    logger.error('Failed to fetch shipment details.', err);
+  }
+}
+
+async function fetchShippingRates() {
+  try {
+    const resp = await CarrierService.fetchShippingRates(shipmentDetails.value.shipmentId)
+    if(!hasError(resp)) {
+      shippingRates.value = resp.data
+    } else { 
+      throw resp.data
     }
   } catch (err) {
     logger.error('Failed to fetch shipment details.', err);
@@ -245,8 +261,7 @@ async function shipOrder() {
 }
 </script>
 
-<style scoped >
-
+<style scoped>
 main {
   display: flex;
   align-items: start;

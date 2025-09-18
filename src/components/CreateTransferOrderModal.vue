@@ -120,6 +120,7 @@ function closeModal() {
   modalController.dismiss({ dismissed: true });
 }
 
+// Creates a transfer order with the provided details and navigates to the order creation page.
 async function createTransferOrder() {
   if(saving.value) return;
   if(!transferOrderName.value?.trim()) {

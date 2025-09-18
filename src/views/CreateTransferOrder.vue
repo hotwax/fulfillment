@@ -23,7 +23,7 @@
               <ion-icon :icon="storefrontOutline" slot="start"/>
               <!-- currently the facility name is coming in the api -->
               <ion-label>{{ getFacilityName(currentOrder.orderFacilityId) }}</ion-label>
-              <ion-button slot="end" color="medium" fill="outline" size="small">{{ translate("Edit") }}</ion-button>
+              <ion-button slot="end" color="medium" fill="outline" size="small" @click="openSelectFacilityModal">{{ translate("Edit") }}</ion-button>
             </ion-item>
             <ion-item>
               <ion-icon :icon="checkmarkDoneOutline" slot="start"/>
@@ -74,7 +74,7 @@
                 <p>{{ translate("Try searching using a keyword instead") }}</p>
               </ion-label>
               <!-- need to add match product button -->
-              <ion-button size="small" slot="end" color="primary">
+              <ion-button size="small" slot="end" color="primary" @click="openAddProductModal">
                 <ion-icon slot="start" :icon="searchOutline"/>
                 {{ translate("Search") }}
               </ion-button>
@@ -106,7 +106,7 @@
                 <p>{{ translate("Scanning is set to") }} {{ (barcodeIdentifier || '').toUpperCase() }}</p>
                 <p>{{ translate("Swap to SKU from the settings page") }}</p>
               </ion-label>
-              <ion-badge slot="end" color="success">start scanning</ion-badge>
+              <ion-badge slot="end" color="success">{{ translate("start scanning") }}</ion-badge>
             </ion-item>
           </div>
           <!-- Searching -->
@@ -229,6 +229,7 @@ import { TransferOrderService } from '@/services/TransferOrderService';
 import { OrderService } from '@/services/OrderService';
 import TransferOrderItem from '@/components/TransferOrderItem.vue'
 import AddProductModal from "@/components/AddProductModal.vue";
+import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
 
 const store = useStore();
 const route = useRoute();
@@ -274,6 +275,7 @@ onIonViewWillEnter(async () => {
   emitter.emit('dismissLoader');
 });
 
+// Fetches transfer order details by orderId, including its items, and updates the store.
 async function fetchTransferOrderDetail(orderId: string) {
   try {
     const orderResp = await TransferOrderService.fetchTransferOrderDetail(orderId);
@@ -360,6 +362,7 @@ async function toggleStatusFlow(event: any) {
   await updateOrderProperty("statusFlowId", updatedStatusFlowId);
 }
 
+// Updates a transfer order's property (name or flow) and shows success/failure toast messages
 async function updateOrderProperty(property: string, value: any) {
   try {
     const payload = {
@@ -382,6 +385,46 @@ async function updateOrderProperty(property: string, value: any) {
   } catch (err) {
     logger.error(`Failed to update order ${property}`, err);
     property === "orderName" ? showToast(translate("Failed to update order name")) : showToast(translate("Failed to update order flow"));
+  }
+}
+
+async function openSelectFacilityModal() {
+  const addressModal = await modalController.create({
+    component: SelectFacilityModal,
+    componentProps: {
+      selectedFacilityId: currentOrder.value.orderFacilityId,
+      facilities: facilities.value
+    }
+  });
+
+  addressModal.onDidDismiss().then(async (result: any) => {
+    if(result.data?.selectedFacilityId) {
+      await updateOrderFacility(result.data?.selectedFacilityId);
+    }
+  });
+  
+  await addressModal.present();
+}
+
+// Updates the order facility with the given facility ID.
+async function updateOrderFacility(facilityId: string) {
+  const payload = {
+    orderId: currentOrder.value.orderId,
+    orderFacilityId: facilityId,
+    shipGroupSeqId: currentOrder.value.shipGroupSeqId
+  }
+
+  try {
+    const resp = await OrderService.updateOrderFacility(payload)
+    if(!hasError(resp)) {
+      currentOrder.value.orderFacilityId = facilityId;
+      await store.dispatch('transferorder/updateCurrentTransferOrder', currentOrder.value);
+    } else {
+      throw resp.data;
+    }
+  } catch (error) {
+    logger.error("Failed to update destination facility", error)
+    showToast(translate("Failed to update store"))
   }
 }
 
@@ -489,6 +532,7 @@ async function findProduct() {
     searchedProduct.value = {};
   }
 }
+
 // Commit a product to the order (single source of truth)
 // - Used by scan immediately, and by search on button click
 async function commitProductToOrder(product: any, scannedId?: string) {
@@ -536,6 +580,7 @@ async function commitProductToOrder(product: any, scannedId?: string) {
   queryString.value = '';
 }
 
+// Fetches the product's average cost and adds the item to the transfer order via an API call.
 async function addProductToOrderApi(newItem: any) {
   const unitPrice = await ProductService.fetchProductAverageCost(newItem.productId, currentOrder.value.orderFacilityId)
 
@@ -584,6 +629,7 @@ function isItemAlreadyInOrder(productId: string) {
   return currentOrder.value?.items?.some((item: any) => item.productId === productId)
 }
 
+// Scrolls the view to the specified product item and highlights it temporarily.
 function scrollToProduct(item: any) {
   lastScannedId.value = item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier.value, getProduct.value(item.productId));
   const el = document.getElementById(item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier.value, getProduct.value(item.productId)));
@@ -596,6 +642,7 @@ function clearSearch() {
   searchedProduct.value = {};
 }
 
+// Discards the current transfer order by calling the cancel API and navigates to the transfer orders list.
 async function discardOrder() {
   const orderId = currentOrder.value.orderId;
   try {
@@ -626,6 +673,7 @@ async function approveOrder(orderId: string) {
   }
 }
 
+// Approves the current transfer order and redirects to the transfer orders page.
 async function shiplater() {
   try {
     const success = await approveOrder(currentOrder.value.orderId);    
@@ -637,6 +685,7 @@ async function shiplater() {
   }
 }
 
+// Packs and ships the order by approving it, grouping items into packages, and creating an outbound transfer shipment.
 async function packAndShipOrder() {
   let shipmentId;
   try {
