@@ -30,7 +30,7 @@ import permissionPlugin, { Actions, hasPermission } from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
 import { dxpComponents } from '@hotwax/dxp-components';
-import { login, logout, loader, fetchProduct } from '@/utils/user';
+import { login, logout, loader, fetchProducts } from '@/utils/user';
 import { getConfig, fetchGoodIdentificationTypes, getEComStoresByFacility, getProductIdentificationPref, getUserFacilities, getUserPreference, initialise, setProductIdentificationPref, setUserLocale, getAvailableTimeZones, setUserTimeZone, 
   setUserPreference } from './adapter';
 import localeMessages from '@/locales';
@@ -75,7 +75,7 @@ const app = createApp(App)
     setUserPreference,
     getUserPreference,
     hasPermission,
-    fetchProduct
+    fetchProducts
   });
 
 router.isReady().then(() => {
