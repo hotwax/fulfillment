@@ -450,9 +450,9 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_PRODUCT_STORES_UPDATED, stores)
   },
   
-  async getForceScanSetting({ commit, dispatch }, eComStoreId) {
+  async getForceScanSetting({ commit, dispatch }, productStoreId) {
     const payload = {
-      productStoreId: eComStoreId,
+      productStoreId: productStoreId,
       settingTypeEnumId: "FULFILL_FORCE_SCAN",
       fieldsToSelect: ["settingValue", "settingTypeEnumId"],
       pageSize: 1
@@ -510,10 +510,10 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async setForceScanSetting({ commit, dispatch, state }, value) {
     let prefValue = state.isForceScanEnabled
-    const eComStoreId: any = getProductStoreId();
+    const productStoreId: any = getProductStoreId();
 
     // when selecting none as ecom store, not updating the pref as it's not possible to save pref with empty productStoreId
-    if(!eComStoreId) {
+    if(!productStoreId) {
       showToast(translate("Unable to update force scan preference."))
       commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
       return;
@@ -523,7 +523,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const resp = await UtilService.getProductStoreSetting({
-          productStoreId: eComStoreId,
+          productStoreId: productStoreId,
           settingTypeEnumId: "FULFILL_FORCE_SCAN",
           fieldsToSelect: ["settingTypeEnumId"],
           pageSize: 1
@@ -546,7 +546,7 @@ const actions: ActionTree<UtilState, RootState> = {
     }
 
     const params = {
-      "productStoreId": eComStoreId,
+      "productStoreId": productStoreId,
       "settingTypeEnumId": "FULFILL_FORCE_SCAN",
       "settingValue": `${value}`
     }
@@ -567,9 +567,9 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
   },
 
-  async fetchBarcodeIdentificationPref({ commit, dispatch }, eComStoreId) {
+  async fetchBarcodeIdentificationPref({ commit, dispatch }, productStoreId) {
     const payload = {
-      productStoreId: eComStoreId,
+      productStoreId: productStoreId,
       settingTypeEnumId: "BARCODE_IDEN_PREF",
       fieldToSelect: ["settingValue", "settingTypeEnumId"],
       pageSize: 1
@@ -627,10 +627,10 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async setBarcodeIdentificationPref({ commit, dispatch, state }, value) {
     let prefValue = state.barcodeIdentificationPref
-    const eComStoreId = getProductStoreId()
+    const productStoreId = getProductStoreId()
 
     // when selecting none as ecom store, not updating the pref as it's not possible to save pref with empty productStoreId
-    if(!eComStoreId) {
+    if(!productStoreId) {
       showToast(translate("Unable to update barcode identification preference since no product store config found."))
       commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, prefValue)
       return;
@@ -640,7 +640,7 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const resp = await UtilService.getProductStoreSetting({
-        "productStoreId": eComStoreId,
+        "productStoreId": productStoreId,
         "settingTypeEnumId": "BARCODE_IDEN_PREF",
         "fieldsToSelect": ["settingTypeEnumId"],
         "pageSize": 1
@@ -663,7 +663,7 @@ const actions: ActionTree<UtilState, RootState> = {
     }
 
     const params = {
-      "productStoreId": eComStoreId,
+      "productStoreId": productStoreId,
       "settingTypeEnumId": "BARCODE_IDEN_PREF",
       "settingValue": value
     }
@@ -839,10 +839,10 @@ const actions: ActionTree<UtilState, RootState> = {
     }
   },
 
-  async fetchProductStoreSettingPicklist({ commit }, eComStoreId) {
+  async fetchProductStoreSettingPicklist({ commit }, productStoreId) {
     let isPicklistDownloadEnabled = false
     const payload = {
-      "productStoreId": eComStoreId,
+      "productStoreId": productStoreId,
       "settingTypeEnumId": "FF_DOWNLOAD_PICKLIST",
       "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
       "pageSize": 1

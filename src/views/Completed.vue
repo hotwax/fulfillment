@@ -485,7 +485,7 @@ export default defineComponent({
         statusId: "SHIPMENT_PACKED",
         shippedDateFrom: DateTime.now().startOf('day').toMillis(),
         originFacilityId: this.currentFacility?.facilityId,
-        productStoreId: this.currentEComStore.productStoreId
+        productStoreId: this.currentProductStore.productStoreId
       }
       try {
         const resp = await OrderService.fetchShipmentFacets(params)
@@ -784,7 +784,7 @@ export default defineComponent({
     const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
-    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
+    let currentProductStore: any = computed(() => userStore.getCurrentEComStore)
     let currentFacility: any = computed(() => userStore.getCurrentFacility) 
 
     return {
@@ -794,7 +794,7 @@ export default defineComponent({
       copyToClipboard,
       checkmarkDoneOutline,
       cubeOutline,
-      currentEComStore,
+      currentProductStore,
       currentFacility,
       downloadOutline,
       ellipsisVerticalOutline,

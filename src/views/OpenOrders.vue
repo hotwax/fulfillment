@@ -34,7 +34,7 @@
           </ion-checkbox>
         </ion-item>
       </div>
-      <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentEComStore="currentEComStore" @updateOpenQuery="updateOpenQuery" />
+      <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentEComStore="currentProductStore" @updateOpenQuery="updateOpenQuery" />
       <div v-if="openOrders.total">
 
         <div class="results">
@@ -325,7 +325,7 @@ export default defineComponent({
           '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
-          productStoreId: { value: this.currentEComStore.productStoreId },
+          productStoreId: { value: this.currentProductStore.productStoreId },
           ...getFacilityFilter(this.currentFacility?.facilityId)
         },
         solrFilters: [
@@ -400,7 +400,7 @@ export default defineComponent({
             try {
               resp = await OrderService.recycleOutstandingOrders({
                 "facilityId": this.currentFacility?.facilityId,
-                "productStoreId": this.currentEComStore.productStoreId,
+                "productStoreId": this.currentProductStore.productStoreId,
                 "reasonId": "INACTIVE_STORE"
               })
 
@@ -454,14 +454,14 @@ export default defineComponent({
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
     let currentFacility: any = computed(() => userStore.getCurrentFacility) 
-    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
+    let currentProductStore: any = computed(() => userStore.getCurrentEComStore)
 
     return{
       Actions,
       caretDownOutline,
       chevronUpOutline,
       cubeOutline,
-      currentEComStore,
+      currentProductStore,
       currentFacility,
       formatUtcDate,
       getFeatures,

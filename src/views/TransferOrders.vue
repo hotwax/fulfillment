@@ -221,7 +221,7 @@ export default defineComponent({
     const store = useStore();
     const userStore = useUserStore()
     let currentFacility: any = computed(() => userStore.getCurrentFacility)
-    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
+    let currentProductStore: any = computed(() => userStore.getCurrentEComStore)
 
     return{
       Actions,
@@ -229,7 +229,7 @@ export default defineComponent({
       caretDownOutline,
       checkmarkDoneOutline,
       cubeOutline,
-      currentEComStore,
+      currentProductStore,
       currentFacility,
       optionsOutline,
       pricetagOutline,

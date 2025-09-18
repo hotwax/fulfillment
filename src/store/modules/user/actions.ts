@@ -213,14 +213,14 @@ const actions: ActionTree<UserState, RootState> = {
     emitter.emit('presentLoader', {message: 'Updating facility', backdropDismiss: false})
 
     try {
-      const previousEComStoreId = getProductStoreId()
+      const previousProductStoreId = getProductStoreId()
       const userProfile = JSON.parse(JSON.stringify(state.current as any));
       userProfile.stores = await useUserStore().getEComStoresByFacility(facility.facilityId);
       await useUserStore().getEComStorePreference('SELECTED_BRAND');
       const preferredStore: any = useUserStore().getCurrentEComStore
       commit(types.USER_INFO_UPDATED, userProfile);
 
-      if(previousEComStoreId !== preferredStore.productStoreId) {
+      if(previousProductStoreId !== preferredStore.productStoreId) {
         await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
           .catch((error) => logger.error(error));
         this.dispatch('order/clearOrders')
@@ -260,9 +260,9 @@ const actions: ActionTree<UserState, RootState> = {
   },
 
   /**
-   *  update current eComStore information
+   *  update current ProductStore information
   */
-  async setEComStore({ commit, dispatch }, productStoreId) {
+  async setProductStore({ commit, dispatch }, productStoreId) {
     // Get product identification from api using dxp-component
     await useProductIdentificationStore().getIdentificationPref(productStoreId)
       .catch((error) => logger.error(error));

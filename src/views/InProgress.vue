@@ -901,7 +901,7 @@ export default defineComponent({
 
           if (!hasError(resp)) {
             resp.data?.forEach((shipment: any) => {
-              if (shipment?.order?.statusId === "ORDER_APPROVED" && shipment?.order?.productStoreId === this.currentEComStore.productStoreId) {
+              if (shipment?.order?.statusId === "ORDER_APPROVED" && shipment?.order?.productStoreId === this.currentProductStore.productStoreId) {
                 shipment?.picklistShipment?.forEach((picklistShipment: any) => {
                   if (!picklistInfo[picklistShipment.picklistId]) {
                     const picklistRoles = picklistShipment?.picklist?.roles.filter((role: any) => !role.thruDate)
@@ -1149,7 +1149,7 @@ export default defineComponent({
             try {
               resp = await OrderService.recycleInProgressOrders({
                 "facilityId": this.currentFacility?.facilityId,
-                "productStoreId": this.currentEComStore.productStoreId,
+                "productStoreId": this.currentProductStore.productStoreId,
                 "reasonId": "INACTIVE_STORE"
               })
 
@@ -1273,7 +1273,7 @@ export default defineComponent({
     const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
-    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
+    let currentProductStore: any = computed(() => userStore.getCurrentEComStore)
     let currentFacility: any = computed(() => userStore.getCurrentFacility) 
 
     return {
@@ -1285,7 +1285,7 @@ export default defineComponent({
       checkmarkDoneOutline,
       closeCircleOutline,
       cubeOutline,
-      currentEComStore,
+      currentProductStore,
       currentFacility,
       ellipsisVerticalOutline,
       fileTrayOutline,

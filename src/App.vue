@@ -44,7 +44,6 @@ export default defineComponent({
       instanceUrl: 'user/getInstanceUrl',
       userProfile: 'user/getUserProfile',
       locale: 'user/getLocale',
-      currentEComStore: 'user/getCurrentEComStore',
       allNotificationPrefs: 'user/getAllNotificationPrefs',
     })
   },
@@ -145,12 +144,12 @@ export default defineComponent({
       Settings.defaultZone = this.userProfile.userTimeZone;
     }
 
-    const currentEComStore: any = useUserStore().getCurrentEComStore;
+    const currentProductStore: any = useUserStore().getCurrentEComStore;
     // If fetching identifier without checking token then on login the app stucks in a loop, as the mounted hook runs before
     // token is available which results in api failure as unauthenticated, thus making logout call and then login call again and so on.
-    if(this.userToken && currentEComStore?.productStoreId) {
+    if(this.userToken && currentProductStore?.productStoreId) {
       // Get product identification from api using dxp-component
-      await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId)
+      await useProductIdentificationStore().getIdentificationPref(currentProductStore.productStoreId)
         .catch((error) => logger.error(error));
 
       // check if firebase configurations are there.
