@@ -149,7 +149,7 @@ async function addProductToOrderApi(newItem: any) {
     shipGroupSeqId: newItem.shipGroupSeqId,
     unitPrice: unitPrice,
   }
-  return await TransferOrderService.addProductToOrder(payload)
+  return await TransferOrderService.addOrderItem(payload)
 }
 
 // product search

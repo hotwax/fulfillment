@@ -66,7 +66,7 @@
 
       <ion-item v-else class="qty-ordered" lines="none">
         <ion-label>{{ item.qoh }} {{ translate("Qoh") }}</ion-label>
-        <ion-icon slot="end" color="danger" :icon="removeCircleOutline" @click="removeItemFromOrder(item)" />
+        <ion-icon slot="end" color="danger" :icon="removeCircleOutline" @click="removeOrderItem(item)" />
       </ion-item>
     </div>
   </ion-card>
@@ -248,10 +248,10 @@ export default defineComponent({
         showToast(translate("Failed to update item quantity"));
       }
     },
-    async removeItemFromOrder(item: any) {
+    async removeOrderItem(item: any) {
       if(!item || !item.orderItemSeqId) return;
       try {
-        const resp = await OrderService.deleteProductFromOrder({
+        const resp = await OrderService.deleteOrderItem({
           orderId: this.currentOrder.orderId,
           orderItemSeqId: item.orderItemSeqId
         });

@@ -591,7 +591,7 @@ async function addProductToOrderApi(newItem: any) {
     shipGroupSeqId: newItem.shipGroupSeqId,
     unitPrice: unitPrice || 0
   }
-  return await TransferOrderService.addProductToOrder(payload)
+  return await TransferOrderService.addOrderItem(payload)
 }
 
 // Stock fetch helper

@@ -878,7 +878,7 @@ const createCommunicationEvent = async (payload: any): Promise<any> => {
   });
 }
 
-const deleteProductFromOrder = async (payload: any): Promise<any> => {
+const deleteOrderItem = async (payload: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
@@ -932,7 +932,7 @@ export const OrderService = {
   bulkShipOrders,
   createCommunicationEvent,
   createPicklist,
-  deleteProductFromOrder,
+  deleteOrderItem,
   fetchGiftCardItemPriceInfo,
   fetchOrderDetail,
   downloadPicklist,

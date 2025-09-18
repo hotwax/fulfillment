@@ -60,7 +60,7 @@
                 Rate name
                 <p>estimated delivery date</p>
               </ion-label>
-              <ion-button slot="end" color="primary" fill="outline">{{ translate("Purchase label") }}</ion-button>
+              <ion-button slot="end" color="primary" fill="outline" @click="generateShippingLabel">{{ translate("Purchase label") }}</ion-button>
             </ion-item>
           </ion-list>
 
@@ -133,6 +133,7 @@ import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonContent, I
 import { openOutline, printOutline, storefrontOutline } from 'ionicons/icons'
 import { DxpShopifyImg, getProductIdentificationValue, useProductIdentificationStore, translate } from '@hotwax/dxp-components';
 import { TransferOrderService } from '@/services/TransferOrderService';
+import { OrderService } from '@/services/OrderService'
 import { CarrierService } from '@/services/CarrierService';
 import { useRoute } from 'vue-router';
 import { showToast } from '@/utils';
@@ -204,6 +205,41 @@ async function fetchShippingRates() {
     logger.error('Failed to fetch shipment details.', err);
   }
 }
+
+async function generateShippingLabel() {
+  await updateCarrierAndShippingMethod();
+  const shipmentIds = [shipmentDetails.value.shipmentId]
+  const shippingLabelPdfUrls: string[] = Array.from(
+    new Set(
+      (shipmentDetails.value.shipmentPackages ?? [])
+        .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+        .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+    )
+  );
+  await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentDetails.value.shipmentPackages);
+}
+
+async function updateCarrierAndShippingMethod() {
+  let resp;
+  try {
+    const payload = {
+      shipmentId: shipmentDetails.value.shipmentId,
+      shipmentRouteSegmentId: shipmentDetails.value.shipmentRouteSegmentId,
+      shipmentMethodTypeId: 'method',
+      carrierPartyId: 'carrier'
+    }
+    resp = await OrderService.updateShipmentCarrierAndMethod(payload);
+    if(!hasError(resp)) {
+      return true;
+    } else {
+      throw resp.data
+    }
+  } catch (error) {
+     logger.error(error)
+  }
+}
+
+
 
 async function shipLater() {
   const message = translate("Save this order without tracking details to ship later.");
