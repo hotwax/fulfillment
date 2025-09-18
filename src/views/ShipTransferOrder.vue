@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button slot="start" defaultHref="" @click="shipLater" />
+        <ion-back-button data-testid="ship-transfer-orders-back-btn" slot="start" defaultHref="" @click="shipLater" />
         <ion-title>{{ translate("Ship transfer order") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -60,29 +60,29 @@
                 Rate name
                 <p>estimated delivery date</p>
               </ion-label>
-              <ion-button slot="end" color="primary" fill="outline" @click="generateShippingLabel">{{ translate("Purchase label") }}</ion-button>
+              <ion-button data-testid="purchase-label-<id>" slot="end" color="primary" fill="outline" @click="generateShippingLabel">{{ translate("Purchase label") }}</ion-button>
             </ion-item>
           </ion-list>
 
           <!-- manual tracking segment -->
           <ion-list v-if="selectedSegment === 'manual'">
             <ion-item>
-              <ion-select :value="selectedCarrier" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedCarrier = $event.detail.value; updateShipmentMethodsForCarrier(selectedCarrier)">
-                <ion-select-option v-for="(carrierPartyId, index) in Object.keys(shipmentMethodsByCarrier)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) ? getCarrierDesc(carrierPartyId) : carrierPartyId }}</ion-select-option>
+              <ion-select data-testid="select-carrier-dropdown" :value="selectedCarrier" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedCarrier = $event.detail.value; updateShipmentMethodsForCarrier(selectedCarrier)">
+                <ion-select-option data-testid="select-carrier-dropdown-option" v-for="(carrierPartyId, index) in Object.keys(shipmentMethodsByCarrier)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) ? getCarrierDesc(carrierPartyId) : carrierPartyId }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item>
-              <ion-select :disabled="!selectedCarrier" :value="selectedMethod" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedMethod = $event.detail.value">
-                <ion-select-option v-for="(method, index) in shipmentMethods" :key="index" :value="method.shipmentMethodTypeId">{{ method.description ? method.description : method.shipmentMethodTypeId }}</ion-select-option>
+              <ion-select data-testid="select-method-dropdown" :disabled="!selectedCarrier" :value="selectedMethod" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedMethod = $event.detail.value">
+                <ion-select-option data-testid="select-method-dropdown-option" v-for="(method, index) in shipmentMethods" :key="index" :value="method.shipmentMethodTypeId">{{ method.description ? method.description : method.shipmentMethodTypeId }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item lines="full">
-              <ion-input :label="translate('Tracking code')" :placeholder="translate('Enter code')" :value="trackingCode" @ionInput="trackingCode = $event.target.value"/>
+              <ion-input data-testid="tracking-code-input" :label="translate('Tracking code')" :placeholder="translate('Enter code')" :value="trackingCode" @ionInput="trackingCode = $event.target.value"/>
             </ion-item>
             <!-- no related data available for this field in the api response -->
             <!-- <ion-item lines="none">
               Tracking URL: fedex.com/tracking/12344
-              <ion-button slot="end" color="primary" fill="clear">
+              <ion-button data-testid="tracking-test-link" slot="end" color="primary" fill="clear">
                 Test
                 <ion-icon :icon="openOutline" slot="end"/>
               </ion-button>
@@ -100,14 +100,14 @@
                 <p>estimated delivery date</p>
               </ion-label>
               <ion-note slot="end" class="ion-margin">tracking code</ion-note>
-              <ion-icon slot="end" :icon="openOutline"/>
+              <ion-icon data-testid="tracking-code-link" slot="end" :icon="openOutline"/>
             </ion-item>
             <ion-card-content>
-              <ion-button fill="outline" color="primary">
+              <ion-button data-testid="reprint-label-btn"> fill="outline" color="primary">
                 <ion-icon :icon="printOutline" slot="start"  size="small"/>
                 Re-print shipping label
               </ion-button>
-              <ion-button fill="outline" color="warning">Void shipping label</ion-button>
+              <ion-button data-testid="void-label-btn"> fill="outline" color="warning">Void shipping label</ion-button>
             </ion-card-content>
           </ion-card> -->
         </div>
@@ -119,7 +119,7 @@
         <ion-buttons slot="end">
           <!-- need to add check here that after we print shiping label we need to disable this button. -->
           <ion-button fill="outline" color="primary" @click="shipLater">{{ translate("Ship later") }}</ion-button>
-          <ion-button fill="solid" color="primary" @click="shipOrder">{{ translate("Ship order") }}</ion-button>
+          <ion-button data-testid="ship-order-btn" fill="solid" color="primary" @click="shipOrder">{{ translate("Ship order") }}</ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-footer>

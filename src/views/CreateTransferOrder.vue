@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button default-href="/" slot="start"/>
+        <ion-back-button data-testid="create-transfer-orders-back-btn" default-href="/" slot="start"/>
         <ion-title>{{ translate("Create transfer order") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -17,13 +17,13 @@
                 <p class="overline">{{ currentOrder.orderId }}</p>
                 <h1>{{ currentOrder.orderName }}</h1>
               </ion-label>
-              <ion-button slot="end" color="medium" fill="outline" @click="editOrderName">{{ translate("Edit") }}</ion-button>
+              <ion-button data-testid="order-name-edit-btn" slot="end" color="medium" fill="outline" @click="editOrderName">{{ translate("Edit") }}</ion-button>
             </ion-item>
             <ion-item>
               <ion-icon :icon="storefrontOutline" slot="start"/>
               <!-- currently the facility name is coming in the api -->
               <ion-label>{{ getFacilityName(currentOrder.orderFacilityId) }}</ion-label>
-              <ion-button slot="end" color="medium" fill="outline" size="small" @click="openSelectFacilityModal">{{ translate("Edit") }}</ion-button>
+              <ion-button data-testid="store-name-edit-btn" slot="end" color="medium" fill="outline" size="small" @click="openSelectFacilityModal">{{ translate("Edit") }}</ion-button>
             </ion-item>
             <ion-item>
               <ion-icon :icon="checkmarkDoneOutline" slot="start"/>
@@ -112,7 +112,7 @@
           <!-- Searching -->
           <div v-show="mode === 'search'">
             <!-- searching products input-->
-            <ion-searchbar ref="searchInput" v-model="queryString" :placeholder="translate('Search')" @ionClear="clearSearch" />
+            <ion-searchbar data-testid="search-product-input" ref="searchInput" v-model="queryString" :placeholder="translate('Search')" @ionClear="clearSearch" />
 
             <!-- searching spinner -->
             <ion-item lines="none" v-if="isSearchingProduct">
@@ -130,7 +130,7 @@
                   <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
                 </ion-label>
                 <template v-if="!isItemAlreadyInOrder(searchedProduct.productId)">
-                  <ion-button slot="end" fill="outline" @click="addSearchedProductToOrder">
+                  <ion-button data-testid="Add-to-transfer-btn" slot="end" fill="outline" @click="addSearchedProductToOrder">
                     {{ translate("Add to Transfer") }}
                   </ion-button>
                 </template>
@@ -138,7 +138,7 @@
                   <ion-icon slot="end" :icon="checkmarkCircle" color="success" />
                 </template>
               </ion-item>
-              <ion-item detail @click="openAddProductModal">
+              <ion-item data-testid="view-more-results" detail @click="openAddProductModal">
                 {{ translate("View result count more results") }}
               </ion-item>
             </ion-list>
@@ -152,7 +152,7 @@
                   <p>{{ translate("Try a different keyword") }}</p>
                 </ion-label>
               </ion-item>
-              <ion-item detail @click="openAddProductModal">
+              <ion-item data-testid="view-more-results" detail @click="openAddProductModal">
                 {{ translate("View result count more results") }}
               </ion-item>
             </ion-list>
@@ -187,13 +187,13 @@
     <ion-footer>
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button size="small" color="danger" fill="outline" @click="discardOrder">
+          <ion-button data-testid="discard-order-btn" size="small" color="danger" fill="outline" @click="discardOrder">
             {{ translate("Discard order") }}
           </ion-button>
-          <ion-button size="small" fill="outline" :disabled="!currentOrder.items?.length" @click="shiplater">
+          <ion-button data-testid="ship-later-btn" size="small" fill="outline" :disabled="!currentOrder.items?.length" @click="shiplater">
             {{ translate("Ship later") }}
           </ion-button>
-          <ion-button size="small" color="primary" fill="solid" :disabled="!currentOrder.items?.length" @click="packAndShipOrder">
+          <ion-button data-testid="pack-and-ship-order-btn" size="small" color="primary" fill="solid" :disabled="!currentOrder.items?.length" @click="packAndShipOrder">
             {{ translate("Pack and ship order") }}
           </ion-button>
         </ion-buttons>

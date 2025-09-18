@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal()">
+        <ion-button @click="closeModal()" data-testid="create-to-close-modal">
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -12,10 +12,10 @@
 
   <ion-content>
     <ion-item lines="full">
-      <ion-input v-model="transferOrderName" :label="translate('Transfer name')" :placeholder="translate('Add a name')"/>
+      <ion-input data-testid="transfer-name-input" v-model="transferOrderName" :label="translate('Transfer name')" :placeholder="translate('Add a name')"/>
     </ion-item>
 
-    <ion-searchbar v-model="queryString" :placeholder="translate('Search facilites')"/>
+    <ion-searchbar data-testid="facility-search-input" v-model="queryString" :placeholder="translate('Search facilites')"/>
     <ion-list>
       <ion-list-header>{{ translate("Select destination facility") }}</ion-list-header>
       <div v-if="isLoading" class="empty-state">
@@ -25,7 +25,7 @@
 
       <template v-else-if="filteredFacilities().length">
         <ion-item v-for="facility in filteredFacilities()" :key="facility.facilityId" @click="selectFacility(facility.facilityId)">
-          <ion-radio label-placement="end" justify="start" :value="facility.facilityId" :checked="facility.facilityId === selectedDestinationFacilityid">
+          <ion-radio data-testid="facility-radio-options" label-placement="end" justify="start" :value="facility.facilityId" :checked="facility.facilityId === selectedDestinationFacilityid">
             <ion-label>
               {{ facility.facilityName || facility.facilityId }}
               <p>{{ facility.facilityId }}</p>
@@ -41,7 +41,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="saving" @click="createTransferOrder">
+    <ion-fab-button data-testid="create-transfer-order-btn" :disabled="saving" @click="createTransferOrder">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>
