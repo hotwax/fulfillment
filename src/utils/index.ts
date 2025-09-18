@@ -210,8 +210,8 @@ const getCurrentFacilityId = () => {
 }
 
 const getProductStoreId = () => {
-  const currentEComStore: any = useUserStore().getCurrentEComStore;
-  return currentEComStore.productStoreId
+  const currentProductStore: any = useUserStore().getCurrentEComStore;
+  return currentProductStore.productStoreId
 };
 
 function getDateWithOrdinalSuffix(time: any) {

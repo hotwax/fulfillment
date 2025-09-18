@@ -1600,7 +1600,7 @@ export default defineComponent({
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
     let currentFacility: any = computed(() => userStore.getCurrentFacility) 
-    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
+    let currentProductStore: any = computed(() => userStore.getCurrentEComStore)
 
     return {
       addOutline,
@@ -1614,7 +1614,7 @@ export default defineComponent({
       closeCircleOutline,
       copyToClipboard,
       cubeOutline,
-      currentEComStore,
+      currentProductStore,
       currentFacility,
       documentTextOutline,
       ellipsisVerticalOutline,

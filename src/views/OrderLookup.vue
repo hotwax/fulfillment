@@ -198,7 +198,7 @@ export default defineComponent ({
       isScrollable: 'orderLookup/isScrollable',
       query: 'orderLookup/getOrderQuery',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
-      eComStores: 'util/getEcomStores'
+      productStores: 'util/getProductStores'
     })
   },
   data() {

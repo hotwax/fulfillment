@@ -38,7 +38,7 @@
 
       <section>
         <DxpOmsInstanceNavigator />
-        <DxpProductStoreSelector @updateEComStore="updateEComStore($event)"/>
+        <DxpProductStoreSelector @updateEComStore="updateProductStore($event)"/>
         <DxpFacilitySwitcher @updateFacility="updateFacility($event)"/>
 
         <ion-card>
@@ -300,8 +300,8 @@ export default defineComponent({
     await this.store.dispatch('user/fetchNotificationPreferences')
   },
   methods: {
-    updateEComStore(selectedProductStore: any) {
-      this.store.dispatch('user/setEComStore', selectedProductStore?.productStoreId)
+    updateProductStore(selectedProductStore: any) {
+      this.store.dispatch('user/setProductStore', selectedProductStore?.productStoreId)
     },
     async getCurrentFacilityDetails() {
       let resp: any;

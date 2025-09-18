@@ -114,8 +114,8 @@ const actions: ActionTree<ProductState, RootState> = {
       }) as any;
   
       if(!hasError(resp) && resp.data?.length) {
-        const currentEComStore = useUserStore()?.getCurrentEComStore as any;
-        let fieldName = currentEComStore?.productIdentifierEnumId || "SKU";
+        const currentProductStore = useUserStore()?.getCurrentEComStore as any;
+        let fieldName = currentProductStore?.productIdentifierEnumId || "SKU";
         if(fieldName === "SHOPIFY_BARCODE") fieldName = "UPCA"
         products = resp.data
         products = products.map((product: any) => ({
