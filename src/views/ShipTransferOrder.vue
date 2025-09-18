@@ -60,7 +60,7 @@
                 Rate name
                 <p>estimated delivery date</p>
               </ion-label>
-              <ion-button data-testid="purchase-label-<id>" slot="end" color="primary" fill="outline" @click="generateShippingLabel">{{ translate("Purchase label") }}</ion-button>
+              <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" @click="generateShippingLabel">{{ translate("Purchase label") }}</ion-button>
             </ion-item>
           </ion-list>
 

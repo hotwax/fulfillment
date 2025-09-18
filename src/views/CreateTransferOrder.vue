@@ -486,7 +486,7 @@ async function scanProduct() {
   // call findProduct which will update searchedProduct (found or not)
   const productFound: any = await findProduct();
   if(productFound) {
-    await commitProductToOrder(productFound, scannedId);
+    await addTransferOrderItem(productFound, scannedId);
   } 
 }
 
@@ -494,7 +494,7 @@ async function addSearchedProductToOrder() {
   const productId = searchedProduct.value?.productId;
   if(!productId) return;
   const product = getProduct.value(productId);
-  await commitProductToOrder(product);
+  await addTransferOrderItem(product);
 }
 
 // Find a product (shared by scan & search)
@@ -533,12 +533,17 @@ async function findProduct() {
   }
 }
 
-// Commit a product to the order (single source of truth)
-// - Used by scan immediately, and by search on button click
-async function commitProductToOrder(product: any, scannedId?: string) {
-  if(!product?.productId) return;
+/**
+ * Commits a product to the current transfer order.
+ * - Handles scanning or manual search add
+ * - Fetches stock + average cost
+ * - Calls API to create order item
+ * - Updates local currentOrder state
+ */
+async function addTransferOrderItem(product: any, scannedId?: string) {
+  if (!product?.productId) return;
 
-  // If already in order, just increment
+  // If product is already in order → scroll to existing row & exit
   const alreadyAdded = findAndScrollToExisting(scannedId, product.productId);
   if(alreadyAdded) {
     queryString.value = '';
@@ -554,7 +559,7 @@ async function commitProductToOrder(product: any, scannedId?: string) {
     scannedId
   };
 
-  // qoh/atp & instant UI feedback
+  // Fetch available stock
   const stock = product.productId ? await fetchStock(product.productId) : null;
   if(stock) {
     newItem.qoh = stock.qoh ?? 0;
@@ -563,9 +568,25 @@ async function commitProductToOrder(product: any, scannedId?: string) {
   searchedProduct.value = { ...newItem };
 
   try {
-    const resp = await addProductToOrderApi(newItem);
+    // Fetch product's average cost before committing to order
+    const unitPrice = await ProductService.fetchProductAverageCost(
+      newItem.productId,
+      currentOrder.value.orderFacilityId
+    );
+
+    // Prepare payload and call API to add order item
+    const payload = {
+      orderId: currentOrder.value.orderId,
+      productId: newItem.productId,
+      quantity: newItem.quantity,
+      shipGroupSeqId: newItem.shipGroupSeqId,
+      unitPrice: unitPrice || 0
+    };
+    const resp = await TransferOrderService.addOrderItem(payload);
+
     if(!hasError(resp)) {
-      newItem.orderId = route.params.orderId;
+      // Update local state with order item & refresh order in store
+      newItem.orderId = currentOrder.value.orderId;
       newItem.orderItemSeqId = resp.data?.orderItemSeqId;
 
       currentOrder.value.items.push(newItem);
@@ -580,19 +601,6 @@ async function commitProductToOrder(product: any, scannedId?: string) {
   queryString.value = '';
 }
 
-// Fetches the product's average cost and adds the item to the transfer order via an API call.
-async function addProductToOrderApi(newItem: any) {
-  const unitPrice = await ProductService.fetchProductAverageCost(newItem.productId, currentOrder.value.orderFacilityId)
-
-  const payload = {
-    orderId: currentOrder.value.orderId,
-    productId: newItem.productId,
-    quantity: newItem.quantity,
-    shipGroupSeqId: newItem.shipGroupSeqId,
-    unitPrice: unitPrice || 0
-  }
-  return await TransferOrderService.addOrderItem(payload)
-}
 
 // Stock fetch helper
 async function fetchStock(productId: string) {

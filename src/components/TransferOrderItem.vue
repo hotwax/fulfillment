@@ -1,6 +1,6 @@
 <template>
-  <ion-card data-testid="product-card-btn-<id>" :id="item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier, getProduct(item.productId))" :class="{ 'scanned-item': lastScannedId && lastScannedId === (item.scannedId || getProductIdentificationValue(barcodeIdentifier, getProduct(item.productId))) }">
-    <div class="product">
+  <ion-card :data-testid="`product-card-btn-${item.orderItemSeqId}`" :id="item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier, getProduct(item.productId))" :class="{ 'scanned-item': lastScannedId && lastScannedId === (item.scannedId || getProductIdentificationValue(barcodeIdentifier, getProduct(item.productId))) }">
+    <div class="pr</ion-card>oduct">
       <div class="product-info">
         <ion-item lines="none">
           <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
@@ -15,7 +15,7 @@
       </div>
       <div class="product-count">
         <ion-item v-if="!item.shipmentId" lines="none">
-          <ion-input data-testid="qty-input-<id>" :label="translate('Qty')" label-placement="floating" ref="pickedQuantity" type="number" min="0" v-model="item.pickedQuantity" :value="item.pickedQuantity" @ionInput="updatePickedQuantity($event, item); validatePickedQuantity($event, item); markPickedQuantityTouched()" @ionBlur="updateItemQuantity(item)" :errorText="getErrorText(item)" :disabled="isForceScanEnabled" />
+          <ion-input data-testid="qty-input" :label="translate('Qty')" label-placement="floating" ref="pickedQuantity" type="number" min="0" v-model="item.pickedQuantity" :value="item.pickedQuantity" @ionInput="updatePickedQuantity($event, item); validatePickedQuantity($event, item); markPickedQuantityTouched()" @ionBlur="updateItemQuantity(item)" :errorText="getErrorText(item)" :disabled="isForceScanEnabled" />
         </ion-item>
         <ion-item v-else lines="none">
           <ion-label slot="end">{{ item.pickedQuantity }} {{ translate('packed') }}</ion-label>
@@ -27,7 +27,7 @@
         <ion-button v-if="item.orderedQuantity" @click="pickAll(item)" slot="start" size="small" fill="outline" :disabled="isForceScanEnabled">
           {{ translate("Pick All") }}
         </ion-button>
-        <ion-button data-testid="book-qoh-btn-<id>" v-else slot="start" size="small" fill="outline" @click="bookQoh(item)">
+        <ion-button data-testid="book-qoh-btn" v-else slot="start" size="small" fill="outline" @click="bookQoh(item)">
           {{ translate("Book qoh") }}
         </ion-button>
       </div>
@@ -66,7 +66,7 @@
 
       <ion-item v-else class="qty-ordered" lines="none">
         <ion-label>{{ item.qoh }} {{ translate("Qoh") }}</ion-label>
-        <ion-icon data-testid="remove-item-btn-<id>" slot="end" color="danger" :icon="removeCircleOutline" @click="removeOrderItem(item)" />
+        <ion-icon data-testid="remove-item-btn" slot="end" color="danger" :icon="removeCircleOutline" @click="removeOrderItem(item)" />
       </ion-item>
     </div>
   </ion-card>

@@ -25,7 +25,7 @@
 
         <!-- Show Add button if not in currentOrder -->
         <template v-if="!isItemAlreadyInOrder(product.productId)">
-          <ion-button slot="end" fill="outline" @click="commitProductToOrder(product)">
+          <ion-button slot="end" fill="outline" @click="addTransferOrderItem(product)">
             {{ translate("Add to Transfer") }}
           </ion-button>
         </template>
@@ -101,10 +101,16 @@ async function fetchStock(productId: string) {
   return null;
 }
 
-// Add product to order
-async function commitProductToOrder(product: any) {
-  if (!product?.productId) return
+/**
+ * Adds a product to the current transfer order.
+ * - Builds order item object
+ * - Calls API to create order item
+ * - Updates local currentOrder state
+ */
+async function addTransferOrderItem(product: any) {
+  if (!product?.productId) return;
 
+  // Build new order item object
   const newItem: any = {
     productId: product.productId,
     sku: product.sku,
@@ -112,45 +118,49 @@ async function commitProductToOrder(product: any) {
     pickedQuantity: 1,
     shipGroupSeqId: "00001",
     scannedId: queryString.value
-  }
+  };
 
-  // fetch stock
-  const stock = product.productId ? await fetchStock(product.productId) : null
+  // Fetch available stock
+  const stock = product.productId ? await fetchStock(product.productId) : null;
   if (stock) {
-    newItem.qoh = stock.qoh ?? 0
-    newItem.atp = stock.atp ?? 0
+    newItem.qoh = stock.qoh ?? 0;
+    newItem.atp = stock.atp ?? 0;
   }
 
   try {
-    const resp = await addProductToOrderApi(newItem)
-    if (!hasError(resp)) {
-      newItem.orderId = currentOrder.value.orderId
-      newItem.orderItemSeqId = resp.data?.orderItemSeqId
+    // Fetch product's average cost before committing to order
+    const unitPrice = await ProductService.fetchProductAverageCost(
+      newItem.productId,
+      currentOrder.value.orderFacilityId
+    );
 
-      currentOrder.value.items.push(newItem)
-      await store.dispatch('transferorder/updateCurrentTransferOrder', currentOrder.value)
+    // Prepare payload and call API to add order item
+    const payload = {
+      orderId: currentOrder.value.orderId,
+      productId: newItem.productId,
+      quantity: newItem.quantity,
+      shipGroupSeqId: newItem.shipGroupSeqId,
+      unitPrice: unitPrice || 0
+    };
+    const resp = await TransferOrderService.addOrderItem(payload);
+
+    if (!hasError(resp)) {
+      // Update local state with order item & refresh order in store
+      newItem.orderId = currentOrder.value.orderId;
+      newItem.orderItemSeqId = resp.data?.orderItemSeqId;
+
+      currentOrder.value.items.push(newItem);
+      await store.dispatch('transferorder/updateCurrentTransferOrder', currentOrder.value);
     } else {
-      throw resp.data
+      throw resp.data;
     }
   } catch (err) {
-    logger.error(err)
-    showToast(translate("Failed to add product to order"))
+    logger.error(err);
+    showToast(translate("Failed to add product to order"));
   }
-  queryString.value = ''
+  queryString.value = '';
 }
 
-async function addProductToOrderApi(newItem: any) {
-  const unitPrice = await ProductService.fetchProductAverageCost(newItem.productId, currentOrder.value.orderFacilityId)
-
-  const payload = {
-    orderId: currentOrder.value.orderId,
-    productId: newItem.productId,
-    quantity: newItem.quantity,
-    shipGroupSeqId: newItem.shipGroupSeqId,
-    unitPrice: unitPrice,
-  }
-  return await TransferOrderService.addOrderItem(payload)
-}
 
 // product search
 async function getProducts() {
