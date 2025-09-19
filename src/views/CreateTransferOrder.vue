@@ -1,916 +1,769 @@
 <template>
   <ion-page>
-    <ion-header :translucent="true">
+    <ion-header>
       <ion-toolbar>
-        <ion-back-button slot="start" default-href="/transfer-orders" />
+        <ion-back-button data-testid="create-transfer-orders-back-btn" default-href="/transfer-orders" slot="start"/>
         <ion-title>{{ translate("Create transfer order") }}</ion-title>
       </ion-toolbar>
     </ion-header>
-
-    <ion-content id="filter-content">
-      <div class="find">
-        <section class="search">
-          <ion-item>
-            <ion-input :label="translate('Transfer name')" :placeholder="translate('name')" v-model="currentOrder.name" />
-          </ion-item>
-        </section>
-
-        <aside class="to-filters">
-          <ion-card>
-            <ion-card-header>
-              <ion-card-title>{{ translate("Assign") }}</ion-card-title>
-            </ion-card-header>
+    <ion-content>
+      <!--Transfer order cards -->
+      <div class="transfer-order">
+        <!-- order details -->
+        <ion-card class="order-info">
+          <ion-list lines="none">
             <ion-item>
-              <ion-icon :icon="sendOutline" slot="start" />
-              <ion-label>{{ translate("Origin") }}</ion-label>
-              <ion-label slot="end">{{ getFacilityName(currentOrder.originFacilityId) ? getFacilityName(currentOrder.originFacilityId) : currentOrder.originFacilityId }}</ion-label>
-            </ion-item>
-            <ion-item lines="none">
-              <ion-icon :icon="downloadOutline" slot="start" />
-              <ion-label>{{ translate("Destination") }}</ion-label>
-              <template v-if="currentOrder.destinationFacilityId" slot="end">
-                <ion-chip outline @click="openSelectFacilityModal()">
-                  {{ getFacilityName(currentOrder.destinationFacilityId) ? getFacilityName(currentOrder.destinationFacilityId) : currentOrder.destinationFacilityId }}
-                </ion-chip>
-              </template>
-              <ion-button v-else slot="end" fill="outline" @click="openSelectFacilityModal()">
-                <ion-icon slot="start" :icon="addCircleOutline" />
-                <ion-label>{{ translate("Assign") }}</ion-label>
-              </ion-button>
-            </ion-item>
-          </ion-card>
-
-          <ion-card>
-            <ion-card-header>
-              <ion-card-title>{{ translate("Shipping Method") }}</ion-card-title>
-            </ion-card-header>
-            <ion-item>
-              <ion-select :label="translate('Carrier')" :placeholder="translate('Select')" v-model="currentOrder.carrierPartyId" interface="popover" @ionChange="selectUpdatedMethod()">
-                <ion-select-option :value="carrierPartyId" v-for="(carrierPartyId, index) in Object.keys(shipmentMethodsByCarrier)" :key="index">{{ getCarrierDesc(carrierPartyId) }}</ion-select-option>
-              </ion-select>
-            </ion-item>
-            <ion-item lines="none">
-              <ion-select :label="translate('Method')" :placeholder="translate('Select')" v-model="currentOrder.shipmentMethodTypeId" v-if="getCarrierShipmentMethods()?.length" interface="popover">
-                <ion-select-option :value="shipmentMethod.shipmentMethodTypeId" v-for="(shipmentMethod, index) in getCarrierShipmentMethods()" :key="index">{{ shipmentMethod.description ? shipmentMethod.description : shipmentMethod.shipmentMethodTypeId }}</ion-select-option>
-              </ion-select>
-              <template v-else>
-                <ion-icon :icon="informationCircleOutline" slot="start" />
-                <ion-label>{{ translate("No shipment methods found") }}</ion-label>
-              </template>
-            </ion-item>
-          </ion-card>
-
-          <ion-card>
-            <ion-card-header>
-              <ion-card-title>{{ translate("Plan") }}</ion-card-title>
-            </ion-card-header>
-            <ion-item>
-              <ion-select :label="translate('Lifecycle')" placeholder="Select" v-model="currentOrder.statusFlowId" interface="popover">
-                <ion-select-option v-for="flow in statusFlows" :key="flow.statusFlowId" :value="flow.statusFlowId">{{ translate(flow.description) }}</ion-select-option>
-              </ion-select>
+              <ion-label>
+                <p class="overline">{{ currentOrder.orderId }}</p>
+                <h1>{{ currentOrder.orderName }}</h1>
+              </ion-label>
+              <ion-button data-testid="order-name-edit-btn" slot="end" color="medium" fill="outline" @click="editOrderName">{{ translate("Edit") }}</ion-button>
             </ion-item>
             <ion-item>
-              <ion-label>{{ translate("Ship Date") }}</ion-label>
-              <ion-button slot="end" class="date-time-button" @click="openDateTimeModal('shipDate')">{{ currentOrder.shipDate ? formatDateTime(currentOrder.shipDate) : translate("Select date") }}</ion-button>
+              <ion-icon :icon="storefrontOutline" slot="start"/>
+              <!-- currently the facility name is coming in the api -->
+              <ion-label>{{ getFacilityName(currentOrder.orderFacilityId) }}</ion-label>
+              <ion-button data-testid="store-name-edit-btn" slot="end" color="medium" fill="outline" size="small" @click="openSelectFacilityModal">{{ translate("Edit") }}</ion-button>
             </ion-item>
             <ion-item>
-              <ion-label>{{ translate("Delivery Date") }}</ion-label>
-              <ion-button slot="end" class="date-time-button" @click="openDateTimeModal('deliveryDate')">{{ currentOrder.deliveryDate ? formatDateTime(currentOrder.deliveryDate) : translate("Select date") }}</ion-button>
+              <ion-icon :icon="checkmarkDoneOutline" slot="start"/>
+              <ion-toggle :checked="currentOrder.statusFlowId === 'TO_Fulfill_Only'" @ionChange="toggleStatusFlow">
+                {{ translate("Complete order on fulfillment") }}
+              </ion-toggle>
             </ion-item>
-          </ion-card>
+          </ion-list>
+        </ion-card>
 
-          <ion-item>
-            <ion-icon :icon="cloudUploadOutline" slot="start" />
-            <ion-label>
-              {{ translate("Import items CSV") }}
-              <p @click="downloadSampleCsv()">
-                <a>{{ translate("Download example") }}</a>
-              </p>
-            </ion-label>
-            <input @change="parse" ref="file" class="ion-hide" type="file" id="updateProductFile" :key="fileUploaded.toString()"/>
-            <label for="updateProductFile" class="pointer">{{ translate("Upload") }}</label>
-          </ion-item>
-        </aside>
-
-        <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="closeDateTimeModal">
-          <ion-content force-overscroll="false">
-            <ion-datetime 
-              :value="currentOrder[selectedDateFilter] ? currentOrder[selectedDateFilter] : DateTime.now().toISO()"
-              show-clear-button
-              show-default-buttons
-              presentation="date"
-              :min="currentOrder.shipDate"
-              :max="currentOrder.deliveryDate" 
-              @ionChange="updateDateTimeFilter($event.detail.value)"
-            />
-          </ion-content>
-        </ion-modal>
-
-        <main>
-          <div class="item-search">
-            <ion-item>
-              <ion-icon slot="start" :icon="listOutline"/>
-              <ion-input ref="addProductInput" :label="translate('Add product')" label-placement="floating" :clear-input="true" v-model="queryString" :placeholder="translate('Search product')" @keyup.enter="isScanningEnabled ? scanProduct(queryString) : addProductToOrder()" />
-              <ion-button slot="end" fill="outline" @click="toggleScan()">
-                <ion-icon slot="start" :icon="isScanningEnabled? stopOutline : cameraOutline" />
-                {{ isScanningEnabled ? translate("Stop scanning") :translate("Scan") }}
-              </ion-button>
-            </ion-item>
-            <template v-if="!isScanningEnabled">
-              <ion-item lines="none" v-if="isSearchingProduct">
-                <ion-spinner color="secondary" name="crescent"></ion-spinner>
-              </ion-item>
-              <ion-item lines="none" v-else-if="searchedProduct.productId">
-                <ion-thumbnail slot="start" v-image-preview="getProduct(searchedProduct.productId)" :key="getProduct(searchedProduct.productId)?.mainImageUrl">
-                  <Image :src="getProduct(searchedProduct.productId).mainImageUrl"/>
-                </ion-thumbnail>
-                <ion-label>
-                  <p class="overline">{{ translate("Search result") }}</p>
-                  {{ searchedProduct.internalName || searchedProduct.sku || searchedProduct.productId }}
-                </ion-label>
-                <ion-button size="default" slot="end" fill="clear" @click="addProductToOrder" :color="isProductAvailableInOrder() ? 'success' : 'primary'">
-                  <ion-icon slot="icon-only" :icon="isProductAvailableInOrder() ? checkmarkCircle : addCircleOutline"/>
-                </ion-button>
-              </ion-item>
-              <p v-else-if="queryString">{{ translate("No product found") }}</p>
-            </template>
+        <!-- adding product card -->
+        <ion-card class="add-items">
+          <div class="search-type ion-margin-start">
+            <h4>{{ translate("Add items") }}</h4>
+            <ion-segment v-model="mode" @ionChange="segmentChange($event.target.value)">
+              <ion-segment-button value="scan" content-id="scan">
+                <ion-icon :icon="barcodeOutline"/>
+              </ion-segment-button>
+              <ion-segment-button value="search" content-id="search">
+                <ion-icon :icon="searchOutline"/>
+              </ion-segment-button>
+            </ion-segment>
           </div>
-
-          <hr />
-
-          <template v-if="currentOrder.items?.length">
-            <div class="list-item ion-padding-vertical">
-              <ion-item lines="none" class="item-qty-actions" style="grid-column: span 2;">
-                <ion-button fill="outline" color="medium" @click="updateBulkOrderItemQuantity('bookQOH')">{{ translate("Book QoH") }}</ion-button>
-                <ion-button fill="outline" color="medium" @click="updateBulkOrderItemQuantity('bookATP')">{{ translate("Book ATP") }}</ion-button>
-                <ion-button fill="outline" color="medium" @click="updateBulkOrderItemQuantity('customQty')">{{ translate("Custom Qty") }}</ion-button>
-              </ion-item>
-              <div></div>
-              <div class="tablet">
-                <ion-checkbox :modelValue="isEligibleForBulkAction()" @ionChange="toggleBulkSelection($event.detail.checked)" />
-              </div>
-              <ion-button slot="end" fill="clear" color="medium" :disabled="!isEligibleForBulkAction()" @click="openOrderItemActionsPopover($event, null, true)">
-                <ion-icon :icon="ellipsisVerticalOutline" slot="icon-only" />
+          <!-- Scanning -->
+          <div v-show="mode === 'scan'">
+            <!-- scanning input -->
+            <ion-item lines="full">
+              <ion-input ref="scanInput" :disabled="!isScanningEnabled" :value="queryString" :label="translate('Scan barcode')" :placeholder="barcodeIdentifier" @keyup.enter="queryString = $event.target.value; scanProduct()" />
+            </ion-item>
+            <!-- product found after scan (reads from searchedProduct) -->
+            <ion-item lines="none" v-if="searchedProduct.productId">
+              <ion-thumbnail>
+                <DxpShopifyImg :src="getProduct(searchedProduct.productId)?.mainImageUrl || searchedProduct.mainImageUrl" />
+              </ion-thumbnail>
+              <ion-label>
+                {{ getProductIdentificationValue(barcodeIdentifier, getProduct(searchedProduct.productId)) }}
+                <p>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) }}</p>
+                <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
+              </ion-label>
+              <ion-icon :icon="checkmarkDoneOutline" color="success" slot="end"/>
+            </ion-item>
+            
+            <!-- scanned no match -->
+            <ion-item lines="none" v-else-if="searchedProduct.scannedId && !searchedProduct.productId">
+              <ion-icon :icon="cloudOfflineOutline" slot="start"/>
+              <ion-label>
+                {{ searchedProduct.scannedId }} {{ translate("not found") }}
+                <p>{{ translate("Try searching using a keyword instead") }}</p>
+              </ion-label>
+              <!-- need to add match product button -->
+              <ion-button size="small" slot="end" color="primary" @click="openAddProductModal">
+                <ion-icon slot="start" :icon="searchOutline"/>
+                {{ translate("Search") }}
               </ion-button>
-            </div>
+            </ion-item>
 
-            <div v-for="(item, index) in currentOrder.items" :key="index" :id="item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier, getProduct(item.productId))" :class="(item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier, getProduct(item.productId))) == lastScannedId ? 'list-item scanned-item' : 'list-item'">
-              <ion-item lines="none">
-                <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
-                  <Image :src="getProduct(item.productId)?.mainImageUrl" />
+            <!-- scanner not focused -->
+            <ion-item lines="none" v-else-if="!isScanningEnabled">
+              <ion-thumbnail>
+                <DxpShopifyImg/>
+              </ion-thumbnail>
+              <ion-label>
+                {{ translate("Your scanner isn’t focused yet.") }}
+                <p>{{ translate("Scanning is set to") }} {{ (barcodeIdentifier || '').toUpperCase() }}</p>
+                <p>{{ translate("Swap to SKU from the settings page") }}</p>
+              </ion-label>
+              <ion-button slot="end" color="warning" size="small" @click="enableScan">
+                <ion-icon slot="start" :icon="locateOutline"/>
+                {{ translate("Focus scanning") }}
+              </ion-button>
+            </ion-item>
+
+            <!-- default / idle state -->
+            <ion-item lines="none" v-else>
+              <ion-thumbnail>
+                <DxpShopifyImg/>
+              </ion-thumbnail>
+              <ion-label>
+                {{ translate("Begin scanning products to add them to this transfer") }}
+                <p>{{ translate("Scanning is set to") }} {{ (barcodeIdentifier || '').toUpperCase() }}</p>
+                <p>{{ translate("Swap to SKU from the settings page") }}</p>
+              </ion-label>
+              <ion-badge slot="end" color="success">{{ translate("start scanning") }}</ion-badge>
+            </ion-item>
+          </div>
+          <!-- Searching -->
+          <div v-show="mode === 'search'">
+            <!-- searching products input-->
+            <ion-searchbar data-testid="search-product-input" ref="searchInput" v-model="queryString" :placeholder="translate('Search')" @ionClear="clearSearch" />
+
+            <!-- searching spinner -->
+            <ion-item lines="none" v-if="isSearchingProduct">
+              <ion-spinner name="crescent" />
+            </ion-item>
+            
+            <!-- result found -->
+            <ion-list lines="none" v-else-if="searchedProduct.productId">
+              <ion-item>
+                <ion-thumbnail>
+                  <DxpShopifyImg :product="searchedProduct" />
                 </ion-thumbnail>
                 <ion-label>
-                  {{ item.scannedId ? item.scannedId : getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                  <p>{{ item.isMatching ? translate("Matching...") : item.noMatchFound ? translate("no match found") : getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                  {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) }}
+                  <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
                 </ion-label>
-              </ion-item>
-              <template v-if="item.isMatching || item.noMatchFound">
-                <div></div>
-                <div></div>
-                <div class="ion-margin-end">
-                  <ion-button fill="clear" v-if="item.noMatchFound" @click="openMatchProductModal(item)">
-                    <ion-label>{{ translate("Match product") }}</ion-label>
+                <template v-if="!isItemAlreadyInOrder(searchedProduct.productId)">
+                  <ion-button data-testid="Add-to-transfer-btn" slot="end" fill="outline" @click="addSearchedOrderItem">
+                    {{ translate("Add to Transfer") }}
                   </ion-button>
-                </div>
-              </template>
-              <template v-else>
-                <div class="tablet">
-                  <ion-chip outline :color="isQOHAvailable(item) ? '' : 'warning'">
-                    <ion-icon slot="start" :icon="sendOutline" />
-                    <ion-label>{{ item.qoh }} {{ translate("QOH") }}</ion-label>
-                  </ion-chip>
-                </div>
-                <ion-item>
-                  <ion-input type="number" placeholder="Qty" v-model="item.quantity" />
-                </ion-item>
-                <div class="tablet">
-                  <ion-checkbox v-model="item.isChecked" />
-                </div>
-              </template>
-              <ion-button slot="end" fill="clear" color="medium" @click="openOrderItemActionsPopover($event, item)">
-                <ion-icon :icon="ellipsisVerticalOutline" slot="icon-only" />
-              </ion-button>
-            </div>
-          </template>
-          <div v-else class="empty-state">
-            <p>{{ translate("No item added to order") }}</p>
+                </template>
+                <template v-else>
+                  <ion-icon slot="end" :icon="checkmarkCircle" color="success" />
+                </template>
+              </ion-item>
+              <ion-item data-testid="view-more-results" detail @click="openAddProductModal">
+                {{ translate("View result count more results") }}
+              </ion-item>
+            </ion-list>
+            
+            <!-- no search result -->
+            <ion-list lines="none" v-else-if="queryString">
+              <ion-item>
+                <ion-icon :icon="cloudOfflineOutline" slot="start"/>
+                <ion-label>
+                  {{ translate("No product found") }}
+                  <p>{{ translate("Try a different keyword") }}</p>
+                </ion-label>
+              </ion-item>
+              <ion-item data-testid="view-more-results" detail @click="openAddProductModal">
+                {{ translate("View result count more results") }}
+              </ion-item>
+            </ion-list>
+
+            <!-- before searching -->
+            <ion-item lines="none" v-else>
+              <ion-icon :icon="shirtOutline" slot="start"/>
+              {{ translate("Search for products by their Parent name, SKU or UPC") }}
+            </ion-item>
           </div>
-        </main>
+        </ion-card>
       </div>
 
-      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="createOrder()">
-          <ion-icon :icon="checkmarkDoneOutline" />
-        </ion-fab-button>
-      </ion-fab>
+      <!-- content below the card before searching -->
+      <div class="ion-text-center" v-if="!currentOrder.items?.length">
+        <p>{{ translate("Add items to this transfer by scanning or searching for products using keywords") }}</p>
+        <ion-button :color="mode === 'scan' ? 'primary' : 'medium'" :fill="mode === 'scan' ? 'solid' : 'outline'" @click="enableScan">
+          <ion-icon :icon="barcodeOutline" slot="start"/>
+          {{ translate("Start scanning") }}
+        </ion-button>
+        <ion-button :color="mode === 'search' ? 'primary' : 'medium'" :fill="mode === 'search' ? 'solid' : 'outline'" @click="enableSearch">
+          <ion-icon :icon="searchOutline" slot="start"/>
+          {{ translate("Search products") }}
+        </ion-button>
+      </div>
+      <div v-else>
+        <h1 class="ion-padding">{{ translate("Transfer items") }}</h1>
+        <TransferOrderItem v-for="item in currentOrder.items" :key="item.productId" :itemDetail="item" :lastScannedId="lastScannedId" />
+      </div>
     </ion-content>
+    <!-- footer -->
+    <ion-footer>
+      <ion-toolbar>
+        <ion-buttons slot="end">
+          <ion-button data-testid="discard-order-btn" size="small" color="danger" fill="outline" @click="discardOrder">
+            {{ translate("Discard order") }}
+          </ion-button>
+          <ion-button data-testid="ship-later-btn" size="small" fill="outline" :disabled="!currentOrder.items?.length" @click="shiplater">
+            {{ translate("Ship later") }}
+          </ion-button>
+          <ion-button data-testid="pack-and-ship-order-btn" size="small" color="primary" fill="solid" :disabled="!currentOrder.items?.length" @click="packAndShipOrder">
+            {{ translate("Pack and ship order") }}
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-footer>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonBackButton, IonButton, IonCard, IonCardHeader, IonCardTitle, IonCheckbox, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonModal, IonPage, IonSelect, IonSelectOption, IonSpinner, IonThumbnail, IonTitle, IonToolbar, onIonViewDidEnter, alertController, modalController, popoverController } from '@ionic/vue';
-import { addCircleOutline, cameraOutline, checkmarkCircle, checkmarkDoneOutline, cloudUploadOutline, downloadOutline, ellipsisVerticalOutline, informationCircleOutline, listOutline, sendOutline, stopOutline, storefrontOutline } from 'ionicons/icons';
-import { getProductIdentificationValue, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components'
-import { computed, ref, watch } from "vue";
-import { getDateWithOrdinalSuffix, jsonToCsv, parseCsv, showToast } from '@/utils';
-import logger from '@/logger';
+import { ref, computed, watch, nextTick } from 'vue';
+import { IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonCard, IonList, IonItem, IonLabel, IonButton, IonIcon, IonToggle, IonSegment, IonSegmentButton, IonThumbnail, IonBadge, IonSearchbar, IonSpinner, IonFooter, IonButtons, onIonViewWillEnter, alertController, modalController } from '@ionic/vue';
+import {
+  barcodeOutline,
+  checkmarkDoneOutline,
+  checkmarkCircle,
+  cloudOfflineOutline,
+  locateOutline,
+  searchOutline,
+  shirtOutline,
+  storefrontOutline,
+} from 'ionicons/icons';
+import emitter from "@/event-bus";
 import { useStore } from 'vuex';
-import Image from '@/components/Image.vue';
-import TransferOrderItemActionsPopover from '@/components/TransferOrderItemActionsPopover.vue';
-import SelectFacilityModal from '@/components/SelectFacilityModal.vue';
-import ImportTOItemsCsvModal from '@/components/ImportTOItemsCsvModal.vue';
-import { ProductService } from '@/services/ProductService';
-import { UtilService } from '@/services/UtilService';
-import { TransferOrderService } from '@/services/TransferOrderService';
+import { useRoute } from 'vue-router';
 import router from '@/router';
-import { DateTime } from 'luxon';
-import { hasError } from "@/adapter";
-import emitter from '@/event-bus';
+import { DxpShopifyImg, getProductIdentificationValue, useProductIdentificationStore, translate } from '@hotwax/dxp-components';
+import { ProductService } from '@/services/ProductService';
 import { StockService } from '@/services/StockService';
-import MatchProductModal from "@/components/MatchProductModal.vue";
+import { hasError } from '@/adapter';
+import logger from '@/logger';
+import { showToast } from '@/utils';
+import { TransferOrderService } from '@/services/TransferOrderService';
+import { OrderService } from '@/services/OrderService';
+import TransferOrderItem from '@/components/TransferOrderItem.vue'
+import AddProductModal from "@/components/AddProductModal.vue";
+import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
 
 const store = useStore();
+const route = useRoute();
 const productIdentificationStore = useProductIdentificationStore();
+const productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
 
-let timeoutId = ref();
+const mode = ref('scan');
+const queryString = ref('');
 const isSearchingProduct = ref(false);
 const searchedProduct = ref({}) as any;
-const queryString = ref("");
-const facilities = ref([]) as any;
-const dateTimeModalOpen = ref(false);
-const selectedDateFilter = ref("");
-const currentOrder = ref({
-  name: "",
-  productStoreId: "",
-  originFacilityId: "",
-  destinationFacilityId: "",
-  carrierPartyId: "",
-  shipmentMethodTypeId: "", 
-  items: [],
-  statusFlowId: "",
-}) as any;
-const statusFlows = [
-  {
-    statusFlowId: "TO_Fulfill_And_Receive",
-    description: "Fulfill & Receive"
-  },
-  {
-    statusFlowId: "TO_Fulfill_Only",
-    description: "Fulfill only"
-  }
-]
+const isScanningEnabled = ref(false);
+const lastScannedId = ref('');
+const scanInput = ref('') as any
+const searchInput = ref('') as any
+let timeoutId: any = null;
 
-let content = ref([]) as any 
-let fileColumns = ref([]) as any 
-let uploadedFile = ref({}) as any
-let isScanningEnabled = ref(false)
-let lastScannedId = ref("") as any
-const fileUploaded = ref(false);
-const addProductInput = ref("") as any
+const barcodeIdentifier = computed(() => store.getters["util/getBarcodeIdentificationPref"]);
+const getProduct = computed(() => store.getters["product/getProduct"]);
+const currentOrder = computed(() => store.getters["transferorder/getCurrent"]);
+const facilities = computed(() => store.getters["util/getFacilities"])
 
-const getProduct = computed(() => store.getters["product/getProduct"])
-const getProducts = computed(() => store.getters["product/getProducts"])
-const shipmentMethodsByCarrier = computed(() => store.getters["util/getShipmentMethodsByCarrier"])
-const getCarrierDesc = computed(() => store.getters["util/getCarrierDesc"])
-const sampleProducts = computed(() => store.getters["product/getSampleProducts"])
-const barcodeIdentifier = computed(() => store.getters["util/getBarcodeIdentificationPref"])
-
-// Implemented watcher to display the search spinner correctly. Mainly the watcher is needed to not make the findProduct call always and to create the debounce effect.
-// Previously we were using the `debounce` property of ion-input but it was updating the searchedString and making other related effects after the debounce effect thus the spinner is also displayed after the debounce
-// effect is completed.
 watch(queryString, (value) => {
-  if(isScanningEnabled.value) return;
-  const searchedString = value.trim()
+  if(mode.value === 'scan') return;
+  const searchedString = value?.trim();
 
-  if(searchedString?.length) {
-    isSearchingProduct.value = true
-  } else {
-    searchedProduct.value = {}
-    isSearchingProduct.value = false
-  }
-
-  if(timeoutId.value) {
-    clearTimeout(timeoutId.value)
-  }
-
-  // Storing the setTimeoutId in a variable as watcher is invoked multiple times creating multiple setTimeout instance those are all called, but we only need to call the function once.
-  timeoutId.value = setTimeout(() => {
-    if(searchedString?.length) findProduct()
-  }, 1000)
-
-}, { deep: true })
-
-onIonViewDidEnter(async () => {
-  emitter.emit("presentLoader")
-  currentOrder.value.productStoreId = useUserStore().getCurrentEComStore?.productStoreId
-  currentOrder.value.originFacilityId = useUserStore().getCurrentFacility?.facilityId
-  await Promise.allSettled([fetchFacilitiesByCurrentStore(), store.dispatch("util/fetchStoreCarrierAndMethods", currentOrder.value.productStoreId), store.dispatch("util/fetchCarriersDetail"), store.dispatch("product/fetchSampleProducts")])
-  if(Object.keys(shipmentMethodsByCarrier.value)?.length) {
-    currentOrder.value.carrierPartyId = Object.keys(shipmentMethodsByCarrier.value)[0]
-    selectUpdatedMethod()
-  }
-  uploadedFile.value = {}
-  content.value = []
-  emitter.emit("dismissLoader")
-})
-
-async function parse(event: any) {
-  let file = event.target.files[0];
-  try {
-    if (file) { 
-      uploadedFile.value = file;
-      content.value = await parseCsv(uploadedFile.value);
-      fileColumns.value = Object.keys(content.value[0]);
-      showToast(translate("File uploaded successfully"));
-      fileUploaded.value =!fileUploaded.value; 
-      openImportCsvModal();
-    } else {
-      showToast(translate("No new file upload. Please try again"));
-    }
-  } catch {
-    content.value = []
-    showToast(translate("Please upload a valid csv to continue"));
-  }
-}
-
-async function findProductFromIdentifier(payload: any) {
-  const productField = payload.productField
-  const quantityField = payload.quantityField
-  const idType = payload.idType
-  const uploadedItemsByIdValue = {} as any;
-  content.value.map((row: any) => {
-    uploadedItemsByIdValue[row[productField]] = row
-  })
-
-  const idValues = Object.keys(uploadedItemsByIdValue);
-  const productIdsAlreadyAddedInList = currentOrder.value.items.map((item: any) => item.productId)
-  const filterString = (idType === 'productId') ? `${idType}: (${idValues.join(' OR ')})` : `goodIdentifications: (${idValues.map((value: any) => `${idType}/${value}`).join(' OR ')})`;
-
-  try {
-    const resp = await ProductService.fetchProducts({
-      "filters": [filterString],
-      "viewSize": idValues.length
-    })
-
-    if(!hasError(resp) && resp.data.response?.docs?.length) {
-      const productsToAdd = resp.data.response.docs
-      store.dispatch("product/addProductToCachedMultiple", { products: productsToAdd })
-      const productsByIdValue = {} as any;
-      productsToAdd.map((product: any) => {
-        if(idType === "SKU") {
-          productsByIdValue[product["sku"]] = product
-        } else {
-          const idValue = getProductIdentificationValue(idType, product)
-          productsByIdValue[idValue] = product
-        }
-      })
-
-      Object.entries(productsByIdValue).map(async ([idValue, product]) => {
-        if(productIdsAlreadyAddedInList.includes(product.productId)) {
-          if(quantityField) {
-            const item = currentOrder.value.items.find((item: any) => item.productId === product.productId)
-            item.quantity = Number(item.quantity) + (Number(uploadedItemsByIdValue[idValue][quantityField]) || 0)
-          }
-        } else {
-          const stock = await fetchStock(product.productId);
-          currentOrder.value.items.push({
-            productId: product.productId,
-            sku: product.sku,
-            quantity: quantityField ? (Number(uploadedItemsByIdValue[idValue][quantityField]) || 0) : 0,
-            isChecked: false,
-            qoh: stock?.qoh || 0,
-            atp: stock?.atp || 0
-          })
-        }
-      })
-    } else {
-      throw resp.data;
-    }
-  } catch(error) {
-    logger.error(error)
-    showToast(translate("Failed to add items to the order due to incorrect SKU mapping or invalid SKUs."))
-  }
-}
-
-function toggleScan() {
-  isScanningEnabled.value = !isScanningEnabled.value;
-  isScanningEnabled.value ? addProductInput.value.$el.setFocus() : addProductInput.value.$el.blur();
-}
-
-async function addProductToOrder(scannedId?: any, product?: any) {
-  if(!isScanningEnabled.value) {
-    if(!searchedProduct.value.productId ||!queryString.value) return;
-    if(isProductAvailableInOrder()) {
-      scrollToProduct(searchedProduct.value)
-      return;  
-    }
-  }
-
-  let newProduct = { 
-    productId: product ? product.productId :searchedProduct.value.productId,
-    sku: product ? product.sku : searchedProduct.value.sku,
-    quantity: 0,
-    isChecked: false,
-    isMatching: false,
-    noMatchFound: false
-  } as any;
-
-  const stock = await fetchStock(newProduct.productId);
-  if(stock?.qoh || stock?.qoh === 0) {
-    newProduct = { ...newProduct, qoh: stock.qoh, atp: stock.atp }
-  }
-  
-  if(product) {
-    currentOrder.value.items = currentOrder.value.items.map((item: any) => {
-      if(item.scannedId === scannedId) {
-        return newProduct;
-      }
-      return item;
-    });
-  } else {
-    currentOrder.value.items.push(newProduct);
-  }
-}
-
-function scrollToProduct(item: any) {
-  lastScannedId.value = item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier.value, getProduct.value(item.productId))
-  const element = document.getElementById(item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier.value, getProduct.value(item.productId)));
-  if(element) element.scrollIntoView({ behavior: 'smooth' });
-  setTimeout(() => {
-    lastScannedId.value = ''
-  }, 3000)
-}
-
-// Updates the scanned product by checking if it already exists in the order and adding it if not
-async function scanProduct(scannedValue: string) {
-  // Check if the product already exists in the order
-  const existingItem = currentOrder.value.items.find((item: any) => (item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier.value, getProduct.value(item.productId))) === scannedValue);
-  if(existingItem) {
-    existingItem.quantity++
-    queryString.value = ""
-    scrollToProduct(existingItem)
+  if(timeoutId) clearTimeout(timeoutId);
+  if(!searchedString) {
+    isSearchingProduct.value = false;
     return;
   }
 
-  let newProduct = { 
-    scannedId: scannedValue,
-    quantity: 0,
-    isChecked: false,
-    isMatching: true,
-    noMatchFound: true
-  } as any;
+  isSearchingProduct.value = true;
+  timeoutId = setTimeout(() => {
+    findProduct();
+  }, 800);
+}, { deep: true });
 
-  currentOrder.value.items.push(newProduct);
-  await findProduct();
-}
+onIonViewWillEnter(async () => {
+  emitter.emit('presentLoader');
+  await fetchTransferOrderDetail(route.params.orderId as string);
+  await fetchProductInformation();
+  await store.dispatch('util/fetchFacilities')
+  emitter.emit('dismissLoader');
+});
 
-// Validates the scanned product by checking if it matches any product in the cachedProducts and updating the order accordingly
-async function validateScannedProduct() {
-  queryString.value = "";
-  const itemsWithNoMatch = currentOrder.value.items.filter((item: any) => item.noMatchFound);
-  const allProducts = Object.values(getProducts.value);
+// Fetches transfer order details by orderId, including its items, and updates the store.
+async function fetchTransferOrderDetail(orderId: string) {
+  try {
+    const orderResp = await TransferOrderService.fetchTransferOrderDetail(orderId);
+    if(!hasError(orderResp)) {
+      const order = orderResp.data[0];
+      // Fetch items and attach to order
+      const items = await fetchOrderItems(order.orderId);
+      order.items = items;
 
-  for(const item of itemsWithNoMatch) {
-    const matchedProduct = allProducts.find((product: any) => getProductIdentificationValue(barcodeIdentifier.value, getProduct.value(product.productId)) === item.scannedId);
-    // If a matched product is found, call addProductToOrder
-    if(matchedProduct) {
-      await addProductToOrder(item.scannedId, matchedProduct);
+      // Dispatch to store
+      await store.dispatch('transferorder/updateCurrentTransferOrder', order)
     } else {
-      // If no match found, set the noMatchFound flag for the scanned item
-      currentOrder.value.items = currentOrder.value.items.map((existingItem: any) => {
-        if(existingItem.scannedId === item.scannedId) {
-          return { ...existingItem, isMatching: false, noMatchFound: true };
-        }
-        return existingItem;
-      });
+      throw orderResp.data;
     }
+  } catch (error) {
+    logger.error('Error fetching transfer order details:', error);
   }
 }
 
-async function openMatchProductModal(currentItem: any) {
-  const addProductModal = await modalController.create({
-    component: MatchProductModal,
-    componentProps: { items: currentOrder.value.items },
-    showBackdrop: false,
-  });
-
-  addProductModal.onDidDismiss().then(async (result) => {
-    if(result.data?.selectedProduct) {
-      await addProductToOrder(currentItem.scannedId, result.data.selectedProduct);
-    }
-  })
-
-  addProductModal.present();
-}
-
-function selectUpdatedMethod() {
-  const shipmentMethods = getCarrierShipmentMethods()
-  if(shipmentMethods?.length) currentOrder.value.shipmentMethodTypeId = shipmentMethods[0]?.shipmentMethodTypeId
-}
-
-function isQOHAvailable(item: any) {
-  return item.qoh && Number(item.qoh) > Number(item.quantity)
-}
-
-function getCarrierShipmentMethods() {
-  return currentOrder.value.carrierPartyId && shipmentMethodsByCarrier.value[currentOrder.value.carrierPartyId]
-}
-
-async function fetchFacilitiesByCurrentStore() {
-  let availableFacilities = [];
-
+async function fetchOrderItems(orderId: string) {
   try {
-    const resp = await UtilService.fetchProductStoreFacilities({
-      productStoreId: currentOrder.value.productStoreId,
-      facilityTypeId: "VIRTUAL_FACILITY",
-      facilityTypeId_op: "equals",
-      facilityTypeId_not: "Y",
-      parentFacilityTypeId: "VIRTUAL_FACILITY",
-      parentFacilityTypeId_op: "equals",
-      parentFacilityTypeId_not: "Y",
-      fieldsToSelect: ["facilityId", "facilityName"],
-      pageSize: 200,
-    })
+    const payload = { orderId };
+    const resp = await TransferOrderService.findTransferOrderItems(payload);
+
+    if(!hasError(resp) && resp?.data?.transferOrderItems?.length) {
+      return resp.data.transferOrderItems.map((item: any) => ({
+        ...item,
+        pickedQuantity: item.pickedQuantity ?? item.quantity
+      }));
+    } else {
+      throw resp.data;
+    }
+  } catch (error) {
+    logger.error('Error fetching order items:', error);
+    return [];
+  }
+}
+
+async function fetchProductInformation() {
+  try {
+    const items = currentOrder.value.items;
+    if(!items.length) return;
+    const productIds = items.map((item: any) => item.productId)
+    await store.dispatch('product/fetchProducts', { productIds });
+  } catch (err) {
+    logger.error("Failed to fetch product information", err);
+  }
+}
+
+async function editOrderName() {
+  const alert = await alertController.create({
+    header: translate("Edit order name"),
+    inputs: [
+      {
+        name: 'orderName',
+        value: currentOrder.value?.orderName || '',
+        placeholder: translate('Enter order name')
+      }
+    ],
+    buttons: [
+      {
+        text: translate("Cancel"),
+        role: 'cancel'
+      },
+      {
+        text: translate("Save"),
+        handler: async(data: any) => {
+          const newName = (data.orderName || '').trim();
+          if(!newName) {
+            showToast(translate('Please enter a valid order name'));
+            return false;
+          }
+          await updateOrderProperty("orderName", newName);
+          return true;
+        }
+      }
+    ]
+  });
+  await alert.present();
+}
+
+async function toggleStatusFlow(event: any) {
+  const updatedStatusFlowId = event.detail.checked ? 'TO_Fulfill_Only' : 'TO_Fulfill_And_Receive';
+  await updateOrderProperty("statusFlowId", updatedStatusFlowId);
+}
+
+// Updates a transfer order's property (name or flow) and shows success/failure toast messages
+async function updateOrderProperty(property: string, value: any) {
+  try {
+    const payload = {
+      orderId: currentOrder.value.orderId,
+      [property]: value
+    };
+
+    const resp = await OrderService.updateOrderHeader(payload);
 
     if(!hasError(resp)) {
-      availableFacilities = resp.data
+      await store.dispatch('transferorder/updateCurrentTransferOrder', {
+        ...currentOrder.value,
+        [property]: value
+      });
+
+      property === "orderName" ? showToast(translate("Order name updated successfully")) : showToast(translate("Order flow updated successfully"));
     } else {
       throw resp.data;
     }
-  } catch(error: any) {
-    logger.error(error);
+  } catch (err) {
+    logger.error(`Failed to update order ${property}`, err);
+    property === "orderName" ? showToast(translate("Failed to update order name")) : showToast(translate("Failed to update order flow"));
   }
-  facilities.value = availableFacilities
-}
-
-function getFacilityName(facilityId: any) {
-  return facilities.value.find((facility: any) => facility.facilityId === facilityId)?.facilityName
-}
-
-async function updateBulkOrderItemQuantity(action: any) {
-  if(!isEligibleForBulkAction()) {
-    showToast(translate("No order item is selected for bulk action."))
-    return;
-  }
-
-  if(action === "bookQOH" || action === "bookATP") {
-    currentOrder.value.items.map((item: any) => {
-      if(item.isChecked) {
-        item.quantity = (action === "bookQOH") ? item.qoh : item.atp
-      }
-    })
-  } else if(action === "customQty") {
-    const alert = await alertController.create({
-      header: translate("Custom Qty"),
-      buttons: [{
-        text: translate("Cancel"),
-        role: "cancel"
-      }, {
-        text: translate("Save"),
-        handler: async (data: any) => {
-          if(!data?.quantity) return false;
-          const customQty = Number(data.quantity);
-          currentOrder.value.items.map((item: any) => {
-            if(item.isChecked) {
-              item.quantity = customQty
-            }
-          }) 
-        }
-      }],
-      inputs: [{
-        name: "quantity",
-        placeholder: translate("ordered quantity"),
-        min: 0,
-        type: "number"
-      }]
-    })
-    alert.present()
-  }
-}
-
-async function createOrder() {
-  if(!currentOrder.value.items?.length) {
-    showToast(translate("Please add atleast one item in the order."));
-    return;
-  }
-
-  if(!currentOrder.value.name.trim()) {
-    showToast(translate("Please give some valid transfer order name."))
-    return;
-  }
-
-  if(!currentOrder.value.productStoreId || !currentOrder.value.originFacilityId || !currentOrder.value.destinationFacilityId || !currentOrder.value.carrierPartyId || !currentOrder.value.shipmentMethodTypeId) {
-    showToast(translate("Please select all the required properties assigned to the order."))
-    return;
-  }
-
-  if(currentOrder.value.originFacilityId === currentOrder.value.destinationFacilityId) {
-    showToast(translate("Origin and destination facility can't be same."))
-    return;
-  }
-
-
-  const isItemQuantityInvalid = currentOrder.value.items.some((item: any) => !Number(item.quantity) || Number(item.quantity) < 0)
-  if(isItemQuantityInvalid) {
-    showToast(translate("Order items must have a valid ordered quantity."))
-    return;
-  }
-
-  if(!currentOrder.value.statusFlowId) {
-    showToast(translate("Please select transfer order lifecycle."));
-    return;
-  }
-
-  const productIds = currentOrder.value.items?.map((item: any) => item.productId);
-  const productAverageCostDetail = await ProductService.fetchProductsAverageCost(productIds, currentOrder.value.originFacilityId)
-
-  const order = {
-    orderName: currentOrder.value.name.trim(),
-    orderTypeId: "TRANSFER_ORDER",
-    customerId: "COMPANY",
-    statusId: "ORDER_CREATED",
-    productStoreId: currentOrder.value.productStoreId,
-    statusFlowId: currentOrder.value.statusFlowId,
-    orderDate: DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000"),
-    entryDate: DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000"),
-    originFacilityId: currentOrder.value.originFacilityId,
-    shipGroups: [{
-      shipGroupSeqId: "00001",
-      facilityId: currentOrder.value.originFacilityId,
-      orderFacilityId: currentOrder.value.destinationFacilityId,
-      carrierPartyId: currentOrder.value.carrierPartyId,
-      shipmentMethodTypeId: currentOrder.value.shipmentMethodTypeId,
-      estimatedShipDate: currentOrder.value.shipDate ? DateTime.fromISO(currentOrder.value.shipDate).toFormat("yyyy-MM-dd 23:59:59.000") : "",
-      estimatedDeliveryDate: currentOrder.value.deliveryDate ? DateTime.fromISO(currentOrder.value.deliveryDate).toFormat("yyyy-MM-dd 23:59:59.000") : "",
-      items: currentOrder.value.items.map((item: any) => {
-        return {
-          orderItemTypeId: "PRODUCT_ORDER_ITEM",
-          productId: item.productId,
-          sku: item.sku,
-          statusId: "ITEM_CREATED",
-          quantity: Number(item.quantity),
-          unitPrice: (Object.keys(productAverageCostDetail).length && productAverageCostDetail[item.productId]) || 0.00
-        }
-      })
-    }]
-  } as any;
-
-  let grandTotal = 0;
-  order.shipGroups[0].items.map((item: any) => {
-    grandTotal += Number(item.quantity) * Number(item.unitPrice)
-  })
-  order["grandTotal"] = grandTotal
-
-  const addresses = await store.dispatch("util/fetchFacilityAddresses", [currentOrder.value.originFacilityId, currentOrder.value.destinationFacilityId])
-  addresses.map((address: any) => {
-    if(address.facilityId === currentOrder.value.originFacilityId) {
-      order.shipGroups[0].shipFrom = {
-        postalAddress: {
-          id: address.contactMechId
-        }
-      }
-    }
-    if(address.facilityId === currentOrder.value.destinationFacilityId) {
-      order.shipGroups[0].shipTo = {
-        postalAddress: {
-          id: address.contactMechId
-        }
-      }
-    }
-  })
-
-  try {
-    const resp = await TransferOrderService.createTransferOrder({ payload: order })
-    if(!hasError(resp) && resp.data?.orderId) {
-      const orderId = resp.data.orderId
-      const isApproved = await TransferOrderService.approveTransferOrder(orderId)
-      if(!isApproved) {
-        router.replace("/transfer-orders");
-        const toast = await showToast(translate("Order is created successfully, but approval failed. Please contact administrator.", { orderId }), { canDismiss: true, manualDismiss: true })
-        toast?.present();
-        return;
-      }
-      router.replace(`/transfer-order-details/${orderId}/open`)
-      showToast(translate("Transfer order created successfully."))
-    } else {
-      throw resp.data;
-    }
-  } catch(error: any) {
-    logger.error(error)
-    showToast(translate("Failed to create order."))
-  }
-}
-
-function toggleBulkSelection(isChecked: any) {
-  currentOrder.value.items.map((item: any) => item.isChecked = isChecked)
-}
-
-function isEligibleForBulkAction() {
-  return currentOrder.value.items?.some((item: any) => item.isChecked)
-}
-
-async function openOrderItemActionsPopover(event: any, selectedItem: any, isBulkOperation = false){
-  const popover = await popoverController.create({
-    component: TransferOrderItemActionsPopover,
-    componentProps: { item: selectedItem },
-    event,
-    showBackdrop: false,
-  });
-
-  popover.onDidDismiss().then((result: any) => {
-    const action = result.data?.action
-
-    if(action === "bookQOH" || action === "bookATP") {
-      if(isBulkOperation) {
-        currentOrder.value.items.map((item: any) => {
-          if(item.isChecked) {
-            item.quantity = (action === "boolean") ? item.qoh : item.atp
-          }
-        })
-      } else {
-        selectedItem.quantity = (action === "bookQOH") ? selectedItem.qoh : selectedItem.atp
-      }
-    } else if(action === "remove") {
-      currentOrder.value.items = isBulkOperation ? currentOrder.value.items.filter((item: any) => !item.isChecked) : selectedItem.noMatchFound ? currentOrder.value.items.filter((item: any) => selectedItem.scannedId !== item.scannedId) : currentOrder.value.items.filter((item: any) => selectedItem.productId !== item.productId)
-    }
-  })
-
-  await popover.present();
-}
-
-async function openImportCsvModal() {
-  const importCsvModal = await modalController.create({
-    component: ImportTOItemsCsvModal,
-    componentProps: {
-      fileColumns: fileColumns.value,
-      content: content.value
-    }
-  })
-  importCsvModal.onDidDismiss().then((result: any) => {
-    if (result?.data?.identifierData && Object.keys(result?.data?.identifierData).length) {
-      findProductFromIdentifier(result.data.identifierData)
-    }
-  })
-  importCsvModal.present();
-}
-
-function downloadSampleCsv() {
-  jsonToCsv(sampleProducts.value, {
-    download: true,
-    name: "Sample CSV.csv"
-  })
 }
 
 async function openSelectFacilityModal() {
   const addressModal = await modalController.create({
     component: SelectFacilityModal,
-    componentProps: { selectedFacilityId: currentOrder.value.destinationFacilityId, facilities: facilities.value }
-  })
-
-  addressModal.onDidDismiss().then(async(result: any) => {
-    if(result.data?.selectedFacilityId) {
-      currentOrder.value.destinationFacilityId = result.data.selectedFacilityId
+    componentProps: {
+      selectedFacilityId: currentOrder.value.orderFacilityId,
+      facilities: facilities.value
     }
+  });
+
+  addressModal.onDidDismiss().then(async (result: any) => {
+    if(result.data?.selectedFacilityId) {
+      await updateOrderFacility(result.data?.selectedFacilityId);
+    }
+  });
+  
+  await addressModal.present();
+}
+
+// Updates the order facility with the given facility ID.
+async function updateOrderFacility(facilityId: string) {
+  const payload = {
+    orderId: currentOrder.value.orderId,
+    orderFacilityId: facilityId,
+    shipGroupSeqId: currentOrder.value.shipGroupSeqId
+  }
+
+  try {
+    const resp = await OrderService.updateOrderFacility(payload)
+    if(!hasError(resp)) {
+      currentOrder.value.orderFacilityId = facilityId;
+      await store.dispatch('transferorder/updateCurrentTransferOrder', currentOrder.value);
+    } else {
+      throw resp.data;
+    }
+  } catch (error) {
+    logger.error("Failed to update destination facility", error)
+    showToast(translate("Failed to update store"))
+  }
+}
+
+function clearQuery() {
+  queryString.value = ''
+  searchedProduct.value = {}
+}
+
+// Scanning/Searching helpers
+async function enableScan() {
+  clearQuery();
+  mode.value = 'scan';
+  isScanningEnabled.value = true;
+}
+
+async function enableSearch() {
+  clearQuery();
+  mode.value = 'search';
+  await nextTick();
+  searchInput.value?.$el.setFocus?.()
+}
+
+function segmentChange(mode: string) {
+  mode === 'scan' ? enableScan() : enableSearch()
+}
+
+async function openAddProductModal() {
+  const addProductModal = await modalController.create({
+    component: AddProductModal,
+    componentProps: {
+      query: queryString.value,
+    }
+  });
+
+  addProductModal.onDidDismiss().then(async () => {
+    queryString.value = '';
+    await fetchTransferOrderDetail(currentOrder.value.orderId as string);
+    await fetchProductInformation();
   })
-
-  addressModal.present()
+  await addProductModal.present();
 }
 
-function isProductAvailableInOrder() {
-  return currentOrder.value.items.some((item: any) => item.productId === searchedProduct.value.productId)
+function getFacilityName(facilityId: string) {
+  const facility = facilities.value.find((facility: any) => facility.facilityId === facilityId)
+  return facility ? facility.facilityName || facility.facilityId : facilityId
 }
 
-async function findProduct() {
-  if(!queryString.value.trim()) {
-    showToast(translate("Enter a valid product sku"));
-    return;
+async function scanProduct() {
+  const scannedId = queryString.value?.trim();
+  if(!scannedId) return;
+
+  // clear any watcher-scheduled timeout to avoid a later duplicate call
+  if(timeoutId) {
+    clearTimeout(timeoutId);
+    timeoutId = null;
   }
 
   isSearchingProduct.value = true;
-  try {
-    const resp = await ProductService.fetchProducts({
-      "filters": [
-        'isVirtual: false', 
-        `goodIdentifications: ${barcodeIdentifier.value}/${isScanningEnabled.value ? queryString.value.trim() : `*${queryString.value.trim()}*`}`
-      ],
-      "viewSize": 1
-    })
-    if (!hasError(resp) && resp.data.response?.docs?.length) {
-      if(!isScanningEnabled.value) searchedProduct.value = resp.data.response.docs[0];
-      store.dispatch("product/addProductToCached", resp.data.response.docs[0])      
-    } else {
-      throw resp.data
-    }
-  } catch(err) {
-    searchedProduct.value = {}
-    logger.error("Product not found", err)
-  }
-  isSearchingProduct.value = false
-  if(isScanningEnabled.value) await validateScannedProduct()
+  // call findProduct which will update searchedProduct (found or not)
+  const productFound: any = await findProduct();
+  if(productFound) {
+    await addTransferOrderItem(productFound, scannedId);
+  } 
 }
 
-async function fetchStock(productId: string) {
+async function addSearchedOrderItem() {
+  const productId = searchedProduct.value?.productId;
+  if(!productId) return;
+  const product = getProduct.value(productId);
+  await addTransferOrderItem(product);
+}
+
+// Find a product (shared by scan & search)
+// - On search: sets a preview in `searchedProduct`
+// - Returns the found product (or null)
+async function findProduct() {
+  const query = queryString.value?.trim();
+  if(!query) { 
+    isSearchingProduct.value = false; 
+    return null; 
+  }
+
   try {
-    const resp: any = await StockService.getInventoryAvailableByFacility({
-      productId,
-      facilityId: currentOrder.value.originFacilityId
+    const resp = await ProductService.fetchProducts({
+      filters: [
+        'isVirtual: false',
+        `goodIdentifications: ${barcodeIdentifier.value}/${mode.value === 'scan' ? query : `*${query}*`}`
+      ],
+      viewSize: 1
     });
 
+    if(!hasError(resp) && resp.data.response?.docs?.length) {
+      const item = resp.data.response.docs[0];
+      store.dispatch("product/addProductToCached", item);
+      searchedProduct.value = { productId: item.productId, mainImageUrl: item.mainImageUrl };
+      isSearchingProduct.value = false;
+      return item;
+    } else {
+      searchedProduct.value = { scannedId: query };
+      isSearchingProduct.value = false;
+      return null;
+    }
+  } catch (err) {
+    logger.error(err);
+    searchedProduct.value = {};
+  }
+}
+
+/**
+ * Commits a product to the current transfer order.
+ * - Handles scanning or manual search add
+ * - Fetches stock + average cost
+ * - Calls API to create order item
+ * - Updates local currentOrder state
+ */
+async function addTransferOrderItem(product: any, scannedId?: string) {
+  if (!product?.productId) return;
+
+  // If product is already in order → scroll to existing row & exit
+  const alreadyAdded = findAndScrollToExisting(scannedId, product.productId);
+  if(alreadyAdded) {
+    queryString.value = '';
+    return;
+  }
+
+  const newItem: any = {
+    productId: product.productId,
+    sku: product.sku,
+    quantity: 1,
+    pickedQuantity: 1,
+    shipGroupSeqId: "00001",
+    scannedId
+  };
+
+  // Fetch available stock
+  const stock = product.productId ? await fetchStock(product.productId) : null;
+  if(stock) {
+    newItem.qoh = stock.qoh ?? 0;
+    newItem.atp = stock.atp ?? 0;
+  }
+  searchedProduct.value = { ...newItem };
+
+  try {
+    // Fetch product's average cost before committing to order
+    const unitPrice = await ProductService.fetchProductAverageCost(
+      newItem.productId,
+      currentOrder.value.orderFacilityId
+    );
+
+    // Prepare payload and call API to add order item
+    const payload = {
+      orderId: currentOrder.value.orderId,
+      productId: newItem.productId,
+      quantity: newItem.quantity,
+      shipGroupSeqId: newItem.shipGroupSeqId,
+      unitPrice: unitPrice || 0
+    };
+    const resp = await TransferOrderService.addOrderItem(payload);
+
     if(!hasError(resp)) {
-      return resp.data;
+      // Update local state with order item & refresh order in store
+      newItem.orderId = currentOrder.value.orderId;
+      newItem.orderItemSeqId = resp.data?.orderItemSeqId;
+
+      currentOrder.value.items.push(newItem);
+      await store.dispatch('transferorder/updateCurrentTransferOrder', currentOrder.value);
     } else {
       throw resp.data;
     }
   } catch (err) {
-    logger.error(err)
-    return null;
+    logger.error(err);
+    showToast(translate("Failed to add product to order"));
+  }
+  queryString.value = '';
+}
+
+
+// Stock fetch helper
+async function fetchStock(productId: string) {
+  try {
+    const resp: any = await StockService.getInventoryAvailableByFacility({
+      productId,
+      facilityId: currentOrder.value.orderFacilityId
+    });
+    if(!hasError(resp)) return resp.data;
+  } catch (err) {
+    logger.error(err);
+  }
+  return null;
+}
+
+// Utility functions
+function findAndScrollToExisting(identifier?: string, productId?: string) {
+  const items = currentOrder.value.items || [];
+  const existing = items.find((item: any) => {
+    if(productId && item.productId === productId) return true;
+    const idVal = item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier.value, getProduct.value(item.productId));
+    return identifier && idVal === identifier;
+  });
+
+  if(existing) {
+    scrollToProduct(existing);
+    return true;
+  }
+  return false;
+}
+
+// check if product already exists in currentOrder
+function isItemAlreadyInOrder(productId: string) {
+  return currentOrder.value?.items?.some((item: any) => item.productId === productId)
+}
+
+// Scrolls the view to the specified product item and highlights it temporarily.
+function scrollToProduct(item: any) {
+  lastScannedId.value = item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier.value, getProduct.value(item.productId));
+  const el = document.getElementById(item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier.value, getProduct.value(item.productId)));
+  if(el) el.scrollIntoView({ behavior: 'smooth' });
+  setTimeout(() => lastScannedId.value = '', 3000);
+}
+
+function clearSearch() {
+  queryString.value = '';
+  searchedProduct.value = {};
+}
+
+// Discards the current transfer order by calling the cancel API and navigates to the transfer orders list.
+async function discardOrder() {
+  const orderId = currentOrder.value.orderId;
+  try {
+    const resp = await TransferOrderService.cancelTransferOrder(orderId);
+    if(!hasError(resp)) {
+      showToast(translate("Order discarded successfully"));
+      router.replace({ path: '/transfer-orders' });
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    logger.error("Failed to discard order", err);
+    showToast(translate("Failed to discard order"));
   }
 }
 
-function formatDateTime(date: any) {
-  const dateTime = DateTime.fromISO(date);
-  return getDateWithOrdinalSuffix(dateTime.toMillis());
+async function approveOrder(orderId: string) {
+  try {
+    const resp = await TransferOrderService.approveTransferOrder(orderId);
+    if(!hasError(resp)) {
+      currentOrder.value.statusId = "ORDER_APPROVED"
+      await store.dispatch('transferorder/updateCurrentTransferOrder', currentOrder.value);
+      return true;
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    logger.error('Failed to approve the transfer order', err);
+    return false;
+  }
 }
 
-function updateDateTimeFilter(value: any) {
-  currentOrder.value[selectedDateFilter.value] = value;
+// Approves the current transfer order and redirects to the transfer orders page.
+async function shiplater() {
+  try {
+    const success = await approveOrder(currentOrder.value.orderId);    
+    if(success) {
+      router.replace({ path: '/transfer-orders' })
+    }
+  } catch (err) {
+    logger.error('Failed to approve the transfer order to ship later', err);
+  }
 }
 
-function closeDateTimeModal() {
-  dateTimeModalOpen.value = false;
-  selectedDateFilter.value = "";
-}
+// Packs and ships the order by approving it, grouping items into packages, and creating an outbound transfer shipment.
+async function packAndShipOrder() {
+  let shipmentId;
+  try {
+    if(currentOrder.value.statusId === 'ORDER_CREATED') {
+      const success = await approveOrder(currentOrder.value.orderId);
+      if(!success) {
+        showToast(translate("Order approval failed"));
+        return;
+      }
+    }
+    const eligibleItems = currentOrder.value.items.filter((item: any) => item.quantity > 0);
+    if(!eligibleItems.length) return;
 
-function openDateTimeModal(type: any) {
-  dateTimeModalOpen.value = true;
-  selectedDateFilter.value = type;
+    // Group items into packages — assuming we're sending one package for now
+    const packages = [{
+      items: eligibleItems.map((item: any) => ({
+        orderItemSeqId: item.orderItemSeqId,
+        productId: item.productId,
+        quantity: parseInt(item.quantity),
+        shipGroupSeqId: item.shipGroupSeqId
+      }))
+    }];
+
+    const params = {
+      "payload": {
+        "orderId": currentOrder.value.orderId,
+        "packages": packages
+      }
+    }
+    const resp = await TransferOrderService.createOutboundTransferShipment(params)
+    if(!hasError(resp)) {
+      shipmentId = resp.data.shipmentId;
+      router.push({ path: `/ship-transfer-order/${shipmentId}` })
+    } else {
+      throw resp.data;
+    }
+  } catch (error) {
+    logger.error(error);
+    showToast(translate('Failed to create shipment'));
+  }
 }
 </script>
 
 <style scoped>
-.list-item {
-  --columns-desktop: 5;
-  border-bottom: var(--border-medium);
-}
-
-.item-qty-actions {
-  grid-column: span 2;
-}
-
-.date-time-modal {
-  --width: 320px;
-  --height: 400px;
-  --border-radius: 8px;
-}
-
-.pointer {
-  cursor: pointer;
-}
-
-.find {
-  display: grid;
-  grid-template-areas: "search"
-                       "to-filters"
-                       "main";
+.transfer-order {
+  display: flex;
   align-items: start;
+  gap: var(--spacer-base);
+  padding: var(--spacer-base);
 }
 
-.find > main {
-  grid-area: main;
+.transfer-order > * {
+  margin: 0;
 }
 
-.to-filters {
-  grid-area: to-filters;
+.order-info {
+  flex: 1;
 }
 
-.search {
-  grid-area: search;
+.add-items {
+  flex: 3;
 }
 
-.scanned-item {
-  outline: 2px solid var( --ion-color-medium-tint);
+.search-type { 
+  display: flex;
 }
 
-@media (min-width: 991px) {
-
-  .find {
-    grid: "search  main" min-content
-    "to-filters main" 1fr
-    / 375px;
-    column-gap: var(--spacer-xl);
-    margin: var(--spacer-lg);
-    margin-right: 0;
-  }
-
-  .to-filters {
-    margin-top: var(--spacer-lg);
-  }
-
-  .find > .to-filters{
-    display: unset;
-  }
+.order-items{
+  padding: var(--spacer-base);
 }
 </style>
-
-
-

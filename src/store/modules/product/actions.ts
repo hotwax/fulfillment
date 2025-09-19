@@ -101,36 +101,6 @@ const actions: ActionTree<ProductState, RootState> = {
     return resp;
   },
 
-  async fetchSampleProducts ({ commit, state }) {
-    let products = state.sampleProducts ? JSON.parse(JSON.stringify(state.sampleProducts)) : []
-    if(products.length) return;
-
-    try {
-      const resp = await ProductService.fetchSampleProducts({
-        internalName_op: "empty",
-        internalName_not: "Y",
-        fieldsToSelect: ["internalName", "productId"],
-        pageSize: 10
-      }) as any;
-  
-      if(!hasError(resp) && resp.data?.length) {
-        const currentEComStore = useUserStore()?.getCurrentEComStore as any;
-        let fieldName = currentEComStore?.productIdentifierEnumId || "SKU";
-        if(fieldName === "SHOPIFY_BARCODE") fieldName = "UPCA"
-        products = resp.data
-        products = products.map((product: any) => ({
-          [fieldName]: product.internalName,
-          quantity:2
-        }))
-      } else {
-        throw resp.data;
-      }
-    } catch (error) {
-      logger.error(error);
-    }
-    commit(types.PRODUCT_SAMPLE_PRODUCTS_UPDATED, products)
-  },
-
   async addProductToCached ( { commit }, payload) {
     commit(types.PRODUCT_ADD_TO_CACHED, payload);
   },

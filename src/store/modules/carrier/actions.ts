@@ -228,6 +228,7 @@ const actions: ActionTree<CarrierState, RootState> = {
       return updatedShipmentMethod;
     }, {})
     commit(types.SHIPMENT_METHODS_UPDATED, shipmentMethods)
+    return shipmentMethodTypes;
   },
 
   async fetchCarrierFacilities({ state, commit }, payload) {

@@ -13,11 +13,7 @@ const mutations: MutationTree <ProductState> = {
   [types.PRODUCT_ADD_TO_CACHED] (state, payload) {
     state.cached[payload.productId] = payload
   },
-  [types.PRODUCT_SAMPLE_PRODUCTS_UPDATED](state, payload) {
-    state.sampleProducts = payload
-  },
   [types.PRODUCT_CLEARED](state) {
-    state.sampleProducts = []
     state.cached = {}
   },
 }

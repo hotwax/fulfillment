@@ -9,9 +9,6 @@ const getters: GetterTree<ProductState, RootState> = {
   },
   getProducts(state) {
     return state.cached;
-  },
-  getSampleProducts(state) {
-    return state.sampleProducts
-  },
+  }
 };
 export default getters;
