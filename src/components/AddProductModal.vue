@@ -13,7 +13,7 @@
   <ion-content>
     <ion-searchbar :value="queryString" :placeholder="translate('Search SKU or product name')" @keyup.enter="queryString = $event.target.value; getProducts()"/>
     <!-- Product list -->
-    <ion-list>
+    <template v-if="products.length">
       <ion-item v-for="product in products" :key="product.productId">
         <ion-avatar slot="start">
           <DxpShopifyImg :src="product.mainImageUrl" />
@@ -24,32 +24,28 @@
         </ion-label>
 
         <!-- Show Add button if not in currentOrder -->
-        <template v-if="!isItemAlreadyInOrder(product.productId)">
-          <ion-button slot="end" fill="outline" @click="addTransferOrderItem(product)">
-            {{ translate("Add to Transfer") }}
-          </ion-button>
-        </template>
-        <template v-else>
-          <ion-icon slot="end" :icon="checkmarkCircle" color="success" />
-        </template>
+        <ion-button v-if="!isItemAlreadyInOrder(product.productId)" slot="end" fill="outline" @click="addTransferOrderItem(product)">
+          {{ translate("Add to Transfer") }}
+        </ion-button>
+
+        <!-- Display a checkmark icon if the product is already added, otherwise display nothing. -->
+        <ion-icon v-else slot="end" :icon="checkmarkCircle" color="success" />
       </ion-item>
-    </ion-list>
+
+      <ion-infinite-scroll @ionInfinite="loadMoreProducts($event)" threshold="100px" :disabled="!isScrollable()">
+        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
+      </ion-infinite-scroll>
+    </template>
 
     <!-- Empty state -->
-    <div class="empty-state" v-if="!isLoading && products.length === 0 && queryString">
+    <div class="empty-state" v-else-if="!isLoading && queryString">
       <ion-text>{{ translate("No products found") }}</ion-text>
-    </div>
-
-    <!-- Loading spinner -->
-    <div v-if="isLoading" class="empty-state">
-      <ion-spinner name="crescent" />
-      <ion-label>{{ translate("Loading...") }}</ion-label>
     </div>
   </ion-content>
 </template>
 
 <script setup lang="ts">
-import { IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent, IonSearchbar, IonList, IonItem, IonAvatar, IonLabel, IonText, IonSpinner } from '@ionic/vue';
+import { IonAvatar, IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonSearchbar, IonText, IonTitle, IonToolbar } from '@ionic/vue';
 import { checkmarkCircle, closeOutline } from "ionicons/icons";
 import { computed, defineProps, onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
@@ -68,6 +64,7 @@ const productIdentificationStore = useProductIdentificationStore();
 
 const queryString = ref(props.query)
 const products = ref([]) as any;
+const total = ref(0) as any;
 const isLoading = ref(false)
 
 const currentOrder = computed(() => store.getters['transferorder/getCurrent'])
@@ -161,26 +158,46 @@ async function addTransferOrderItem(product: any) {
   queryString.value = '';
 }
 
+function isScrollable() {
+  return products.value.length < total.value;
+}
+
+async function loadMoreProducts(event: any) {
+  await getProducts(
+    undefined,
+    Math.ceil(products.value.length / Number(process.env.VUE_APP_VIEW_SIZE || 20)).toString()
+  );
+  event.target.complete();
+}
 
 // product search
-async function getProducts() {
-  let productsList = [] as any;
-  isLoading.value = true
+async function getProducts(vSize?: any, vIndex?: any) {
+  const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
+  const viewIndex = vIndex ? vIndex : 0;
+  isLoading.value = true;
+
   try {
     const resp = await ProductService.fetchProducts({
-      "keyword": queryString.value.trim(),
-      "viewSize": 100,
-      "filters": ['isVirtual: false', 'isVariant: true'],
-    })
-    if(!hasError(resp)) {
-      productsList = resp.data.response.docs;
+      keyword: queryString.value.trim(),
+      viewSize, 
+      viewIndex,
+      filters: ['isVirtual: false', 'isVariant: true'],
+    });
+
+    if (!hasError(resp) && resp.data.response?.docs?.length) {
+      const productsList = resp.data.response.docs;
+      if(viewIndex) {
+        products.value = products.value.concat(productsList); 
+      } else {
+        products.value = productsList;
+        total.value = resp.data.response.numFound;
+      }
     } else {
-      throw resp.data;
+      products.value = viewIndex ? products.value : [];
     }
   } catch(err) {
     logger.error("Failed to fetch products", err)
   }
-  products.value = productsList
   isLoading.value = false;
 }
 </script>

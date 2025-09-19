@@ -1,6 +1,6 @@
 <template>
   <ion-card :data-testid="`product-card-btn-${item.orderItemSeqId}`" :id="item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier, getProduct(item.productId))" :class="{ 'scanned-item': lastScannedId && lastScannedId === (item.scannedId || getProductIdentificationValue(barcodeIdentifier, getProduct(item.productId))) }">
-    <div class="pr</ion-card>oduct">
+    <div class="product">
       <div class="product-info">
         <ion-item lines="none">
           <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">

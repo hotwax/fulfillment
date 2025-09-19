@@ -49,67 +49,73 @@
             <ion-segment-button value="purchase">{{ translate("Purchase shipping label") }}</ion-segment-button>
             <ion-segment-button value="manual">{{ translate("Manual tracking") }}</ion-segment-button>
           </ion-segment>
-          <!-- purchase shipping segment -->
-          <ion-list v-if="selectedSegment === 'purchase'">
-            <!-- we will remove this check after making the purchase shipping label functional -->
-            <ion-item :disabled="selectedSegment === 'purchase'">
-              <ion-avatar slot="start">
-                <img src="" alt="carrier-logo" />
-              </ion-avatar>
-              <ion-label>
-                Rate name
-                <p>estimated delivery date</p>
-              </ion-label>
-              <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" @click="generateShippingLabel">{{ translate("Purchase label") }}</ion-button>
-            </ion-item>
-          </ion-list>
-
-          <!-- manual tracking segment -->
-          <ion-list v-if="selectedSegment === 'manual'">
-            <ion-item>
-              <ion-select data-testid="select-carrier-dropdown" :value="selectedCarrier" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedCarrier = $event.detail.value; updateShipmentMethodsForCarrier(selectedCarrier)">
-                <ion-select-option data-testid="select-carrier-dropdown-option" v-for="(carrierPartyId, index) in Object.keys(shipmentMethodsByCarrier)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) ? getCarrierDesc(carrierPartyId) : carrierPartyId }}</ion-select-option>
-              </ion-select>
-            </ion-item>
-            <ion-item>
-              <ion-select data-testid="select-method-dropdown" :disabled="!selectedCarrier" :value="selectedMethod" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedMethod = $event.detail.value">
-                <ion-select-option data-testid="select-method-dropdown-option" v-for="(method, index) in shipmentMethods" :key="index" :value="method.shipmentMethodTypeId">{{ method.description ? method.description : method.shipmentMethodTypeId }}</ion-select-option>
-              </ion-select>
-            </ion-item>
-            <ion-item lines="full">
-              <ion-input data-testid="tracking-code-input" :label="translate('Tracking code')" :placeholder="translate('Enter code')" :value="trackingCode" @ionInput="trackingCode = $event.target.value"/>
-            </ion-item>
-            <!-- no related data available for this field in the api response -->
-            <!-- <ion-item lines="none">
-              Tracking URL: fedex.com/tracking/12344
-              <ion-button data-testid="tracking-test-link" slot="end" color="primary" fill="clear">
-                Test
-                <ion-icon :icon="openOutline" slot="end"/>
-              </ion-button>
-            </ion-item> -->
-          </ion-list>
 
           <!-- card after purchase shipping label generated -->
-          <!-- <ion-card>
+          <ion-card v-if="shipmentDetails.trackingIdNumber">
             <ion-item lines="full">
               <ion-avatar slot="start">
                 <img src="" alt="carrier-logo" />
               </ion-avatar>
               <ion-label>
                 Rate name
-                <p>estimated delivery date</p>
+                <!-- this field is not coming it the shipping rates api -->
+                <!-- <p>estimated delivery date</p> -->
               </ion-label>
-              <ion-note slot="end" class="ion-margin">tracking code</ion-note>
-              <ion-icon data-testid="tracking-code-link" slot="end" :icon="openOutline"/>
+              <ion-note slot="end" class="ion-margin">{{ shipmentDetails.trackingIdNumber }}</ion-note>
+              <ion-icon data-testid="tracking-code-link" slot="end" :icon="openOutline" @click="redirectToTrackingUrl()"/>
             </ion-item>
             <ion-card-content>
-              <ion-button data-testid="reprint-label-btn"> fill="outline" color="primary">
+              <ion-button data-testid="reprint-label-btn" fill="outline" color="primary" @click="printShippingLabel">
                 <ion-icon :icon="printOutline" slot="start"  size="small"/>
-                Re-print shipping label
+                {{ translate("Re-print shipping label") }}
               </ion-button>
-              <ion-button data-testid="void-label-btn"> fill="outline" color="warning">Void shipping label</ion-button>
+              <ion-button data-testid="void-label-btn" fill="outline" color="warning" @click="voidShippingLabelAlert">
+                {{ translate("Void shipping label") }}
+              </ion-button>
             </ion-card-content>
-          </ion-card> -->
+          </ion-card>
+
+          <template v-else>
+            <!-- purchase shipping segment -->
+            <ion-list v-if="selectedSegment === 'purchase'">
+              <!-- we will remove this check after making the purchase shipping label functional -->
+              <ion-item>
+                <ion-avatar slot="start">
+                  <!-- <img src="" alt="carrier-logo" /> -->
+                </ion-avatar>
+                <ion-label>
+                  Rate name
+                  <!-- this field is not coming it the shipping rates api -->
+                  <!-- <p>estimated delivery date</p> -->
+                </ion-label>
+                <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" @click="purchaseShippingLabel">{{ translate("Purchase label") }}</ion-button>
+              </ion-item>
+            </ion-list>
+
+            <!-- manual tracking segment -->
+            <ion-list v-if="selectedSegment === 'manual'">
+              <ion-item>
+                <ion-select data-testid="select-carrier-dropdown" :value="selectedCarrier || shipmentDetails.carrierPartyId" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedCarrier = $event.detail.value; updateShipmentMethodsForCarrier(selectedCarrier)">
+                  <ion-select-option data-testid="select-carrier-dropdown-option" v-for="(carrierPartyId, index) in Object.keys(shipmentMethodsByCarrier)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) ? getCarrierDesc(carrierPartyId) : carrierPartyId }}</ion-select-option>
+                </ion-select>
+              </ion-item>
+              <ion-item>
+                <ion-select data-testid="select-method-dropdown" :disabled="!selectedCarrier" :value="selectedMethod || shipmentDetails.shipmentMethodTypeId" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedMethod = $event.detail.value">
+                  <ion-select-option data-testid="select-method-dropdown-option" v-for="(method, index) in shipmentMethods" :key="index" :value="method.shipmentMethodTypeId">{{ method.description ? method.description : method.shipmentMethodTypeId }}</ion-select-option>
+                </ion-select>
+              </ion-item>
+              <ion-item lines="full">
+                <ion-input data-testid="tracking-code-input" :label="translate('Tracking code')" :placeholder="translate('Enter code')" :value="trackingCode" @ionInput="trackingCode = $event.target.value"/>
+              </ion-item>
+              <ion-item v-if="selectedCarrier || shipmentDetails.carrierPartyId" lines="none">
+                {{ generateTrackingUrl() }}
+                <ion-button data-testid="tracking-test-link" slot="end" color="primary" fill="clear" :disabled="!trackingCode.trim() || !getCarrierTrackingUrl()" @click="redirectToTrackingUrl()">
+                  {{ translate("Test") }}
+                  <ion-icon :icon="openOutline" slot="end"/>
+                </ion-button>
+              </ion-item>
+            </ion-list>
+          </template>
         </div>
       </main>
     </ion-content>
@@ -151,6 +157,7 @@ let productIdentificationPref = computed(() => productIdentificationStore.getPro
 const getProduct = computed(() => store.getters['product/getProduct'])
 const shipmentMethodsByCarrier = computed(() => store.getters["util/getShipmentMethodsByCarrier"])
 const getCarrierDesc = computed(() => store.getters["util/getCarrierDesc"])
+const facilityCarriers = computed(() => store.getters["carrier/getFacilityCarriers"])
 
 const shipmentItems = computed(() => {
   if(!shipmentDetails.value?.packages) return []
@@ -166,7 +173,7 @@ const shipmentDetails = ref({}) as any
 const shippingRates = ref({}) as any
 
 onIonViewWillEnter(async() => {
-  await Promise.allSettled([fetchShipmentOrderDetail(route.params.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail")])
+  await Promise.allSettled([fetchShipmentOrderDetail(route.params.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers')])
   await fetchShippingRates();
 });
 
@@ -180,7 +187,8 @@ async function fetchShipmentOrderDetail(shipmentId: string) {
     const resp = await TransferOrderService.fetchTransferShipmentDetails({ shipmentId: shipmentId });
     if(!hasError(resp)) {
       shipmentDetails.value = resp.data.shipments[0]
-      const items = shipmentDetails.value?.packages?.flatMap(pkg => pkg.items || []) || []
+      trackingCode.value = shipmentDetails.value.trackingIdNumber || ''
+      const items = shipmentDetails.value?.packages?.flatMap((pkg: any) => pkg.items || []) || []
       const productIds = [...new Set(items.map((item: any) => item.productId))]
       if(productIds.length) {
         await store.dispatch('product/fetchProducts', { productIds })
@@ -191,6 +199,24 @@ async function fetchShipmentOrderDetail(shipmentId: string) {
   } catch (err) {
     logger.error('Failed to fetch shipment details.', err);
   }
+}
+
+// Retrieves the tracking URL template for the selected or prefilled carrier
+function getCarrierTrackingUrl() {
+  return facilityCarriers.value.find((carrier: any) => carrier.partyId === selectedCarrier.value || shipmentDetails.value.carrierPartyId)?.trackingUrl
+}
+
+// Builds a full tracking URL with the tracking number, or shows a fallback message if unavailable
+function generateTrackingUrl() {
+  if(getCarrierTrackingUrl()) {
+    return translate("Tracking URL:", { trackingUrl: getCarrierTrackingUrl()?.replace("${trackingNumber}", trackingCode.value) })
+  }
+  return translate("A tracking URL is not configured for", { carrierName: getCarrierDesc.value(selectedCarrier.value || shipmentDetails.value.carrierPartyId) })
+}
+
+// Opens the tracking URL in a new browser tab using the carrier's template and tracking number
+function redirectToTrackingUrl() {
+  window.open(getCarrierTrackingUrl().replace("${trackingNumber}", trackingCode.value), "_blank");
 }
 
 async function fetchShippingRates() {
@@ -206,17 +232,80 @@ async function fetchShippingRates() {
   }
 }
 
-async function generateShippingLabel() {
-  await updateCarrierAndShippingMethod();
-  const shipmentIds = [shipmentDetails.value.shipmentId]
-  const shippingLabelPdfUrls: string[] = Array.from(
-    new Set(
-      (shipmentDetails.value.shipmentPackages ?? [])
-        .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
-        .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
-    )
-  );
-  await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentDetails.value.shipmentPackages);
+// Purchases a new shipping label by updating carrier/method, retrying label generation, refreshing shipment details, and printing the label
+async function purchaseShippingLabel() {
+  const shipment = shipmentDetails.value;
+
+  try {
+    await updateCarrierAndShippingMethod();
+    await OrderService.retryShippingLabel(shipment.shipmentId);
+    await fetchShipmentOrderDetail(shipment.shipmentId)
+    await printShippingLabel();
+  } catch (error) {
+    logger.error("Failed to purchase shipping label", error);
+    showToast(translate("Failed to purchase shipping label"));
+  }
+}
+
+// Prints the shipping label if available by collecting unique label URLs and calling the print service
+async function printShippingLabel() {
+  const shipment = shipmentDetails.value
+
+  try {
+    if(shipment.trackingIdNumber) {
+      const shippingLabelPdfUrls: string[] = Array.from(
+        new Set(
+          (shipment.shipmentPackages ?? [])
+            .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+            .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+        )
+      );
+      showToast(translate("Shipping Label generated successfully"))
+      await OrderService.printShippingLabel([shipment.shipmentId], shippingLabelPdfUrls, shipment.shipmentPackages);
+    } else {
+      showToast(translate("Failed to generate shipping label"))
+    }
+  } catch (error) {
+    logger.error(error)
+  }
+}
+
+// Voids an existing shipping label using the route segment ID and refreshes shipment details
+async function voidShippingLabel() {
+  try {
+    const routeSegmentId = shipmentDetails.value?.shipmentPackageRouteSegDetails?.[0]?.shipmentRouteSegmentId;
+    if(!routeSegmentId) return;
+
+    await OrderService.voidShipmentLabel({
+      shipmentId: shipmentDetails.value.shipmentId,
+      shipmentRouteSegmentId: routeSegmentId
+    });
+
+    showToast(translate("Shipping label voided successfully"));
+    await fetchShipmentOrderDetail(shipmentDetails.value.shipmentId)
+  } catch (err) {
+    logger.error("Failed to void shipping label", err);
+    showToast(translate("Failed to void shipping label"));
+  }
+}
+
+async function voidShippingLabelAlert() {
+  const alert = await alertController.create({
+    header: translate("Void shipping label"),
+    buttons: [
+      {
+        text: translate("Cancel"),
+      },
+      {
+        text: translate("Confirm"),
+        handler: async () => {
+          await voidShippingLabel()
+          alertController.dismiss()
+        }
+      }
+    ],
+  });
+  return alert.present();
 }
 
 async function updateCarrierAndShippingMethod() {
@@ -235,11 +324,9 @@ async function updateCarrierAndShippingMethod() {
       throw resp.data
     }
   } catch (error) {
-     logger.error(error)
+    logger.error(error)
   }
 }
-
-
 
 async function shipLater() {
   const message = translate("Save this order without tracking details to ship later.");
@@ -266,33 +353,44 @@ async function shipLater() {
 }
 
 async function shipOrder() {
-  if(!selectedCarrier.value) {
-    showToast(translate('Please select a carrier'))
-    return
-  }
-  if(!selectedMethod.value) {
-    showToast(translate('Please select a shipping method'))
-    return
-  }
-  if(!trackingCode.value) {
-    showToast(translate('Please enter a tracking number'));
-    return;
+  const shipment = shipmentDetails.value;
+  if(!shipment) return;
+
+  const isLabelAlreadyGenerated = shipment.trackingIdNumber ? true : false;
+
+  // Only validate carrier/method/trackingCode if label not already generated
+  if(!isLabelAlreadyGenerated) {
+    if(!selectedCarrier.value) {
+      showToast(translate('Please select a carrier'))
+      return;
+    }
+    if(!selectedMethod.value) {
+      showToast(translate('Please select a shipping method'))
+      return;
+    }
+    if(!trackingCode.value) {
+      showToast(translate('Please enter a tracking number'));
+      return;
+    }
   }
 
   try {
-    await TransferOrderService.shipTransferOrderShipment({
-      shipmentId: shipmentDetails.value.shipmentId,
-      trackingIdNumber: trackingCode.value,
-      shipmentRouteSegmentId: shipmentDetails.value.shipmentRouteSegmentId,
-      carrierPartyId: selectedCarrier.value,
-      shipmentMethodTypeId: selectedMethod.value
-    });
-    
+    // Build payload dynamically based on whether label exists
+    const payload: any = { shipmentId: shipment.shipmentId }
+
+    if(!isLabelAlreadyGenerated) {
+      payload.trackingIdNumber = trackingCode.value
+      payload.shipmentRouteSegmentId = shipment.shipmentRouteSegmentId
+      payload.carrierPartyId = selectedCarrier.value
+      payload.shipmentMethodTypeId = selectedMethod.value
+    }
+
+    await TransferOrderService.shipTransferOrderShipment(payload)
     showToast(translate('Shipment shipped successfully.'));
-    router.replace({ path: '/transfer-orders' })
+    router.replace({ path: '/transfer-orders' });
   } catch (err) {
     logger.error('Failed to ship the shipment.', err);
-    showToast(translate('Something went wrong, could not ship the shipment'))
+    showToast(translate('Something went wrong, could not ship the shipment'));
   }
 }
 </script>

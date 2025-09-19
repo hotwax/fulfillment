@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button data-testid="create-transfer-orders-back-btn" default-href="/" slot="start"/>
+        <ion-back-button data-testid="create-transfer-orders-back-btn" default-href="/transfer-orders" slot="start"/>
         <ion-title>{{ translate("Create transfer order") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -130,7 +130,7 @@
                   <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
                 </ion-label>
                 <template v-if="!isItemAlreadyInOrder(searchedProduct.productId)">
-                  <ion-button data-testid="Add-to-transfer-btn" slot="end" fill="outline" @click="addSearchedProductToOrder">
+                  <ion-button data-testid="Add-to-transfer-btn" slot="end" fill="outline" @click="addSearchedOrderItem">
                     {{ translate("Add to Transfer") }}
                   </ion-button>
                 </template>
@@ -490,7 +490,7 @@ async function scanProduct() {
   } 
 }
 
-async function addSearchedProductToOrder() {
+async function addSearchedOrderItem() {
   const productId = searchedProduct.value?.productId;
   if(!productId) return;
   const product = getProduct.value(productId);
@@ -671,6 +671,8 @@ async function approveOrder(orderId: string) {
   try {
     const resp = await TransferOrderService.approveTransferOrder(orderId);
     if(!hasError(resp)) {
+      currentOrder.value.statusId = "ORDER_APPROVED"
+      await store.dispatch('transferorder/updateCurrentTransferOrder', currentOrder.value);
       return true;
     } else {
       throw resp.data;
@@ -697,10 +699,12 @@ async function shiplater() {
 async function packAndShipOrder() {
   let shipmentId;
   try {
-    const success = await approveOrder(currentOrder.value.orderId);
-    if(!success) {
-      showToast(translate("Order approval failed"));
-      return;
+    if(currentOrder.value.statusId === 'ORDER_CREATED') {
+      const success = await approveOrder(currentOrder.value.orderId);
+      if(!success) {
+        showToast(translate("Order approval failed"));
+        return;
+      }
     }
     const eligibleItems = currentOrder.value.items.filter((item: any) => item.quantity > 0);
     if(!eligibleItems.length) return;
