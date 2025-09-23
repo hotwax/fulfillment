@@ -29,7 +29,7 @@
           </ion-button>
         </div>
 
-        <ion-segment scrollable v-model="selectedSegment">
+        <ion-segment scrollable v-if="isDisabled || $route.params.category === 'open'" v-model="selectedSegment">
           <ion-segment-button value="open">
             <ion-label>{{ translate("Open") }}</ion-label>
           </ion-segment-button>
@@ -232,7 +232,11 @@ export default defineComponent({
     }),
     areItemsEligibleForRejection() {
       return this.currentOrder.items?.some((item: any) => item.rejectReasonId);
-    }
+    },
+    isDisabled() {
+      const openItems:any = this.currentOrder?.items?.filter((item: any) => item.statusId === 'ITEM_PENDING_FULFILL');
+      return (openItems && openItems.length > 0);
+    },
   },
   methods: {
     async printTransferOrderPicklist() {
