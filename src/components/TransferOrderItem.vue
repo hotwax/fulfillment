@@ -1,5 +1,5 @@
 <template>
-  <ion-card>
+  <ion-card :data-testid="`product-card-btn-${item.orderItemSeqId}`" :id="item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier, getProduct(item.productId))" :class="{ 'scanned-item': lastScannedId && lastScannedId === (item.scannedId || getProductIdentificationValue(barcodeIdentifier, getProduct(item.productId))) }">
     <div class="product">
       <div class="product-info">
         <ion-item lines="none">
@@ -15,17 +15,20 @@
       </div>
       <div class="product-count">
         <ion-item v-if="!item.shipmentId" lines="none">
-          <ion-input :label="translate('Qty')" label-placement="floating" ref="pickedQuantity" type="number" min="0" v-model="item.pickedQuantity" @ionInput="updatePickedQuantity($event, item); validatePickedQuantity($event, item); markPickedQuantityTouched()" :errorText="getErrorText(item)" :disabled="isForceScanEnabled" />
+          <ion-input data-testid="qty-input" :label="translate('Qty')" label-placement="floating" ref="pickedQuantity" type="number" min="0" v-model="item.pickedQuantity" :value="item.pickedQuantity" @ionInput="updatePickedQuantity($event, item); validatePickedQuantity($event, item); markPickedQuantityTouched()" @ionBlur="updateItemQuantity(item)" :errorText="getErrorText(item)" :disabled="isForceScanEnabled" />
         </ion-item>
         <ion-item v-else lines="none">
           <ion-label slot="end">{{ item.pickedQuantity }} {{ translate('packed') }}</ion-label>
         </ion-item>
       </div>
     </div>
-    <div class="action border-top" v-if="item.orderedQuantity > 0">
+    <div class="action border-top">
       <div class="pick-all-qty" v-if="!item.shipmentId">
-        <ion-button @click="pickAll(item)" slot="start" size="small" fill="outline" :disabled="isForceScanEnabled">
+        <ion-button v-if="item.orderedQuantity" @click="pickAll(item)" slot="start" size="small" fill="outline" :disabled="isForceScanEnabled">
           {{ translate("Pick All") }}
+        </ion-button>
+        <ion-button data-testid="book-qoh-btn" v-else slot="start" size="small" fill="outline" @click="bookQoh(item)">
+          {{ translate("Book qoh") }}
         </ion-button>
       </div>
 
@@ -49,7 +52,7 @@
         </ion-chip>
       </div>
 
-      <div class="to-item-history" v-else>
+      <div class="to-item-history" v-else-if="item.shippedQuantity">
         <ion-chip outline @click="item.shippedQuantity && shippedHistory(item.productId)">
           <ion-icon :icon="checkmarkDone"/>
           <ion-label> {{ item.shippedQuantity }} {{ translate("shipped") }} </ion-label>
@@ -57,9 +60,14 @@
       </div>
 
 
-      <div class="qty-ordered">
+      <div class="qty-ordered" v-else-if="item.orderedQuantity">
         <ion-label>{{ item.orderedQuantity }} {{ translate("ordered") }}</ion-label>
       </div>
+
+      <ion-item v-else class="qty-ordered" lines="none">
+        <ion-label>{{ item.qoh }} {{ translate("Qoh") }}</ion-label>
+        <ion-icon data-testid="remove-item-btn" slot="end" color="danger" :icon="removeCircleOutline" @click="removeOrderItem(item)" />
+      </ion-item>
     </div>
   </ion-card>
 </template>
@@ -78,17 +86,20 @@ import {
   modalController,
   popoverController,
 } from '@ionic/vue';
-import { computed, defineComponent } from 'vue';
-import { add, caretDownOutline, checkmarkDone, closeCircleOutline, barcodeOutline } from 'ionicons/icons';
+import { computed, defineComponent, onMounted } from 'vue';
+import { add, caretDownOutline, checkmarkDone, closeCircleOutline, barcodeOutline, removeCircleOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
-
+import { TransferOrderService } from '@/services/TransferOrderService';
+import { OrderService } from '@/services/OrderService';
 import { useRouter } from 'vue-router';
 import { Actions } from '@/authorization'
 import { getFeatures } from '@/utils';
+import { hasError } from '@/adapter';
+import logger from '@/logger';
+import { showToast } from '@/utils';
 import ShippedHistoryModal from '@/components/ShippedHistoryModal.vue'
 import ReportIssuePopover from './ReportIssuePopover.vue';
-
 
 export default defineComponent({
   name: "TransferOrderItem",
@@ -106,7 +117,7 @@ export default defineComponent({
   },
   // As we are using the same component on detail and review page, thus defined prop isRejectionSupported
   // for handing the case to enable rejection functionality
-  props: ["itemDetail", "isRejectionSupported"],
+  props: ["itemDetail", "isRejectionSupported", "lastScannedId"],
   data() {
     return {
       pickedQuantity: this.itemDetail.pickedQuantity,
@@ -119,7 +130,8 @@ export default defineComponent({
       currentOrder: 'transferorder/getCurrent',
       getProduct: 'product/getProduct',
       isForceScanEnabled: 'util/isForceScanEnabled',
-      rejectReasons: "transferorder/getRejectReasons"
+      rejectReasons: "transferorder/getRejectReasons",
+      barcodeIdentifier: "util/getBarcodeIdentificationPref"
     }),
     isAnyItemSelectedForRejection() {
       return this.currentOrder.items.some((item: any) => item.rejectReasonId)
@@ -136,7 +148,7 @@ export default defineComponent({
       else return 'primary'
     },
     getPickedToOrderedFraction(item: any) {
-      return (parseInt(item.pickedQuantity) + this.item.shippedQuantity) / item.orderedQuantity;
+      return item.quantity ? item.pickedQuantity / item.qoh : (parseInt(item.pickedQuantity) + this.item.shippedQuantity) / item.orderedQuantity
     },
     async pickAll(item: any) {
       const selectedItem = this.currentOrder.items.find((ele: any) => ele.orderItemSeqId === item.orderItemSeqId);
@@ -210,6 +222,51 @@ export default defineComponent({
       const reason = this.rejectReasons?.find((reason: any) => reason.enumId === rejectionReasonId)
       return reason?.description ? reason.description : reason?.enumDescription ? reason.enumDescription : reason?.enumId;
     },
+    async bookQoh(item: any) {
+      if(item.qoh) {
+        // set pickedQuantity = qoh
+        item.pickedQuantity = item.qoh;
+        await this.updateItemQuantity(item);
+      }
+    },
+    async updateItemQuantity(item: any) {
+      try {
+        const resp = await TransferOrderService.updateOrderItem({
+          orderId: this.currentOrder.orderId,
+          orderItemSeqId: item.orderItemSeqId,
+          quantity: item.pickedQuantity,
+          unitPrice: item.unitPrice || 0
+        });
+        if(!hasError(resp)) {
+          item.quantity = item.pickedQuantity;
+          await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
+        } else {
+          throw resp.data;
+        }
+      } catch (err) {
+        logger.error(err);
+        showToast(translate("Failed to update item quantity"));
+      }
+    },
+    async removeOrderItem(item: any) {
+      if(!item || !item.orderItemSeqId) return;
+      try {
+        const resp = await OrderService.deleteOrderItem({
+          orderId: this.currentOrder.orderId,
+          orderItemSeqId: item.orderItemSeqId
+        });
+        if(!hasError(resp)) {
+          this.currentOrder.items = this.currentOrder.items?.filter((i: any) => i.orderItemSeqId !== item.orderItemSeqId);
+          await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
+          showToast(translate("Item removed from order"));
+        } else {
+          throw resp.data;
+        }
+      } catch (err) {
+        logger.error(err);
+        showToast(translate("Failed to remove item from order"));
+      }
+    }
   }, 
   setup() {
     const store = useStore(); 
@@ -229,6 +286,7 @@ export default defineComponent({
       getProductIdentificationValue,
       productIdentificationPref,
       store,
+      removeCircleOutline,
       router,
       translate
     };
@@ -271,6 +329,10 @@ ion-thumbnail {
   grid-area: ordered;
   text-align: end;
   font-size: 16px;
+}
+
+.scanned-item {
+  outline: 2px solid var(--ion-color-medium-tint);
 }
 @media (min-width: 720px) {
   .action {
