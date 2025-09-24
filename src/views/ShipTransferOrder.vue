@@ -79,16 +79,16 @@
             <!-- purchase shipping segment -->
             <ion-list v-if="selectedSegment === 'purchase'">
               <!-- we will remove this check after making the purchase shipping label functional -->
-              <ion-item>
+              <ion-item v-for="(shippingRate, index) in shippingRates" :key="index">
                 <ion-avatar slot="start">
-                  <!-- <img src="" alt="carrier-logo" /> -->
+                  <img src="" />
                 </ion-avatar>
                 <ion-label>
-                  Rate name
+                  {{ shippingRate.shippingEstimateAmount }}
                   <!-- this field is not coming it the shipping rates api -->
-                  <!-- <p>estimated delivery date</p> -->
+                  <p>{{ getCarrierDesc(shippingRate.carrierPartyId) }}</p>
                 </ion-label>
-                <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" @click="purchaseShippingLabel">{{ translate("Purchase label") }}</ion-button>
+                <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" @click="updateCarrierAndShippingMethod(shippingRate.carrierPartyId, shippingRate.shipmentMethodTypeId)">{{ translate("Purchase label") }}</ion-button>
               </ion-item>
             </ion-list>
 
@@ -221,9 +221,9 @@ function redirectToTrackingUrl() {
 
 async function fetchShippingRates() {
   try {
-    const resp = await CarrierService.fetchShippingRates(shipmentDetails.value.shipmentId)
+    const resp = await CarrierService.fetchShippingRates({ shipmentId: shipmentDetails.value.shipmentId })
     if(!hasError(resp)) {
-      shippingRates.value = resp.data
+      shippingRates.value = resp.data.shippingRates
     } else { 
       throw resp.data
     }
@@ -237,7 +237,6 @@ async function purchaseShippingLabel() {
   const shipment = shipmentDetails.value;
 
   try {
-    await updateCarrierAndShippingMethod();
     await OrderService.retryShippingLabel(shipment.shipmentId);
     await fetchShipmentOrderDetail(shipment.shipmentId)
     await printShippingLabel();
@@ -308,18 +307,18 @@ async function voidShippingLabelAlert() {
   return alert.present();
 }
 
-async function updateCarrierAndShippingMethod() {
+async function updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMethodTypeId: string) {
   let resp;
   try {
     const payload = {
       shipmentId: shipmentDetails.value.shipmentId,
       shipmentRouteSegmentId: shipmentDetails.value.shipmentRouteSegmentId,
-      shipmentMethodTypeId: 'method',
-      carrierPartyId: 'carrier'
+      shipmentMethodTypeId: shipmentMethodTypeId,
+      carrierPartyId: carrierPartyId
     }
     resp = await OrderService.updateShipmentCarrierAndMethod(payload);
     if(!hasError(resp)) {
-      return true;
+      await purchaseShippingLabel();
     } else {
       throw resp.data
     }

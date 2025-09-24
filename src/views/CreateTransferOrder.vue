@@ -258,6 +258,7 @@ watch(queryString, (value) => {
   if(timeoutId) clearTimeout(timeoutId);
   if(!searchedString) {
     isSearchingProduct.value = false;
+    searchedProduct.value = {}
     return;
   }
 
@@ -302,6 +303,7 @@ async function fetchOrderItems(orderId: string) {
 
     if(!hasError(resp) && resp?.data?.transferOrderItems?.length) {
       return resp.data.transferOrderItems.map((item: any) => ({
+        // need to add the fetching logic of item's stock
         ...item,
         pickedQuantity: item.pickedQuantity ?? item.quantity
       }));
@@ -561,10 +563,7 @@ async function addTransferOrderItem(product: any, scannedId?: string) {
 
   // Fetch available stock
   const stock = product.productId ? await fetchStock(product.productId) : null;
-  if(stock) {
-    newItem.qoh = stock.qoh ?? 0;
-    newItem.atp = stock.atp ?? 0;
-  }
+  if(stock) newItem.qoh = stock.qoh ?? 0;
   searchedProduct.value = { ...newItem };
 
   try {

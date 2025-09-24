@@ -119,10 +119,7 @@ async function addTransferOrderItem(product: any) {
 
   // Fetch available stock
   const stock = product.productId ? await fetchStock(product.productId) : null;
-  if (stock) {
-    newItem.qoh = stock.qoh ?? 0;
-    newItem.atp = stock.atp ?? 0;
-  }
+  if (stock) newItem.qoh = stock.qoh ?? 0;
 
   try {
     // Fetch product's average cost before committing to order

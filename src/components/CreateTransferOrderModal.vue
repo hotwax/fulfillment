@@ -25,7 +25,7 @@
 
       <template v-else-if="filteredFacilities().length">
         <ion-item v-for="facility in filteredFacilities()" :key="facility.facilityId" @click="selectFacility(facility.facilityId)">
-          <ion-radio data-testid="facility-radio-options" label-placement="end" justify="start" :value="facility.facilityId" :checked="facility.facilityId === selectedDestinationFacilityid">
+          <ion-radio data-testid="facility-radio-options" label-placement="end" justify="start" :value="facility.facilityId" :checked="facility.facilityId === selectedDestinationFacilityId">
             <ion-label>
               {{ facility.facilityName || facility.facilityId }}
               <p>{{ facility.facilityId }}</p>
@@ -65,7 +65,7 @@ const store = useStore();
 const transferOrderName = ref('');
 const queryString = ref('');
 const facilities = ref([]) as any;
-const selectedDestinationFacilityid = ref('');
+const selectedDestinationFacilityId = ref('');
 const isLoading = ref(false);
 const saving = ref(false);
 
@@ -113,7 +113,7 @@ function filteredFacilities() {
 }
 
 function selectFacility(id: string) {
-  selectedDestinationFacilityid.value = id;
+  selectedDestinationFacilityId.value = id;
 }
 
 function closeModal() {
@@ -127,7 +127,7 @@ async function createTransferOrder() {
     showToast(translate('Please give some valid transfer order name.'));
     return;
   }
-  if(!selectedDestinationFacilityid.value) {
+  if(!selectedDestinationFacilityId.value) {
     showToast(translate('Please select a destination facility.'));
     return;
   }
@@ -147,11 +147,11 @@ async function createTransferOrder() {
     originFacilityId,
     shipGroups: [{
       facilityId: originFacilityId,
-      orderFacilityId: selectedDestinationFacilityid.value,
+      orderFacilityId: selectedDestinationFacilityId.value,
     }],
   };
 
-  const addresses = await store.dispatch("util/fetchFacilityAddresses", [originFacilityId, selectedDestinationFacilityid.value])
+  const addresses = await store.dispatch("util/fetchFacilityAddresses", [originFacilityId, selectedDestinationFacilityId.value])
   addresses.map((address: any) => {
     if(address.facilityId === originFacilityId) {
       orderPayload.shipGroups[0].shipFrom = {
@@ -160,7 +160,7 @@ async function createTransferOrder() {
         }
       }
     }
-    if(address.facilityId === selectedDestinationFacilityid.value) {
+    if(address.facilityId === selectedDestinationFacilityId.value) {
       orderPayload.shipGroups[0].shipTo = {
         postalAddress: {
           id: address.contactMechId

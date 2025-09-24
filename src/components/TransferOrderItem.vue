@@ -27,7 +27,7 @@
         <ion-button v-if="item.orderedQuantity" @click="pickAll(item)" slot="start" size="small" fill="outline" :disabled="isForceScanEnabled">
           {{ translate("Pick All") }}
         </ion-button>
-        <ion-button data-testid="book-qoh-btn" v-else slot="start" size="small" fill="outline" @click="bookQoh(item)">
+        <ion-button data-testid="book-qoh-btn" v-else :disabled="!item.qoh" slot="start" size="small" fill="outline" @click="bookQoh(item)">
           {{ translate("Book qoh") }}
         </ion-button>
       </div>
