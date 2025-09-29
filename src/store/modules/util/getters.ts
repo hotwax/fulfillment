@@ -68,6 +68,9 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   getExcludeOrderBrokerDays(state) {
     return state.excludeOrderBrokerDays
+  },
+  getFacilityAddress: (state) => (facilityId: string) => {
+    return state.facilityAddresses?.[facilityId] ? state.facilityAddresses?.[facilityId] : {}
   }
 }
 export default getters;

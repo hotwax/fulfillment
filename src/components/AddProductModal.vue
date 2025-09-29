@@ -152,7 +152,6 @@ async function addTransferOrderItem(product: any) {
     logger.error(err);
     showToast(translate("Failed to add product to order"));
   }
-  queryString.value = '';
 }
 
 function isScrollable() {

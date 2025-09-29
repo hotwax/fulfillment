@@ -366,7 +366,8 @@ const actions: ActionTree<CarrierState, RootState> = {
 
     const carrierIds = facilityCarriers.map((carrier: any) => carrier.partyId)
     const systemProperties = {} as any;
-
+    
+    // fetch tracking URLs
     try {
       resp = await CarrierService.fetchCarrierTrackingUrls({
         "systemResourceId": carrierIds,
@@ -387,9 +388,31 @@ const actions: ActionTree<CarrierState, RootState> = {
       logger.error(error);
     }
 
+    // fetch carrier logos
+    try {
+      const resp = await CarrierService.fetchCarrierTrackingUrls({
+        systemResourceId: carrierIds,
+        systemResourceId_op: "in",
+        systemPropertyId: "%logo.url%",
+        systemPropertyId_op: "like",
+        fieldsToSelect: ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
+      });
+
+      if(!hasError(resp)) {
+        resp.data.map((doc: any) => {
+          systemProperties[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue
+        })
+      } else {
+        throw resp.data;
+      }
+    } catch (error) {
+      logger.error(error);
+    }
+
     if(Object.keys(systemProperties).length) {
       facilityCarriers.map((carrier: any) => {
         carrier.trackingUrl = systemProperties[carrier.partyId.toUpperCase()]
+        carrier.logoUrl = systemProperties[carrier.partyId.toUpperCase()]
       })
     }
     commit(types.CARRIER_FACILITY_CARRIERS_UPDATED, facilityCarriers)

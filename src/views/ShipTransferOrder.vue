@@ -54,7 +54,7 @@
           <ion-card v-if="shipmentDetails.trackingIdNumber">
             <ion-item lines="full">
               <ion-avatar slot="start">
-                <img src="" alt="carrier-logo" />
+                <img :src="getCarrierLogo(shipmentDetails.carrierPartyId)" alt="carrier-logo" />
               </ion-avatar>
               <ion-label>
                 Rate name
@@ -81,7 +81,7 @@
               <!-- we will remove this check after making the purchase shipping label functional -->
               <ion-item v-for="(shippingRate, index) in shippingRates" :key="index">
                 <ion-avatar slot="start">
-                  <img src="" />
+                  <img :src="getCarrierLogo(shippingRate.carrierPartyId)" alt="carrier-logo" />
                 </ion-avatar>
                 <ion-label>
                   {{ shippingRate.shippingEstimateAmount }}
@@ -91,6 +91,11 @@
                 <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" @click="updateCarrierAndShippingMethod(shippingRate.carrierPartyId, shippingRate.shipmentMethodTypeId)">{{ translate("Purchase label") }}</ion-button>
               </ion-item>
             </ion-list>
+
+            <div v-if="selectedSegment === 'purchase' && !shippingRates.length" class="empty-state">
+              <ion-spinner name="crescent" />
+              <ion-label>{{ translate("Loading...") }}</ion-label>
+            </div>
 
             <!-- manual tracking segment -->
             <ion-list v-if="selectedSegment === 'manual'">
@@ -199,6 +204,12 @@ async function fetchShipmentOrderDetail(shipmentId: string) {
   } catch (err) {
     logger.error('Failed to fetch shipment details.', err);
   }
+}
+
+// Retrieves the logo url for the selected or prefilled carrier
+function getCarrierLogo(partyId: string) {
+  const carrier = facilityCarriers.value.find((carrier: any) => carrier.partyId === partyId);
+  return carrier?.logoUrl || '';
 }
 
 // Retrieves the tracking URL template for the selected or prefilled carrier

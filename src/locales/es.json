@@ -630,6 +630,7 @@
   "View details": "Ver detalles",
   "View historical manifests": "View historical manifests",
   "View Label": "Ver Guía",
+  "View more results": "View { count } more results",
   "Void": "Void",
   "Void Label": "Eliminar Guía",
   "We were unable to automatically fetch a shipping label from": "We were unable to automatically fetch a shipping label from { carrierName }.",

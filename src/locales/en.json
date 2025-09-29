@@ -640,6 +640,7 @@
   "View details": "View details",
   "View historical manifests": "View historical manifests",
   "View Label": "View Label",
+  "View more results": "View { count } more results",
   "Void": "Void",
   "Void Label": "Void Label",
   "We were unable to automatically fetch a shipping label from": "We were unable to automatically fetch a shipping label from { carrierName }.",

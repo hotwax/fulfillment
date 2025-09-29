@@ -15,9 +15,9 @@
       <ion-input data-testid="transfer-name-input" v-model="transferOrderName" :label="translate('Transfer name')" :placeholder="translate('Add a name')"/>
     </ion-item>
 
-    <ion-searchbar data-testid="facility-search-input" v-model="queryString" :placeholder="translate('Search facilites')"/>
+    <ion-searchbar v-if="facilities.length" data-testid="facility-search-input" v-model="queryString" :placeholder="translate('Search facilites')"/>
     <ion-list>
-      <ion-list-header>{{ translate("Select destination facility") }}</ion-list-header>
+      <ion-list-header v-if="facilities.length">{{ translate("Select destination facility") }}</ion-list-header>
       <div v-if="isLoading" class="empty-state">
         <ion-spinner name="crescent" />
         <ion-label>{{ translate("Loading...") }}</ion-label>
@@ -34,14 +34,14 @@
         </ion-item>
       </template>
 
-      <ion-item v-else lines="none" class="empty-state">
+      <div v-else lines="none" class="empty-state">
         <ion-label>{{ translate('No facilities found') }}</ion-label>
-      </ion-item>
+      </div>
     </ion-list>
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button data-testid="create-transfer-order-btn" :disabled="saving" @click="createTransferOrder">
+    <ion-fab-button :disabled="!facilities.length" data-testid="create-transfer-order-btn" @click="createTransferOrder">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -50,7 +50,7 @@
 <script setup lang="ts">
 import { IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent, IonInput, IonSearchbar, IonList, IonListHeader, IonItem, IonRadio, IonLabel, IonFab, IonFabButton, modalController } from '@ionic/vue';
 import { closeOutline, saveOutline } from 'ionicons/icons';
-import { ref, onMounted } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { translate, useUserStore } from '@hotwax/dxp-components';
 import { UtilService } from '@/services/UtilService';
 import { TransferOrderService } from '@/services/TransferOrderService';
@@ -62,12 +62,13 @@ import logger from '@/logger';
 
 const store = useStore();
 
+const facilityAddresses = computed(() => store.getters['util/getFacilityAddress'])
+
 const transferOrderName = ref('');
 const queryString = ref('');
 const facilities = ref([]) as any;
 const selectedDestinationFacilityId = ref('');
 const isLoading = ref(false);
-const saving = ref(false);
 
 onMounted(async () => {
   await loadFacilities();
@@ -122,20 +123,24 @@ function closeModal() {
 
 // Creates a transfer order with the provided details and navigates to the order creation page.
 async function createTransferOrder() {
-  if(saving.value) return;
   if(!transferOrderName.value?.trim()) {
     showToast(translate('Please give some valid transfer order name.'));
     return;
   }
+
   if(!selectedDestinationFacilityId.value) {
     showToast(translate('Please select a destination facility.'));
     return;
   }
-  saving.value = true;
-
+  
   const productStoreId = useUserStore().getCurrentEComStore?.productStoreId || '';
   const originFacilityId = useUserStore().getCurrentFacility?.facilityId || '';
-
+  
+  if(originFacilityId === selectedDestinationFacilityId.value) {
+    showToast(translate('Origin and destination facility cannot be the same.'));
+    return;
+  }
+  
   const orderPayload: any = {
     orderName: transferOrderName.value.trim(),
     orderTypeId: 'TRANSFER_ORDER',
@@ -150,24 +155,22 @@ async function createTransferOrder() {
       orderFacilityId: selectedDestinationFacilityId.value,
     }],
   };
+  
+  // Fetch origin and destination facility addresses directly from the store getter and assign them to the order payload.
+  const originAddress = facilityAddresses.value(originFacilityId)
+  const destinationAddress = facilityAddresses.value(selectedDestinationFacilityId.value)
 
-  const addresses = await store.dispatch("util/fetchFacilityAddresses", [originFacilityId, selectedDestinationFacilityId.value])
-  addresses.map((address: any) => {
-    if(address.facilityId === originFacilityId) {
-      orderPayload.shipGroups[0].shipFrom = {
-        postalAddress: {
-          id: address.contactMechId
-        }
-      }
+  if(originAddress) {
+    orderPayload.shipGroups[0].shipFrom = {
+      postalAddress: { id: originAddress.contactMechId }
     }
-    if(address.facilityId === selectedDestinationFacilityId.value) {
-      orderPayload.shipGroups[0].shipTo = {
-        postalAddress: {
-          id: address.contactMechId
-        }
-      }
+  }
+
+  if(destinationAddress) {
+    orderPayload.shipGroups[0].shipTo = {
+      postalAddress: { id: destinationAddress.contactMechId }
     }
-  })
+  }
 
   try {
     const resp = await TransferOrderService.createTransferOrder({ payload: orderPayload })

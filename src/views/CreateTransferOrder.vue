@@ -27,7 +27,7 @@
             </ion-item>
             <ion-item>
               <ion-icon :icon="checkmarkDoneOutline" slot="start"/>
-              <ion-toggle :checked="currentOrder.statusFlowId === 'TO_Fulfill_Only'" @ionChange="toggleStatusFlow">
+              <ion-toggle class="ion-text-wrap" :checked="currentOrder.statusFlowId === 'TO_Fulfill_Only'" @ionChange="toggleStatusFlow">
                 {{ translate("Complete order on fulfillment") }}
               </ion-toggle>
             </ion-item>
@@ -42,7 +42,7 @@
               <ion-segment-button value="scan" content-id="scan">
                 <ion-icon :icon="barcodeOutline"/>
               </ion-segment-button>
-              <ion-segment-button value="search" content-id="search">
+              <ion-segment-button :disabled="isForceScanEnabled" value="search" content-id="search">
                 <ion-icon :icon="searchOutline"/>
               </ion-segment-button>
             </ion-segment>
@@ -139,7 +139,7 @@
                 </template>
               </ion-item>
               <ion-item data-testid="view-more-results" detail @click="openAddProductModal">
-                {{ translate("View result count more results") }}
+                {{ translate("View more results", { count: viewSize }) }}
               </ion-item>
             </ion-list>
             
@@ -151,9 +151,6 @@
                   {{ translate("No product found") }}
                   <p>{{ translate("Try a different keyword") }}</p>
                 </ion-label>
-              </ion-item>
-              <ion-item data-testid="view-more-results" detail @click="openAddProductModal">
-                {{ translate("View result count more results") }}
               </ion-item>
             </ion-list>
 
@@ -169,11 +166,11 @@
       <!-- content below the card before searching -->
       <div class="ion-text-center" v-if="!currentOrder.items?.length">
         <p>{{ translate("Add items to this transfer by scanning or searching for products using keywords") }}</p>
-        <ion-button :color="mode === 'scan' ? 'primary' : 'medium'" :fill="mode === 'scan' ? 'solid' : 'outline'" @click="enableScan">
+        <ion-button class="ion-margin-end" :color="mode === 'scan' ? 'primary' : 'medium'" :fill="mode === 'scan' ? 'solid' : 'outline'" @click="enableScan">
           <ion-icon :icon="barcodeOutline" slot="start"/>
           {{ translate("Start scanning") }}
         </ion-button>
-        <ion-button :color="mode === 'search' ? 'primary' : 'medium'" :fill="mode === 'search' ? 'solid' : 'outline'" @click="enableSearch">
+        <ion-button :disabled="isForceScanEnabled" :color="mode === 'search' ? 'primary' : 'medium'" :fill="mode === 'search' ? 'solid' : 'outline'" @click="enableSearch">
           <ion-icon :icon="searchOutline" slot="start"/>
           {{ translate("Search products") }}
         </ion-button>
@@ -224,7 +221,7 @@ import { ProductService } from '@/services/ProductService';
 import { StockService } from '@/services/StockService';
 import { hasError } from '@/adapter';
 import logger from '@/logger';
-import { showToast } from '@/utils';
+import { getCurrentFacilityId, showToast } from '@/utils';
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { OrderService } from '@/services/OrderService';
 import TransferOrderItem from '@/components/TransferOrderItem.vue'
@@ -244,12 +241,14 @@ const isScanningEnabled = ref(false);
 const lastScannedId = ref('');
 const scanInput = ref('') as any
 const searchInput = ref('') as any
+const viewSize = process.env.VUE_APP_VIEW_SIZE
 let timeoutId: any = null;
 
 const barcodeIdentifier = computed(() => store.getters["util/getBarcodeIdentificationPref"]);
 const getProduct = computed(() => store.getters["product/getProduct"]);
 const currentOrder = computed(() => store.getters["transferorder/getCurrent"]);
 const facilities = computed(() => store.getters["util/getFacilities"])
+const isForceScanEnabled = computed(() => store.getters['util/isForceScanEnabled']);
 
 watch(queryString, (value) => {
   if(mode.value === 'scan') return;
@@ -279,7 +278,7 @@ onIonViewWillEnter(async () => {
 // Fetches transfer order details by orderId, including its items, and updates the store.
 async function fetchTransferOrderDetail(orderId: string) {
   try {
-    const orderResp = await TransferOrderService.fetchTransferOrderDetail(orderId);
+    const orderResp = await TransferOrderService.fetchTransferOrderDetailByShipGroup(orderId);
     if(!hasError(orderResp)) {
       const order = orderResp.data[0];
       // Fetch items and attach to order
@@ -298,20 +297,27 @@ async function fetchTransferOrderDetail(orderId: string) {
 
 async function fetchOrderItems(orderId: string) {
   try {
-    const payload = { orderId };
-    const resp = await TransferOrderService.findTransferOrderItems(payload);
+    const resp = await TransferOrderService.findTransferOrderItems({ orderId });
 
-    if(!hasError(resp) && resp?.data?.transferOrderItems?.length) {
-      return resp.data.transferOrderItems.map((item: any) => ({
-        // need to add the fetching logic of item's stock
-        ...item,
-        pickedQuantity: item.pickedQuantity ?? item.quantity
-      }));
-    } else {
+    if(hasError(resp) && !resp?.data?.transferOrderItems?.length) {
       throw resp.data;
     }
+
+    const items = await Promise.allSettled(
+      resp.data.transferOrderItems.map(async (item: any) => {
+        const stock = await fetchStock(item.productId);
+        return {
+          ...item,
+          pickedQuantity: item.pickedQuantity ?? item.quantity,
+          qoh: stock?.qoh ?? 0
+        };
+      })
+    );
+    // Keep only fulfilled results
+    return items.filter(item => item.status === "fulfilled").map((item: any) => item.value);
+
   } catch (error) {
-    logger.error('Error fetching order items:', error);
+    logger.error("Error fetching order items:", error);
     return [];
   }
 }
@@ -345,12 +351,18 @@ async function editOrderName() {
       {
         text: translate("Save"),
         handler: async(data: any) => {
-          const newName = (data.orderName || '').trim();
-          if(!newName) {
+          const updatedOrderName = (data.orderName || '').trim();
+          const currentOrderName = (currentOrder.value?.orderName || '').trim();
+
+          if(!updatedOrderName) {
             showToast(translate('Please enter a valid order name'));
             return false;
           }
-          await updateOrderProperty("orderName", newName);
+          if(currentOrderName === updatedOrderName) {
+            return true;
+          }
+
+          await updateOrderProperty("orderName", updatedOrderName);
           return true;
         }
       }
@@ -394,6 +406,7 @@ async function openSelectFacilityModal() {
   const addressModal = await modalController.create({
     component: SelectFacilityModal,
     componentProps: {
+      currentFacilityId: currentOrder.value.facilityId,
       selectedFacilityId: currentOrder.value.orderFacilityId,
       facilities: facilities.value
     }
@@ -421,6 +434,7 @@ async function updateOrderFacility(facilityId: string) {
     if(!hasError(resp)) {
       currentOrder.value.orderFacilityId = facilityId;
       await store.dispatch('transferorder/updateCurrentTransferOrder', currentOrder.value);
+      showToast(translate("Store name updated successfully"))
     } else {
       throw resp.data;
     }
@@ -606,7 +620,7 @@ async function fetchStock(productId: string) {
   try {
     const resp: any = await StockService.getInventoryAvailableByFacility({
       productId,
-      facilityId: currentOrder.value.orderFacilityId
+      facilityId: getCurrentFacilityId()
     });
     if(!hasError(resp)) return resp.data;
   } catch (err) {
@@ -706,7 +720,10 @@ async function packAndShipOrder() {
       }
     }
     const eligibleItems = currentOrder.value.items.filter((item: any) => item.quantity > 0);
-    if(!eligibleItems.length) return;
+    if(!eligibleItems.length) {
+      showToast(translate("Please add at least one quantity to the item to proceed."));
+      return;
+    }
 
     // Group items into packages — assuming we're sending one package for now
     const packages = [{

@@ -794,7 +794,6 @@ const actions: ActionTree<UtilState, RootState> = {
       logger.error(error);
     }
     commit(types.UTIL_FACILITY_ADDRESSES_UPDATED, facilityAddresses)
-    return addresses
   },
 
   async clearUtilState ({ commit }) {
