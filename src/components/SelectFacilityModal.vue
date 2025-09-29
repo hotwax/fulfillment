@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal"> 
+        <ion-button data-testid="updat-store-name-close-modal" @click="closeModal"> 
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -12,7 +12,7 @@
   <ion-content>
     <ion-radio-group v-model="selectedFacilityIdValue">
       <ion-item v-for="facility in facilities" :key="facility.facilityId">
-        <ion-radio label-placement="end" justify="start" :value="facility.facilityId">
+        <ion-radio data-testid="update-facility-radio-options" label-placement="end" justify="start" :value="facility.facilityId">
           <ion-label>
             {{ facility.facilityName ? facility.facilityName : facility.facilityId }}
             <p>{{ facility.facilityId }}</p>
@@ -23,7 +23,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="selectedFacilityIdValue === selectedFacilityId" @click="saveFacility">
+    <ion-fab-button data-testid="update-store-name-transfer-order-btn" :disabled="selectedFacilityIdValue === selectedFacilityId" @click="saveFacility">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>

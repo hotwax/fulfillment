@@ -340,16 +340,25 @@ async function editOrderName() {
       {
         name: 'orderName',
         value: currentOrder.value?.orderName || '',
-        placeholder: translate('Enter order name')
+        placeholder: translate('Enter order name'),
+        attributes: {
+          'data-testid': "edited-order-name-input"
+        }
       }
     ],
     buttons: [
       {
         text: translate("Cancel"),
-        role: 'cancel'
+        role: 'cancel',
+        htmlAttributes: { 
+          'data-testid': "cancel-editting-transfer-order-name-btn"
+        }
       },
       {
         text: translate("Save"),
+        htmlAttributes: { 
+          'data-testid': "save-ediited-transfer-order-name-btn"
+        },
         handler: async(data: any) => {
           const updatedOrderName = (data.orderName || '').trim();
           const currentOrderName = (currentOrder.value?.orderName || '').trim();
@@ -451,20 +460,19 @@ function clearQuery() {
 
 // Scanning/Searching helpers
 async function enableScan() {
-  clearQuery();
   mode.value = 'scan';
   isScanningEnabled.value = true;
 }
 
 async function enableSearch() {
-  clearQuery();
   mode.value = 'search';
   await nextTick();
   searchInput.value?.$el.setFocus?.()
 }
 
 function segmentChange(mode: string) {
-  mode === 'scan' ? enableScan() : enableSearch()
+  clearQuery();
+  if(mode === 'search') enableSearch()
 }
 
 async function openAddProductModal() {

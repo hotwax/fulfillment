@@ -45,7 +45,7 @@
 
         <!-- Shipping label  -->
         <div class="shipping">
-          <ion-segment v-model="selectedSegment">
+          <ion-segment :disabled="shipmentDetails.trackingIdNumber" v-model="selectedSegment">
             <ion-segment-button value="purchase">{{ translate("Purchase shipping label") }}</ion-segment-button>
             <ion-segment-button value="manual">{{ translate("Manual tracking") }}</ion-segment-button>
           </ion-segment>
@@ -57,7 +57,9 @@
                 <img :src="getCarrierLogo(shipmentDetails.carrierPartyId)" alt="carrier-logo" />
               </ion-avatar>
               <ion-label>
-                Rate name
+                <!-- TODO: need to add rate name here after the api get updated -->
+                {{ shipmentDetails.rateName }}
+                {{ shipmentDetails.shippingEstimateAmount }}
                 <!-- this field is not coming it the shipping rates api -->
                 <!-- <p>estimated delivery date</p> -->
               </ion-label>
@@ -84,9 +86,11 @@
                   <img :src="getCarrierLogo(shippingRate.carrierPartyId)" alt="carrier-logo" />
                 </ion-avatar>
                 <ion-label>
+                  <!-- TODO: need to add rate name here after the api get updated -->
+                  {{ shippingRate.rateName }}
                   {{ shippingRate.shippingEstimateAmount }}
                   <!-- this field is not coming it the shipping rates api -->
-                  <p>{{ getCarrierDesc(shippingRate.carrierPartyId) }}</p>
+                  <!-- <p>estimated delivery date</p> -->
                 </ion-label>
                 <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" @click="updateCarrierAndShippingMethod(shippingRate.carrierPartyId, shippingRate.shipmentMethodTypeId)">{{ translate("Purchase label") }}</ion-button>
               </ion-item>
@@ -129,7 +133,7 @@
       <ion-toolbar>
         <ion-buttons slot="end">
           <!-- need to add check here that after we print shiping label we need to disable this button. -->
-          <ion-button fill="outline" color="primary" @click="shipLater">{{ translate("Ship later") }}</ion-button>
+          <ion-button :disabled="shipmentDetails.trackingIdNumber" fill="outline" color="primary" @click="shipLater">{{ translate("Ship later") }}</ion-button>
           <ion-button data-testid="ship-order-btn" fill="solid" color="primary" @click="shipOrder">{{ translate("Ship order") }}</ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -305,9 +309,15 @@ async function voidShippingLabelAlert() {
     buttons: [
       {
         text: translate("Cancel"),
+        htmlAttributes: { 
+          'data-testid': "voidlabel-cancel-btn"
+        },
       },
       {
         text: translate("Confirm"),
+        htmlAttributes: { 
+          'data-testid': "voidlabel-confrim-btn"
+        },
         handler: async () => {
           await voidShippingLabel()
           alertController.dismiss()
@@ -346,9 +356,15 @@ async function shipLater() {
     buttons: [
       {
         text: translate("Go back"),
+        htmlAttributes: { 
+          'data-testid': "shiplater-back-btn"
+        },
       },
       {
         text: translate("Continue"),
+        htmlAttributes: { 
+          'data-testid': "shiplater-continue-btn"
+        },
         handler: async () => {
           const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId)
           if(!hasError(resp)) {
