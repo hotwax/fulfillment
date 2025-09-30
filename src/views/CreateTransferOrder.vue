@@ -27,7 +27,7 @@
             </ion-item>
             <ion-item>
               <ion-icon :icon="checkmarkDoneOutline" slot="start"/>
-              <ion-toggle class="ion-text-wrap" :checked="currentOrder.statusFlowId === 'TO_Fulfill_Only'" @ionChange="toggleStatusFlow">
+              <ion-toggle data-testid="toggle-complete-on-fulfillment" class="ion-text-wrap" :checked="currentOrder.statusFlowId === 'TO_Fulfill_Only'" @ionChange="toggleStatusFlow">
                 {{ translate("Complete order on fulfillment") }}
               </ion-toggle>
             </ion-item>
@@ -130,7 +130,7 @@
                   <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
                 </ion-label>
                 <template v-if="!isItemAlreadyInOrder(searchedProduct.productId)">
-                  <ion-button data-testid="Add-to-transfer-btn" slot="end" fill="outline" @click="addSearchedOrderItem">
+                  <ion-button data-testid="add-to-transfer-btn" slot="end" fill="outline" @click="addSearchedOrderItem">
                     {{ translate("Add to Transfer") }}
                   </ion-button>
                 </template>
@@ -187,7 +187,7 @@
           <ion-button data-testid="discard-order-btn" size="small" color="danger" fill="outline" @click="discardOrder">
             {{ translate("Discard order") }}
           </ion-button>
-          <ion-button data-testid="ship-later-btn" size="small" fill="outline" :disabled="!currentOrder.items?.length" @click="shiplater">
+          <ion-button data-testid="ship-later-btn-create-transfer-order-page" size="small" fill="outline" :disabled="!currentOrder.items?.length" @click="shiplater">
             {{ translate("Ship later") }}
           </ion-button>
           <ion-button data-testid="pack-and-ship-order-btn" size="small" color="primary" fill="solid" :disabled="!currentOrder.items?.length" @click="packAndShipOrder">
@@ -357,7 +357,7 @@ async function editOrderName() {
       {
         text: translate("Save"),
         htmlAttributes: { 
-          'data-testid': "save-ediited-transfer-order-name-btn"
+          'data-testid': "save-edited-transfer-order-name-btn"
         },
         handler: async(data: any) => {
           const updatedOrderName = (data.orderName || '').trim();

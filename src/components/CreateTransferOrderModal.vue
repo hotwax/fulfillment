@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal()" data-testid="create-to-close-modal">
+        <ion-button @click="closeModal()" data-testid="create-transfer-order-close-modal-btn">
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -41,7 +41,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="!facilities.length || saving" data-testid="create-transfer-order-btn" @click="createTransferOrder">
+    <ion-fab-button :disabled="!facilities.length || saving" data-testid="save-transfer-order-btn" @click="createTransferOrder">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>

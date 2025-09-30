@@ -24,7 +24,7 @@
         </ion-label>
 
         <!-- Show Add button if not in currentOrder -->
-        <ion-button data-testid="viewmore-Add-to-transfer-btn" v-if="!isItemAlreadyInOrder(product.productId)" slot="end" fill="outline" @click="addTransferOrderItem(product)">
+        <ion-button data-testid="viewmore-add-to-transfer-btn" v-if="!isItemAlreadyInOrder(product.productId)" slot="end" fill="outline" @click="addTransferOrderItem(product)">
           {{ translate("Add to Transfer") }}
         </ion-button>
 

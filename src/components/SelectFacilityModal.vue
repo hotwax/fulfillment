@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button data-testid="updat-store-name-close-modal" @click="closeModal"> 
+        <ion-button data-testid="update-store-name-close-modal-btn" @click="closeModal"> 
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>

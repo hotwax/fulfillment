@@ -133,7 +133,7 @@
       <ion-toolbar>
         <ion-buttons slot="end">
           <!-- need to add check here that after we print shiping label we need to disable this button. -->
-          <ion-button :disabled="shipmentDetails.trackingIdNumber" fill="outline" color="primary" @click="shipLater">{{ translate("Ship later") }}</ion-button>
+          <ion-button data-testid="ship-later-btn-ship-transfer-order-page" :disabled="shipmentDetails.trackingIdNumber" fill="outline" color="primary" @click="shipLater">{{ translate("Ship later") }}</ion-button>
           <ion-button data-testid="ship-order-btn" fill="solid" color="primary" @click="shipOrder">{{ translate("Ship order") }}</ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -316,7 +316,7 @@ async function voidShippingLabelAlert() {
       {
         text: translate("Confirm"),
         htmlAttributes: { 
-          'data-testid': "voidlabel-confrim-btn"
+          'data-testid': "voidlabel-confirm-btn"
         },
         handler: async () => {
           await voidShippingLabel()
@@ -357,7 +357,7 @@ async function shipLater() {
       {
         text: translate("Go back"),
         htmlAttributes: { 
-          'data-testid': "shiplater-back-btn"
+          'data-testid': "shiplater-goback-btn"
         },
       },
       {
