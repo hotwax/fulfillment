@@ -21,7 +21,8 @@ const findOpenOrders = async (payload: any): Promise<any> => {
     filters: {
       '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
       orderStatusId: { value: 'ORDER_APPROVED' },
-      orderTypeId: { value: 'SALES_ORDER' }
+      orderTypeId: { value: 'SALES_ORDER' },
+      productStoreId: { value: getProductStoreId() }
     },
     solrFilters: [
       //it should be explicit what is subtracting the first part of your OR statement from
@@ -376,7 +377,8 @@ const findShipments = async (query: any): Promise <any>  => {
     const params = {
       pageSize: query.viewSize,
       orderBy: 'orderDate',
-      shipmentTypeId: 'SALES_SHIPMENT'
+      shipmentTypeId: 'SALES_SHIPMENT', 
+      productStoreId: getProductStoreId(),
     } as any
 
     if (query.queryString) {
@@ -762,7 +764,7 @@ const fetchOrderDetail = async (orderId: string): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return await apiClient({
-    url: `/oms/orders/${orderId}`, //should handle the update of OISG, SRG, SPRG if needed
+    url: `/poorti/orders/${orderId}`, //should handle the update of OISG, SRG, SPRG if needed
     method: "GET",
     baseURL,
     headers: {

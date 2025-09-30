@@ -7,7 +7,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <div v-if="Object.keys(order).length">
+      <div v-if="order && Object.keys(order).length">
         <div class="order-header">
           <div class="order-primary-info">
             <h3>{{ order.orderName }}</h3>
@@ -236,6 +236,30 @@
             </ion-item>
           </ion-card>
 
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>{{ translate("Payment") }}</ion-card-title>
+            </ion-card-header>
+            <div v-if="order.paymentPreferences?.length">
+              <ion-list v-for="(orderPayment, index) in order.paymentPreferences" :key="`${order.orderId}-${orderPayment.orderPaymentPreferenceId}`">
+                <ion-item lines="none">
+                  <ion-label class="ion-text-wrap">
+                    <p class="overline">{{ orderPayment.paymentMethodTypeId }}</p>
+                    <ion-label>{{ translate(getPaymentMethodDesc(orderPayment.paymentMethodTypeId)) || orderPayment.paymentMethodTypeId }}</ion-label>
+                    <ion-note :color="getColorByDesc(getStatusDesc(orderPayment.statusId))">{{ translate(getStatusDesc(orderPayment.statusId)) }}</ion-note>
+                  </ion-label>
+                  <div slot="end" class="ion-text-end">
+                    <ion-badge v-if="order.paymentPreferences.length > 1 && index === 0" color="dark">{{ translate("Latest") }}</ion-badge>
+                    <ion-label slot="end">{{ formatCurrency(orderPayment.maxAmount, order.currencyUom) }}</ion-label>
+                  </div>
+                </ion-item>
+              </ion-list>
+            </div>
+            <p v-else class="empty-state">
+              {{ translate("No payments found") }}
+            </p>
+          </ion-card>
+
           <ion-card v-if="['in-progress', 'completed'].includes(order.category)">
             <ion-card-header>
               <ion-card-title>
@@ -356,13 +380,17 @@
               <div class="other-shipment-actions">
                 <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
                 <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).qoh">{{ getProductStock(item.productId, item.facilityId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button slot="end" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
+                <ion-button slot="end" fill="clear" v-else-if="['open', 'in-progress', 'completed'].includes(shipGroup.category)" size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
               </div>
             </ion-item>
           </ion-card>
         </div>
+      </div>
+      <div v-else-if="order" class="empty-state">
+        <ion-spinner name="crescent" />
+        <ion-label>{{ translate("Loading...") }}</ion-label>
       </div>
       <div v-else class="empty-state">
         <p>{{ translate("Unable to fetch the order details. Either the order has been shipped or something went wrong. Please try again after some time.")}}</p>
@@ -428,7 +456,7 @@ import {
   checkmarkCircleOutline
 } from 'ionicons/icons';
 import { getProductIdentificationValue, translate, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { copyToClipboard, formatUtcDate, getFeatures, getFacilityFilter, showToast } from '@/utils'
+import { copyToClipboard, formatUtcDate, getFeatures, getFacilityFilter, showToast, getColorByDesc, formatCurrency } from '@/utils'
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import emitter from '@/event-bus';
@@ -557,12 +585,7 @@ export default defineComponent({
     : this.category === 'in-progress'
     ? await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipmentId: this.shipmentId })
     : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipmentId: this.shipmentId })
-    await Promise.all([
-      this.store.dispatch('util/fetchCarrierShipmentBoxTypes'),
-      this.store.dispatch('carrier/fetchFacilityCarriers'),
-      this.store.dispatch('carrier/fetchProductStoreShipmentMeths', this.order.productStoreId),
-      this.fetchOrderInvoicingStatus()
-    ]);
+    await Promise.all([this.store.dispatch('util/fetchCarrierShipmentBoxTypes'), this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths'), this.fetchOrderInvoicingStatus()]);
     if (this.facilityCarriers) {
       const shipmentPackageRouteSegDetail = this.order.shipmentPackageRouteSegDetails?.[0];
       this.carrierPartyId = shipmentPackageRouteSegDetail?.carrierPartyId ? shipmentPackageRouteSegDetail?.carrierPartyId : this.facilityCarriers[0].partyId;
@@ -1615,7 +1638,9 @@ export default defineComponent({
       store,
       trashBinOutline,
       translate,
-      ribbonOutline
+      ribbonOutline,
+      getColorByDesc,
+      formatCurrency
     };
   }
 });

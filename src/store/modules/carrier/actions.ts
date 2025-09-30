@@ -419,10 +419,7 @@ const actions: ActionTree<CarrierState, RootState> = {
     }
     commit(types.CARRIER_FACILITY_CARRIERS_UPDATED, facilityCarriers)
   },
-  async fetchProductStoreShipmentMeths({ commit }, productStoreId?: string) {
-    if (!productStoreId) {
-      productStoreId = getProductStoreId();
-    }
+  async fetchProductStoreShipmentMeths({ state, commit }) {
     let productStoreShipmentMethods  = [] as any;
     let viewIndex = 0, resp;
     
@@ -431,7 +428,7 @@ const actions: ActionTree<CarrierState, RootState> = {
         const params = {
           customParametersMap:{
             "roleTypeId": "CARRIER",
-            "productStoreId": productStoreId,
+            "productStoreId": getProductStoreId(),
             "shipmentMethodTypeId": "STOREPICKUP",
             "shipmentMethodTypeId_op": "equals",
             "shipmentMethodTypeId_not": "Y",

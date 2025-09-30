@@ -193,7 +193,7 @@
               </div>
 
               <div class="desktop-only">
-                <ion-button v-if="order.missingLabelImage" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
+                <ion-button v-if="order.missingLabelImage && isAutoShippingLabelEnabled" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -216,12 +216,6 @@
     <!-- only show footer buttons if 'All orders' is not selected -->
     <ion-footer v-if="selectedPicklistId && inProgressOrders.total">
       <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-button fill="clear" color="primary" @click="openQRCodeModal(selectedPicklistId)">
-            <ion-icon slot="start" :icon="qrCodeOutline" />
-            {{ translate("Generate QR code") }}
-          </ion-button>
-        </ion-buttons>
         <ion-buttons slot="end">
           <ion-button fill="outline" color="primary" @click="editPickers(getPicklist(selectedPicklistId))">
             <ion-icon slot="start" :icon="pencilOutline" />
@@ -289,7 +283,6 @@ import {
   optionsOutline,
   pricetagOutline,
   printOutline,
-  qrCodeOutline,
   trashBinOutline
 } from 'ionicons/icons'
 import PackagingPopover from "@/views/PackagingPopover.vue";
@@ -310,8 +303,6 @@ import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue'
 import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
 import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
-import QRCodeModal from '@/components/QRCodeModal.vue'
-import { useAuthStore } from '@hotwax/dxp-components'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
@@ -367,7 +358,8 @@ export default defineComponent({
       affectQohConfig: 'user/getAffectQohConfig',
       excludeOrderBrokerDays: "util/getExcludeOrderBrokerDays",
       carrierShipmentBoxTypes: 'util/getCarrierShipmentBoxTypes',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
+      isAutoShippingLabelEnabled: 'util/isAutoShippingLabelEnabled',
     }),
   },
   data() {
@@ -509,7 +501,7 @@ export default defineComponent({
           throw resp.data
         }
 
-        await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
+        await this.fetchOrderAndPickerInformation();
         showToast(translate('Order rejected successfully'));
         return true
 
@@ -576,7 +568,7 @@ export default defineComponent({
         
         //Fetching updated shipment detail after successful packing
         const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
-
+       
         if (documentOptions.length) {
           // additional parameters for dismiss button and manual dismiss ability
           toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
@@ -621,7 +613,7 @@ export default defineComponent({
         }
         // TODO: handle the case of fetching in progress orders after packing an order
         // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
-        await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
+        await this.fetchOrderAndPickerInformation();
         return { isPacked: true }
       } catch (err: any) {
         // in case of error, if loader and toast are not dismissed above
@@ -660,7 +652,7 @@ export default defineComponent({
             handler: async (data) => {
               emitter.emit('presentLoader');
               let orderList = JSON.parse(JSON.stringify(this.inProgressOrders.list))
-
+              
               let toast: any;
               // Considering only unique shipment IDs
               // TODO check reason for redundant shipment IDs
@@ -706,11 +698,17 @@ export default defineComponent({
                 const resp = await OrderService.packOrders({
                   shipments
                 });
+
                 if (hasError(resp)) {
                   throw resp.data
                 }
+
                 //Generate documents only for successfully packed shipments, not for those where packing failed.
-                const packedShipmentIds = resp.data?.packedShipmentIds ? resp.data?.packedShipmentIds : [];
+                const packedShipmentIds = resp.data?.packedShipmentIds ?? [];
+
+                if (!packedShipmentIds.length) {
+                  throw resp.data
+                }
 
                 if (data.length) {
                   // additional parameters for dismiss button and manual dismiss ability
@@ -735,7 +733,7 @@ export default defineComponent({
                 } else {
                   showToast(translate('Order packed successfully'));
                 }
-                await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
+                await this.fetchOrderAndPickerInformation();
               } catch (err) {
                 // in case of error, if loader and toast are not dismissed above
                 if (toast) toast.dismiss()
@@ -892,6 +890,9 @@ export default defineComponent({
           const payload = {
             originFacilityId: this.currentFacility?.facilityId,
             statusId: "SHIPMENT_APPROVED",
+            "shipmentMethodTypeId": "STOREPICKUP",
+            "shipmentMethodTypeId_op": "equals",
+            "shipmentMethodTypeId_not": "Y",
             pageIndex, // Ensure updated pageIndex is used
             pageSize: 50
           };
@@ -900,7 +901,7 @@ export default defineComponent({
 
           if (!hasError(resp)) {
             resp.data?.forEach((shipment: any) => {
-              if (shipment?.order?.statusId === "ORDER_APPROVED") {
+              if (shipment?.order?.statusId === "ORDER_APPROVED" && shipment?.order?.productStoreId === this.currentEComStore.productStoreId) {
                 shipment?.picklistShipment?.forEach((picklistShipment: any) => {
                   if (!picklistInfo[picklistShipment.picklistId]) {
                     const picklistRoles = picklistShipment?.picklist?.roles.filter((role: any) => !role.thruDate)
@@ -942,6 +943,10 @@ export default defineComponent({
 
         // Assign the processed picklists to `this.picklists`
         this.picklists = Object.values(picklistInfo);
+        if (this.selectedPicklistId) {
+          const selectedPicklist = this.picklists.find((picklist: any) => picklist.id === this.selectedPicklistId)
+          this.selectedPicklistId = selectedPicklist ? selectedPicklist.id : ""
+        }
       } catch (err) {
         logger.error('Failed to fetch picklists', err);
       }
@@ -1089,7 +1094,7 @@ export default defineComponent({
       size && (inProgressOrdersQuery.viewSize = size)
       queryString && (inProgressOrdersQuery.queryString = '')
       inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
-      this.selectedPicklistId && (inProgressOrdersQuery.selectedPicklist = this.selectedPicklistId)
+      inProgressOrdersQuery.selectedPicklist = this.selectedPicklistId
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery, hideLoader })
     },
     async initialiseOrderQuery() {
@@ -1208,14 +1213,6 @@ export default defineComponent({
       });
       return shippingLabelErrorModal.present();
     },
-    async openQRCodeModal(picklistId: string) {
-      const link = `${process.env.VUE_APP_PICKING_LOGIN_URL}?oms=${this.authStore.oms}&token=${this.authStore.token.value}&expirationTime=${this.authStore.token.expiration}&picklistId=${picklistId}`
-      const qrCodeModal = await modalController.create({
-        component: QRCodeModal,
-        componentProps: { picklistId, link }
-      });
-      return qrCodeModal.present();
-    },
     async scanOrder(order: any, updateParameter?: string) {
       const modal = await modalController.create({
         component: ScanOrderItemModal,
@@ -1237,7 +1234,7 @@ export default defineComponent({
       })
       modal.present();
     },
- 
+
     async openGiftCardActivationModal(item: any) {
       const modal = await modalController.create({
         component: GiftCardActivationModal,
@@ -1251,17 +1248,15 @@ export default defineComponent({
       })
 
       modal.present();
-    }
+    },
+    async fetchOrderAndPickerInformation(){
+      await this.fetchPickersInformation();
+      await this.updateOrderQuery(process.env.VUE_APP_VIEW_SIZE, "", true);
+    },
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
     await this.fetchPickersInformation()
-    //Cross checking if the selected picklist is still valid, as user can pack the order from order detail page
-    if (this.selectedPicklistId) {
-      const selectedPicklist = this.picklists.find((picklist: any) => picklist.id === this.selectedPicklistId)
-      this.selectedPicklistId = selectedPicklist ? selectedPicklist.id : ""
-    }
-
     await Promise.all([
       this.store.dispatch('util/fetchRejectReasonOptions'),
       this.initialiseOrderQuery()
@@ -1273,7 +1268,6 @@ export default defineComponent({
     emitter.off('updateOrderQuery', this.updateOrderQuery)
   },
   setup() {
-    const authStore = useAuthStore()
     const router = useRouter();
     const store = useStore();
     const userStore = useUserStore()
@@ -1285,7 +1279,6 @@ export default defineComponent({
     return {
       Actions,
       addOutline,
-      authStore,
       caretDownOutline,
       chevronUpOutline,
       copyToClipboard,
@@ -1310,7 +1303,6 @@ export default defineComponent({
       pricetagOutline,
       printOutline,
       productIdentificationPref,
-      qrCodeOutline,
       router,
       trashBinOutline,
       store,
