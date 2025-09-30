@@ -70,7 +70,7 @@ const getters: GetterTree <UtilState, RootState> = {
     return state.excludeOrderBrokerDays
   },
   getFacilityAddress: (state) => (facilityId: string) => {
-    return state.facilityAddresses?.[facilityId] ? state.facilityAddresses?.[facilityId] : {}
+    return state.facilityAddresses?.[facilityId] || {}
   }
 }
 export default getters;

@@ -41,7 +41,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="!facilities.length" data-testid="create-transfer-order-btn" @click="createTransferOrder">
+    <ion-fab-button :disabled="!facilities.length || saving" data-testid="create-transfer-order-btn" @click="createTransferOrder">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -56,7 +56,7 @@ import { UtilService } from '@/services/UtilService';
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { hasError } from '@/adapter';
 import { useStore } from 'vuex';
-import { showToast } from '@/utils';
+import { getCurrentFacilityId, getProductStoreId, showToast } from '@/utils';
 import router from '@/router';
 import logger from '@/logger';
 
@@ -69,6 +69,7 @@ const queryString = ref('');
 const facilities = ref([]) as any;
 const selectedDestinationFacilityId = ref('');
 const isLoading = ref(false);
+const saving = ref(false);
 
 onMounted(async () => {
   await loadFacilities();
@@ -123,6 +124,7 @@ function closeModal() {
 
 // Creates a transfer order with the provided details and navigates to the order creation page.
 async function createTransferOrder() {
+  if(saving.value) return;
   if(!transferOrderName.value?.trim()) {
     showToast(translate('Please give some valid transfer order name.'));
     return;
@@ -133,13 +135,14 @@ async function createTransferOrder() {
     return;
   }
   
-  const productStoreId = useUserStore().getCurrentEComStore?.productStoreId || '';
-  const originFacilityId = useUserStore().getCurrentFacility?.facilityId || '';
+  const productStoreId = getProductStoreId() || '';
+  const originFacilityId = getCurrentFacilityId() || '';
   
   if(originFacilityId === selectedDestinationFacilityId.value) {
     showToast(translate('Origin and destination facility cannot be the same.'));
     return;
   }
+  saving.value = true;
   
   const orderPayload: any = {
     orderName: transferOrderName.value.trim(),
@@ -157,6 +160,7 @@ async function createTransferOrder() {
   };
   
   // Fetch origin and destination facility addresses directly from the store getter and assign them to the order payload.
+  await store.dispatch("util/fetchFacilityAddresses", [originFacilityId, selectedDestinationFacilityId.value])
   const originAddress = facilityAddresses.value(originFacilityId)
   const destinationAddress = facilityAddresses.value(selectedDestinationFacilityId.value)
 
