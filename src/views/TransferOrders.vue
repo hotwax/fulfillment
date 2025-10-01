@@ -9,10 +9,10 @@
       <div>
         <ion-searchbar class="searchbar" :value="transferOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
         <ion-segment v-model="selectedSegment" @ionChange="segmentChanged()">
-          <ion-segment-button value="open">
+          <ion-segment-button data-testid='open-transfer-orders-tab' value="open">
             <ion-label>{{ translate("Open") }}</ion-label>
           </ion-segment-button>
-          <ion-segment-button value="completed">
+          <ion-segment-button data-testid='completed-transfer-orders-tab' value="completed">
             <ion-label>{{ translate("Completed") }}</ion-label>
           </ion-segment-button>
         </ion-segment>
@@ -53,7 +53,7 @@
 
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-      <ion-fab-button @click="openCreateTransferOrderModal">
+      <ion-fab-button data-testid="create-transfer-order-btn" @click="openCreateTransferOrderModal">
         <ion-icon :icon="addOutline" />
       </ion-fab-button>
     </ion-fab>

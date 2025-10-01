@@ -42,6 +42,21 @@ const fetchTransferOrderDetail = async (orderId: string): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
+    url: `/oms/transferOrders/${orderId}`,
+    method: "get",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    }
+  });
+}
+
+const fetchTransferOrderDetailByShipGroup = async (orderId: string): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
     url: `/oms/transferOrders/${orderId}/shipgroups`,
     method: "get",
     baseURL,
@@ -406,6 +421,7 @@ export const TransferOrderService = {
   fetchRejectReasons,
   fetchFulfillmentRejectReasons,
   fetchTransferOrderDetail,
+  fetchTransferOrderDetailByShipGroup,
   printTransferOrderPicklist,
   fetchShippedTransferShipments,
   fetchTransferShipmentDetails,

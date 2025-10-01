@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal">
+        <ion-button data-testid="viewmore-close-modal" @click="closeModal">
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -11,7 +11,7 @@
   </ion-header>
 
   <ion-content>
-    <ion-searchbar :value="queryString" :placeholder="translate('Search SKU or product name')" @keyup.enter="queryString = $event.target.value; getProducts()"/>
+    <ion-searchbar data-testid="viewmore-search-products-input" :value="queryString" :placeholder="translate('Search SKU or product name')" @keyup.enter="queryString = $event.target.value; getProducts()"/>
     <!-- Product list -->
     <template v-if="products.length">
       <ion-item v-for="product in products" :key="product.productId">
@@ -24,7 +24,7 @@
         </ion-label>
 
         <!-- Show Add button if not in currentOrder -->
-        <ion-button v-if="!isItemAlreadyInOrder(product.productId)" slot="end" fill="outline" @click="addTransferOrderItem(product)">
+        <ion-button data-testid="viewmore-add-to-transfer-btn" v-if="!isItemAlreadyInOrder(product.productId)" slot="end" fill="outline" @click="addTransferOrderItem(product)">
           {{ translate("Add to Transfer") }}
         </ion-button>
 
@@ -119,10 +119,7 @@ async function addTransferOrderItem(product: any) {
 
   // Fetch available stock
   const stock = product.productId ? await fetchStock(product.productId) : null;
-  if (stock) {
-    newItem.qoh = stock.qoh ?? 0;
-    newItem.atp = stock.atp ?? 0;
-  }
+  if (stock) newItem.qoh = stock.qoh ?? 0;
 
   try {
     // Fetch product's average cost before committing to order
@@ -155,7 +152,6 @@ async function addTransferOrderItem(product: any) {
     logger.error(err);
     showToast(translate("Failed to add product to order"));
   }
-  queryString.value = '';
 }
 
 function isScrollable() {

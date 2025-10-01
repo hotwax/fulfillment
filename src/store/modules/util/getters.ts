@@ -71,6 +71,9 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   isAutoShippingLabelEnabled(state){
   return state.isAutoShippingLabelEnabled
+  },
+  getFacilityAddress: (state) => (facilityId: string) => {
+    return state.facilityAddresses?.[facilityId] || {}
   }
 }
 export default getters;

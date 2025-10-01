@@ -329,9 +329,10 @@ const fetchShippingRates = async (params: any): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `poorti/shippingRate/${params}`,
+    url: 'poorti/shippingRate/',
     method: "GET",
     baseURL,
+    params,
     headers: {
       "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"

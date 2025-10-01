@@ -45,7 +45,7 @@
 
         <!-- Shipping label  -->
         <div class="shipping">
-          <ion-segment v-model="selectedSegment">
+          <ion-segment :disabled="shipmentDetails.trackingIdNumber" v-model="selectedSegment">
             <ion-segment-button value="purchase">{{ translate("Purchase shipping label") }}</ion-segment-button>
             <ion-segment-button value="manual">{{ translate("Manual tracking") }}</ion-segment-button>
           </ion-segment>
@@ -54,10 +54,12 @@
           <ion-card v-if="shipmentDetails.trackingIdNumber">
             <ion-item lines="full">
               <ion-avatar slot="start">
-                <img src="" alt="carrier-logo" />
+                <img :src="getCarrierLogo(shipmentDetails.carrierPartyId)" alt="carrier-logo" />
               </ion-avatar>
               <ion-label>
-                Rate name
+                <!-- TODO: need to add rate name here after the api get updated -->
+                {{ shipmentDetails.rateName }}
+                {{ shipmentDetails.shippingEstimateAmount }}
                 <!-- this field is not coming it the shipping rates api -->
                 <!-- <p>estimated delivery date</p> -->
               </ion-label>
@@ -79,18 +81,25 @@
             <!-- purchase shipping segment -->
             <ion-list v-if="selectedSegment === 'purchase'">
               <!-- we will remove this check after making the purchase shipping label functional -->
-              <ion-item>
+              <ion-item v-for="(shippingRate, index) in shippingRates" :key="index">
                 <ion-avatar slot="start">
-                  <!-- <img src="" alt="carrier-logo" /> -->
+                  <img :src="getCarrierLogo(shippingRate.carrierPartyId)" alt="carrier-logo" />
                 </ion-avatar>
                 <ion-label>
-                  Rate name
+                  <!-- TODO: need to add rate name here after the api get updated -->
+                  {{ shippingRate.rateName }}
+                  {{ shippingRate.shippingEstimateAmount }}
                   <!-- this field is not coming it the shipping rates api -->
                   <!-- <p>estimated delivery date</p> -->
                 </ion-label>
-                <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" @click="purchaseShippingLabel">{{ translate("Purchase label") }}</ion-button>
+                <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" @click="updateCarrierAndShippingMethod(shippingRate.carrierPartyId, shippingRate.shipmentMethodTypeId)">{{ translate("Purchase label") }}</ion-button>
               </ion-item>
             </ion-list>
+
+            <div v-if="selectedSegment === 'purchase' && !shippingRates.length" class="empty-state">
+              <ion-spinner name="crescent" />
+              <ion-label>{{ translate("Loading...") }}</ion-label>
+            </div>
 
             <!-- manual tracking segment -->
             <ion-list v-if="selectedSegment === 'manual'">
@@ -124,7 +133,7 @@
       <ion-toolbar>
         <ion-buttons slot="end">
           <!-- need to add check here that after we print shiping label we need to disable this button. -->
-          <ion-button fill="outline" color="primary" @click="shipLater">{{ translate("Ship later") }}</ion-button>
+          <ion-button data-testid="ship-later-btn-ship-transfer-order-page" :disabled="shipmentDetails.trackingIdNumber" fill="outline" color="primary" @click="shipLater">{{ translate("Ship later") }}</ion-button>
           <ion-button data-testid="ship-order-btn" fill="solid" color="primary" @click="shipOrder">{{ translate("Ship order") }}</ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -201,6 +210,12 @@ async function fetchShipmentOrderDetail(shipmentId: string) {
   }
 }
 
+// Retrieves the logo url for the selected or prefilled carrier
+function getCarrierLogo(partyId: string) {
+  const carrier = facilityCarriers.value.find((carrier: any) => carrier.partyId === partyId);
+  return carrier?.logoUrl || '';
+}
+
 // Retrieves the tracking URL template for the selected or prefilled carrier
 function getCarrierTrackingUrl() {
   return facilityCarriers.value.find((carrier: any) => carrier.partyId === selectedCarrier.value || shipmentDetails.value.carrierPartyId)?.trackingUrl
@@ -221,9 +236,9 @@ function redirectToTrackingUrl() {
 
 async function fetchShippingRates() {
   try {
-    const resp = await CarrierService.fetchShippingRates(shipmentDetails.value.shipmentId)
+    const resp = await CarrierService.fetchShippingRates({ shipmentId: shipmentDetails.value.shipmentId })
     if(!hasError(resp)) {
-      shippingRates.value = resp.data
+      shippingRates.value = resp.data.shippingRates
     } else { 
       throw resp.data
     }
@@ -237,7 +252,6 @@ async function purchaseShippingLabel() {
   const shipment = shipmentDetails.value;
 
   try {
-    await updateCarrierAndShippingMethod();
     await OrderService.retryShippingLabel(shipment.shipmentId);
     await fetchShipmentOrderDetail(shipment.shipmentId)
     await printShippingLabel();
@@ -295,9 +309,15 @@ async function voidShippingLabelAlert() {
     buttons: [
       {
         text: translate("Cancel"),
+        htmlAttributes: { 
+          'data-testid': "voidlabel-cancel-btn"
+        },
       },
       {
         text: translate("Confirm"),
+        htmlAttributes: { 
+          'data-testid': "voidlabel-confirm-btn"
+        },
         handler: async () => {
           await voidShippingLabel()
           alertController.dismiss()
@@ -308,18 +328,18 @@ async function voidShippingLabelAlert() {
   return alert.present();
 }
 
-async function updateCarrierAndShippingMethod() {
+async function updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMethodTypeId: string) {
   let resp;
   try {
     const payload = {
       shipmentId: shipmentDetails.value.shipmentId,
       shipmentRouteSegmentId: shipmentDetails.value.shipmentRouteSegmentId,
-      shipmentMethodTypeId: 'method',
-      carrierPartyId: 'carrier'
+      shipmentMethodTypeId: shipmentMethodTypeId,
+      carrierPartyId: carrierPartyId
     }
     resp = await OrderService.updateShipmentCarrierAndMethod(payload);
     if(!hasError(resp)) {
-      return true;
+      await purchaseShippingLabel();
     } else {
       throw resp.data
     }
@@ -336,9 +356,15 @@ async function shipLater() {
     buttons: [
       {
         text: translate("Go back"),
+        htmlAttributes: { 
+          'data-testid': "shiplater-goback-btn"
+        },
       },
       {
         text: translate("Continue"),
+        htmlAttributes: { 
+          'data-testid': "shiplater-continue-btn"
+        },
         handler: async () => {
           const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId)
           if(!hasError(resp)) {
