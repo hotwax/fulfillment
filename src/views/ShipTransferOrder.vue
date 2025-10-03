@@ -196,7 +196,7 @@ onIonViewWillEnter(async() => {
 
 function updateShipmentMethodsForCarrier(carrierPartyId: string) {
   shipmentMethods.value = shipmentMethodsByCarrier.value[carrierPartyId] || [];
-  selectedShippingMethod.value = shipmentMethods.value[0].shipmentMethodTypeId;
+  selectedShippingMethod.value = shipmentMethods.value[0]?.shipmentMethodTypeId || '';
 }
 
 async function fetchShipmentOrderDetail(shipmentId: string) {
