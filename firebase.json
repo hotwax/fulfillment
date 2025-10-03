@@ -21,10 +21,13 @@
         },
         {
           "key": "strict-transport-security",
-          "value": "max-age=31536000; includeSubDomains"
+          "value": "max-age=31536000; includeSubDomains; preload"
         },{
           "key": "Permissions-Policy",
           "value": "camera=self"
+        },{
+          "key": "X-Content-Type-Options",
+          "value": "NoSniff"
         } ]
       }]
     },
@@ -49,10 +52,13 @@
         },
         {
           "key": "strict-transport-security",
-          "value": "max-age=31536000; includeSubDomains"
+          "value": "max-age=31536000; includeSubDomains; preload"
         },{
           "key": "Permissions-Policy",
           "value": "camera=self"
+        },{
+          "key": "X-Content-Type-Options",
+          "value": "NoSniff"
         } ]
       }]
     },
@@ -77,10 +83,13 @@
         },
         {
           "key": "strict-transport-security",
-          "value": "max-age=31536000; includeSubDomains"
+          "value": "max-age=31536000; includeSubDomains; preload"
         },{
           "key": "Permissions-Policy",
           "value": "camera=self"
+        },{
+          "key": "X-Content-Type-Options",
+          "value": "NoSniff"
         } ]
       }]
     },
