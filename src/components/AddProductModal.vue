@@ -19,7 +19,7 @@
           <DxpShopifyImg :src="product.mainImageUrl" />
         </ion-avatar>
         <ion-label>
-          <h2>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, product) }}</h2>
+          <h2>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, product) ? getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, product) : product?.internalName }}</h2>
           <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, product) }}</p>
         </ion-label>
 
