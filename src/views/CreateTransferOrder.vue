@@ -36,8 +36,8 @@
 
         <!-- adding product card -->
         <ion-card class="add-items">
-          <div class="search-type ion-margin-start">
-            <h4>{{ translate("Add items") }}</h4>
+          <div class="search-type">
+            <h5 class="ion-margin-horizontal">{{ translate("Add items") }}</h5>
             <ion-segment v-model="mode" @ionChange="segmentChange($event.target.value)">
               <ion-segment-button value="scan" content-id="scan">
                 <ion-icon :icon="barcodeOutline"/>
@@ -60,7 +60,7 @@
               </ion-thumbnail>
               <ion-label>
                 {{ getProductIdentificationValue(barcodeIdentifier, getProduct(searchedProduct.productId)) }}
-                <p>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) }}</p>
+                <p>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) : getProduct(searchedProduct.productId)?.internalName }}</p>
                 <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
               </ion-label>
               <ion-icon :icon="checkmarkDoneOutline" color="success" slot="end"/>
@@ -126,7 +126,7 @@
                   <DxpShopifyImg :product="searchedProduct" />
                 </ion-thumbnail>
                 <ion-label>
-                  {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) }}
+                  {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) : getProduct(searchedProduct.productId)?.internalName }}
                   <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
                 </ion-label>
                 <template v-if="!isItemAlreadyInOrder(searchedProduct.productId)">
@@ -309,7 +309,7 @@ async function fetchOrderItems(orderId: string) {
         return {
           ...item,
           pickedQuantity: item.pickedQuantity ?? item.quantity,
-          qoh: stock?.qoh ?? 0
+          qoh: stock?.qoh
         };
       })
     );
@@ -585,7 +585,7 @@ async function addTransferOrderItem(product: any, scannedId?: string) {
 
   // Fetch available stock
   const stock = product.productId ? await fetchStock(product.productId) : null;
-  if(stock) newItem.qoh = stock.qoh ?? 0;
+  newItem.qoh = stock?.qoh;
   searchedProduct.value = { ...newItem };
 
   try {
@@ -769,6 +769,11 @@ async function packAndShipOrder() {
   align-items: start;
   gap: var(--spacer-base);
   padding: var(--spacer-base);
+}
+
+ion-segment {
+  grid-auto-columns: minmax(auto, 150px);
+  width: auto;
 }
 
 .transfer-order > * {

@@ -744,8 +744,10 @@ const actions: ActionTree<UtilState, RootState> = {
           const { partyId, shipmentMethodTypeId, description } = storeCarrierAndMethod;
 
           if(!shipmentMethodsByCarrier[partyId]) shipmentMethodsByCarrier[partyId] = []
-          shipmentMethodsByCarrier[partyId].push({ shipmentMethodTypeId, description })
-
+          // only push this shipment method if not already added
+          if(!shipmentMethodsByCarrier[partyId].some((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)) {
+            shipmentMethodsByCarrier[partyId].push({ shipmentMethodTypeId, description });
+          }
           return shipmentMethodsByCarrier
         }, {})
       } else {

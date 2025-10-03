@@ -19,7 +19,7 @@
             <ion-icon :icon="storefrontOutline" slot="start"/>
             <ion-label>
               <p class="overline">{{ translate("Sending to") }}</p>
-              {{ shipmentDetails.originFacilityId }}
+              {{ shipmentDetails.orderFacilityId }}
               <!-- this field is not coming in the api resposne -->
               <!-- <p>50 miles</p> -->
             </ion-label>
@@ -79,37 +79,43 @@
 
           <template v-else>
             <!-- purchase shipping segment -->
-            <ion-list v-if="selectedSegment === 'purchase'">
-              <!-- we will remove this check after making the purchase shipping label functional -->
-              <ion-item v-for="(shippingRate, index) in shippingRates" :key="index">
-                <ion-avatar slot="start">
-                  <img :src="getCarrierLogo(shippingRate.carrierPartyId)" alt="carrier-logo" />
-                </ion-avatar>
-                <ion-label>
-                  <!-- TODO: need to add rate name here after the api get updated -->
-                  {{ shippingRate.rateName }}
-                  {{ shippingRate.shippingEstimateAmount }}
-                  <!-- this field is not coming it the shipping rates api -->
-                  <!-- <p>estimated delivery date</p> -->
-                </ion-label>
-                <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" @click="updateCarrierAndShippingMethod(shippingRate.carrierPartyId, shippingRate.shipmentMethodTypeId)">{{ translate("Purchase label") }}</ion-button>
-              </ion-item>
-            </ion-list>
-
-            <div v-if="selectedSegment === 'purchase' && !shippingRates.length" class="empty-state">
-              <ion-spinner name="crescent" />
-              <ion-label>{{ translate("Loading...") }}</ion-label>
-            </div>
+            <template v-if="selectedSegment === 'purchase'">
+              <!-- Loading state -->
+              <div v-if="isLoadingRates" class="empty-state">
+                <ion-spinner name="crescent" />
+                <ion-label>{{ translate("Loading...") }}</ion-label>
+              </div>
+              <!-- Rates list -->
+              <ion-list v-else-if="shippingRates.length">
+                <ion-item v-for="(shippingRate, index) in shippingRates" :key="index">
+                  <ion-avatar slot="start">
+                    <img :src="getCarrierLogo(shippingRate.carrierPartyId)" alt="carrier-logo" />
+                  </ion-avatar>
+                  <ion-label>
+                    <!-- TODO: need to add rate name here after the api get updated -->
+                    {{ shippingRate.rateName }}
+                    {{ shippingRate.shippingEstimateAmount }}
+                    <!-- this field is not coming it the shipping rates api -->
+                    <!-- <p>estimated delivery date</p> -->
+                  </ion-label>
+                  <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" @click="updateCarrierAndShippingMethod(shippingRate.carrierPartyId, shippingRate.shipmentMethodTypeId)">{{ translate("Purchase label") }}</ion-button>
+                </ion-item>
+              </ion-list>
+              <!-- No shipping rates found state -->
+              <div v-else class="empty-state">
+                <ion-label>{{ translate("No shipping rates found") }}</ion-label>
+              </div>
+            </template>
 
             <!-- manual tracking segment -->
             <ion-list v-if="selectedSegment === 'manual'">
               <ion-item>
-                <ion-select data-testid="select-carrier-dropdown" :value="selectedCarrier || shipmentDetails.carrierPartyId" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedCarrier = $event.detail.value; updateShipmentMethodsForCarrier(selectedCarrier)">
+                <ion-select data-testid="select-carrier-dropdown" :value="shipmentDetails.carrierPartyId || selectedCarrier" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedCarrier = $event.detail.value; updateShipmentMethodsForCarrier(selectedCarrier)">
                   <ion-select-option data-testid="select-carrier-dropdown-option" v-for="(carrierPartyId, index) in Object.keys(shipmentMethodsByCarrier)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) ? getCarrierDesc(carrierPartyId) : carrierPartyId }}</ion-select-option>
                 </ion-select>
               </ion-item>
               <ion-item>
-                <ion-select data-testid="select-method-dropdown" :disabled="!selectedCarrier" :value="selectedMethod || shipmentDetails.shipmentMethodTypeId" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedMethod = $event.detail.value">
+                <ion-select data-testid="select-method-dropdown" :disabled="!shipmentMethods.length" :value="shipmentDetails.shipmentMethodTypeId || selectedShippingMethod" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedShippingMethod = $event.detail.value">
                   <ion-select-option data-testid="select-method-dropdown-option" v-for="(method, index) in shipmentMethods" :key="index" :value="method.shipmentMethodTypeId">{{ method.description ? method.description : method.shipmentMethodTypeId }}</ion-select-option>
                 </ion-select>
               </ion-item>
@@ -173,22 +179,24 @@ const shipmentItems = computed(() => {
   return shipmentDetails.value.packages.flatMap((pkg: any) => pkg.items || [])
 })
 
-const selectedSegment = ref('manual')
+const selectedSegment = ref('purchase')
 const selectedCarrier = ref('')
 const shipmentMethods = ref([]) as any;
-const selectedMethod = ref('')
+const selectedShippingMethod = ref('')
 const trackingCode = ref('')
 const shipmentDetails = ref({}) as any
 const shippingRates = ref({}) as any
+const isLoadingRates = ref(true)
 
 onIonViewWillEnter(async() => {
   await Promise.allSettled([fetchShipmentOrderDetail(route.params.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers')])
   await fetchShippingRates();
+  if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId)
 });
 
 function updateShipmentMethodsForCarrier(carrierPartyId: string) {
   shipmentMethods.value = shipmentMethodsByCarrier.value[carrierPartyId] || [];
-  selectedMethod.value = shipmentMethods.value[0].shipmentMethodTypeId;
+  selectedShippingMethod.value = shipmentMethods.value[0].shipmentMethodTypeId;
 }
 
 async function fetchShipmentOrderDetail(shipmentId: string) {
@@ -245,6 +253,7 @@ async function fetchShippingRates() {
   } catch (err) {
     logger.error('Failed to fetch shipment details.', err);
   }
+  isLoadingRates.value = false
 }
 
 // Purchases a new shipping label by updating carrier/method, retrying label generation, refreshing shipment details, and printing the label
@@ -390,7 +399,7 @@ async function shipOrder() {
       showToast(translate('Please select a carrier'))
       return;
     }
-    if(!selectedMethod.value) {
+    if(!selectedShippingMethod.value) {
       showToast(translate('Please select a shipping method'))
       return;
     }
@@ -408,7 +417,7 @@ async function shipOrder() {
       payload.trackingIdNumber = trackingCode.value
       payload.shipmentRouteSegmentId = shipment.shipmentRouteSegmentId
       payload.carrierPartyId = selectedCarrier.value
-      payload.shipmentMethodTypeId = selectedMethod.value
+      payload.shipmentMethodTypeId = selectedShippingMethod.value
     }
 
     await TransferOrderService.shipTransferOrderShipment(payload)

@@ -107,7 +107,7 @@ const actions: ActionTree<TransferOrderState, RootState> = {
             ...item,
             orderedQuantity: item.quantity,
             shippedQuantity: item.totalIssuedQuantity || 0,
-            pickedQuantity: 0
+            pickedQuantity: item.quantity
           }));
         }
 

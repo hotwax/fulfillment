@@ -27,7 +27,7 @@
         <ion-button v-if="item.orderedQuantity" @click="pickAll(item)" slot="start" size="small" fill="outline" :disabled="isForceScanEnabled">
           {{ translate("Pick All") }}
         </ion-button>
-        <ion-button data-testid="book-qoh-btn" v-else :disabled="!item.qoh || item.pickedQuantity === item.qoh" slot="start" size="small" fill="outline" @click="bookQoh(item)">
+        <ion-button data-testid="book-qoh-btn" v-else :disabled="!item.qoh || item.qoh <= 0 || item.pickedQuantity === item.qoh" slot="start" size="small" fill="outline" @click="bookQoh(item)">
           {{ translate("Book qoh") }}
         </ion-button>
       </div>
@@ -64,7 +64,7 @@
       </div>
 
       <ion-item v-else class="qty-ordered" lines="none">
-        <ion-label>{{ item.qoh }} {{ translate("Qoh") }}</ion-label>
+        <ion-label>{{ item.qoh >= 0 ? item.qoh : '-' }} {{ translate("Qoh") }}</ion-label>
         <ion-icon data-testid="remove-item-btn" slot="end" color="danger" :icon="removeCircleOutline" @click="removeOrderItem(item)" />
       </ion-item>
     </div>
@@ -231,6 +231,11 @@ export default defineComponent({
       }
     },
     async updateItemQuantity(item: any) {
+      if(item.pickedQuantity < 0) {
+        showToast(translate("Quantity cannot be negative"));
+        return;
+      }
+
       try {
         const resp = await TransferOrderService.updateOrderItem({
           orderId: this.currentOrder.orderId,
