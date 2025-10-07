@@ -556,6 +556,7 @@ async function findProduct() {
   } catch (err) {
     logger.error(err);
     searchedProduct.value = {};
+    isSearchingProduct.value = false;
   }
 }
 
