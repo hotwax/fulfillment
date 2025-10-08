@@ -139,7 +139,7 @@
                 </template>
               </ion-item>
               <ion-item data-testid="view-more-results" detail @click="openAddProductModal">
-                {{ translate("View more results", { count: viewSize }) }}
+                {{ translate("View more results", { count: productSearchCount - 1 }) }}
               </ion-item>
             </ion-list>
             
@@ -241,8 +241,8 @@ const isScanningEnabled = ref(false);
 const lastScannedId = ref('');
 const scanInput = ref('') as any
 const searchInput = ref('') as any
-const viewSize = process.env.VUE_APP_VIEW_SIZE
 let timeoutId: any = null;
+let productSearchCount = ref(0);
 
 const barcodeIdentifier = computed(() => store.getters["util/getBarcodeIdentificationPref"]);
 const getProduct = computed(() => store.getters["product/getProduct"]);
@@ -541,6 +541,7 @@ async function findProduct() {
     });
 
     if(!hasError(resp) && resp.data.response?.docs?.length) {
+      productSearchCount.value = resp.data.response?.numFound
       const item = resp.data.response.docs[0];
       store.dispatch("product/addProductToCached", item);
       searchedProduct.value = { productId: item.productId, mainImageUrl: item.mainImageUrl };
@@ -554,6 +555,7 @@ async function findProduct() {
   } catch (err) {
     logger.error(err);
     searchedProduct.value = {};
+    isSearchingProduct.value = false;
   }
 }
 
