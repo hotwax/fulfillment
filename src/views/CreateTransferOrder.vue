@@ -740,7 +740,7 @@ async function packAndShipOrder() {
     }
     const hasInvalidItem = currentOrder.value.items.some((item: any) => item.pickedQuantity <= 0);
     if(hasInvalidItem) {
-      showToast(translate("Please update a valid items quantity."));
+      showToast(translate("Please enter a valid quantity for all items."));
       return;
     }
 
@@ -749,7 +749,7 @@ async function packAndShipOrder() {
       items: currentOrder.value.items.map((item: any) => ({
         orderItemSeqId: item.orderItemSeqId,
         productId: item.productId,
-        quantity: parseInt(item.quantity),
+        quantity: parseInt(item.pickedQuantity),
         shipGroupSeqId: item.shipGroupSeqId
       }))
     }];
