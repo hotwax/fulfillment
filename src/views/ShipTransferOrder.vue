@@ -378,7 +378,7 @@ async function shipLater() {
           const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId)
           if(!hasError(resp)) {
             alertController.dismiss()
-            router.push({ path: '/transfer-orders' })
+            router.replace({ path: '/transfer-orders' })
           }
         }
       }
