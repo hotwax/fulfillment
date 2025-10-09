@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button data-testid="ship-transfer-orders-back-btn" slot="start" defaultHref="" @click="shipLater" />
+        <ion-back-button data-testid="ship-transfer-orders-back-btn" slot="start" defaultHref="/transfer-orders" @click="shipLater" />
         <ion-title>{{ translate("Ship transfer order") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -375,10 +375,17 @@ async function shipLater() {
           'data-testid': "shiplater-continue-btn"
         },
         handler: async () => {
-          const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId)
-          if(!hasError(resp)) {
-            alertController.dismiss()
-            router.replace({ path: '/transfer-orders' })
+          try {
+            const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId)
+            if(!hasError(resp)) {
+              alertController.dismiss()
+              router.replace({ path: '/transfer-orders' })
+            } else {
+              throw resp.data
+            }
+          } catch (err) {
+            logger.error('Failed to cancel the shipment.', err);
+            showToast(translate('Failed to cancel transfer order shipment'));
           }
         }
       }
