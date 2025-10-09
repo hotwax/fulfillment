@@ -64,7 +64,7 @@
       </div>
 
       <ion-item v-else class="qty-ordered" lines="none">
-        <ion-label>{{ item.qoh >= 0 ? item.qoh : '-' }} {{ translate("Qoh") }}</ion-label>
+        <ion-label>{{ item.qoh != null ? item.qoh : '-' }} {{ translate("Qoh") }}</ion-label>
         <ion-icon data-testid="remove-item-btn" slot="end" color="danger" :icon="removeCircleOutline" @click="removeOrderItem(item)" />
       </ion-item>
     </div>
@@ -180,8 +180,16 @@ export default defineComponent({
     },
     validatePickedQuantity(event: any, item: any) {
       const value = event.target.value;
+      const path = this.router.currentRoute.value.path;
+
       (this as any).$refs.pickedQuantity.$el.classList.remove('ion-valid');
       (this as any).$refs.pickedQuantity.$el.classList.remove('ion-invalid');
+
+      // Apply zero/negative check only on /create-transfer-order
+      if(path.includes('/create-transfer-order') && value <= 0) {
+        (this as any).$refs.pickedQuantity.$el.classList.add('ion-invalid');
+        return;
+      }
 
       if (value === '') return;
 
@@ -193,7 +201,10 @@ export default defineComponent({
       (this as any).$refs.pickedQuantity.$el.classList.add('ion-touched');
     },
     getErrorText(item: any) {
-      return translate('The picked quantity cannot exceed the ordered quantity.') + " " + (this.item.shippedQuantity > 0 ? translate("already shipped.", {shippedQuantity: this.item.shippedQuantity}): '')
+      const path = this.router.currentRoute.value.path;
+      return path.includes('/create-transfer-order')
+        ? translate("Please enter valid item quantity.")
+        : translate('The picked quantity cannot exceed the ordered quantity.') + " " + (this.item.shippedQuantity > 0 ? translate("already shipped.", {shippedQuantity: this.item.shippedQuantity}): '')
     },
     async openRejectReasonPopover(ev: Event, item: any) {
       const reportIssuePopover = await popoverController.create({
@@ -231,10 +242,10 @@ export default defineComponent({
       }
     },
     async updateItemQuantity(item: any) {
-      if(item.pickedQuantity < 0) {
-        showToast(translate("Quantity cannot be negative"));
-        return;
-      }
+      const currentItem = this.currentOrder.items.find((orderItem: any) => orderItem.orderItemSeqId === item.orderItemSeqId);
+      // Skip if picked quantity is same as current or invalid (equal to or less than 0)
+      if(currentItem && item.pickedQuantity === currentItem.quantity) return;
+      if(item.pickedQuantity <= 0) return;
 
       try {
         const resp = await TransferOrderService.updateOrderItem({
