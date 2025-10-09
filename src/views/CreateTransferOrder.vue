@@ -754,7 +754,7 @@ async function packAndShipOrder() {
     const resp = await TransferOrderService.createOutboundTransferShipment(params)
     if(!hasError(resp)) {
       shipmentId = resp.data.shipmentId;
-      router.push({ path: `/ship-transfer-order/${shipmentId}` })
+      router.replace({ path: `/ship-transfer-order/${shipmentId}` })
     } else {
       throw resp.data;
     }
