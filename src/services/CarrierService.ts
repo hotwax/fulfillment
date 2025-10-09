@@ -324,6 +324,22 @@ const fetchShipmentGatewayConfigs = async (params: any): Promise<any> => {
   });
 }
 
+const fetchShippingRates = async (params: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: 'poorti/shippingRate/',
+    method: "GET",
+    baseURL,
+    params,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    }
+  });
+}
+
 export const CarrierService = {
   addCarrierShipmentMethod,
   addCarrierToFacility,
@@ -339,6 +355,7 @@ export const CarrierService = {
   fetchProductStoreShipmentMethodsByCarrier,
   fetchShipmentGatewayConfigs,
   fetchShipmentMethodTypes,
+  fetchShippingRates,
   removeCarrierFromFacility,
   removeCarrierShipmentMethod,
   removeProductStoreShipmentMethod,

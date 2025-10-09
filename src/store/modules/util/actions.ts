@@ -8,6 +8,7 @@ import logger from '@/logger'
 import store from '@/store';
 import { showToast, getProductStoreId } from '@/utils'
 import { translate, useUserStore } from '@hotwax/dxp-components'
+import { getCurrentFacilityId } from '@/utils';
 
 const actions: ActionTree<UtilState, RootState> = {
   async fetchRejectReasons({ commit }) {
@@ -690,7 +691,7 @@ const actions: ActionTree<UtilState, RootState> = {
   async updateBarcodeIdentificationPref({ commit }, payload) { 
     commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, payload)
   },
-
+  
   async fetchCarriersDetail ({ commit, state }) {
     if(Object.keys(state.carrierDesc)?.length) return;
     const carrierDesc = {} as any;
@@ -705,7 +706,8 @@ const actions: ActionTree<UtilState, RootState> = {
 
       if (!hasError(resp)) {
         resp.data.map((carrier: any) => {
-          carrierDesc[carrier.partyId] = carrier.partyTypeId === "PERSON" ? `${carrier.firstName} ${carrier.lastName}` : carrier.groupName
+          const personName = [carrier.firstName, carrier.lastName].filter(Boolean).join(' ');
+          carrierDesc[carrier.partyId] = carrier.partyTypeId === "PERSON"? (personName || carrier.partyId): (carrier.groupName || carrier.partyId);
         })
       } else {
         throw resp.data;
@@ -716,13 +718,13 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_CARRIER_DESC_UPDATED, carrierDesc)
   },
 
-  async fetchStoreCarrierAndMethods({ commit }, productStoreId) {
+  async fetchStoreCarrierAndMethods({ commit }) {
     let shipmentMethodsByCarrier = {};
 
     try {
       const payload = {
         customParametersMap:{
-          productStoreId,
+          "productStoreId": getProductStoreId(),
           "roleTypeId": "CARRIER",
           "shipmentMethodTypeId": "STOREPICKUP",
           "shipmentMethodTypeId_op": "equals",
@@ -742,8 +744,10 @@ const actions: ActionTree<UtilState, RootState> = {
           const { partyId, shipmentMethodTypeId, description } = storeCarrierAndMethod;
 
           if(!shipmentMethodsByCarrier[partyId]) shipmentMethodsByCarrier[partyId] = []
-          shipmentMethodsByCarrier[partyId].push({ shipmentMethodTypeId, description })
-
+          // only push this shipment method if not already added
+          if(!shipmentMethodsByCarrier[partyId].some((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)) {
+            shipmentMethodsByCarrier[partyId].push({ shipmentMethodTypeId, description });
+          }
           return shipmentMethodsByCarrier
         }, {})
       } else {
@@ -794,7 +798,6 @@ const actions: ActionTree<UtilState, RootState> = {
       logger.error(error);
     }
     commit(types.UTIL_FACILITY_ADDRESSES_UPDATED, facilityAddresses)
-    return addresses
   },
 
   async clearUtilState ({ commit }) {
@@ -871,7 +874,35 @@ const actions: ActionTree<UtilState, RootState> = {
       logger.error("Failed to get the exclude order broker days", err)
     }
     commit(types.UTIL_EXCLUDE_ORDER_BROKER_DAYS_UPDATED, excludeOrderBrokerDays)
+  },
+
+  async fetchAutoShippingLabelConfig({commit}) {
+      let resp: any;
+      try {     
+        const currentFacility: any = getCurrentFacilityId();
+        // 1. Check if current facility is part of Auto shipping group
+        resp = await UtilService.getFacilityGroupAndMemberDetails({
+          customParametersMap: {
+            "facilityId": currentFacility,
+            "facilityGroupId": "AUTO_SHIPPING_LABEL",
+            pageIndex: 0,
+            pageSize: 1
+          },
+          dataDocumentId: "FacilityGroupAndMember",
+          filterByDate: true
+        })
+  
+        if (!hasError(resp) && resp.data?.entityValueList?.length > 0) {
+          commit(types.SET_AUTO_SHIPPING_LABEL_ENABLED, true);
+        } else {
+          commit(types.SET_AUTO_SHIPPING_LABEL_ENABLED, false);
+        }
+      } catch (err) {
+        logger.error('Failed to check auto shipping label group', err);
+        commit(types.SET_AUTO_SHIPPING_LABEL_ENABLED, false);
+      }
   }
+
 }
 
 export default actions;
