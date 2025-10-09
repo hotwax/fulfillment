@@ -20,8 +20,7 @@
             <ion-label>
               <p class="overline">{{ translate("Sending to") }}</p>
               {{ shipmentDetails.orderFacilityId }}
-              <!-- this field is not coming in the api resposne -->
-              <!-- <p>50 miles</p> -->
+              <!-- TODO: shipping distance field is not coming in the api resposne -->
             </ion-label>
           </ion-item>
           <ion-list>
@@ -31,7 +30,7 @@
                 <DxpShopifyImg size="small" :src="getProduct(item.productId).mainImageUrl"/>
               </ion-thumbnail>
               <ion-label>
-                {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) }}
+                {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId)?.internalName }}
                 <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
               </ion-label>
               <ion-label slot="end">{{ item.quantity }}</ion-label>
@@ -45,21 +44,20 @@
 
         <!-- Shipping label  -->
         <div class="shipping">
-          <ion-segment :disabled="shipmentDetails.trackingIdNumber" v-model="selectedSegment">
+          <ion-segment :disabled="shipmentDetails?.trackingIdNumber" v-model="selectedSegment">
             <ion-segment-button value="purchase">{{ translate("Purchase shipping label") }}</ion-segment-button>
             <ion-segment-button value="manual">{{ translate("Manual tracking") }}</ion-segment-button>
           </ion-segment>
 
           <!-- card after purchase shipping label generated -->
-          <ion-card v-if="shipmentDetails.trackingIdNumber">
+          <ion-card v-if="shipmentDetails?.trackingIdNumber">
             <ion-item lines="full">
               <ion-avatar slot="start">
-                <img :src="getCarrierLogo(shipmentDetails.carrierPartyId)" alt="carrier-logo" />
+                <Image :src="getCarrierLogo(shipmentDetails.carrierPartyId)" />
               </ion-avatar>
               <ion-label>
-                <!-- TODO: need to add rate name here after the api get updated -->
-                {{ shipmentDetails.rateName }}
-                {{ shipmentDetails.shippingEstimateAmount }}
+                {{ formatCurrency(shipmentDetails.shippingEstimateAmount, shipmentDetails.currencyUomId) }}
+                <p>{{ generateRateName(shipmentDetails.carrierPartyId, shipmentDetails.shipmentMethodTypeId) }}</p>
                 <!-- this field is not coming it the shipping rates api -->
                 <!-- <p>estimated delivery date</p> -->
               </ion-label>
@@ -85,22 +83,23 @@
                 <ion-spinner name="crescent" />
                 <ion-label>{{ translate("Loading...") }}</ion-label>
               </div>
+
               <!-- Rates list -->
               <ion-list v-else-if="shippingRates.length">
                 <ion-item v-for="(shippingRate, index) in shippingRates" :key="index">
                   <ion-avatar slot="start">
-                    <img :src="getCarrierLogo(shippingRate.carrierPartyId)" alt="carrier-logo" />
+                    <Image :src="getCarrierLogo(shippingRate.carrierPartyId)" />
                   </ion-avatar>
                   <ion-label>
-                    <!-- TODO: need to add rate name here after the api get updated -->
-                    {{ shippingRate.rateName }}
-                    {{ shippingRate.shippingEstimateAmount }}
+                    {{ formatCurrency(shippingRate.shippingEstimateAmount, shippingRate.currencyUomId) }}
+                    <p>{{ generateRateName(shippingRate.carrierPartyId, shippingRate.shipmentMethodTypeId) }}</p>
                     <!-- this field is not coming it the shipping rates api -->
                     <!-- <p>estimated delivery date</p> -->
                   </ion-label>
-                  <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" @click="updateCarrierAndShippingMethod(shippingRate.carrierPartyId, shippingRate.shipmentMethodTypeId)">{{ translate("Purchase label") }}</ion-button>
+                  <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" @click="updateCarrierAndShippingMethod(shippingRate.carrierPartyId, shippingRate.shipmentMethodTypeId, shippingRate.shippingEstimateAmount)">{{ translate("Purchase label") }}</ion-button>
                 </ion-item>
               </ion-list>
+
               <!-- No shipping rates found state -->
               <div v-else class="empty-state">
                 <ion-label>{{ translate("No shipping rates found") }}</ion-label>
@@ -157,9 +156,10 @@ import { TransferOrderService } from '@/services/TransferOrderService';
 import { OrderService } from '@/services/OrderService'
 import { CarrierService } from '@/services/CarrierService';
 import { useRoute } from 'vue-router';
-import { showToast } from '@/utils';
+import { formatCurrency, showToast } from '@/utils';
 import { hasError } from '@hotwax/oms-api';
 import { useRouter } from 'vue-router'
+import Image from '@/components/Image.vue';
 import logger from '@/logger';
 
 const store = useStore()
@@ -194,6 +194,7 @@ onIonViewWillEnter(async() => {
   if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId)
 });
 
+// Updates the available shipment methods based on the selected carrier.
 function updateShipmentMethodsForCarrier(carrierPartyId: string) {
   shipmentMethods.value = shipmentMethodsByCarrier.value[carrierPartyId] || [];
   selectedShippingMethod.value = shipmentMethods.value[0]?.shipmentMethodTypeId || '';
@@ -256,7 +257,14 @@ async function fetchShippingRates() {
   isLoadingRates.value = false
 }
 
-// Purchases a new shipping label by updating carrier/method, retrying label generation, refreshing shipment details, and printing the label
+// Generates a rate name by combining carrier description and shipment method description.
+function generateRateName(carrierPartyId: string, shipmentMethodTypeId: string) {
+  const carrierDesc = getCarrierDesc.value(carrierPartyId) || carrierPartyId;
+  const methodDesc = shipmentMethodsByCarrier.value[carrierPartyId]?.find((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)?.description || shipmentMethodTypeId;
+  return `${carrierDesc} - ${methodDesc}`;
+}
+
+// Purchases a new shipping label by updating carrier/method, retrying label generation, refreshing shipment details, and printing the label.
 async function purchaseShippingLabel() {
   const shipment = shipmentDetails.value;
 
@@ -337,14 +345,15 @@ async function voidShippingLabelAlert() {
   return alert.present();
 }
 
-async function updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMethodTypeId: string) {
+async function updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMethodTypeId: string, shippingEstimateAmount: number) {
   let resp;
   try {
     const payload = {
       shipmentId: shipmentDetails.value.shipmentId,
       shipmentRouteSegmentId: shipmentDetails.value.shipmentRouteSegmentId,
       shipmentMethodTypeId: shipmentMethodTypeId,
-      carrierPartyId: carrierPartyId
+      carrierPartyId: carrierPartyId,
+      shippingEstimateAmount: shippingEstimateAmount
     }
     resp = await OrderService.updateShipmentCarrierAndMethod(payload);
     if(!hasError(resp)) {
