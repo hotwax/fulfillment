@@ -269,7 +269,7 @@ watch(queryString, (value) => {
 
 onIonViewWillEnter(async () => {
   emitter.emit('presentLoader');
-  await fetchTransferOrderDetail(route.params.orderId as string);
+  await fetchTransferOrderDetail(route?.params?.orderId as string);
   await fetchProductInformation();
   await store.dispatch('util/fetchFacilities')
   emitter.emit('dismissLoader');
@@ -459,20 +459,29 @@ function clearQuery() {
 }
 
 // Scanning/Searching helpers
+// Enables scan mode and activates scanning.
 async function enableScan() {
   mode.value = 'scan';
   isScanningEnabled.value = true;
+  setTimeout(() => {
+    scanInput.value?.setFocus?.()
+  }, 0)
 }
 
+// Activates search mode: sets mode, focuses input after DOM update, and disables scanning.
+// Used by the "Search products" button.
 async function enableSearch() {
   mode.value = 'search';
   await nextTick();
   searchInput.value?.$el.setFocus?.()
+  isScanningEnabled.value = false
 }
 
+// Handles segment changes: clears query, switches to search mode or disables scanning.
+// Used by the segment change toggle UI.
 function segmentChange(mode: string) {
   clearQuery();
-  if(mode === 'search') enableSearch()
+  mode === 'search' ? enableSearch() : isScanningEnabled.value = false;
 }
 
 async function openAddProductModal() {
@@ -613,11 +622,13 @@ async function addTransferOrderItem(product: any, scannedId?: string) {
       currentOrder.value.items.push(newItem);
       await store.dispatch('transferorder/updateCurrentTransferOrder', currentOrder.value);
     } else {
+      searchedProduct.value = {};
       throw resp.data;
     }
   } catch (err) {
     logger.error(err);
     showToast(translate("Failed to add product to order"));
+    searchedProduct.value = {};
   }
   queryString.value = '';
 }
@@ -727,15 +738,15 @@ async function packAndShipOrder() {
         return;
       }
     }
-    const eligibleItems = currentOrder.value.items.filter((item: any) => item.quantity > 0);
-    if(!eligibleItems.length) {
-      showToast(translate("Please add at least one quantity to the item to proceed."));
+    const hasInvalidItem = currentOrder.value.items.some((item: any) => item.pickedQuantity <= 0);
+    if(hasInvalidItem) {
+      showToast(translate("Please update a valid items quantity."));
       return;
     }
 
     // Group items into packages — assuming we're sending one package for now
     const packages = [{
-      items: eligibleItems.map((item: any) => ({
+      items: currentOrder.value.items.map((item: any) => ({
         orderItemSeqId: item.orderItemSeqId,
         productId: item.productId,
         quantity: parseInt(item.quantity),
