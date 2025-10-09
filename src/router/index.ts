@@ -33,7 +33,6 @@ import { loader } from '@/utils/user';
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 import Rejections from '@/views/Rejections.vue';
-import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
 import Shopify from '@/views/Shopify.vue';
 
 const authGuard = async (to: any, from: any, next: any) => {
