@@ -70,9 +70,11 @@ const facilities = ref([]) as any;
 const selectedDestinationFacilityId = ref('');
 const isLoading = ref(false);
 const saving = ref(false);
+const currencyUom = ref('');
 
 onMounted(async () => {
   await loadFacilities();
+  await fetchProductStoreDetails();
 });
 
 async function loadFacilities() {
@@ -102,6 +104,19 @@ async function loadFacilities() {
     logger.error(err);
   }
   isLoading.value = false;
+}
+
+async function fetchProductStoreDetails() {
+  try {
+    const resp = await UtilService.fetchProductStoreDetails({ productStoreId: getProductStoreId() });
+    if(!hasError(resp)) {
+      currencyUom.value = resp.data.defaultCurrencyUomId;
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    logger.error(err);
+  }
 }
 
 function filteredFacilities() {
@@ -150,6 +165,7 @@ async function createTransferOrder() {
     customerId: 'COMPANY',
     statusId: 'ORDER_CREATED',
     statusFlowId: 'TO_Fulfill_And_Receive',
+    currencyUom: currencyUom.value || 'USD',
     grandTotal: 0,
     productStoreId,
     originFacilityId,

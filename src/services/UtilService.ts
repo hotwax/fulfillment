@@ -321,6 +321,21 @@ const fetchProductStores = async (payload: any): Promise<any> => {
   });
 }
 
+const fetchProductStoreDetails = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${payload.productStoreId}`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    }
+  });
+}
+
 const fetchFacilities = async (payload: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -692,6 +707,7 @@ export const UtilService = {
   fetchGiftCardFulfillmentInfo,
   fetchPartyInformation,
   fetchProductStores,
+  fetchProductStoreDetails,
   fetchRejectReasons,
   fetchRejectReasonEnumTypes,
   fetchShipmentBoxType,

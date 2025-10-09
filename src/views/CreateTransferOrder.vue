@@ -511,7 +511,9 @@ async function scanProduct() {
   const productFound: any = await findProduct();
   if(productFound) {
     await addTransferOrderItem(productFound, scannedId);
-  } 
+  }
+  // clear the input field after scanning the product
+  queryString.value = '';
 }
 
 async function addSearchedOrderItem() {
