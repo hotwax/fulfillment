@@ -513,7 +513,7 @@ async function scanProduct() {
     await addTransferOrderItem(productFound, scannedId);
   }
   // clear the input field after scanning the product
-  if(mode.value === 'scan') queryString.value = '';
+  queryString.value = '';
 }
 
 async function addSearchedOrderItem() {
