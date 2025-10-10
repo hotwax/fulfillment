@@ -160,7 +160,7 @@
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
               <ion-button fill="clear" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
-              <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
+              <ion-button size="default" slot="end" fill="clear" color="medium" @click="packagingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
@@ -169,7 +169,7 @@
           <div v-else-if="category === 'completed'" class="mobile-only">
             <ion-item>
               <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
-              <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
+              <ion-button size="default" slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
@@ -293,7 +293,7 @@
                 <ion-label>
                   {{ translate('No shipment methods linked to', {carrierName: getCarrierName(carrierPartyId)}) }}
                 </ion-label>
-                <ion-button @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
+                <ion-button size="default" @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
                   <ion-icon slot="icon-only" :icon="informationCircleOutline" />
                 </ion-button>
               </template>
@@ -320,7 +320,7 @@
                 {{ order.trackingCode }}
                 <p>{{ translate("tracking code") }}</p>
               </ion-label>        
-              <ion-button slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, order)">
+              <ion-button size="default" slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, order)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
@@ -380,7 +380,7 @@
               <div class="other-shipment-actions">
                 <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
                 <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).qoh">{{ getProductStock(item.productId, item.facilityId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button slot="end" fill="clear" v-else-if="['open', 'in-progress', 'completed'].includes(shipGroup.category)" size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
+                <ion-button slot="end" fill="clear" v-else-if="['open', 'in-progress', 'completed'].includes(shipGroup.category)" size="default" @click.stop="fetchProductStock(item.productId, item.facilityId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
               </div>
