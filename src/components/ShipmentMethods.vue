@@ -111,7 +111,8 @@
                 : (shipmentMethod.deliveryDays || "");
               
               // Validate that delivery days is greater than zero
-              if (deliveryDaysValue === "0" || parseInt(deliveryDaysValue) === 0) {
+              const numValue = parseInt(deliveryDaysValue);
+              if (deliveryDaysValue === "0" || numValue <= 0 || isNaN(numValue)) {
                 showToast(translate("Only positive numbers are allowed."));
                 return false; // Prevent alert from closing
               }
