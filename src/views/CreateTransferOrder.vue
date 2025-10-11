@@ -688,7 +688,11 @@ function clearSearch() {
 
 // Discards the current transfer order by calling the cancel API and navigates to the transfer orders list.
 async function discardOrder() {
+  const confirmed = window.confirm("Are you sure you want to discard this order?");
+  if (!confirmed) return; // Stop if user clicks Cancel
+
   const orderId = currentOrder.value.orderId;
+  
   try {
     const resp = await TransferOrderService.cancelTransferOrder(orderId);
     if(!hasError(resp)) {
