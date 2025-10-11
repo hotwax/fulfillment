@@ -719,16 +719,32 @@ async function approveOrder(orderId: string) {
   }
 }
 
-// Approves the current transfer order and redirects to the transfer orders page.
+// Shows confirmation popup and approves the current transfer order to ship later.
 async function shiplater() {
-  try {
-    const success = await approveOrder(currentOrder.value.orderId);    
-    if(success) {
-      router.replace({ path: '/transfer-orders' })
-    }
-  } catch (err) {
-    logger.error('Failed to approve the transfer order to ship later', err);
-  }
+  const alert = await alertController.create({
+    header: translate("Ship Later"),
+    message: translate("Save this order without tracking details to ship later."),
+    buttons: [
+      {
+        text: translate("GO BACK"),
+        role: 'cancel',
+        cssClass: 'secondary'
+      },
+      {
+        text: translate("CONTINUE"),
+        cssClass: 'primary',
+        handler: async () => {
+          const success = await approveOrder(currentOrder.value.orderId);    
+          if(success) {
+            router.replace({ path: '/transfer-orders' })
+          } else {
+            showToast(translate("Failed to approve the transfer order"));
+          }
+        }
+      }
+    ]
+  });
+  await alert.present();
 }
 
 // Packs and ships the order by approving it, grouping items into packages, and creating an outbound transfer shipment.
