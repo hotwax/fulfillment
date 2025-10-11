@@ -8,7 +8,7 @@
       </ion-label>
     </ion-item>
     <div class="tablet">
-      <ion-chip v-if="shipmentMethod.deliveryDays" outline @click.stop="editDeliveryDays(shipmentMethod)">
+      <ion-chip v-if="shipmentMethod.deliveryDays && shipmentMethod.deliveryDays !== '0' && shipmentMethod.deliveryDays !== 0" outline @click.stop="editDeliveryDays(shipmentMethod)">
         <ion-label>{{ shipmentMethod?.deliveryDays }}</ion-label>
       </ion-chip>
       <ion-chip v-else :disabled="!shipmentMethod.isChecked" outline @click.stop="editDeliveryDays(shipmentMethod)">
@@ -88,11 +88,14 @@
     },
     methods: {
       async editDeliveryDays(shipmentMethod: any) {
+        // Don't show zero values in the alert input
+        const displayValue = shipmentMethod.deliveryDays === "0" || shipmentMethod.deliveryDays === 0 ? "" : shipmentMethod.deliveryDays;
+        
         const alert = await alertController.create({
           header: translate('Edit delivery days'),
           inputs: [{
             name: "deliveryDays",
-            value: shipmentMethod.deliveryDays
+            value: displayValue
           }],
           buttons: [{
             text: translate('Cancel'),
@@ -101,9 +104,20 @@
           {
             text: translate('Apply'),
             handler: async (data) => {
-              const currentDeliveryDays = shipmentMethod.deliveryDays ? shipmentMethod.deliveryDays : "";
-              if (data.deliveryDays.trim() != currentDeliveryDays) {
-                const updatedData = {"fieldName": "deliveryDays", "fieldValue": data.deliveryDays.trim()}
+              const deliveryDaysValue = data.deliveryDays.trim();
+              // Normalize current value - treat zero as empty string
+              const currentDeliveryDays = shipmentMethod.deliveryDays === "0" || shipmentMethod.deliveryDays === 0 
+                ? "" 
+                : (shipmentMethod.deliveryDays || "");
+              
+              // Validate that delivery days is greater than zero
+              if (deliveryDaysValue === "0" || parseInt(deliveryDaysValue) === 0) {
+                showToast(translate("Only positive numbers are allowed."));
+                return false; // Prevent alert from closing
+              }
+              
+              if (deliveryDaysValue != currentDeliveryDays) {
+                const updatedData = {"fieldName": "deliveryDays", "fieldValue": deliveryDaysValue}
                 const messages = {"successMessage": "Delivery days updated.", "errorMessage": "Failed to update delivery days."}
                 await this.store.dispatch('carrier/updateCarrierShipmentMethod', {shipmentMethod, updatedData, messages});
               }
