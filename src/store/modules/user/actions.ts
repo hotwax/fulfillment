@@ -24,10 +24,7 @@ const actions: ActionTree<UserState, RootState> = {
  */
   async login ({ commit, dispatch }, payload) {
     try {
-     // const {token, oms, omsRedirectionUrl} = payload;
-
-      const {token, oms} = payload;
-      const omsRedirectionUrl = "hacktoberfest-maarg"
+      const {token, oms, omsRedirectionUrl} = payload;
       dispatch("setUserInstanceUrl", oms);
 
       // Getting the permissions list from server

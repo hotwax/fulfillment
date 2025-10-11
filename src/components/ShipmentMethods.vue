@@ -8,7 +8,7 @@
       </ion-label>
     </ion-item>
     <div class="tablet">
-      <ion-chip v-if="shipmentMethod.deliveryDays && shipmentMethod.deliveryDays !== '0' && shipmentMethod.deliveryDays !== 0" outline @click.stop="editDeliveryDays(shipmentMethod)">
+      <ion-chip v-if="Number(shipmentMethod.deliveryDays) > 0" outline @click.stop="editDeliveryDays(shipmentMethod)">
         <ion-label>{{ shipmentMethod?.deliveryDays }}</ion-label>
       </ion-chip>
       <ion-chip v-else :disabled="!shipmentMethod.isChecked" outline @click.stop="editDeliveryDays(shipmentMethod)">
@@ -88,8 +88,8 @@
     },
     methods: {
       async editDeliveryDays(shipmentMethod: any) {
-        // Don't show zero values in the alert input
-        const displayValue = shipmentMethod.deliveryDays === "0" || shipmentMethod.deliveryDays === 0 ? "" : shipmentMethod.deliveryDays;
+        // Don't show zero or negative values in the alert input
+        const displayValue = Number(shipmentMethod.deliveryDays) > 0 ? shipmentMethod.deliveryDays : "";
         
         const alert = await alertController.create({
           header: translate('Edit delivery days'),
@@ -105,16 +105,18 @@
             text: translate('Apply'),
             handler: async (data) => {
               const deliveryDaysValue = data.deliveryDays.trim();
-              // Normalize current value - treat zero as empty string
-              const currentDeliveryDays = shipmentMethod.deliveryDays === "0" || shipmentMethod.deliveryDays === 0 
-                ? "" 
-                : (shipmentMethod.deliveryDays || "");
+              // Normalize current value - treat zero or negative as empty string
+              const currentDeliveryDays = Number(shipmentMethod.deliveryDays) > 0 
+                ? shipmentMethod.deliveryDays 
+                : "";
               
-              // Validate that delivery days is greater than zero
-              const numValue = parseInt(deliveryDaysValue);
-              if (deliveryDaysValue === "0" || numValue <= 0 || isNaN(numValue)) {
-                showToast(translate("Only positive numbers are allowed."));
-                return false; // Prevent alert from closing
+              // Validate that delivery days is a positive number
+              if (deliveryDaysValue) {
+                const numValue = parseFloat(deliveryDaysValue);
+                if (isNaN(numValue) || numValue <= 0) {
+                  showToast(translate("Only positive numbers are allowed."));
+                  return false; // Prevent alert from closing
+                }
               }
               
               if (deliveryDaysValue != currentDeliveryDays) {
