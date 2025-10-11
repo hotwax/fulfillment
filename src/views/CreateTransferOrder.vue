@@ -734,13 +734,11 @@ async function shiplater() {
         text: translate("CONTINUE"),
         cssClass: 'primary',
         handler: async () => {
-          try {
-            const success = await approveOrder(currentOrder.value.orderId);    
-            if(success) {
-              router.replace({ path: '/transfer-orders' })
-            }
-          } catch (err) {
-            logger.error('Failed to approve the transfer order to ship later', err);
+          const success = await approveOrder(currentOrder.value.orderId);    
+          if(success) {
+            router.replace({ path: '/transfer-orders' })
+          } else {
+            showToast(translate("Failed to approve the transfer order"));
           }
         }
       }
