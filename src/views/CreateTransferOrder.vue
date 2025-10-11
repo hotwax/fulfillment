@@ -25,12 +25,11 @@
               <ion-label>{{ getFacilityName(currentOrder.orderFacilityId) }}</ion-label>
               <ion-button data-testid="store-name-edit-btn" slot="end" color="medium" fill="outline" size="small" @click="openSelectFacilityModal">{{ translate("Edit") }}</ion-button>
             </ion-item>
-            <ion-item>
-              <ion-icon :icon="checkmarkDoneOutline" slot="start"/>
-              <ion-toggle data-testid="toggle-complete-on-fulfillment" class="ion-text-wrap" :checked="currentOrder.statusFlowId === 'TO_Fulfill_Only'" @ionChange="toggleStatusFlow">
-                {{ translate("Complete order on fulfillment") }}
-              </ion-toggle>
-            </ion-item>
+            <ion-item class="complete-fulfillment-item">
+ <ion-icon :icon="checkmarkDoneOutline" slot="start"/>
+ <ion-label class="ion-no-wrap">{{ translate("Complete order on fulfillment") }}</ion-label>
+ <ion-toggle data-testid="toggle-complete-on-fulfillment" slot="end" :checked="currentOrder.statusFlowId === 'TO_Fulfill_Only'" @ionChange="toggleStatusFlow" />
+</ion-item>
           </ion-list>
         </ion-card>
 
@@ -797,6 +796,7 @@ ion-segment {
 
 .order-info {
   flex: 1;
+  min-width: 400px;
 }
 
 .add-items {
@@ -809,5 +809,9 @@ ion-segment {
 
 .order-items{
   padding: var(--spacer-base);
+}
+
+.complete-fulfillment-item ion-label {
+  white-space: nowrap !important;
 }
 </style>
