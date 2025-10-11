@@ -138,7 +138,7 @@
                   <ion-icon slot="end" :icon="checkmarkCircle" color="success" />
                 </template>
               </ion-item>
-              <ion-item data-testid="view-more-results" detail @click="openAddProductModal">
+              <ion-item v-if="productSearchCount > 1" data-testid="view-more-results" detail @click="openAddProductModal">
                 {{ translate("View more results", { count: productSearchCount - 1 }) }}
               </ion-item>
             </ion-list>
