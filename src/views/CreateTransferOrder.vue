@@ -88,7 +88,7 @@
               <ion-label>
                 {{ translate("Your scanner isn’t focused yet.") }}
                 <p>{{ translate("Scanning is set to") }} {{ (barcodeIdentifier || '').toUpperCase() }}</p>
-                <p>{{ translate("Swap to SKU from the settings page") }}</p>
+                <p v-if="barcodeIdentifier !== 'SKU'">{{ translate("Swap to SKU from the settings page") }}</p>
               </ion-label>
               <ion-button slot="end" color="warning" size="small" @click="enableScan">
                 <ion-icon slot="start" :icon="locateOutline"/>
@@ -104,7 +104,7 @@
               <ion-label>
                 {{ translate("Begin scanning products to add them to this transfer") }}
                 <p>{{ translate("Scanning is set to") }} {{ (barcodeIdentifier || '').toUpperCase() }}</p>
-                <p>{{ translate("Swap to SKU from the settings page") }}</p>
+                <p v-if="barcodeIdentifier !== 'SKU'">{{ translate("Swap to SKU from the settings page") }}</p>
               </ion-label>
               <ion-badge slot="end" color="success">{{ translate("start scanning") }}</ion-badge>
             </ion-item>
