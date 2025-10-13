@@ -147,7 +147,12 @@ export default defineComponent({
       else return 'primary'
     },
     getPickedToOrderedFraction(item: any) {
-      return item.quantity ? item.pickedQuantity / item.qoh : (parseInt(item.pickedQuantity) + this.item.shippedQuantity) / item.orderedQuantity
+      if (item.orderedQuantity && item.orderedQuantity > 0) { 
+        return item.pickedQuantity / item.orderedQuantity;
+      } else if (item.qoh && item.qoh > 0) { 
+        return item.pickedQuantity / item.qoh;
+      }
+      return 0; 
     },
     async pickAll(item: any) {
       const selectedItem = this.currentOrder.items.find((ele: any) => ele.orderItemSeqId === item.orderItemSeqId);
