@@ -543,13 +543,17 @@ async function findProduct() {
   }
 
   try {
-    const resp = await ProductService.fetchProducts({
-      filters: [
-        'isVirtual: false',
-        `goodIdentifications: ${barcodeIdentifier.value}/${mode.value === 'scan' ? query : `*${query}*`}`
-      ],
+    const payload: any = {
+      filters: ['isVirtual: false', 'isVariant: true'],
       viewSize: 1
-    });
+    }
+
+    if(mode.value === 'scan') {
+      payload.filters.push(`goodIdentifications: ${barcodeIdentifier.value}/${query}`);
+    } else {
+      payload.keyword = queryString.value.trim();
+    }
+    const resp = await ProductService.fetchProducts(payload);
 
     if(!hasError(resp) && resp.data.response?.docs?.length) {
       productSearchCount.value = resp.data.response?.numFound
