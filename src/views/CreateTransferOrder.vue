@@ -705,7 +705,7 @@ async function discardOrder() {
     {
       text: translate('Discard'),
       htmlAttributes: { 
-        'data-testid': "discard-order-btn"
+        'data-testid': "discard-order-discard-btn"
       },
       handler: async () => {
         const orderId = currentOrder.value.orderId;
