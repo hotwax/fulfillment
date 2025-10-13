@@ -707,7 +707,7 @@ const actions: ActionTree<UtilState, RootState> = {
       if (!hasError(resp)) {
         resp.data.map((carrier: any) => {
           const personName = [carrier.firstName, carrier.lastName].filter(Boolean).join(' ');
-          carrierDesc[carrier.partyId] = carrier.partyTypeId === "PERSON"? (personName || carrier.groupName || carrier.partyId): (carrier.groupName || carrier.partyId);
+          carrierDesc[carrier.partyId] = (carrier.partyTypeId === "PERSON" && personName) || carrier.groupName || carrier.partyId;
         })
       } else {
         throw resp.data;
