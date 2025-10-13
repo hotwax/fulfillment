@@ -92,7 +92,7 @@ async function loadFacilities() {
       parentFacilityTypeId_op: 'equals',
       parentFacilityTypeId_not: 'Y',
       fieldsToSelect: ['facilityId', 'facilityName'],
-      pageSize: 200,
+      pageSize: 250,
     });
 
     if(!hasError(resp)) {

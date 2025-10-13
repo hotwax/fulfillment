@@ -19,7 +19,7 @@
             <ion-icon :icon="storefrontOutline" slot="start"/>
             <ion-label>
               <p class="overline">{{ translate("Sending to") }}</p>
-              {{ shipmentDetails.orderFacilityId }}
+              {{ getFacilityName(shipmentDetails.orderFacilityId) }}
               <!-- TODO: shipping distance field is not coming in the api resposne -->
             </ion-label>
           </ion-item>
@@ -156,7 +156,7 @@ import { TransferOrderService } from '@/services/TransferOrderService';
 import { OrderService } from '@/services/OrderService'
 import { CarrierService } from '@/services/CarrierService';
 import { useRoute } from 'vue-router';
-import { formatCurrency, showToast } from '@/utils';
+import { formatCurrency, getProductStoreId, showToast } from '@/utils';
 import { hasError } from '@hotwax/oms-api';
 import { useRouter } from 'vue-router'
 import Image from '@/components/Image.vue';
@@ -173,6 +173,7 @@ const getProduct = computed(() => store.getters['product/getProduct'])
 const shipmentMethodsByCarrier = computed(() => store.getters["util/getShipmentMethodsByCarrier"])
 const getCarrierDesc = computed(() => store.getters["util/getCarrierDesc"])
 const facilityCarriers = computed(() => store.getters["carrier/getFacilityCarriers"])
+const facilities = computed(() => store.getters['util/getFacilities'])
 
 const shipmentItems = computed(() => {
   if(!shipmentDetails.value?.packages) return []
@@ -189,7 +190,7 @@ const shippingRates = ref([]) as any
 const isLoadingRates = ref(true)
 
 onIonViewWillEnter(async() => {
-  await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers')])
+  await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers'), store.dispatch('util/fetchFacilities', getProductStoreId())])
   await fetchShippingRates();
   if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId)
 });
@@ -223,6 +224,11 @@ async function fetchShipmentOrderDetail(shipmentId: string) {
 function getCarrierLogo(partyId: string) {
   const carrier = facilityCarriers.value.find((carrier: any) => carrier.partyId === partyId);
   return carrier?.logoUrl || '';
+}
+
+function getFacilityName(facilityId: string) {
+  const facility = facilities.value.find((facility: any) => facility.facilityId === facilityId)
+  return facility ? facility.facilityName || facility.facilityId : facilityId
 }
 
 // Retrieves the tracking URL template for the selected or prefilled carrier
