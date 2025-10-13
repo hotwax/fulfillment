@@ -221,7 +221,7 @@ import { ProductService } from '@/services/ProductService';
 import { StockService } from '@/services/StockService';
 import { hasError } from '@/adapter';
 import logger from '@/logger';
-import { getCurrentFacilityId, showToast } from '@/utils';
+import { getCurrentFacilityId, getProductStoreId, showToast } from '@/utils';
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { OrderService } from '@/services/OrderService';
 import TransferOrderItem from '@/components/TransferOrderItem.vue'
@@ -271,7 +271,7 @@ onIonViewWillEnter(async () => {
   emitter.emit('presentLoader');
   await fetchTransferOrderDetail(route?.params?.orderId as string);
   await fetchProductInformation();
-  await store.dispatch('util/fetchFacilities')
+  await store.dispatch('util/fetchFacilities', getProductStoreId())
   emitter.emit('dismissLoader');
 });
 
