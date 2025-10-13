@@ -404,10 +404,11 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_REJECT_REASONS_UPDATED, payload)
   },
 
-  async fetchFacilities({ commit }) {
+  async fetchFacilities({ commit }, productStoreId?: string) {
     let facilities  = [];
     try {
       const payload = {
+        productStoreId: productStoreId,
         "parentTypeId": "VIRTUAL_FACILITY",
         "parentTypeId_op": "equals",
         "parentTypeId_not": "Y",
