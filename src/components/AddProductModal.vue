@@ -11,7 +11,7 @@
   </ion-header>
 
   <ion-content>
-    <ion-searchbar data-testid="viewmore-search-products-input" :value="queryString" :placeholder="translate('Search SKU or product name')" @keyup.enter="queryString = $event.target.value; getProducts()"/>
+    <ion-searchbar data-testid="viewmore-search-products-input" :value="queryString" :placeholder="translate('Search products')" @keyup.enter="queryString = $event.target.value; getProducts()"/>
     <!-- Product list -->
     <template v-if="products.length">
       <ion-item v-for="product in products" :key="product.productId">
