@@ -109,12 +109,12 @@
             <!-- manual tracking segment -->
             <ion-list v-if="selectedSegment === 'manual'">
               <ion-item>
-                <ion-select data-testid="select-carrier-dropdown" :value="shipmentDetails.carrierPartyId || selectedCarrier" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedCarrier = $event.detail.value; updateShipmentMethodsForCarrier(selectedCarrier)">
+                <ion-select data-testid="select-carrier-dropdown" :value="selectedCarrier || shipmentDetails.carrierPartyId" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedCarrier = $event.detail.value; updateShipmentMethodsForCarrier(selectedCarrier)">
                   <ion-select-option data-testid="select-carrier-dropdown-option" v-for="(carrierPartyId, index) in Object.keys(shipmentMethodsByCarrier)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) ? getCarrierDesc(carrierPartyId) : carrierPartyId }}</ion-select-option>
                 </ion-select>
               </ion-item>
               <ion-item>
-                <ion-select data-testid="select-method-dropdown" :disabled="!shipmentMethods.length" :value="shipmentDetails.shipmentMethodTypeId || selectedShippingMethod" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedShippingMethod = $event.detail.value">
+                <ion-select data-testid="select-method-dropdown" :disabled="!shipmentMethods.length" :value="selectedShippingMethod || shipmentDetails.shipmentMethodTypeId" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedShippingMethod = $event.detail.value">
                   <ion-select-option data-testid="select-method-dropdown-option" v-for="(method, index) in shipmentMethods" :key="index" :value="method.shipmentMethodTypeId">{{ method.description ? method.description : method.shipmentMethodTypeId }}</ion-select-option>
                 </ion-select>
               </ion-item>
@@ -191,13 +191,13 @@ const isLoadingRates = ref(true)
 onIonViewWillEnter(async() => {
   await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers')])
   await fetchShippingRates();
-  if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId)
+  if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId, shipmentDetails.value.shipmentMethodTypeId)
 });
 
 // Updates the available shipment methods based on the selected carrier.
-function updateShipmentMethodsForCarrier(carrierPartyId: string) {
+function updateShipmentMethodsForCarrier(carrierPartyId: string, shippingMethodId = "") {
   shipmentMethods.value = shipmentMethodsByCarrier.value[carrierPartyId] || [];
-  selectedShippingMethod.value = shipmentMethods.value[0]?.shipmentMethodTypeId || '';
+  selectedShippingMethod.value = shippingMethodId ?  shippingMethodId : shipmentMethods.value[0]?.shipmentMethodTypeId;
 }
 
 async function fetchShipmentOrderDetail(shipmentId: string) {
