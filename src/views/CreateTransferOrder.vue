@@ -692,19 +692,39 @@ function clearSearch() {
 
 // Discards the current transfer order by calling the cancel API and navigates to the transfer orders list.
 async function discardOrder() {
-  const orderId = currentOrder.value.orderId;
-  try {
-    const resp = await TransferOrderService.cancelTransferOrder(orderId);
-    if(!hasError(resp)) {
-      showToast(translate("Order discarded successfully"));
-      router.replace({ path: '/transfer-orders' });
-    } else {
-      throw resp.data;
-    }
-  } catch (err) {
-    logger.error("Failed to discard order", err);
-    showToast(translate("Failed to discard order"));
-  }
+  const alert = await alertController.create({
+    header: translate('Discard order'),
+    message: translate("Are you sure you want to discard this transfer order?"),
+    buttons: [{
+      text: translate('Cancel'),
+      role: 'cancel',
+      htmlAttributes: { 
+        'data-testid': "discard-order-cancel-btn"
+      }
+    },
+    {
+      text: translate('Discard'),
+      htmlAttributes: { 
+        'data-testid': "discard-order-discard-btn"
+      },
+      handler: async () => {
+        const orderId = currentOrder.value.orderId;
+        try {
+          const resp = await TransferOrderService.cancelTransferOrder(orderId);
+          if(!hasError(resp)) {
+            showToast(translate("Order discarded successfully"));
+            router.replace({ path: '/transfer-orders' });
+          } else {
+            throw resp.data;
+          }
+        } catch (err) {
+          logger.error("Failed to discard order", err);
+          showToast(translate("Failed to discard order"));
+        }
+      }
+    }]
+  });
+  return alert.present();
 }
 
 async function approveOrder(orderId: string) {
