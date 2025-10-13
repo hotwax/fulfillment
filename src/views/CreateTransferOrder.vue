@@ -544,7 +544,7 @@ async function findProduct() {
 
   try {
     const payload: any = {
-      filters: ['isVirtual: false'],
+      filters: ['isVirtual: false', 'isVariant: true'],
       viewSize: 1
     }
 
