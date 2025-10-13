@@ -85,7 +85,7 @@
               </div>
 
               <!-- Rates list -->
-              <ion-list v-else-if="shippingRates.length">
+              <ion-list v-else-if="shippingRates?.length">
                 <ion-item v-for="(shippingRate, index) in shippingRates" :key="index">
                   <ion-avatar slot="start">
                     <Image :src="getCarrierLogo(shippingRate.carrierPartyId)" />
@@ -247,7 +247,7 @@ async function fetchShippingRates() {
   try {
     const resp = await CarrierService.fetchShippingRates({ shipmentId: shipmentDetails.value.shipmentId })
     if(!hasError(resp)) {
-      shippingRates.value = resp.data.shippingRates
+      shippingRates.value = resp.data?.shippingRates
     } else { 
       throw resp.data
     }
