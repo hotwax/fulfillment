@@ -85,7 +85,7 @@
               </div>
 
               <!-- Rates list -->
-              <ion-list v-else-if="shippingRates?.length">
+              <ion-list v-else-if="shippingRates.length">
                 <ion-item v-for="(shippingRate, index) in shippingRates" :key="index">
                   <ion-avatar slot="start">
                     <Image :src="getCarrierLogo(shippingRate.carrierPartyId)" />
@@ -185,7 +185,7 @@ const shipmentMethods = ref([]) as any;
 const selectedShippingMethod = ref('')
 const trackingCode = ref('')
 const shipmentDetails = ref({}) as any
-const shippingRates = ref({}) as any
+const shippingRates = ref([]) as any
 const isLoadingRates = ref(true)
 
 onIonViewWillEnter(async() => {
@@ -247,12 +247,13 @@ async function fetchShippingRates() {
   try {
     const resp = await CarrierService.fetchShippingRates({ shipmentId: shipmentDetails.value.shipmentId })
     if(!hasError(resp)) {
-      shippingRates.value = resp.data?.shippingRates
+      shippingRates.value = resp.data?.shippingRates || []
     } else { 
       throw resp.data
     }
   } catch (err) {
     logger.error('Failed to fetch shipment details.', err);
+    shippingRates.value = []
   }
   isLoadingRates.value = false
 }
