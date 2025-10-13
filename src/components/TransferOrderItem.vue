@@ -148,7 +148,7 @@ export default defineComponent({
     },
     getPickedToOrderedFraction(item: any) {
       if (item.orderedQuantity && item.orderedQuantity > 0) { 
-        return item.pickedQuantity / item.orderedQuantity;
+        return ((item.pickedQuantity || 0) + (item.shippedQuantity || 0)) / item.orderedQuantity;
       } else if (item.qoh && item.qoh > 0) { 
         return item.pickedQuantity / item.qoh;
       }
