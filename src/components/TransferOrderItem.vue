@@ -99,6 +99,7 @@ import logger from '@/logger';
 import { showToast } from '@/utils';
 import ShippedHistoryModal from '@/components/ShippedHistoryModal.vue'
 import ReportIssuePopover from './ReportIssuePopover.vue';
+import emitter from '@/event-bus';
 
 export default defineComponent({
   name: "TransferOrderItem",
@@ -275,6 +276,7 @@ export default defineComponent({
         if(!hasError(resp)) {
           this.currentOrder.items = this.currentOrder.items?.filter((i: any) => i.orderItemSeqId !== item.orderItemSeqId);
           await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
+          emitter.emit('clearScannedOrderItem', item.productId)
           showToast(translate("Item removed from order"));
         } else {
           throw resp.data;
