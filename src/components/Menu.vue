@@ -46,11 +46,12 @@ import {
 } from "@ionic/vue";
 import { computed, defineComponent } from "vue";
 import { mapGetters } from "vuex";
-import { backspaceOutline, businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
+import { backspaceOutline, businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline, warningOutline, openOutline, copyOutline } from "ionicons/icons";
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 import { hasPermission } from "@/authorization";
 import { translate, useUserStore } from '@hotwax/dxp-components';
+import Actions from "@/authorization/Actions";
 
 export default defineComponent({
   name: "Menu",
@@ -81,9 +82,20 @@ export default defineComponent({
     const store = useStore();
     const router = useRouter();
     const userStore = useUserStore()
+    console.log("🚀 ~ setup ~ userStore:", userStore.eComStores.length)
     let currentFacility: any = computed(() => userStore.getCurrentFacility) 
+    console.log("🚀 ~ setup ~ currentFacility:", currentFacility.value)
 
     const appPages = [
+      {
+        title: "Finish facility setup",
+        url: "https://docs.hotwax.co/documents/system-admins/administration/facilities/manage-product-stores",
+        iosIcon: warningOutline,
+        mdIcon: warningOutline,
+        meta : {
+          icon: hasPermission(Actions.APP_FACILITY_EDIT) ?  openOutline : copyOutline ,
+        }
+      },
       {
         title: "Open",
         url: "/open",
