@@ -74,6 +74,7 @@ const mutations: MutationTree <UtilState> = {
     state.shipmentBoxTypeDesc = {}
     state.carrierShipmentBoxTypes = {}
     state.excludeOrderBrokerDays = undefined
+    state.isAutoShippingLabelEnabled = false;
   },
   [types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED](state, payload) {
     if(payload.facilityId) {
@@ -86,5 +87,8 @@ const mutations: MutationTree <UtilState> = {
   [types.UTIL_EXCLUDE_ORDER_BROKER_DAYS_UPDATED](state, payload) {
     state.excludeOrderBrokerDays = payload
   },
+  [types.SET_AUTO_SHIPPING_LABEL_ENABLED](state, payload) {
+    state.isAutoShippingLabelEnabled = payload;
+  }
 }
 export default mutations;

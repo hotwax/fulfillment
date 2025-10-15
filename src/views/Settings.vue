@@ -22,7 +22,7 @@
               <ion-card-title>{{ userProfile?.partyName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
+          <ion-button color="danger" v-if="!authStore.isEmbedded" @click="logout()">{{ translate("Logout") }}</ion-button>
           <ion-button fill="outline" @click="goToLaunchpad()">
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
@@ -217,10 +217,10 @@ import { computed, defineComponent } from 'vue';
 import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, openOutline, timeOutline } from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import { UserService } from '@/services/UserService';
+import { UserService} from '@/services/UserService';
 import { showToast } from '@/utils';
 import { hasError, removeClientRegistrationToken, subscribeTopic, unsubscribeTopic } from '@/adapter'
-import { initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
+import { initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore, useAuthStore, getAppLoginUrl } from '@hotwax/dxp-components';
 import logger from '@/logger';
 import { Actions, hasPermission } from '@/authorization'
 import { DateTime } from 'luxon';
@@ -228,6 +228,7 @@ import Image from '@/components/Image.vue';
 import OrderLimitPopover from '@/components/OrderLimitPopover.vue'
 import emitter from "@/event-bus"
 import { addNotification, generateTopicName, isFcmConfigured, storeClientRegistrationToken } from "@/utils/firebase";
+import { UtilService } from '@/services/UtilService';
 
 
 
@@ -370,7 +371,7 @@ export default defineComponent({
         if (!hasError(resp)) {
           // using facilityGroupId as a flag for getting data from getFacilityGroupDetails
           this.facilityGroupDetails.facilityGroupId = resp.data[0].facilityGroupId
-          resp = await UserService.getFacilityGroupAndMemberDetails({
+          resp = await UtilService.getFacilityGroupAndMemberDetails({
             customParametersMap:{
               "facilityId": this.currentFacility?.facilityId,
               "facilityGroupId": this.facilityGroupDetails.facilityGroupId,
@@ -412,12 +413,12 @@ export default defineComponent({
         // if not having redirection url then redirect the user to launchpad
         if(!redirectionUrl) {
           const redirectUrl = window.location.origin + '/login'
-          window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+          window.location.href = `${getAppLoginUrl()}?isLoggedOut=true&redirectUrl=${redirectUrl}`
         }
       })
     },
     goToLaunchpad() {
-      window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
+        window.location.href = getAppLoginUrl();
     },
     async changeOrderLimitPopover(ev: Event) {
       const popover = await popoverController.create({
@@ -441,6 +442,7 @@ export default defineComponent({
       this.getCurrentFacilityDetails();
       this.getFacilityOrderCount();
       this.getEcomInvStatus();
+      await this.store.dispatch('util/fetchAutoShippingLabelConfig');
     },
     async timeZoneUpdated(tzId: string) {
       await this.store.dispatch("user/setUserTimeZone", tzId)
@@ -719,7 +721,7 @@ export default defineComponent({
     const productIdentificationStore = useProductIdentificationStore();
     let currentFacility: any = computed(() => userStore.getCurrentFacility) 
     let barcodeIdentificationOptions = computed(() => productIdentificationStore.getGoodIdentificationOptions)
-
+    const authStore = useAuthStore();
     return {
       Actions,
       barcodeIdentificationOptions,
@@ -732,7 +734,8 @@ export default defineComponent({
       router,
       store,
       hasPermission,
-      translate
+      translate,
+      authStore
     }
   }
 });

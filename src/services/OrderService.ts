@@ -764,7 +764,7 @@ const fetchOrderDetail = async (orderId: string): Promise<any> => {
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return await apiClient({
-    url: `/oms/orders/${orderId}`, //should handle the update of OISG, SRG, SPRG if needed
+    url: `/poorti/orders/${orderId}`, //should handle the update of OISG, SRG, SPRG if needed
     method: "GET",
     baseURL,
     headers: {
@@ -880,6 +880,53 @@ const createCommunicationEvent = async (payload: any): Promise<any> => {
   });
 }
 
+const deleteOrderItem = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/orders/${payload.orderId}/items/${payload.orderItemSeqId}`,
+    method: "DELETE",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+  });
+}
+
+const updateOrderHeader = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/orders/${payload.orderId}`,
+    method: "PUT",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
+const updateOrderFacility = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/orders/${payload.orderId}/shipGroups/${payload.shipGroupSeqId}`,
+    method: "PUT",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
 export const OrderService = {
   activateGiftCard,
   addShipmentBox,
@@ -887,6 +934,7 @@ export const OrderService = {
   bulkShipOrders,
   createCommunicationEvent,
   createPicklist,
+  deleteOrderItem,
   fetchGiftCardItemPriceInfo,
   fetchOrderDetail,
   downloadPicklist,
@@ -911,6 +959,8 @@ export const OrderService = {
   retryShippingLabel,
   shipOrder,
   unpackOrder,
+  updateOrderHeader,
+  updateOrderFacility,
   updateShipmentCarrierAndMethod,
   voidShipmentLabel
 }

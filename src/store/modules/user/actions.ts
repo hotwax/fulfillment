@@ -26,7 +26,7 @@ const actions: ActionTree<UserState, RootState> = {
     try {
       const {token, oms, omsRedirectionUrl} = payload;
       dispatch("setUserInstanceUrl", oms);
-
+      
       // Getting the permissions list from server
       const permissionId = process.env.VUE_APP_PERMISSION_ID;
       // Prepare permissions list
@@ -129,10 +129,11 @@ const actions: ActionTree<UserState, RootState> = {
       await dispatch('getDisableShipNowConfig')
       await dispatch('getDisableUnpackConfig')
       await this.dispatch('util/fetchCarrierShipmentBoxTypes')
+      await this.dispatch('util/fetchAutoShippingLabelConfig')
 
       const orderId = router.currentRoute.value.query.orderId
       if (isQueryFacilityFound && orderId) {
-        return `/transfer-order-details/${orderId}`;
+        return `/transfer-order-details/${orderId}/open`;
       }
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.

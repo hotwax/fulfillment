@@ -5,6 +5,7 @@ import ProductState from './ProductState'
 import * as types from './mutation-types'
 import { hasError } from '@/adapter'
 import logger from "@/logger";
+import { useUserStore } from "@hotwax/dxp-components";
 
 const actions: ActionTree<ProductState, RootState> = {
 
@@ -98,33 +99,6 @@ const actions: ActionTree<ProductState, RootState> = {
       logger.error('Failed to fetch product components information', err)
     }
     return resp;
-  },
-
-  async fetchSampleProducts ({ commit, state }) {
-    let products = state.sampleProducts ? JSON.parse(JSON.stringify(state.sampleProducts)) : []
-    if(products.length) return;
-
-    try {
-      const resp = await ProductService.fetchSampleProducts({
-        internalName_op: "empty",
-        internalName_not: "Y",
-        fieldsToSelect: ["internalName", "productId"],
-        pageSize: 10
-      }) as any;
-  
-      if(!hasError(resp) && resp.data?.length) {
-        products = resp.data
-        products = products.map((product: any) => ({
-          sku: product.internalName,
-          quantity: 2
-        }))
-      } else {
-        throw resp.data;
-      }
-    } catch (error) {
-      logger.error(error);
-    }
-    commit(types.PRODUCT_SAMPLE_PRODUCTS_UPDATED, products)
   },
 
   async addProductToCached ( { commit }, payload) {

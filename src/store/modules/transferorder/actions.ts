@@ -18,15 +18,11 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     const orderStatusId = transferOrderQuery.orderStatusId ?? "ORDER_APPROVED"
 
     const params: any = {
-      orderStatusId: orderStatusId,
       originFacilityId: getCurrentFacilityId(),
       limit: transferOrderQuery.viewSize,
       pageIndex: transferOrderQuery.viewIndex
     };
-    if (orderStatusId === 'ORDER_APPROVED') {
-      params.itemStatusId = "ITEM_PENDING_FULFILL"
-    }
-
+    
     // If searching, add queryString
     if (transferOrderQuery.queryString) {
       params.orderName = transferOrderQuery.queryString;
@@ -36,7 +32,17 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     let total = 0;
 
     try {
-      resp = await TransferOrderService.fetchTransferOrders(params);
+      if (transferOrderQuery.shipmentStatusId) {
+        //fetching orders having shipment in shipped status for the completed TOs tab
+        params.shipmentStatusId = transferOrderQuery.shipmentStatusId
+        resp = await TransferOrderService.fetchCompletedTransferOrders(params);
+      } else {
+        //fetching open transfer orders
+        params.orderStatusId = orderStatusId
+        params.itemStatusId = "ITEM_PENDING_FULFILL"
+        resp = await TransferOrderService.fetchTransferOrders(params);
+      }
+      
       if (!hasError(resp) && resp.data.ordersCount > 0) {
         total = resp.data.ordersCount;
         if (transferOrderQuery.viewIndex > 0) {
@@ -73,10 +79,27 @@ const actions: ActionTree<TransferOrderState, RootState> = {
 
         if (!hasError(shipmentResp)) {
           const shipmentData = shipmentResp.data || {};
-          // Merge order and shipment data fields into orderDetail
+          const shipments = shipmentData.shipments || [];
+
+          const updatedShipments = shipments.map((shipment: any) => {
+            const packages = shipment.packages || [];
+            const items = packages.flatMap((pkg: any) => pkg.items || []);
+            const labelImageUrls = 
+              shipment.packages
+                .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+                .map((shipmentPackage: any) => shipmentPackage.labelImageUrl);
+
+            return {
+              ...shipment,
+              items: items,
+              labelImageUrls
+            };
+          });
+
+          // Merge shipment data into orderDetail
           orderDetail = {
             ...orderDetail,
-            shipments: shipmentData.shipments || [],
+            shipments: updatedShipments
           };
         }
         if (orderDetail.items && Array.isArray(orderDetail.items)) {
@@ -122,18 +145,23 @@ const actions: ActionTree<TransferOrderState, RootState> = {
   async createOutboundTransferShipment({ commit }, payload) {
     let shipmentId;
 
-    try {
-      let eligibleItems = payload.items.filter((item: any) => item.pickedQuantity > 0)
-      eligibleItems = eligibleItems.map((item: any) => ({
-        orderItemSeqId: item.orderItemSeqId, //This is needed to map shipment item with order item correctly if multiple order items for the same product are there in the TO.
-        productId: item.productId,
-        quantity: parseInt(item.pickedQuantity), // Using parseInt to convert to an integer
-        shipGroupSeqId: item.shipGroupSeqId
-      }));
+     try {
+      const eligibleItems = payload.items.filter((item: any) => item.pickedQuantity > 0);
+
+      // Group items into packages — assuming we're sending one package for now
+      const packages = [{
+        items: eligibleItems.map((item: any) => ({
+          orderItemSeqId: item.orderItemSeqId,
+          productId: item.productId,
+          quantity: parseInt(item.pickedQuantity),
+          shipGroupSeqId: item.shipGroupSeqId
+        }))
+      }];
+
       const params = {
         "payload": {
           "orderId": payload.orderId,
-          "items": eligibleItems
+          "packages": packages
         }
       }
       const resp = await TransferOrderService.createOutboundTransferShipment(params)
@@ -155,21 +183,34 @@ const actions: ActionTree<TransferOrderState, RootState> = {
 
       const shipments = shipmentResponse.data?.shipments || [];
       if (shipments.length > 0) {
+        const firstShipment = shipments[0];
+        const packages = firstShipment.packages || [];
 
-        const shipment = {
-          ...shipments[0],
-          items: shipments[0]?.items.map((item: any) => ({
+        // Flatten package items and add pickedQuantity/shippedQuantity
+        const items = packages.flatMap((pkg: any) =>
+          (pkg.items || []).map((item: any) => ({
             ...item,
             pickedQuantity: item.quantity,
             shippedQuantity: item.totalIssuedQuantity || 0,
-          })),
-          totalQuantityPicked: shipments[0]?.items.reduce((acc: number, curr: any) => acc + curr.quantity, 0),
-          isTrackingRequired: shipments[0]?.isTrackingRequired ?? 'Y' 
+          }))
+        );
+
+        const labelImageUrls = 
+              packages
+                .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+                .map((shipmentPackage: any) => shipmentPackage.labelImageUrl);
+
+        const shipment = {
+          ...firstShipment,
+          items,
+          totalQuantityPicked: items.reduce((acc: number, curr: any) => acc + curr.pickedQuantity, 0),
+          isTrackingRequired: firstShipment.isTrackingRequired ?? 'Y',
+          labelImageUrls
         };
 
         commit(types.ORDER_CURRENT_SHIPMENT_UPDATED, shipment);
 
-        const productIds = [...new Set(shipment.items.map((item: any) => item.productId))];
+        const productIds = [...new Set(items.map((item: any) => item.productId))];
         const batchSize = 250;
         const productIdBatches = [];
 
@@ -179,8 +220,8 @@ const actions: ActionTree<TransferOrderState, RootState> = {
 
         await Promise.all([
           ...productIdBatches.map((productIds) => this.dispatch('product/fetchProducts', { productIds })),
-          this.dispatch('util/fetchPartyInformation', [shipments[0].carrierPartyId]),
-          this.dispatch('util/fetchShipmentMethodTypeDesc', [shipments[0].shipmentMethodTypeId])
+          this.dispatch('util/fetchPartyInformation', [firstShipment.carrierPartyId]),
+          this.dispatch('util/fetchShipmentMethodTypeDesc', [firstShipment.shipmentMethodTypeId])
         ]);
       }
     } catch (err: any) {
