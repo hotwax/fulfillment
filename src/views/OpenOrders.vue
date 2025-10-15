@@ -322,7 +322,7 @@ export default defineComponent({
         viewSize: '0',  // passed viewSize as 0 to not fetch any data
         isGroupingRequired: false,
         filters: {
-          '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+          '-shipmentMethodTypeId': { value: ['STOREPICKUP', 'POS_COMPLETED'] },
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
           productStoreId: { value: this.currentEComStore.productStoreId },
