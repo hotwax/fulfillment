@@ -278,12 +278,27 @@ onIonViewWillEnter(async () => {
 // Fetches transfer order details by orderId, including its items, and updates the store.
 async function fetchTransferOrderDetail(orderId: string) {
   try {
-    const orderResp = await TransferOrderService.fetchTransferOrderDetailByShipGroup(orderId);
+    const orderResp = await TransferOrderService.fetchTransferOrderDetail(orderId);
     if(!hasError(orderResp)) {
-      const order = orderResp.data[0];
-      // Fetch items and attach to order
-      const items = await fetchOrderItems(order.orderId);
-      order.items = items;
+      const order = orderResp.data.order;
+      
+      // Process items and add additional information
+      if(order.items && order.items.length) {
+        const items = await Promise.allSettled(
+          order.items.map(async (item: any) => {
+            const stock = await fetchStock(item.productId);
+            return {
+              ...item,
+              pickedQuantity: item.pickedQuantity ?? item.quantity,
+              qoh: stock?.qoh
+            };
+          })
+        );
+        // Keep only fulfilled results and update order items
+        order.items = items.filter(item => item.status === "fulfilled").map((item: any) => item.value);
+      } else {
+        order.items = [];
+      }
 
       // Dispatch to store
       await store.dispatch('transferorder/updateCurrentTransferOrder', order)
@@ -292,33 +307,6 @@ async function fetchTransferOrderDetail(orderId: string) {
     }
   } catch (error) {
     logger.error('Error fetching transfer order details:', error);
-  }
-}
-
-async function fetchOrderItems(orderId: string) {
-  try {
-    const resp = await TransferOrderService.findTransferOrderItems({ orderId });
-
-    if(hasError(resp) && !resp?.data?.transferOrderItems?.length) {
-      throw resp.data;
-    }
-
-    const items = await Promise.allSettled(
-      resp.data.transferOrderItems.map(async (item: any) => {
-        const stock = await fetchStock(item.productId);
-        return {
-          ...item,
-          pickedQuantity: item.pickedQuantity ?? item.quantity,
-          qoh: stock?.qoh
-        };
-      })
-    );
-    // Keep only fulfilled results
-    return items.filter(item => item.status === "fulfilled").map((item: any) => item.value);
-
-  } catch (error) {
-    logger.error("Error fetching order items:", error);
-    return [];
   }
 }
 
