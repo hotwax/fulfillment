@@ -221,8 +221,9 @@ import { ProductService } from '@/services/ProductService';
 import { StockService } from '@/services/StockService';
 import { hasError } from '@/adapter';
 import logger from '@/logger';
-import { getCurrentFacilityId, getProductStoreId, showToast } from '@/utils';
+import { getCurrentFacilityId, showToast } from '@/utils';
 import { TransferOrderService } from '@/services/TransferOrderService';
+import { UtilService } from '@/services/UtilService';
 import { OrderService } from '@/services/OrderService';
 import TransferOrderItem from '@/components/TransferOrderItem.vue'
 import AddProductModal from "@/components/AddProductModal.vue";
@@ -243,11 +244,11 @@ const scanInput = ref('') as any
 const searchInput = ref('') as any
 let timeoutId: any = null;
 let productSearchCount = ref(0);
+let facilities = ref([]) as any;
 
 const barcodeIdentifier = computed(() => store.getters["util/getBarcodeIdentificationPref"]);
 const getProduct = computed(() => store.getters["product/getProduct"]);
 const currentOrder = computed(() => store.getters["transferorder/getCurrent"]);
-const facilities = computed(() => store.getters["util/getFacilities"])
 const isForceScanEnabled = computed(() => store.getters['util/isForceScanEnabled']);
 
 watch(queryString, (value) => {
@@ -271,7 +272,7 @@ onIonViewWillEnter(async () => {
   emitter.emit('presentLoader');
   await fetchTransferOrderDetail(route?.params?.orderId as string);
   await fetchProductInformation();
-  await store.dispatch('util/fetchFacilities', getProductStoreId())
+  facilities.value = await UtilService.fetchProductStoreFacilities();
   emitter.emit('dismissLoader');
 });
 

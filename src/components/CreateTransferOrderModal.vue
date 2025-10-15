@@ -51,7 +51,7 @@
 import { IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent, IonInput, IonSearchbar, IonList, IonListHeader, IonItem, IonRadio, IonLabel, IonFab, IonFabButton, modalController } from '@ionic/vue';
 import { closeOutline, saveOutline } from 'ionicons/icons';
 import { computed, ref, onMounted } from 'vue';
-import { translate, useUserStore } from '@hotwax/dxp-components';
+import { translate } from '@hotwax/dxp-components';
 import { UtilService } from '@/services/UtilService';
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { hasError } from '@/adapter';
@@ -78,31 +78,8 @@ onMounted(async () => {
 });
 
 async function loadFacilities() {
-  try {
-    isLoading.value = true;
-    const productStoreId = useUserStore().getCurrentEComStore?.productStoreId;
-    if(!productStoreId) return;
-
-    const resp = await UtilService.fetchProductStoreFacilities({
-      productStoreId,
-      facilityTypeId: 'VIRTUAL_FACILITY',
-      facilityTypeId_op: 'equals',
-      facilityTypeId_not: 'Y',
-      parentFacilityTypeId: 'VIRTUAL_FACILITY',
-      parentFacilityTypeId_op: 'equals',
-      parentFacilityTypeId_not: 'Y',
-      fieldsToSelect: ['facilityId', 'facilityName'],
-      pageSize: 250,
-    });
-
-    if(!hasError(resp)) {
-      facilities.value = resp.data;
-    } else {
-      throw resp.data;
-    }
-  } catch (err) {
-    logger.error(err);
-  }
+  isLoading.value = true;
+  facilities.value = await UtilService.fetchProductStoreFacilities();
   isLoading.value = false;
 }
 
