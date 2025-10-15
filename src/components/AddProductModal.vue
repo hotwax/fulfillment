@@ -56,6 +56,7 @@ import { StockService } from '@/services/StockService';
 import { hasError, showToast } from '@/utils';
 import { DxpShopifyImg, getProductIdentificationValue, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
 import logger from '@/logger';
+import emitter from '@/event-bus';
 
 const props = defineProps(["query"])
 
@@ -145,6 +146,7 @@ async function addTransferOrderItem(product: any) {
 
       currentOrder.value.items.push(newItem);
       await store.dispatch('transferorder/updateCurrentTransferOrder', currentOrder.value);
+      emitter.emit('clearScannedOrderItem')
     } else {
       throw resp.data;
     }

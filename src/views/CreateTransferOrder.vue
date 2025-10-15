@@ -280,6 +280,9 @@ const clearScannedOrderItem = (removedProductId: string) => {
   if (searchedProduct.value.productId === removedProductId) {
     searchedProduct.value = {};
     queryString.value = '';
+  } else {
+    searchedProduct.value = {};
+    queryString.value = '';
   }
 };
 
