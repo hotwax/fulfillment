@@ -22,7 +22,7 @@
               <ion-card-title>{{ userProfile?.partyName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
+          <ion-button color="danger" v-if="!authStore.isEmbedded" @click="logout()">{{ translate("Logout") }}</ion-button>
           <ion-button fill="outline" @click="goToLaunchpad()">
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
@@ -136,12 +136,11 @@
           </ion-item>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_BARCODE_IDENTIFIER_UPDATE)">
             <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="barcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
-              <ion-select-option v-for="identification in barcodeIdentificationOptions" :key="identification" :value="identification" >{{ identification }}</ion-select-option>
+              <ion-select-option v-for="identification in barcodeIdentificationOptions" :key="identification" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
             </ion-select>
           </ion-item>
         </ion-card>
 
-        <template v-if="useNewRejectionApi()">
         <ion-card>
           <ion-card-header>
             <ion-card-title>
@@ -152,7 +151,7 @@
             {{ translate("Individual items within an order will be rejected without affecting the other items in the order.") }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="partialOrderRejectionConfig.settingValue" @click.prevent="confirmPartialOrderRejection(partialOrderRejectionConfig, $event)">{{ translate("Partial rejections") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="partialOrderRejectionConfig?.settingValue" @click.prevent="confirmPartialOrderRejection(partialOrderRejectionConfig, $event)">{{ translate("Partial rejections") }}</ion-toggle>
           </ion-item>
         </ion-card>
         <ion-card>
@@ -165,7 +164,7 @@
             {{ translate('When rejecting an item, automatically reject all other orders for that item as well.') }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_COLLATERAL_REJECTION_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="'true' === collateralRejectionConfig.settingValue" @click.prevent="confirmCollateralRejection(collateralRejectionConfig, $event)">{{ translate("Auto reject related items") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="'true' === collateralRejectionConfig?.settingValue" @click.prevent="confirmCollateralRejection(collateralRejectionConfig, $event)">{{ translate("Auto reject related items") }}</ion-toggle>
           </ion-item>
         </ion-card>
         <ion-card>
@@ -178,10 +177,9 @@
             {{ translate('Adjust the QOH along with ATP on rejection.') }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_AFFECT_QOH_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="'true' === affectQohConfig.settingValue" @click.prevent="confirmAffectQohConfig(affectQohConfig, $event)">{{ translate("Affect QOH") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="'true' === affectQohConfig?.settingValue" @click.prevent="confirmAffectQohConfig(affectQohConfig, $event)">{{ translate("Affect QOH") }}</ion-toggle>
           </ion-item>
         </ion-card>
-        </template>
       </section>
     </ion-content>
   </ion-page>
@@ -219,10 +217,10 @@ import { computed, defineComponent } from 'vue';
 import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, openOutline, timeOutline } from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import { UserService } from '@/services/UserService';
+import { UserService} from '@/services/UserService';
 import { showToast } from '@/utils';
 import { hasError, removeClientRegistrationToken, subscribeTopic, unsubscribeTopic } from '@/adapter'
-import { initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
+import { initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore, useAuthStore, getAppLoginUrl } from '@hotwax/dxp-components';
 import logger from '@/logger';
 import { Actions, hasPermission } from '@/authorization'
 import { DateTime } from 'luxon';
@@ -230,6 +228,7 @@ import Image from '@/components/Image.vue';
 import OrderLimitPopover from '@/components/OrderLimitPopover.vue'
 import emitter from "@/event-bus"
 import { addNotification, generateTopicName, isFcmConfigured, storeClientRegistrationToken } from "@/utils/firebase";
+import { UtilService } from '@/services/UtilService';
 
 
 
@@ -283,7 +282,6 @@ export default defineComponent({
       allNotificationPrefs: 'user/getAllNotificationPrefs',
       firebaseDeviceId: 'user/getFirebaseDeviceId',
       isForceScanEnabled: 'util/isForceScanEnabled',
-      newRejectionApiConfig: 'user/getNewRejectionApiConfig',
       partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
       collateralRejectionConfig: 'user/getCollateralRejectionConfig',
       affectQohConfig: 'user/getAffectQohConfig',
@@ -296,7 +294,6 @@ export default defineComponent({
     // fetching partial order rejection when entering setting page to have latest information
     await this.store.dispatch('user/getPartialOrderRejectionConfig')
     await this.store.dispatch('user/getCollateralRejectionConfig')
-    await this.store.dispatch('user/getNewRejectionApiConfig')
     
     // as notification prefs can also be updated from the notification pref modal,
     // latest state is fetched each time we open the settings page
@@ -306,26 +303,20 @@ export default defineComponent({
     updateEComStore(selectedProductStore: any) {
       this.store.dispatch('user/setEComStore', selectedProductStore?.productStoreId)
     },
-    useNewRejectionApi() {
-      return this.newRejectionApiConfig && this.newRejectionApiConfig.settingValue && JSON.parse(this.newRejectionApiConfig.settingValue)
-    },
     async getCurrentFacilityDetails() {
       let resp: any;
       try {        
         resp = await UserService.getFacilityDetails({
-          "entityName": "Facility",
-          "inputFields": {
-            "facilityId": this.currentFacility?.facilityId
-          },
-          "viewSize": 1,
-          "fieldList": ["maximumOrderLimit", "facilityId"]
+          "facilityId": this.currentFacility?.facilityId,
+          "pageSize": 1,
+          "fieldsToSelect": ["maximumOrderLimit", "facilityId"]
         })
 
-        if(!hasError(resp) && resp.data.count) {
+        if(!hasError(resp)) {
           // using index 0 as we will only get a single record
           this.currentFacilityDetails = {
             ...this.currentFacilityDetails,
-            ...resp.data.docs[0]
+            ...resp.data
           }
           this.updateOrderLimitType()
         } else {
@@ -339,17 +330,14 @@ export default defineComponent({
       let resp: any;
       try {
         resp = await UserService.getFacilityOrderCount({
-          "entityName": "FacilityOrderCount",
-          "inputFields": {
-            "facilityId": this.currentFacility?.facilityId,
-            "entryDate": DateTime.now().toFormat('yyyy-MM-dd'),
-          },
-          "viewSize": 1,
-          "fieldList": ["entryDate", "lastOrderCount"],
+          "facilityId": this.currentFacility?.facilityId,
+          "entryDate": DateTime.now().toFormat('yyyy-MM-dd'),
+          "pageSize": 1,
+          "fieldsToSelect": ["entryDate", "lastOrderCount"],
         })
-        if (!hasError(resp) && resp.data.count) {          
+        if (!hasError(resp) && resp.data.length) {          
           // using index 0 as we will only get a single record
-          this.currentFacilityDetails.orderCount = resp.data.docs[0].lastOrderCount
+          this.currentFacilityDetails.orderCount = resp.data[0]?.lastOrderCount
         } else {
           throw resp.data
         }
@@ -375,30 +363,27 @@ export default defineComponent({
         this.facilityGroupDetails = {}
 
         resp = await UserService.getFacilityGroupDetails({
-          "entityName": "FacilityGroup",
-          "inputFields": {
-            "facilityGroupTypeId": 'SHOPIFY_GROUP_FAC'
-          },
-          "fieldList": ["facilityGroupId", "facilityGroupTypeId"],
-          "viewSize": 1,
+          "facilityGroupTypeId": 'SHOPIFY_GROUP_FAC',
+          "fieldsToSelect": ["facilityGroupId", "facilityGroupTypeId"],
+          "pageSize": 1,
         })
 
         if (!hasError(resp)) {
           // using facilityGroupId as a flag for getting data from getFacilityGroupDetails
-          this.facilityGroupDetails.facilityGroupId = resp.data.docs[0].facilityGroupId
-          resp = await UserService.getFacilityGroupAndMemberDetails({
-            "entityName": "FacilityGroupAndMember",
-            "inputFields": {
+          this.facilityGroupDetails.facilityGroupId = resp.data[0].facilityGroupId
+          resp = await UtilService.getFacilityGroupAndMemberDetails({
+            customParametersMap:{
               "facilityId": this.currentFacility?.facilityId,
-              "facilityGroupId": this.facilityGroupDetails.facilityGroupId
+              "facilityGroupId": this.facilityGroupDetails.facilityGroupId,
+              pageIndex: 0,
+              pageSize: 1
             },
-            "fieldList": ["facilityId", "fromDate"],
-            "viewSize": 1,
-            "filterByDate": 'Y'
+            dataDocumentId: "FacilityGroupAndMember",
+            filterByDate: true
           })
 
           if (!hasError(resp)) {
-            this.facilityGroupDetails = { ...this.facilityGroupDetails, ...resp.data.docs[0] }
+            this.facilityGroupDetails = { ...this.facilityGroupDetails, ...resp.data.entityValueList[0] }
 
             // When getting data from group member enabling the eCom inventory
             this.isEComInvEnabled = true
@@ -428,12 +413,12 @@ export default defineComponent({
         // if not having redirection url then redirect the user to launchpad
         if(!redirectionUrl) {
           const redirectUrl = window.location.origin + '/login'
-          window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+          window.location.href = `${getAppLoginUrl()}?isLoggedOut=true&redirectUrl=${redirectUrl}`
         }
       })
     },
     goToLaunchpad() {
-      window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
+        window.location.href = getAppLoginUrl();
     },
     async changeOrderLimitPopover(ev: Event) {
       const popover = await popoverController.create({
@@ -457,6 +442,7 @@ export default defineComponent({
       this.getCurrentFacilityDetails();
       this.getFacilityOrderCount();
       this.getEcomInvStatus();
+      await this.store.dispatch('util/fetchAutoShippingLabelConfig');
     },
     async timeZoneUpdated(tzId: string) {
       await this.store.dispatch("user/setUserTimeZone", tzId)
@@ -734,8 +720,8 @@ export default defineComponent({
     const userStore = useUserStore()
     const productIdentificationStore = useProductIdentificationStore();
     let currentFacility: any = computed(() => userStore.getCurrentFacility) 
-    let barcodeIdentificationOptions = computed(() => productIdentificationStore.getProductIdentificationOptions)
-
+    let barcodeIdentificationOptions = computed(() => productIdentificationStore.getGoodIdentificationOptions)
+    const authStore = useAuthStore();
     return {
       Actions,
       barcodeIdentificationOptions,
@@ -748,7 +734,8 @@ export default defineComponent({
       router,
       store,
       hasPermission,
-      translate
+      translate,
+      authStore
     }
   }
 });

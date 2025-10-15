@@ -19,6 +19,8 @@ import { showToast } from '@/utils'
 import { translate } from '@hotwax/dxp-components'
 import 'vue-router'
 import Notifications from '@/views/Notifications.vue'
+import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
+import ShipTransferOrder from '@/views/ShipTransferOrder.vue';
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -26,7 +28,7 @@ declare module 'vue-router' {
     permissionId?: string;
   }
 }
-import { useAuthStore, DxpLogin } from '@hotwax/dxp-components'
+import { useAuthStore, DxpLogin, getAppLoginUrl } from '@hotwax/dxp-components'
 import { loader } from '@/utils/user';
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
@@ -38,7 +40,7 @@ const authGuard = async (to: any, from: any, next: any) => {
     await loader.present('Authenticating')
     // TODO use authenticate() when support is there
     const redirectUrl = window.location.origin + '/login'
-    window.location.href = `${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`
+    window.location.href = authStore.isEmbedded? getAppLoginUrl() : `${getAppLoginUrl()}?redirectUrl=${redirectUrl}`
     loader.dismiss()
   }
   next()
@@ -94,7 +96,21 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/transfer-order-details/:orderId',
+    path: '/create-transfer-order/:orderId',
+    name: 'CreateTransferOrder',
+    component: CreateTransferOrder,
+    beforeEnter: authGuard,
+    props: true
+  },
+  {
+    path: '/ship-transfer-order/:shipmentId',
+    name: 'ShipTransferOrder',
+    component: ShipTransferOrder,
+    beforeEnter: authGuard,
+    props: true
+  },
+  {
+    path: '/transfer-order-details/:orderId/:category',
     name: 'TransferOrderDetail',
     component: TransferOrderDetail,
     beforeEnter: authGuard,
@@ -116,6 +132,16 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/:category/order-detail/:orderId/:shipGroupSeqId',
     name: 'OrderDetail',
+    component: OrderDetail,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_ORDER_DETAIL_VIEW"
+    }
+  },
+  {
+    path: '/:category/shipment-detail/:orderId/:shipmentId',
+    name: 'ShipmentDetail',
     component: OrderDetail,
     beforeEnter: authGuard,
     props: true,

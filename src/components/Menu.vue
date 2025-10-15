@@ -46,7 +46,7 @@ import {
 } from "@ionic/vue";
 import { computed, defineComponent } from "vue";
 import { mapGetters } from "vuex";
-import { arrowBackOutline, backspaceOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
+import { backspaceOutline, businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
 import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 import { hasPermission } from "@/authorization";
@@ -114,6 +114,7 @@ export default defineComponent({
           permissionId: "APP_COMPLETED_ORDERS_VIEW"
         }
       },
+      /* Commenting the Rejection page until Solr indexing for rejections are not properly integrated
       {
         title: "Rejections",
         url: "/rejections",
@@ -122,13 +123,13 @@ export default defineComponent({
         meta: {
           permissionId: "APP_REJECTIONS_VIEW"
         }
-      },
+      },*/
       {
         title: "Transfer Orders",
         url: "/transfer-orders",
-        iosIcon: arrowBackOutline,
-        mdIcon: arrowBackOutline,
-        childRoutes: ["/transfer-order-details", "/transfer-shipment-review"],
+        iosIcon: businessOutline,
+        mdIcon: businessOutline,
+        childRoutes: ["/transfer-order-details", "/transfer-shipment-review", "/create-transfer-order"],
         meta: {
           permissionId: "APP_TRANSFER_ORDERS_VIEW"
         }
@@ -180,10 +181,10 @@ export default defineComponent({
     return {
       appPages,
       backspaceOutline,
+      businessOutline,
       checkmarkDoneOutline,
       currentFacility,
       hasPermission,
-      arrowBackOutline,
       mailUnreadOutline,
       mailOpenOutline,
       selectedIndex,

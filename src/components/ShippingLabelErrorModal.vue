@@ -66,10 +66,10 @@ export default defineComponent({
       shipmentLabelErrorMessages: []
     }
   },
-  props: ['shipmentIds'],
+  props: ['shipmentId'],
   async mounted() {
     // Fetching shipment label errors
-    this.shipmentLabelErrorMessages = await OrderService.fetchShipmentLabelError(this.shipmentIds);
+    this.shipmentLabelErrorMessages = await OrderService.fetchShipmentLabelError(this.shipmentId);
   },
   methods: {
     closeModal() {

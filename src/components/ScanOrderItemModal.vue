@@ -24,7 +24,7 @@
       <div class="list-item" v-for="(item, index) in orderItems" :key="index" :class="item.orderItemSeqId === lastScannedId ? 'scanned-item' : '' " :id="item.productSku">
         <div class="product-info">
           <ion-item lines="none">
-            <ion-thumbnail slot="start">
+            <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
               <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
             </ion-thumbnail>
             <ion-label>
@@ -33,7 +33,7 @@
                 {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
                 <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
               </div>
-              <p>{{ getFeature(getProduct(item.productId).featureHierarchy, '1/COLOR/')}} {{ getFeature(getProduct(item.productId).featureHierarchy, '1/SIZE/')}}</p>
+              <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
             </ion-label>
           </ion-item>
         </div>
@@ -74,7 +74,7 @@ import { computed, defineComponent } from "vue";
 import { cameraOutline, closeOutline, copyOutline, saveOutline } from "ionicons/icons";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { mapGetters } from 'vuex';
-import { getFeature, showToast, hasWebcamAccess } from "@/utils"
+import { getFeatures, showToast, hasWebcamAccess } from "@/utils"
 import Scanner from "@/components/Scanner.vue"
 import { isKit } from '@/utils/order'
 
@@ -112,7 +112,8 @@ export default defineComponent({
   },
   props: ["order"],
   mounted() {
-    this.orderItems = this.order.items.length ? JSON.parse(JSON.stringify(this.order.items)) : []
+    const orderItems = this.order.items.length ? JSON.parse(JSON.stringify(this.order.items)) : []
+    this.orderItems = orderItems ? orderItems.filter((item: any) => !item.rejectReason) : []
   },
   methods: {
     closeModal(payload= {}) {
@@ -159,7 +160,7 @@ export default defineComponent({
           this.lastScannedId = ''
         }, 3000)
       } else {
-        showToast(translate((currentItem.productSku ? "Product is already received:" : "Scanned item is not present within the shipment:"), { itemName: payload }))
+        showToast(translate((currentItem.productId ? "Product is already scanned:" : "Scanned item is not present within the shipment:"), { itemName: payload }))
       }
       this.queryString = ''
     },
@@ -178,7 +179,7 @@ export default defineComponent({
       cameraOutline,
       closeOutline,
       copyOutline,
-      getFeature,
+      getFeatures,
       getProductIdentificationValue,
       isKit,
       productIdentificationPref,

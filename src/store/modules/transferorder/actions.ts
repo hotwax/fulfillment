@@ -1,281 +1,232 @@
 import { ActionTree } from 'vuex'
 import RootState from '@/store/RootState'
 import TransferOrderState from './TransferOrderState'
-import emitter from '@/event-bus'
-import { OrderService } from '@/services/OrderService'
+import { TransferOrderService } from '@/services/TransferOrderService';
 import { hasError } from '@/adapter'
 import * as types from './mutation-types'
-import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper'
 import logger from '@/logger'
-import { getProductIdentificationValue, translate } from '@hotwax/dxp-components'
-import { showToast, getCurrentFacilityId, getProductStoreId } from "@/utils";
-import { UtilService } from '@/services/UtilService'
 import store from "@/store";
+import { getProductIdentificationValue, translate } from '@hotwax/dxp-components'
+import { showToast } from "@/utils";
+import { getCurrentFacilityId } from '@/utils'
 
 const actions: ActionTree<TransferOrderState, RootState> = {
 
-  async findTransferOrders ({ commit, state }, payload = {}) {
-    emitter.emit('presentLoader');
+  async findTransferOrders({ commit, state }, payload = {}) {
     let resp;
     const transferOrderQuery = JSON.parse(JSON.stringify(state.transferOrder.query))
+    const orderStatusId = transferOrderQuery.orderStatusId ?? "ORDER_APPROVED"
 
-    const params = {
-      ...payload,
-      docType: "ORDER",
-      queryString: transferOrderQuery.queryString,
-      viewIndex: transferOrderQuery.viewIndex ? transferOrderQuery.viewIndex : 0,
-      viewSize: transferOrderQuery.viewSize,
-      queryFields: "orderId orderName externalOrderId productId productName internalName",
-      sort: payload.sort ? payload.sort : "orderDate asc",
-      filters: {
-        orderTypeId: { value: 'TRANSFER_ORDER' },
-        facilityId: { value: escapeSolrSpecialChars(getCurrentFacilityId()) },
-        productStoreId: { value: getProductStoreId() }
-      }
+    const params: any = {
+      originFacilityId: getCurrentFacilityId(),
+      limit: transferOrderQuery.viewSize,
+      pageIndex: transferOrderQuery.viewIndex
+    };
+    
+    // If searching, add queryString
+    if (transferOrderQuery.queryString) {
+      params.orderName = transferOrderQuery.queryString;
     }
 
-    // only adding shipmentMethods when a method is selected
-    if(transferOrderQuery.selectedShipmentMethods.length) {
-      params.filters['shipmentMethodTypeId'] = { value: transferOrderQuery.selectedShipmentMethods, op: 'OR' }
-    }
-    if(transferOrderQuery.selectedStatuses.length) {
-      params.filters['orderStatusId'] = { value: transferOrderQuery.selectedStatuses, op: 'OR' }
-    }
-
-    const transferOrderQueryPayload = prepareOrderQuery(params)
     let orders = [];
-    let orderList = []
     let total = 0;
 
     try {
-      resp = await OrderService.findTransferOrders(transferOrderQueryPayload);
-      if (!hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
-        total = resp.data.grouped.orderId.ngroups
-        orders = resp.data.grouped.orderId.groups
-
-        orders = orders.map((order: any) => {
-          const orderItem = order.doclist.docs[0];
-
-          return {
-            orderId: orderItem.orderId,
-            externalId: orderItem.externalOrderId,
-            orderDate: orderItem.orderDate,
-            orderName: orderItem.orderName,
-            shipGroupSeqId: orderItem.shipGroupSeqId,
-            shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
-            orderStatusId: orderItem.orderStatusId,
-            orderStatusDesc: orderItem.orderStatusDesc
-          }
-        })
-
-        if (transferOrderQuery.viewIndex && transferOrderQuery.viewIndex > 0) orderList = JSON.parse(JSON.stringify(state.transferOrder.list)).concat(orders)
+      if (transferOrderQuery.shipmentStatusId) {
+        //fetching orders having shipment in shipped status for the completed TOs tab
+        params.shipmentStatusId = transferOrderQuery.shipmentStatusId
+        resp = await TransferOrderService.fetchCompletedTransferOrders(params);
       } else {
-        throw resp.data
+        //fetching open transfer orders
+        params.orderStatusId = orderStatusId
+        params.itemStatusId = "ITEM_PENDING_FULFILL"
+        resp = await TransferOrderService.fetchTransferOrders(params);
       }
-    } catch (err) {
-      logger.error('No transfer orders found', err)
-    }
-
-    commit(types.ORDER_TRANSFER_QUERY_UPDATED, { ...transferOrderQuery })
-    commit(types.ORDER_TRANSFER_UPDATED, { list: orderList.length > 0 ? orderList : orders, total})
-
-    emitter.emit('dismissLoader');
-    return resp;
-  },
-  async fetchTransferOrderDetail ({ commit }, payload) {
-    let orderDetail = {} as any;
-    let resp;
-    try {
-      const params = {
-        "entityName": "OrderHeaderItemAndShipGroup",
-        "inputFields": {
-          "orderId": payload.orderId,
-          "oisgFacilityId": escapeSolrSpecialChars(getCurrentFacilityId())
-        },
-        "fieldList": ["orderId", "orderName", "externalId", "orderTypeId", "statusId", "orderDate", "shipGroupSeqId", "oisgFacilityId", "orderFacilityId"],
-        "viewSize": 1,
-        "distinct": "Y"
-      }
-    
-      resp = await OrderService.fetchOrderHeader(params);
-      if (!hasError(resp)) {
-         orderDetail = resp.data.docs?.[0];
-         orderDetail["facilityId"] = orderDetail.oisgFacilityId
-         
-        //fetch order items
-        orderDetail.items = await OrderService.fetchOrderItems(payload.orderId);
-        if (orderDetail?.items?.length > 0) {
-          orderDetail.items.forEach((item: any) => {
-            item.pickedQuantity = 0;
-            item.orderedQuantity = item.quantity;
-          })
-  
-          //fetch shipped quantity
-          const shippedQuantityInfo = {} as any;
-          resp = await OrderService.fetchShippedQuantity(payload.orderId);
-          resp.forEach((doc:any) => {
-            shippedQuantityInfo[doc.orderItemSeqId] = doc.shippedQuantity;
-          });
-          orderDetail.shippedQuantityInfo = shippedQuantityInfo;
-
-          //fetch product details
-          const productIds = [...new Set(orderDetail.items.map((item:any) => item.productId))];
-  
-          const batchSize = 250;
-          const productIdBatches = [];
-          while(productIds.length) {
-            productIdBatches.push(productIds.splice(0, batchSize))
-          }
-          await Promise.all([productIdBatches.map((productIds) => this.dispatch('product/fetchProducts', { productIds })), this.dispatch('util/fetchStatusDesc', [orderDetail.statusId])])
+      
+      if (!hasError(resp) && resp.data.ordersCount > 0) {
+        total = resp.data.ordersCount;
+        if (transferOrderQuery.viewIndex > 0) {
+          orders = state.transferOrder.list.concat(resp.data.orders);
+        } else {
+          orders = resp.data.orders;
         }
-        commit(types.ORDER_CURRENT_UPDATED, orderDetail)
       } else {
         throw resp.data;
       }
+    } catch (err) {
+      logger.error('No transfer orders found', err);
+    }
+
+    commit(types.ORDER_TRANSFER_QUERY_UPDATED, { ...transferOrderQuery });
+    commit(types.ORDER_TRANSFER_UPDATED, { list: orders, total });
+
+    return resp;
+  },
+
+  async fetchTransferOrderDetail({ commit }, payload) {
+    let orderDetail = {} as any;
+    let orderResp, shipmentResp;
+
+    try {
+      // Fetch main transfer order details
+      orderResp = await TransferOrderService.fetchTransferOrderDetail(payload.orderId);
+
+      if (!hasError(orderResp)) {
+        orderDetail = orderResp.data.order || {};
+
+        // Fetch additional shipment data
+        shipmentResp = await TransferOrderService.fetchShippedTransferShipments({ orderId: payload.orderId, shipmentStatusId: "SHIPMENT_SHIPPED" });
+
+        if (!hasError(shipmentResp)) {
+          const shipmentData = shipmentResp.data || {};
+          const shipments = shipmentData.shipments || [];
+
+          const updatedShipments = shipments.map((shipment: any) => {
+            const packages = shipment.packages || [];
+            const items = packages.flatMap((pkg: any) => pkg.items || []);
+            const labelImageUrls = 
+              shipment.packages
+                .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+                .map((shipmentPackage: any) => shipmentPackage.labelImageUrl);
+
+            return {
+              ...shipment,
+              items: items,
+              labelImageUrls
+            };
+          });
+
+          // Merge shipment data into orderDetail
+          orderDetail = {
+            ...orderDetail,
+            shipments: updatedShipments
+          };
+        }
+        if (orderDetail.items && Array.isArray(orderDetail.items)) {
+          orderDetail.items = orderDetail.items.map((item: any) => ({
+            ...item,
+            orderedQuantity: item.quantity,
+            shippedQuantity: item.totalIssuedQuantity || 0,
+            pickedQuantity: 0
+          }));
+        }
+
+        // Fetch products & status description
+        const productIds = [...new Set((orderDetail.items || []).map((item: any) => item.productId))];
+        const batchSize = 250;
+        const productIdBatches = [];
+
+        while (productIds.length) {
+          productIdBatches.push(productIds.splice(0, batchSize));
+        }
+
+        try {
+          await Promise.all([
+            ...productIdBatches.map(batch =>
+              this.dispatch('product/fetchProducts', { productIds: batch })
+            ),
+            this.dispatch('util/fetchStatusDesc', [orderDetail.statusId]),
+          ]);
+          // Commit the full enriched orderDetail to the store
+          commit(types.ORDER_CURRENT_UPDATED, orderDetail);
+        } catch (err: any) {
+          logger.error("Error fetching product details or status description", err);
+          return Promise.reject(new Error(err));
+        }
+      } else {
+        throw orderResp.data;
+      }
     } catch (err: any) {
       logger.error("error", err);
-      return Promise.reject(new Error(err))
+      return Promise.reject(new Error(err));
     }
   },
 
   async createOutboundTransferShipment({ commit }, payload) {
     let shipmentId;
-    
-    try {
-      let eligibleItems = payload.items.filter((item: any) => item.pickedQuantity > 0)
-      let seqIdCounter = 1;
-      eligibleItems = eligibleItems.map((item:any) => ({
-        orderItemSeqId: item.orderItemSeqId, //This is needed to map shipment item with order item correctly if multiple order items for the same product are there in the TO.
-        productId: item.productId,
-        sku: item.internalName,
-        quantity: parseInt(item.pickedQuantity), // Using parseInt to convert to an integer
-        itemSeqId: String(seqIdCounter++).padStart(5, '0') // This is needed to correctly create the shipment package content if multiple order items for the same product are there in the TO.
-      }));  
+
+     try {
+      const eligibleItems = payload.items.filter((item: any) => item.pickedQuantity > 0);
+
+      // Group items into packages — assuming we're sending one package for now
+      const packages = [{
+        items: eligibleItems.map((item: any) => ({
+          orderItemSeqId: item.orderItemSeqId,
+          productId: item.productId,
+          quantity: parseInt(item.pickedQuantity),
+          shipGroupSeqId: item.shipGroupSeqId
+        }))
+      }];
 
       const params = {
-        "shipmentTypeId": "OUT_TRANSFER",
-        orderId: payload.orderId,
-        "shipGroupSeqId": payload.shipGroupSeqId,
-        "originFacilityId": getCurrentFacilityId(),
-        "destinationFacilityId": payload.orderFacilityId,
-        "items": eligibleItems,
-        "packages": [{
-          "items": eligibleItems
-        }]
+        "payload": {
+          "orderId": payload.orderId,
+          "packages": packages
+        }
       }
-      const resp = await OrderService.createOutboundTransferShipment({"shipments": params})
+      const resp = await TransferOrderService.createOutboundTransferShipment(params)
       if (!hasError(resp)) {
-        shipmentId = resp.data.shipments.id;
+        shipmentId = resp.data.shipmentId;
       } else {
         throw resp.data;
       }
-    } catch(error){
+    } catch (error) {
       logger.error(error);
       showToast(translate('Failed to create shipment'));
     }
     return shipmentId;
   },
 
-  async fetchTransferShipmentDetail ({ commit }, payload) {
-    let resp;
+  async fetchTransferShipmentDetail({ commit }, payload) {
     try {
-      const shipmentItems = await OrderService.fetchShipmentItems('', payload.shipmentId);
-        
-      if (shipmentItems?.length > 0) {
-        const [shipmentPackagesWithMissingLabel, shipmentPackages, shipmentCarriers] = await Promise.all([OrderService.fetchShipmentPackages([payload.shipmentId]), UtilService.findShipmentPackages([payload.shipmentId]), OrderService.fetchShipmentCarrierDetail([payload.shipmentId])]);
+      const shipmentResponse = await TransferOrderService.fetchTransferShipmentDetails({ shipmentId: payload.shipmentId });
+
+      const shipments = shipmentResponse.data?.shipments || [];
+      if (shipments.length > 0) {
+        const firstShipment = shipments[0];
+        const packages = firstShipment.packages || [];
+
+        // Flatten package items and add pickedQuantity/shippedQuantity
+        const items = packages.flatMap((pkg: any) =>
+          (pkg.items || []).map((item: any) => ({
+            ...item,
+            pickedQuantity: item.quantity,
+            shippedQuantity: item.totalIssuedQuantity || 0,
+          }))
+        );
+
+        const labelImageUrls = 
+              packages
+                .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+                .map((shipmentPackage: any) => shipmentPackage.labelImageUrl);
 
         const shipment = {
-          shipmentId: shipmentItems?.[0].shipmentId,
-          primaryOrderId: shipmentItems?.[0].orderId,
-          statusId: shipmentItems?.[0].shipmentStatusId,
-          trackingCode: shipmentCarriers?.[0].trackingIdNumber,
-          carrierPartyId: shipmentCarriers?.[0].carrierPartyId,
-          shipmentMethodTypeId: shipmentCarriers?.[0].shipmentMethodTypeId,
-          shipmentPackagesWithMissingLabel: shipmentPackagesWithMissingLabel,
-          shipmentPackages: shipmentPackages ? Object.values(shipmentPackages).flat() : [],
-          isTrackingRequired: shipmentPackagesWithMissingLabel?.some((shipmentPackage: any) => shipmentPackage.isTrackingRequired === 'Y'),
-          items: shipmentItems.map((item: any) => ({
-            ...item,
-            pickedQuantity: item.quantity
-          })),
-          totalQuantityPicked: shipmentItems.reduce((accumulator:any, currentItem:any) => accumulator + currentItem.quantity, 0)
-        }
+          ...firstShipment,
+          items,
+          totalQuantityPicked: items.reduce((acc: number, curr: any) => acc + curr.pickedQuantity, 0),
+          isTrackingRequired: firstShipment.isTrackingRequired ?? 'Y',
+          labelImageUrls
+        };
 
-        commit(types.ORDER_CURRENT_SHIPMENT_UPDATED, shipment)
+        commit(types.ORDER_CURRENT_SHIPMENT_UPDATED, shipment);
 
-        const productIds = [...new Set(shipmentItems.map((item:any) => item.productId))];
-
-
+        const productIds = [...new Set(items.map((item: any) => item.productId))];
         const batchSize = 250;
         const productIdBatches = [];
-        while(productIds.length) {
-          productIdBatches.push(productIds.splice(0, batchSize))
+
+        while (productIds.length) {
+          productIdBatches.push(productIds.splice(0, batchSize));
         }
-        await Promise.all([productIdBatches.map((productIds) => this.dispatch('product/fetchProducts', { productIds })), this.dispatch('util/fetchPartyInformation', [shipmentCarriers?.[0].carrierPartyId,]), this.dispatch('util/fetchShipmentMethodTypeDesc', [shipmentCarriers?.[0].shipmentMethodTypeId])])
-      }
 
-    } catch (err: any) {
-      logger.error("error", err);
-    }
-  },
-  async fetchOrderShipments ({ commit, state }, payload) {
-    let resp;
-    let shipments = [];
-
-    try {
-      const shipmentItems  = await OrderService.fetchShipmentItems(payload.orderId, '');
-      if (shipmentItems?.length > 0) {
-        shipments = Object.values(shipmentItems.reduce((shipmentInfo:any, currentItem:any) => {
-          const { shipmentId, shipmentStatusId, orderId } = currentItem;
-          if (!shipmentInfo[shipmentId]) {
-            shipmentInfo[shipmentId] = {
-              shipmentId,
-              primaryOrderId: orderId,
-              statusId : shipmentStatusId,
-              items: [currentItem]
-            };
-          } else {
-            shipmentInfo[shipmentId].items.push(currentItem);
-          }
-          return shipmentInfo;
-        }, {}));
-
-        const shipmentIds = new Set(shipments.map((shipment:any) => shipment.shipmentId));
-        const [shipmentCarriers, shipmentShippedStatuses, shipmentPackages] = await Promise.all([OrderService.fetchShipmentCarrierDetail([...shipmentIds]), OrderService.fetchShipmentShippedStatusHistory([...shipmentIds]), UtilService.findShipmentPackages([...shipmentIds])]);
-        const shipmentCarrierDetail = shipmentCarriers.reduce((carriers: any, carrierDetail:any) => {
-          carriers[carrierDetail.shipmentId] = carrierDetail;
-          return carriers;
-        }, {});
-
-        const shipmentShippedStatusDetail = shipmentShippedStatuses.reduce((shipments: any, statusDetail:any) => {
-          shipments[statusDetail.shipmentId] = statusDetail;
-          return shipments;
-        }, {});
-
-        
-        const shipmentPackageValues = Object.values(shipmentPackages).flat() as any;
-        const shipmentPackageDetail = shipmentPackageValues.reduce((shipPackages:any, shipmentPackageDetail:any) => {
-          const { shipmentId } = shipmentPackageDetail;
-          if (!shipPackages[shipmentId]) {
-            shipPackages[shipmentId] = [];
-          }
-          shipPackages[shipmentId].push(shipmentPackageDetail);
-          return shipPackages;
-        }, {})
-
-        shipments = shipments.map((shipment:any) => {
-          const shipmentDetails = shipmentShippedStatusDetail[shipment.shipmentId];
-          const carrierDetails = shipmentCarrierDetail[shipment.shipmentId]
-          const shipmentPackages = shipmentPackageDetail[shipment.shipmentId]
-          return { ...shipment, ...shipmentDetails, ...carrierDetails, shipmentPackages };
-        });
-
-        await this.dispatch('util/fetchShipmentMethodTypeDesc', shipmentCarriers.map((carrier:any) => carrier.shipmentMethodTypeId))
+        await Promise.all([
+          ...productIdBatches.map((productIds) => this.dispatch('product/fetchProducts', { productIds })),
+          this.dispatch('util/fetchPartyInformation', [firstShipment.carrierPartyId]),
+          this.dispatch('util/fetchShipmentMethodTypeDesc', [firstShipment.shipmentMethodTypeId])
+        ]);
       }
     } catch (err: any) {
       logger.error("error", err);
     }
-    commit(types.ORDER_CURRENT_UPDATED, {...state.current, shipments})
   },
 
   async updateOrderProductCount({ commit, state }, payload ) {
@@ -286,9 +237,9 @@ const actions: ActionTree<TransferOrderState, RootState> = {
 
     const item = state.current.items.find((orderItem: any) => {
       const itemVal = getProductIdentificationValue(barcodeIdentifier, getProduct(orderItem.productId)) ? getProductIdentificationValue(barcodeIdentifier, getProduct(orderItem.productId)) : getProduct(orderItem.productId)?.internalName;
-      return itemVal === payload && orderItem.statusId !== 'ITEM_COMPLETED' && orderItem.statusId !== 'ITEM_REJECTED' && orderItem.statusId !== 'ITEM_CANCELLED';
+      return itemVal === payload && orderItem.statusId === 'ITEM_PENDING_FULFILL';
     })
-    if(item){
+    if(item) {
       item.pickedQuantity = parseInt(item.pickedQuantity) + 1;
       commit(types.ORDER_CURRENT_UPDATED, state.current )
       return { isProductFound: true, orderItem: item }
@@ -333,21 +284,16 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     if(isAdminUser) {
       try {
         const payload = {
-          inputFields: {
-            parentEnumTypeId: ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
-            parentEnumTypeId_op: "in"
-          },
-          fieldList: ["description", "enumId", "enumName", "enumTypeId", "sequenceNum"],
-          distinct: "Y",
-          entityName: "EnumTypeChildAndEnum",
-          viewSize: 20, // keeping view size 20 as considering that we will have max 20 reasons
-          orderBy: "sequenceNum"
+          parentTypeId: ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
+          parentTypeId_op: "in",
+          pageSize: 20, // keeping view size 20 as considering that we will have max 20 reasons
+          orderByField: "sequenceNum"
         }
 
-        const resp = await OrderService.fetchRejectReasons(payload)
+        const resp = await TransferOrderService.fetchRejectReasons(payload)
 
-        if(!hasError(resp) && resp.data.count > 0) {
-          rejectReasons = resp.data.docs
+        if(!hasError(resp)) {
+          rejectReasons = resp.data
         } else {
           throw resp.data
         }
@@ -357,22 +303,15 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     } else {
       try {
         const payload = {
-          inputFields: {
-            enumerationGroupId: "TO_REJ_RSN_GRP"
-          },
-          // We shouldn't fetch description here, as description contains EnumGroup description which we don't wanna show on UI.
-          fieldList: ["enumerationGroupId", "enumId", "fromDate", "sequenceNum", "enumDescription", "enumName"],
-          distinct: "Y",
-          entityName: "EnumerationGroupAndMember",
-          viewSize: 200,
-          filterByDate: "Y",
-          orderBy: "sequenceNum"
+          enumerationGroupId: "FF_REJ_RSN_GRP",
+          pageSize: 200,
+          orderByField: "sequenceNum"
         }
 
-        const resp = await OrderService.fetchRejectReasons(payload)
+        const resp = await TransferOrderService.fetchFulfillmentRejectReasons(payload)
 
-        if(!hasError(resp) && resp?.data.docs.length > 0) {
-          rejectReasons = resp.data.docs
+        if(!hasError(resp)) {
+          rejectReasons = resp.data
         } else {
           throw resp.data
         }

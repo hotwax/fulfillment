@@ -3,6 +3,10 @@ export default interface UserState {
     current: any;
     permissions: any;
     pwaState: any;
+    omsRedirectionInfo: {
+        url: string;
+        token: string;
+    }
     instanceUrl: string;
     preference: {
         printShippingLabel: boolean,
@@ -13,10 +17,10 @@ export default interface UserState {
     firebaseDeviceId: string;
     hasUnreadNotifications: boolean;
     allNotificationPrefs: any;
-    newRejectionApiConfig: any;
     partialOrderRejectionConfig: any;
     collateralRejectionConfig: any;
     affectQohConfig: any;
     isShipNowDisabled: boolean;
     isUnpackDisabled: boolean;
+    isReservationFacilityFieldEnabled: boolean;
 }

@@ -12,7 +12,7 @@
     <ion-content>
       <ion-list v-for="(item, index) in items" :key="index">
         <ion-item>
-          <ion-thumbnail slot="start">
+          <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
             <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" />
           </ion-thumbnail>
           <ion-label>
@@ -82,7 +82,7 @@
     mounted() {
       const shippedHistory = [];
       this.currentOrder.shipments.forEach(shipment => {
-        if (shipment.statusId === 'SHIPMENT_SHIPPED') {
+        if (shipment.shipmentStatusId === 'SHIPMENT_SHIPPED') {
           shipment.items.forEach(item => {
             if (item.productId === this.productId) {
               shippedHistory.push({...shipment, ...item});

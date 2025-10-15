@@ -7,28 +7,23 @@ import { hasError } from '@/adapter'
 import logger from '@/logger'
 import store from '@/store';
 import { showToast, getProductStoreId } from '@/utils'
-import { translate } from '@hotwax/dxp-components'
+import { translate, useUserStore } from '@hotwax/dxp-components'
+import { getCurrentFacilityId } from '@/utils';
 
 const actions: ActionTree<UtilState, RootState> = {
   async fetchRejectReasons({ commit }) {
     let rejectReasons  = [];
     try {
       const payload = {
-        "inputFields": {
-          "parentEnumTypeId": ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
-          "parentEnumTypeId_op": "in"
-        },
-        "fieldList": ["description", "enumId", "enumName", "enumTypeId", "sequenceNum"],
-        "distinct": "Y",
-        "entityName": "EnumTypeChildAndEnum",
-        "viewSize": 20, // keeping view size 20 as considering that we will have max 20 reasons
-        "orderBy": "sequenceNum"
+        parentTypeId: ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
+        parentTypeId_op: "in",
+        pageSize: 20, // keeping view size 20 as considering that we will have max 20 reasons
+        orderByField: "sequenceNum"
       }
 
       const resp = await UtilService.fetchRejectReasons(payload)
-
-      if(!hasError(resp) && resp.data.count > 0) {
-        rejectReasons = resp.data.docs
+      if(!hasError(resp)) {
+        rejectReasons = resp.data
       } else {
         throw resp.data
       }
@@ -43,34 +38,36 @@ const actions: ActionTree<UtilState, RootState> = {
     const permissions = store.getters['user/getUserPermissions'];
 
     const isAdminUser = permissions.some((permission: any) => permission.action === "APP_STOREFULFILLMENT_ADMIN")
-    const isApiSuccess = isAdminUser ? await dispatch("fetchRejectReasons") : await dispatch("fetchFulfillmentRejectReasons")
+    const isApiSuccess = isAdminUser ? await dispatch("fetchRejectReasons") : await dispatch("fetchFulfillmentRejectReasons", true)
 
     commit(types.UTIL_REJECT_REASON_OPTIONS_UPDATED, ((!isAdminUser && isApiSuccess) ? Object.values(state.fulfillmentRejectReasons) : state.rejectReasons ));
   },
 
-  async fetchFulfillmentRejectReasons({ commit, dispatch }) {
+  // @param fetchRestrictedRejReasons - Defined whether to fetch restricted group enums or not, defined as the same action is used for managing group from rej reasons page
+  async fetchFulfillmentRejectReasons({ commit, dispatch }, fetchRestrictedRejReasons = false) {
     let isApiSuccess = true;
-    const fulfillmentRejectReasons  = {}  as any;
+    let fulfillmentRejectReasons  = {}  as any;
     try {
       const payload = {
-        "inputFields": {
-          "enumerationGroupId": "FF_REJ_RSN_GRP"
-        },
-        // We shouldn't fetch description here, as description contains EnumGroup description which we don't wanna show on UI.
-        "fieldList": ["enumerationGroupId", "enumId", "fromDate", "sequenceNum", "enumDescription", "enumName"],
-        "distinct": "Y",
-        "entityName": "EnumerationGroupAndMember",
-        "viewSize": 200,
-        "filterByDate": "Y",
-        "orderBy": "sequenceNum"
+        enumerationGroupId: fetchRestrictedRejReasons ? ["FF_REJ_RSN_GRP", "FF_REJ_RSN_RES_GRP"] : ["FF_REJ_RSN_GRP"],  // FF_REJ_RSN_RES_GRP, Fulfillment restricted rejection reason group
+        enumerationGroupId_op: "in",
+        pageSize: 200,
+        orderByField: "sequenceNum"
       }
 
       const resp = await UtilService.fetchFulfillmentRejectReasons(payload)
 
       if(!hasError(resp)) {
-        resp.data.docs.map((reason: any) => {
-          fulfillmentRejectReasons[reason.enumId] = reason
+        const rejectionsReasons = resp.data.filter((reason: any) => !reason.thruDate).reduce((rejReasons: any, reason: any) => {
+          rejReasons[reason.enumerationGroupId][reason.enumId] = reason
+          return rejReasons;
+        }, {
+          FF_REJ_RSN_GRP: {},
+          FF_REJ_RSN_RES_GRP: {}
         })
+
+        // If the restricted group has rejection reasons and the facility is not of type warehouse then display restricted rejection reasons otherwise display the reasons from the default rejection reason group
+        fulfillmentRejectReasons = (useUserStore().getCurrentFacility as any).facilityTypeId === "WAREHOUSE" && Object.keys(rejectionsReasons["FF_REJ_RSN_RES_GRP"]).length ? rejectionsReasons["FF_REJ_RSN_RES_GRP"] : rejectionsReasons["FF_REJ_RSN_GRP"]
       } else {
         throw resp.data
       }
@@ -86,6 +83,33 @@ const actions: ActionTree<UtilState, RootState> = {
     return isApiSuccess
   },
 
+  async fetchRejectReasonEnumTypes({ commit, state }) {
+    if(state.rejectReasonEnumTypes.length) {
+      return;
+    }
+
+    let rejectReasonEnumTypes = [] as any;
+
+    try {
+      const params = {
+        parentTypeId: ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
+        parentTypeId_op: "in",
+        pageIndex: 0,
+        pageSize: 10
+      }
+
+      const resp = await UtilService.fetchRejectReasonEnumTypes(params)
+      if (!hasError(resp)) {
+        rejectReasonEnumTypes = resp.data
+      } else {
+        throw resp.data
+      }
+    } catch (err) {
+      logger.error(err)
+    }
+    commit(types.UTIL_REJECT_REASON_ENUM_TYPES_UPDATED, rejectReasonEnumTypes)
+  },
+
   async fetchPartyInformation({ commit, state }, partyIds) {
     let partyInformation = JSON.parse(JSON.stringify(state.partyNames))
     const cachedPartyIds = Object.keys(partyInformation);
@@ -95,20 +119,17 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const payload = {
-        "inputFields": {
-          "partyId": ids,
-          "partyId_op": "in"
-        },
-        "fieldList": ["firstName", "middleName", "lastName", "groupName", "partyId"],
-        "entityName": "PartyNameView",
-        "viewSize": ids.length
+        partyId: ids,
+        partyId_op: "in",
+        fieldsToSelect: ["firstName", "middleName", "lastName", "groupName", "partyId"],
+        pageSize: ids.length
       }
 
       const resp = await UtilService.fetchPartyInformation(payload);
 
-      if(!hasError(resp)) {
+      if (!hasError(resp)) {
         const partyResp = {} as any
-        resp.data.docs.map((partyInformation: any) => {
+        resp.data.map((partyInformation: any) => {
 
           let partyName = ''
           if(partyInformation.groupName) {
@@ -136,29 +157,61 @@ const actions: ActionTree<UtilState, RootState> = {
     return partyInformation;
   },
 
-  async fetchShipmentMethodTypeDesc({ commit, state }, shipmentIds) {
-    let shipmentMethodTypeDesc = JSON.parse(JSON.stringify(state.shipmentMethodTypeDesc))
-    const cachedShipmentMethodIds = Object.keys(shipmentMethodTypeDesc);
-    const ids = shipmentIds.filter((shipmentId: string) => !cachedShipmentMethodIds.includes(shipmentId))
+  async fetchCarrierShipmentBoxTypes({ commit, dispatch }) {
+    try {
+      const shipmentBoxTypeDesc = {} as any;
+      const resp = await UtilService.fetchCarrierShipmentBoxTypes({
+        pageIndex: 0,
+        pageSize: 100, //considerting there won't be more than 100 carrier shipment box types
+        fieldsToSelect: ["shipmentBoxTypeId", "partyId"]
+      });
 
-    if(!ids.length) return shipmentMethodTypeDesc;
+      const shipmentBoxTypeIds = new Set();
+
+      if (!hasError(resp)) {
+        const shipmentBoxTypeDetail = resp.data.reduce((shipmentBoxTypes: any, carrierShipmentBoxType: any) => {
+          shipmentBoxTypeIds.add(carrierShipmentBoxType.shipmentBoxTypeId)
+          if (shipmentBoxTypes[carrierShipmentBoxType.partyId]) {
+            shipmentBoxTypeDesc[carrierShipmentBoxType.shipmentBoxTypeId] = carrierShipmentBoxType?.shipmentBoxType?.description
+            shipmentBoxTypes[carrierShipmentBoxType.partyId].push({shipmentBoxTypeId: carrierShipmentBoxType.shipmentBoxTypeId, description: carrierShipmentBoxType?.shipmentBoxType?.description})
+          } else {
+            shipmentBoxTypeDesc[carrierShipmentBoxType.shipmentBoxTypeId] = carrierShipmentBoxType?.shipmentBoxType?.description
+            shipmentBoxTypes[carrierShipmentBoxType.partyId] = [{shipmentBoxTypeId: carrierShipmentBoxType.shipmentBoxTypeId, description: carrierShipmentBoxType?.shipmentBoxType?.description}]
+          }
+          return shipmentBoxTypes
+        }, {})
+
+        commit(types.UTIL_SHIPMENT_BOXES_UPDATED, shipmentBoxTypeDesc)
+        commit(types.UTIL_CARRIER_SHIPMENT_BOX_TYPES_UPDATED, shipmentBoxTypeDetail)
+      } else {
+        throw resp.data;
+      }
+    } catch(err) {
+      logger.error('Failed to fetch carrier shipment box type information', err)
+    }
+  },
+
+  async fetchShipmentMethodTypeDesc({ commit, state }, shipmentMethodTypeIds) {
+    let shipmentMethodTypeDesc = JSON.parse(JSON.stringify(state.shipmentMethodTypeDesc))
+    const cachedShipmentMethodTypeIds = Object.keys(shipmentMethodTypeDesc);
+    const ids = shipmentMethodTypeIds.filter((shipmentMethodTypeId: string) => !cachedShipmentMethodTypeIds.includes(shipmentMethodTypeId))
+
+    if (!ids.length) return shipmentMethodTypeDesc;
 
     try {
+      
       const payload = {
-        "inputFields": {
-          "shipmentMethodTypeId": ids,
-          "shipmentMethodTypeId_op": "in"
-        },
-        "fieldList": ["shipmentMethodTypeId", "description"],
-        "entityName": "ShipmentMethodType",
-        "viewSize": ids.length
+        shipmentMethodTypeId: ids,
+        shipmentMethodTypeId_op: "in",
+        fieldsToSelect: ["shipmentMethodTypeId", "description"],
+        pageSize: ids.length
       }
-
+      
       const resp = await UtilService.fetchShipmentMethodTypeDesc(payload);
 
-      if(!hasError(resp)) {
+      if (!hasError(resp)) {
         const shipmentMethodResp = {} as any
-        resp.data.docs.map((shipmentMethodInformation: any) => {
+        resp.data.map((shipmentMethodInformation: any) => {
           shipmentMethodResp[shipmentMethodInformation.shipmentMethodTypeId] = shipmentMethodInformation.description
         })
 
@@ -178,48 +231,6 @@ const actions: ActionTree<UtilState, RootState> = {
     return shipmentMethodTypeDesc;
   },
 
-  async fetchShipmentBoxTypeDesc({ commit, state }, shipmentBoxIds) {
-    let shipmentBoxTypeDesc = JSON.parse(JSON.stringify(state.shipmentBoxTypeDesc))
-    const cachedShipmentBoxIds = Object.keys(shipmentBoxTypeDesc);
-    const ids = shipmentBoxIds.filter((boxId: string) => !cachedShipmentBoxIds.includes(boxId))
-
-    if(!ids.length) return shipmentBoxTypeDesc;
-
-    try {
-      const payload = {
-        "inputFields": {
-          "shipmentBoxTypeId": ids,
-          "shipmentBoxTypeId_op": "in"
-        },
-        "fieldList": ["shipmentBoxTypeId", "description"],
-        "entityName": "ShipmentBoxType",
-        "viewSize": ids.length
-      }
-
-      const resp = await UtilService.fetchShipmentBoxTypeDesc(payload);
-
-      if(!hasError(resp)) {
-        const shipmentBoxResp = {} as any
-        resp.data.docs.map((shipmentBoxInformation: any) => {
-          shipmentBoxResp[shipmentBoxInformation.shipmentBoxTypeId] = shipmentBoxInformation.description
-        })
-
-        shipmentBoxTypeDesc = {
-          ...shipmentBoxTypeDesc,
-          ...shipmentBoxResp
-        }
-
-        commit(types.UTIL_SHIPMENT_BOXES_UPDATED, shipmentBoxTypeDesc)
-      } else {
-        throw resp.data
-      }
-    } catch(err) {
-      logger.error('Error fetching shipment boxes description', err)
-    }
-
-    return shipmentBoxTypeDesc;
-  },
-
   async fetchFacilityTypeInformation({ commit, state }, facilityTypeIds) {
     const facilityTypeDesc = JSON.parse(JSON.stringify(state.facilityTypeDesc))
 
@@ -230,23 +241,18 @@ const actions: ActionTree<UtilState, RootState> = {
     if (!facilityTypeIdFilter.length) return;
 
     const payload = {
-      inputFields: {
-        facilityTypeId: facilityTypeIds,
-        facilityTypeId_op: 'in'
-      },
-      viewSize: facilityTypeIds.length,
-      entityName: 'FacilityType',
-      noConditionFind: 'Y',
-      distinct: "Y",
-      fieldList: ["facilityTypeId", "description"]
+      facilityTypeId: facilityTypeIds,
+      facilityTypeId_op: 'in',
+      pageSize: facilityTypeIds.length,
+      fieldsToSelect: ["facilityTypeId", "typeDescription"]
     }
 
     try {
       const resp = await UtilService.fetchFacilityTypeInformation(payload);
 
-      if(!hasError(resp) && resp.data?.docs.length > 0) {
-        resp.data.docs.map((facilityType: any) => { 
-          facilityTypeDesc[facilityType.facilityTypeId] = facilityType['description'] 
+      if(!hasError(resp) && resp.data?.length > 0) {
+        resp.data.map((facilityType: any) => { 
+          facilityTypeDesc[facilityType.facilityTypeId] = facilityType['typeDescription'] 
         })
 
         commit(types.UTIL_FACILITY_TYPE_UPDATED, facilityTypeDesc)
@@ -266,20 +272,17 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const payload = {
-        "inputFields": {
-          "paymentMethodTypeId": ids,
-          "paymentMethodTypeId_op": "in"
-        },
-        "fieldList": ["paymentMethodTypeId", "description"],
-        "entityName": "PaymentMethodType",
-        "viewSize": ids.length
+        paymentMethodTypeId: ids,
+        paymentMethodTypeId_op: "in",
+        fieldsToSelect: ["paymentMethodTypeId", "description"],
+        pageSize: ids.length
       }
 
       const resp = await UtilService.fetchPaymentMethodTypeDesc(payload);
 
       if(!hasError(resp)) {
         const paymentMethodResp = {} as any
-        resp.data.docs.map((paymentMethodType: any) => {
+        resp.data.map((paymentMethodType: any) => {
           paymentMethodResp[paymentMethodType.paymentMethodTypeId] = paymentMethodType.description
         })
 
@@ -307,20 +310,17 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const payload = {
-        "inputFields": {
-          "statusId": ids,
-          "statusId_op": "in"
-        },
-        "fieldList": ["statusId", "description"],
-        "entityName": "StatusItem",
-        "viewSize": ids.length
+        statusId: ids,
+        statusId_op: "in",
+        fieldsToSelect: ["statusId", "description"],
+        pageSize: ids.length
       }
 
       const resp = await UtilService.fetchStatusDesc(payload);
 
       if(!hasError(resp)) {
         const statusResp = {} as any
-        resp.data.docs.map((statusItem: any) => {
+        resp.data.map((statusItem: any) => {
           statusResp[statusItem.statusId] = statusItem.description
         })
 
@@ -343,22 +343,20 @@ const actions: ActionTree<UtilState, RootState> = {
   async findProductStoreShipmentMethCount({ commit }) {
     let productStoreShipmentMethCount = 0
     const params = {
-      "entityName": "ProductStoreShipmentMeth",
-      "inputFields": {
-        "partyId": "_NA_",
-        "partyId_op": "notEqual",
-        "roleTypeId": "CARRIER",
-        "productStoreId": getProductStoreId()
-      },
-      "fieldList": ['roleTypeId', "partyId"],
-      "viewSize": 1
+      "partyId": "_NA_",
+      "partyId_op": "equals",
+      "partyId_not": "Y",
+      "roleTypeId": "CARRIER",
+      "productStoreId": getProductStoreId(),
+      "fieldsToSelect": ['roleTypeId', "partyId"],
+      "pageSize": 1
     }
 
     try {
       const resp = await UtilService.findProductStoreShipmentMethCount(params);
 
-      if(resp?.status == 200 && !hasError(resp) && resp.data.count) {
-        productStoreShipmentMethCount = resp.data.count
+      if(!hasError(resp)) {
+        productStoreShipmentMethCount = resp.data[0]?.shipmentMethodCount
       } else {
         throw resp?.data
       }
@@ -369,36 +367,6 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_PRODUCT_STORE_SHIPMENT_METH_COUNT_UPDATED, productStoreShipmentMethCount)
   },
   
-  async fetchRejectReasonEnumTypes({ commit, state }) {
-    if(state.rejectReasonEnumTypes.length) {
-      return;
-    }
-
-    let rejectReasonEnumTypes = [] as any;
-
-    try {
-      const payload = {
-        "inputFields": {
-          "parentTypeId": ["REPORT_AN_ISSUE", "RPRT_NO_VAR_LOG"],
-          "parentTypeId_op": "in"
-        },
-        "fieldList": ["description", "enumTypeId"],
-        "entityName": "EnumerationType",
-        "noConditionFind": "Y"
-      }
-
-      const resp = await UtilService.fetchRejectReasonEnumTypes(payload)
-      if (!hasError(resp) && resp.data.count > 0) {
-        rejectReasonEnumTypes = resp.data.docs
-      } else {
-        throw resp.data
-      }
-    } catch (err) {
-      logger.error(err)
-    }
-    commit(types.UTIL_REJECT_REASON_ENUM_TYPES_UPDATED, rejectReasonEnumTypes)
-  },
-
   async fetchEnumerations({ commit, state }, ids) {
     let enumerations = JSON.parse(JSON.stringify(state.enumerations)) as any
 
@@ -410,19 +378,15 @@ const actions: ActionTree<UtilState, RootState> = {
 
     try {
       const payload = {
-        inputFields: {
-          enumId: enumIds,
-          enumId_op: "in"
-        },
-        viewSize: enumIds.length,
-        fieldList: ["enumId", "description"],
-        entityName: "Enumeration",
-        distinct: "Y"
+        enumId: enumIds,
+        enumId_op: "in",
+        pageSize: enumIds.length,
+        fieldsToSelect: ["enumId", "description"],
       }
 
       const resp = await UtilService.fetchEnumeration(payload)
-      if (!hasError(resp) && resp.data.count > 0) {
-        enumerations = resp.data.docs.reduce((enums: any, enumeration: any) => {
+      if (!hasError(resp)) {
+        enumerations = resp.data.reduce((enums: any, enumeration: any) => {
           enums[enumeration.enumId] = enumeration.description
           return enums;
         }, enumerations)
@@ -440,24 +404,24 @@ const actions: ActionTree<UtilState, RootState> = {
     commit(types.UTIL_REJECT_REASONS_UPDATED, payload)
   },
 
-  async fetchFacilities({ commit }) {
+  async fetchFacilities({ commit }, productStoreId?: string) {
     let facilities  = [];
     try {
       const payload = {
-        "inputFields": {
-          "parentTypeId": "VIRTUAL_FACILITY",
-          "parentTypeId_op": "notEqual",
-          "facilityTypeId": "VIRTUAL_FACILITY",
-          "facilityTypeId_op": "notEqual"
-        },
-        "entityName": "FacilityAndType",
-        "viewSize": 250 // keeping view size 100 as considering that we will have max 100 facilities
+        productStoreId: productStoreId,
+        "parentTypeId": "VIRTUAL_FACILITY",
+        "parentTypeId_op": "equals",
+        "parentTypeId_not": "Y",
+        "facilityTypeId": "VIRTUAL_FACILITY",
+        "facilityTypeId_op": "equals",
+        "facilityTypeId_not": "Y",
+        "pageSize": 250 // keeping view size 250 as considering that we will have max 100 facilities
       }
 
       const resp = await UtilService.fetchFacilities(payload)
 
-      if (!hasError(resp) && resp.data.count > 0) {
-        facilities = resp.data.docs
+      if (!hasError(resp)) {
+        facilities = resp.data
       } else {
         throw resp.data
       }
@@ -471,14 +435,13 @@ const actions: ActionTree<UtilState, RootState> = {
     let stores  = [];
     try {
       const payload = {
-        "entityName": "ProductStore",
-        "noConditionFind": "Y",
-        "viewSize": 250 // keeping view size 100 as considering that we will have max 100 product stores
+        fieldsToSelect: ['productStoreId', "storeName"],
+        pageSize: 250 // keeping view size 250 as considering that we will have max 250 product stores
       }
 
       const resp = await UtilService.fetchProductStores(payload)
-      if (!hasError(resp) && resp.data.count > 0) {
-        stores = resp.data.docs
+      if (!hasError(resp)) {
+        stores = resp.data
       } else {
         throw resp.data
       }
@@ -487,47 +450,19 @@ const actions: ActionTree<UtilState, RootState> = {
     }
     commit(types.UTIL_PRODUCT_STORES_UPDATED, stores)
   },
-
-  async fetchShipmentGatewayConfigs({ commit }) {
-    let configs  = {};
-    try {
-      const payload = {
-        "entityName": "ShipmentGatewayConfig",
-        "noConditionFind": "Y",
-        "viewSize": 50 // keeping view size 50 as considering there will not be more than 50 shipment gateway
-      }
-
-      const resp = await UtilService.fetchShipmentGatewayConfigs(payload)
-      if (!hasError(resp) && resp.data.count > 0) {
-        configs = resp.data.docs.reduce((updatedConfigDetail:any, config:any) => {
-          updatedConfigDetail[config.shipmentGatewayConfigId] = config;
-          return updatedConfigDetail;
-        }, {})
-      } else {
-        throw resp.data
-      }
-    } catch (err) {
-      logger.error('Failed to fetch shipment gateway config', err)
-    }
-    commit(types.UTIL_SHIPMENT_GATEWAY_CONFIGS_UPDATED, configs)
-  },
   
   async getForceScanSetting({ commit, dispatch }, eComStoreId) {
     const payload = {
-      "inputFields": {
-        "productStoreId": eComStoreId,
-        "settingTypeEnumId": "FULFILL_FORCE_SCAN"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["settingValue", "fromDate"],
-      "viewSize": 1
+      productStoreId: eComStoreId,
+      settingTypeEnumId: "FULFILL_FORCE_SCAN",
+      fieldsToSelect: ["settingValue", "settingTypeEnumId"],
+      pageSize: 1
     }
 
     try {
       const resp = await UtilService.getProductStoreSetting(payload) as any
-      if(!hasError(resp)) {
-        const respValue = resp.data.docs[0].settingValue === "true"
+      if (!hasError(resp)) {
+        const respValue = resp.data[0]?.settingValue === "true"
         commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, respValue)
       } else {
         dispatch('createForceScanSetting');
@@ -539,7 +474,7 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   async createForceScanSetting({ commit }) {
-    const fromDate = Date.now()
+    let isSettingExists = false
 
     try {
       if(!await UtilService.isEnumExists("FULFILL_FORCE_SCAN")) {
@@ -557,13 +492,13 @@ const actions: ActionTree<UtilState, RootState> = {
       }
 
       const params = {
-        fromDate,
         "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "FULFILL_FORCE_SCAN",
         "settingValue": "false"
       }
 
       await UtilService.createForceScanSetting(params) as any
+      isSettingExists = true
     } catch(err) {
       console.error(err)
     }
@@ -571,7 +506,7 @@ const actions: ActionTree<UtilState, RootState> = {
     // not checking for resp success and fail case as every time we need to update the state with the
     // default value when creating a scan setting
     commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, false)
-    return fromDate;
+    return isSettingExists;
   },
 
   async setForceScanSetting({ commit, dispatch, state }, value) {
@@ -585,32 +520,33 @@ const actions: ActionTree<UtilState, RootState> = {
       return;
     }
 
-    let fromDate;
+    let isSettingExists = false;
 
     try {
       const resp = await UtilService.getProductStoreSetting({
-        "inputFields": {
-          "productStoreId": eComStoreId,
-          "settingTypeEnumId": "FULFILL_FORCE_SCAN"
-        },
-        "filterByDate": 'Y',
-        "entityName": "ProductStoreSetting",
-        "fieldList": ["fromDate"],
-        "viewSize": 1
+          productStoreId: eComStoreId,
+          settingTypeEnumId: "FULFILL_FORCE_SCAN",
+          fieldsToSelect: ["settingTypeEnumId"],
+          pageSize: 1
       }) as any
-      if(!hasError(resp)) {
-        fromDate = resp.data.docs[0]?.fromDate
+      if(!hasError(resp) && resp.data[0]?.settingTypeEnumId) {
+        isSettingExists = true
       }
     } catch(err) {
       console.error(err)
     }
 
-    if(!fromDate) {
-      fromDate = await dispatch("createForceScanSetting");
+    if(!isSettingExists) {
+      isSettingExists = await dispatch("createForceScanSetting");
+    }
+
+    if(!isSettingExists) {
+      showToast(translate("Failed to update force scan preference."))
+      commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
+      return;
     }
 
     const params = {
-      "fromDate": fromDate,
       "productStoreId": eComStoreId,
       "settingTypeEnumId": "FULFILL_FORCE_SCAN",
       "settingValue": `${value}`
@@ -619,7 +555,7 @@ const actions: ActionTree<UtilState, RootState> = {
     try {
       const resp = await UtilService.updateForceScanSetting(params) as any
 
-      if((!hasError(resp))) {
+      if ((!hasError(resp))) {
         showToast(translate("Force scan preference updated successfully."))
         prefValue = value
       } else {
@@ -634,20 +570,16 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async fetchBarcodeIdentificationPref({ commit, dispatch }, eComStoreId) {
     const payload = {
-      "inputFields": {
-        "productStoreId": eComStoreId,
-        "settingTypeEnumId": "BARCODE_IDEN_PREF"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["settingValue", "fromDate"],
-      "viewSize": 1
+      productStoreId: eComStoreId,
+      settingTypeEnumId: "BARCODE_IDEN_PREF",
+      fieldToSelect: ["settingValue", "settingTypeEnumId"],
+      pageSize: 1
     }
 
     try {
       const resp = await UtilService.getProductStoreSetting(payload) as any
       if(!hasError(resp)) {
-        const respValue = resp.data.docs[0].settingValue
+        const respValue = resp.data[0].settingValue
         commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, respValue)
       } else {
         dispatch("createBarcodeIdentificationPref");
@@ -659,7 +591,7 @@ const actions: ActionTree<UtilState, RootState> = {
   },
 
   async createBarcodeIdentificationPref({ commit }) {
-    const fromDate = Date.now()
+    let isSettingExists = false;
 
     try {
       if(!await UtilService.isEnumExists("BARCODE_IDEN_PREF")) {
@@ -677,13 +609,13 @@ const actions: ActionTree<UtilState, RootState> = {
       }
 
       const params = {
-        fromDate,
         "productStoreId": getProductStoreId(),
         "settingTypeEnumId": "BARCODE_IDEN_PREF",
         "settingValue": "internalName"
       }  
 
       await UtilService.createBarcodeIdentificationPref(params) as any
+      isSettingExists = true
     } catch(err) {
       console.error(err)
     }
@@ -691,7 +623,7 @@ const actions: ActionTree<UtilState, RootState> = {
     // not checking for resp success and fail case as every time we need to update the state with the
     // default value when creating a store setting
     commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, "internalName")
-    return fromDate;
+    return isSettingExists;
   },
 
   async setBarcodeIdentificationPref({ commit, dispatch, state }, value) {
@@ -705,32 +637,33 @@ const actions: ActionTree<UtilState, RootState> = {
       return;
     }
 
-    let fromDate;
+    let isSettingExists = false;
 
     try {
       const resp = await UtilService.getProductStoreSetting({
-        "inputFields": {
-          "productStoreId": eComStoreId,
-          "settingTypeEnumId": "BARCODE_IDEN_PREF"
-        },
-        "filterByDate": 'Y',
-        "entityName": "ProductStoreSetting",
-        "fieldList": ["fromDate"],
-        "viewSize": 1
+        "productStoreId": eComStoreId,
+        "settingTypeEnumId": "BARCODE_IDEN_PREF",
+        "fieldsToSelect": ["settingTypeEnumId"],
+        "pageSize": 1
       }) as any
-      if(!hasError(resp)) {
-        fromDate = resp.data.docs[0]?.fromDate
+      if(!hasError(resp) && resp.data[0]?.settingTypeEnumId) {
+        isSettingExists = true 
       }
     } catch(err) {
       console.error(err)
     }
 
-    if(!fromDate) {
-      fromDate = await dispatch("createBarcodeIdentificationPref");
+    if(!isSettingExists) {
+      isSettingExists = await dispatch("createBarcodeIdentificationPref");
+    }
+
+    if(!isSettingExists) {
+      showToast(translate("Failed to update barcode identification preference."))
+      commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, prefValue)
+      return;
     }
 
     const params = {
-      "fromDate": fromDate,
       "productStoreId": eComStoreId,
       "settingTypeEnumId": "BARCODE_IDEN_PREF",
       "settingValue": value
@@ -758,7 +691,219 @@ const actions: ActionTree<UtilState, RootState> = {
 
   async updateBarcodeIdentificationPref({ commit }, payload) { 
     commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, payload)
+  },
+  
+  async fetchCarriersDetail ({ commit, state }) {
+    if(Object.keys(state.carrierDesc)?.length) return;
+    const carrierDesc = {} as any;
+
+    try {
+      const resp = await UtilService.fetchCarriers({
+        "roleTypeId": "CARRIER",
+        "fieldsToSelect": ["partyId", "partyTypeId", "roleTypeId", "firstName", "lastName", "groupName"],
+        "distinct": "Y",
+        "pageSize": 20
+      });
+
+      if (!hasError(resp)) {
+        resp.data.map((carrier: any) => {
+          const personName = [carrier.firstName, carrier.lastName].filter(Boolean).join(' ');
+          carrierDesc[carrier.partyId] = (carrier.partyTypeId === "PERSON" && personName) || carrier.groupName || carrier.partyId;
+        })
+      } else {
+        throw resp.data;
+      }
+    } catch (err: any) {
+      logger.error("error", err);
+    }
+    commit(types.UTIL_CARRIER_DESC_UPDATED, carrierDesc)
+  },
+
+  async fetchStoreCarrierAndMethods({ commit }) {
+    let shipmentMethodsByCarrier = {};
+
+    try {
+      const payload = {
+        customParametersMap:{
+          "productStoreId": getProductStoreId(),
+          "roleTypeId": "CARRIER",
+          "shipmentMethodTypeId": "STOREPICKUP",
+          "shipmentMethodTypeId_op": "equals",
+          "shipmentMethodTypeId_not": "Y",
+          pageIndex: 0,
+          pageSize: 100
+        },
+        dataDocumentId: "ProductStoreShipmentMethod",
+        filterByDate: true
+      }
+
+      const resp = await UtilService.fetchStoreCarrierAndMethods(payload);
+
+      if(!hasError(resp)) {
+        const storeCarrierAndMethods = resp.data.entityValueList;
+        shipmentMethodsByCarrier = storeCarrierAndMethods.reduce((shipmentMethodsByCarrier: any, storeCarrierAndMethod: any) => {
+          const { partyId, shipmentMethodTypeId, description } = storeCarrierAndMethod;
+
+          if(!shipmentMethodsByCarrier[partyId]) shipmentMethodsByCarrier[partyId] = []
+          // only push this shipment method if not already added
+          if(!shipmentMethodsByCarrier[partyId].some((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)) {
+            shipmentMethodsByCarrier[partyId].push({ shipmentMethodTypeId, description });
+          }
+          return shipmentMethodsByCarrier
+        }, {})
+      } else {
+        throw resp.data
+      }
+    } catch(err) {
+      logger.error('Error fetching status description', err)
+    }
+    commit(types.UTIL_SHPMNT_MTHD_BY_CARRIER_UPDATED, shipmentMethodsByCarrier)
+  },
+
+  async fetchFacilityAddresses ({ commit, state }, facilityIds) {
+    const facilityAddresses = state.facilityAddresses ? JSON.parse(JSON.stringify(state.facilityAddresses)) : {}
+    const addresses = [] as any;
+    const remainingFacilityIds = [] as any;
+
+    facilityIds.map((facilityId: string) => {
+      facilityAddresses[facilityId] ? addresses.push(facilityAddresses[facilityId]) : remainingFacilityIds.push(facilityId)
+    })
+
+    if(!remainingFacilityIds?.length) return addresses;
+
+    try {
+      const responses = await Promise.all(
+        remainingFacilityIds.map((facilityId:any) =>
+          UtilService.fetchFacilityAddresses({
+            contactMechPurposeTypeId: "PRIMARY_LOCATION",
+            contactMechTypeId: "POSTAL_ADDRESS",
+            facilityId,
+          })
+        )
+      ); 
+
+      const hasFailedResponse = responses.some((response: any) => response.status === 'rejected')
+      if (hasFailedResponse) {
+        throw responses
+      }
+
+      responses.map((response: any) => {
+        if(response.data?.facilityContactMechs?.length) {
+          response.data.facilityContactMechs.map((facilityAddress: any) => {
+            facilityAddresses[facilityAddress.facilityId] = facilityAddress;
+            addresses.push(facilityAddress)
+          })
+        }
+      })
+    } catch (error) {
+      logger.error(error);
+    }
+    commit(types.UTIL_FACILITY_ADDRESSES_UPDATED, facilityAddresses)
+  },
+
+  async clearUtilState ({ commit }) {
+    commit(types.UTIL_CLEARED)
+  },
+
+  async fetchLabelImageType({ commit, state }, carrierId) {
+    const facilityId = (useUserStore().getCurrentFacility as any).facilityId
+    let labelImageType = "PNG"
+    if(state.facilityShippingLabelImageType[facilityId]) {
+      return state.facilityShippingLabelImageType[facilityId]
+    }
+
+    const isFacilityZPLConfigured = await UtilService.fetchFacilityZPLGroupInfo(facilityId);
+    
+    if(isFacilityZPLConfigured) {
+      labelImageType = "ZPLII"
+      commit(types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED, {
+        labelImageType,
+        facilityId
+      })
+      return labelImageType;
+    }
+
+    try {
+      const resp = await UtilService.fetchLabelImageType(carrierId);
+
+      if(hasError(resp) || !resp.data.length) {
+        throw resp.data;
+      }
+
+      const labelImageType = resp?.data[0]?.systemPropertyValue;
+      commit(types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED, {
+        labelImageType,
+        facilityId
+      })
+      return labelImageType;
+    } catch (err) {
+      logger.error("Failed to fetch label image type", err)
+    }
+  },
+
+  async fetchProductStoreSettingPicklist({ commit }, eComStoreId) {
+    let isPicklistDownloadEnabled = false
+    const payload = {
+      "productStoreId": eComStoreId,
+      "settingTypeEnumId": "FF_DOWNLOAD_PICKLIST",
+      "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
+      "pageSize": 1
+    }
+
+    try {
+      const resp = await UtilService.getProductStoreSetting(payload) as any
+      if (!hasError(resp) && resp.data?.length) {
+        isPicklistDownloadEnabled = resp.data[0].settingValue == "true"
+      }
+    } catch(err) {
+      logger.error(err)
+    }
+    commit(types.UTIL_PICKLIST_DOWNLOAD_STATUS_UPDATED, isPicklistDownloadEnabled)
+  },
+  async fetchExcludeOrderBrokerDays({ commit }, productStoreId) {
+    let excludeOrderBrokerDays = undefined
+    try {
+      const resp = await UtilService.fetchExcludeOrderBrokerDays({
+        "productStoreId": productStoreId,
+        "settingTypeEnumId": "EXCLUDE_ODR_BKR_DAYS"
+      })
+
+      if (!hasError(resp) && resp.data[0]?.settingTypeEnumId && resp.data[0]?.settingValue !== null) {
+        excludeOrderBrokerDays = Number(resp.data[0]?.settingValue)
+      }
+    } catch(err) {
+      logger.error("Failed to get the exclude order broker days", err)
+    }
+    commit(types.UTIL_EXCLUDE_ORDER_BROKER_DAYS_UPDATED, excludeOrderBrokerDays)
+  },
+
+  async fetchAutoShippingLabelConfig({commit}) {
+      let resp: any;
+      try {     
+        const currentFacility: any = getCurrentFacilityId();
+        // 1. Check if current facility is part of Auto shipping group
+        resp = await UtilService.getFacilityGroupAndMemberDetails({
+          customParametersMap: {
+            "facilityId": currentFacility,
+            "facilityGroupId": "AUTO_SHIPPING_LABEL",
+            pageIndex: 0,
+            pageSize: 1
+          },
+          dataDocumentId: "FacilityGroupAndMember",
+          filterByDate: true
+        })
+  
+        if (!hasError(resp) && resp.data?.entityValueList?.length > 0) {
+          commit(types.SET_AUTO_SHIPPING_LABEL_ENABLED, true);
+        } else {
+          commit(types.SET_AUTO_SHIPPING_LABEL_ENABLED, false);
+        }
+      } catch (err) {
+        logger.error('Failed to check auto shipping label group', err);
+        commit(types.SET_AUTO_SHIPPING_LABEL_ENABLED, false);
+      }
   }
+
 }
 
 export default actions;

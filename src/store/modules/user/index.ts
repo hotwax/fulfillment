@@ -20,17 +20,21 @@ const userModule: Module<UserState, RootState> = {
         updateExists: false,
         registration: null,
       },
+      omsRedirectionInfo: {
+        url: "",
+        token: ""
+      },
       notifications: [],
       notificationPrefs: [],
       firebaseDeviceId: '',
       hasUnreadNotifications: true,
       allNotificationPrefs: [],
-      newRejectionApiConfig: {},
       partialOrderRejectionConfig: {},
       collateralRejectionConfig: {},
       affectQohConfig: {},
       isShipNowDisabled: false,
-      isUnpackDisabled: false
+      isUnpackDisabled: false,
+      isReservationFacilityFieldEnabled: false
     },
     getters,
     actions,

@@ -1,22 +1,25 @@
 <template>
-  <ion-page>
-    <TransferOrderFilters menu-id="transfer-order-filters" content-id="transfer-order-filters" :queryString="transferOrders.query.queryString" :shipmentMethods="shipmentMethods" :statuses="statuses"/>
-    
-    <ion-header :translucent="true">
+  <ion-page> 
+   <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button menu="start" slot="start" />
         <ion-title v-if="!transferOrders.total">{{ transferOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-title v-else>{{ transferOrders.list.length }} {{ translate('of') }} {{ transferOrders.total }} {{ translate('orders') }}</ion-title>
-        <ion-buttons slot="end">
-          <ion-menu-button menu="transfer-order-filters" :disabled="!transferOrderCount">
-            <ion-icon :icon="optionsOutline" />
-          </ion-menu-button>
-        </ion-buttons>
       </ion-toolbar>
+      <div>
+        <ion-searchbar class="searchbar" :value="transferOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
+        <ion-segment v-model="selectedSegment" @ionChange="segmentChanged()">
+          <ion-segment-button data-testid='open-transfer-orders-tab' value="open">
+            <ion-label>{{ translate("Open") }}</ion-label>
+          </ion-segment-button>
+          <ion-segment-button data-testid='completed-transfer-orders-tab' value="completed">
+            <ion-label>{{ translate("Completed") }}</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </div>
     </ion-header>
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="transfer-order-filters">
-      <ion-searchbar class="searchbar" :value="transferOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <div v-if="transferOrders.total">
         <div class="results">
           <ion-list>
@@ -24,9 +27,9 @@
               <ion-label>
                 <p class="overline">{{ order.orderId }}</p>
                 {{ order.orderName }}
-                <p>{{ order.externalId }}</p>
+                <p>{{ order.orderExternalId ? order.orderExternalId : order.externalId }}</p>
               </ion-label>
-              <ion-badge slot="end">{{ order.orderStatusDesc }}</ion-badge>
+              <ion-badge slot="end">{{ (selectedSegment === 'completed' && order.shipmentShippedDate) ? getTime(order.shipmentShippedDate) : order.orderStatusDesc }}</ion-badge>
             </ion-item>
           </ion-list>
              <!--
@@ -45,21 +48,25 @@
       </div>
       <div v-else class="empty-state">
         <p v-html="getErrorMessage()"></p>
-        <ion-button v-if="!transferOrders.query.queryString && hasCompletedTransferOrders" size="small" fill="outline" color="medium" @click="showCompletedTransferOrders">
-          <ion-icon slot="end" :icon="checkmarkDoneOutline"/>{{ translate("Show completed transfer orders") }}
-        </ion-button>
       </div>
     </ion-content>
+
+
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab-button data-testid="create-transfer-order-btn" @click="openCreateTransferOrderModal">
+        <ion-icon :icon="addOutline" />
+      </ion-fab-button>
+    </ion-fab>
   </ion-page>
 </template>
 
 <script lang="ts">
 import { 
   IonBadge,
-  IonButton,
-  IonButtons,
   IonIcon,
   IonContent, 
+  IonFab,
+  IonFabButton,
   IonHeader, 
   IonInfiniteScroll,
   IonInfiniteScrollContent,
@@ -69,29 +76,30 @@ import {
   IonMenuButton,
   IonPage, 
   IonSearchbar,
+  IonSegment,
+  IonSegmentButton,
   IonTitle, 
   IonToolbar, 
+  modalController
 } from '@ionic/vue';
 import { defineComponent, computed } from 'vue';
-import { caretDownOutline, checkmarkDoneOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
+import { addOutline, caretDownOutline, checkmarkDoneOutline, cubeOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { translate, useUserStore } from '@hotwax/dxp-components';
 import { Actions } from '@/authorization'
-import { escapeSolrSpecialChars, prepareOrderQuery } from '@/utils/solrHelper';
-import { UtilService } from '@/services/UtilService';
-import { hasError } from '@/adapter';
-import logger from '@/logger';
-import TransferOrderFilters from '@/components/TransferOrderFilters.vue'
+import emitter from '@/event-bus';
+import { DateTime } from 'luxon';
+import CreateTransferOrderModal from '@/components/CreateTransferOrderModal.vue';
 
 export default defineComponent({
   name: 'TransferOrders',
   components: {
     IonBadge,
-    IonButton,
-    IonButtons,
     IonIcon,  
     IonContent,
+    IonFab,
+    IonFabButton,
     IonHeader,
     IonInfiniteScroll,
     IonInfiniteScrollContent,
@@ -101,9 +109,10 @@ export default defineComponent({
     IonMenuButton,
     IonPage,
     IonSearchbar,
+    IonSegment,
+    IonSegmentButton,
     IonTitle,
-    IonToolbar,
-    TransferOrderFilters
+    IonToolbar
   },
   computed: {
     ...mapGetters({
@@ -113,25 +122,36 @@ export default defineComponent({
   },
   data () {
     return {
-      shipmentMethods: [] as Array<any>,
-      statuses: [] as Array<any>,
       searchedQuery: '',
       isScrollingEnabled: false,
       hasCompletedTransferOrders: true,
-      transferOrderCount: 0
+      selectedSegment: "open"
     }
   },
   async ionViewWillEnter() {
+    emitter.emit('presentLoader');
     this.isScrollingEnabled = false;
-    await this.fetchFilters(); 
-    if(this.transferOrderCount) { 
-      await this.initialiseTransferOrderQuery();
-    }
+    await this.initialiseTransferOrderQuery();
+    emitter.emit('dismissLoader');
   },
   methods: {
+    async openCreateTransferOrderModal() {
+      const createTransferOrderModal = await modalController.create({
+        component: CreateTransferOrderModal,
+      });
+
+      return createTransferOrderModal.present();
+    },
+    segmentChanged() {
+      this.initialiseTransferOrderQuery();
+    },
     getErrorMessage() {
       if(!this.searchedQuery) {
-        return this.hasCompletedTransferOrders ? translate("doesn't have any open transfer orders right now.", { facilityName: this.currentFacility.facilityName }) : translate("doesn't have any transfer orders right now.", { facilityName: this.currentFacility.facilityName });
+        if (this.selectedSegment === 'completed') {
+          return translate("doesn't have any completed transfer orders right now.", { facilityName: this.currentFacility.facilityName });
+        } else {
+          return this.hasCompletedTransferOrders ? translate("doesn't have any open transfer orders right now.", { facilityName: this.currentFacility.facilityName }) : translate("doesn't have any transfer orders right now.", { facilityName: this.currentFacility.facilityName });
+        }
       } else {
         return translate("No results found for .", { searchedQuery: this.searchedQuery });
       }
@@ -153,20 +173,12 @@ export default defineComponent({
         await event.target.complete();
       }
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
-      transferOrdersQuery.viewIndex = this.transferOrders.list?.length / (process.env.VUE_APP_VIEW_SIZE as any);
+      transferOrdersQuery.viewIndex = this.transferOrders.list?.length / 20;
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
       event.target.complete();
     },
     isTransferOrdersScrollable() {
       return this.transferOrders.list?.length > 0 && this.transferOrders.list?.length < this.transferOrders.total
-    },
-    async showCompletedTransferOrders() {
-      const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
-      transferOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
-      transferOrdersQuery.viewSize = 20
-      transferOrdersQuery.selectedStatuses = ["ORDER_COMPLETED"]
-      await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
-      this.hasCompletedTransferOrders = this.transferOrders.list.some((order: any) => order.orderStatusId === "ORDER_COMPLETED");
     },
     async updateQueryString(queryString: string) {
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
@@ -174,74 +186,37 @@ export default defineComponent({
       transferOrdersQuery.viewIndex = 0
       transferOrdersQuery.viewSize = 20
       transferOrdersQuery.queryString = queryString.trim()
+      if (this.selectedSegment === 'completed') {
+        transferOrdersQuery.orderStatusId = ""
+        transferOrdersQuery.shipmentStatusId = "SHIPMENT_SHIPPED"
+      } else {
+        transferOrdersQuery.orderStatusId = "ORDER_APPROVED"
+        transferOrdersQuery.shipmentStatusId = ""
+      }
+      
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
       this.searchedQuery = queryString;
-    },
-    async fetchFilters() {
-      let resp: any;
-      const payload = prepareOrderQuery({
-        docType: "ORDER",
-        queryFields: 'orderId',
-        viewSize: '0',  // passed viewSize as 0 to not fetch any data
-        filters: {
-          '-orderStatusId': { value: 'ORDER_CREATED' },
-          orderTypeId: { value: 'TRANSFER_ORDER' },
-          facilityId: { value: escapeSolrSpecialChars(this.currentFacility?.facilityId) },
-          productStoreId: { value: this.currentEComStore?.productStoreId }
-        },
-        facet: {
-          "shipmentMethodTypeIdFacet":{
-            "excludeTags":"shipmentMethodTypeIdFilter",
-            "field":"shipmentMethodTypeId",
-            "mincount":1,
-            "limit":-1,
-            "sort":"index",
-            "type":"terms",
-            "facet": {
-              "ordersCount": "unique(orderId)"
-            }
-          },
-          "orderStatusIdFacet":{
-            "excludeTags":"orderStatusIdFilter",
-            "field":"orderStatusId",
-            "mincount":1,
-            "limit":-1,
-            "sort":"index",
-            "type":"terms",
-            "facet": {
-              "ordersCount": "unique(orderId)"
-            }
-          }
-        }
-      })
-
-      try {
-        resp = await UtilService.fetchTransferOrderFacets(payload);
-        if(resp.status == 200 && !hasError(resp)) {
-          this.transferOrderCount = resp.data.facets?.count
-          if(this.transferOrderCount) {
-            this.shipmentMethods = resp.data.facets.shipmentMethodTypeIdFacet.buckets;
-            this.statuses = resp.data.facets.orderStatusIdFacet.buckets;
-            this.store.dispatch('util/fetchShipmentMethodTypeDesc', this.shipmentMethods.map((shipmentMethod: any) => shipmentMethod.val));
-            this.store.dispatch('util/fetchStatusDesc', this.statuses.map((status: any) => status.val));
-          }
-        } else {
-          throw resp.data;
-        }
-      } catch(err) {
-        logger.error('Failed to fetch transfer order filters.', err)
-      }
     },
     async initialiseTransferOrderQuery() {
       const transferOrdersQuery = JSON.parse(JSON.stringify(this.transferOrders.query))
       transferOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
       transferOrdersQuery.viewSize = 20
+      if (this.selectedSegment === 'completed') {
+        transferOrdersQuery.orderStatusId = ""
+        transferOrdersQuery.shipmentStatusId = "SHIPMENT_SHIPPED"
+      } else {
+        transferOrdersQuery.orderStatusId = "ORDER_APPROVED"
+        transferOrdersQuery.shipmentStatusId = ""
+      }
       await this.store.dispatch('transferorder/updateTransferOrderQuery', { ...transferOrdersQuery })
     },
     async viewTransferOrderDetail(order: any) {
       await this.store.dispatch('transferorder/updateCurrentTransferOrder', order)
-      this.router.push({ path: `/transfer-order-details/${order.orderId}` })
+      this.router.push({ path: `/transfer-order-details/${order.orderId}/${this.selectedSegment}` })
     },
+    getTime(time: any) {
+      return DateTime.fromMillis(time).toFormat("dd MMMM yyyy t a")
+    }
   },
   ionViewDidLeave() {
     const routeTo = this.router.currentRoute;
@@ -259,6 +234,7 @@ export default defineComponent({
 
     return{
       Actions,
+      addOutline,
       caretDownOutline,
       checkmarkDoneOutline,
       cubeOutline,
@@ -274,3 +250,10 @@ export default defineComponent({
   }
 });
 </script>
+<style scoped>
+@media (min-width: 991px) {
+  ion-header > div {
+    display: flex;
+  }
+}
+</style>

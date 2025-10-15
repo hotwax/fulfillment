@@ -114,7 +114,6 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       rejectReasons: 'util/getRejectReasons',
-      rejectReasonEnumTypes: 'util/getRejectReasonEnumTypes',
       fulfillmentRejectReasons: 'util/getFulfillmentRejectReasons'
     })
   },
@@ -308,10 +307,6 @@ export default defineComponent({
 
 .list-item:hover {
   cursor: default;
-}
-
-.list-item ion-item {
-  width: 100%;
 }
 
 ion-content {

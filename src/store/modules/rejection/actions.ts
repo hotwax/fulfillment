@@ -37,7 +37,7 @@ const actions: ActionTree<RejectionState, RootState> = {
             "limit":-1,
             "type":"terms",
           },
-          "prodductIdFacet":{
+          "productIdFacet":{
             "field":"productId_s",
             "mincount":1,
             "limit":-1,
@@ -51,7 +51,7 @@ const actions: ActionTree<RejectionState, RootState> = {
         if (!hasError(resp)) {
           total = resp.data.facets.total ? resp.data.facets.total : 0
           const usedReasons = resp.data.facets.rejectionReasonIdFacet.buckets
-          rejectedItems = resp.data.facets.prodductIdFacet.buckets
+          rejectedItems = resp.data.facets.productIdFacet.buckets
           if (rejectedItems) {
             const productIds = rejectedItems.map((rejectedItem: any) => rejectedItem.val)
             await this.dispatch('product/fetchProducts', { productIds })
@@ -60,33 +60,26 @@ const actions: ActionTree<RejectionState, RootState> = {
           if (usedReasons) {
             const reasonIds = usedReasons.map((usedReason: any) => usedReason.val)
             const payload = {
-              "inputFields": {
-                "enumId": reasonIds,
-                "enumId_op": "in"
-              },
-              "fieldList": ["description", "enumId", "enumName", "enumTypeId", "sequenceNum"],
-              "distinct": "Y",
-              "entityName": "Enumeration",
-              "viewSize": reasonIds.length, //There won't we rejection reasons more than 20, hence fetching detail for all the reasons at once
-              "orderBy": "sequenceNum"
+              "enumId": reasonIds,
+              "enumId_op": "in",
+              "fieldsToSelect": ["description", "enumId", "enumName", "enumTypeId", "sequenceNum"],
+              "pageSize": reasonIds.length, //There won't we rejection reasons more than 20, hence fetching detail for all the reasons at once
+              "orderByField": "sequenceNum"
             }
             const resp = await UtilService.fetchRejectReasons(payload)
 
-            if (!hasError(resp) && resp.data.count > 0) {
-              const reasonCountDetail = usedReasons.reduce((reasonDetail: any, reason: any) => {
-                reasonDetail[reason.val.trim().toUpperCase()] = reason;
+            if (!hasError(resp)) {
+              
+              const reasonCountDetail = resp.data.reduce((reasonDetail: any, reason: any) => {
+                reasonDetail[reason.enumId] = reason;
                 return reasonDetail;
               }, {});
-              usedRejectionReasons = resp.data.docs
-              await store.dispatch("util/updateRejectReasons", usedRejectionReasons)
 
-              // Added this logic as we need to display the rejections on UI in desc order of count
-              // If directly looping over the resp, it does not persist the rejections order on the basis of count
-              usedRejectionReasons = Object.keys(reasonCountDetail).map((rejectionReasonId: any) => {
-                const reason = usedRejectionReasons.find((reason: any) => reason.enumId === rejectionReasonId)
+              await store.dispatch("util/updateRejectReasons", resp.data)
+              usedRejectionReasons = usedReasons.map((reason:any) => {
                 return {
-                  ...reason,
-                  count: reasonCountDetail[rejectionReasonId]?.count
+                  count: reason.count,
+                  ...reasonCountDetail[reason.val.toUpperCase()]
                 }
               })
             } else {

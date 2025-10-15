@@ -5,6 +5,7 @@ import ProductState from './ProductState'
 import * as types from './mutation-types'
 import { hasError } from '@/adapter'
 import logger from "@/logger";
+import { useUserStore } from "@hotwax/dxp-components";
 
 const actions: ActionTree<ProductState, RootState> = {
 
@@ -76,20 +77,16 @@ const actions: ActionTree<ProductState, RootState> = {
     let resp;
     try {
       resp = await ProductService.fetchProductComponents({
-        "entityName": "ProductAssoc",
-          "inputFields": {
-            "productId": productId,
-            "productTypeId": "PRODUCT_COMPONENT"
-          },
-          "fieldList": ["productId", "productIdTo", "productAssocTypeId"],
-          "viewIndex": 0,
-          "viewSize": 250,  // maximum records we could have
-          "distinct": "Y",
-          "noConditionFind": "Y",
-          "filterByDate": "Y"
+        customParametersMap: {
+          productId: productId,
+          pageIndex: 0,
+          pageSize: 100,  // maximum records we could have
+        },
+        dataDocumentId: "ProductComponent",
+        filterByDate: true
       })
       if (!hasError(resp)) {
-        const productComponents = resp.data.docs;
+        const productComponents = resp.data.entityValueList;
         const componentProductIds = productComponents.map((productComponent: any) => productComponent.productIdTo);
         await dispatch('fetchProducts', { productIds: componentProductIds })
         
@@ -102,6 +99,18 @@ const actions: ActionTree<ProductState, RootState> = {
       logger.error('Failed to fetch product components information', err)
     }
     return resp;
+  },
+
+  async addProductToCached ( { commit }, payload) {
+    commit(types.PRODUCT_ADD_TO_CACHED, payload);
+  },
+
+  async addProductToCachedMultiple ( { commit }, payload) {
+    commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, payload);
+  },
+
+  async clearProductState ({ commit }) {
+    commit(types.PRODUCT_CLEARED)
   }
 }
 

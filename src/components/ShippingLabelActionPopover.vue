@@ -26,10 +26,9 @@
   import { defineComponent } from "vue";
   import { documentOutline, trashOutline } from "ionicons/icons";
   import { translate } from "@hotwax/dxp-components";
-  import { mapGetters, useStore } from "vuex";
+  import { useStore } from "vuex";
   import { OrderService } from '@/services/OrderService';
   import { showToast } from '@/utils'
-  import { hasError } from "@/adapter";
   import logger from '@/logger';
   
   export default defineComponent({
@@ -42,41 +41,28 @@
       IonListHeader
     },
     props: ['currentOrder'],
-    computed: {
-      ...mapGetters({
-        facilityProductStores: 'facility/getFacilityProductStores',
-        getProductStore: 'util/getProductStore',
-        productStores: 'util/getProductStores',
-        shopifyShopIdForProductStore: 'util/getShopifyShopIdForProductStore',
-        current: 'facility/getCurrent'
-      })
-    },
     methods: {
       async printShippingLabel(order: any) {
-        const shipmentIds = order?.shipmentIds?.length > 0 ? order?.shipmentIds : order.shipments?.map((shipment: any) => shipment.shipmentId);
-        const shippingLabelPdfUrls = order.shipmentPackages
-            ?.filter((shipmentPackage: any) => shipmentPackage.labelPdfUrl)
-            .map((shipmentPackage: any) => shipmentPackage.labelPdfUrl);
-        await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls)
+        const shipmentIds = [order.shipmentId];
+        const shippingLabelPdfUrls: string[] = Array.from(
+          new Set(
+            (order.shipmentPackageRouteSegDetails ?? [])
+              .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+              .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+          )
+        );
+
+        await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackageRouteSegDetails)
         popoverController.dismiss()
       },
       async voidShippingLabel(order: any) {
-        const shipmentIds = [] as any;
         let resp = {} as any;
         try {
-          for (const shipmentPackage of order.shipmentPackages) {
-            if(!shipmentIds.includes(shipmentPackage.shipmentId)) {
-              resp = await OrderService.voidShipmentLabel({
-                "shipmentId": shipmentPackage.shipmentId,
-                "shipmentRouteSegmentId": shipmentPackage.shipmentRouteSegmentId
-              })
-  
-              if(hasError(resp)) {
-                throw resp.data;
-              }
-              shipmentIds.push(shipmentPackage.shipmentId);
-            }
-          }
+          resp = await OrderService.voidShipmentLabel({
+            "shipmentId": order.shipmentId,
+            "shipmentRouteSegmentId": order.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
+          })
+          
           showToast(translate("Shipping label voided successfully."))
           //fetching updated shipment packages
           await this.store.dispatch('order/updateShipmentPackageDetail', order) 

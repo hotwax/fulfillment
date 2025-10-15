@@ -20,6 +20,12 @@
     </ion-row>
 
     <ion-list>
+      <!--<ion-item lines="none" v-if="hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN)">
+        <ion-toggle v-model="showAllPickers" @ionChange="refetchPickers()">
+          {{ translate("Show all pickers") }}
+        </ion-toggle>
+      </ion-item>-->
+
       <ion-list-header>{{ translate("Staff") }}</ion-list-header>
 
       <div v-if="isLoading" class="empty-state">
@@ -71,13 +77,16 @@ import {
   modalController,
   alertController
 } from "@ionic/vue";
-import { defineComponent } from "vue";
+import { defineComponent, computed } from "vue";
 import { close, closeCircle, saveOutline } from "ionicons/icons";
 import { useStore } from "vuex";
 import { hasError, showToast } from '@/utils';
 import logger from "@/logger"
-import { UtilService } from "@/services/UtilService";
-import { translate } from '@hotwax/dxp-components'
+import { OrderService } from "@/services/OrderService"
+import { UtilService } from "@/services/UtilService"
+import { translate, useUserStore } from '@hotwax/dxp-components'
+import { Actions, hasPermission } from "@/authorization";
+import { DateTime } from 'luxon';
 
 export default defineComponent({
   name: "EditPickersModal",
@@ -99,7 +108,7 @@ export default defineComponent({
     IonListHeader,
     IonRow,
     IonSearchbar,
-    IonSpinner
+    IonSpinner,
   },
   data () {
     return {
@@ -107,11 +116,12 @@ export default defineComponent({
       queryString: '',
       pickers: [] as any,
       editedPicklist: {} as any,
-      isLoading: false
+      isLoading: false,
+      //showAllPickers: false
     }
   },
   async mounted() {
-    await this.findPickers(this.selectedPicklist.pickerIds)
+    await this.findPickers()
     this.selectAlreadyAssociatedPickers()
   },
   props: ['selectedPicklist'],
@@ -127,11 +137,6 @@ export default defineComponent({
       } else {
         this.selectedPickers.push(this.pickers.find((picker: any) => picker.id == id))
       }
-
-      // If all the selected pickers are removed, retrieve and display the original picker list.
-      if (!this.selectedPickers.length) {
-        this.findPickers();
-      }
     },
     async findPickers(pickerIds?: Array<any>) {
       this.isLoading = true;
@@ -145,6 +150,12 @@ export default defineComponent({
         let keyword = this.queryString.trim().split(' ')
         query = `(${keyword.map(key => `*${key}*`).join(' OR ')}) OR "${this.queryString}"^100`;
       }
+
+      /*const facilityFilter = [];
+
+      if(!this.showAllPickers) {
+        facilityFilter.push(`facilityIds:${this.currentFacility.facilityId}`)
+      }*/
 
       const payload = {
         "json": {
@@ -208,9 +219,30 @@ export default defineComponent({
       }).filter((id: any) => id)
 
       try {
-        const resp = await UtilService.resetPicker({
-          pickerIds,
-          picklistId: this.selectedPicklist.id
+        //Removing pickers that were unselected
+        let roles = this.selectedPicklist.roles
+        .map((role:any) => {
+          if (!pickerIds.includes(role.partyId)) {
+            return { ...role, thruDate: DateTime.now().toMillis() };
+          }
+          return role;
+        });
+
+        //Adding the newly selected pickers
+        pickerIds.forEach((pickerId: any) => {
+          if (!roles.some((role: any) => role.partyId === pickerId)) {
+            roles.push({
+              picklistId: this.selectedPicklist.picklistId,
+              partyId: pickerId,
+              roleTypeId: "WAREHOUSE_PICKER",
+              fromDate: DateTime.now().toMillis()
+            });
+          }
+        });
+
+        const resp = await OrderService.resetPicker({ 
+          picklistId: this.selectedPicklist.id,
+          roles
         });
         if (resp.status === 200 && !hasError(resp)) {
           showToast(translate("Pickers successfully replaced in the picklist with the new selections."))
@@ -218,6 +250,7 @@ export default defineComponent({
           // upading the UI due to solr issue
           this.editedPicklist = {
             ...this.selectedPicklist,
+            roles: roles.filter((role: any) => !role.thruDate),//only keeping active pickers
             pickerIds,
             pickersName: pickersNameArray.join(', ')
           }
@@ -257,12 +290,22 @@ export default defineComponent({
           id: null
         }]
       }
+    },
+    async refetchPickers() {
+      await this.findPickers()
+      this.selectAlreadyAssociatedPickers()
     }
   },
   setup() {
     const store = useStore();
+    const userStore = useUserStore()
+    let currentFacility = computed(() => userStore.getCurrentFacility) as any
+
     return {
+      Actions,
       close,
+      currentFacility,
+      hasPermission,
       saveOutline,
       closeCircle,
       store,
