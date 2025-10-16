@@ -1,4 +1,5 @@
 import { api, apiClient, hasError } from '@/adapter';
+import { getProductStoreId } from '@/utils'
 import store from '@/store';
 import logger from '@/logger'
 
@@ -321,6 +322,21 @@ const fetchProductStores = async (payload: any): Promise<any> => {
   });
 }
 
+const fetchProductStoreDetails = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${payload.productStoreId}`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    }
+  });
+}
+
 const fetchFacilities = async (payload: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -337,20 +353,50 @@ const fetchFacilities = async (payload: any): Promise<any> => {
   });
 }
 
-const fetchProductStoreFacilities = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+const fetchProductStoreFacilities = async (): Promise<any> => {
+  try {
+    const productStoreId = getProductStoreId();
+    
+    if(!productStoreId) {
+      logger.error('Product store ID not found');
+      return [];
+    }
 
-  return apiClient({
-    url: `/oms/productStores/${params.productStoreId}/facilities`,
-    method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    params
-  });
+    const omstoken = store.getters['user/getUserToken'];
+    const baseURL = store.getters['user/getMaargBaseUrl'];
+
+    // Define parameters before API call
+    const params = {
+      facilityTypeId: 'VIRTUAL_FACILITY',
+      facilityTypeId_op: 'equals',
+      facilityTypeId_not: 'Y',
+      parentFacilityTypeId: 'VIRTUAL_FACILITY',
+      parentFacilityTypeId_op: 'equals',
+      parentFacilityTypeId_not: 'Y',
+      pageSize: 250,
+    };
+
+    const resp = await apiClient({
+      url: `/oms/productStores/${productStoreId}/facilities`,
+      method: "GET",
+      baseURL,
+      headers: {
+        "Authorization": "Bearer " + omstoken,
+        "Content-Type": "application/json"
+      },
+      params
+    });
+
+    if(!hasError(resp)) {
+      return resp.data;
+    } else {
+      logger.error('Failed to fetch product store facilities:', resp.data);
+      return [];
+    }
+  } catch (err) {
+    logger.error('Failed to fetch product store facilities:', err);
+    return [];
+  }
 }
 
 const fetchProductStoreSetting = async (params: any): Promise<any> => {
@@ -644,6 +690,7 @@ export const UtilService = {
   fetchGiftCardFulfillmentInfo,
   fetchPartyInformation,
   fetchProductStores,
+  fetchProductStoreDetails,
   fetchRejectReasons,
   fetchRejectReasonEnumTypes,
   fetchShipmentBoxType,
