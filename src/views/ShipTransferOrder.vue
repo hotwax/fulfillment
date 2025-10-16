@@ -19,7 +19,7 @@
             <ion-icon :icon="storefrontOutline" slot="start"/>
             <ion-label>
               <p class="overline">{{ translate("Sending to") }}</p>
-              {{ shipmentDetails.orderFacilityId }}
+              {{ getFacilityName(shipmentDetails.orderFacilityId) }}
               <!-- TODO: shipping distance field is not coming in the api resposne -->
             </ion-label>
           </ion-item>
@@ -155,6 +155,7 @@ import { DxpShopifyImg, getProductIdentificationValue, useProductIdentificationS
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { OrderService } from '@/services/OrderService'
 import { CarrierService } from '@/services/CarrierService';
+import { UtilService } from '@/services/UtilService';
 import { useRoute } from 'vue-router';
 import { formatCurrency, showToast } from '@/utils';
 import { hasError } from '@hotwax/oms-api';
@@ -187,11 +188,14 @@ const trackingCode = ref('')
 const shipmentDetails = ref({}) as any
 const shippingRates = ref([]) as any
 const isLoadingRates = ref(true)
+let facilities = ref([]) as any;
 
 onIonViewWillEnter(async() => {
-  await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers')])
-  await fetchShippingRates();
-  if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId, shipmentDetails.value.shipmentMethodTypeId)
+  facilities.value = await UtilService.fetchProductStoreFacilities();
+  // Fetch shipment and carrier-related data in parallel
+  await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers'), fetchShippingRates()])
+  // Update shipment methods if carrier exists
+  if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId)
 });
 
 // Updates the available shipment methods based on the selected carrier.
@@ -223,6 +227,11 @@ async function fetchShipmentOrderDetail(shipmentId: string) {
 function getCarrierLogo(partyId: string) {
   const carrier = facilityCarriers.value.find((carrier: any) => carrier.partyId === partyId);
   return carrier?.logoUrl || '';
+}
+
+function getFacilityName(facilityId: string) {
+  const facility = facilities.value.find((facility: any) => facility.facilityId === facilityId)
+  return facility ? facility.facilityName || facility.facilityId : facilityId
 }
 
 // Retrieves the tracking URL template for the selected or prefilled carrier
