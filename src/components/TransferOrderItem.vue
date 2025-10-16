@@ -52,7 +52,7 @@
         </ion-chip>
       </div>
 
-      <div class="to-item-history" v-else>
+      <div class="to-item-history" v-else-if="!router.currentRoute.value.path.includes('/create-transfer-order/')">
         <ion-chip outline @click="item.shippedQuantity && shippedHistory(item.productId)">
           <ion-icon :icon="checkmarkDone"/>
           <ion-label> {{ item.shippedQuantity || 0 }} {{ translate("shipped") }} </ion-label>
@@ -63,9 +63,11 @@
         <ion-label>{{ item.orderedQuantity }} {{ translate("ordered") }}</ion-label>
       </div>
 
-      <ion-item v-if="router.currentRoute.value.path.includes('/create-transfer-order/')" class="qty-qoh" lines="none">
-        <ion-label>{{ item.qoh != null ? item.qoh : '-' }} {{ translate("Qoh") }}</ion-label>
-        <ion-icon data-testid="remove-item-btn" slot="end" color="danger" :icon="removeCircleOutline" @click="removeOrderItem(item)" />
+      <ion-item v-if="router.currentRoute.value.path.includes('/create-transfer-order/')" class="ion-no-padding qty-qoh" lines="none">
+        <ion-label>{{ item.qoh != null ? item.qoh : 0 }} {{ translate("Qoh") }}</ion-label>
+        <ion-button fill="clear" size="default" color="medium" @click="removeOrderItem(item)">
+          <ion-icon data-testid="remove-item-btn" slot="icon-only" color="danger" :icon="removeCircleOutline" />
+        </ion-button>
       </ion-item>
     </div>
   </ion-card>
