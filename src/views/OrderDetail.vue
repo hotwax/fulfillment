@@ -60,7 +60,7 @@
               <ion-skeleton-text animated />
             </div>
             <div class="box-type desktop-only" v-else-if="order.shipmentPackages">
-              <ion-button :disabled="addingBoxForShipmentIds.includes(order.orderId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />
+              <ion-button :disabled="order.items.length <= order.shipmentPackages.length || addingBoxForShipmentIds.includes(order.orderId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />
                 {{ translate("Add Box") }}
               </ion-button>
               <ion-row>

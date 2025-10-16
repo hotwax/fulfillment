@@ -155,8 +155,9 @@ import { DxpShopifyImg, getProductIdentificationValue, useProductIdentificationS
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { OrderService } from '@/services/OrderService'
 import { CarrierService } from '@/services/CarrierService';
+import { UtilService } from '@/services/UtilService';
 import { useRoute } from 'vue-router';
-import { formatCurrency, getProductStoreId, showToast } from '@/utils';
+import { formatCurrency, showToast } from '@/utils';
 import { hasError } from '@hotwax/oms-api';
 import { useRouter } from 'vue-router'
 import Image from '@/components/Image.vue';
@@ -173,7 +174,6 @@ const getProduct = computed(() => store.getters['product/getProduct'])
 const shipmentMethodsByCarrier = computed(() => store.getters["util/getShipmentMethodsByCarrier"])
 const getCarrierDesc = computed(() => store.getters["util/getCarrierDesc"])
 const facilityCarriers = computed(() => store.getters["carrier/getFacilityCarriers"])
-const facilities = computed(() => store.getters['util/getFacilities'])
 
 const shipmentItems = computed(() => {
   if(!shipmentDetails.value?.packages) return []
@@ -188,10 +188,13 @@ const trackingCode = ref('')
 const shipmentDetails = ref({}) as any
 const shippingRates = ref([]) as any
 const isLoadingRates = ref(true)
+let facilities = ref([]) as any;
 
 onIonViewWillEnter(async() => {
-  await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers'), store.dispatch('util/fetchFacilities', getProductStoreId())])
-  await fetchShippingRates();
+  facilities.value = await UtilService.fetchProductStoreFacilities();
+  // Fetch shipment and carrier-related data in parallel
+  await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers'), fetchShippingRates()])
+  // Update shipment methods if carrier exists
   if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId)
 });
 
@@ -413,11 +416,9 @@ async function shipLater() {
 async function shipOrder() {
   const shipment = shipmentDetails.value;
   if(!shipment) return;
-
-  const isLabelAlreadyGenerated = shipment.trackingIdNumber ? true : false;
-
-  // Only validate carrier/method/trackingCode if label not already generated
-  if(!isLabelAlreadyGenerated) {
+ 
+  // Validate required fields based on selected shipping method
+  if(selectedSegment.value === "manual") {
     if(!selectedCarrier.value) {
       showToast(translate('Please select a carrier'))
       return;
@@ -430,13 +431,15 @@ async function shipOrder() {
       showToast(translate('Please enter a tracking number'));
       return;
     }
+  } else if(selectedSegment.value === "purchase" && !shipment.trackingIdNumber) {
+    showToast(translate('Please purchase a shipping label'))
+    return;
   }
 
   try {
-    // Build payload dynamically based on whether label exists
     const payload: any = { shipmentId: shipment.shipmentId }
 
-    if(!isLabelAlreadyGenerated) {
+    if(selectedSegment.value === "manual") {
       payload.trackingIdNumber = trackingCode.value
       payload.shipmentRouteSegmentId = shipment.shipmentRouteSegmentId
       payload.carrierPartyId = selectedCarrier.value
