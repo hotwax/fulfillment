@@ -416,11 +416,9 @@ async function shipLater() {
 async function shipOrder() {
   const shipment = shipmentDetails.value;
   if(!shipment) return;
-
-  const isLabelAlreadyGenerated = shipment.trackingIdNumber ? true : false;
-
-  // Only validate carrier/method/trackingCode if label not already generated
-  if(!isLabelAlreadyGenerated) {
+ 
+  // Validate required fields based on selected shipping method
+  if(selectedSegment.value === "manual") {
     if(!selectedCarrier.value) {
       showToast(translate('Please select a carrier'))
       return;
@@ -433,13 +431,15 @@ async function shipOrder() {
       showToast(translate('Please enter a tracking number'));
       return;
     }
+  } else if(selectedSegment.value === "purchase" && !shipment.trackingIdNumber) {
+    showToast(translate('Please purchase a shipping label'))
+    return;
   }
 
   try {
-    // Build payload dynamically based on whether label exists
     const payload: any = { shipmentId: shipment.shipmentId }
 
-    if(!isLabelAlreadyGenerated) {
+    if(selectedSegment.value === "manual") {
       payload.trackingIdNumber = trackingCode.value
       payload.shipmentRouteSegmentId = shipment.shipmentRouteSegmentId
       payload.carrierPartyId = selectedCarrier.value
