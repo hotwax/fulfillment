@@ -27,7 +27,7 @@
         <ion-button v-if="item.orderedQuantity" @click="pickAll(item)" slot="start" size="small" fill="outline" :disabled="isForceScanEnabled">
           {{ translate("Pick All") }}
         </ion-button>
-        <ion-button data-testid="book-qoh-btn" v-else :disabled="!item.qoh || item.qoh <= 0 || item.pickedQuantity === item.qoh" slot="start" size="small" fill="outline" @click="bookQoh(item)">
+        <ion-button data-testid="book-qoh-btn" v-else :disabled="!item.qoh || item.qoh <= 0 || item.pickedQuantity >= item.qoh" slot="start" size="small" fill="outline" @click="bookQoh(item)">
           {{ translate("Book qoh") }}
         </ion-button>
       </div>
@@ -52,18 +52,18 @@
         </ion-chip>
       </div>
 
-      <div class="to-item-history" v-else-if="item.shippedQuantity">
+      <div class="to-item-history" v-else>
         <ion-chip outline @click="item.shippedQuantity && shippedHistory(item.productId)">
           <ion-icon :icon="checkmarkDone"/>
-          <ion-label> {{ item.shippedQuantity }} {{ translate("shipped") }} </ion-label>
+          <ion-label> {{ item.shippedQuantity || 0 }} {{ translate("shipped") }} </ion-label>
         </ion-chip>
       </div>
 
-      <div class="qty-ordered" v-else-if="item.orderedQuantity">
+      <div class="qty-ordered" v-if="item.orderedQuantity">
         <ion-label>{{ item.orderedQuantity }} {{ translate("ordered") }}</ion-label>
       </div>
 
-      <ion-item v-else class="qty-ordered" lines="none">
+      <ion-item v-if="router.currentRoute.value.path.includes('/create-transfer-order/')" class="qty-qoh" lines="none">
         <ion-label>{{ item.qoh != null ? item.qoh : '-' }} {{ translate("Qoh") }}</ion-label>
         <ion-icon data-testid="remove-item-btn" slot="end" color="danger" :icon="removeCircleOutline" @click="removeOrderItem(item)" />
       </ion-item>
@@ -327,7 +327,7 @@ ion-thumbnail {
 
 .action {
   display: grid;
-  grid: "progressbar ordered"
+  grid: "progressbar ordered qoh"
         "pick     history" 
         / 1fr max-content; 
   gap: var(--spacer-xs);
@@ -353,12 +353,18 @@ ion-thumbnail {
   font-size: 16px;
 }
 
+.qty-qoh {
+  grid-area: qoh;
+  text-align: end;
+  font-size: 16px;
+}
+
 .scanned-item {
   outline: 2px solid var(--ion-color-medium-tint);
 }
 @media (min-width: 720px) {
   .action {
-    grid: "pick progressbar history ordered" /  max-content 1fr max-content max-content;
+    grid: "pick progressbar history ordered qoh" /  max-content 1fr max-content max-content;
     padding-left: var(--spacer-sm);
   }
 }

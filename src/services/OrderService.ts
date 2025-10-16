@@ -19,7 +19,7 @@ const findOpenOrders = async (payload: any): Promise<any> => {
     viewSize: openOrderQuery.viewSize,
     sort: payload.sort ? payload.sort : "orderDate asc",
     filters: {
-      '-shipmentMethodTypeId': { value: 'STOREPICKUP' },
+      '-shipmentMethodTypeId': { value: ['STOREPICKUP', 'POS_COMPLETED'] },
       orderStatusId: { value: 'ORDER_APPROVED' },
       orderTypeId: { value: 'SALES_ORDER' },
       productStoreId: { value: getProductStoreId() }

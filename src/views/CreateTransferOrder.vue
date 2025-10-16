@@ -88,7 +88,7 @@
               <ion-label>
                 {{ translate("Your scanner isn’t focused yet.") }}
                 <p>{{ translate("Scanning is set to") }} {{ (barcodeIdentifier || '').toUpperCase() }}</p>
-                <p>{{ translate("Swap to SKU from the settings page") }}</p>
+                <p v-if="barcodeIdentifier !== 'SKU'">{{ translate("Swap to SKU from the settings page") }}</p>
               </ion-label>
               <ion-button slot="end" color="warning" size="small" @click="enableScan">
                 <ion-icon slot="start" :icon="locateOutline"/>
@@ -104,7 +104,7 @@
               <ion-label>
                 {{ translate("Begin scanning products to add them to this transfer") }}
                 <p>{{ translate("Scanning is set to") }} {{ (barcodeIdentifier || '').toUpperCase() }}</p>
-                <p>{{ translate("Swap to SKU from the settings page") }}</p>
+                <p v-if="barcodeIdentifier !== 'SKU'">{{ translate("Swap to SKU from the settings page") }}</p>
               </ion-label>
               <ion-badge slot="end" color="success">{{ translate("start scanning") }}</ion-badge>
             </ion-item>
@@ -138,7 +138,7 @@
                   <ion-icon slot="end" :icon="checkmarkCircle" color="success" />
                 </template>
               </ion-item>
-              <ion-item v-if="productSearchCount > 1" data-testid="view-more-results" detail @click="openAddProductModal">
+              <ion-item button v-if="productSearchCount > 1" data-testid="view-more-results" detail @click="openAddProductModal">
                 {{ translate("View more results", { count: productSearchCount - 1 }) }}
               </ion-item>
             </ion-list>
@@ -223,6 +223,7 @@ import { hasError } from '@/adapter';
 import logger from '@/logger';
 import { getCurrentFacilityId, showToast } from '@/utils';
 import { TransferOrderService } from '@/services/TransferOrderService';
+import { UtilService } from '@/services/UtilService';
 import { OrderService } from '@/services/OrderService';
 import TransferOrderItem from '@/components/TransferOrderItem.vue'
 import AddProductModal from "@/components/AddProductModal.vue";
@@ -243,11 +244,11 @@ const scanInput = ref('') as any
 const searchInput = ref('') as any
 let timeoutId: any = null;
 let productSearchCount = ref(0);
+let facilities = ref([]) as any;
 
 const barcodeIdentifier = computed(() => store.getters["util/getBarcodeIdentificationPref"]);
 const getProduct = computed(() => store.getters["product/getProduct"]);
 const currentOrder = computed(() => store.getters["transferorder/getCurrent"]);
-const facilities = computed(() => store.getters["util/getFacilities"])
 const isForceScanEnabled = computed(() => store.getters['util/isForceScanEnabled']);
 
 watch(queryString, (value) => {
@@ -271,7 +272,7 @@ onIonViewWillEnter(async () => {
   emitter.emit('presentLoader');
   await fetchTransferOrderDetail(route?.params?.orderId as string);
   await fetchProductInformation();
-  await store.dispatch('util/fetchFacilities')
+  facilities.value = await UtilService.fetchProductStoreFacilities();
   emitter.emit('dismissLoader');
 });
 
@@ -543,13 +544,17 @@ async function findProduct() {
   }
 
   try {
-    const resp = await ProductService.fetchProducts({
-      filters: [
-        'isVirtual: false',
-        `goodIdentifications: ${barcodeIdentifier.value}/${mode.value === 'scan' ? query : `*${query}*`}`
-      ],
+    const payload: any = {
+      filters: ['isVirtual: false', 'isVariant: true'],
       viewSize: 1
-    });
+    }
+
+    if(mode.value === 'scan') {
+      payload.filters.push(`goodIdentifications: ${barcodeIdentifier.value}/${query}`);
+    } else {
+      payload.keyword = queryString.value.trim();
+    }
+    const resp = await ProductService.fetchProducts(payload);
 
     if(!hasError(resp) && resp.data.response?.docs?.length) {
       productSearchCount.value = resp.data.response?.numFound
@@ -688,19 +693,39 @@ function clearSearch() {
 
 // Discards the current transfer order by calling the cancel API and navigates to the transfer orders list.
 async function discardOrder() {
-  const orderId = currentOrder.value.orderId;
-  try {
-    const resp = await TransferOrderService.cancelTransferOrder(orderId);
-    if(!hasError(resp)) {
-      showToast(translate("Order discarded successfully"));
-      router.replace({ path: '/transfer-orders' });
-    } else {
-      throw resp.data;
-    }
-  } catch (err) {
-    logger.error("Failed to discard order", err);
-    showToast(translate("Failed to discard order"));
-  }
+  const alert = await alertController.create({
+    header: translate('Discard order'),
+    message: translate("Are you sure you want to discard this transfer order?"),
+    buttons: [{
+      text: translate('Cancel'),
+      role: 'cancel',
+      htmlAttributes: { 
+        'data-testid': "discard-order-cancel-btn"
+      }
+    },
+    {
+      text: translate('Discard'),
+      htmlAttributes: { 
+        'data-testid': "discard-order-discard-btn"
+      },
+      handler: async () => {
+        const orderId = currentOrder.value.orderId;
+        try {
+          const resp = await TransferOrderService.cancelTransferOrder(orderId);
+          if(!hasError(resp)) {
+            showToast(translate("Order discarded successfully"));
+            router.replace({ path: '/transfer-orders' });
+          } else {
+            throw resp.data;
+          }
+        } catch (err) {
+          logger.error("Failed to discard order", err);
+          showToast(translate("Failed to discard order"));
+        }
+      }
+    }]
+  });
+  return alert.present();
 }
 
 async function approveOrder(orderId: string) {
