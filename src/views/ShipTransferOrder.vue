@@ -191,9 +191,10 @@ const isLoadingRates = ref(true)
 let facilities = ref([]) as any;
 
 onIonViewWillEnter(async() => {
-  await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers')])
-  await fetchShippingRates();
   facilities.value = await UtilService.fetchProductStoreFacilities();
+  // Fetch shipment and carrier-related data in parallel
+  await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers'), fetchShippingRates()])
+  // Update shipment methods if carrier exists
   if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId)
 });
 
