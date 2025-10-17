@@ -279,7 +279,7 @@ onIonViewWillEnter(async () => {
 async function fetchTransferOrderDetail(orderId: string) {
   try {
     const orderResp = await TransferOrderService.fetchTransferOrderDetail(orderId);
-    if(!hasError(orderResp) && orderResp.data?.length) {
+    if(!hasError(orderResp) && Object.keys(orderResp.data?.order).length) {
       const order = orderResp.data.order;
       
       // Process items and add additional information
