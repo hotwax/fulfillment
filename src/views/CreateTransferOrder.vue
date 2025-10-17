@@ -279,7 +279,7 @@ onIonViewWillEnter(async () => {
 async function fetchTransferOrderDetail(orderId: string) {
   try {
     const orderResp = await TransferOrderService.fetchTransferOrderDetail(orderId);
-    if(!hasError(orderResp)) {
+    if(!hasError(orderResp) && orderResp.data?.length) {
       const order = orderResp.data.order;
       
       // Process items and add additional information
@@ -294,8 +294,8 @@ async function fetchTransferOrderDetail(orderId: string) {
             };
           })
         );
-        // Keep only fulfilled results and update order items
-        order.items = items.filter(item => item.status === "fulfilled").map((item: any) => item.value);
+        // Update order items with stock information
+        order.items = items.map((item: any) => item.value);
       } else {
         order.items = [];
       }
