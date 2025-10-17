@@ -256,8 +256,7 @@ export default defineComponent({
         const resp = await TransferOrderService.updateOrderItem({
           orderId: this.currentOrder.orderId,
           orderItemSeqId: item.orderItemSeqId,
-          quantity: item.pickedQuantity,
-          unitPrice: item.unitPrice || 0
+          quantity: item.pickedQuantity
         });
         if(!hasError(resp)) {
           item.quantity = item.pickedQuantity;
