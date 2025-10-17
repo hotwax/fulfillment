@@ -29,12 +29,6 @@ const userModule: Module<UserState, RootState> = {
       firebaseDeviceId: '',
       hasUnreadNotifications: true,
       allNotificationPrefs: [],
-      partialOrderRejectionConfig: {},
-      collateralRejectionConfig: {},
-      affectQohConfig: {},
-      isShipNowDisabled: false,
-      isUnpackDisabled: false,
-      isReservationFacilityFieldEnabled: false
     },
     getters,
     actions,
