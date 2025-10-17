@@ -77,7 +77,7 @@ import { documentTextOutline, sendOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
 import { translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import Scanner from "@/components/Scanner.vue";
 import { Actions, hasPermission } from '@/authorization'
 import { getFeatures, showToast, hasWebcamAccess } from '@/utils';
@@ -263,7 +263,7 @@ export default defineComponent({
         
         this.isShipped = true;
         showToast(translate('Shipment shipped successfully.'));
-        this.router.replace({ path: `/transfer-order-details/${this.currentShipment.orderId}/open` })
+        this.router.replace({ path: `/transfer-order-details/${this.currentShipment.orderId}/${this.route.params.category}` })
       } catch (err) {
         logger.error('Failed to ship the shipment.', err);
         showToast(translate('Something went wrong, could not ship the shipment'))
@@ -291,6 +291,7 @@ export default defineComponent({
   }, 
   setup() {
     const store = useStore(); 
+    const route = useRoute();
     const router = useRouter();
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
@@ -303,6 +304,7 @@ export default defineComponent({
       productIdentificationPref,
       store,
       router,
+      route,
       translate
     };
   },
