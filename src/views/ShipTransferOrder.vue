@@ -19,7 +19,7 @@
             <ion-icon :icon="storefrontOutline" slot="start"/>
             <ion-label>
               <p class="overline">{{ translate("Sending to") }}</p>
-              {{ shipmentDetails.orderFacilityId }}
+              {{ getFacilityName(shipmentDetails.orderFacilityId) }}
               <!-- TODO: shipping distance field is not coming in the api resposne -->
             </ion-label>
           </ion-item>
@@ -109,12 +109,12 @@
             <!-- manual tracking segment -->
             <ion-list v-if="selectedSegment === 'manual'">
               <ion-item>
-                <ion-select data-testid="select-carrier-dropdown" :value="shipmentDetails.carrierPartyId || selectedCarrier" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedCarrier = $event.detail.value; updateShipmentMethodsForCarrier(selectedCarrier)">
+                <ion-select data-testid="select-carrier-dropdown" :value="selectedCarrier" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedCarrier = $event.detail.value; updateShipmentMethodsForCarrier(selectedCarrier)">
                   <ion-select-option data-testid="select-carrier-dropdown-option" v-for="(carrierPartyId, index) in Object.keys(shipmentMethodsByCarrier)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) ? getCarrierDesc(carrierPartyId) : carrierPartyId }}</ion-select-option>
                 </ion-select>
               </ion-item>
               <ion-item>
-                <ion-select data-testid="select-method-dropdown" :disabled="!shipmentMethods.length" :value="shipmentDetails.shipmentMethodTypeId || selectedShippingMethod" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedShippingMethod = $event.detail.value">
+                <ion-select data-testid="select-method-dropdown" :disabled="!shipmentMethods.length" :value="selectedShippingMethod" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedShippingMethod = $event.detail.value">
                   <ion-select-option data-testid="select-method-dropdown-option" v-for="(method, index) in shipmentMethods" :key="index" :value="method.shipmentMethodTypeId">{{ method.description ? method.description : method.shipmentMethodTypeId }}</ion-select-option>
                 </ion-select>
               </ion-item>
@@ -155,6 +155,7 @@ import { DxpShopifyImg, getProductIdentificationValue, useProductIdentificationS
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { OrderService } from '@/services/OrderService'
 import { CarrierService } from '@/services/CarrierService';
+import { UtilService } from '@/services/UtilService';
 import { useRoute } from 'vue-router';
 import { formatCurrency, showToast } from '@/utils';
 import { hasError } from '@hotwax/oms-api';
@@ -187,17 +188,21 @@ const trackingCode = ref('')
 const shipmentDetails = ref({}) as any
 const shippingRates = ref([]) as any
 const isLoadingRates = ref(true)
+let facilities = ref([]) as any;
 
 onIonViewWillEnter(async() => {
-  await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers')])
-  await fetchShippingRates();
-  if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId)
+  facilities.value = await UtilService.fetchProductStoreFacilities();
+  // Fetch shipment and carrier-related data in parallel
+  await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers'), fetchShippingRates()])
+  // Update shipment methods if carrier exists
+  selectedCarrier.value = shipmentDetails.value?.carrierPartyId;
+  if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId, shipmentDetails.value.shipmentMethodTypeId)
 });
 
 // Updates the available shipment methods based on the selected carrier.
-function updateShipmentMethodsForCarrier(carrierPartyId: string) {
+function updateShipmentMethodsForCarrier(carrierPartyId: string, shippingMethodId = "") {
   shipmentMethods.value = shipmentMethodsByCarrier.value[carrierPartyId] || [];
-  selectedShippingMethod.value = shipmentMethods.value[0]?.shipmentMethodTypeId || '';
+  selectedShippingMethod.value = shippingMethodId ?  shippingMethodId : shipmentMethods.value[0]?.shipmentMethodTypeId;
 }
 
 async function fetchShipmentOrderDetail(shipmentId: string) {
@@ -223,6 +228,11 @@ async function fetchShipmentOrderDetail(shipmentId: string) {
 function getCarrierLogo(partyId: string) {
   const carrier = facilityCarriers.value.find((carrier: any) => carrier.partyId === partyId);
   return carrier?.logoUrl || '';
+}
+
+function getFacilityName(facilityId: string) {
+  const facility = facilities.value.find((facility: any) => facility.facilityId === facilityId)
+  return facility ? facility.facilityName || facility.facilityId : facilityId
 }
 
 // Retrieves the tracking URL template for the selected or prefilled carrier
@@ -407,11 +417,9 @@ async function shipLater() {
 async function shipOrder() {
   const shipment = shipmentDetails.value;
   if(!shipment) return;
-
-  const isLabelAlreadyGenerated = shipment.trackingIdNumber ? true : false;
-
-  // Only validate carrier/method/trackingCode if label not already generated
-  if(!isLabelAlreadyGenerated) {
+ 
+  // Validate required fields based on selected shipping method
+  if(selectedSegment.value === "manual") {
     if(!selectedCarrier.value) {
       showToast(translate('Please select a carrier'))
       return;
@@ -424,13 +432,15 @@ async function shipOrder() {
       showToast(translate('Please enter a tracking number'));
       return;
     }
+  } else if(selectedSegment.value === "purchase" && !shipment.trackingIdNumber) {
+    showToast(translate('Please purchase a shipping label'))
+    return;
   }
 
   try {
-    // Build payload dynamically based on whether label exists
     const payload: any = { shipmentId: shipment.shipmentId }
 
-    if(!isLabelAlreadyGenerated) {
+    if(selectedSegment.value === "manual") {
       payload.trackingIdNumber = trackingCode.value
       payload.shipmentRouteSegmentId = shipment.shipmentRouteSegmentId
       payload.carrierPartyId = selectedCarrier.value
