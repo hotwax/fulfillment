@@ -52,18 +52,18 @@
         </ion-chip>
       </div>
 
-      <div class="to-item-history" v-else-if="item.shippedQuantity">
+      <div class="to-item-history" v-else>
         <ion-chip outline @click="item.shippedQuantity && shippedHistory(item.productId)">
           <ion-icon :icon="checkmarkDone"/>
-          <ion-label> {{ item.shippedQuantity }} {{ translate("shipped") }} </ion-label>
+          <ion-label> {{ item.shippedQuantity || 0 }} {{ translate("shipped") }} </ion-label>
         </ion-chip>
       </div>
 
-      <div class="qty-ordered" v-else-if="item.orderedQuantity">
+      <div class="qty-ordered" v-if="item.orderedQuantity">
         <ion-label>{{ item.orderedQuantity }} {{ translate("ordered") }}</ion-label>
       </div>
 
-      <ion-item v-else class="qty-ordered" lines="none">
+      <ion-item v-if="router.currentRoute.value.path.includes('/create-transfer-order/')" class="qty-qoh" lines="none">
         <ion-label>{{ item.qoh != null ? item.qoh : '-' }} {{ translate("Qoh") }}</ion-label>
         <ion-icon data-testid="remove-item-btn" slot="end" color="danger" :icon="removeCircleOutline" @click="removeOrderItem(item)" />
       </ion-item>
@@ -148,7 +148,12 @@ export default defineComponent({
       else return 'primary'
     },
     getPickedToOrderedFraction(item: any) {
-      return item.quantity ? item.pickedQuantity / item.qoh : (parseInt(item.pickedQuantity) + this.item.shippedQuantity) / item.orderedQuantity
+      if (item.orderedQuantity && item.orderedQuantity > 0) { 
+        return ((item.pickedQuantity || 0) + (item.shippedQuantity || 0)) / item.orderedQuantity;
+      } else if (item.qoh && item.qoh > 0) { 
+        return item.pickedQuantity / item.qoh;
+      }
+      return 0; 
     },
     async pickAll(item: any) {
       const selectedItem = this.currentOrder.items.find((ele: any) => ele.orderItemSeqId === item.orderItemSeqId);
@@ -252,8 +257,7 @@ export default defineComponent({
         const resp = await TransferOrderService.updateOrderItem({
           orderId: this.currentOrder.orderId,
           orderItemSeqId: item.orderItemSeqId,
-          quantity: item.pickedQuantity,
-          unitPrice: item.unitPrice || 0
+          quantity: item.pickedQuantity
         });
         if(!hasError(resp)) {
           item.quantity = item.pickedQuantity;
@@ -324,7 +328,7 @@ ion-thumbnail {
 
 .action {
   display: grid;
-  grid: "progressbar ordered"
+  grid: "progressbar ordered qoh"
         "pick     history" 
         / 1fr max-content; 
   gap: var(--spacer-xs);
@@ -350,12 +354,18 @@ ion-thumbnail {
   font-size: 16px;
 }
 
+.qty-qoh {
+  grid-area: qoh;
+  text-align: end;
+  font-size: 16px;
+}
+
 .scanned-item {
   outline: 2px solid var(--ion-color-medium-tint);
 }
 @media (min-width: 720px) {
   .action {
-    grid: "pick progressbar history ordered" /  max-content 1fr max-content max-content;
+    grid: "pick progressbar history ordered qoh" /  max-content 1fr max-content max-content;
     padding-left: var(--spacer-sm);
   }
 }
