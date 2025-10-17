@@ -207,7 +207,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonCard, IonList, IonItem, IonLabel, IonButton, IonIcon, IonToggle, IonSegment, IonSegmentButton, IonThumbnail, IonBadge, IonSearchbar, IonSpinner, IonFooter, IonButtons, onIonViewWillEnter, alertController, modalController } from '@ionic/vue';
+import { IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonCard, IonList, IonItem, IonLabel, IonButton, IonIcon, IonToggle, IonSegment, IonSegmentButton, IonThumbnail, IonBadge, IonSearchbar, IonSpinner, IonFooter, IonButtons, onIonViewWillEnter, alertController, modalController, onIonViewWillLeave } from '@ionic/vue';
 import {
   barcodeOutline,
   checkmarkDoneOutline,
@@ -275,11 +275,21 @@ watch(queryString, (value) => {
 }, { deep: true });
 
 onIonViewWillEnter(async () => {
+  emitter.on('clearSearchedProduct', clearSearchedProduct as any);
   emitter.emit('presentLoader');
   await fetchTransferOrderDetail(route?.params?.orderId as string);
   await fetchProductInformation();
   facilities.value = await UtilService.fetchProductStoreFacilities();
   emitter.emit('dismissLoader');
+});
+
+const clearSearchedProduct = () => {
+  searchedProduct.value = {};
+  queryString.value = '';
+};
+
+onIonViewWillLeave(() => {
+  emitter.off('clearSearchedProduct', clearSearchedProduct as any);
 });
 
 // Fetches transfer order details by orderId, including its items, and updates the store.
