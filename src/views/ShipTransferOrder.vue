@@ -195,14 +195,14 @@ onIonViewWillEnter(async() => {
   // Fetch shipment and carrier-related data in parallel
   await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers'), fetchShippingRates()])
   // Update shipment methods if carrier exists
-  selectedCarrier.value = shipmentDetails.value?.carrierPartyId;
+  selectedCarrier.value = shipmentDetails.value?.carrierPartyId || '';
   if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId, shipmentDetails.value.shipmentMethodTypeId)
 });
 
 // Updates the available shipment methods based on the selected carrier.
 function updateShipmentMethodsForCarrier(carrierPartyId: string, shippingMethodId = "") {
   shipmentMethods.value = shipmentMethodsByCarrier.value[carrierPartyId] || [];
-  selectedShippingMethod.value = shippingMethodId ?  shippingMethodId : shipmentMethods.value[0]?.shipmentMethodTypeId;
+  selectedShippingMethod.value = shippingMethodId || shipmentMethods.value[0]?.shipmentMethodTypeId || '';
 }
 
 async function fetchShipmentOrderDetail(shipmentId: string) {
