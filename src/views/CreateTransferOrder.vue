@@ -268,7 +268,7 @@ watch(queryString, (value) => {
 }, { deep: true });
 
 onIonViewWillEnter(async () => {
-  emitter.on('clearScannedOrderItem', clearScannedOrderItem as any);
+  emitter.on('clearSearchedProduct', clearSearchedProduct as any);
   emitter.emit('presentLoader');
   await fetchTransferOrderDetail(route?.params?.orderId as string);
   await fetchProductInformation();
@@ -276,18 +276,13 @@ onIonViewWillEnter(async () => {
   emitter.emit('dismissLoader');
 });
 
-const clearScannedOrderItem = (removedProductId: string) => {
-  if (searchedProduct.value.productId === removedProductId) {
-    searchedProduct.value = {};
-    queryString.value = '';
-  } else {
-    searchedProduct.value = {};
-    queryString.value = '';
-  }
+const clearSearchedProduct = () => {
+  searchedProduct.value = {};
+  queryString.value = '';
 };
 
 onIonViewWillLeave(() => {
-  emitter.off('clearScannedOrderItem', clearScannedOrderItem as any);
+  emitter.off('clearSearchedProduct', clearSearchedProduct as any);
 });
 
 // Fetches transfer order details by orderId, including its items, and updates the store.

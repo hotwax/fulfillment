@@ -146,7 +146,7 @@ async function addTransferOrderItem(product: any) {
 
       currentOrder.value.items.push(newItem);
       await store.dispatch('transferorder/updateCurrentTransferOrder', currentOrder.value);
-      emitter.emit('clearScannedOrderItem')
+      emitter.emit('clearSearchedProduct')
     } else {
       throw resp.data;
     }

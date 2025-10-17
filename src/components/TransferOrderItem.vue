@@ -276,7 +276,7 @@ export default defineComponent({
         if(!hasError(resp)) {
           this.currentOrder.items = this.currentOrder.items?.filter((i: any) => i.orderItemSeqId !== item.orderItemSeqId);
           await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
-          emitter.emit('clearScannedOrderItem', item.productId)
+          emitter.emit('clearSearchedProduct')
           showToast(translate("Item removed from order"));
         } else {
           throw resp.data;
