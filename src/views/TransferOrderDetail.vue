@@ -261,7 +261,7 @@ export default defineComponent({
       this.isCreatingShipment = false;
       if (shipmentId) {
         await this.store.dispatch('transferorder/clearCurrentTransferShipment');
-        this.router.push({ path: `/transfer-shipment-review/${shipmentId}` })
+        this.router.push({ name: 'TransferShipmentReview', params: { shipmentId, category: this.$route.params.category } })
       }
     },
     async confirmCreateShipment() {
