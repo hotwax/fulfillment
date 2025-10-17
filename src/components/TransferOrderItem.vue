@@ -99,6 +99,7 @@ import logger from '@/logger';
 import { showToast } from '@/utils';
 import ShippedHistoryModal from '@/components/ShippedHistoryModal.vue'
 import ReportIssuePopover from './ReportIssuePopover.vue';
+import emitter from '@/event-bus';
 
 export default defineComponent({
   name: "TransferOrderItem",
@@ -147,7 +148,12 @@ export default defineComponent({
       else return 'primary'
     },
     getPickedToOrderedFraction(item: any) {
-      return item.quantity ? item.pickedQuantity / item.qoh : (parseInt(item.pickedQuantity) + this.item.shippedQuantity) / item.orderedQuantity
+      if (item.orderedQuantity && item.orderedQuantity > 0) { 
+        return ((item.pickedQuantity || 0) + (item.shippedQuantity || 0)) / item.orderedQuantity;
+      } else if (item.qoh && item.qoh > 0) { 
+        return item.pickedQuantity / item.qoh;
+      }
+      return 0; 
     },
     async pickAll(item: any) {
       const selectedItem = this.currentOrder.items.find((ele: any) => ele.orderItemSeqId === item.orderItemSeqId);
@@ -251,8 +257,7 @@ export default defineComponent({
         const resp = await TransferOrderService.updateOrderItem({
           orderId: this.currentOrder.orderId,
           orderItemSeqId: item.orderItemSeqId,
-          quantity: item.pickedQuantity,
-          unitPrice: item.unitPrice || 0
+          quantity: item.pickedQuantity
         });
         if(!hasError(resp)) {
           item.quantity = item.pickedQuantity;
@@ -275,6 +280,7 @@ export default defineComponent({
         if(!hasError(resp)) {
           this.currentOrder.items = this.currentOrder.items?.filter((i: any) => i.orderItemSeqId !== item.orderItemSeqId);
           await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
+          emitter.emit('clearSearchedProduct')
           showToast(translate("Item removed from order"));
         } else {
           throw resp.data;
