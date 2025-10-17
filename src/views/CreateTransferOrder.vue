@@ -775,17 +775,18 @@ async function shiplater() {
 async function packAndShipOrder() {
   let shipmentId;
   try {
+    const hasInvalidItem = currentOrder.value.items.some((item: any) => item.pickedQuantity <= 0);
+    if(hasInvalidItem) {
+      showToast(translate("Please enter a valid quantity for all items."));
+      return;
+    }
+
     if(currentOrder.value.statusId === 'ORDER_CREATED') {
       const success = await approveOrder(currentOrder.value.orderId);
       if(!success) {
         showToast(translate("Order approval failed"));
         return;
       }
-    }
-    const hasInvalidItem = currentOrder.value.items.some((item: any) => item.pickedQuantity <= 0);
-    if(hasInvalidItem) {
-      showToast(translate("Please enter a valid quantity for all items."));
-      return;
     }
 
     // Group items into packages — assuming we're sending one package for now
