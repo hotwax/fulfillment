@@ -23,7 +23,7 @@
               <ion-item>
                 <ion-icon :icon="storefrontOutline" slot="start"/>
                 <!-- currently the facility name is coming in the api -->
-                <ion-label>{{ getFacilityName(currentOrder.orderFacilityId) }}</ion-label>
+                <ion-label>{{ getFacilityName(currentOrder.shipGroups[0].orderFacilityId) }}</ion-label>
                 <ion-button data-testid="store-name-edit-btn" slot="end" color="medium" fill="outline" size="small" @click="openSelectFacilityModal">{{ translate("Edit") }}</ion-button>
               </ion-item>
               <ion-item>
@@ -420,8 +420,8 @@ async function openSelectFacilityModal() {
   const addressModal = await modalController.create({
     component: SelectFacilityModal,
     componentProps: {
-      currentFacilityId: currentOrder.value.facilityId,
-      selectedFacilityId: currentOrder.value.orderFacilityId,
+      currentFacilityId: currentOrder.value.shipGroups[0].facilityId,
+      selectedFacilityId: currentOrder.value.shipGroups[0].orderFacilityId,
       facilities: facilities.value
     }
   });
@@ -440,13 +440,13 @@ async function updateOrderFacility(facilityId: string) {
   const payload = {
     orderId: currentOrder.value.orderId,
     orderFacilityId: facilityId,
-    shipGroupSeqId: currentOrder.value.shipGroupSeqId
+    shipGroupSeqId: currentOrder.value.shipGroups[0].shipGroupSeqId
   }
 
   try {
     const resp = await OrderService.updateOrderFacility(payload)
     if(!hasError(resp)) {
-      currentOrder.value.orderFacilityId = facilityId;
+      currentOrder.value.shipGroups[0].orderFacilityId = facilityId;
       await store.dispatch('transferorder/updateCurrentTransferOrder', currentOrder.value);
       showToast(translate("Store name updated successfully"))
     } else {
@@ -614,7 +614,7 @@ async function addTransferOrderItem(product: any, scannedId?: string) {
     // Fetch product's average cost before committing to order
     const unitPrice = await ProductService.fetchProductAverageCost(
       newItem.productId,
-      currentOrder.value.orderFacilityId
+      currentOrder.value.shipGroups[0].orderFacilityId
     );
 
     // Prepare payload and call API to add order item
