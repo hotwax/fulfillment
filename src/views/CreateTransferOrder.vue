@@ -227,7 +227,7 @@ import { ProductService } from '@/services/ProductService';
 import { StockService } from '@/services/StockService';
 import { hasError } from '@/adapter';
 import logger from '@/logger';
-import { getCurrentFacilityId, showToast } from '@/utils';
+import { showToast } from '@/utils';
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { UtilService } from '@/services/UtilService';
 import { OrderService } from '@/services/OrderService';
@@ -614,7 +614,7 @@ async function addTransferOrderItem(product: any, scannedId?: string) {
     // Fetch product's average cost before committing to order
     const unitPrice = await ProductService.fetchProductAverageCost(
       newItem.productId,
-      currentOrder.value.shipGroups[0].orderFacilityId
+      currentOrder.value.shipGroups[0].facilityId
     );
 
     // Prepare payload and call API to add order item
@@ -652,7 +652,7 @@ async function fetchStock(productId: string) {
   try {
     const resp: any = await StockService.getInventoryAvailableByFacility({
       productId,
-      facilityId: getCurrentFacilityId()
+      facilityId: currentOrder.value.shipGroups[0].facilityId
     });
     if(!hasError(resp)) return resp.data;
   } catch (err) {
