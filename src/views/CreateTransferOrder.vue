@@ -493,7 +493,7 @@ async function openAddProductModal() {
   const addProductModal = await modalController.create({
     component: AddProductModal,
     componentProps: {
-      query: queryString.value,
+      query: searchedProduct.value.scannedId || queryString.value,
     }
   });
 
