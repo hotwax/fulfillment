@@ -90,7 +90,7 @@ async function fetchStock(productId: string) {
   try {
     const resp: any = await StockService.getInventoryAvailableByFacility({
       productId,
-      facilityId: currentOrder.value.orderFacilityId
+      facilityId: currentOrder.value.shipGroups[0].facilityId
     });
     if(!hasError(resp)) return resp.data;
   } catch (err) {
@@ -126,7 +126,7 @@ async function addTransferOrderItem(product: any) {
     // Fetch product's average cost before committing to order
     const unitPrice = await ProductService.fetchProductAverageCost(
       newItem.productId,
-      currentOrder.value.orderFacilityId
+      currentOrder.value.shipGroups[0].facilityId
     );
 
     // Prepare payload and call API to add order item
