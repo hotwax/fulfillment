@@ -65,8 +65,8 @@
 
       <ion-item v-if="router.currentRoute.value.path.includes('/create-transfer-order/')" class="ion-no-padding qty-qoh" lines="none">
         <ion-label>{{ item.qoh != null ? item.qoh : 0 }} {{ translate("Qoh") }}</ion-label>
-        <ion-button fill="clear" size="default" color="medium" @click="removeOrderItem(item)">
-          <ion-icon data-testid="remove-item-btn" slot="icon-only" color="danger" :icon="removeCircleOutline" />
+        <ion-button data-testid="remove-item-btn" size="default" fill="clear" slot="end" color="danger" @click="removeOrderItem(item)">
+          <ion-icon slot="icon-only" :icon="removeCircleOutline" />
         </ion-button>
       </ion-item>
     </div>
@@ -87,7 +87,7 @@ import {
   modalController,
   popoverController,
 } from '@ionic/vue';
-import { computed, defineComponent, onMounted } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { add, caretDownOutline, checkmarkDone, closeCircleOutline, barcodeOutline, removeCircleOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
