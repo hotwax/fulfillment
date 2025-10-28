@@ -190,7 +190,7 @@
     <ion-footer v-if="currentOrder.statusId === 'ORDER_CREATED'">
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button data-testid="discard-order-btn" size="small" color="danger" fill="outline" @click="discardOrder">
+          <ion-button data-testid="discard-order-btn" size="small" color="danger" fill="outline" :disabled="!currentOrder.items?.length" @click="discardOrder">
             {{ translate("Discard order") }}
           </ion-button>
           <ion-button data-testid="ship-later-btn-create-transfer-order-page" size="small" fill="outline" :disabled="!currentOrder.items?.length" @click="shiplater">
