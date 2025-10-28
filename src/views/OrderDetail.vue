@@ -1204,8 +1204,8 @@ export default defineComponent({
 
       if (result.data) {
         const payload = {
-          shipmentId: shipmentPackage.shimentId,
-          shipmentPackageSeqId: shipmentPackage.shipmentPackageSId,
+          shipmentId: shipmentPackage.shipmentId,
+          shipmentPackageSeqId: shipmentPackage.shipmentPackageSeqId,
           shipmentBoxTypeId: result.data
         } as any
         try {
