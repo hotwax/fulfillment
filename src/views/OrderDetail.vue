@@ -1203,8 +1203,21 @@ export default defineComponent({
       const result = await popover.onDidDismiss();
 
       if (result.data) {
-        shipmentPackage.shipmentBoxTypeId = result.data;
-        this.store.dispatch('order/updateInProgressOrder', order);
+        const payload = {
+          shipmentId: shipmentPackage.shimentId,
+          shipmentPackageSeqId: shipmentPackage.shipmentPackageSId,
+          shipmentBoxTypeId: result.data
+        } as any
+        try {
+          const updatepackage = await OrderService.updateShipmentPackage(payload)
+          if (!hasError(updatepackage)) {
+            shipmentPackage.shipmentBoxTypeId = result.data;
+            this.store.dispatch('order/updateInProgressOrder', order);
+          }
+        } catch (error) {
+          showToast(translate('Failed to update box.'))
+          logger.error('Failed to update box.',error)
+        }
       }
     },
     async fetchDefaultShipmentBox() {
