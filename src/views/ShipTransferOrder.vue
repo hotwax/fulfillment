@@ -189,15 +189,15 @@ const shipmentDetails = ref({}) as any
 const shippingRates = ref([]) as any
 const isLoadingRates = ref(true)
 let facilities = ref([]) as any;
-let carrierShipmentMethods = ref([]) as any;
+let carrierShipmentMethods = ref<Record<string, any>>({}) as any;
 
 onIonViewWillEnter(async() => {
   facilities.value = await UtilService.fetchProductStoreFacilities();
   // Fetch shipment and carrier-related data in parallel
   await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers'), fetchShippingRates()])
   // Update shipment methods if carrier exists
-  const carrierByFacility = facilityCarriers.value.map((item:any) => item.partyId);
-  carrierShipmentMethods.value = Object.fromEntries(Object.entries(shipmentMethodsByCarrier.value).filter(([key]) => carrierByFacility.includes(key)));
+  const carrierByFacility = new Set(facilityCarriers.value.map((item: any) => item.partyId));
+  carrierShipmentMethods.value = Object.fromEntries(Object.entries(shipmentMethodsByCarrier.value).filter(([key]) => carrierByFacility.has(key)));
   selectedCarrier.value = shipmentDetails.value?.carrierPartyId || '';
   if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId, shipmentDetails.value.shipmentMethodTypeId)
 });
