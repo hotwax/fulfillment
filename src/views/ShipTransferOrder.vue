@@ -110,7 +110,7 @@
             <ion-list v-if="selectedSegment === 'manual'">
               <ion-item>
                 <ion-select data-testid="select-carrier-dropdown" :value="selectedCarrier" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedCarrier = $event.detail.value; updateShipmentMethodsForCarrier(selectedCarrier)">
-                  <ion-select-option data-testid="select-carrier-dropdown-option" v-for="(carrierPartyId, index) in Object.keys(shipmentMethodsByCarrier)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) ? getCarrierDesc(carrierPartyId) : carrierPartyId }}</ion-select-option>
+                  <ion-select-option data-testid="select-carrier-dropdown-option" v-for="(carrierPartyId, index) in Object.keys(carrierShipmentMethods)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) ? getCarrierDesc(carrierPartyId) : carrierPartyId }}</ion-select-option>
                 </ion-select>
               </ion-item>
               <ion-item>
@@ -189,12 +189,15 @@ const shipmentDetails = ref({}) as any
 const shippingRates = ref([]) as any
 const isLoadingRates = ref(true)
 let facilities = ref([]) as any;
+let carrierShipmentMethods = ref([]) as any;
 
 onIonViewWillEnter(async() => {
   facilities.value = await UtilService.fetchProductStoreFacilities();
   // Fetch shipment and carrier-related data in parallel
   await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers'), fetchShippingRates()])
   // Update shipment methods if carrier exists
+  const carrierByFacility = facilityCarriers.value.map((item:any) => item.partyId);
+  carrierShipmentMethods.value = Object.fromEntries(Object.entries(shipmentMethodsByCarrier.value).filter(([key]) => carrierByFacility.includes(key)));
   selectedCarrier.value = shipmentDetails.value?.carrierPartyId || '';
   if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId, shipmentDetails.value.shipmentMethodTypeId)
 });
