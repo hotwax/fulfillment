@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button data-testid="ship-transfer-orders-back-btn" slot="start" defaultHref="/transfer-orders" @click="shipLater" />
+        <ion-back-button data-testid="ship-transfer-orders-back-btn" slot="start" defaultHref="/transfer-orders" />
         <ion-title>{{ translate("Ship transfer order") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -138,7 +138,7 @@
       <ion-toolbar>
         <ion-buttons slot="end">
           <!-- need to add check here that after we print shiping label we need to disable this button. -->
-          <ion-button data-testid="ship-later-btn-ship-transfer-order-page" :disabled="shipmentDetails.trackingIdNumber" fill="outline" color="primary" @click="shipLater">{{ translate("Ship later") }}</ion-button>
+          <ion-button data-testid="ship-later-btn-ship-transfer-order-page" :disabled="shipmentDetails.trackingIdNumber" fill="outline" color="primary" @click="router.replace('/transfer-orders')">{{ translate("Ship later") }}</ion-button>
           <ion-button data-testid="ship-order-btn" fill="solid" color="primary" @click="shipOrder">{{ translate("Ship order") }}</ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -156,7 +156,7 @@ import { TransferOrderService } from '@/services/TransferOrderService';
 import { OrderService } from '@/services/OrderService'
 import { CarrierService } from '@/services/CarrierService';
 import { UtilService } from '@/services/UtilService';
-import { useRoute } from 'vue-router';
+import { onBeforeRouteLeave, useRoute } from 'vue-router';
 import { formatCurrency, showToast } from '@/utils';
 import { hasError } from '@hotwax/oms-api';
 import { useRouter } from 'vue-router'
@@ -197,6 +197,45 @@ onIonViewWillEnter(async() => {
   // Update shipment methods if carrier exists
   selectedCarrier.value = shipmentDetails.value?.carrierPartyId || '';
   if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId, shipmentDetails.value.shipmentMethodTypeId)
+});
+
+onBeforeRouteLeave(async () => {
+  let canLeave = false;
+  const message = translate("Save this order without tracking details to ship later.");
+  const alert = await alertController.create({
+    header: translate("Ship later"),
+    message,
+    buttons: [
+      {
+        text: translate("Go back"),
+        role: 'cancel',
+        handler: () => {
+          canLeave = false;
+        },
+      },
+      {
+        text: translate("Continue"),
+        handler: async () => {
+          try {
+            const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId);
+            if (!hasError(resp)) {
+              canLeave = true;
+              alertController.dismiss();
+            } else {
+              throw resp.data;
+            }
+          } catch {
+            showToast(translate('Failed to cancel transfer order shipment'));
+            canLeave = false;
+          }
+        },
+      },
+    ],
+  });
+
+  alert.present();
+  await alert.onDidDismiss();
+  return canLeave;
 });
 
 // Updates the available shipment methods based on the selected carrier.
@@ -375,43 +414,6 @@ async function updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMe
   } catch (error) {
     logger.error(error)
   }
-}
-
-async function shipLater() {
-  const message = translate("Save this order without tracking details to ship later.");
-  const alert = await alertController.create({
-    header: translate("Ship later"),
-    message,
-    buttons: [
-      {
-        text: translate("Go back"),
-        htmlAttributes: { 
-          'data-testid': "shiplater-goback-btn"
-        },
-      },
-      {
-        text: translate("Continue"),
-        htmlAttributes: { 
-          'data-testid': "shiplater-continue-btn"
-        },
-        handler: async () => {
-          try {
-            const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId)
-            if(!hasError(resp)) {
-              alertController.dismiss()
-              router.replace({ path: '/transfer-orders' })
-            } else {
-              throw resp.data
-            }
-          } catch (err) {
-            logger.error('Failed to cancel the shipment.', err);
-            showToast(translate('Failed to cancel transfer order shipment'));
-          }
-        }
-      }
-    ],
-  });
-  return alert.present();
 }
 
 async function shipOrder() {
