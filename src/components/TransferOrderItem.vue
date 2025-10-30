@@ -248,6 +248,9 @@ export default defineComponent({
       }
     },
     async updateItemQuantity(item: any) {
+      // Allow updating item quantity only if the order is in ORDER_CREATED status
+      if(this.currentOrder.statusId !== 'ORDER_CREATED') return;
+
       const currentItem = this.currentOrder.items.find((orderItem: any) => orderItem.orderItemSeqId === item.orderItemSeqId);
       // Skip if picked quantity is same as current or invalid (equal to or less than 0)
       if(currentItem && item.pickedQuantity === currentItem.quantity) return;
