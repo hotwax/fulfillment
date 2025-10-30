@@ -224,8 +224,9 @@ onBeforeRouteLeave(async () => {
             } else {
               throw resp.data;
             }
-          } catch {
+          } catch (err) {
             showToast(translate('Failed to cancel transfer order shipment'));
+            logger.error('Failed to cancel transfer order shipment', err);
             canLeave = false;
           }
         },
