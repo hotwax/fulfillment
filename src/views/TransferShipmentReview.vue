@@ -263,7 +263,7 @@ export default defineComponent({
         
         this.isShipped = true;
         showToast(translate('Shipment shipped successfully.'));
-        this.router.replace({ path: `/transfer-order-details/${this.currentShipment.orderId}/open` })
+        this.router.replace({ path: `/transfer-order-details/${this.currentShipment.orderId}/completed` })
       } catch (err) {
         logger.error('Failed to ship the shipment.', err);
         showToast(translate('Something went wrong, could not ship the shipment'))
