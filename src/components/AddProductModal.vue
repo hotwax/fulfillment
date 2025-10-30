@@ -87,11 +87,10 @@ function isItemAlreadyInOrder(productId: string) {
 
 // Stock fetch helper
 async function fetchStock(productId: string) {
+  const facilityId = currentOrder.value.shipGroups?.[0]?.facilityId;
+  if(!facilityId) return;
   try {
-    const resp: any = await StockService.getInventoryAvailableByFacility({
-      productId,
-      facilityId: currentOrder.value.shipGroups[0].facilityId
-    });
+    const resp: any = await StockService.getInventoryAvailableByFacility({ productId, facilityId });
     if(!hasError(resp)) return resp.data;
   } catch (err) {
     logger.error(err);
@@ -126,7 +125,7 @@ async function addTransferOrderItem(product: any) {
     // Fetch product's average cost before committing to order
     const unitPrice = await ProductService.fetchProductAverageCost(
       newItem.productId,
-      currentOrder.value.shipGroups[0].facilityId
+      currentOrder.value.shipGroups?.[0]?.facilityId
     );
 
     // Prepare payload and call API to add order item
