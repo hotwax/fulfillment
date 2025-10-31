@@ -239,7 +239,7 @@ function getFacilityName(facilityId: string) {
 
 // Retrieves the tracking URL template for the selected or prefilled carrier
 function getCarrierTrackingUrl() {
-  return facilityCarriers.value.find((carrier: any) => carrier.partyId === selectedCarrier.value || shipmentDetails.value.carrierPartyId)?.trackingUrl
+  return facilityCarriers.value.find((carrier: any) => carrier.partyId === selectedCarrier.value)?.trackingUrl
 }
 
 // Builds a full tracking URL with the tracking number, or shows a fallback message if unavailable
@@ -247,7 +247,7 @@ function generateTrackingUrl() {
   if(getCarrierTrackingUrl()) {
     return translate("Tracking URL:", { trackingUrl: getCarrierTrackingUrl()?.replace("${trackingNumber}", trackingCode.value) })
   }
-  return translate("A tracking URL is not configured for", { carrierName: getCarrierDesc.value(selectedCarrier.value || shipmentDetails.value.carrierPartyId) })
+  return translate("A tracking URL is not configured for", { carrierName: getCarrierDesc.value(selectedCarrier.value) })
 }
 
 // Opens the tracking URL in a new browser tab using the carrier's template and tracking number
