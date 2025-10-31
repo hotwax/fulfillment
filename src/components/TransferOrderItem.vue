@@ -63,7 +63,7 @@
         <ion-label>{{ item.orderedQuantity }} {{ translate("ordered") }}</ion-label>
       </div>
 
-      <ion-item v-if="orderStatus === 'created'" class="ion-no-padding qty-qoh" lines="none">
+      <ion-item v-if="orderStatus === 'created'" class="qty-qoh" lines="none">
         <ion-label>{{ item.qoh != null ? item.qoh : 0 }} {{ translate("Qoh") }}</ion-label>
         <ion-button data-testid="remove-item-btn" size="default" fill="clear" slot="end" color="danger" @click="removeOrderItem(item)">
           <ion-icon slot="icon-only" :icon="removeCircleOutline" />
@@ -254,18 +254,20 @@ export default defineComponent({
       if(this.currentOrder.statusId !== 'ORDER_CREATED') return;
 
       const currentItem = this.currentOrder.items.find((orderItem: any) => orderItem.orderItemSeqId === item.orderItemSeqId);
+      const itemQuantity = (this.$refs.pickedQuantity as any).$el.value
+
       // Skip if picked quantity is same as current or invalid (equal to or less than 0)
-      if(currentItem && item.pickedQuantity === currentItem.quantity) return;
-      if(item.pickedQuantity <= 0) return;
+      if(currentItem && itemQuantity === currentItem.quantity) return;
+      if(itemQuantity <= 0) return;
 
       try {
         const resp = await TransferOrderService.updateOrderItem({
           orderId: this.currentOrder.orderId,
           orderItemSeqId: item.orderItemSeqId,
-          quantity: item.pickedQuantity
+          quantity: itemQuantity
         });
         if(!hasError(resp)) {
-          item.quantity = item.pickedQuantity;
+          item.quantity = itemQuantity;
           await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
         } else {
           throw resp.data;
