@@ -57,6 +57,7 @@ import { TransferOrderService } from '@/services/TransferOrderService';
 import { hasError } from '@/adapter';
 import { useStore } from 'vuex';
 import { getCurrentFacilityId, getProductStoreId, showToast } from '@/utils';
+import { DateTime } from 'luxon';
 import router from '@/router';
 import logger from '@/logger';
 
@@ -143,6 +144,8 @@ async function createTransferOrder() {
     statusId: 'ORDER_CREATED',
     statusFlowId: 'TO_Fulfill_And_Receive',
     currencyUom: currencyUom.value || 'USD',
+    orderDate: DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000"),
+		entryDate: DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000"),
     grandTotal: 0,
     productStoreId,
     originFacilityId,
