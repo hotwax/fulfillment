@@ -52,7 +52,7 @@
         </ion-chip>
       </div>
 
-      <div class="to-item-history" v-else>
+      <div class="to-item-history" v-else-if="orderStatus !== 'created'">
         <ion-chip outline @click="item.shippedQuantity && shippedHistory(item.productId)">
           <ion-icon :icon="checkmarkDone"/>
           <ion-label> {{ item.shippedQuantity || 0 }} {{ translate("shipped") }} </ion-label>
@@ -63,9 +63,11 @@
         <ion-label>{{ item.orderedQuantity }} {{ translate("ordered") }}</ion-label>
       </div>
 
-      <ion-item v-if="router.currentRoute.value.path.includes('/create-transfer-order/')" class="qty-qoh" lines="none">
-        <ion-label>{{ item.qoh != null ? item.qoh : '-' }} {{ translate("Qoh") }}</ion-label>
-        <ion-icon data-testid="remove-item-btn" slot="end" color="danger" :icon="removeCircleOutline" @click="removeOrderItem(item)" />
+      <ion-item v-if="orderStatus === 'created'" class="ion-no-padding qty-qoh" lines="none">
+        <ion-label>{{ item.qoh != null ? item.qoh : 0 }} {{ translate("Qoh") }}</ion-label>
+        <ion-button data-testid="remove-item-btn" size="default" fill="clear" slot="end" color="danger" @click="removeOrderItem(item)">
+          <ion-icon slot="icon-only" :icon="removeCircleOutline" />
+        </ion-button>
       </ion-item>
     </div>
   </ion-card>
@@ -85,7 +87,7 @@ import {
   modalController,
   popoverController,
 } from '@ionic/vue';
-import { computed, defineComponent, onMounted } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { add, caretDownOutline, checkmarkDone, closeCircleOutline, barcodeOutline, removeCircleOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
@@ -117,7 +119,7 @@ export default defineComponent({
   },
   // As we are using the same component on detail and review page, thus defined prop isRejectionSupported
   // for handing the case to enable rejection functionality
-  props: ["itemDetail", "isRejectionSupported", "lastScannedId"],
+  props: ["itemDetail", "isRejectionSupported", "lastScannedId", "orderStatus"],
   data() {
     return {
       pickedQuantity: this.itemDetail.pickedQuantity,

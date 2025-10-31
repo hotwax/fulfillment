@@ -56,8 +56,8 @@
               </ion-item>
               <!-- product found after scan (reads from searchedProduct) -->
               <ion-item lines="none" v-if="searchedProduct.productId">
-                <ion-thumbnail>
-                  <DxpShopifyImg :src="getProduct(searchedProduct.productId)?.mainImageUrl || searchedProduct.mainImageUrl" />
+                <ion-thumbnail slot="start">
+                  <DxpShopifyImg :src="getProduct(searchedProduct.productId)?.mainImageUrl || searchedProduct.mainImageUrl" :key="getProduct(searchedProduct.productId)?.mainImageUrl || searchedProduct.mainImageUrl" />
                 </ion-thumbnail>
                 <ion-label>
                   {{ getProductIdentificationValue(barcodeIdentifier, getProduct(searchedProduct.productId)) }}
@@ -83,7 +83,7 @@
   
               <!-- scanner not focused -->
               <ion-item lines="none" v-else-if="!isScanningEnabled">
-                <ion-thumbnail>
+                <ion-thumbnail slot="start">
                   <DxpShopifyImg/>
                 </ion-thumbnail>
                 <ion-label>
@@ -99,7 +99,7 @@
   
               <!-- default / idle state -->
               <ion-item lines="none" v-else>
-                <ion-thumbnail>
+                <ion-thumbnail slot="start">
                   <DxpShopifyImg/>
                 </ion-thumbnail>
                 <ion-label>
@@ -123,8 +123,8 @@
               <!-- result found -->
               <ion-list lines="none" v-else-if="searchedProduct.productId">
                 <ion-item>
-                  <ion-thumbnail>
-                    <DxpShopifyImg :product="searchedProduct" />
+                  <ion-thumbnail slot="start">
+                    <DxpShopifyImg :src="searchedProduct.mainImageUrl" :key="searchedProduct.mainImageUrl" />
                   </ion-thumbnail>
                   <ion-label>
                     {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) : getProduct(searchedProduct.productId)?.internalName }}
@@ -178,7 +178,7 @@
         </div>
         <div v-else>
           <h1 class="ion-padding">{{ translate("Transfer items") }}</h1>
-          <TransferOrderItem v-for="item in currentOrder.items" :key="item.productId" :itemDetail="item" :lastScannedId="lastScannedId" />
+          <TransferOrderItem v-for="item in currentOrder.items" :key="item.productId" :itemDetail="item" :lastScannedId="lastScannedId" orderStatus="created" />
         </div>
       </template>
 
