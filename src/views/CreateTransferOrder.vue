@@ -227,7 +227,7 @@ import { ProductService } from '@/services/ProductService';
 import { StockService } from '@/services/StockService';
 import { hasError } from '@/adapter';
 import logger from '@/logger';
-import { showToast } from '@/utils';
+import { getCurrentFacilityId, showToast } from '@/utils';
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { UtilService } from '@/services/UtilService';
 import { OrderService } from '@/services/OrderService';
@@ -654,7 +654,7 @@ async function fetchStock(productId: string) {
   try {
     const resp: any = await StockService.getInventoryAvailableByFacility({
       productId,
-      facilityId: currentOrder.value.shipGroups?.[0]?.facilityId
+      facilityId: getCurrentFacilityId()
     });
     if(!hasError(resp)) return resp.data;
   } catch (err) {
