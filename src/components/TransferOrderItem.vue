@@ -63,7 +63,7 @@
         <ion-label>{{ item.orderedQuantity }} {{ translate("ordered") }}</ion-label>
       </div>
 
-      <ion-item v-if="orderStatus === 'created'" class="ion-no-padding qty-qoh" lines="none">
+      <ion-item v-if="orderStatus === 'created'" class="qty-qoh" lines="none">
         <ion-label>{{ item.qoh != null ? item.qoh : 0 }} {{ translate("Qoh") }}</ion-label>
         <ion-button data-testid="remove-item-btn" size="default" fill="clear" slot="end" color="danger" @click="removeOrderItem(item)">
           <ion-icon slot="icon-only" :icon="removeCircleOutline" />
