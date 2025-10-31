@@ -26,8 +26,8 @@
           <ion-list>
             <ion-list-header>{{ translate("Items") }}</ion-list-header>
             <ion-item v-for="item in shipmentItems" :key="item.shipmentItemSeqId">
-              <ion-thumbnail>
-                <DxpShopifyImg size="small" :src="getProduct(item.productId).mainImageUrl"/>
+              <ion-thumbnail slot="start">
+                <DxpShopifyImg size="small" :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl"/>
               </ion-thumbnail>
               <ion-label>
                 {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId)?.internalName }}
@@ -62,7 +62,9 @@
                 <!-- <p>estimated delivery date</p> -->
               </ion-label>
               <ion-note slot="end" class="ion-margin">{{ shipmentDetails.trackingIdNumber }}</ion-note>
-              <ion-icon data-testid="tracking-code-link" slot="end" :icon="openOutline" @click="redirectToTrackingUrl()"/>
+              <ion-button data-testid="tracking-code-link" fill="clear" size="default" color="medium" @click="redirectToTrackingUrl()">
+                <ion-icon slot="icon-only" :icon="openOutline" />
+              </ion-button>
             </ion-item>
             <ion-card-content>
               <ion-button data-testid="reprint-label-btn" fill="outline" color="primary" @click="printShippingLabel">
