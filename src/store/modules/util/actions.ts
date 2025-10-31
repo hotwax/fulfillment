@@ -11,6 +11,27 @@ import { translate, useUserStore } from '@hotwax/dxp-components'
 import { getCurrentFacilityId } from '@/utils';
 
 const actions: ActionTree<UtilState, RootState> = {
+  async fetchProductStoreSettings({ commit },productStoreId){
+    const defaultProductStoreSettings= JSON.parse(process.env.VUE_APP_DEFAULT_PRODUCT_STORE_SETTINGS as any)
+    const productStoreSettings:any = {...defaultProductStoreSettings};
+    const payload = {
+      productStoreId,
+      settingTypeEnumId: Object.keys(defaultProductStoreSettings),
+      settingTypeEnumId_op: "in",
+      pageIndex: 0,
+      pageSize: 50
+    };
+    try {
+      const resp = await UtilService.fetchProductStoreSetting(payload) as any
+      
+      resp?.data?.entityValueList?.forEach((productSetting: any) => {
+        return productStoreSettings[productSetting.settingTypeEnumId] = productSetting.settingValue
+      });
+    } catch (error) {
+      logger.error('Failed to fetch settings', error)
+    }
+    commit(types.UTIL_PRODUCT_STORE_SETTINGS_UPDATED, productStoreSettings);
+  },
   async fetchRejectReasons({ commit }) {
     let rejectReasons  = [];
     try {
@@ -449,249 +470,6 @@ const actions: ActionTree<UtilState, RootState> = {
     }
     commit(types.UTIL_PRODUCT_STORES_UPDATED, stores)
   },
-  
-  async getForceScanSetting({ commit, dispatch }, eComStoreId) {
-    const payload = {
-      productStoreId: eComStoreId,
-      settingTypeEnumId: "FULFILL_FORCE_SCAN",
-      fieldsToSelect: ["settingValue", "settingTypeEnumId"],
-      pageSize: 1
-    }
-
-    try {
-      const resp = await UtilService.getProductStoreSetting(payload) as any
-      if (!hasError(resp)) {
-        const respValue = resp.data[0]?.settingValue === "true"
-        commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, respValue)
-      } else {
-        dispatch('createForceScanSetting');
-      }
-    } catch(err) {
-      console.error(err)
-      commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, false)
-    }
-  },
-
-  async createForceScanSetting({ commit }) {
-    let isSettingExists = false
-
-    try {
-      if(!await UtilService.isEnumExists("FULFILL_FORCE_SCAN")) {
-        const resp = await UtilService.createEnumeration({
-          "enumId": "FULFILL_FORCE_SCAN",
-          "enumTypeId": "PROD_STR_STNG",
-          "description": "Impose force scanning of items while packing from fulfillment app",
-          "enumName": "Fulfillment Force Scan",
-          "enumCode": "FULFILL_FORCE_SCAN"
-        })
-
-        if(hasError(resp)) {
-          throw resp.data;
-        }
-      }
-
-      const params = {
-        "productStoreId": getProductStoreId(),
-        "settingTypeEnumId": "FULFILL_FORCE_SCAN",
-        "settingValue": "false"
-      }
-
-      await UtilService.createForceScanSetting(params) as any
-      isSettingExists = true
-    } catch(err) {
-      console.error(err)
-    }
-
-    // not checking for resp success and fail case as every time we need to update the state with the
-    // default value when creating a scan setting
-    commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, false)
-    return isSettingExists;
-  },
-
-  async setForceScanSetting({ commit, dispatch, state }, value) {
-    let prefValue = state.isForceScanEnabled
-    const eComStoreId: any = getProductStoreId();
-
-    // when selecting none as ecom store, not updating the pref as it's not possible to save pref with empty productStoreId
-    if(!eComStoreId) {
-      showToast(translate("Unable to update force scan preference."))
-      commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
-      return;
-    }
-
-    let isSettingExists = false;
-
-    try {
-      const resp = await UtilService.getProductStoreSetting({
-          productStoreId: eComStoreId,
-          settingTypeEnumId: "FULFILL_FORCE_SCAN",
-          fieldsToSelect: ["settingTypeEnumId"],
-          pageSize: 1
-      }) as any
-      if(!hasError(resp) && resp.data[0]?.settingTypeEnumId) {
-        isSettingExists = true
-      }
-    } catch(err) {
-      console.error(err)
-    }
-
-    if(!isSettingExists) {
-      isSettingExists = await dispatch("createForceScanSetting");
-    }
-
-    if(!isSettingExists) {
-      showToast(translate("Failed to update force scan preference."))
-      commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
-      return;
-    }
-
-    const params = {
-      "productStoreId": eComStoreId,
-      "settingTypeEnumId": "FULFILL_FORCE_SCAN",
-      "settingValue": `${value}`
-    }
-
-    try {
-      const resp = await UtilService.updateForceScanSetting(params) as any
-
-      if ((!hasError(resp))) {
-        showToast(translate("Force scan preference updated successfully."))
-        prefValue = value
-      } else {
-        throw resp.data;
-      }
-    } catch(err) {
-      showToast(translate("Failed to update force scan preference."))
-      console.error(err)
-    }
-    commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, prefValue)
-  },
-
-  async fetchBarcodeIdentificationPref({ commit, dispatch }, eComStoreId) {
-    const payload = {
-      productStoreId: eComStoreId,
-      settingTypeEnumId: "BARCODE_IDEN_PREF",
-      fieldToSelect: ["settingValue", "settingTypeEnumId"],
-      pageSize: 1
-    }
-
-    try {
-      const resp = await UtilService.getProductStoreSetting(payload) as any
-      if(!hasError(resp)) {
-        const respValue = resp.data[0].settingValue
-        commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, respValue)
-      } else {
-        dispatch("createBarcodeIdentificationPref");
-      }
-    } catch(err) {
-      console.error(err)
-      commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, "internalName")
-    }
-  },
-
-  async createBarcodeIdentificationPref({ commit }) {
-    let isSettingExists = false;
-
-    try {
-      if(!await UtilService.isEnumExists("BARCODE_IDEN_PREF")) {
-        const resp = await UtilService.createEnumeration({
-          "enumId": "BARCODE_IDEN_PREF",
-          "enumTypeId": "PROD_STR_STNG",
-          "description": "Identification preference to be used for scanning items.",
-          "enumName": "Barcode Identification Preference",
-          "enumCode": "BARCODE_IDEN_PREF"
-        })
-
-        if(hasError(resp)) {
-          throw resp.data;
-        }
-      }
-
-      const params = {
-        "productStoreId": getProductStoreId(),
-        "settingTypeEnumId": "BARCODE_IDEN_PREF",
-        "settingValue": "internalName"
-      }  
-
-      await UtilService.createBarcodeIdentificationPref(params) as any
-      isSettingExists = true
-    } catch(err) {
-      console.error(err)
-    }
-
-    // not checking for resp success and fail case as every time we need to update the state with the
-    // default value when creating a store setting
-    commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, "internalName")
-    return isSettingExists;
-  },
-
-  async setBarcodeIdentificationPref({ commit, dispatch, state }, value) {
-    let prefValue = state.barcodeIdentificationPref
-    const eComStoreId = getProductStoreId()
-
-    // when selecting none as ecom store, not updating the pref as it's not possible to save pref with empty productStoreId
-    if(!eComStoreId) {
-      showToast(translate("Unable to update barcode identification preference since no product store config found."))
-      commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, prefValue)
-      return;
-    }
-
-    let isSettingExists = false;
-
-    try {
-      const resp = await UtilService.getProductStoreSetting({
-        "productStoreId": eComStoreId,
-        "settingTypeEnumId": "BARCODE_IDEN_PREF",
-        "fieldsToSelect": ["settingTypeEnumId"],
-        "pageSize": 1
-      }) as any
-      if(!hasError(resp) && resp.data[0]?.settingTypeEnumId) {
-        isSettingExists = true 
-      }
-    } catch(err) {
-      console.error(err)
-    }
-
-    if(!isSettingExists) {
-      isSettingExists = await dispatch("createBarcodeIdentificationPref");
-    }
-
-    if(!isSettingExists) {
-      showToast(translate("Failed to update barcode identification preference."))
-      commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, prefValue)
-      return;
-    }
-
-    const params = {
-      "productStoreId": eComStoreId,
-      "settingTypeEnumId": "BARCODE_IDEN_PREF",
-      "settingValue": value
-    }
-
-    try {
-      const resp = await UtilService.updateBarcodeIdentificationPref(params) as any
-
-      if((!hasError(resp))) {
-        showToast(translate("Barcode identification preference updated successfully."))
-        prefValue = value
-      } else {
-        throw resp.data;
-      }
-    } catch(err) {
-      showToast(translate("Failed to update barcode identification preference."))
-      console.error(err)
-    }
-    commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, prefValue)
-  },
-  
-  async updateForceScanStatus({ commit }, payload) { 
-    commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, payload)
-  },
-
-  async updateBarcodeIdentificationPref({ commit }, payload) { 
-    commit(types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED, payload)
-  },
-  
   async fetchCarriersDetail ({ commit, state }) {
     if(Object.keys(state.carrierDesc)?.length) return;
     const carrierDesc = {} as any;
@@ -840,40 +618,78 @@ const actions: ActionTree<UtilState, RootState> = {
     }
   },
 
-  async fetchProductStoreSettingPicklist({ commit }, eComStoreId) {
-    let isPicklistDownloadEnabled = false
-    const payload = {
-      "productStoreId": eComStoreId,
-      "settingTypeEnumId": "FF_DOWNLOAD_PICKLIST",
-      "fieldsToSelect": ["settingTypeEnumId", "settingValue"],
-      "pageSize": 1
-    }
-
+  // Generic update action for any product store setting
+  async updateProductStoreSettingConfig({ commit }, config) {
     try {
-      const resp = await UtilService.getProductStoreSetting(payload) as any
-      if (!hasError(resp) && resp.data?.length) {
-        isPicklistDownloadEnabled = resp.data[0].settingValue == "true"
-      }
-    } catch(err) {
-      logger.error(err)
-    }
-    commit(types.UTIL_PICKLIST_DOWNLOAD_STATUS_UPDATED, isPicklistDownloadEnabled)
-  },
-  async fetchExcludeOrderBrokerDays({ commit }, productStoreId) {
-    let excludeOrderBrokerDays = undefined
-    try {
-      const resp = await UtilService.fetchExcludeOrderBrokerDays({
-        "productStoreId": productStoreId,
-        "settingTypeEnumId": "EXCLUDE_ODR_BKR_DAYS"
-      })
+      const {
+        enumId,
+        payload,
+        createService,
+        requireEnum = false,
+        enumMeta = { description: enumId, enumName: enumId }
+      } = config;
 
-      if (!hasError(resp) && resp.data[0]?.settingTypeEnumId && resp.data[0]?.settingValue !== null) {
-        excludeOrderBrokerDays = Number(resp.data[0]?.settingValue)
+      if (requireEnum) {
+        const enumExists = await UtilService.isEnumExists(enumId);
+        if (!enumExists) {
+          const enumPayload = {
+            enumId,
+            enumTypeId: "PROD_STR_STNG",
+            enumCode: enumId,
+            description: enumMeta.description,
+            enumName: enumMeta.enumName
+          };
+          const enumResponse = await UtilService.createEnumeration(enumPayload);
+          if (hasError(enumResponse)) {
+            throw new Error("Failed to create enumeration");
+          }
+        }
       }
-    } catch(err) {
-      logger.error("Failed to get the exclude order broker days", err)
+
+      //Check if product store setting already exists
+      let isSettingAlreadyExists = false;
+      try {
+        const fetchSetting = await UtilService.fetchProductStoreSetting({
+          productStoreId: getProductStoreId(),
+          settingTypeEnumId: enumId,
+          fieldsToSelect: ["settingTypeEnumId"],
+          pageSize: 1
+        });
+        isSettingAlreadyExists = fetchSetting?.data?.entityValueList?.length > 0;
+      } catch (err) {
+        logger.error(`Unable to check existence for ${enumId}`, err);
+      }
+
+      //Update or create setting on the basis of isSettingAlreadyExists
+      let response;
+      if (isSettingAlreadyExists) {
+        console.log('inside exist block')
+        response = await UtilService.updateProductStoreSetting({
+          productStoreId: getProductStoreId(),
+          settingTypeEnumId: enumId,
+          ...payload
+        });
+      } else {
+        response = await createService({
+          productStoreId: getProductStoreId(),
+          settingTypeEnumId: enumId,
+          ...payload
+        });
+      }
+
+      if (!hasError(response)) {
+        commit(types.UTIL_PRODUCT_STORE_SETTING_UPDATED, {
+          key: enumId,
+          value: payload.settingValue
+        });
+        showToast("Configuration updated");
+      } else {
+        showToast("Failed to update configuration");
+      }
+    } catch (error) {
+      showToast("Failed to update configuration");
+      logger.error("Error updating product store setting:", error);
     }
-    commit(types.UTIL_EXCLUDE_ORDER_BROKER_DAYS_UPDATED, excludeOrderBrokerDays)
   },
 
   async fetchAutoShippingLabelConfig({commit}) {
