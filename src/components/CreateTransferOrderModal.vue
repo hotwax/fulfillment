@@ -57,6 +57,7 @@ import { TransferOrderService } from '@/services/TransferOrderService';
 import { hasError } from '@/adapter';
 import { useStore } from 'vuex';
 import { getCurrentFacilityId, getProductStoreId, showToast } from '@/utils';
+import { DateTime } from 'luxon';
 import router from '@/router';
 import logger from '@/logger';
 
@@ -129,7 +130,8 @@ async function createTransferOrder() {
   
   const productStoreId = getProductStoreId() || '';
   const originFacilityId = getCurrentFacilityId() || '';
-  
+  const orderTimestamp = DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000")
+
   if(originFacilityId === selectedDestinationFacilityId.value) {
     showToast(translate('Origin and destination facility cannot be the same.'));
     return;
@@ -143,6 +145,8 @@ async function createTransferOrder() {
     statusId: 'ORDER_CREATED',
     statusFlowId: 'TO_Fulfill_And_Receive',
     currencyUom: currencyUom.value || 'USD',
+    orderDate: orderTimestamp,
+		entryDate: orderTimestamp,
     grandTotal: 0,
     productStoreId,
     originFacilityId,
