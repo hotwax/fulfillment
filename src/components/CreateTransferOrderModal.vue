@@ -130,7 +130,8 @@ async function createTransferOrder() {
   
   const productStoreId = getProductStoreId() || '';
   const originFacilityId = getCurrentFacilityId() || '';
-  
+  const orderTimestamp = DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000")
+
   if(originFacilityId === selectedDestinationFacilityId.value) {
     showToast(translate('Origin and destination facility cannot be the same.'));
     return;
@@ -144,8 +145,8 @@ async function createTransferOrder() {
     statusId: 'ORDER_CREATED',
     statusFlowId: 'TO_Fulfill_And_Receive',
     currencyUom: currencyUom.value || 'USD',
-    orderDate: DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000"),
-		entryDate: DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000"),
+    orderDate: orderTimestamp,
+		entryDate: orderTimestamp,
     grandTotal: 0,
     productStoreId,
     originFacilityId,
