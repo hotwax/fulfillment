@@ -62,8 +62,8 @@
                 <!-- <p>estimated delivery date</p> -->
               </ion-label>
               <ion-note slot="end" class="ion-margin">{{ shipmentDetails.trackingIdNumber }}</ion-note>
-              <ion-button fill="clear" size="default" color="medium" @click="redirectToTrackingUrl()">
-                <ion-icon data-testid="tracking-code-link" slot="icon-only" :icon="openOutline" />
+              <ion-button data-testid="tracking-code-link" fill="clear" size="default" color="medium" @click="redirectToTrackingUrl()">
+                <ion-icon slot="icon-only" :icon="openOutline" />
               </ion-button>
             </ion-item>
             <ion-card-content>

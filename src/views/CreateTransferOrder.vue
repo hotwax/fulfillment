@@ -177,7 +177,7 @@
       </div>
       <div v-else>
         <h1 class="ion-padding">{{ translate("Transfer items") }}</h1>
-        <TransferOrderItem v-for="item in currentOrder.items" :key="item.productId" :itemDetail="item" :lastScannedId="lastScannedId" />
+        <TransferOrderItem v-for="item in currentOrder.items" :key="item.productId" :itemDetail="item" :lastScannedId="lastScannedId" orderStatus="created" />
       </div>
     </ion-content>
     <!-- footer -->
