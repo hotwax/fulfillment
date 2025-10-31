@@ -7,7 +7,13 @@
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <template v-if="currentOrder.statusId === 'ORDER_CREATED'">
+      <!-- Loader -->
+      <div v-if="isOrderLoading" class="empty-state">
+        <ion-spinner name="crescent" />
+        <ion-label>{{ translate("Loading...") }}</ion-label>
+      </div>
+      <!-- Order Found -->
+      <div v-else-if="currentOrder.statusId === 'ORDER_CREATED'">
         <!--Transfer order cards -->
         <div class="transfer-order">
           <!-- order details -->
@@ -180,8 +186,8 @@
           <h1 class="ion-padding">{{ translate("Transfer items") }}</h1>
           <TransferOrderItem v-for="item in currentOrder.items" :key="item.productId" :itemDetail="item" :lastScannedId="lastScannedId" />
         </div>
-      </template>
-
+      </div>
+      <!-- No Order Found -->
       <div v-else class="empty-state">
         <ion-label>{{ translate("No order found") }}</ion-label>
       </div>
@@ -242,6 +248,7 @@ const productIdentificationPref = computed(() => productIdentificationStore.getP
 
 const mode = ref('scan');
 const queryString = ref('');
+const isOrderLoading = ref(false);
 const isSearchingProduct = ref(false);
 const searchedProduct = ref({}) as any;
 const isScanningEnabled = ref(false);
@@ -275,12 +282,12 @@ watch(queryString, (value) => {
 }, { deep: true });
 
 onIonViewWillEnter(async () => {
+  isOrderLoading.value = true;
   emitter.on('clearSearchedProduct', clearSearchedProduct as any);
-  emitter.emit('presentLoader');
   await fetchTransferOrderDetail(route?.params?.orderId as string);
   await fetchProductInformation();
   facilities.value = await UtilService.fetchProductStoreFacilities();
-  emitter.emit('dismissLoader');
+  isOrderLoading.value = false;
 });
 
 const clearSearchedProduct = () => {

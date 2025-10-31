@@ -251,7 +251,7 @@ export default defineComponent({
     },
     async updateItemQuantity(item: any) {
       const currentItem = this.currentOrder.items.find((orderItem: any) => orderItem.orderItemSeqId === item.orderItemSeqId);
-      const itemQuantity = (this.$refs.pickedQuantity as any).value
+      const itemQuantity = (this.$refs.pickedQuantity as any).$el.value
 
       // Skip if picked quantity is same as current or invalid (equal to or less than 0)
       if(currentItem && itemQuantity === currentItem.quantity) return;
