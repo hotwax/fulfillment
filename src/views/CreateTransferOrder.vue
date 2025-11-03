@@ -7,7 +7,13 @@
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <template v-if="currentOrder.statusId === 'ORDER_CREATED'">
+      <!-- Loader -->
+      <div v-if="isOrderLoading" class="empty-state">
+        <ion-spinner name="crescent" />
+        <ion-label>{{ translate("Loading...") }}</ion-label>
+      </div>
+      <!-- Order Found -->
+      <div v-else-if="currentOrder.statusId === 'ORDER_CREATED'">
         <!--Transfer order cards -->
         <div class="transfer-order">
           <!-- order details -->
@@ -52,12 +58,12 @@
             <div v-show="mode === 'scan'">
               <!-- scanning input -->
               <ion-item lines="full">
-                <ion-input ref="scanInput" :value="queryString" :label="translate('Scan barcode')" :placeholder="barcodeIdentifier" @ionBlur="isScanningEnabled = false" @keyup.enter="queryString = $event.target.value; scanProduct()" />
+                <ion-input ref="scanInput" :value="queryString" :label="translate('Scan barcode')" :placeholder="barcodeIdentifier" @ionBlur="isScanningEnabled = false" @ionFocus="isScanningEnabled = true" @keyup.enter="queryString = $event.target.value; scanProduct()" />
               </ion-item>
               <!-- product found after scan (reads from searchedProduct) -->
               <ion-item lines="none" v-if="searchedProduct.productId">
-                <ion-thumbnail>
-                  <DxpShopifyImg :src="getProduct(searchedProduct.productId)?.mainImageUrl || searchedProduct.mainImageUrl" />
+                <ion-thumbnail slot="start">
+                  <DxpShopifyImg :src="getProduct(searchedProduct.productId)?.mainImageUrl || searchedProduct.mainImageUrl" :key="getProduct(searchedProduct.productId)?.mainImageUrl || searchedProduct.mainImageUrl" />
                 </ion-thumbnail>
                 <ion-label>
                   {{ getProductIdentificationValue(barcodeIdentifier, getProduct(searchedProduct.productId)) }}
@@ -83,7 +89,7 @@
   
               <!-- scanner not focused -->
               <ion-item lines="none" v-else-if="!isScanningEnabled">
-                <ion-thumbnail>
+                <ion-thumbnail slot="start">
                   <DxpShopifyImg/>
                 </ion-thumbnail>
                 <ion-label>
@@ -99,7 +105,7 @@
   
               <!-- default / idle state -->
               <ion-item lines="none" v-else>
-                <ion-thumbnail>
+                <ion-thumbnail slot="start">
                   <DxpShopifyImg/>
                 </ion-thumbnail>
                 <ion-label>
@@ -123,8 +129,8 @@
               <!-- result found -->
               <ion-list lines="none" v-else-if="searchedProduct.productId">
                 <ion-item>
-                  <ion-thumbnail>
-                    <DxpShopifyImg :product="searchedProduct" />
+                  <ion-thumbnail slot="start">
+                    <DxpShopifyImg :src="searchedProduct.mainImageUrl" :key="searchedProduct.mainImageUrl" />
                   </ion-thumbnail>
                   <ion-label>
                     {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) : getProduct(searchedProduct.productId)?.internalName }}
@@ -178,10 +184,10 @@
         </div>
         <div v-else>
           <h1 class="ion-padding">{{ translate("Transfer items") }}</h1>
-          <TransferOrderItem v-for="item in currentOrder.items" :key="item.productId" :itemDetail="item" :lastScannedId="lastScannedId" />
+          <TransferOrderItem v-for="item in currentOrder.items" :key="item.productId" :itemDetail="item" :lastScannedId="lastScannedId" orderStatus="created" />
         </div>
-      </template>
-
+      </div>
+      <!-- No Order Found -->
       <div v-else class="empty-state">
         <ion-label>{{ translate("No order found") }}</ion-label>
       </div>
@@ -190,7 +196,7 @@
     <ion-footer v-if="currentOrder.statusId === 'ORDER_CREATED'">
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button data-testid="discard-order-btn" size="small" color="danger" fill="outline" @click="discardOrder">
+          <ion-button data-testid="discard-order-btn" size="small" color="danger" fill="outline" :disabled="!currentOrder.items?.length" @click="discardOrder">
             {{ translate("Discard order") }}
           </ion-button>
           <ion-button data-testid="ship-later-btn-create-transfer-order-page" size="small" fill="outline" :disabled="!currentOrder.items?.length" @click="shiplater">
@@ -227,7 +233,7 @@ import { ProductService } from '@/services/ProductService';
 import { StockService } from '@/services/StockService';
 import { hasError } from '@/adapter';
 import logger from '@/logger';
-import { showToast } from '@/utils';
+import { getCurrentFacilityId, showToast } from '@/utils';
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { UtilService } from '@/services/UtilService';
 import { OrderService } from '@/services/OrderService';
@@ -242,6 +248,7 @@ const productIdentificationPref = computed(() => productIdentificationStore.getP
 
 const mode = ref('scan');
 const queryString = ref('');
+const isOrderLoading = ref(false);
 const isSearchingProduct = ref(false);
 const searchedProduct = ref({}) as any;
 const isScanningEnabled = ref(false);
@@ -275,12 +282,12 @@ watch(queryString, (value) => {
 }, { deep: true });
 
 onIonViewWillEnter(async () => {
+  isOrderLoading.value = true;
   emitter.on('clearSearchedProduct', clearSearchedProduct as any);
-  emitter.emit('presentLoader');
   await fetchTransferOrderDetail(route?.params?.orderId as string);
   await fetchProductInformation();
   facilities.value = await UtilService.fetchProductStoreFacilities();
-  emitter.emit('dismissLoader');
+  isOrderLoading.value = false;
 });
 
 const clearSearchedProduct = () => {
@@ -495,7 +502,7 @@ async function openAddProductModal() {
   const addProductModal = await modalController.create({
     component: AddProductModal,
     componentProps: {
-      query: queryString.value,
+      query: searchedProduct.value.scannedId || queryString.value,
     }
   });
 
@@ -654,7 +661,7 @@ async function fetchStock(productId: string) {
   try {
     const resp: any = await StockService.getInventoryAvailableByFacility({
       productId,
-      facilityId: currentOrder.value.shipGroups?.[0]?.facilityId
+      facilityId: getCurrentFacilityId()
     });
     if(!hasError(resp)) return resp.data;
   } catch (err) {
