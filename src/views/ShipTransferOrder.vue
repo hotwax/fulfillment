@@ -427,7 +427,6 @@ async function updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMe
 async function shipOrder() {
   const shipment = shipmentDetails.value;
   if(!shipment) return;
-  isOrderShipped.value = true;
 
   // Validate required fields based on selected shipping method
   if(selectedSegment.value === "manual") {
@@ -457,7 +456,7 @@ async function shipOrder() {
       payload.carrierPartyId = selectedCarrier.value
       payload.shipmentMethodTypeId = selectedShippingMethod.value
     }
-
+    isOrderShipped.value = true;
     await TransferOrderService.shipTransferOrderShipment(payload)
     showToast(translate('Shipment shipped successfully.'));
     router.replace({ path: '/transfer-orders' });
