@@ -190,7 +190,7 @@
     <ion-footer v-if="currentOrder.statusId === 'ORDER_CREATED'">
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button data-testid="discard-order-btn" size="small" color="danger" fill="outline" :disabled="!currentOrder.items?.length" @click="discardOrder">
+          <ion-button data-testid="discard-order-btn" size="small" color="danger" fill="outline" @click="discardOrder">
             {{ translate("Discard order") }}
           </ion-button>
           <ion-button data-testid="ship-later-btn-create-transfer-order-page" size="small" fill="outline" :disabled="!currentOrder.items?.length" @click="shiplater">
@@ -277,9 +277,11 @@ watch(queryString, (value) => {
 onIonViewWillEnter(async () => {
   emitter.on('clearSearchedProduct', clearSearchedProduct as any);
   emitter.emit('presentLoader');
-  await fetchTransferOrderDetail(route?.params?.orderId as string);
-  await fetchProductInformation();
-  facilities.value = await UtilService.fetchProductStoreFacilities();
+  const isValidOrder = await fetchTransferOrderDetail(route?.params?.orderId as string);
+  if(isValidOrder) {
+    await fetchProductInformation();
+    facilities.value = await UtilService.fetchProductStoreFacilities();
+  }
   emitter.emit('dismissLoader');
 });
 
@@ -298,7 +300,8 @@ async function fetchTransferOrderDetail(orderId: string) {
     const orderResp = await TransferOrderService.fetchTransferOrderDetail(orderId);
     if(!hasError(orderResp) && Object.keys(orderResp.data?.order).length) {
       const order = orderResp.data.order;
-      
+      if(order.statusId !== 'ORDER_CREATED') return false;
+
       // Process items and add additional information
       if(order.items && order.items.length) {
         const items = await Promise.allSettled(
@@ -319,12 +322,14 @@ async function fetchTransferOrderDetail(orderId: string) {
 
       // Dispatch to store
       await store.dispatch('transferorder/updateCurrentTransferOrder', order)
+      return true;
     } else {
       throw orderResp.data;
     }
   } catch (error) {
     logger.error('Error fetching transfer order details:', error);
   }
+  return false;
 }
 
 async function fetchProductInformation() {
@@ -714,8 +719,18 @@ async function discardOrder() {
       },
       handler: async () => {
         const orderId = currentOrder.value.orderId;
+        let resp;
+
         try {
-          const resp = await TransferOrderService.cancelTransferOrder(orderId);
+          if(!currentOrder.value?.items?.length) {
+            // No items present — update order header status directly
+            const payload = { orderId, statusId: "ORDER_CANCELLED" };
+            resp = await OrderService.updateOrderHeader(payload);
+          } else {
+            // Items present — cancel via transfer order API
+            resp = await TransferOrderService.cancelTransferOrder(orderId);
+          }
+
           if(!hasError(resp)) {
             showToast(translate("Order discarded successfully"));
             router.replace({ path: '/transfer-orders' });
