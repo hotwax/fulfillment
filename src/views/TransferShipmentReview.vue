@@ -77,7 +77,7 @@ import { documentTextOutline, sendOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
 import { translate, useProductIdentificationStore } from '@hotwax/dxp-components';
 
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import Scanner from "@/components/Scanner.vue";
 import { Actions, hasPermission } from '@/authorization'
 import { getFeatures, showToast, hasWebcamAccess } from '@/utils';
@@ -291,7 +291,6 @@ export default defineComponent({
   }, 
   setup() {
     const store = useStore(); 
-    const route = useRoute();
     const router = useRouter();
     const productIdentificationStore = useProductIdentificationStore();
     let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
@@ -304,7 +303,6 @@ export default defineComponent({
       productIdentificationPref,
       store,
       router,
-      route,
       translate
     };
   },

@@ -120,7 +120,7 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/transfer-shipment-review/:shipmentId/:category',
+    path: '/transfer-shipment-review/:shipmentId',
     name: 'TransferShipmentReview',
     component: TransferShipmentReview,
     beforeEnter: authGuard,
