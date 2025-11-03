@@ -663,7 +663,6 @@ const actions: ActionTree<UtilState, RootState> = {
       //Update or create setting on the basis of isSettingAlreadyExists
       let response;
       if (isSettingAlreadyExists) {
-        console.log('inside exist block')
         response = await UtilService.updateProductStoreSetting({
           productStoreId: getProductStoreId(),
           settingTypeEnumId: enumId,
