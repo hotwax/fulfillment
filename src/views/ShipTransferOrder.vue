@@ -189,19 +189,24 @@ const selectedShippingMethod = ref('')
 const trackingCode = ref('')
 const shipmentDetails = ref({}) as any
 const shippingRates = ref([]) as any
+const isOrderShipped = ref(false)
 const isLoadingRates = ref(true)
 let facilities = ref([]) as any;
 
 onIonViewWillEnter(async() => {
   facilities.value = await UtilService.fetchProductStoreFacilities();
   // Fetch shipment and carrier-related data in parallel
-  await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers'), fetchShippingRates()])
+  await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers')])
+  await fetchShippingRates();
   // Update shipment methods if carrier exists
   selectedCarrier.value = shipmentDetails.value?.carrierPartyId || '';
   if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId, shipmentDetails.value.shipmentMethodTypeId)
 });
 
 onBeforeRouteLeave(async () => {
+  // If order is already shipped, allow navigation
+  if(isOrderShipped.value) return true;
+
   let canLeave = false;
   const message = translate("Save this order without tracking details to ship later.");
   const alert = await alertController.create({
@@ -422,7 +427,7 @@ async function updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMe
 async function shipOrder() {
   const shipment = shipmentDetails.value;
   if(!shipment) return;
- 
+
   // Validate required fields based on selected shipping method
   if(selectedSegment.value === "manual") {
     if(!selectedCarrier.value) {
@@ -451,11 +456,12 @@ async function shipOrder() {
       payload.carrierPartyId = selectedCarrier.value
       payload.shipmentMethodTypeId = selectedShippingMethod.value
     }
-
+    isOrderShipped.value = true;
     await TransferOrderService.shipTransferOrderShipment(payload)
     showToast(translate('Shipment shipped successfully.'));
     router.replace({ path: '/transfer-orders' });
   } catch (err) {
+    isOrderShipped.value = false;
     logger.error('Failed to ship the shipment.', err);
     showToast(translate('Something went wrong, could not ship the shipment'));
   }
