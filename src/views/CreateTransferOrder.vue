@@ -199,10 +199,10 @@
           <ion-button data-testid="discard-order-btn" size="small" color="danger" fill="outline" @click="discardOrder">
             {{ translate("Discard order") }}
           </ion-button>
-          <ion-button data-testid="ship-later-btn-create-transfer-order-page" size="small" fill="outline" :disabled="!currentOrder.items?.length" @click="shiplater">
+          <ion-button data-testid="ship-later-btn-create-transfer-order-page" size="small" fill="outline" :disabled="!currentOrder.items?.length || hasInvalidPickedQuantity()" @click="shiplater">
             {{ translate("Ship later") }}
           </ion-button>
-          <ion-button data-testid="pack-and-ship-order-btn" size="small" color="primary" fill="solid" :disabled="!currentOrder.items?.length" @click="packAndShipOrder">
+          <ion-button data-testid="pack-and-ship-order-btn" size="small" color="primary" fill="solid" :disabled="!currentOrder.items?.length || hasInvalidPickedQuantity()" @click="packAndShipOrder">
             {{ translate("Pack and ship order") }}
           </ion-button>
         </ion-buttons>
@@ -704,6 +704,11 @@ function clearSearch() {
   searchedProduct.value = {};
 }
 
+// Returns true if any order item has invalid (zero or negative) picked quantity
+function hasInvalidPickedQuantity() {
+  return currentOrder.value.items.some((item: any) => !item.pickedQuantity || item.pickedQuantity <= 0);
+}
+
 // Discards the current transfer order by calling the cancel API and navigates to the transfer orders list.
 async function discardOrder() {
   const alert = await alertController.create({
@@ -794,12 +799,6 @@ async function shiplater() {
 async function packAndShipOrder() {
   let shipmentId;
   try {
-    const hasInvalidItem = currentOrder.value.items.some((item: any) => item.pickedQuantity <= 0);
-    if(hasInvalidItem) {
-      showToast(translate("Please enter a valid quantity for all items."));
-      return;
-    }
-
     if(currentOrder.value.statusId === 'ORDER_CREATED') {
       const success = await approveOrder(currentOrder.value.orderId);
       if(!success) {
