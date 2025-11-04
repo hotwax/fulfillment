@@ -196,7 +196,7 @@
     <ion-footer v-if="currentOrder.statusId === 'ORDER_CREATED'">
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button data-testid="discard-order-btn" size="small" color="danger" fill="outline" @click="discardOrder">
+          <ion-button data-testid="discard-order-btn" size="small" color="danger" fill="outline" @click="router.replace('/transfer-orders')">
             {{ translate("Discard order") }}
           </ion-button>
           <ion-button data-testid="ship-later-btn-create-transfer-order-page" size="small" fill="outline" :disabled="!currentOrder.items?.length" @click="shiplater">
@@ -226,7 +226,7 @@ import {
 } from 'ionicons/icons';
 import emitter from "@/event-bus";
 import { useStore } from 'vuex';
-import { useRoute } from 'vue-router';
+import { onBeforeRouteLeave, useRoute } from 'vue-router';
 import router from '@/router';
 import { DxpShopifyImg, getProductIdentificationValue, useProductIdentificationStore, translate } from '@hotwax/dxp-components';
 import { ProductService } from '@/services/ProductService';
@@ -258,6 +258,7 @@ const searchInput = ref('') as any
 let timeoutId: any = null;
 let productSearchCount = ref(0);
 let facilities = ref([]) as any;
+let preventLeave = ref(false);
 
 const barcodeIdentifier = computed(() => store.getters["util/getBarcodeIdentificationPref"]);
 const getProduct = computed(() => store.getters["product/getProduct"]);
@@ -292,6 +293,66 @@ onIonViewWillEnter(async () => {
   isOrderLoading.value = false;
 });
 
+// Discards the current transfer order by calling the cancel API and navigates to the transfer orders list.
+onBeforeRouteLeave(async () => {
+  if(preventLeave.value) return true;
+
+  let canLeave = false;
+  const alert = await alertController.create({
+    header: translate('Discard order'),
+    message: translate('Are you sure you want to discard this transfer order?'),
+    buttons: [
+      {
+        text: translate('Cancel'),
+        role: 'cancel',
+        htmlAttributes: { 
+          'data-testid': 'discard-order-cancel-btn'
+        },
+        handler: () => {
+          canLeave = false;
+        },
+      },
+      {
+        text: translate('Discard'),
+        htmlAttributes: { 
+          'data-testid': 'discard-order-discard-btn'
+        },
+        handler: async () => {
+          const orderId = currentOrder.value.orderId;
+          let resp;
+
+          try {
+            if (!currentOrder.value?.items?.length) {
+              // No items — update order header directly
+              const payload = { orderId, statusId: 'ORDER_CANCELLED' };
+              resp = await OrderService.updateOrderHeader(payload);
+            } else {
+              // Items present — cancel via transfer order API
+              resp = await TransferOrderService.cancelTransferOrder(orderId);
+            }
+
+            if (!hasError(resp)) {
+              showToast(translate('Order discarded successfully'));
+              canLeave = true;
+              alertController.dismiss();
+            } else {
+              throw resp.data;
+            }
+          } catch (err) {
+            logger.error('Failed to discard order', err);
+            showToast(translate('Failed to discard order'));
+            canLeave = false;
+          }
+        },
+      },
+    ],
+  });
+
+  await alert.present();
+  await alert.onDidDismiss();
+  return canLeave;
+});
+
 const clearSearchedProduct = () => {
   searchedProduct.value = {};
   queryString.value = '';
@@ -307,7 +368,10 @@ async function fetchTransferOrderDetail(orderId: string) {
     const orderResp = await TransferOrderService.fetchTransferOrderDetail(orderId);
     if(!hasError(orderResp) && Object.keys(orderResp.data?.order).length) {
       const order = orderResp.data.order;
-      if(order.statusId !== 'ORDER_CREATED') return false;
+      if(order.statusId !== 'ORDER_CREATED') {
+        await store.dispatch('transferorder/updateCurrentTransferOrder', order)
+        return false;
+      }
 
       // Process items and add additional information
       if(order.items && order.items.length) {
@@ -709,53 +773,6 @@ function clearSearch() {
   searchedProduct.value = {};
 }
 
-// Discards the current transfer order by calling the cancel API and navigates to the transfer orders list.
-async function discardOrder() {
-  const alert = await alertController.create({
-    header: translate('Discard order'),
-    message: translate("Are you sure you want to discard this transfer order?"),
-    buttons: [{
-      text: translate('Cancel'),
-      role: 'cancel',
-      htmlAttributes: { 
-        'data-testid': "discard-order-cancel-btn"
-      }
-    },
-    {
-      text: translate('Discard'),
-      htmlAttributes: { 
-        'data-testid': "discard-order-discard-btn"
-      },
-      handler: async () => {
-        const orderId = currentOrder.value.orderId;
-        let resp;
-
-        try {
-          if(!currentOrder.value?.items?.length) {
-            // No items present — update order header status directly
-            const payload = { orderId, statusId: "ORDER_CANCELLED" };
-            resp = await OrderService.updateOrderHeader(payload);
-          } else {
-            // Items present — cancel via transfer order API
-            resp = await TransferOrderService.cancelTransferOrder(orderId);
-          }
-
-          if(!hasError(resp)) {
-            showToast(translate("Order discarded successfully"));
-            router.replace({ path: '/transfer-orders' });
-          } else {
-            throw resp.data;
-          }
-        } catch (err) {
-          logger.error("Failed to discard order", err);
-          showToast(translate("Failed to discard order"));
-        }
-      }
-    }]
-  });
-  return alert.present();
-}
-
 async function approveOrder(orderId: string) {
   try {
     const resp = await TransferOrderService.approveTransferOrder(orderId);
@@ -792,10 +809,12 @@ async function shiplater() {
           'data-testid': "shiplater-continue-btn"
         },
         handler: async () => {
+          preventLeave.value = true;
           const success = await approveOrder(currentOrder.value.orderId);
           if(success) {
             router.replace({ path: '/transfer-orders' });
           } else {
+            preventLeave.value = false;
             showToast(translate('Failed to approve the transfer order to ship later.'));
           }
         }
@@ -839,6 +858,8 @@ async function packAndShipOrder() {
         "packages": packages
       }
     }
+    preventLeave.value = true;
+
     const resp = await TransferOrderService.createOutboundTransferShipment(params)
     if(!hasError(resp)) {
       shipmentId = resp.data.shipmentId;
@@ -847,6 +868,7 @@ async function packAndShipOrder() {
       throw resp.data;
     }
   } catch (error) {
+    preventLeave.value = false;
     logger.error(error);
     showToast(translate('Failed to create shipment'));
   }
