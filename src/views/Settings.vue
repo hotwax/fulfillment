@@ -180,6 +180,23 @@
             <ion-toggle label-placement="start" :checked="affectQoh" @click.prevent="confirmAffectQohConfig($event)">{{ translate("Affect QOH") }}</ion-toggle>
           </ion-item>
         </ion-card>
+        <ion-card >
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Show all pickers") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate('Show facility wise pickers.') }}
+          </ion-card-content>
+          <ion-list>
+            <ion-item lines="none">
+              <ion-toggle label-placement="start" :checked="showAllPickers" @ionChange="updateShowAllPickers($event)">
+                {{ translate("Show all pickers") }}
+              </ion-toggle>
+            </ion-item>
+          </ion-list>
+        </ion-card>
       </section>
     </ion-content>
   </ion-page>
@@ -285,7 +302,8 @@ export default defineComponent({
       isPartialOrderRejectionEnabled: 'util/getPartialOrderRejectionConfig',
       isCollateralRejectionEnabled: 'util/getCollateralRejectionConfig',
       affectQoh: 'util/getAffectQohConfig',
-      barcodeIdentificationPref: 'util/getBarcodeIdentificationPref'
+      barcodeIdentificationPref: 'util/getBarcodeIdentificationPref',
+      showAllPickers: 'util/getShowAllPickers',
     })
   },
   async ionViewWillEnter() {
@@ -299,6 +317,9 @@ export default defineComponent({
     await this.store.dispatch('user/fetchNotificationPreferences')
   },
   methods: {
+    updateShowAllPickers(event: any) {
+      this.store.dispatch('util/updateShowAllPickers', event.detail.checked);
+    },
     updateEComStore(selectedProductStore: any) {
       this.store.dispatch('user/setEComStore', selectedProductStore?.productStoreId)
     },

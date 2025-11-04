@@ -95,6 +95,9 @@ const getters: GetterTree <UtilState, RootState> = {
   },
   getFacilityAddress: (state) => (facilityId: string) => {
     return state.facilityAddresses?.[facilityId] || {}
+  },
+  getShowAllPickers(state){
+    return state.showAllPickers;
   }
 }
 export default getters;

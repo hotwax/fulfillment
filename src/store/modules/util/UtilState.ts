@@ -30,5 +30,6 @@ export default interface UtilState {
   isReservationFacilityFieldEnabled:boolean;
   productStoreSettings: Record<string, any>;
   isAutoShippingLabelEnabled: boolean;
+  showAllPickers: boolean;
 
 }
