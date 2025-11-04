@@ -114,8 +114,9 @@ export default defineComponent({
     this.trackingCode = this.currentShipment?.trackingIdNumber;
     this.shipmentItems = this.currentShipment.items;
   },
-  async beforeRouteLeave(to) {
-    if (to.path !== `/transfer-order-details/${this.currentShipment.orderId}/open`) return;
+  async beforeRouteLeave() {
+    if(this.isShipped) return true;
+
     let canLeave = false;
     const message = translate("Are you sure that you want to discard this shipment?");
     const alert = await alertController.create({
@@ -263,7 +264,7 @@ export default defineComponent({
         
         this.isShipped = true;
         showToast(translate('Shipment shipped successfully.'));
-        this.router.replace({ path: `/transfer-order-details/${this.currentShipment.orderId}/open` })
+        this.router.replace({ path: `/transfer-order-details/${this.currentShipment.orderId}/completed` })
       } catch (err) {
         logger.error('Failed to ship the shipment.', err);
         showToast(translate('Something went wrong, could not ship the shipment'))

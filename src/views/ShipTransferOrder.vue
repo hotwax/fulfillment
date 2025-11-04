@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button data-testid="ship-transfer-orders-back-btn" slot="start" defaultHref="/transfer-orders" @click="shipLater" />
+        <ion-back-button data-testid="ship-transfer-orders-back-btn" slot="start" defaultHref="/transfer-orders" />
         <ion-title>{{ translate("Ship transfer order") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -26,8 +26,8 @@
           <ion-list>
             <ion-list-header>{{ translate("Items") }}</ion-list-header>
             <ion-item v-for="item in shipmentItems" :key="item.shipmentItemSeqId">
-              <ion-thumbnail>
-                <DxpShopifyImg size="small" :src="getProduct(item.productId).mainImageUrl"/>
+              <ion-thumbnail slot="start">
+                <DxpShopifyImg size="small" :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl"/>
               </ion-thumbnail>
               <ion-label>
                 {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId)?.internalName }}
@@ -62,7 +62,9 @@
                 <!-- <p>estimated delivery date</p> -->
               </ion-label>
               <ion-note slot="end" class="ion-margin">{{ shipmentDetails.trackingIdNumber }}</ion-note>
-              <ion-icon data-testid="tracking-code-link" slot="end" :icon="openOutline" @click="redirectToTrackingUrl()"/>
+              <ion-button data-testid="tracking-code-link" fill="clear" size="default" color="medium" @click="redirectToTrackingUrl()">
+                <ion-icon slot="icon-only" :icon="openOutline" />
+              </ion-button>
             </ion-item>
             <ion-card-content>
               <ion-button data-testid="reprint-label-btn" fill="outline" color="primary" @click="printShippingLabel">
@@ -138,7 +140,7 @@
       <ion-toolbar>
         <ion-buttons slot="end">
           <!-- need to add check here that after we print shiping label we need to disable this button. -->
-          <ion-button data-testid="ship-later-btn-ship-transfer-order-page" :disabled="shipmentDetails.trackingIdNumber" fill="outline" color="primary" @click="shipLater">{{ translate("Ship later") }}</ion-button>
+          <ion-button data-testid="ship-later-btn-ship-transfer-order-page" :disabled="shipmentDetails.trackingIdNumber" fill="outline" color="primary" @click="router.replace('/transfer-orders')">{{ translate("Ship later") }}</ion-button>
           <ion-button data-testid="ship-order-btn" fill="solid" color="primary" @click="shipOrder">{{ translate("Ship order") }}</ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -156,7 +158,7 @@ import { TransferOrderService } from '@/services/TransferOrderService';
 import { OrderService } from '@/services/OrderService'
 import { CarrierService } from '@/services/CarrierService';
 import { UtilService } from '@/services/UtilService';
-import { useRoute } from 'vue-router';
+import { onBeforeRouteLeave, useRoute } from 'vue-router';
 import { formatCurrency, showToast } from '@/utils';
 import { hasError } from '@hotwax/oms-api';
 import { useRouter } from 'vue-router'
@@ -187,16 +189,61 @@ const selectedShippingMethod = ref('')
 const trackingCode = ref('')
 const shipmentDetails = ref({}) as any
 const shippingRates = ref([]) as any
+const isOrderShipped = ref(false)
 const isLoadingRates = ref(true)
 let facilities = ref([]) as any;
 
 onIonViewWillEnter(async() => {
   facilities.value = await UtilService.fetchProductStoreFacilities();
   // Fetch shipment and carrier-related data in parallel
-  await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers'), fetchShippingRates()])
+  await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers')])
+  await fetchShippingRates();
   // Update shipment methods if carrier exists
   selectedCarrier.value = shipmentDetails.value?.carrierPartyId || '';
   if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId, shipmentDetails.value.shipmentMethodTypeId)
+});
+
+onBeforeRouteLeave(async () => {
+  // If order is already shipped, allow navigation
+  if(isOrderShipped.value) return true;
+
+  let canLeave = false;
+  const message = translate("Save this order without tracking details to ship later.");
+  const alert = await alertController.create({
+    header: translate("Ship later"),
+    message,
+    buttons: [
+      {
+        text: translate("Go back"),
+        role: 'cancel',
+        handler: () => {
+          canLeave = false;
+        },
+      },
+      {
+        text: translate("Continue"),
+        handler: async () => {
+          try {
+            const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId);
+            if (!hasError(resp)) {
+              canLeave = true;
+              alertController.dismiss();
+            } else {
+              throw resp.data;
+            }
+          } catch (err) {
+            showToast(translate('Failed to cancel transfer order shipment'));
+            logger.error('Failed to cancel transfer order shipment', err);
+            canLeave = false;
+          }
+        },
+      },
+    ],
+  });
+
+  alert.present();
+  await alert.onDidDismiss();
+  return canLeave;
 });
 
 // Updates the available shipment methods based on the selected carrier.
@@ -237,7 +284,7 @@ function getFacilityName(facilityId: string) {
 
 // Retrieves the tracking URL template for the selected or prefilled carrier
 function getCarrierTrackingUrl() {
-  return facilityCarriers.value.find((carrier: any) => carrier.partyId === selectedCarrier.value || shipmentDetails.value.carrierPartyId)?.trackingUrl
+  return facilityCarriers.value.find((carrier: any) => carrier.partyId === selectedCarrier.value)?.trackingUrl
 }
 
 // Builds a full tracking URL with the tracking number, or shows a fallback message if unavailable
@@ -245,7 +292,7 @@ function generateTrackingUrl() {
   if(getCarrierTrackingUrl()) {
     return translate("Tracking URL:", { trackingUrl: getCarrierTrackingUrl()?.replace("${trackingNumber}", trackingCode.value) })
   }
-  return translate("A tracking URL is not configured for", { carrierName: getCarrierDesc.value(selectedCarrier.value || shipmentDetails.value.carrierPartyId) })
+  return translate("A tracking URL is not configured for", { carrierName: getCarrierDesc.value(selectedCarrier.value) })
 }
 
 // Opens the tracking URL in a new browser tab using the carrier's template and tracking number
@@ -377,47 +424,10 @@ async function updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMe
   }
 }
 
-async function shipLater() {
-  const message = translate("Save this order without tracking details to ship later.");
-  const alert = await alertController.create({
-    header: translate("Ship later"),
-    message,
-    buttons: [
-      {
-        text: translate("Go back"),
-        htmlAttributes: { 
-          'data-testid': "shiplater-goback-btn"
-        },
-      },
-      {
-        text: translate("Continue"),
-        htmlAttributes: { 
-          'data-testid': "shiplater-continue-btn"
-        },
-        handler: async () => {
-          try {
-            const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId)
-            if(!hasError(resp)) {
-              alertController.dismiss()
-              router.replace({ path: '/transfer-orders' })
-            } else {
-              throw resp.data
-            }
-          } catch (err) {
-            logger.error('Failed to cancel the shipment.', err);
-            showToast(translate('Failed to cancel transfer order shipment'));
-          }
-        }
-      }
-    ],
-  });
-  return alert.present();
-}
-
 async function shipOrder() {
   const shipment = shipmentDetails.value;
   if(!shipment) return;
- 
+
   // Validate required fields based on selected shipping method
   if(selectedSegment.value === "manual") {
     if(!selectedCarrier.value) {
@@ -446,11 +456,12 @@ async function shipOrder() {
       payload.carrierPartyId = selectedCarrier.value
       payload.shipmentMethodTypeId = selectedShippingMethod.value
     }
-
+    isOrderShipped.value = true;
     await TransferOrderService.shipTransferOrderShipment(payload)
     showToast(translate('Shipment shipped successfully.'));
     router.replace({ path: '/transfer-orders' });
   } catch (err) {
+    isOrderShipped.value = false;
     logger.error('Failed to ship the shipment.', err);
     showToast(translate('Something went wrong, could not ship the shipment'));
   }
