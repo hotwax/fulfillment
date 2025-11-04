@@ -295,7 +295,7 @@ onIonViewWillEnter(async () => {
 
 // Discards the current transfer order by calling the cancel API and navigates to the transfer orders list.
 onBeforeRouteLeave(async () => {
-  if(preventLeave.value) return true;
+  if(preventLeave.value || currentOrder.value.statusId !== 'ORDER_CREATED') return true;
 
   let canLeave = false;
   const alert = await alertController.create({
