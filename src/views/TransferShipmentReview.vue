@@ -114,8 +114,9 @@ export default defineComponent({
     this.trackingCode = this.currentShipment?.trackingIdNumber;
     this.shipmentItems = this.currentShipment.items;
   },
-  async beforeRouteLeave(to) {
-    if (to.path !== `/transfer-order-details/${this.currentShipment.orderId}/open`) return;
+  async beforeRouteLeave() {
+    if(this.isShipped) return true;
+
     let canLeave = false;
     const message = translate("Are you sure that you want to discard this shipment?");
     const alert = await alertController.create({
