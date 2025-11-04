@@ -35,7 +35,7 @@
               <ion-item>
                 <ion-icon :icon="checkmarkDoneOutline" slot="start"/>
                 <ion-label class="ion-text-wrap">{{ translate("Complete order on fulfillment") }}</ion-label>
-                <ion-toggle slot="end" data-testid="toggle-complete-on-fulfillment" class="ion-text-wrap" :checked="currentOrder.statusFlowId === 'TO_Fulfill_Only'" @ionChange="toggleStatusFlow">
+                <ion-toggle slot="end" data-testid="toggle-complete-on-fulfillment" :checked="currentOrder.statusFlowId === 'TO_Fulfill_Only'" @ionChange="toggleStatusFlow">
                 </ion-toggle>
               </ion-item>
             </ion-list>
