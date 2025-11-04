@@ -254,7 +254,7 @@ export default defineComponent({
       if(this.currentOrder.statusId !== 'ORDER_CREATED') return;
 
       const currentItem = this.currentOrder.items.find((orderItem: any) => orderItem.orderItemSeqId === item.orderItemSeqId);
-      const itemQuantity = parseInt((this.$refs.pickedQuantity as any).$el.value)
+      const itemQuantity = parseInt((this.$refs.pickedQuantity as any).$el.value) || 0
 
       // Skip if picked quantity is same as current or invalid (equal to or less than 0)
       if(currentItem && itemQuantity === currentItem.quantity) return;
