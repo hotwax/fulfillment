@@ -247,8 +247,8 @@ export default defineComponent({
         // set pickedQuantity = qoh
         if(item.pickedQuantity !== item.qoh) {
           item.pickedQuantity = item.qoh;
-          // TODO: Avoid direct DOM manipulation for pickedQuantity; use a reactive approach instead.
-          (this.$refs.pickedQuantity as any).$el.value = item.qoh;
+          // wait for the DOM to be updated after changing item.pickedQuantity
+          await this.$nextTick();
           await this.updateItemQuantity(item);
         }
       }
