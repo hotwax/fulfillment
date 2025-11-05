@@ -175,6 +175,8 @@ export default defineComponent({
       if (selectedItem) {
         selectedItem.pickedQuantity = event.detail.value ? parseInt(event.detail.value) : 0;
         selectedItem.progress = parseInt(selectedItem.pickedQuantity);
+        item.pickedQuantity = selectedItem.pickedQuantity;
+        item.progress = selectedItem.progress;
       }
       await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
     },
