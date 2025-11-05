@@ -247,6 +247,8 @@ export default defineComponent({
         // set pickedQuantity = qoh
         if(item.pickedQuantity !== item.qoh) {
           item.pickedQuantity = item.qoh;
+          // TODO: Avoid direct DOM manipulation for pickedQuantity; use a reactive approach instead.
+          (this.$refs.pickedQuantity as any).$el.value = item.qoh;
           await this.updateItemQuantity(item);
         }
       }
@@ -270,6 +272,7 @@ export default defineComponent({
         });
         if(!hasError(resp)) {
           currentItem.quantity = itemQuantity;
+          currentItem.pickedQuantity = itemQuantity;
           await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
         } else {
           throw resp.data;
