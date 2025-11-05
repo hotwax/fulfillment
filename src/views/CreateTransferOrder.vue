@@ -895,8 +895,7 @@ async function packAndShipOrder() {
 }
 
 .add-items {
-  flex: 3;
-  flex-basis: 375px;
+  flex: 3 1 375px;
  
   .mode { 
     display: flex;
