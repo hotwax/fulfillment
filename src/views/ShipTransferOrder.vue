@@ -44,13 +44,13 @@
 
         <!-- Shipping label  -->
         <div class="shipping">
-          <ion-segment :disabled="shipmentDetails?.trackingIdNumber" v-model="selectedSegment">
+          <ion-segment :disabled="shipmentDetails?.carrierServiceStatusId === 'SHRSCS_ACCEPTED'" v-model="selectedSegment">
             <ion-segment-button value="purchase">{{ translate("Purchase shipping label") }}</ion-segment-button>
             <ion-segment-button value="manual">{{ translate("Manual tracking") }}</ion-segment-button>
           </ion-segment>
 
           <!-- card after purchase shipping label generated -->
-          <ion-card v-if="shipmentDetails?.trackingIdNumber">
+          <ion-card v-if="shipmentDetails?.carrierServiceStatusId === 'SHRSCS_ACCEPTED'">
             <ion-item lines="full">
               <ion-avatar slot="start">
                 <Image :src="getCarrierLogo(shipmentDetails.carrierPartyId)" />
@@ -140,7 +140,7 @@
       <ion-toolbar>
         <ion-buttons slot="end">
           <!-- need to add check here that after we print shiping label we need to disable this button. -->
-          <ion-button data-testid="ship-later-btn-ship-transfer-order-page" :disabled="shipmentDetails.trackingIdNumber" fill="outline" color="primary" @click="router.replace('/transfer-orders')">{{ translate("Ship later") }}</ion-button>
+          <ion-button data-testid="ship-later-btn-ship-transfer-order-page" :disabled="shipmentDetails?.carrierServiceStatusId === 'SHRSCS_ACCEPTED'" fill="outline" color="primary" @click="router.replace('/transfer-orders')">{{ translate("Ship later") }}</ion-button>
           <ion-button data-testid="ship-order-btn" fill="solid" color="primary" @click="shipOrder">{{ translate("Ship order") }}</ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -442,7 +442,7 @@ async function shipOrder() {
       showToast(translate('Please enter a tracking number'));
       return;
     }
-  } else if(selectedSegment.value === "purchase" && !shipment.trackingIdNumber) {
+  } else if(selectedSegment.value === "purchase" && shipment?.carrierServiceStatusId !== 'SHRSCS_ACCEPTED') {
     showToast(translate('Please purchase a shipping label'))
     return;
   }
