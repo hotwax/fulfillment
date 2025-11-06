@@ -178,8 +178,6 @@ import TransferOrderItem from '@/components/TransferOrderItem.vue'
 import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
 import emitter from "@/event-bus";
 import CloseTransferOrderModal from '@/components/CloseTransferOrderModal.vue';
-import logger from '@/logger';
-import { hasError } from '@hotwax/oms-api';
  
 export default defineComponent({
   name: "TransferOrderDetail",
@@ -213,17 +211,13 @@ export default defineComponent({
       selectedSegment: 'open',
       isCreatingShipment: false,
       lastScannedId: '',
-      defaultRejectReasonId: "NO_VARIANCE_LOG",  // default variance reason, to be used when any other item is selected for rejection
-      shipmentMethods: [] as Array<any>,
-      selectedShipmentMethod: [] as Array<any>
+      defaultRejectReasonId: "NO_VARIANCE_LOG"  // default variance reason, to be used when any other item is selected for rejection
     }
   },
   async ionViewWillEnter() {
     emitter.emit('presentLoader');
     await this.store.dispatch("transferorder/fetchRejectReasons");
     await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
-    await this.fetchShipmentFacets();
-    this.selectedShipmentMethod = this.selectedShipmentMethod?.filter((shipmentMethod: any) => this.shipmentMethods.includes(shipmentMethod));
     this.selectedSegment = this.$route.params.category === 'completed' ? "completed" : "open" 
     emitter.emit('dismissLoader');
   },
@@ -432,27 +426,6 @@ export default defineComponent({
 
         return modal.present();
       },
-      async fetchShipmentFacets() {
-        const params = {
-          orderTypeId: 'TRANSFER_ORDER',
-          statusId: 'SHIPMENT_SHIPPED',
-          shippedDateFrom: DateTime.now().startOf('day').toMillis(),
-          originFacilityId: this.currentOrder?.facilityId,
-          productStoreId: this.currentOrder?.productStoreId,
-        };
-        try {
-          const resp = await OrderService.fetchShipmentFacets(params);
-
-          if(!hasError(resp)){
-            this.shipmentMethods = resp.data.shipmentMethodTypeIds;
-            await this.store.dispatch('util/fetchShipmentMethodTypeDesc', resp.data.shipmentMethodTypeIds)
-          } else {
-            throw resp.data;
-          }
-        } catch (err) {
-          logger.error('Error in fetching shipment facets', err);
-        }
-      }
 }, 
 ionViewDidLeave() {
   const routeTo = this.router.currentRoute;
