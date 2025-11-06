@@ -65,7 +65,7 @@
                 </div>
                 <div class="order-metadata">
                   <ion-label>
-                    {{ getShipmentMethodDesc(shipment.shipmentMethodTypeId) }}
+                    {{ shipment.routeSegShipmentMethodDescription ? shipment.routeSegShipmentMethodDescription : shipment.routeSegShipmentMethodTypeId }}
                     <p v-if="shipment.trackingIdNumber">{{ translate("Tracking Code") }} {{ shipment.trackingIdNumber }}</p>
                   </ion-label>
                 </div>
@@ -228,7 +228,6 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       productIdentificationPref: 'user/getProductIdentificationPref',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
     }),
     areItemsEligibleForRejection() {
       return this.currentOrder.items?.some((item: any) => item.rejectReasonId);
