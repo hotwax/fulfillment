@@ -98,7 +98,10 @@
                     <!-- this field is not coming it the shipping rates api -->
                     <!-- <p>estimated delivery date</p> -->
                   </ion-label>
-                  <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" @click="updateCarrierAndShippingMethod(shippingRate.carrierPartyId, shippingRate.shipmentMethodTypeId, shippingRate.shippingEstimateAmount)">{{ translate("Purchase label") }}</ion-button>
+                  <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" :disabled="!!selectedCarrierService" @click="updateCarrierAndShippingMethod(shippingRate)">
+                    <ion-spinner v-if="selectedCarrierService === shippingRate.carrierService" slot="start" name="crescent" />
+                    {{ translate("Purchase label") }}
+                  </ion-button>
                 </ion-item>
               </ion-list>
 
@@ -140,8 +143,11 @@
       <ion-toolbar>
         <ion-buttons slot="end">
           <!-- need to add check here that after we print shiping label we need to disable this button. -->
-          <ion-button data-testid="ship-later-btn-ship-transfer-order-page" :disabled="shipmentDetails?.carrierServiceStatusId === 'SHRSCS_ACCEPTED'" fill="outline" color="primary" @click="router.replace('/transfer-orders')">{{ translate("Ship later") }}</ion-button>
-          <ion-button data-testid="ship-order-btn" fill="solid" color="primary" @click="shipOrder">{{ translate("Ship order") }}</ion-button>
+          <ion-button data-testid="ship-later-btn-ship-transfer-order-page" :disabled="shipmentDetails?.carrierServiceStatusId === 'SHRSCS_ACCEPTED' || isProcessingShipment || !!selectedCarrierService" fill="outline" color="primary" @click="router.replace('/transfer-orders')">{{ translate("Ship later") }}</ion-button>
+          <ion-button data-testid="ship-order-btn" :disabled="isProcessingShipment || !!selectedCarrierService" fill="solid" color="primary" @click="shipOrder">
+            <ion-spinner v-if="isProcessingShipment" slot="start" name="crescent" />
+            {{ translate("Ship order") }}
+          </ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-footer>
@@ -151,7 +157,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useStore } from 'vuex';
-import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonSegment, IonSegmentButton, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from '@ionic/vue'
+import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonSegment, IonSegmentButton, IonSpinner, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from '@ionic/vue'
 import { openOutline, printOutline, storefrontOutline } from 'ionicons/icons'
 import { DxpShopifyImg, getProductIdentificationValue, useProductIdentificationStore, translate } from '@hotwax/dxp-components';
 import { TransferOrderService } from '@/services/TransferOrderService';
@@ -164,6 +170,7 @@ import { hasError } from '@hotwax/oms-api';
 import { useRouter } from 'vue-router'
 import Image from '@/components/Image.vue';
 import logger from '@/logger';
+import emitter from '@/event-bus';
 
 const store = useStore()
 const route = useRoute();
@@ -192,8 +199,11 @@ const shippingRates = ref([]) as any
 const isOrderShipped = ref(false)
 const isLoadingRates = ref(true)
 let facilities = ref([]) as any;
+let isProcessingShipment = ref(false)
+let selectedCarrierService = ref("")
 
 onIonViewWillEnter(async() => {
+  emitter.emit("presentLoader")
   facilities.value = await UtilService.fetchProductStoreFacilities();
   // Fetch shipment and carrier-related data in parallel
   await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers')])
@@ -201,6 +211,7 @@ onIonViewWillEnter(async() => {
   // Update shipment methods if carrier exists
   selectedCarrier.value = shipmentDetails.value?.carrierPartyId || '';
   if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId, shipmentDetails.value.shipmentMethodTypeId)
+  emitter.emit("dismissLoader")
 });
 
 onBeforeRouteLeave(async () => {
@@ -405,15 +416,16 @@ async function voidShippingLabelAlert() {
   return alert.present();
 }
 
-async function updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMethodTypeId: string, shippingEstimateAmount: number) {
+async function updateCarrierAndShippingMethod(shippingRate: any) {
   let resp;
+  selectedCarrierService.value = shippingRate.carrierService
   try {
     const payload = {
       shipmentId: shipmentDetails.value.shipmentId,
       shipmentRouteSegmentId: shipmentDetails.value.shipmentRouteSegmentId,
-      shipmentMethodTypeId: shipmentMethodTypeId,
-      carrierPartyId: carrierPartyId,
-      shippingEstimateAmount: shippingEstimateAmount
+      shipmentMethodTypeId: shippingRate.shipmentMethodTypeId,
+      carrierPartyId: shippingRate.carrierPartyId,
+      shippingEstimateAmount: shippingRate.shippingEstimateAmount
     }
     resp = await OrderService.updateShipmentCarrierAndMethod(payload);
     if(!hasError(resp)) {
@@ -423,6 +435,8 @@ async function updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMe
     }
   } catch (error) {
     logger.error(error)
+  } finally {
+    selectedCarrierService.value = ""
   }
 }
 
@@ -450,6 +464,7 @@ async function shipOrder() {
   }
 
   try {
+    isProcessingShipment.value = true
     const payload: any = { shipmentId: shipment.shipmentId }
 
     if(selectedSegment.value === "manual") {
@@ -461,8 +476,10 @@ async function shipOrder() {
     isOrderShipped.value = true;
     await TransferOrderService.shipTransferOrderShipment(payload)
     showToast(translate('Shipment shipped successfully.'));
+    isProcessingShipment.value = false
     router.replace({ path: '/transfer-orders' });
   } catch (err) {
+    isProcessingShipment.value = false
     isOrderShipped.value = false;
     logger.error('Failed to ship the shipment.', err);
     showToast(translate('Something went wrong, could not ship the shipment'));

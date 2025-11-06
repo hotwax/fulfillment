@@ -117,18 +117,18 @@
     <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment === 'open'">
       <ion-toolbar>
         <ion-buttons slot="end">
-            <ion-button color="dark" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="closeTOItems()">
-              {{ translate("Close Items") }}
-            </ion-button>
-            <ion-button v-show="areItemsEligibleForRejection" color="danger" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="rejectItems()">
-              <ion-icon slot="start" :icon="trashOutline" />
-              {{ translate("Reject Items") }}
-            </ion-button>
-            <ion-button color="primary" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="printTransferOrderPicklist()">
-            <ion-icon slot="start" :icon="printOutline" />
+          <ion-button color="dark" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || isCreatingShipment" @click="closeTOItems()">
+            {{ translate("Close Items") }}
+          </ion-button>
+          <ion-button v-show="areItemsEligibleForRejection" color="danger" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || isCreatingShipment" @click="rejectItems()">
+            <ion-icon slot="start" :icon="trashOutline" />
+            {{ translate("Reject Items") }}
+          </ion-button>
+          <ion-button color="primary" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || isCreatingShipment" @click="printTransferOrderPicklist()">
+          <ion-icon slot="start" :icon="printOutline" />
             {{ translate('Picklist') }}   
           </ion-button>
-          <ion-button color="primary" fill="solid" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment()" @click="confirmCreateShipment">
+          <ion-button color="primary" fill="solid" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment() || isCreatingShipment" @click="confirmCreateShipment">
             <ion-spinner v-if="isCreatingShipment" slot="start" name="crescent" />
             {{ translate('Create shipment') }}   
           </ion-button>
