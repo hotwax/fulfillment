@@ -66,7 +66,7 @@
             <div v-show="mode === 'scan'">
               <!-- scanning input -->
               <ion-item lines="full">
-                <ion-input ref="scanInput" :value="queryString" :label="translate('Scan barcode')" :placeholder="productIdentificationDesc[barcodeIdentifier]" @ionBlur="isScanningEnabled = false" @ionFocus="isScanningEnabled = true" @keyup.enter="queryString = $event.target.value; scanProduct()" />
+                <ion-input ref="scanInput" :value="queryString" :label="translate('Scan barcode')" :placeholder="productIdentificationDesc[barcodeIdentifier] || barcodeIdentifier" @ionBlur="isScanningEnabled = false" @ionFocus="isScanningEnabled = true" @keyup.enter="queryString = $event.target.value; scanProduct()" />
               </ion-item>
               <!-- product found after scan (reads from searchedProduct) -->
               <ion-item lines="none" v-if="searchedProduct.productId">
@@ -102,7 +102,7 @@
                 </ion-thumbnail>
                 <ion-label>
                   {{ translate("Your scanner isn’t focused yet.") }}
-                  <p>{{ translate("Scanning is set to") }} {{ (productIdentificationDesc[barcodeIdentifier] || '').toUpperCase() }}</p>
+                  <p>{{ translate("Scanning is set to") }} {{ productIdentificationDesc[barcodeIdentifier] || barcodeIdentifier }}</p>
                   <p v-if="barcodeIdentifier !== 'SKU'">{{ translate("Swap to SKU from the settings page") }}</p>
                 </ion-label>
                 <ion-button slot="end" color="warning" size="small" @click="enableScan">
@@ -118,7 +118,7 @@
                 </ion-thumbnail>
                 <ion-label>
                   {{ translate("Begin scanning products to add them to this transfer") }}
-                  <p>{{ translate("Scanning is set to") }} {{ (productIdentificationDesc[barcodeIdentifier] || '').toUpperCase() }}</p>
+                  <p>{{ translate("Scanning is set to") }} {{ productIdentificationDesc[barcodeIdentifier] || barcodeIdentifier }}</p>
                   <p v-if="barcodeIdentifier !== 'SKU'">{{ translate("Swap to SKU from the settings page") }}</p>
                 </ion-label>
                 <ion-badge slot="end" color="success">{{ translate("start scanning") }}</ion-badge>
