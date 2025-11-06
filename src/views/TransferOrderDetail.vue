@@ -228,7 +228,6 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       productIdentificationPref: 'user/getProductIdentificationPref',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
     }),
     areItemsEligibleForRejection() {
       return this.currentOrder.items?.some((item: any) => item.rejectReasonId);
