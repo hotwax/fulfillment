@@ -72,8 +72,25 @@ const fetchProductAverageCost = async (productId: string, facilityId: string): P
   return productAverageCost;
 };
 
+const fetchBarcodeIdentificationDesc = async (params: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/goodIdentificationTypes`,
+    method: "get",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    params
+  });
+}
+
 export const ProductService = {
   fetchProducts,
   fetchProductComponents,
-  fetchProductAverageCost
+  fetchProductAverageCost,
+  fetchBarcodeIdentificationDesc
 }
