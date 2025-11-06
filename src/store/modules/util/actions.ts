@@ -716,7 +716,8 @@ const actions: ActionTree<UtilState, RootState> = {
         logger.error('Failed to check auto shipping label group', err);
         commit(types.SET_AUTO_SHIPPING_LABEL_ENABLED, false);
       }
-  },
+  }
+  
 }
 
 export default actions;

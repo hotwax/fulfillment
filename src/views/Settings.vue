@@ -285,7 +285,7 @@ export default defineComponent({
       isPartialOrderRejectionEnabled: 'util/getPartialOrderRejectionConfig',
       isCollateralRejectionEnabled: 'util/getCollateralRejectionConfig',
       affectQoh: 'util/getAffectQohConfig',
-      barcodeIdentificationPref: 'util/getBarcodeIdentificationPref',
+      barcodeIdentificationPref: 'util/getBarcodeIdentificationPref'
     })
   },
   async ionViewWillEnter() {
