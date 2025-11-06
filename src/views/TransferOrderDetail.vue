@@ -65,7 +65,7 @@
                 </div>
                 <div class="order-metadata">
                   <ion-label>
-                    {{ getShipmentMethodDesc(shipment.shipmentMethodTypeId) }}
+                    {{ shipment.routeSegShipmentMethodDescription }}
                     <p v-if="shipment.trackingIdNumber">{{ translate("Tracking Code") }} {{ shipment.trackingIdNumber }}</p>
                   </ion-label>
                 </div>
