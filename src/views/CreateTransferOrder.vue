@@ -215,7 +215,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonCard, IonList, IonItem, IonLabel, IonButton, IonIcon, IonToggle, IonSegment, IonSegmentButton, IonThumbnail, IonBadge, IonSearchbar, IonSpinner, IonFooter, IonButtons, onIonViewWillEnter, alertController, modalController, onIonViewWillLeave } from '@ionic/vue';
+import { IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonCard, IonList, IonItem, IonInput, IonLabel, IonButton, IonIcon, IonToggle, IonSegment, IonSegmentButton, IonThumbnail, IonBadge, IonSearchbar, IonSpinner, IonFooter, IonButtons, onIonViewWillEnter, alertController, modalController, onIonViewWillLeave } from '@ionic/vue';
 import {
   barcodeOutline,
   checkmarkDoneOutline,
