@@ -217,7 +217,7 @@ export default defineComponent({
       }
 
       const facilityFilter = [];
-      if(hasPermission(Actions.APP_SHOW_ALL_PICKERS)){
+      if(!hasPermission(Actions.APP_SHOW_ALL_PICKERS)){
         facilityFilter.push(`facilityIds:${this.currentFacility.facilityId}`)
       }
 
