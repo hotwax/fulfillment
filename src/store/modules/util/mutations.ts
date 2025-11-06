@@ -88,8 +88,5 @@ const mutations: MutationTree <UtilState> = {
   [types.SET_AUTO_SHIPPING_LABEL_ENABLED](state, payload) {
     state.isAutoShippingLabelEnabled = payload;
   },
-  [types.SET_SHOW_ALL_PICKERS](state, payload) {
-    state.showAllPickers = payload;
-  }
 }
 export default mutations;

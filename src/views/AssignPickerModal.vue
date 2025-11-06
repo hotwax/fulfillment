@@ -81,7 +81,7 @@ import { UtilService } from "@/services/UtilService";
 import emitter from "@/event-bus";
 import logger from "@/logger"
 import { OrderService } from '@/services/OrderService';
-import { Actions } from '@/authorization'
+import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
   name: "AssignPickerModal",
@@ -108,7 +108,6 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       openOrders: 'order/getOpenOrders',
-      showAllPickers: 'util/getShowAllPickers',
     })
   },
   data () {
@@ -218,7 +217,7 @@ export default defineComponent({
       }
 
       const facilityFilter = [];
-      if(!this.showAllPickers) {
+      if(hasPermission(Actions.APP_SHOW_ALL_PICKERS)){
         facilityFilter.push(`facilityIds:${this.currentFacility.facilityId}`)
       }
 
@@ -266,6 +265,7 @@ export default defineComponent({
       Actions,
       closeOutline,
       currentFacility,
+      hasPermission,
       saveOutline,
       closeCircle,
       store,

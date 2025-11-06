@@ -717,10 +717,6 @@ const actions: ActionTree<UtilState, RootState> = {
         commit(types.SET_AUTO_SHIPPING_LABEL_ENABLED, false);
       }
   },
-  updateShowAllPickers({ commit }, payload) {
-    commit(types.SET_SHOW_ALL_PICKERS, payload);
-  }
-
 }
 
 export default actions;

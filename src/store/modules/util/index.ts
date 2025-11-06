@@ -39,7 +39,6 @@ const utilModule: Module<UtilState, RootState> = {
     isReservationFacilityFieldEnabled:false,
     productStoreSettings: {},
     isAutoShippingLabelEnabled: false,
-    showAllPickers: false,
   },
   getters,
   actions,
