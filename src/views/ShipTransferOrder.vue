@@ -227,6 +227,8 @@ onBeforeRouteLeave(async () => {
             const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId);
             if (!hasError(resp)) {
               canLeave = true;
+              // When we will be coming from TO detail page in that case once successfull we need to clear the current TO details
+              await store.dispatch('transferorder/clearCurrentTransferOrder');
               alertController.dismiss();
             } else {
               throw resp.data;
