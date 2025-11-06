@@ -128,7 +128,7 @@
             <ion-icon slot="start" :icon="printOutline" />
             {{ translate('Picklist') }}   
           </ion-button>
-          <ion-button  color="primary" fill="solid" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment()" @click="confirmCreateShipment">
+          <ion-button color="primary" fill="solid" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment()" @click="confirmCreateShipment">
             <ion-spinner v-if="isCreatingShipment" slot="start" name="crescent" />
             {{ translate('Create shipment') }}   
           </ion-button>
@@ -261,7 +261,7 @@ export default defineComponent({
       this.isCreatingShipment = false;
       if (shipmentId) {
         await this.store.dispatch('transferorder/clearCurrentTransferShipment');
-        this.router.replace({ path: `/transfer-shipment-review/${shipmentId}` })
+        this.router.replace({ path: `/ship-transfer-order/${shipmentId}` })
       }
     },
     async confirmCreateShipment() {
