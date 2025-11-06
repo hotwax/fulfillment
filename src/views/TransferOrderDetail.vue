@@ -29,7 +29,7 @@
           </ion-button>
         </div>
 
-        <ion-segment scrollable v-if="hasOpenItems" v-model="selectedSegment">
+        <ion-segment scrollable v-if="hasOpenItems || $route.params.category === 'open'" v-model="selectedSegment">
           <ion-segment-button value="open">
             <ion-label>{{ translate("Open") }}</ion-label>
           </ion-segment-button>
@@ -224,7 +224,7 @@ export default defineComponent({
     await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
     await this.fetchShipmentFacets();
     this.selectedShipmentMethod = this.selectedShipmentMethod?.filter((shipmentMethod: any) => this.shipmentMethods.includes(shipmentMethod));
-    this.selectedSegment = this.hasOpenItems? (this.$route.params.category === 'completed' ? 'completed' : 'open'): 'completed';
+    this.selectedSegment = this.$route.params.category === 'completed' ? "completed" : "open" 
     emitter.emit('dismissLoader');
   },
   computed: {
@@ -267,7 +267,7 @@ export default defineComponent({
       this.isCreatingShipment = false;
       if (shipmentId) {
         await this.store.dispatch('transferorder/clearCurrentTransferShipment');
-        this.router.replace({ path: `/transfer-shipment-review/${shipmentId}` })
+        this.router.push({ path: `/transfer-shipment-review/${shipmentId}` })
       }
     },
     async confirmCreateShipment() {
