@@ -72,7 +72,7 @@ const fetchProductAverageCost = async (productId: string, facilityId: string): P
   return productAverageCost;
 };
 
-const fetchProductIdentificationDesc = async (params: any): Promise<any> => {
+const fetchBarcodeIdentificationDesc = async (params: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
@@ -92,5 +92,5 @@ export const ProductService = {
   fetchProducts,
   fetchProductComponents,
   fetchProductAverageCost,
-  fetchProductIdentificationDesc
+  fetchBarcodeIdentificationDesc
 }
