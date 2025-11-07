@@ -34,13 +34,11 @@
               </ion-item>
               <ion-item>
                 <ion-icon :icon="checkmarkDoneOutline" slot="start"/>
-                <ion-label v-if="currentOrder.statusFlowId === 'TO_Fulfill_Only'">
+                <ion-label>
                   {{ translate("Return to warehouse") }}
                   <p>{{ translate("Complete order on fulfillment") }}</p>
                 </ion-label>
-                <ion-label v-else class="ion-text-wrap">{{ translate("Complete order on fulfillment") }}</ion-label>
-                <ion-toggle slot="end" data-testid="toggle-complete-on-fulfillment" :checked="currentOrder.statusFlowId === 'TO_Fulfill_Only'" @ionChange="toggleStatusFlow">
-                </ion-toggle>
+                <ion-toggle slot="end" data-testid="toggle-complete-on-fulfillment" :checked="currentOrder.statusFlowId === 'TO_Fulfill_Only'" @ionChange="toggleStatusFlow" />
               </ion-item>
             </ion-list>
           </ion-card>
