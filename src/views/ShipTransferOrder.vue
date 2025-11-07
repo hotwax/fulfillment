@@ -44,7 +44,7 @@
 
         <!-- Shipping label  -->
         <div class="shipping">
-          <ion-segment :disabled="shipmentDetails?.carrierServiceStatusId === 'SHRSCS_ACCEPTED'" v-model="selectedSegment">
+          <ion-segment :disabled="shipmentDetails?.carrierServiceStatusId === 'SHRSCS_ACCEPTED'" v-model="selectedSegment" @ionChange="segmentChanged">
             <ion-segment-button value="purchase">{{ translate("Purchase shipping label") }}</ion-segment-button>
             <ion-segment-button value="manual">{{ translate("Manual tracking") }}</ion-segment-button>
           </ion-segment>
@@ -53,16 +53,16 @@
           <ion-card v-if="shipmentDetails?.carrierServiceStatusId === 'SHRSCS_ACCEPTED'">
             <ion-item lines="full">
               <ion-avatar slot="start">
-                <Image :src="getCarrierLogo(shipmentDetails.carrierPartyId)" />
+                <Image :src="getCarrierLogo(shipmentDetails.routeSegCarrierPartyId)" />
               </ion-avatar>
               <ion-label>
-                {{ formatCurrency(shipmentDetails.shippingEstimateAmount, shipmentDetails.currencyUomId) }}
-                <p>{{ generateRateName(shipmentDetails.carrierPartyId, shipmentDetails.shipmentMethodTypeId) }}</p>
+                {{ formatCurrency(shipmentDetails.shippingEstimateAmount, shipmentDetails.currencyUom) }}
+                <p>{{ generateRateName(shipmentDetails.routeSegCarrierPartyId, shipmentDetails.routeSegShipmentMethodTypeId) }}</p>
                 <!-- this field is not coming it the shipping rates api -->
                 <!-- <p>estimated delivery date</p> -->
               </ion-label>
-              <ion-note slot="end" class="ion-margin">{{ shipmentDetails.trackingIdNumber }}</ion-note>
-              <ion-button data-testid="tracking-code-link" fill="clear" size="default" color="medium" @click="redirectToTrackingUrl()">
+              <ion-note>{{ shipmentDetails.trackingIdNumber }}</ion-note>
+              <ion-button :disabled="!getCarrierTrackingUrl()" data-testid="tracking-code-link" fill="clear" size="default" color="medium" @click="redirectToTrackingUrl()">
                 <ion-icon slot="icon-only" :icon="openOutline" />
               </ion-button>
             </ion-item>
@@ -93,7 +93,7 @@
                     <Image :src="getCarrierLogo(shippingRate.carrierPartyId)" />
                   </ion-avatar>
                   <ion-label>
-                    {{ formatCurrency(shippingRate.shippingEstimateAmount, shippingRate.currencyUomId) }}
+                    {{ formatCurrency(shippingRate.shippingEstimateAmount, shipmentDetails.currencyUom) }}
                     <p>{{ generateRateName(shippingRate.carrierPartyId, shippingRate.shipmentMethodTypeId) }}</p>
                     <!-- this field is not coming it the shipping rates api -->
                     <!-- <p>estimated delivery date</p> -->
@@ -114,12 +114,12 @@
             <!-- manual tracking segment -->
             <ion-list v-if="selectedSegment === 'manual'">
               <ion-item>
-                <ion-select data-testid="select-carrier-dropdown" :value="selectedCarrier" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedCarrier = $event.detail.value; updateShipmentMethodsForCarrier(selectedCarrier)">
-                  <ion-select-option data-testid="select-carrier-dropdown-option" v-for="(carrierPartyId, index) in Object.keys(shipmentMethodsByCarrier)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) ? getCarrierDesc(carrierPartyId) : carrierPartyId }}</ion-select-option>
+                <ion-select data-testid="select-carrier-dropdown" :value="selectedCarrier" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="updateSelectedCarrier($event.detail.value)">
+                  <ion-select-option data-testid="select-carrier-dropdown-option" v-for="(carrierPartyId, index) in Object.keys(shipmentMethodsByCarrier)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) }}</ion-select-option>
                 </ion-select>
               </ion-item>
               <ion-item>
-                <ion-select data-testid="select-method-dropdown" :disabled="!shipmentMethods.length" :value="selectedShippingMethod" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="selectedShippingMethod = $event.detail.value">
+                <ion-select data-testid="select-method-dropdown" :disabled="!shipmentMethods.length" :value="selectedShippingMethod" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="updateSelectedShippingMethod($event.detail.value)">
                   <ion-select-option data-testid="select-method-dropdown-option" v-for="(method, index) in shipmentMethods" :key="index" :value="method.shipmentMethodTypeId">{{ method.description ? method.description : method.shipmentMethodTypeId }}</ion-select-option>
                 </ion-select>
               </ion-item>
@@ -259,6 +259,21 @@ onBeforeRouteLeave(async () => {
   return canLeave;
 });
 
+function segmentChanged() {
+  trackingCode.value = ""
+}
+
+function updateSelectedCarrier(value: string) {
+  selectedCarrier.value = value;
+  trackingCode.value = ""
+  updateShipmentMethodsForCarrier(selectedCarrier.value);
+}
+
+function updateSelectedShippingMethod(value: string) {
+  selectedShippingMethod.value = value;
+  trackingCode.value = ""
+}
+
 // Updates the available shipment methods based on the selected carrier.
 function updateShipmentMethodsForCarrier(carrierPartyId: string, shippingMethodId = "") {
   shipmentMethods.value = shipmentMethodsByCarrier.value[carrierPartyId] || [];
@@ -352,30 +367,13 @@ async function purchaseShippingLabel() {
 // Prints the shipping label if available by collecting unique label URLs and calling the print service
 async function printShippingLabel() {
   const shipment = shipmentDetails.value
-
-  try {
-    if(shipment.trackingIdNumber) {
-      const shippingLabelPdfUrls: string[] = Array.from(
-        new Set(
-          (shipment.shipmentPackages ?? [])
-            .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
-            .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
-        )
-      );
-      showToast(translate("Shipping Label generated successfully"))
-      await OrderService.printShippingLabel([shipment.shipmentId], shippingLabelPdfUrls, shipment.shipmentPackages);
-    } else {
-      showToast(translate("Failed to generate shipping label"))
-    }
-  } catch (error) {
-    logger.error(error)
-  }
+  await OrderService.printShippingLabel([shipment.shipmentId]);
 }
 
 // Voids an existing shipping label using the route segment ID and refreshes shipment details
 async function voidShippingLabel() {
   try {
-    const routeSegmentId = shipmentDetails.value?.shipmentPackageRouteSegDetails?.[0]?.shipmentRouteSegmentId;
+    const routeSegmentId = shipmentDetails.value?.shipmentRouteSegmentId;
     if(!routeSegmentId) return;
 
     await OrderService.voidShipmentLabel({
@@ -465,7 +463,10 @@ async function shipOrder() {
 
   try {
     isProcessingShipment.value = true
-    const payload: any = { shipmentId: shipment.shipmentId }
+    const payload: any = { 
+      shipmentId: shipment.shipmentId,
+      shipmentRouteSegmentId: shipment.shipmentRouteSegmentId
+    }
 
     if(selectedSegment.value === "manual") {
       payload.trackingIdNumber = trackingCode.value
