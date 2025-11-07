@@ -896,16 +896,16 @@ async function packAndShipOrder() {
 
 .add-items {
   flex: 3 1 375px;
- 
-  .mode { 
-    display: flex;
+}
 
-    ion-segment {
-      grid-auto-columns: minmax(auto, 150px);
-      justify-content: start;
-      flex: 0 1 max-content;
-    }
-  }
+.add-items .mode { 
+  display: flex;
+}
+
+.add-items .mode ion-segment {
+  grid-auto-columns: minmax(auto, 150px);
+  justify-content: start;
+  flex: 0 1 max-content;
 }
 
 .order-items{
