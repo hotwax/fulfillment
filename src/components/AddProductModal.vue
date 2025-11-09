@@ -93,7 +93,7 @@ function addTransferOrderItem(product: any) {
     orderId: currentOrder.value.orderId,
     facilityId: currentOrder.value.shipGroups?.[0]?.facilityId,
     scannedId: queryString.value,
-    onSuccess: (product: any, newItem: any) => {
+    onSuccess: () => {
       emitter.emit('clearSearchedProduct');
     },
     onError: (product: any, error: any) => {

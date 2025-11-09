@@ -1,4 +1,4 @@
-import { ref, watch, computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useStore } from 'vuex';
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { ProductService } from '@/services/ProductService';
@@ -6,6 +6,21 @@ import { StockService } from '@/services/StockService';
 import { hasError, showToast } from '@/utils';
 import { translate } from "@hotwax/dxp-components";
 import logger from '@/logger';
+
+/**
+ * Sequential product addition queue to prevent API deadlocks.
+ * 
+ * Process:
+ * 1. Products are added to queue via addProductToQueue()
+ * 2. Queue processes items sequentially (one API call at a time)
+ * 3. pendingProductIds tracks products being added for UI feedback
+ * 4. Prevents duplicate additions and API conflicts
+ * 
+ * States:
+ * - addQueue: Items waiting to be processed
+ * - pendingProductIds: Products currently being added (for UI)
+ * - isProcessing: Whether queue is actively processing items
+ */
 
 export function useProductQueue() {
   const store = useStore();
@@ -25,12 +40,6 @@ export function useProductQueue() {
   const isProductBeingProcessed = (productId: string ) => {
     return pendingProductIds.value.has(productId) || isProductInOrder(productId);
   };
-
-  // watch(addQueue.length, (newQueue) => {
-  //   if (newQueue.length > 0 && !isProcessing.value) {
-  //     processQueue();
-  //   }
-  // });
 
   const addProductToQueue = (itemToAdd: any) => {
     const { product } = itemToAdd;
@@ -120,7 +129,6 @@ export function useProductQueue() {
         
         pendingProductIds.value.delete(product.productId);
         onSuccess?.(product, newItem);
-        
       } else {
         throw resp.data;
       }
