@@ -51,7 +51,7 @@ export function useProductQueue() {
   };
 
   // Hide pending items toast
-  const hidePendingItemsToast = async () => {
+  const hidePendingItemsToast = () => {
     if (pendingItemsToast) {
       pendingItemsToast.dismiss();
       pendingItemsToast = null;
@@ -78,8 +78,8 @@ export function useProductQueue() {
     pendingProductIds.value.add(product.productId);
     addQueue.value.push(itemToAdd);
 
-    // Show toast only when pending items exceed 2
-    if (pendingProductIds.value.size > 2) showPendingItemsToast();
+    // Show toast only when pending items are 2 or more
+    if (pendingProductIds.value.size >= 2) showPendingItemsToast();
     processQueue();
   };
 
@@ -97,14 +97,10 @@ export function useProductQueue() {
 
       await processSingleProduct(itemToAdd);
       addQueue.value.shift();
-
-      // Hide toast when pending items drop to 2 or less
-      if (pendingItemsToast && pendingProductIds.value.size <= 2) {
-        await hidePendingItemsToast();
-      }
     }
     
     isProcessing.value = false;
+    if (pendingItemsToast) hidePendingItemsToast();
   };
   
   /**
