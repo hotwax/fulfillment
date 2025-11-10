@@ -40,7 +40,11 @@ export function useProductQueue() {
   const isProductBeingProcessed = (productId: string ) => {
     return pendingProductIds.value.has(productId) || isProductInOrder(productId);
   };
-
+  
+  /**
+   * Adds product to queue for sequential processing.
+   * Validates input, checks for duplicates, and triggers processing.
+   */
   const addProductToQueue = (itemToAdd: any) => {
     const { product } = itemToAdd;
     
@@ -55,14 +59,14 @@ export function useProductQueue() {
     }
     
     pendingProductIds.value.add(product.productId);
-    
-    addQueue.value.push({
-      ...itemToAdd,
-      scannedId: itemToAdd.scannedId
-    });
+    addQueue.value.push(itemToAdd);
     processQueue();
   };
 
+  /**
+   * Processes product queue sequentially to prevent API deadlocks.
+   * Handles one item at a time, continues on failures.
+   */
   const processQueue = async () => {
     if (isProcessing.value || addQueue.value.length === 0) return;
     
@@ -70,21 +74,18 @@ export function useProductQueue() {
     
     while (addQueue.value.length > 0) {
       const itemToAdd = addQueue.value[0];
-      
-      try {
-        await processSingleProduct(itemToAdd);
-        addQueue.value.shift();
-      } catch (error) {
-        addQueue.value.shift();
-        pendingProductIds.value.delete(itemToAdd.product.productId);
-        itemToAdd.onError?.(itemToAdd.product, error);
-        logger.error('Failed to add product:', error);
-      }
+
+      await processSingleProduct(itemToAdd);
+      addQueue.value.shift();
     }
     
     isProcessing.value = false;
   };
-
+  
+  /**
+   * Processes single product addition with error handling.
+   * Fetches stock, cost, calls API, updates store, and handles UI feedback.
+   */
   const processSingleProduct = async (itemToAdd: any) => {
     const { product, orderId, facilityId, scannedId, onSuccess } = itemToAdd;
     
@@ -126,17 +127,15 @@ export function useProductQueue() {
         };
         
         await store.dispatch('transferorder/updateCurrentTransferOrder', updatedOrder);
-        
-        pendingProductIds.value.delete(product.productId);
         onSuccess?.(product, newItem);
       } else {
         throw resp.data;
       }
     } catch (err) {
-      pendingProductIds.value.delete(product.productId);
       itemToAdd.onError?.(product, err);
       showToast(translate("Failed to add product to order"));
-      throw err;
+    } finally {
+      pendingProductIds.value.delete(product.productId);
     }
   };
 
