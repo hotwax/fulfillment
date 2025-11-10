@@ -175,6 +175,8 @@ export default defineComponent({
       if (selectedItem) {
         selectedItem.pickedQuantity = event.detail.value ? parseInt(event.detail.value) : 0;
         selectedItem.progress = parseInt(selectedItem.pickedQuantity);
+        item.pickedQuantity = selectedItem.pickedQuantity;
+        item.progress = selectedItem.progress;
       }
       await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
     },
@@ -242,11 +244,10 @@ export default defineComponent({
     },
     async bookQoh(item: any) {
       if(item.qoh) {
-        // set pickedQuantity = qoh
-        if(item.pickedQuantity !== item.qoh) {
-          item.pickedQuantity = item.qoh;
-          await this.updateItemQuantity(item);
-        }
+        item.pickedQuantity = item.qoh;
+        // wait for the DOM to be updated after changing item.pickedQuantity
+        await this.$nextTick();
+        await this.updateItemQuantity(item);
       }
     },
     async updateItemQuantity(item: any) {
@@ -268,6 +269,7 @@ export default defineComponent({
         });
         if(!hasError(resp)) {
           currentItem.quantity = itemQuantity;
+          currentItem.pickedQuantity = itemQuantity;
           await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
         } else {
           throw resp.data;

@@ -129,7 +129,7 @@ export default defineComponent({
         url: "/transfer-orders",
         iosIcon: businessOutline,
         mdIcon: businessOutline,
-        childRoutes: ["/transfer-order-details", "/transfer-shipment-review", "/create-transfer-order"],
+        childRoutes: ["/transfer-order-details", "/create-transfer-order", "/ship-transfer-order"],
         meta: {
           permissionId: "APP_TRANSFER_ORDERS_VIEW"
         }
