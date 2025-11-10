@@ -28,6 +28,7 @@ export function useProductQueue() {
   const addQueue = ref([]) as any;
   const isProcessing = ref(false);
   const pendingProductIds = ref(new Set());
+  let pendingItemsToast: any = null;
   
   const currentOrder = computed(() => store.getters['transferorder/getCurrent']);
 
@@ -39,6 +40,22 @@ export function useProductQueue() {
   // Helper function to check if product is being processed
   const isProductBeingProcessed = (productId: string ) => {
     return pendingProductIds.value.has(productId) || isProductInOrder(productId);
+  };
+
+  // Show pending items toast when bulk scanning
+  const showPendingItemsToast = async () => {
+    if (!pendingItemsToast) {
+      pendingItemsToast = await showToast(translate('Adding items to the order'), { manualDismiss: true });
+      await pendingItemsToast.present();
+    }
+  };
+
+  // Hide pending items toast
+  const hidePendingItemsToast = async () => {
+    if (pendingItemsToast) {
+      pendingItemsToast.dismiss();
+      pendingItemsToast = null;
+    }
   };
   
   /**
@@ -60,6 +77,9 @@ export function useProductQueue() {
     
     pendingProductIds.value.add(product.productId);
     addQueue.value.push(itemToAdd);
+
+    // Show toast only when pending items exceed 2
+    if (pendingProductIds.value.size > 2) showPendingItemsToast();
     processQueue();
   };
 
@@ -77,6 +97,11 @@ export function useProductQueue() {
 
       await processSingleProduct(itemToAdd);
       addQueue.value.shift();
+
+      // Hide toast when pending items drop to 2 or less
+      if (pendingItemsToast && pendingProductIds.value.size <= 2) {
+        await hidePendingItemsToast();
+      }
     }
     
     isProcessing.value = false;
@@ -157,6 +182,7 @@ export function useProductQueue() {
   const clearQueue = () => {
     addQueue.value = [];
     pendingProductIds.value.clear();
+    hidePendingItemsToast();
   };
 
   return {
