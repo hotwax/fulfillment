@@ -423,8 +423,17 @@ async function updateCarrierAndShippingMethod(shippingRate: any) {
       shipmentRouteSegmentId: shipmentDetails.value.shipmentRouteSegmentId,
       shipmentMethodTypeId: shippingRate.shipmentMethodTypeId,
       carrierPartyId: shippingRate.carrierPartyId,
-      shippingEstimateAmount: shippingRate.shippingEstimateAmount
+      actualCost: shippingRate.shippingEstimateAmount,
+      carrierServiceStatusId: 'SHRSCS_CONFIRMED'
+    } as any;
+
+    if (shippingRate.actualCarrierCode) {
+      payload.actualCarrierCode = shippingRate.actualCarrierCode;
     }
+    if (shippingRate.gatewayRateId) {
+      payload.gatewayRateId = shippingRate.gatewayRateId;
+    }
+
     resp = await OrderService.updateShipmentCarrierAndMethod(payload);
     if(!hasError(resp)) {
       await purchaseShippingLabel();
