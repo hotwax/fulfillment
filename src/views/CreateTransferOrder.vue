@@ -38,14 +38,15 @@
                   {{ translate("Return to warehouse") }}
                   <p>{{ translate("Complete order on fulfillment") }}</p>
                 </ion-label>
-                <ion-toggle slot="end" data-testid="toggle-complete-on-fulfillment" :checked="currentOrder.statusFlowId === 'TO_Fulfill_Only'" @ionChange="toggleStatusFlow" />
+                <ion-toggle slot="end" data-testid="toggle-complete-on-fulfillment" :checked="currentOrder.statusFlowId === 'TO_Fulfill_Only'" @ionChange="toggleStatusFlow">
+                </ion-toggle>
               </ion-item>
             </ion-list>
           </ion-card>
   
           <!-- adding product card -->
           <ion-card class="add-items">
-            <div class="search-type">
+            <div class="mode">
               <h5 class="ion-margin-horizontal">{{ translate("Add items") }}</h5>
               <ion-segment v-model="mode" @ionChange="segmentChange($event.target.value)">
                 <ion-segment-button value="scan" content-id="scan">
@@ -865,11 +866,7 @@ async function packAndShipOrder() {
   align-items: start;
   gap: var(--spacer-base);
   padding: var(--spacer-base);
-}
-
-ion-segment {
-  grid-auto-columns: minmax(auto, 150px);
-  width: auto;
+  flex-wrap: wrap;
 }
 
 .transfer-order > * {
@@ -877,15 +874,21 @@ ion-segment {
 }
 
 .order-info {
-  flex: 1;
+  flex: 1 0 350px;
 }
 
 .add-items {
-  flex: 3;
+  flex: 3 1 375px;
 }
 
-.search-type { 
+.add-items .mode { 
   display: flex;
+}
+
+.add-items .mode ion-segment {
+  grid-auto-columns: minmax(auto, 150px);
+  justify-content: start;
+  flex: 0 1 max-content;
 }
 
 .order-items{
