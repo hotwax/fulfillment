@@ -572,7 +572,7 @@ async function enableScan() {
   mode.value = 'scan';
   isScanningEnabled.value = true;
   setTimeout(() => {
-    scanInput.value?.setFocus?.()
+    scanInput.value?.$el.setFocus?.()
   }, 0)
 }
 
@@ -678,8 +678,7 @@ async function addSearchedOrderItem() {
 // - On search: sets a preview in `searchedProduct`
 // - Returns the found product (or null)
 async function findProduct(value: string) {
-  const query = value
-  if(!query) { 
+  if(!value) { 
     isSearchingProduct.value = false; 
     return null; 
   }
@@ -691,9 +690,9 @@ async function findProduct(value: string) {
     }
 
     if(mode.value === 'scan') {
-      payload.filters.push(`goodIdentifications: ${barcodeIdentifier.value}/${query}`);
+      payload.filters.push(`goodIdentifications: ${barcodeIdentifier.value}/${value}`);
     } else {
-      payload.keyword = query;
+      payload.keyword = value;
     }
     const resp = await ProductService.fetchProducts(payload);
 
@@ -705,7 +704,7 @@ async function findProduct(value: string) {
       isSearchingProduct.value = false;
       return item;
     } else {
-      searchedProduct.value = { scannedId: query };
+      searchedProduct.value = { scannedId: value };
       isSearchingProduct.value = false;
       return null;
     }
