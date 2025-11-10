@@ -34,9 +34,11 @@
               </ion-item>
               <ion-item>
                 <ion-icon :icon="checkmarkDoneOutline" slot="start"/>
-                <ion-label class="ion-text-wrap">{{ translate("Complete order on fulfillment") }}</ion-label>
-                <ion-toggle slot="end" data-testid="toggle-complete-on-fulfillment" :checked="currentOrder.statusFlowId === 'TO_Fulfill_Only'" @ionChange="toggleStatusFlow">
-                </ion-toggle>
+                <ion-label>
+                  {{ translate("Return to warehouse") }}
+                  <p>{{ translate("Complete order on fulfillment") }}</p>
+                </ion-label>
+                <ion-toggle slot="end" data-testid="toggle-complete-on-fulfillment" :checked="currentOrder.statusFlowId === 'TO_Fulfill_Only'" @ionChange="toggleStatusFlow" />
               </ion-item>
             </ion-list>
           </ion-card>
@@ -58,7 +60,7 @@
             <div v-show="mode === 'scan'">
               <!-- scanning input -->
               <ion-item lines="full">
-                <ion-input ref="scanInput" v-model="queryString" :label="translate('Scan barcode')" :placeholder="barcodeIdentifier" @ionBlur="isScanningEnabled = false" @ionFocus="isScanningEnabled = true" @keyup.enter="queryString = $event.target.value; scanProduct()" />
+                <ion-input ref="scanInput" v-model="queryString" :label="translate('Scan barcode')" :placeholder="barcodeIdentificationDesc[barcodeIdentifier] || barcodeIdentifier" @ionBlur="isScanningEnabled = false" @ionFocus="isScanningEnabled = true" @keyup.enter="queryString = $event.target.value; scanProduct()" />
               </ion-item>
               <!-- product found after scan (reads from searchedProduct) -->
               <ion-item lines="none" v-if="searchedProduct.productId">
@@ -95,7 +97,7 @@
                 </ion-thumbnail>
                 <ion-label>
                   {{ translate("Your scanner isn’t focused yet.") }}
-                  <p>{{ translate("Scanning is set to") }} {{ (barcodeIdentifier || '').toUpperCase() }}</p>
+                  <p>{{ translate("Scanning is set to") }} {{ barcodeIdentificationDesc[barcodeIdentifier] || barcodeIdentifier }}</p>
                   <p v-if="barcodeIdentifier !== 'SKU'">{{ translate("Swap to SKU from the settings page") }}</p>
                 </ion-label>
                 <ion-button slot="end" color="warning" size="small" @click="enableScan">
@@ -111,7 +113,7 @@
                 </ion-thumbnail>
                 <ion-label>
                   {{ translate("Begin scanning products to add them to this transfer") }}
-                  <p>{{ translate("Scanning is set to") }} {{ (barcodeIdentifier || '').toUpperCase() }}</p>
+                  <p>{{ translate("Scanning is set to") }} {{ barcodeIdentificationDesc[barcodeIdentifier] || barcodeIdentifier }}</p>
                   <p v-if="barcodeIdentifier !== 'SKU'">{{ translate("Swap to SKU from the settings page") }}</p>
                 </ion-label>
                 <ion-badge slot="end" color="success">{{ translate("start scanning") }}</ion-badge>
@@ -262,6 +264,7 @@ let timeoutId: any = null;
 let productSearchCount = ref(0);
 let facilities = ref([]) as any;
 let preventLeave = ref(false);
+let barcodeIdentificationDesc = ref({}) as any;
 
 const barcodeIdentifier = computed(() => store.getters["util/getBarcodeIdentificationPref"]);
 const getProduct = computed(() => store.getters["product/getProduct"]);
@@ -291,6 +294,7 @@ onIonViewWillEnter(async () => {
   const isValidOrder = await fetchTransferOrderDetail(route?.params?.orderId as string);
   if(isValidOrder) {
     await fetchProductInformation();
+    await fetchBarcodeIdentificationDesc();
     facilities.value = await UtilService.fetchProductStoreFacilities();
   }
   isOrderLoading.value = false;
@@ -415,6 +419,23 @@ async function fetchProductInformation() {
     await store.dispatch('product/fetchProducts', { productIds });
   } catch (err) {
     logger.error("Failed to fetch product information", err);
+  }
+}
+
+async function fetchBarcodeIdentificationDesc() {
+  try {
+    const resp = await ProductService.fetchBarcodeIdentificationDesc({ parentTypeId: 'HC_GOOD_ID_TYPE' });
+    
+    if (!hasError(resp) && resp.data?.length) {
+      barcodeIdentificationDesc.value = resp.data.reduce((identifierDesc: any, identifier: any) => {
+        identifierDesc[identifier.goodIdentificationTypeId] = identifier.description;
+        return identifierDesc;
+      }, {});
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    logger.error("Failed to fetch product identification descriptions", err);
   }
 }
 
@@ -581,7 +602,6 @@ async function openAddProductModal() {
 
   addProductModal.onDidDismiss().then(async () => {
     queryString.value = '';
-    await fetchTransferOrderDetail(currentOrder.value.orderId as string);
     await fetchProductInformation();
   })
   await addProductModal.present();

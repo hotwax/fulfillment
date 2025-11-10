@@ -177,58 +177,6 @@ const actions: ActionTree<TransferOrderState, RootState> = {
     return shipmentId;
   },
 
-  async fetchTransferShipmentDetail({ commit }, payload) {
-    try {
-      const shipmentResponse = await TransferOrderService.fetchTransferShipmentDetails({ shipmentId: payload.shipmentId });
-
-      const shipments = shipmentResponse.data?.shipments || [];
-      if (shipments.length > 0) {
-        const firstShipment = shipments[0];
-        const packages = firstShipment.packages || [];
-
-        // Flatten package items and add pickedQuantity/shippedQuantity
-        const items = packages.flatMap((pkg: any) =>
-          (pkg.items || []).map((item: any) => ({
-            ...item,
-            pickedQuantity: item.quantity,
-            shippedQuantity: item.totalIssuedQuantity || 0,
-          }))
-        );
-
-        const labelImageUrls = 
-              packages
-                .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
-                .map((shipmentPackage: any) => shipmentPackage.labelImageUrl);
-
-        const shipment = {
-          ...firstShipment,
-          items,
-          totalQuantityPicked: items.reduce((acc: number, curr: any) => acc + curr.pickedQuantity, 0),
-          isTrackingRequired: firstShipment.isTrackingRequired ?? 'Y',
-          labelImageUrls
-        };
-
-        commit(types.ORDER_CURRENT_SHIPMENT_UPDATED, shipment);
-
-        const productIds = [...new Set(items.map((item: any) => item.productId))];
-        const batchSize = 250;
-        const productIdBatches = [];
-
-        while (productIds.length) {
-          productIdBatches.push(productIds.splice(0, batchSize));
-        }
-
-        await Promise.all([
-          ...productIdBatches.map((productIds) => this.dispatch('product/fetchProducts', { productIds })),
-          this.dispatch('util/fetchPartyInformation', [firstShipment.carrierPartyId]),
-          this.dispatch('util/fetchShipmentMethodTypeDesc', [firstShipment.shipmentMethodTypeId])
-        ]);
-      }
-    } catch (err: any) {
-      logger.error("error", err);
-    }
-  },
-
   async updateOrderProductCount({ commit, state }, payload ) {
     // When there exists multiple line item for a single product, then may arise discrepancy in scanning
     // since some items might be completed and some pending. Hence searching is done with status check.
