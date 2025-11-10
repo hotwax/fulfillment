@@ -99,7 +99,7 @@
                     <!-- <p>estimated delivery date</p> -->
                   </ion-label>
                   <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" :disabled="!!selectedCarrierService" @click="updateCarrierAndShippingMethod(shippingRate)">
-                    <ion-spinner v-if="selectedCarrierService === shippingRate.carrierService" slot="start" name="crescent" />
+                    <ion-spinner v-if="selectedCarrierService === shippingRate.carrierPartyId+'_'+shippingRate.shipmentMethodTypeId" slot="start" name="crescent" />
                     {{ translate("Purchase label") }}
                   </ion-button>
                 </ion-item>
@@ -416,7 +416,7 @@ async function voidShippingLabelAlert() {
 
 async function updateCarrierAndShippingMethod(shippingRate: any) {
   let resp;
-  selectedCarrierService.value = shippingRate.carrierService
+  selectedCarrierService.value = shippingRate.carrierPartyId+'_'+shippingRate.shipmentMethodTypeId
   try {
     const payload = {
       shipmentId: shipmentDetails.value.shipmentId,
