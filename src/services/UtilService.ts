@@ -1,4 +1,5 @@
 import { api, apiClient, hasError } from '@/adapter';
+import { getProductStoreId } from '@/utils'
 import store from '@/store';
 import logger from '@/logger'
 
@@ -321,6 +322,21 @@ const fetchProductStores = async (payload: any): Promise<any> => {
   });
 }
 
+const fetchProductStoreDetails = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${payload.productStoreId}`,
+    method: "GET",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    }
+  });
+}
+
 const fetchFacilities = async (payload: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -337,115 +353,68 @@ const fetchFacilities = async (payload: any): Promise<any> => {
   });
 }
 
-const fetchProductStoreFacilities = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+const fetchProductStoreFacilities = async (): Promise<any> => {
+  try {
+    const productStoreId = getProductStoreId();
+    
+    if(!productStoreId) {
+      logger.error('Product store ID not found');
+      return [];
+    }
 
-  return apiClient({
-    url: `/oms/productStores/${params.productStoreId}/facilities`,
-    method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    params
-  });
+    const omstoken = store.getters['user/getUserToken'];
+    const baseURL = store.getters['user/getMaargBaseUrl'];
+
+    // Define parameters before API call
+    const params = {
+      facilityTypeId: 'VIRTUAL_FACILITY',
+      facilityTypeId_op: 'equals',
+      facilityTypeId_not: 'Y',
+      parentFacilityTypeId: 'VIRTUAL_FACILITY',
+      parentFacilityTypeId_op: 'equals',
+      parentFacilityTypeId_not: 'Y',
+      pageSize: 250,
+    };
+
+    const resp = await apiClient({
+      url: `/oms/productStores/${productStoreId}/facilities`,
+      method: "GET",
+      baseURL,
+      headers: {
+        "Authorization": "Bearer " + omstoken,
+        "Content-Type": "application/json"
+      },
+      params
+    });
+
+    if(!hasError(resp)) {
+      return resp.data;
+    } else {
+      logger.error('Failed to fetch product store facilities:', resp.data);
+      return [];
+    }
+  } catch (err) {
+    logger.error('Failed to fetch product store facilities:', err);
+    return [];
+  }
 }
 
-const updateForceScanSetting = async (payload: any): Promise<any> => {
+const fetchProductStoreSetting = async (params: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
   return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    url: `/oms/dataDocumentView`,
     method: "POST",
     baseURL,
     headers: {
       "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
-    data: payload
-  });
-}
-
-const createForceScanSetting = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "POST",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    data: payload
-  });
-}
-
-const updateBarcodeIdentificationPref = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "POST",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    data: payload
-  });
-}
-
-const createBarcodeIdentificationPref = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${payload.productStoreId}/settings`,
-    method: "POST",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    data: payload
-  });
-}
-
-const getProductStoreSetting = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${params.productStoreId}/settings`,
-    method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    params
-  });
-}
-
-const fetchExcludeOrderBrokerDays = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
-    url: `/oms/productStores/${params.productStoreId}/settings`,
-    method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
-    params
+    data: {
+      dataDocumentId: "ProductStoreSetting",
+      customParametersMap: params
+    }
   });
 }
 
@@ -518,7 +487,7 @@ const isEnumExists = async (enumId: string): Promise<any> => {
     const omstoken = store.getters['user/getUserToken'];
     const baseURL = store.getters['user/getMaargBaseUrl'];
   
-    const resp = apiClient({
+    const resp = await apiClient({
       url: `/admin/enums`,
       method: "GET",
       baseURL,
@@ -673,17 +642,46 @@ const getFacilityGroupAndMemberDetails = async (payload: any): Promise<any> => {
   });
 }
 
+const updateProductStoreSetting = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
+const createProductStoreSetting = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/oms/productStores/${payload.productStoreId}/settings`,
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
 export const UtilService = {
-  createBarcodeIdentificationPref,
   fetchCarriers,
   createEnumerationGroupMember,
-  createForceScanSetting,
   createEnumeration,
   downloadCarrierManifest,
   fetchAdjustmentTypeDescription,
   fetchDefaultShipmentBox,
   fetchEnumeration,
-  fetchExcludeOrderBrokerDays,
   fetchFacilities,
   fetchFacilityAddresses,
   fetchFacilityZPLGroupInfo,
@@ -692,6 +690,7 @@ export const UtilService = {
   fetchGiftCardFulfillmentInfo,
   fetchPartyInformation,
   fetchProductStores,
+  fetchProductStoreDetails,
   fetchRejectReasons,
   fetchRejectReasonEnumTypes,
   fetchShipmentBoxType,
@@ -706,13 +705,13 @@ export const UtilService = {
   findProductStoreShipmentMethCount,
   generateManifest,
   getAvailablePickers,
-  getProductStoreSetting,
+  fetchProductStoreSetting,
   isEnumExists,
   deleteEnumeration,
   updateEnumeration,
-  updateBarcodeIdentificationPref,
   updateEnumerationGroupMember,
-  updateForceScanSetting,
   fetchLabelImageType,
+  updateProductStoreSetting,
+  createProductStoreSetting,
   getFacilityGroupAndMemberDetails
 }

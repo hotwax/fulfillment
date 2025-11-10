@@ -11,7 +11,7 @@
   </ion-header>
 
   <ion-content>
-    <ion-searchbar data-testid="viewmore-search-products-input" :value="queryString" :placeholder="translate('Search SKU or product name')" @keyup.enter="queryString = $event.target.value; getProducts()"/>
+    <ion-searchbar data-testid="viewmore-search-products-input" :value="queryString" :placeholder="translate('Search products')" @keyup.enter="queryString = $event.target.value; getProducts()"/>
     <!-- Product list -->
     <template v-if="products.length">
       <ion-item v-for="product in products" :key="product.productId">
@@ -56,6 +56,7 @@ import { StockService } from '@/services/StockService';
 import { hasError, showToast } from '@/utils';
 import { DxpShopifyImg, getProductIdentificationValue, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
 import logger from '@/logger';
+import emitter from '@/event-bus';
 
 const props = defineProps(["query"])
 
@@ -86,11 +87,10 @@ function isItemAlreadyInOrder(productId: string) {
 
 // Stock fetch helper
 async function fetchStock(productId: string) {
+  const facilityId = currentOrder.value.shipGroups?.[0]?.facilityId;
+  if(!facilityId) return;
   try {
-    const resp: any = await StockService.getInventoryAvailableByFacility({
-      productId,
-      facilityId: currentOrder.value.orderFacilityId
-    });
+    const resp: any = await StockService.getInventoryAvailableByFacility({ productId, facilityId });
     if(!hasError(resp)) return resp.data;
   } catch (err) {
     logger.error(err);
@@ -125,7 +125,7 @@ async function addTransferOrderItem(product: any) {
     // Fetch product's average cost before committing to order
     const unitPrice = await ProductService.fetchProductAverageCost(
       newItem.productId,
-      currentOrder.value.orderFacilityId
+      currentOrder.value.shipGroups?.[0]?.facilityId
     );
 
     // Prepare payload and call API to add order item
@@ -145,6 +145,7 @@ async function addTransferOrderItem(product: any) {
 
       currentOrder.value.items.push(newItem);
       await store.dispatch('transferorder/updateCurrentTransferOrder', currentOrder.value);
+      emitter.emit('clearSearchedProduct')
     } else {
       throw resp.data;
     }
