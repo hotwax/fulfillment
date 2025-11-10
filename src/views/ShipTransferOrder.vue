@@ -99,7 +99,7 @@
                     <!-- <p>estimated delivery date</p> -->
                   </ion-label>
                   <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" :disabled="!!selectedCarrierService" @click="updateCarrierAndShippingMethod(shippingRate)">
-                    <ion-spinner v-if="selectedCarrierService === shippingRate.carrierService" slot="start" name="crescent" />
+                    <ion-spinner v-if="selectedCarrierService === shippingRate.carrierPartyId+'_'+shippingRate.shipmentMethodTypeId" slot="start" name="crescent" />
                     {{ translate("Purchase label") }}
                   </ion-button>
                 </ion-item>
@@ -367,7 +367,20 @@ async function purchaseShippingLabel() {
 // Prints the shipping label if available by collecting unique label URLs and calling the print service
 async function printShippingLabel() {
   const shipment = shipmentDetails.value
-  await OrderService.printShippingLabel([shipment.shipmentId]);
+  try {
+    if(shipment.carrierServiceStatusId === 'SHRSCS_ACCEPTED') {
+      const shippingLabelPdfUrls: string[] = Array.from(
+        new Set(
+          (shipment.packages ?? [])
+            .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+            .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+        )
+      );
+      await OrderService.printShippingLabel([shipment.shipmentId], shippingLabelPdfUrls, shipment.packages);
+    }
+  } catch (error) {
+    logger.error(error)
+  }
 }
 
 // Voids an existing shipping label using the route segment ID and refreshes shipment details
@@ -416,15 +429,24 @@ async function voidShippingLabelAlert() {
 
 async function updateCarrierAndShippingMethod(shippingRate: any) {
   let resp;
-  selectedCarrierService.value = shippingRate.carrierService
+  selectedCarrierService.value = shippingRate.carrierPartyId+'_'+shippingRate.shipmentMethodTypeId
   try {
     const payload = {
       shipmentId: shipmentDetails.value.shipmentId,
       shipmentRouteSegmentId: shipmentDetails.value.shipmentRouteSegmentId,
       shipmentMethodTypeId: shippingRate.shipmentMethodTypeId,
       carrierPartyId: shippingRate.carrierPartyId,
-      shippingEstimateAmount: shippingRate.shippingEstimateAmount
+      actualCost: shippingRate.shippingEstimateAmount,
+      carrierServiceStatusId: 'SHRSCS_CONFIRMED'
+    } as any;
+
+    if (shippingRate.actualCarrierCode) {
+      payload.actualCarrierCode = shippingRate.actualCarrierCode;
     }
+    if (shippingRate.gatewayRateId) {
+      payload.gatewayRateId = shippingRate.gatewayRateId;
+    }
+
     resp = await OrderService.updateShipmentCarrierAndMethod(payload);
     if(!hasError(resp)) {
       await purchaseShippingLabel();
