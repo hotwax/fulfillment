@@ -255,9 +255,9 @@ const mode = ref('scan');
 const queryString = ref('');
 const isOrderLoading = ref(false);
 const isSearchingProduct = ref(false);
-const searchedProduct = ref({}) as any;
+const searchedProduct = ref({}) as any; // Stores the product found from scan/search - used to display product details below input
 const isScanningEnabled = ref(false);
-const lastScannedId = ref('');
+const lastScannedId = ref(''); // Stores the last successfully scanned product ID - used to highlight recently scanned items
 const scanInput = ref('') as any
 const searchInput = ref('') as any
 let timeoutId: any = null;
@@ -670,7 +670,7 @@ async function addSearchedOrderItem() {
   const productId = searchedProduct.value?.productId;
   if(!productId) return;
   const product = getProduct.value(productId);
-  // Use the queue system for search flow too
+  // Use the queue system for search flow
   await addProductViaQueue(product);
 }
 

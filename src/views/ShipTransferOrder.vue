@@ -367,7 +367,20 @@ async function purchaseShippingLabel() {
 // Prints the shipping label if available by collecting unique label URLs and calling the print service
 async function printShippingLabel() {
   const shipment = shipmentDetails.value
-  await OrderService.printShippingLabel([shipment.shipmentId]);
+  try {
+    if(shipment.carrierServiceStatusId === 'SHRSCS_ACCEPTED') {
+      const shippingLabelPdfUrls: string[] = Array.from(
+        new Set(
+          (shipment.packages ?? [])
+            .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+            .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+        )
+      );
+      await OrderService.printShippingLabel([shipment.shipmentId], shippingLabelPdfUrls, shipment.packages);
+    }
+  } catch (error) {
+    logger.error(error)
+  }
 }
 
 // Voids an existing shipping label using the route segment ID and refreshes shipment details
