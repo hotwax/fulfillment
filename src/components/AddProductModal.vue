@@ -54,7 +54,7 @@
 <script setup lang="ts">
 import { IonAvatar, IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonSearchbar, IonText, IonTitle, IonToolbar } from '@ionic/vue';
 import { checkmarkCircle, closeOutline } from "ionicons/icons";
-import { computed, defineProps, onMounted, ref, toRefs } from 'vue';
+import { computed, defineProps, onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
 import { modalController } from '@ionic/vue';
 import { ProductService } from '@/services/ProductService';
