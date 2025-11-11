@@ -115,7 +115,7 @@
             <ion-list v-if="selectedSegment === 'manual'">
               <ion-item>
                 <ion-select data-testid="select-carrier-dropdown" :value="selectedCarrier" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="updateSelectedCarrier($event.detail.value)">
-                  <ion-select-option data-testid="select-carrier-dropdown-option" v-for="(carrierPartyId, index) in Object.keys(shipmentMethodsByCarrier)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) }}</ion-select-option>
+                  <ion-select-option data-testid="select-carrier-dropdown-option" v-for="(carrierPartyId, index) in Object.keys(carrierShipmentMethods)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) }}</ion-select-option>
                 </ion-select>
               </ion-item>
               <ion-item>
@@ -199,6 +199,7 @@ const shippingRates = ref([]) as any
 const isOrderShipped = ref(false)
 const isLoadingRates = ref(true)
 let facilities = ref([]) as any;
+let carrierShipmentMethods = ref<Record<string, any>>({}) as any;
 let isProcessingShipment = ref(false)
 let selectedCarrierService = ref("")
 
@@ -209,6 +210,8 @@ onIonViewWillEnter(async() => {
   await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers')])
   await fetchShippingRates();
   // Update shipment methods if carrier exists
+  const carrierByFacility = new Set(facilityCarriers.value.map((item: any) => item.partyId));
+  carrierShipmentMethods.value = Object.fromEntries(Object.entries(shipmentMethodsByCarrier.value).filter(([key]) => carrierByFacility.has(key)));
   selectedCarrier.value = shipmentDetails.value?.carrierPartyId || '';
   if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId, shipmentDetails.value.shipmentMethodTypeId)
   emitter.emit("dismissLoader")
