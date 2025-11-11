@@ -12,6 +12,13 @@
 
   <ion-content>
     <ion-searchbar data-testid="viewmore-search-products-input" :value="queryString" :placeholder="translate('Search products')" @keyup.enter="queryString = $event.target.value; getProducts()"/>
+
+    <!-- Loading state -->
+    <div v-if="isLoading && !products.length" class="empty-state">
+      <ion-spinner name="crescent" />
+      <ion-label>{{ translate("Loading...") }}</ion-label>
+    </div>
+
     <!-- Product list -->
     <template v-if="products.length">
       <ion-item v-for="product in products" :key="product.productId">
@@ -47,17 +54,17 @@
 <script setup lang="ts">
 import { IonAvatar, IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonSearchbar, IonText, IonTitle, IonToolbar } from '@ionic/vue';
 import { checkmarkCircle, closeOutline } from "ionicons/icons";
-import { computed, defineProps, onMounted, ref, onUnmounted } from 'vue';
+import { computed, defineProps, onMounted, ref, toRefs } from 'vue';
 import { useStore } from 'vuex';
 import { modalController } from '@ionic/vue';
 import { ProductService } from '@/services/ProductService';
 import { hasError } from '@/utils';
 import { DxpShopifyImg, getProductIdentificationValue, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
-import { useProductQueue } from '@/composables/useProductQueue';
 import logger from '@/logger';
 import emitter from '@/event-bus';
 
-const props = defineProps(["query"])
+const props = defineProps(["query", "productQueue"])
+const { productQueue } = toRefs(props);
 
 const store = useStore()
 const productIdentificationStore = useProductIdentificationStore();
@@ -68,18 +75,13 @@ const total = ref(0) as any;
 const isLoading = ref(false)
 
 const currentOrder = computed(() => store.getters['transferorder/getCurrent'])
-
-// Use the composable
-const { addProductToQueue, clearQueue, pendingProductIds, isProductInOrder } = useProductQueue();
+// Use the reactive refs directly - no need for computed wrappers
+const { addProductToQueue, pendingProductIds, isProductInOrder } = productQueue.value;
 
 onMounted(() => {
   if(queryString.value) {
     getProducts()
   }
-})
-
-onUnmounted(() => {
-  clearQueue();
 })
 
 function closeModal() {

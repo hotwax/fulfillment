@@ -250,7 +250,11 @@ const store = useStore();
 const route = useRoute();
 const productIdentificationStore = useProductIdentificationStore();
 const productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
-const { addProductToQueue, clearQueue, pendingProductIds, isProductInOrder } = useProductQueue();
+
+// Create single shared instance to prevent state isolation between components
+// Main component and modal will share the same queue state for proper UI sync
+const productQueue = useProductQueue();
+const { addProductToQueue, pendingProductIds, isProductInOrder } = productQueue;
 
 const mode = ref('scan');
 const queryString = ref('');
@@ -368,7 +372,7 @@ const clearSearchedProduct = () => {
 
 onIonViewWillLeave(() => {
   emitter.off('clearSearchedProduct', clearSearchedProduct as any);
-  clearQueue();
+  productQueue.clearQueue();
 });
 
 // Fetches transfer order details by orderId, including its items, and updates the store.
@@ -598,6 +602,7 @@ async function openAddProductModal() {
     component: AddProductModal,
     componentProps: {
       query: searchedProduct.value.scannedId || queryString.value,
+      productQueue // Pass the shared instance
     }
   });
 
