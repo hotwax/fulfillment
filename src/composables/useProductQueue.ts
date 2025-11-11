@@ -197,6 +197,7 @@ export function useProductQueue() {
   return {
     addProductToQueue,
     clearQueue,
+    fetchProductInformation,
     pendingProductIds,
     isProductInOrder
   };

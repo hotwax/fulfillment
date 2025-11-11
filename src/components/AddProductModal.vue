@@ -63,8 +63,7 @@ import { DxpShopifyImg, getProductIdentificationValue, translate, useProductIden
 import logger from '@/logger';
 import emitter from '@/event-bus';
 
-const props = defineProps(["query", "productQueue"])
-const { productQueue } = toRefs(props);
+const props = defineProps(["query", "addProductToQueue", "isProductInOrder", "pendingProductIds"]);
 
 const store = useStore()
 const productIdentificationStore = useProductIdentificationStore();
@@ -75,8 +74,6 @@ const total = ref(0) as any;
 const isLoading = ref(false)
 
 const currentOrder = computed(() => store.getters['transferorder/getCurrent'])
-// Use the reactive refs directly - no need for computed wrappers
-const { addProductToQueue, pendingProductIds, isProductInOrder } = productQueue.value;
 
 onMounted(() => {
   if(queryString.value) {
@@ -103,7 +100,7 @@ function addTransferOrderItem(product: any) {
     }
   }
   
-  addProductToQueue(itemToAdd);
+  props.addProductToQueue(itemToAdd);
 }
 
 function isScrollable() {

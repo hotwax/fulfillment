@@ -140,7 +140,7 @@
                     {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) : getProduct(searchedProduct.productId)?.internalName }}
                     <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
                   </ion-label>
-                  <template v-if="!isProductInOrder(searchedProduct.productId)">
+                  <template v-if="!productQueue.isProductInOrder(searchedProduct.productId)">
                     <ion-button data-testid="add-to-transfer-btn" :disabled="pendingProductIds.has(searchedProduct.productId)" slot="end" fill="outline" @click="addSearchedOrderItem">
                       {{ pendingProductIds.has(searchedProduct.productId) ? translate("Adding...") : translate("Add to Transfer") }}
                     </ion-button>
@@ -254,7 +254,9 @@ const productIdentificationPref = computed(() => productIdentificationStore.getP
 // Create single shared instance to prevent state isolation between components
 // Main component and modal will share the same queue state for proper UI sync
 const productQueue = useProductQueue();
-const { addProductToQueue, pendingProductIds, isProductInOrder } = productQueue;
+// Template cannot automatically unwrap Ref<Set> to access Set methods like .has()
+// Destructuring allows direct use in template: pendingProductIds.has(productId)
+const { pendingProductIds } = productQueue;
 
 const mode = ref('scan');
 const queryString = ref('');
@@ -298,7 +300,7 @@ onIonViewWillEnter(async () => {
   emitter.on('clearSearchedProduct', clearSearchedProduct as any);
   const isValidOrder = await fetchTransferOrderDetail(route?.params?.orderId as string);
   if(isValidOrder) {
-    await fetchProductInformation();
+    await productQueue.fetchProductInformation();
     await fetchBarcodeIdentificationDesc();
     facilities.value = await UtilService.fetchProductStoreFacilities();
   }
@@ -414,17 +416,6 @@ async function fetchTransferOrderDetail(orderId: string) {
     logger.error('Error fetching transfer order details:', error);
   }
   return false;
-}
-
-async function fetchProductInformation() {
-  try {
-    const items = currentOrder.value.items;
-    if(!items.length) return;
-    const productIds = items.map((item: any) => item.productId)
-    await store.dispatch('product/fetchProducts', { productIds });
-  } catch (err) {
-    logger.error("Failed to fetch product information", err);
-  }
 }
 
 async function fetchBarcodeIdentificationDesc() {
@@ -602,13 +593,14 @@ async function openAddProductModal() {
     component: AddProductModal,
     componentProps: {
       query: searchedProduct.value.scannedId || queryString.value,
-      productQueue // Pass the shared instance
+      addProductToQueue: productQueue.addProductToQueue,
+      isProductInOrder: productQueue.isProductInOrder,
+      pendingProductIds: productQueue.pendingProductIds.value // Pass the actual Set, not Ref
     }
   });
 
   addProductModal.onDidDismiss().then(async () => {
     queryString.value = '';
-    await fetchProductInformation();
   })
   await addProductModal.present();
 }
@@ -669,7 +661,7 @@ async function addProductViaQueue(product: any, scannedId?: string) {
     }
   };
   
-  addProductToQueue(itemToAdd);
+  productQueue.addProductToQueue(itemToAdd);
 }
 
 async function addSearchedOrderItem() {
