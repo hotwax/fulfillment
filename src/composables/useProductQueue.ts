@@ -57,6 +57,18 @@ export function useProductQueue() {
       pendingItemsToast = null;
     }
   };
+
+  // Fetch product information for all items in the order
+  const fetchProductInformation = async () => {
+    try {
+      const items = currentOrder.value.items;
+      if(!items?.length) return;
+      const productIds = items.map((item: any) => item.productId);
+      if (productIds.length) await store.dispatch('product/fetchProducts', { productIds });
+    } catch (err) {
+      logger.error("Failed to fetch product information", err);
+    }
+  };
   
   /**
    * Adds product to queue for sequential processing.
@@ -101,6 +113,7 @@ export function useProductQueue() {
     
     isProcessing.value = false;
     hidePendingItemsToast();
+    if (pendingProductIds.value.size === 0) await fetchProductInformation();
   };
   
   /**
@@ -184,6 +197,7 @@ export function useProductQueue() {
   return {
     addProductToQueue,
     clearQueue,
+    fetchProductInformation,
     pendingProductIds,
     isProductInOrder
   };
