@@ -227,7 +227,7 @@ export default defineComponent({
           if (!roles.some((role: any) => role.partyId === pickerId)) {
             roles.push({
               picklistId: this.selectedPicklist.picklistId,
-              partyIdfilter: pickerId,
+              partyId: pickerId,
               roleTypeId: "WAREHOUSE_PICKER",
               fromDate: DateTime.now().toMillis()
             });
