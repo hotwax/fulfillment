@@ -100,7 +100,7 @@ export function useProductQueue() {
     }
     
     isProcessing.value = false;
-    if (pendingItemsToast) hidePendingItemsToast();
+    hidePendingItemsToast();
   };
   
   /**
