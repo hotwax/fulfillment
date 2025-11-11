@@ -84,12 +84,12 @@
                   </ion-item>
                 </div>
                 <div class="product-metadata">
-                  <ion-button v-if="isKit(item)" fill="clear" size="default" @click.stop="fetchKitComponents(item)">
+                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button fill="clear" v-else size="default" @click.stop="fetchProductStock(item.productId)">
+                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
                 </div>
@@ -260,7 +260,7 @@ export default defineComponent({
     },
     enableScrolling() {
       const parentElement = (this as any).$refs.contentRef.$el
-      const scrollEl = parentElement.shadowRoot.querySelector("div[part='scroll']")
+      const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
       let scrollHeight = scrollEl.scrollHeight, infiniteHeight = (this as any).$refs.infiniteScrollRef.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
       const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
       if(distanceFromInfinite < 0) {
