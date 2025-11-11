@@ -9,7 +9,7 @@
       <ion-title>{{ translate("Shipping label error") }}</ion-title>
       <ion-buttons slot="end">
         <!-- Copying first message, assuming only one message will be received -->
-        <ion-button @click="copyToClipboard(shipmentLabelErrorMessages[0], 'Copied to clipboard')"> 
+        <ion-button @click="copyToClipboard(shipmentLabelErrorMessage, 'Copied to clipboard')"> 
           <ion-icon slot="icon-only" :icon="copyOutline" />
         </ion-button>
       </ion-buttons>
@@ -17,10 +17,10 @@
   </ion-header>
   <ion-content>
     <ion-list lines="none">
-      <ion-item v-for="message, index in shipmentLabelErrorMessages" :key="index">
-        <ion-label class="ion-text-wrap">{{ message }}</ion-label>
+      <ion-item v-if="shipmentLabelErrorMessage">
+        <ion-label class="ion-text-wrap">{{ shipmentLabelErrorMessage }}</ion-label>
       </ion-item>
-      <ion-item v-if="!shipmentLabelErrorMessages.length">
+      <ion-item v-else>
         {{ translate("No shipping label error received from carrier") }}
       </ion-item>
     </ion-list>
@@ -63,13 +63,12 @@ export default defineComponent({
   },
   data() {
     return {
-      shipmentLabelErrorMessages: []
+      shipmentLabelErrorMessage: ""
     }
   },
   props: ['shipmentId'],
   async mounted() {
-    // Fetching shipment label errors
-    this.shipmentLabelErrorMessages = await OrderService.fetchShipmentLabelError(this.shipmentId);
+    this.shipmentLabelErrorMessage = await OrderService.fetchShipmentLabelError(this.shipmentId);
   },
   methods: {
     closeModal() {

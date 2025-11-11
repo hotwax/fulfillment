@@ -136,18 +136,18 @@
 
                 <!--Adding checks to avoid any operations if order has missing info, mostly when after packing Solr is not updaing immediately-->
                 <div class="product-metadata">
-                  <ion-button v-if="isKit(item)" fill="clear" size="default" @click.stop="fetchKitComponents(item)">
+                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
-                  <ion-button color="medium" fill="clear" size="default" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
+                  <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
                     <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline"/>
                   </ion-button>
-                  <ion-button color="danger" fill="clear" size="default" @click.stop="openRejectReasonPopover($event, item, order)">
+                  <ion-button color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
                     <ion-icon slot="icon-only" :icon="trashBinOutline"/>
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button color="medium" fill="clear" v-else size="default" @click.stop="fetchProductStock(item.productId)">
+                  <ion-button color="medium" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
                 </div>
@@ -818,9 +818,9 @@ export default defineComponent({
             "shipmentItemSeqId": item.shipmentItemSeqId,
             "productId": item.productId,
             "facilityId": this.currentFacility?.facilityId,
-            "updateQOH": this.affectQohConfig && this.affectQohConfig?.settingValue ? this.affectQohConfig?.settingValue : false,
+            "updateQOH": this.affectQohConfig || false,
             "maySplit": this.isEntierOrderRejectionEnabled(order) ? "N" : "Y",
-            "cascadeRejectByProduct": this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
+            "cascadeRejectByProduct": this.collateralRejectionConfig ? "Y" : "N",
             "rejectionReasonId": item.rejectReason,
             "kitComponents": item.kitComponents,
             "comments": "Store Rejected Inventory"
@@ -868,7 +868,7 @@ export default defineComponent({
       this.store.dispatch('order/updateInProgressOrder', order)
     },
     isEntierOrderRejectionEnabled(order: any) {
-      return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
+      return !this.partialOrderRejectionConfig && order.hasRejectedItem
     },
     
     updateBox(updatedBox: string, item: any, order: any) {
@@ -956,7 +956,7 @@ export default defineComponent({
     },
     enableScrolling() {
       const parentElement = (this as any).$refs.contentRef.$el
-      const scrollEl = parentElement.shadowRoot.querySelector("div[part='scroll']")
+      const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
       let scrollHeight = scrollEl.scrollHeight, infiniteHeight = (this as any).$refs.infiniteScrollRef.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
       const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
       if(distanceFromInfinite < 0) {
@@ -1208,7 +1208,7 @@ export default defineComponent({
       const shippingLabelErrorModal = await modalController.create({
         component: ShippingLabelErrorModal,
         componentProps: {
-          shipmentId : order.shipmentId
+          shipmentId: order.shipmentId
         }
       });
       return shippingLabelErrorModal.present();

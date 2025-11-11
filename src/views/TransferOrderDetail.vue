@@ -29,7 +29,7 @@
           </ion-button>
         </div>
 
-        <ion-segment scrollable v-if="hasOpenItems || $route.params.category === 'open'" v-model="selectedSegment">
+        <ion-segment scrollable v-if="hasOpenItems" v-model="selectedSegment">
           <ion-segment-button value="open">
             <ion-label>{{ translate("Open") }}</ion-label>
           </ion-segment-button>
@@ -65,7 +65,7 @@
                 </div>
                 <div class="order-metadata">
                   <ion-label>
-                    {{ getShipmentMethodDesc(shipment.shipmentMethodTypeId) }}
+                    {{ shipment.routeSegShipmentMethodDescription ? shipment.routeSegShipmentMethodDescription : shipment.routeSegShipmentMethodTypeId }}
                     <p v-if="shipment.trackingIdNumber">{{ translate("Tracking Code") }} {{ shipment.trackingIdNumber }}</p>
                   </ion-label>
                 </div>
@@ -117,18 +117,18 @@
     <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment === 'open'">
       <ion-toolbar>
         <ion-buttons slot="end">
-            <ion-button color="dark" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="closeTOItems()">
-              {{ translate("Close Items") }}
-            </ion-button>
-            <ion-button v-show="areItemsEligibleForRejection" color="danger" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="rejectItems()">
-              <ion-icon slot="start" :icon="trashOutline" />
-              {{ translate("Reject Items") }}
-            </ion-button>
-            <ion-button color="primary" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE)" @click="printTransferOrderPicklist()">
-            <ion-icon slot="start" :icon="printOutline" />
+          <ion-button color="dark" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || isCreatingShipment" @click="closeTOItems()">
+            {{ translate("Close Items") }}
+          </ion-button>
+          <ion-button v-show="areItemsEligibleForRejection" color="danger" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || isCreatingShipment" @click="rejectItems()">
+            <ion-icon slot="start" :icon="trashOutline" />
+            {{ translate("Reject Items") }}
+          </ion-button>
+          <ion-button color="primary" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || isCreatingShipment" @click="printTransferOrderPicklist()">
+          <ion-icon slot="start" :icon="printOutline" />
             {{ translate('Picklist') }}   
           </ion-button>
-          <ion-button  color="primary" fill="solid" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment()" @click="confirmCreateShipment">
+          <ion-button color="primary" fill="solid" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment() || isCreatingShipment" @click="confirmCreateShipment">
             <ion-spinner v-if="isCreatingShipment" slot="start" name="crescent" />
             {{ translate('Create shipment') }}   
           </ion-button>
@@ -218,7 +218,7 @@ export default defineComponent({
     emitter.emit('presentLoader');
     await this.store.dispatch("transferorder/fetchRejectReasons");
     await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
-    this.selectedSegment = this.$route.params.category === 'completed' ? "completed" : "open" 
+    this.selectedSegment = this.hasOpenItems? (this.$route.params.category === 'completed' ? 'completed' : 'open'): 'completed';
     emitter.emit('dismissLoader');
   },
   computed: {
@@ -228,7 +228,6 @@ export default defineComponent({
       getProduct: 'product/getProduct',
       productIdentificationPref: 'user/getProductIdentificationPref',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
     }),
     areItemsEligibleForRejection() {
       return this.currentOrder.items?.some((item: any) => item.rejectReasonId);
@@ -261,7 +260,7 @@ export default defineComponent({
       this.isCreatingShipment = false;
       if (shipmentId) {
         await this.store.dispatch('transferorder/clearCurrentTransferShipment');
-        this.router.push({ path: `/transfer-shipment-review/${shipmentId}` })
+        this.router.replace({ path: `/ship-transfer-order/${shipmentId}` })
       }
     },
     async confirmCreateShipment() {
@@ -339,7 +338,7 @@ export default defineComponent({
       const shippingLabelErrorModal = await modalController.create({
         component: ShippingLabelErrorModal,
         componentProps: {
-          shipmentIds: [shipment.shipmentId]
+          shipmentId: shipment.shipmentId
         }
       });
       return shippingLabelErrorModal.present();
