@@ -659,7 +659,7 @@ const retryShippingLabel = async (shipmentId: string): Promise<any> => {
 const fetchShipmentLabelError = async (shipmentId: string): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
-  let shipmentLabelError = [] as any
+  let shipmentLabelError = ""
 
   try {
     if (!shipmentId) {
@@ -687,8 +687,7 @@ const fetchShipmentLabelError = async (shipmentId: string): Promise<any> => {
     }
     const responseData = resp.data?.shipmentPackageRouteSegDetails || resp.data;
     shipmentLabelError = responseData
-      .filter((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.gatewayMessage)
-      .map((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.gatewayMessage);
+      .find((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.gatewayMessage)?.gatewayMessage;
 
   } catch (err) {
     logger.error('Failed to fetch shipment label error', err)

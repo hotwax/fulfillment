@@ -299,15 +299,15 @@
               </template>
             </ion-item>
             <template v-if="order.missingLabelImage">
-              <ion-item lines="none" v-if="shipmentLabelErrorMessages">
+              <ion-item lines="none" v-if="shipmentLabelErrorMessage">
                 <ion-label class="ion-text-wrap">
                   <p class=overline>{{ translate("Error Log") }}</p>
-                  {{ shipmentLabelErrorMessages }}
+                  {{ shipmentLabelErrorMessage }}
                 </ion-label>
               </ion-item>
               <template v-if="category === 'completed'">
                 <ion-button :disabled="!shipmentMethodTypeId || !hasPackedShipments(order)" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
-                  {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
+                  {{ shipmentLabelErrorMessage ? translate("Retry Label") : translate("Generate Label") }}
                   <ion-spinner color="primary" slot="end" data-spinner-size="medium" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
                 <ion-button :disabled="!shipmentMethodTypeId || !carrierPartyId || !hasPackedShipments(order)" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
@@ -562,7 +562,7 @@ export default defineComponent({
         'PAYMENT_SETTLED': ''
       } as any,
       rejectEntireOrderReasonId: "REJ_AVOID_ORD_SPLIT",
-      shipmentLabelErrorMessages: "",
+      shipmentLabelErrorMessage: "",
       shipmentMethodTypeId: "",
       carrierPartyId: "",
       carrierMethods:[] as any,
@@ -612,9 +612,9 @@ export default defineComponent({
     },
     async fetchShipmentLabelError() {
       const shipmentId = this.order?.shipmentId
-      const labelErrors = await OrderService.fetchShipmentLabelError(shipmentId);
-      if (labelErrors && labelErrors.length) {
-        this.shipmentLabelErrorMessages = labelErrors.join(', ');
+      const labelError = await OrderService.fetchShipmentLabelError(shipmentId);
+      if (labelError) {
+        this.shipmentLabelErrorMessage = labelError
       }
     },
     getCarrierName(carrierPartyId: string) {
@@ -685,7 +685,7 @@ export default defineComponent({
       this.carrierPartyId = carrierPartyId
       this.shipmentMethodTypeId = shipmentMethodTypeId
       this.carrierMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
-      this.shipmentLabelErrorMessages = ""
+      this.shipmentLabelErrorMessage = ""
     },
     async fetchKitComponent(orderItem: any, isOtherShipment = false ) {
       await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })

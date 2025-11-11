@@ -1208,7 +1208,7 @@ export default defineComponent({
       const shippingLabelErrorModal = await modalController.create({
         component: ShippingLabelErrorModal,
         componentProps: {
-          shipmentId : order.shipmentId
+          shipmentId: order.shipmentId
         }
       });
       return shippingLabelErrorModal.present();
