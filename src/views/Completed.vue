@@ -637,13 +637,11 @@ export default defineComponent({
 
       order.isGeneratingShippingLabel = false;
     },
-    async showShippingLabelErrorModal(order: any){
-      // Getting all the shipment ids
-      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId);
+    async showShippingLabelErrorModal(order: any) {
       const shippingLabelErrorModal = await modalController.create({
         component: ShippingLabelErrorModal,
         componentProps: {
-          shipmentIds
+          shipmentId: order.shipmentId
         }
       });
       return shippingLabelErrorModal.present();
