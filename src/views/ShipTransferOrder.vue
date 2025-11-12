@@ -490,14 +490,19 @@ async function shipOrder() {
     isProcessingShipment.value = true
     const payload: any = { 
       shipmentId: shipment.shipmentId,
-      shipmentRouteSegmentId: shipment.shipmentRouteSegmentId
+      shipmentRouteSegmentId: shipment.shipmentRouteSegmentId,
+      carrierPartyId: shipment.routeSegCarrierPartyId,
+      shipmentMethodTypeId: shipment.routeSegShipmentMethodTypeId,
+      trackingIdNumber: shipment.trackingIdNumber
     }
 
+    // Override shipment details with manually entered values when using the "manual" mode
     if(selectedSegment.value === "manual") {
-      payload.trackingIdNumber = trackingCode.value
-      payload.shipmentRouteSegmentId = shipment.shipmentRouteSegmentId
-      payload.carrierPartyId = selectedCarrier.value
-      payload.shipmentMethodTypeId = selectedShippingMethod.value
+      Object.assign(payload, {
+        carrierPartyId: selectedCarrier.value,
+        shipmentMethodTypeId: selectedShippingMethod.value,
+        trackingIdNumber: trackingCode.value
+      });
     }
     isOrderShipped.value = true;
     await TransferOrderService.shipTransferOrderShipment(payload)
