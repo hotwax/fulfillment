@@ -247,11 +247,10 @@ export default defineComponent({
           {
             text: translate("Ship"),
             handler: async () => {
-            if (isShipping) return false;
-            isShipping = true;
+              if (isShipping) return false;
+              isShipping = true;
               await this.shipOutboundTransferShipment();
               isShipping = false;
-              return true;
             }
           }
         ],
