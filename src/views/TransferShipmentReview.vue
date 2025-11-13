@@ -196,8 +196,8 @@ export default defineComponent({
       if (this.isGeneratingShippingLabel) {
         return;
       }
-      await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
       this.isGeneratingShippingLabel = true;
+      await this.store.dispatch('transferorder/fetchTransferShipmentDetail', { shipmentId: this.$route.params.shipmentId })
       let shippingLabelPdfUrls = this.currentShipment?.labelImageUrls
       this.trackingCode = this.currentShipment.trackingIdNumber
       
@@ -235,6 +235,7 @@ export default defineComponent({
       return popover.present();
     },
     async confirmShip() {
+      let isShipping = false;
       const message = translate("Make sure all items in this shipment are ready to be shipped. Once a shipment is completed, it cannot be edited.");
       const alert = await alertController.create({
         header: translate("Complete shipment"),
@@ -246,7 +247,11 @@ export default defineComponent({
           {
             text: translate("Ship"),
             handler: async () => {
+            if (isShipping) return false;
+            isShipping = true;
               await this.shipOutboundTransferShipment();
+              isShipping = false;
+              return true;
             }
           }
         ],

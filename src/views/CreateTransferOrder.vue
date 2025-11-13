@@ -128,7 +128,7 @@
                   <p class="overline">{{ translate("Search result") }}</p>
                   {{ searchedProduct.internalName || searchedProduct.sku || searchedProduct.productId }}
                 </ion-label>
-                <ion-button size="default" slot="end" fill="clear" @click="addProductToOrder" :color="isProductAvailableInOrder() ? 'success' : 'primary'">
+                <ion-button :disabled="isAddingProduct" size="default" slot="end" fill="clear" @click="addProductToOrder" :color="isProductAvailableInOrder() ? 'success' : 'primary'">
                   <ion-icon slot="icon-only" :icon="isProductAvailableInOrder() ? checkmarkCircle : addCircleOutline"/>
                 </ion-button>
               </ion-item>
@@ -239,6 +239,7 @@ const queryString = ref("");
 const facilities = ref([]) as any;
 const dateTimeModalOpen = ref(false);
 const selectedDateFilter = ref("");
+const isAddingProduct = ref(false)
 const currentOrder = ref({
   name: "",
   productStoreId: "",
@@ -398,10 +399,17 @@ function toggleScan() {
 }
 
 async function addProductToOrder(scannedId?: any, product?: any) {
+  if(isAddingProduct.value) return
+  isAddingProduct.value = true
+
   if(!isScanningEnabled.value) {
-    if(!searchedProduct.value.productId ||!queryString.value) return;
+    if(!searchedProduct.value.productId ||!queryString.value) {
+      isAddingProduct.value = false
+      return;
+    }
     if(isProductAvailableInOrder()) {
       scrollToProduct(searchedProduct.value)
+      isAddingProduct.value = false
       return;  
     }
   }
@@ -430,6 +438,7 @@ async function addProductToOrder(scannedId?: any, product?: any) {
   } else {
     currentOrder.value.items.push(newProduct);
   }
+  isAddingProduct.value = false
 }
 
 function scrollToProduct(item: any) {
@@ -621,6 +630,7 @@ async function createOrder() {
     return;
   }
 
+  emitter.emit("presentLoader")
   const productIds = currentOrder.value.items?.map((item: any) => item.productId);
   const productAverageCostDetail = await ProductService.fetchProductsAverageCost(productIds, currentOrder.value.originFacilityId)
 
@@ -699,6 +709,7 @@ async function createOrder() {
     logger.error(error)
     showToast(translate("Failed to create order."))
   }
+  emitter.emit("dismissLoader")
 }
 
 function toggleBulkSelection(isChecked: any) {
