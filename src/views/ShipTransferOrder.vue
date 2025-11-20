@@ -114,12 +114,12 @@
             <!-- manual tracking segment -->
             <ion-list v-if="selectedSegment === 'manual'">
               <ion-item>
-                <ion-select data-testid="select-carrier-dropdown" :value="selectedCarrier" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="updateSelectedCarrier($event.detail.value)">
+                <ion-select data-testid="select-carrier-dropdown" :disabled="!Object.keys(carrierShipmentMethods).length" :value="selectedCarrier" :selectedText="getCarrierDesc(selectedCarrier)" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="updateSelectedCarrier($event.detail.value)">
                   <ion-select-option data-testid="select-carrier-dropdown-option" v-for="(carrierPartyId, index) in Object.keys(carrierShipmentMethods)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) }}</ion-select-option>
                 </ion-select>
               </ion-item>
               <ion-item>
-                <ion-select data-testid="select-method-dropdown" :disabled="!shipmentMethods.length" :value="selectedShippingMethod" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="updateSelectedShippingMethod($event.detail.value)">
+                <ion-select data-testid="select-method-dropdown" :disabled="!shipmentMethods.length" :value="selectedShippingMethod" :selectedText="getSelectedMethodDescription" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="updateSelectedShippingMethod($event.detail.value)">
                   <ion-select-option data-testid="select-method-dropdown-option" v-for="(method, index) in shipmentMethods" :key="index" :value="method.shipmentMethodTypeId">{{ method.description ? method.description : method.shipmentMethodTypeId }}</ion-select-option>
                 </ion-select>
               </ion-item>
@@ -182,6 +182,11 @@ const getProduct = computed(() => store.getters['product/getProduct'])
 const shipmentMethodsByCarrier = computed(() => store.getters["util/getShipmentMethodsByCarrier"])
 const getCarrierDesc = computed(() => store.getters["util/getCarrierDesc"])
 const facilityCarriers = computed(() => store.getters["carrier/getFacilityCarriers"])
+// get the description of selected shipping method
+const getSelectedMethodDescription = computed(() => {
+  const selectedMethod = shipmentMethods.value.find((method: any) => method.shipmentMethodTypeId === selectedShippingMethod.value);
+  return selectedMethod?.description || selectedShippingMethod.value;
+});
 
 const shipmentItems = computed(() => {
   if(!shipmentDetails.value?.packages) return []
@@ -206,12 +211,14 @@ onIonViewWillEnter(async() => {
   facilities.value = await UtilService.fetchProductStoreFacilities();
   // Fetch shipment and carrier-related data in parallel
   await Promise.allSettled([fetchShipmentOrderDetail(route?.params?.shipmentId as any), store.dispatch('util/fetchStoreCarrierAndMethods'), store.dispatch("util/fetchCarriersDetail"), store.dispatch('carrier/fetchFacilityCarriers')])
-  await fetchShippingRates();
   // Update shipment methods if carrier exists
   const carrierByFacility = new Set(facilityCarriers.value.map((item: any) => item.partyId));
   carrierShipmentMethods.value = Object.fromEntries(Object.entries(shipmentMethodsByCarrier.value).filter(([key]) => carrierByFacility.has(key)));
   selectedCarrier.value = shipmentDetails.value?.carrierPartyId || '';
-  if(shipmentDetails.value?.carrierPartyId) updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId, shipmentDetails.value.shipmentMethodTypeId)
+  if(shipmentDetails.value?.carrierPartyId) {
+    updateShipmentMethodsForCarrier(shipmentDetails.value.carrierPartyId, shipmentDetails.value.shipmentMethodTypeId)
+  }
+  await fetchShippingRates();
 });
 
 onBeforeRouteLeave(async () => {
