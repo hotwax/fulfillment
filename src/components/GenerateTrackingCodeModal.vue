@@ -117,7 +117,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :color="selectedSegment === 'reject-order' ? 'danger' : ''" :disabled="(selectedSegment !== 'reject-order' && !shipmentMethodTypeId) || (selectedSegment === 'reject-order' && !rejectOrder)" @click="confirmSave()">
+    <ion-fab-button :color="selectedSegment === 'reject-order' ? 'danger' : ''" :disabled="(selectedSegment !== 'reject-order' && !shipmentMethodTypeId) || (selectedSegment === 'reject-order' && !rejectOrder) || isPackingOrder" @click="confirmSave()">
       <ion-icon :icon="selectedSegment === 'reject-order' ? trashOutline : archiveOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -201,7 +201,8 @@ export default defineComponent({
       carrierPartyId: "",
       shipmentMethodTypeId: "",
       trackingCode: "",
-      packingErrorMessage: ""
+      packingErrorMessage: "",
+      isPackingOrder: false
     }
   },
   props: ["order", "updateCarrierShipmentDetails", "executePackOrder", "rejectEntireOrder", "updateParameter", "documentOptions", "packingError", "isDetailPage"],
@@ -244,12 +245,17 @@ export default defineComponent({
       this.rejectionComment = ""
     },
     async confirmSave() {
+      // Prevent multiple clicks if already processing
+      if (this.isPackingOrder) return;
+      this.isPackingOrder = true;
+
       let order = this.order
       let isSuccess = true;
       if (this.selectedSegment !== 'reject-order' && (order.carrierPartyId !== this.carrierPartyId || order.shipmentMethodTypeId !== this.shipmentMethodTypeId)) {
         const isUpdated = await this.updateCarrierAndShippingMethod(this.carrierPartyId, this.shipmentMethodTypeId)
         if(!isUpdated) {
           showToast(translate("Failed to update shipment method detail."));
+          this.isPackingOrder = false;
           return;
         }
       }
@@ -282,6 +288,7 @@ export default defineComponent({
       if (isSuccess) {
         this.closeModal();
       }
+      this.isPackingOrder = false;
     },
     getCarrierTrackingUrl() {
       return this.facilityCarriers.find((carrier: any) => carrier.partyId === this.carrierPartyId)?.trackingUrl

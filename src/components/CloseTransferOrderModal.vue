@@ -100,6 +100,7 @@ export default defineComponent({
       modalController.dismiss({ dismissed: true });
     },
     async confirmSave() {
+      let isItemsClosed = false;
       const alert = await alertController.create({
         header: translate('Close transfer order items'),
         message: translate("The selected items won't be available for receiving later."),
@@ -111,11 +112,14 @@ export default defineComponent({
           text: translate('Proceed'),
           role: 'proceed',
           handler: async () => {
+            if (isItemsClosed) return;
+            isItemsClosed = true;
             const success = await this.closeOrderItems();
             if (success) {
               modalController.dismiss();
               this.router.push('/transfer-orders');
             }
+            isItemsClosed = false;
           }
         }]
       });

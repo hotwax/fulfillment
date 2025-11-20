@@ -30,7 +30,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button @click="saveTrackingCode()" :disabled="!trackingCode.trim()">
+    <ion-fab-button @click="saveTrackingCode()" :disabled="!trackingCode.trim() || isTrackingCodeSaving">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -86,7 +86,8 @@ export default defineComponent({
   },
   data() {
     return {
-      trackingCode: ""
+      trackingCode: "",
+      isTrackingCodeSaving: false
     }
   },
   props: ["carrierPartyId"],
@@ -95,6 +96,7 @@ export default defineComponent({
       modalController.dismiss({ dismissed: true });
     },
     async saveTrackingCode() {
+      this.isTrackingCodeSaving = true;
       try {
         const shipmentRouteSegmentId = this.order.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
         const resp = await OrderService.addTrackingCode({
@@ -112,6 +114,7 @@ export default defineComponent({
       } catch (error: any) {
         logger.error('Failed to add tracking code', error);
         showToast(translate("Failed to add tracking code."));
+        this.isTrackingCodeSaving = false;
       }
     },
     getCarrierInfo() {

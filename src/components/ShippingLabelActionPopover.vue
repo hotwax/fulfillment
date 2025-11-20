@@ -41,6 +41,11 @@
       IonListHeader
     },
     props: ['currentOrder'],
+    data() {
+      return {
+        isVoiding: false
+      }
+    },
     methods: {
       async printShippingLabel(order: any) {
         const shipmentIds = [order.shipmentId];
@@ -56,6 +61,10 @@
         popoverController.dismiss()
       },
       async voidShippingLabel(order: any) {
+        // Prevent multiple API calls by tracking void operation in progress
+        if(this.isVoiding) return;
+        this.isVoiding = true;
+
         let resp = {} as any;
         try {
           resp = await OrderService.voidShipmentLabel({
@@ -71,6 +80,7 @@
           showToast(translate("Failed to void shipping label"));
         }
         popoverController.dismiss()
+        this.isVoiding = false;
       }
     },
     setup() {

@@ -513,6 +513,7 @@ export default defineComponent({
       return false
     },
     async confirmPackOrder(order: any, updateParameter?: string, trackingCode?: string) {
+      let isPacking = false;
       const confirmPackOrder = await alertController
         .create({
           header: translate("Pack order"),
@@ -537,12 +538,15 @@ export default defineComponent({
             text: translate("Pack"),
             role: 'confirm',
             handler: async (data) => {
+              if (isPacking) return false; // Prevent multiple clicks
+              isPacking = true;
               const packingResponse = await this.executePackOrder(order, updateParameter, trackingCode, data)
               if (!packingResponse.isPacked) {
                 //On error in packing, fetching update detail expecially to fetch carrier, shipment method, gteway message etc. If there is error (gatewayMessage not empty) opening Generate tracking code modal to enter tracking detail manually
                 const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
                 await this.generateTrackingCodeForPacking(updatedOrder, updateParameter, data, packingResponse.errors)
               }
+              isPacking = false;
             }
           }]
         });

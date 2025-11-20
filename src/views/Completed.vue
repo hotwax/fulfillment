@@ -146,7 +146,7 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
-                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER)) || shippingOrders.includes(order.shipmentId)" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate(order.missingLabelImage ? "Regenerate Shipping Label" : "Print Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
@@ -294,7 +294,8 @@ export default defineComponent({
       selectedCarrierPartyId: "",
       carrierConfiguration: {} as any,
       isGeneratingManifest: false,
-      selectedShipmentMethods: [] as any
+      selectedShipmentMethods: [] as any,
+      shippingOrders: [] as any
     }
   },
   computed: {
@@ -396,6 +397,9 @@ export default defineComponent({
       await this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async shipOrder(order: any) {
+      // Prevent multiple clicks
+      if (this.shippingOrders.includes(order.shipmentId)) return;
+      this.shippingOrders.push(order.shipmentId);
       try {
         const resp = await OrderService.shipOrder({shipmentId: order.shipmentId})
 
@@ -411,8 +415,10 @@ export default defineComponent({
         logger.error('Failed to ship order', err)
         showToast(translate('Failed to ship order'))
       }
+      this.shippingOrders = this.shippingOrders.filter((shipmentId: string) => shipmentId !== order.shipmentId);
     },
     async bulkShipOrders() {
+      let isBulkShippingInProgress = false;
       const packedOrdersCount = this.completedOrders.list.filter((order: any) => {
         return this.hasPackedShipments(order);
       }).length;
@@ -426,6 +432,10 @@ export default defineComponent({
           }, {
             text: translate("Ship"),
             handler: async () => {
+              // Prevent multiple clicks
+              if (isBulkShippingInProgress) return;
+              isBulkShippingInProgress = true;
+
               let orderList = JSON.parse(JSON.stringify(this.completedOrders.list))
               orderList = orderList.filter((order: any) =>  order.statusId === 'SHIPMENT_PACKED')
               // orders with tracking required and missing label must be excluded
@@ -441,6 +451,7 @@ export default defineComponent({
 
               if (!orderList.length) {
                 showToast(translate("No orders are currently able to be shipped due to missing tracking codes."))
+                isBulkShippingInProgress = false;
                 return;
               }
 
@@ -462,6 +473,8 @@ export default defineComponent({
               } catch(err) {
                 logger.error('Failed to ship orders', err)
                 showToast(translate('Failed to ship orders'))
+              } finally {
+                isBulkShippingInProgress = false;
               }
             }
           }]
@@ -541,6 +554,7 @@ export default defineComponent({
       this.store.dispatch('order/updateCompletedQuery', { ...completedOrdersQuery })
     },
     async unpackOrder(order: any) {
+      let isUnpacking = false;
       const unpackOrderAlert = await alertController
         .create({
            header: translate("Unpack"),
@@ -551,6 +565,8 @@ export default defineComponent({
           }, {
             text: translate("Unpack"),
             handler: async () => {
+              if (isUnpacking) return false;
+              isUnpacking = true;
               try {
                 const resp = await OrderService.unpackOrder({shipmentId: order.shipmentId})
 
@@ -564,6 +580,8 @@ export default defineComponent({
               } catch(err) {
                 logger.error('Failed to unpack the order', err)
                 showToast(translate('Failed to unpack the order'))
+              } finally {
+                isUnpacking = false;
               }
             }
           }]
