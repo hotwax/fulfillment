@@ -807,6 +807,7 @@ export default defineComponent({
       return false
     },
     async confirmPackOrder(order: any, updateParameter?: string, trackingCode?: string) {
+      let isPacking = false;
       const confirmPackOrder = await alertController
         .create({
           header: translate("Pack order"),
@@ -831,12 +832,15 @@ export default defineComponent({
             text: translate("Pack"),
             role: 'confirm',
             handler: async (data) => {
+              if (isPacking) return false; // Prevent multiple clicks
+              isPacking = true;
               const packingResponse = await this.executePackOrder(order, updateParameter, trackingCode, data)
               if (!packingResponse.isPacked) {
                 //On error in packing, fetching update detail expecially to fetch carrier, shipment method, gteway message etc. If there is error (gatewayMessage not empty) opening Generate tracking code modal to enter tracking detail manually
                 const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
                 await this.generateTrackingCodeForPacking(updatedOrder, updateParameter, data, packingResponse.errors)
               }
+              isPacking = false;
             }
           }]
         });
@@ -1334,6 +1338,7 @@ export default defineComponent({
       return order.statusId === 'SHIPMENT_PACKED'
     },
     async shipOrder(order: any) {
+      emitter.emit('presentLoader');
       try {
         const resp = await OrderService.shipOrder({shipmentId: order.shipmentId})
 
@@ -1350,6 +1355,7 @@ export default defineComponent({
         logger.error('Failed to ship order', err)
         showToast(translate('Failed to ship order'))
       }
+      emitter.emit("dismissLoader");
     },
     async fetchOrderInvoicingStatus() {
       let orderInvoicingInfo = {} as any, resp;
@@ -1432,6 +1438,7 @@ export default defineComponent({
       order.isGeneratingPackingSlip = false;
     },
     async unpackOrder(order: any) {
+      let isUnpacking = false;
       const unpackOrderAlert = await alertController
         .create({
            header: translate("Unpack"),
@@ -1442,6 +1449,8 @@ export default defineComponent({
           }, {
             text: translate("Unpack"),
             handler: async () => {
+              if (isUnpacking) return false;
+              isUnpacking = true;
               try {
                 const resp = await OrderService.unpackOrder({shipmentId: order.shipmentId, statusId: 'SHIPMENT_APPROVED'})
 
@@ -1454,6 +1463,8 @@ export default defineComponent({
               } catch(err) {
                 logger.error('Failed to unpack the order', err)
                 showToast(translate('Failed to unpack the order'))
+              } finally {
+                isUnpacking = false;
               }
             }
           }]
