@@ -132,7 +132,10 @@
           </ion-infinite-scroll>
         </div>
       </div>
-      <ion-fab v-if="openOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
+      <div v-if="isLoadingOrders" class="ion-padding ion-text-center">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
+      <ion-fab v-else-if="openOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="assignPickers">
           <ion-icon :icon="printOutline" />
         </ion-fab-button>
@@ -241,7 +244,8 @@ export default defineComponent({
       isScrollingEnabled: false,
       isRejecting: false,
       productCategoryFilterExt: "" as any,
-      selectedShipmentMethods: [] as any
+      selectedShipmentMethods: [] as any,
+      isLoadingOrders: false
     }
   },
   methods: {
@@ -437,7 +441,12 @@ export default defineComponent({
   },
   async ionViewWillEnter () {
     this.isScrollingEnabled = false;
-    await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
+    this.isLoadingOrders = true;
+    try {
+      await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
+    } finally {
+      this.isLoadingOrders = false;
+    }
     // Remove http://, https://, /api, or :port
     const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "")
     this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`});
