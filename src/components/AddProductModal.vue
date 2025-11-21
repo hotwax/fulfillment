@@ -27,7 +27,7 @@
         </ion-avatar>
         <ion-label>
           <h2>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, product) ? getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, product) : product?.internalName }}</h2>
-          <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, product) }}</p>
+          <p v-if="getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, product) !== 'null'">{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, product) }}</p>
         </ion-label>
 
         <!-- Show Add button if product is NOT in order -->
