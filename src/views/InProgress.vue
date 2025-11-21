@@ -77,7 +77,7 @@
               <ion-skeleton-text animated />
             </div>
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
-              <ion-button :disabled="addingBoxForShipmentIds.includes(order.shipmentId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
+              <ion-button :disabled="order.items.length <= order.shipmentPackages.length || addingBoxForShipmentIds.includes(order.shipmentId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
               <ion-row>
                 <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
                   {{ `Box ${shipmentPackage?.packageName}` }} {{ `| ${boxTypeDesc(getShipmentPackageType(order, shipmentPackage))}`}}
@@ -193,7 +193,7 @@
               </div>
 
               <div class="desktop-only">
-                <ion-button v-if="order.missingLabelImage" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
+                <ion-button v-if="order.missingLabelImage && isAutoShippingLabelEnabled" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -353,12 +353,13 @@ export default defineComponent({
       boxTypeDesc: 'util/getShipmentBoxDesc',
       getProductStock: 'stock/getProductStock',
       isForceScanEnabled: 'util/isForceScanEnabled',
-      partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
-      collateralRejectionConfig: 'user/getCollateralRejectionConfig',
-      affectQohConfig: 'user/getAffectQohConfig',
+      partialOrderRejectionConfig: 'util/getPartialOrderRejectionConfig',
+      collateralRejectionConfig: 'util/getCollateralRejectionConfig',
+      affectQohConfig: 'util/getAffectQohConfig',
       excludeOrderBrokerDays: "util/getExcludeOrderBrokerDays",
       carrierShipmentBoxTypes: 'util/getCarrierShipmentBoxTypes',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc'
+      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
+      isAutoShippingLabelEnabled: 'util/isAutoShippingLabelEnabled',
     }),
   },
   data() {
@@ -500,7 +501,7 @@ export default defineComponent({
           throw resp.data
         }
 
-        await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
+        await this.fetchOrderAndPickerInformation();
         showToast(translate('Order rejected successfully'));
         return true
 
@@ -571,7 +572,7 @@ export default defineComponent({
         
         //Fetching updated shipment detail after successful packing
         const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
-
+       
         if (documentOptions.length) {
           // additional parameters for dismiss button and manual dismiss ability
           toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
@@ -616,7 +617,7 @@ export default defineComponent({
         }
         // TODO: handle the case of fetching in progress orders after packing an order
         // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
-        await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
+        await this.fetchOrderAndPickerInformation();
         return { isPacked: true }
       } catch (err: any) {
         // in case of error, if loader and toast are not dismissed above
@@ -655,7 +656,7 @@ export default defineComponent({
             handler: async (data) => {
               emitter.emit('presentLoader');
               let orderList = JSON.parse(JSON.stringify(this.inProgressOrders.list))
-
+              
               let toast: any;
               // Considering only unique shipment IDs
               // TODO check reason for redundant shipment IDs
@@ -701,11 +702,17 @@ export default defineComponent({
                 const resp = await OrderService.packOrders({
                   shipments
                 });
+
                 if (hasError(resp)) {
                   throw resp.data
                 }
+
                 //Generate documents only for successfully packed shipments, not for those where packing failed.
-                const packedShipmentIds = resp.data?.packedShipmentIds ? resp.data?.packedShipmentIds : [];
+                const packedShipmentIds = resp.data?.packedShipmentIds ?? [];
+
+                if (!packedShipmentIds.length) {
+                  throw resp.data
+                }
 
                 if (data.length) {
                   // additional parameters for dismiss button and manual dismiss ability
@@ -730,7 +737,7 @@ export default defineComponent({
                 } else {
                   showToast(translate('Order packed successfully'));
                 }
-                await Promise.all([this.fetchPickersInformation(), this.updateOrderQuery("", "", true)]);
+                await this.fetchOrderAndPickerInformation();
               } catch (err) {
                 // in case of error, if loader and toast are not dismissed above
                 if (toast) toast.dismiss()
@@ -815,9 +822,9 @@ export default defineComponent({
             "shipmentItemSeqId": item.shipmentItemSeqId,
             "productId": item.productId,
             "facilityId": this.currentFacility?.facilityId,
-            "updateQOH": this.affectQohConfig && this.affectQohConfig?.settingValue ? this.affectQohConfig?.settingValue : false,
+            "updateQOH": this.affectQohConfig || false,
             "maySplit": this.isEntierOrderRejectionEnabled(order) ? "N" : "Y",
-            "cascadeRejectByProduct": this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
+            "cascadeRejectByProduct": this.collateralRejectionConfig ? "Y" : "N",
             "rejectionReasonId": item.rejectReason,
             "kitComponents": item.kitComponents,
             "comments": "Store Rejected Inventory"
@@ -865,7 +872,7 @@ export default defineComponent({
       this.store.dispatch('order/updateInProgressOrder', order)
     },
     isEntierOrderRejectionEnabled(order: any) {
-      return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
+      return !this.partialOrderRejectionConfig && order.hasRejectedItem
     },
     
     updateBox(updatedBox: string, item: any, order: any) {
@@ -887,6 +894,9 @@ export default defineComponent({
           const payload = {
             originFacilityId: this.currentFacility?.facilityId,
             statusId: "SHIPMENT_APPROVED",
+            "shipmentMethodTypeId": "STOREPICKUP",
+            "shipmentMethodTypeId_op": "equals",
+            "shipmentMethodTypeId_not": "Y",
             pageIndex, // Ensure updated pageIndex is used
             pageSize: 50
           };
@@ -937,6 +947,10 @@ export default defineComponent({
 
         // Assign the processed picklists to `this.picklists`
         this.picklists = Object.values(picklistInfo);
+        if (this.selectedPicklistId) {
+          const selectedPicklist = this.picklists.find((picklist: any) => picklist.id === this.selectedPicklistId)
+          this.selectedPicklistId = selectedPicklist ? selectedPicklist.id : ""
+        }
       } catch (err) {
         logger.error('Failed to fetch picklists', err);
       }
@@ -1084,7 +1098,7 @@ export default defineComponent({
       size && (inProgressOrdersQuery.viewSize = size)
       queryString && (inProgressOrdersQuery.queryString = '')
       inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
-      this.selectedPicklistId && (inProgressOrdersQuery.selectedPicklist = this.selectedPicklistId)
+      inProgressOrdersQuery.selectedPicklist = this.selectedPicklistId
       await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery, hideLoader })
     },
     async initialiseOrderQuery() {
@@ -1198,7 +1212,7 @@ export default defineComponent({
       const shippingLabelErrorModal = await modalController.create({
         component: ShippingLabelErrorModal,
         componentProps: {
-          shipmentId : order.shipmentId
+          shipmentId: order.shipmentId
         }
       });
       return shippingLabelErrorModal.present();
@@ -1224,7 +1238,7 @@ export default defineComponent({
       })
       modal.present();
     },
- 
+
     async openGiftCardActivationModal(item: any) {
       const modal = await modalController.create({
         component: GiftCardActivationModal,
@@ -1238,17 +1252,15 @@ export default defineComponent({
       })
 
       modal.present();
-    }
+    },
+    async fetchOrderAndPickerInformation(){
+      await this.fetchPickersInformation();
+      await this.updateOrderQuery(process.env.VUE_APP_VIEW_SIZE, "", true);
+    },
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
     await this.fetchPickersInformation()
-    //Cross checking if the selected picklist is still valid, as user can pack the order from order detail page
-    if (this.selectedPicklistId) {
-      const selectedPicklist = this.picklists.find((picklist: any) => picklist.id === this.selectedPicklistId)
-      this.selectedPicklistId = selectedPicklist ? selectedPicklist.id : ""
-    }
-
     await Promise.all([
       this.store.dispatch('util/fetchRejectReasonOptions'),
       this.initialiseOrderQuery()

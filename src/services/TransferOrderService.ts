@@ -50,7 +50,7 @@ const fetchTransferOrderDetail = async (orderId: string): Promise<any> => {
       "Content-Type": "application/json"
     }
   });
-};
+}
 
 const fetchShippedTransferShipments = async (params: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
@@ -331,8 +331,57 @@ const approveTransferOrder = async (orderId: any): Promise<any> => {
   });
 };
 
+const addOrderItem = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: 'oms/transferOrders/orderItem',
+    method: "POST",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
+const updateOrderItem = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: 'oms/transferOrders/orderItem',
+    method: "PUT",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
+const cancelTransferOrder = async (orderId: string): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `oms/transferOrders/${orderId}/cancel`,
+    method: "post",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    }
+  });
+}
+
 
 export const TransferOrderService = {
+  addOrderItem,
+  cancelTransferOrder,
   cancelTransferOrderShipment,
   createOutboundTransferShipment,
   fetchCompletedTransferOrders,
@@ -348,5 +397,6 @@ export const TransferOrderService = {
   rejectOrderItems,
   closeOrderItems,
   createTransferOrder,
-  approveTransferOrder
+  approveTransferOrder,
+  updateOrderItem
 };

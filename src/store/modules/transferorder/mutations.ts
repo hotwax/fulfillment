@@ -26,9 +26,6 @@ const mutations: MutationTree <TransferOrderState> = {
       orderStatusId: 'ORDER_APPROVED'
     }
   },
-  [types.ORDER_CURRENT_SHIPMENT_UPDATED](state, payload) {
-    state.shipment.current = payload
-  },
   [types.ORDER_CURRENT_SHIPMENT_CLEARED](state) {
     state.shipment.current = {}
   },

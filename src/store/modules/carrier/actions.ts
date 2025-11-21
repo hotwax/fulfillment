@@ -228,6 +228,7 @@ const actions: ActionTree<CarrierState, RootState> = {
       return updatedShipmentMethod;
     }, {})
     commit(types.SHIPMENT_METHODS_UPDATED, shipmentMethods)
+    return shipmentMethodTypes;
   },
 
   async fetchCarrierFacilities({ state, commit }, payload) {
@@ -364,8 +365,10 @@ const actions: ActionTree<CarrierState, RootState> = {
     }
 
     const carrierIds = facilityCarriers.map((carrier: any) => carrier.partyId)
-    const systemProperties = {} as any;
-
+    const trackingUrls = {} as any;
+    const logoUrls = {} as any;
+    
+    // fetch tracking URLs
     try {
       resp = await CarrierService.fetchCarrierTrackingUrls({
         "systemResourceId": carrierIds,
@@ -377,7 +380,7 @@ const actions: ActionTree<CarrierState, RootState> = {
 
       if(!hasError(resp)) {
         resp.data.map((doc: any) => {
-          systemProperties[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue
+          trackingUrls[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue;
         })
       } else {
         throw resp.data;
@@ -386,9 +389,32 @@ const actions: ActionTree<CarrierState, RootState> = {
       logger.error(error);
     }
 
-    if(Object.keys(systemProperties).length) {
+    // fetch carrier logos
+    try {
+      const resp = await CarrierService.fetchCarrierTrackingUrls({
+        systemResourceId: carrierIds,
+        systemResourceId_op: "in",
+        systemPropertyId: "%logo.url%",
+        systemPropertyId_op: "like",
+        fieldsToSelect: ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
+      });
+
+      if(!hasError(resp)) {
+        resp.data.map((doc: any) => {
+          logoUrls[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue;
+        })
+      } else {
+        throw resp.data;
+      }
+    } catch (error) {
+      logger.error(error);
+    }
+
+    if(Object.keys(trackingUrls).length || Object.keys(logoUrls).length) {
       facilityCarriers.map((carrier: any) => {
-        carrier.trackingUrl = systemProperties[carrier.partyId.toUpperCase()]
+        const partyId = carrier.partyId.toUpperCase();
+        carrier.trackingUrl = trackingUrls[partyId]
+        carrier.logoUrl = logoUrls[partyId]
       })
     }
     commit(types.CARRIER_FACILITY_CARRIERS_UPDATED, facilityCarriers)

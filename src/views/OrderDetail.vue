@@ -7,7 +7,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <div v-if="Object.keys(order).length">
+      <div v-if="order && Object.keys(order).length">
         <div class="order-header">
           <div class="order-primary-info">
             <h3>{{ order.orderName }}</h3>
@@ -60,7 +60,7 @@
               <ion-skeleton-text animated />
             </div>
             <div class="box-type desktop-only" v-else-if="order.shipmentPackages">
-              <ion-button :disabled="addingBoxForShipmentIds.includes(order.orderId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />
+              <ion-button :disabled="order.items.length <= order.shipmentPackages.length || addingBoxForShipmentIds.includes(order.orderId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />
                 {{ translate("Add Box") }}
               </ion-button>
               <ion-row>
@@ -299,15 +299,15 @@
               </template>
             </ion-item>
             <template v-if="order.missingLabelImage">
-              <ion-item lines="none" v-if="shipmentLabelErrorMessages">
+              <ion-item lines="none" v-if="shipmentLabelErrorMessage">
                 <ion-label class="ion-text-wrap">
                   <p class=overline>{{ translate("Error Log") }}</p>
-                  {{ shipmentLabelErrorMessages }}
+                  {{ shipmentLabelErrorMessage }}
                 </ion-label>
               </ion-item>
               <template v-if="category === 'completed'">
                 <ion-button :disabled="!shipmentMethodTypeId || !hasPackedShipments(order)" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
-                  {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
+                  {{ shipmentLabelErrorMessage ? translate("Retry Label") : translate("Generate Label") }}
                   <ion-spinner color="primary" slot="end" data-spinner-size="medium" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
                 <ion-button :disabled="!shipmentMethodTypeId || !carrierPartyId || !hasPackedShipments(order)" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
@@ -380,13 +380,17 @@
               <div class="other-shipment-actions">
                 <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
                 <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).qoh">{{ getProductStock(item.productId, item.facilityId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button slot="end" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
+                <ion-button slot="end" fill="clear" v-else-if="['open', 'in-progress', 'completed'].includes(shipGroup.category)" size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
               </div>
             </ion-item>
           </ion-card>
         </div>
+      </div>
+      <div v-else-if="order" class="empty-state">
+        <ion-spinner name="crescent" />
+        <ion-label>{{ translate("Loading...") }}</ion-label>
       </div>
       <div v-else class="empty-state">
         <p>{{ translate("Unable to fetch the order details. Either the order has been shipped or something went wrong. Please try again after some time.")}}</p>
@@ -522,16 +526,16 @@ export default defineComponent({
       getPaymentMethodDesc: 'util/getPaymentMethodDesc',
       getStatusDesc: 'util/getStatusDesc',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
-      partialOrderRejectionConfig: 'user/getPartialOrderRejectionConfig',
-      collateralRejectionConfig: 'user/getCollateralRejectionConfig',
-      affectQohConfig: 'user/getAffectQohConfig',
+      partialOrderRejectionConfig: 'util/getPartialOrderRejectionConfig',
+      collateralRejectionConfig: 'util/getCollateralRejectionConfig',
+      affectQohConfig: 'util/getAffectQohConfig',
       excludeOrderBrokerDays: "util/getExcludeOrderBrokerDays",
       isForceScanEnabled: 'util/isForceScanEnabled',
       productStoreShipmentMethods: 'carrier/getProductStoreShipmentMethods',
       facilityCarriers: 'carrier/getFacilityCarriers',
       userProfile: 'user/getUserProfile',
-      isShipNowDisabled: 'user/isShipNowDisabled',
-      isUnpackDisabled: 'user/isUnpackDisabled',
+      isShipNowDisabled: 'util/isShipNowDisabled',
+      isUnpackDisabled: 'util/isUnpackDisabled',
       instanceUrl: "user/getInstanceUrl",
       carrierShipmentBoxTypes: 'util/getCarrierShipmentBoxTypes',
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
@@ -558,7 +562,7 @@ export default defineComponent({
         'PAYMENT_SETTLED': ''
       } as any,
       rejectEntireOrderReasonId: "REJ_AVOID_ORD_SPLIT",
-      shipmentLabelErrorMessages: "",
+      shipmentLabelErrorMessage: "",
       shipmentMethodTypeId: "",
       carrierPartyId: "",
       carrierMethods:[] as any,
@@ -608,9 +612,9 @@ export default defineComponent({
     },
     async fetchShipmentLabelError() {
       const shipmentId = this.order?.shipmentId
-      const labelErrors = await OrderService.fetchShipmentLabelError(shipmentId);
-      if (labelErrors && labelErrors.length) {
-        this.shipmentLabelErrorMessages = labelErrors.join(', ');
+      const labelError = await OrderService.fetchShipmentLabelError(shipmentId);
+      if (labelError) {
+        this.shipmentLabelErrorMessage = labelError
       }
     },
     getCarrierName(carrierPartyId: string) {
@@ -681,7 +685,7 @@ export default defineComponent({
       this.carrierPartyId = carrierPartyId
       this.shipmentMethodTypeId = shipmentMethodTypeId
       this.carrierMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
-      this.shipmentLabelErrorMessages = ""
+      this.shipmentLabelErrorMessage = ""
     },
     async fetchKitComponent(orderItem: any, isOtherShipment = false ) {
       await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
@@ -706,7 +710,7 @@ export default defineComponent({
       return reason?.description ? reason.description : reason?.enumDescription ? reason.enumDescription : reason?.enumId;
     },
     isEntierOrderRejectionEnabled(order: any) {
-      return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
+      return !this.partialOrderRejectionConfig && order.hasRejectedItem
     },
     async printPicklist (order: any) {
       await OrderService.printPicklist(order.picklistId)
@@ -1306,9 +1310,9 @@ export default defineComponent({
             "shipmentItemSeqId": item.shipmentItemSeqId,
             "productId": item.productId,
             "facilityId": this.currentFacility?.facilityId,
-            "updateQOH": this.affectQohConfig && this.affectQohConfig?.settingValue ? this.affectQohConfig?.settingValue : false,
+            "updateQOH": this.affectQohConfig || false,
             "maySplit": this.isEntierOrderRejectionEnabled(order) ? "N" : "Y",
-            "cascadeRejectByProduct": this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
+            "cascadeRejectByProduct": this.collateralRejectionConfig ? "Y" : "N",
             "rejectionReasonId": item.rejectReason,
             "kitComponents": item.kitComponents,
             "comments": "Store Rejected Inventory"

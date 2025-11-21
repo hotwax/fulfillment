@@ -39,17 +39,11 @@ const mutations: MutationTree <UtilState> = {
   [types.UTIL_PRODUCT_STORES_UPDATED](state, payload) {
     state.productStores = payload
   },
-  [types.UTIL_FORCE_SCAN_STATUS_UPDATED](state, payload) {
-    state.isForceScanEnabled = payload
-  },
   [types.UTIL_FULFILLMENT_REJECT_REASONS_UPDATED](state, payload) {
     state.fulfillmentRejectReasons = payload
   },
   [types.UTIL_REJECT_REASON_OPTIONS_UPDATED](state, payload) {
     state.rejectReasonOptions = payload
-  },
-  [types.UTIL_BARCODE_IDENTIFICATION_PREF_UPDATED](state, payload) {
-    state.barcodeIdentificationPref = payload
   },
   [types.UTIL_CARRIER_SHIPMENT_BOX_TYPES_UPDATED](state, payload) {
     state.carrierShipmentBoxTypes = payload
@@ -74,17 +68,25 @@ const mutations: MutationTree <UtilState> = {
     state.shipmentBoxTypeDesc = {}
     state.carrierShipmentBoxTypes = {}
     state.excludeOrderBrokerDays = undefined
+    state.productStoreSettings = JSON.parse(process.env.VUE_APP_DEFAULT_PRODUCT_STORE_SETTINGS as any)
+    state.isAutoShippingLabelEnabled = false;
   },
   [types.UTIL_FACILITY_SHIPPING_LABEL_IMAGE_TYPE_UPDATED](state, payload) {
     if(payload.facilityId) {
       state.facilityShippingLabelImageType[payload.facilityId] = payload.labelImageType
     }
   },
-  [types.UTIL_PICKLIST_DOWNLOAD_STATUS_UPDATED](state, payload) {
-    state.isPicklistDownloadEnabled = payload
+  [types.UTIL_PRODUCT_STORE_SETTINGS_UPDATED](state, payload) {
+  state.productStoreSettings = payload
   },
-  [types.UTIL_EXCLUDE_ORDER_BROKER_DAYS_UPDATED](state, payload) {
-    state.excludeOrderBrokerDays = payload
+  [types.UTIL_PRODUCT_STORE_SETTING_UPDATED](state, { key, value }) {
+    state.productStoreSettings = {
+      ...state.productStoreSettings,
+      [key]: value
+    };
   },
+  [types.SET_AUTO_SHIPPING_LABEL_ENABLED](state, payload) {
+    state.isAutoShippingLabelEnabled = payload;
+  }
 }
 export default mutations;

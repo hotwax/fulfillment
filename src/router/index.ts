@@ -19,6 +19,8 @@ import { showToast } from '@/utils'
 import { translate } from '@hotwax/dxp-components'
 import 'vue-router'
 import Notifications from '@/views/Notifications.vue'
+import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
+import ShipTransferOrder from '@/views/ShipTransferOrder.vue';
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -31,7 +33,6 @@ import { loader } from '@/utils/user';
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 import Rejections from '@/views/Rejections.vue';
-import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
 
 const authGuard = async (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
@@ -95,28 +96,23 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/create-transfer-order',
+    path: '/create-transfer-order/:orderId',
     name: 'CreateTransferOrder',
     component: CreateTransferOrder,
     beforeEnter: authGuard,
-    meta: {
-      permissionId: ""
-    }
+    props: true
+  },
+  {
+    path: '/ship-transfer-order/:shipmentId',
+    name: 'ShipTransferOrder',
+    component: ShipTransferOrder,
+    beforeEnter: authGuard,
+    props: true
   },
   {
     path: '/transfer-order-details/:orderId/:category',
     name: 'TransferOrderDetail',
     component: TransferOrderDetail,
-    beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_TRANSFER_ORDER_DETAIL_VIEW"
-    }
-  },
-  {
-    path: '/transfer-shipment-review/:shipmentId',
-    name: 'TransferShipmentReview',
-    component: TransferShipmentReview,
     beforeEnter: authGuard,
     props: true,
     meta: {

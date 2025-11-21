@@ -306,8 +306,8 @@ export default defineComponent({
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       getProductStock: 'stock/getProductStock',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
-      isShipNowDisabled: 'user/isShipNowDisabled',
-      isUnpackDisabled: 'user/isUnpackDisabled'
+      isShipNowDisabled: 'util/isShipNowDisabled',
+      isUnpackDisabled: 'util/isUnpackDisabled'
     }),
     getTotalPackages() {
       return this.carrierPartyIds.reduce((total: number, carrier: any) => total + Number(carrier.groups), 0);
@@ -655,13 +655,11 @@ export default defineComponent({
 
       order.isGeneratingShippingLabel = false;
     },
-    async showShippingLabelErrorModal(order: any){
-      // Getting all the shipment ids
-      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId);
+    async showShippingLabelErrorModal(order: any) {
       const shippingLabelErrorModal = await modalController.create({
         component: ShippingLabelErrorModal,
         componentProps: {
-          shipmentIds
+          shipmentId: order.shipmentId
         }
       });
       return shippingLabelErrorModal.present();

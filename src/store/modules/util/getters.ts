@@ -43,7 +43,7 @@ const getters: GetterTree <UtilState, RootState> = {
     return state.facilities
   },
   isForceScanEnabled(state) {
-    return state.isForceScanEnabled
+    return state.productStoreSettings.FULFILL_FORCE_SCAN && JSON.parse(state.productStoreSettings.FULFILL_FORCE_SCAN)
   },
   getFulfillmentRejectReasons(state) {
     return state.fulfillmentRejectReasons
@@ -52,7 +52,7 @@ const getters: GetterTree <UtilState, RootState> = {
     return state.rejectReasonOptions
   },
   getBarcodeIdentificationPref(state) {
-    return state.barcodeIdentificationPref
+    return state.productStoreSettings.BARCODE_IDEN_PREF
   },
   getCarrierShipmentBoxTypes(state) {
     return state.carrierShipmentBoxTypes
@@ -64,10 +64,37 @@ const getters: GetterTree <UtilState, RootState> = {
     return state.shipmentMethodsByCarrier
   },
   isPicklistDownloadEnabled(state) {
-    return state.isPicklistDownloadEnabled
+    return state.productStoreSettings.FF_DOWNLOAD_PICKLIST && JSON.parse(state.productStoreSettings.FF_DOWNLOAD_PICKLIST)
   },
   getExcludeOrderBrokerDays(state) {
-    return state.excludeOrderBrokerDays
+    return state.productStoreSettings.EXCLUDE_ODR_BKR_DAYS
+  },
+  getPartialOrderRejectionConfig(state) {
+    return state.productStoreSettings.FULFILL_PART_ODR_REJ && JSON.parse(state.productStoreSettings.FULFILL_PART_ODR_REJ)
+  },
+  getCollateralRejectionConfig(state) {
+    return state.productStoreSettings.FF_COLLATERAL_REJ && JSON.parse(state.productStoreSettings.FF_COLLATERAL_REJ)
+  },
+  getAffectQohConfig(state) {
+    return state.productStoreSettings.AFFECT_QOH_ON_REJ && JSON.parse(state.productStoreSettings.AFFECT_QOH_ON_REJ)
+  },
+  isShipNowDisabled(state) {
+    return state.productStoreSettings.DISABLE_SHIPNOW && JSON.parse(state.productStoreSettings.DISABLE_SHIPNOW)
+  },
+  isUnpackDisabled(state) {
+    return state.productStoreSettings.DISABLE_UNPACK && JSON.parse(state.productStoreSettings.DISABLE_UNPACK)
+  },
+  isReservationFacilityFieldEnabled(state) {
+    return state.productStoreSettings.USE_RES_FACILITY_ID && JSON.parse(state.productStoreSettings.USE_RES_FACILITY_ID)
+  },
+  getProductStoreSetting(state){
+    return state.productStoreSettings
+  },
+  isAutoShippingLabelEnabled(state){
+    return state.isAutoShippingLabelEnabled
+  },
+  getFacilityAddress: (state) => (facilityId: string) => {
+    return state.facilityAddresses?.[facilityId] || {}
   }
 }
 export default getters;

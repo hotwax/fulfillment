@@ -20,11 +20,6 @@
     </ion-row>
 
     <ion-list>
-      <!--<ion-item lines="none" v-if="hasPermission(Actions.APP_STOREFULFILLMENT_ADMIN)">
-        <ion-toggle v-model="showAllPickers" @ionChange="findPickers()">
-          {{ translate("Show all pickers") }}
-        </ion-toggle>
-      </ion-item>-->
 
       <ion-list-header>{{ translate("Staff") }}</ion-list-header>
       <!-- TODO: added click event on the item as when using the ionChange event then it's getting
@@ -121,7 +116,6 @@ export default defineComponent({
       queryString: '',
       pickers: [],
       isLoading: false,
-      //showAllPickers: false
     }
   },
   props: ["order"], // if we have order in props then create picklist for this single order only
@@ -222,11 +216,10 @@ export default defineComponent({
         query = `*:*`
       }
 
-      /*const facilityFilter = [];
-
-      if(!this.showAllPickers) {
+      const facilityFilter = [];
+      if(!hasPermission(Actions.APP_SHOW_ALL_PICKERS)){
         facilityFilter.push(`facilityIds:${this.currentFacility.facilityId}`)
-      }*/
+      }
 
       const payload = {
         "json": {
@@ -237,7 +230,7 @@ export default defineComponent({
             "qf": "firstName lastName groupName partyId externalId",
             "sort": "firstName asc"
           },
-          "filter": ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true"]
+          "filter": ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true", ...facilityFilter]
         }
       }
 
