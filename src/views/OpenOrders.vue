@@ -442,8 +442,11 @@ export default defineComponent({
   async ionViewWillEnter () {
     this.isScrollingEnabled = false;
     this.isLoadingOrders = true;
-    await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
-    this.isLoadingOrders = false;
+    try {
+      await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
+    } finally {
+      this.isLoadingOrders = false;
+    }
     // Remove http://, https://, /api, or :port
     const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "")
     this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`});

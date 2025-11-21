@@ -1261,12 +1261,15 @@ export default defineComponent({
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
     this.isLoadingOrders = true;
-    await this.fetchPickersInformation()
-    await Promise.all([
-      this.store.dispatch('util/fetchRejectReasonOptions'),
-      this.initialiseOrderQuery()
-    ]);
-    this.isLoadingOrders = false;
+    try {
+      await this.fetchPickersInformation()
+      await Promise.all([
+        this.store.dispatch('util/fetchRejectReasonOptions'),
+        this.initialiseOrderQuery()
+      ]);
+    } finally {
+      this.isLoadingOrders = false;
+    }
 
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
