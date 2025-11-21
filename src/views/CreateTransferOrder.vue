@@ -71,7 +71,7 @@
                 <ion-label>
                   {{ getProductIdentificationValue(barcodeIdentifier, getProduct(searchedProduct.productId)) }}
                   <p>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) : getProduct(searchedProduct.productId)?.internalName }}</p>
-                  <p v-if="getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) !== 'null'">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
+                  <p v-if="getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) !== 'null'">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
                 </ion-label>
                 <ion-icon v-if="!pendingProductIds.has(searchedProduct.productId)" :icon="checkmarkDoneOutline" color="success" slot="end"/>
                 <ion-spinner v-else name="crescent" slot="end" />
@@ -138,7 +138,7 @@
                   </ion-thumbnail>
                   <ion-label>
                     {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) : getProduct(searchedProduct.productId)?.internalName }}
-                    <p v-if="getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) !== 'null'">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
+                    <p v-if="getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) !== 'null'">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
                   </ion-label>
                   <template v-if="!productQueue.isProductInOrder(searchedProduct.productId)">
                     <ion-button data-testid="add-to-transfer-btn" :disabled="pendingProductIds.has(searchedProduct.productId)" slot="end" fill="outline" @click="addSearchedOrderItem">
