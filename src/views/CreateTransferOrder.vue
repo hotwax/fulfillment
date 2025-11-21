@@ -436,6 +436,9 @@ async function fetchBarcodeIdentificationDesc() {
 }
 
 async function editOrderName() {
+  // prevent multiple API calls 
+  let isOrderNameSaving = false;
+
   const alert = await alertController.create({
     header: translate("Edit order name"),
     inputs: [
@@ -473,7 +476,11 @@ async function editOrderName() {
             return true;
           }
 
+          if (isOrderNameSaving) return false;
+          isOrderNameSaving = true;
+          
           await updateOrderProperty("orderName", updatedOrderName);
+          isOrderNameSaving = false;
           return true;
         }
       }
@@ -779,6 +786,7 @@ async function approveOrder(orderId: string) {
 
 // Approves the current transfer order and redirects to the transfer orders page.
 async function shiplater() {
+  let isShipLaterInProgress = false;
   const message = translate("Save this order without tracking details to ship later.");
   const alert = await alertController.create({
     header: translate("Ship later"),
@@ -797,6 +805,10 @@ async function shiplater() {
           'data-testid': "shiplater-continue-btn"
         },
         handler: async () => {
+          // Prevent multiple API calls
+          if (isShipLaterInProgress) return false;
+          isShipLaterInProgress = true;
+
           preventLeave.value = true;
           const success = await approveOrder(currentOrder.value.orderId);
           if(success) {
@@ -805,6 +817,7 @@ async function shiplater() {
             preventLeave.value = false;
             showToast(translate('Failed to approve the transfer order to ship later.'));
           }
+          isShipLaterInProgress = false;
         }
       }
     ],
