@@ -202,7 +202,10 @@
           </ion-infinite-scroll>
         </div>
       </div>
-      <template v-if="inProgressOrders.total">
+      <div v-if="isLoadingOrders" class="ion-padding ion-text-center">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
+      <template v-else-if="inProgressOrders.total">
         <ion-fab v-if="!isForceScanEnabled" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
           <ion-fab-button @click="packOrders()">
             <ion-icon :icon="checkmarkDoneOutline" />
@@ -373,6 +376,7 @@ export default defineComponent({
       isScrollingEnabled: false,
       isRejecting: false,
       rejectEntireOrderReasonId: "REJ_AVOID_ORD_SPLIT",
+      isLoadingOrders: false
     }
   },
   methods: {
@@ -1256,11 +1260,14 @@ export default defineComponent({
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
+    this.isLoadingOrders = true;
     await this.fetchPickersInformation()
     await Promise.all([
       this.store.dispatch('util/fetchRejectReasonOptions'),
       this.initialiseOrderQuery()
     ]);
+    this.isLoadingOrders = false;
+
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
   beforeRouteLeave() {
