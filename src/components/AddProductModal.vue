@@ -57,8 +57,7 @@ import { checkmarkCircle, closeOutline } from "ionicons/icons";
 import { computed, defineProps, onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
 import { modalController } from '@ionic/vue';
-import { ProductService } from '@/services/ProductService';
-import { hasError } from '@/utils';
+import { searchProducts } from '@/adapter';
 import { DxpShopifyImg, getProductIdentificationValue, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
 import logger from '@/logger';
 import emitter from '@/event-bus';
@@ -123,20 +122,20 @@ async function getProducts(vSize?: any, vIndex?: any) {
   isLoading.value = true;
 
   try {
-    const resp = await ProductService.fetchProducts({
+    const resp = await searchProducts({
       keyword: queryString.value.trim(),
       viewSize, 
       viewIndex,
-      filters: ['isVirtual: false', 'isVariant: true'],
+      filters: {}
     });
 
-    if (!hasError(resp) && resp.data.response?.docs?.length) {
-      const productsList = resp.data.response.docs;
+    if (resp.total) {
+      const productsList = resp.products;
       if(viewIndex) {
         products.value = products.value.concat(productsList); 
       } else {
         products.value = productsList;
-        total.value = resp.data.response.numFound;
+        total.value = resp.total;
       }
     } else {
       products.value = viewIndex ? products.value : [];
