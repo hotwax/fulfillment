@@ -26,7 +26,7 @@
         <p class="overline">{{ translate("Gateway error") }}</p>
         {{ order.gatewayMessage ?? packingErrorMessage }}
       </ion-label>
-      <ion-button fill="clear" color="medium" @click="copyToClipboard(order.gatewayMessage, 'Copied to clipboard')"> 
+      <ion-button fill="clear" color="medium" @click="copyToClipboard(order.gatewayMessage ?? packingErrorMessage, 'Copied to clipboard')">
         <ion-icon slot="icon-only" :icon="copyOutline" />
       </ion-button>
     </ion-item>
