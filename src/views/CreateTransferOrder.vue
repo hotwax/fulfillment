@@ -245,6 +245,7 @@ import TransferOrderItem from '@/components/TransferOrderItem.vue'
 import AddProductModal from "@/components/AddProductModal.vue";
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
 import { useProductQueue } from '@/composables/useProductQueue';
+import { searchProducts } from '@/adapter';
 
 const store = useStore();
 const route = useRoute();
@@ -683,20 +684,20 @@ async function findProduct(value: string) {
 
   try {
     const payload: any = {
-      filters: ['isVirtual: false', 'isVariant: true'],
+      filters: {},
       viewSize: 1
     }
 
     if(mode.value === 'scan') {
-      payload.filters.push(`goodIdentifications: ${barcodeIdentifier.value}/${value}`);
+      payload.filters['goodIdentifications'] = { value: `${barcodeIdentifier.value}/${value}`}
     } else {
       payload.keyword = value;
     }
-    const resp = await ProductService.fetchProducts(payload);
+    const resp = await searchProducts(payload);
 
-    if(!hasError(resp) && resp.data.response?.docs?.length) {
-      productSearchCount.value = resp.data.response?.numFound
-      const item = resp.data.response.docs[0];
+    if(resp.total) {
+      productSearchCount.value = resp.total
+      const item = resp.products[0];
       store.dispatch("product/addProductToCached", item);
       searchedProduct.value = { productId: item.productId, mainImageUrl: item.mainImageUrl };
       isSearchingProduct.value = false;
