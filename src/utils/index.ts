@@ -152,7 +152,8 @@ const sortItems = (items: any, sortByField: any) => {
 
 const isValidDeliveryDays = (deliveryDays : any) => {
   // Regular expression pattern for a valid delivery days
-  const delieveryDaysPattern = /^(\d*\.?\d+)?$/;
+  // Allow only positive integers (no decimals, no zero, no negative, leading zeros)
+  const delieveryDaysPattern = /^(0*[1-9]\d*)$/;
   return delieveryDaysPattern.test(deliveryDays);
 }
 
