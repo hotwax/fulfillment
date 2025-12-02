@@ -353,31 +353,27 @@ function generateRateName(carrierPartyId: string, shipmentMethodTypeId: string) 
 // Purchases a new shipping label by updating carrier/method, retrying label generation, refreshing shipment details, and printing the label.
 async function purchaseShippingLabel() {
   const shipment = shipmentDetails.value;
-
-  try {
-    await OrderService.retryShippingLabel(shipment.shipmentId);
-    await fetchShipmentOrderDetail(shipment.shipmentId)
-    await printShippingLabel();
-  } catch (error) {
-    logger.error("Failed to purchase shipping label", error);
-    showToast(translate("Failed to purchase shipping label"));
+  await OrderService.retryShippingLabel(shipment.shipmentId);
+  await fetchShipmentOrderDetail(shipment.shipmentId)
+  if(shipmentDetails.value?.carrierServiceStatusId !== 'SHRSCS_ACCEPTED') {
+    showToast(translate("Failed to generate shipping label"))
+    return;
   }
+  await printShippingLabel();
 }
 
 // Prints the shipping label if available by collecting unique label URLs and calling the print service
 async function printShippingLabel() {
   const shipment = shipmentDetails.value
   try {
-    if(shipment.carrierServiceStatusId === 'SHRSCS_ACCEPTED') {
-      const shippingLabelPdfUrls: string[] = Array.from(
-        new Set(
-          (shipment.packages ?? [])
-            .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
-            .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
-        )
-      );
-      await OrderService.printShippingLabel([shipment.shipmentId], shippingLabelPdfUrls, shipment.packages);
-    }
+    const shippingLabelPdfUrls: string[] = Array.from(
+      new Set(
+        (shipment.packages ?? [])
+          .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+          .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+      )
+    );
+    await OrderService.printShippingLabel([shipment.shipmentId], shippingLabelPdfUrls, shipment.packages);
   } catch (error) {
     logger.error(error)
   }
