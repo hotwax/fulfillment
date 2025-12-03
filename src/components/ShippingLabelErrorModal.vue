@@ -85,12 +85,3 @@ export default defineComponent({
   },
 });
 </script>
-
-<style scoped>
-.box-type {
-  display: flex;
-  gap: var(--spacer-sm);
-  padding: var(--ion-item-like-padding);
-  align-items: center;
-}
-</style>

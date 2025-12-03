@@ -2,16 +2,16 @@
   <ion-content>
     <ion-list>
       <!-- TODO: Need to give Shipping Label Error Option -->
-      <ion-item button>
-        <ion-icon slot="start" :icon="printOutline" />
-        {{ translate("Shipping label") }}
+      <ion-item button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="closeModal('regenerateShippingLabel')">
+        {{ translate("Regenerate shipping label") }}
       </ion-item>
-      <ion-item button>
-        <ion-icon slot="start" :icon="printOutline" />
-        {{ translate("Customer letter") }}
+      <ion-item button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" @click="closeModal('printPackingSlip')">
+        {{ translate("Print customer letter") }}
       </ion-item>
-      <ion-item button lines="none">
-        <ion-icon slot="start" :icon="lockOpenOutline" />
+      <ion-item button v-if="order.missingLabelImage" @click="closeModal('showShippingLabelErrorModal')">
+        {{ translate("Shipping label error") }}
+      </ion-item>
+      <ion-item button lines="none" :disabled="!hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments" @click="closeModal('unpackOrder')">
         {{ translate("Unpack") }}
       </ion-item>
     </ion-list>
@@ -21,26 +21,32 @@
 <script lang="ts">
 import {
   IonContent,
-  IonIcon,
   IonItem,
-  IonList
+  IonList,
+  popoverController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { printOutline, lockOpenOutline } from 'ionicons/icons'
 import { translate } from "@hotwax/dxp-components";
+import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
   name: "ShippingPopover",
   components: { 
     IonContent,
-    IonIcon,
     IonItem,
     IonList,
   },
+  props: ['hasPackedShipments', 'order'],
+  methods: {
+    closeModal(selectedMethod: string) {
+      // Sending function name to be called after popover dismiss.
+      popoverController.dismiss({ dismissed: true, selectedMethod })
+    }
+  },
   setup() {
     return {
-      printOutline,
-      lockOpenOutline,
+      Actions,
+      hasPermission,
       translate 
     }
   }

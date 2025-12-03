@@ -467,7 +467,7 @@ import { UtilService } from "@/services/UtilService";
 import { DateTime } from 'luxon';
 import { prepareOrderQuery, prepareSolrQuery } from '@/utils/solrHelper';
 import Popover from '@/views/ShippingPopover.vue'
-import PackagingPopover from "@/views/PackagingPopover.vue";
+import PackagingPopover from "@/components/PackagingPopover.vue";
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
 import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
 import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
@@ -1641,19 +1641,6 @@ ion-card-header {
   justify-content: space-between;
   align-items: center;
   padding-bottom: 0px;
-}
-
-.box-type {
-  display: flex;
-  gap: var(--spacer-sm);
-  border-bottom: var(--border-medium);
-  padding: var(--ion-item-like-padding);
-  align-items: center;
-}
-
-.box-type > ion-skeleton-text {
-  width: 10%;
-  height: 30px;
 }
 
 ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-text {

@@ -355,6 +355,19 @@ img {
 
 /* shipment card layout end */
 
+.box-type {
+  display: flex;
+  gap: var(--spacer-sm);
+  border-bottom: var(--border-medium);
+  padding: var(--ion-item-like-padding);
+  align-items: center;
+}
+
+.box-type > ion-skeleton-text {
+  width: 10%;
+  height: 30px;
+}
+
 .desktop-only {
   display: none;
 }

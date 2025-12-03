@@ -143,7 +143,7 @@
                   <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
                     <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline"/>
                   </ion-button>
-                  <ion-button color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
+                  <ion-button class="desktop-only" color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
                     <ion-icon slot="icon-only" :icon="trashBinOutline"/>
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
@@ -181,7 +181,7 @@
             <div class="mobile-only">
               <ion-item>
                 <ion-button fill="clear" @click.stop="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
-                <ion-button slot="end" fill="clear" color="medium" @click.stop="packagingPopover">
+                <ion-button slot="end" fill="clear" color="medium" @click.stop="packagingPopover($event, order)">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -288,7 +288,7 @@ import {
   printOutline,
   trashBinOutline
 } from 'ionicons/icons'
-import PackagingPopover from "@/views/PackagingPopover.vue";
+import PackagingPopover from "@/components/PackagingPopover.vue";
 import { mapGetters, useStore } from 'vuex';
 import { copyToClipboard, getFeatures, getFacilityFilter, hasActiveFilters, showToast } from '@/utils';
 import { isKit } from '@/utils/order'
@@ -309,6 +309,8 @@ import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
+import EditPackagingModal from '@/components/EditPackagingModal.vue'
+import ReportIssueModal from '@/components/ReportIssueModal.vue'
 import { OrderService } from '@/services/OrderService';
 import { useRouter } from "vue-router";
 
@@ -454,13 +456,26 @@ export default defineComponent({
     getInProgressOrders() {
       return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
     },
-    async packagingPopover(ev: Event) {
+    async packagingPopover(ev: Event, order: any) {
       const popover = await popoverController.create({
         component: PackagingPopover,
+        componentProps: { order },
         event: ev,
         translucent: true,
         showBackdrop: false,
       });
+
+      popover.onDidDismiss().then(async(result) => {
+        if(result.data?.dismissed) {
+          const selectedAction = result.data.selectedAction;
+
+          const modal = await modalController.create({
+            component: selectedAction === 'editPackaging' ? EditPackagingModal : ReportIssueModal,
+            componentProps: selectedAction === 'editPackaging' ? { order, addShipmentBox: this.addShipmentBox,  } : { order }
+          })
+          modal.present();
+        }
+      })
       return popover.present();
     },
     async packOrder(order: any) {
@@ -1253,6 +1268,7 @@ export default defineComponent({
       await this.fetchPickersInformation()
       await Promise.all([
         this.store.dispatch('util/fetchRejectReasonOptions'),
+        this.store.dispatch('util/fetchCarrierShipmentBoxTypes'),
         this.initialiseOrderQuery()
       ]);
     } finally {
@@ -1260,10 +1276,12 @@ export default defineComponent({
     }
 
     emitter.on('updateOrderQuery', this.updateOrderQuery)
+    emitter.on('updateRejectReason', this.updateRejectReason)
   },
   beforeRouteLeave() {
     this.store.dispatch('order/clearInProgressOrders')
     emitter.off('updateOrderQuery', this.updateOrderQuery)
+    emitter.off('updateRejectReason', this.updateRejectReason)
   },
   setup() {
     const router = useRouter();
@@ -1311,26 +1329,20 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.box-type {
-  display: flex;
-  gap: var(--spacer-sm);
-  border-bottom: var(--border-medium);
-  padding: var(--ion-item-like-padding);
-  align-items: center;
-}
-
-.box-type > ion-skeleton-text {
-  width: 10%;
-  height: 30px;
-}
-
 ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-text {
   width: 100%;
   height: 30px;
 }
 
-.order-item {
-  grid-template-columns: repeat(3, 1fr);
+.product-metadata {
+  display: flex;
+  align-items: center;
+}
+
+@media (min-width: 991px) {
+  .order-item {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 </style>
 
