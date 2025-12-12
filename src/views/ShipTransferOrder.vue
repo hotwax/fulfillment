@@ -232,7 +232,7 @@ onBeforeRouteLeave(async () => {
         },
       },
       {
-        text: translate("Continue"),
+        text: translate("Ship later"),
         handler: async () => {
           try {
             const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId);
