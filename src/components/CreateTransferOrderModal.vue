@@ -153,8 +153,8 @@ async function createTransferOrder() {
     shipGroups: [{
       facilityId: originFacilityId,
       orderFacilityId: selectedDestinationFacilityId.value,
-      carrierPartyId: '_NA_',
-      shipmentMethodTypeId: 'STANDARD'
+      //carrierPartyId: '_NA_',
+      //shipmentMethodTypeId: 'STANDARD'
     }],
   };
   
