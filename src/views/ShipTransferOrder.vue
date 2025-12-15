@@ -53,11 +53,11 @@
           <ion-card v-if="shipmentDetails?.carrierServiceStatusId === 'SHRSCS_ACCEPTED'">
             <ion-item lines="full">
               <ion-avatar slot="start">
-                <Image :src="getCarrierLogo(shipmentDetails.routeSegCarrierPartyId)" />
+                <Image :src="getCarrierLogo(shipmentDetails.actualCarrierCode || shipmentDetails.routeSegCarrierPartyId)" />
               </ion-avatar>
               <ion-label>
                 {{ formatCurrency(shipmentDetails.shippingEstimateAmount, shipmentDetails.currencyUom) }}
-                <p>{{ generateRateName(shipmentDetails.routeSegCarrierPartyId, shipmentDetails.routeSegShipmentMethodTypeId) }}</p>
+                <p>{{ generateRateName(shipmentDetails.actualCarrierCode || shipmentDetails.routeSegCarrierPartyId, shipmentDetails.carrierService || shipmentDetails.routeSegShipmentMethodTypeId) }}</p>
                 <!-- this field is not coming it the shipping rates api -->
                 <!-- <p>estimated delivery date</p> -->
               </ion-label>
@@ -90,16 +90,17 @@
               <ion-list v-else-if="shippingRates.length">
                 <ion-item v-for="(shippingRate, index) in shippingRates" :key="index">
                   <ion-avatar slot="start">
-                    <Image :src="getCarrierLogo(shippingRate.carrierPartyId)" />
+                    <Image :src="getCarrierLogo(shippingRate.actualCarrier || shippingRate.carrierPartyId)" />
                   </ion-avatar>
                   <ion-label>
                     {{ formatCurrency(shippingRate.shippingEstimateAmount, shipmentDetails.currencyUom) }}
-                    <p>{{ generateRateName(shippingRate.carrierPartyId, shippingRate.shipmentMethodTypeId) }}</p>
+                    <p>{{ generateRateName(shippingRate.actualCarrier || shippingRate.carrierPartyId, shippingRate.carrierService || shippingRate.shipmentMethodTypeId) }}</p>
                     <!-- this field is not coming it the shipping rates api -->
                     <!-- <p>estimated delivery date</p> -->
+                    <p v-if="shippingRate?.serviceDays">{{ "Service Days:" }} {{ shippingRate.serviceDays }}</p>
                   </ion-label>
                   <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" :disabled="!!selectedCarrierService" @click="updateCarrierAndShippingMethod(shippingRate)">
-                    <ion-spinner v-if="selectedCarrierService === shippingRate.carrierPartyId+'_'+shippingRate.shipmentMethodTypeId" slot="start" name="crescent" />
+                    <ion-spinner v-if="selectedCarrierService ===  ((shippingRate.actualCarrier || shippingRate.carrierPartyId)+'_'+(shippingRate.carrierService || shippingRate.shipmentMethodTypeId))" slot="start" name="crescent" />
                     {{ translate("Purchase label") }}
                   </ion-button>
                 </ion-item>
@@ -429,12 +430,12 @@ async function voidShippingLabelAlert() {
 
 async function updateCarrierAndShippingMethod(shippingRate: any) {
   let resp;
-  selectedCarrierService.value = shippingRate.carrierPartyId+'_'+shippingRate.shipmentMethodTypeId
+  selectedCarrierService.value = (shippingRate.actualCarrier || shippingRate.carrierPartyId)+'_'+(shippingRate.carrierService || shippingRate.shipmentMethodTypeId)
   try {
     const payload = {
       shipmentId: shipmentDetails.value.shipmentId,
       shipmentRouteSegmentId: shipmentDetails.value.shipmentRouteSegmentId,
-      shipmentMethodTypeId: shippingRate.shipmentMethodTypeId,
+      shipmentMethodTypeId: shippingRate.shipmentMethodTypeId || shippingRate.carrierServiceCode,
       carrierPartyId: shippingRate.carrierPartyId,
       actualCost: shippingRate.shippingEstimateAmount,
       carrierServiceStatusId: 'SHRSCS_CONFIRMED'
@@ -443,11 +444,14 @@ async function updateCarrierAndShippingMethod(shippingRate: any) {
     if (shippingRate.actualCarrierCode) {
       payload.actualCarrierCode = shippingRate.actualCarrierCode;
     }
+    if (shippingRate.carrierService) {
+      payload.carrierService = shippingRate.carrierService;
+    }
     if (shippingRate.gatewayRateId) {
       payload.gatewayRateId = shippingRate.gatewayRateId;
     }
 
-    resp = await OrderService.updateShipmentCarrierAndMethod(payload);
+    resp = await OrderService.updateRouteShipmentCarrierAndMethod(payload);
     if(!hasError(resp)) {
       await purchaseShippingLabel();
     } else {
