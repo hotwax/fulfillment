@@ -23,6 +23,13 @@
               <!-- TODO: shipping distance field is not coming in the api resposne -->
             </ion-label>
           </ion-item>
+          <ion-item lines="full" v-if="shipmentDetails?.carrierPartyId && shipmentDetails?.shipmentMethodTypeId">
+            <ion-icon :icon="pricetagOutline" slot="start" />
+            <ion-label>
+              <p class="overline">{{ translate("Shipping method") }}</p>
+              {{ generateRateName(shipmentDetails.carrierPartyId, shipmentDetails.shipmentMethodTypeId) }}
+            </ion-label>
+          </ion-item>
           <ion-list>
             <ion-list-header>{{ translate("Items") }}</ion-list-header>
             <ion-item v-for="item in shipmentItems" :key="item.shipmentItemSeqId">
@@ -159,7 +166,7 @@
 import { computed, ref } from 'vue'
 import { useStore } from 'vuex';
 import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonSegment, IonSegmentButton, IonSpinner, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from '@ionic/vue'
-import { openOutline, printOutline, storefrontOutline } from 'ionicons/icons'
+import { openOutline, pricetagOutline, printOutline, storefrontOutline } from 'ionicons/icons'
 import { DxpShopifyImg, getProductIdentificationValue, useProductIdentificationStore, translate } from '@hotwax/dxp-components';
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { OrderService } from '@/services/OrderService'
@@ -202,6 +209,7 @@ let facilities = ref([]) as any;
 let carrierShipmentMethods = ref<Record<string, any>>({}) as any;
 let isProcessingShipment = ref(false)
 let selectedCarrierService = ref("")
+const carrierLogos = ref<Record<string, string>>({})
 
 onIonViewWillEnter(async() => {
   facilities.value = await UtilService.fetchProductStoreFacilities();
@@ -286,6 +294,7 @@ async function fetchShipmentOrderDetail(shipmentId: string) {
     const resp = await TransferOrderService.fetchTransferShipmentDetails({ shipmentId: shipmentId });
     if(!hasError(resp)) {
       shipmentDetails.value = resp.data.shipments[0]
+      await fetchCarrierLogos([shipmentDetails.value.actualCarrierCode, shipmentDetails.value.routeSegCarrierPartyId])
       trackingCode.value = shipmentDetails.value.trackingIdNumber || ''
       const items = shipmentDetails.value?.packages?.flatMap((pkg: any) => pkg.items || []) || []
       const productIds = [...new Set(items.map((item: any) => item.productId))]
@@ -303,7 +312,7 @@ async function fetchShipmentOrderDetail(shipmentId: string) {
 // Retrieves the logo url for the selected or prefilled carrier
 function getCarrierLogo(partyId: string) {
   const carrier = facilityCarriers.value.find((carrier: any) => carrier.partyId === partyId);
-  return carrier?.logoUrl || '';
+  return carrier?.logoUrl || carrierLogos.value[partyId?.toUpperCase()] || '';
 }
 
 function getFacilityName(facilityId: string) {
@@ -329,11 +338,46 @@ function redirectToTrackingUrl() {
   window.open(getCarrierTrackingUrl().replace("${trackingNumber}", trackingCode.value), "_blank");
 }
 
+// Fetches logo URLs for carrier identifiers (party IDs or actual carrier codes)
+async function fetchCarrierLogos(carriers: string[] = []) {
+  const carrierIds = Array.from(new Set(carriers
+    .filter((carrierId): carrierId is string => Boolean(carrierId))
+    .map((carrierId: string) => carrierId.toUpperCase())));
+
+  const carrierIdsToFetch = carrierIds.filter((carrierId: string) => !carrierLogos.value[carrierId]);
+  if (!carrierIdsToFetch.length) return;
+
+  try {
+    const resp = await CarrierService.fetchCarrierTrackingUrls({
+      systemResourceId: carrierIdsToFetch,
+      systemResourceId_op: "in",
+      systemPropertyId: "%logo.url%",
+      systemPropertyId_op: "like",
+      fieldsToSelect: ["systemResourceId", "systemPropertyValue"]
+    });
+
+    if(!hasError(resp)) {
+      const logoMap = { ...carrierLogos.value };
+      resp.data.map((doc: any) => {
+        logoMap[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue;
+      })
+      carrierLogos.value = logoMap;
+    } else {
+      throw resp.data;
+    }
+  } catch (error) {
+    logger.error('Failed to fetch carrier logos', error);
+  }
+}
+
 async function fetchShippingRates() {
   try {
     const resp = await CarrierService.fetchShippingRates({ shipmentId: shipmentDetails.value.shipmentId })
     if(!hasError(resp)) {
       shippingRates.value = resp.data?.shippingRates || []
+      const carriers = shippingRates.value.map((rate: any) => rate.actualCarrier || rate.actualCarrierCode || rate.carrierPartyId);
+      if (shipmentDetails.value?.actualCarrierCode) carriers.push(shipmentDetails.value.actualCarrierCode);
+      await fetchCarrierLogos(carriers)
     } else { 
       throw resp.data
     }
