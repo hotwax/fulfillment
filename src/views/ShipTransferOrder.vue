@@ -52,11 +52,11 @@
         <!-- Shipping label  -->
         <div class="shipping">
           <ion-segment :disabled="shipmentDetails?.carrierServiceStatusId === 'SHRSCS_ACCEPTED'" v-model="selectedSegment" @ionChange="segmentChanged">
-            <ion-segment-button value="purchase">{{ translate("Purchase shipping label") }}</ion-segment-button>
+            <ion-segment-button value="generate">{{ translate("Generate shipping label") }}</ion-segment-button>
             <ion-segment-button value="manual">{{ translate("Manual tracking") }}</ion-segment-button>
           </ion-segment>
 
-          <!-- card after purchase shipping label generated -->
+          <!-- card after shipping label generated -->
           <ion-card v-if="shipmentDetails?.carrierServiceStatusId === 'SHRSCS_ACCEPTED'">
             <ion-item lines="full">
               <ion-avatar slot="start">
@@ -85,8 +85,8 @@
           </ion-card>
 
           <template v-else>
-            <!-- purchase shipping segment -->
-            <template v-if="selectedSegment === 'purchase'">
+            <!-- shipping label generation segment -->
+            <template v-if="selectedSegment === 'generate'">
               <!-- Loading state -->
               <div v-if="isLoadingRates" class="empty-state">
                 <ion-spinner name="crescent" />
@@ -108,7 +108,7 @@
                   </ion-label>
                   <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" :disabled="!!selectedCarrierService" @click="updateCarrierAndShippingMethod(shippingRate)">
                     <ion-spinner v-if="selectedCarrierService ===  ((shippingRate.actualCarrier || shippingRate.carrierPartyId)+'_'+(shippingRate.carrierService || shippingRate.shipmentMethodTypeId))" slot="start" name="crescent" />
-                    {{ translate("Purchase label") }}
+                    {{ translate("Generate label") }}
                   </ion-button>
                 </ion-item>
               </ion-list>
@@ -196,7 +196,7 @@ const shipmentItems = computed(() => {
   return shipmentDetails.value.packages.flatMap((pkg: any) => pkg.items || [])
 })
 
-const selectedSegment = ref('purchase')
+const selectedSegment = ref('generate')
 const selectedCarrier = ref('')
 const shipmentMethods = ref([]) as any;
 const selectedShippingMethod = ref('')
@@ -395,8 +395,8 @@ function generateRateName(carrierPartyId: string, shipmentMethodTypeId: string) 
   return `${carrierDesc} - ${methodDesc}`;
 }
 
-// Purchases a new shipping label by updating carrier/method, retrying label generation, refreshing shipment details, and printing the label.
-async function purchaseShippingLabel() {
+// Generates a new shipping label by updating carrier/method, retrying label generation, refreshing shipment details, and printing the label.
+async function generateShippingLabel() {
   const shipment = shipmentDetails.value;
 
   try {
@@ -404,8 +404,8 @@ async function purchaseShippingLabel() {
     await fetchShipmentOrderDetail(shipment.shipmentId)
     await printShippingLabel();
   } catch (error) {
-    logger.error("Failed to purchase shipping label", error);
-    showToast(translate("Failed to purchase shipping label"));
+    logger.error("Failed to generate shipping label", error);
+    showToast(translate("Failed to generate shipping label"));
   }
 }
 
@@ -497,7 +497,7 @@ async function updateCarrierAndShippingMethod(shippingRate: any) {
 
     resp = await OrderService.updateRouteShipmentCarrierAndMethod(payload);
     if(!hasError(resp)) {
-      await purchaseShippingLabel();
+      await generateShippingLabel();
     } else {
       throw resp.data
     }
@@ -526,8 +526,8 @@ async function shipOrder() {
       showToast(translate('Please enter a tracking number'));
       return;
     }
-  } else if(selectedSegment.value === "purchase" && shipment?.carrierServiceStatusId !== 'SHRSCS_ACCEPTED') {
-    showToast(translate('Please purchase a shipping label'))
+  } else if(selectedSegment.value === "generate" && shipment?.carrierServiceStatusId !== 'SHRSCS_ACCEPTED') {
+    showToast(translate('Please generate a shipping label'))
     return;
   }
 
