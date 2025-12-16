@@ -23,6 +23,13 @@
               <!-- TODO: shipping distance field is not coming in the api resposne -->
             </ion-label>
           </ion-item>
+          <ion-item lines="full" v-if="shipmentDetails?.carrierPartyId && shipmentDetails?.shipmentMethodTypeId">
+            <ion-icon :icon="pricetagOutline" slot="start" />
+            <ion-label>
+              <p class="overline">{{ translate("Shipping method") }}</p>
+              {{ generateRateName(shipmentDetails.carrierPartyId, shipmentDetails.shipmentMethodTypeId) }}
+            </ion-label>
+          </ion-item>
           <ion-list>
             <ion-list-header>{{ translate("Items") }}</ion-list-header>
             <ion-item v-for="item in shipmentItems" :key="item.shipmentItemSeqId">
@@ -45,19 +52,19 @@
         <!-- Shipping label  -->
         <div class="shipping">
           <ion-segment :disabled="shipmentDetails?.carrierServiceStatusId === 'SHRSCS_ACCEPTED'" v-model="selectedSegment" @ionChange="segmentChanged">
-            <ion-segment-button value="purchase">{{ translate("Purchase shipping label") }}</ion-segment-button>
+            <ion-segment-button value="generate">{{ translate("Generate shipping label") }}</ion-segment-button>
             <ion-segment-button value="manual">{{ translate("Manual tracking") }}</ion-segment-button>
           </ion-segment>
 
-          <!-- card after purchase shipping label generated -->
+          <!-- card after shipping label generated -->
           <ion-card v-if="shipmentDetails?.carrierServiceStatusId === 'SHRSCS_ACCEPTED'">
             <ion-item lines="full">
               <ion-avatar slot="start">
-                <Image :src="getCarrierLogo(shipmentDetails.routeSegCarrierPartyId)" />
+                <Image :src="getCarrierLogo(shipmentDetails.actualCarrierCode || shipmentDetails.routeSegCarrierPartyId)" />
               </ion-avatar>
               <ion-label>
                 {{ formatCurrency(shipmentDetails.shippingEstimateAmount, shipmentDetails.currencyUom) }}
-                <p>{{ generateRateName(shipmentDetails.routeSegCarrierPartyId, shipmentDetails.routeSegShipmentMethodTypeId) }}</p>
+                <p>{{ generateRateName(shipmentDetails.actualCarrierCode || shipmentDetails.routeSegCarrierPartyId, shipmentDetails.carrierService || shipmentDetails.routeSegShipmentMethodTypeId) }}</p>
                 <!-- this field is not coming it the shipping rates api -->
                 <!-- <p>estimated delivery date</p> -->
               </ion-label>
@@ -78,8 +85,8 @@
           </ion-card>
 
           <template v-else>
-            <!-- purchase shipping segment -->
-            <template v-if="selectedSegment === 'purchase'">
+            <!-- shipping label generation segment -->
+            <template v-if="selectedSegment === 'generate'">
               <!-- Loading state -->
               <div v-if="isLoadingRates" class="empty-state">
                 <ion-spinner name="crescent" />
@@ -90,17 +97,18 @@
               <ion-list v-else-if="shippingRates.length">
                 <ion-item v-for="(shippingRate, index) in shippingRates" :key="index">
                   <ion-avatar slot="start">
-                    <Image :src="getCarrierLogo(shippingRate.carrierPartyId)" />
+                    <Image :src="getCarrierLogo(shippingRate.actualCarrier || shippingRate.carrierPartyId)" />
                   </ion-avatar>
                   <ion-label>
                     {{ formatCurrency(shippingRate.shippingEstimateAmount, shipmentDetails.currencyUom) }}
-                    <p>{{ generateRateName(shippingRate.carrierPartyId, shippingRate.shipmentMethodTypeId) }}</p>
+                    <p>{{ generateRateName(shippingRate.actualCarrier || shippingRate.carrierPartyId, shippingRate.carrierService || shippingRate.shipmentMethodTypeId) }}</p>
                     <!-- this field is not coming it the shipping rates api -->
                     <!-- <p>estimated delivery date</p> -->
+                    <p v-if="shippingRate?.serviceDays">{{ "Service Days:" }} {{ shippingRate.serviceDays }}</p>
                   </ion-label>
                   <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" :disabled="!!selectedCarrierService" @click="updateCarrierAndShippingMethod(shippingRate)">
-                    <ion-spinner v-if="selectedCarrierService === shippingRate.carrierPartyId+'_'+shippingRate.shipmentMethodTypeId" slot="start" name="crescent" />
-                    {{ translate("Purchase label") }}
+                    <ion-spinner v-if="selectedCarrierService ===  ((shippingRate.actualCarrier || shippingRate.carrierPartyId)+'_'+(shippingRate.carrierService || shippingRate.shipmentMethodTypeId))" slot="start" name="crescent" />
+                    {{ translate("Generate label") }}
                   </ion-button>
                 </ion-item>
               </ion-list>
@@ -158,7 +166,7 @@
 import { computed, ref } from 'vue'
 import { useStore } from 'vuex';
 import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonSegment, IonSegmentButton, IonSpinner, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from '@ionic/vue'
-import { openOutline, printOutline, storefrontOutline } from 'ionicons/icons'
+import { openOutline, pricetagOutline, printOutline, storefrontOutline } from 'ionicons/icons'
 import { DxpShopifyImg, getProductIdentificationValue, useProductIdentificationStore, translate } from '@hotwax/dxp-components';
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { OrderService } from '@/services/OrderService'
@@ -188,7 +196,7 @@ const shipmentItems = computed(() => {
   return shipmentDetails.value.packages.flatMap((pkg: any) => pkg.items || [])
 })
 
-const selectedSegment = ref('purchase')
+const selectedSegment = ref('generate')
 const selectedCarrier = ref('')
 const shipmentMethods = ref([]) as any;
 const selectedShippingMethod = ref('')
@@ -201,6 +209,7 @@ let facilities = ref([]) as any;
 let carrierShipmentMethods = ref<Record<string, any>>({}) as any;
 let isProcessingShipment = ref(false)
 let selectedCarrierService = ref("")
+const carrierLogos = ref<Record<string, string>>({})
 
 onIonViewWillEnter(async() => {
   facilities.value = await UtilService.fetchProductStoreFacilities();
@@ -285,6 +294,7 @@ async function fetchShipmentOrderDetail(shipmentId: string) {
     const resp = await TransferOrderService.fetchTransferShipmentDetails({ shipmentId: shipmentId });
     if(!hasError(resp)) {
       shipmentDetails.value = resp.data.shipments[0]
+      await fetchCarrierLogos([shipmentDetails.value.actualCarrierCode, shipmentDetails.value.routeSegCarrierPartyId])
       trackingCode.value = shipmentDetails.value.trackingIdNumber || ''
       const items = shipmentDetails.value?.packages?.flatMap((pkg: any) => pkg.items || []) || []
       const productIds = [...new Set(items.map((item: any) => item.productId))]
@@ -302,7 +312,7 @@ async function fetchShipmentOrderDetail(shipmentId: string) {
 // Retrieves the logo url for the selected or prefilled carrier
 function getCarrierLogo(partyId: string) {
   const carrier = facilityCarriers.value.find((carrier: any) => carrier.partyId === partyId);
-  return carrier?.logoUrl || '';
+  return carrier?.logoUrl || carrierLogos.value[partyId?.toUpperCase()] || '';
 }
 
 function getFacilityName(facilityId: string) {
@@ -328,11 +338,46 @@ function redirectToTrackingUrl() {
   window.open(getCarrierTrackingUrl().replace("${trackingNumber}", trackingCode.value), "_blank");
 }
 
+// Fetches logo URLs for carrier identifiers (party IDs or actual carrier codes)
+async function fetchCarrierLogos(carriers: string[] = []) {
+  const carrierIds = Array.from(new Set(carriers
+    .filter((carrierId): carrierId is string => Boolean(carrierId))
+    .map((carrierId: string) => carrierId.toUpperCase())));
+
+  const carrierIdsToFetch = carrierIds.filter((carrierId: string) => !carrierLogos.value[carrierId]);
+  if (!carrierIdsToFetch.length) return;
+
+  try {
+    const resp = await CarrierService.fetchCarrierTrackingUrls({
+      systemResourceId: carrierIdsToFetch,
+      systemResourceId_op: "in",
+      systemPropertyId: "%logo.url%",
+      systemPropertyId_op: "like",
+      fieldsToSelect: ["systemResourceId", "systemPropertyValue"]
+    });
+
+    if(!hasError(resp)) {
+      const logoMap = { ...carrierLogos.value };
+      resp.data.map((doc: any) => {
+        logoMap[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue;
+      })
+      carrierLogos.value = logoMap;
+    } else {
+      throw resp.data;
+    }
+  } catch (error) {
+    logger.error('Failed to fetch carrier logos', error);
+  }
+}
+
 async function fetchShippingRates() {
   try {
     const resp = await CarrierService.fetchShippingRates({ shipmentId: shipmentDetails.value.shipmentId })
     if(!hasError(resp)) {
       shippingRates.value = resp.data?.shippingRates || []
+      const carriers = shippingRates.value.map((rate: any) => rate.actualCarrier || rate.actualCarrierCode || rate.carrierPartyId);
+      if (shipmentDetails.value?.actualCarrierCode) carriers.push(shipmentDetails.value.actualCarrierCode);
+      await fetchCarrierLogos(carriers)
     } else { 
       throw resp.data
     }
@@ -350,8 +395,8 @@ function generateRateName(carrierPartyId: string, shipmentMethodTypeId: string) 
   return `${carrierDesc} - ${methodDesc}`;
 }
 
-// Purchases a new shipping label by updating carrier/method, retrying label generation, refreshing shipment details, and printing the label.
-async function purchaseShippingLabel() {
+// Generates a new shipping label by updating carrier/method, retrying label generation, refreshing shipment details, and printing the label.
+async function generateShippingLabel() {
   const shipment = shipmentDetails.value;
 
   try {
@@ -359,8 +404,8 @@ async function purchaseShippingLabel() {
     await fetchShipmentOrderDetail(shipment.shipmentId)
     await printShippingLabel();
   } catch (error) {
-    logger.error("Failed to purchase shipping label", error);
-    showToast(translate("Failed to purchase shipping label"));
+    logger.error("Failed to generate shipping label", error);
+    showToast(translate("Failed to generate shipping label"));
   }
 }
 
@@ -429,12 +474,12 @@ async function voidShippingLabelAlert() {
 
 async function updateCarrierAndShippingMethod(shippingRate: any) {
   let resp;
-  selectedCarrierService.value = shippingRate.carrierPartyId+'_'+shippingRate.shipmentMethodTypeId
+  selectedCarrierService.value = (shippingRate.actualCarrier || shippingRate.carrierPartyId)+'_'+(shippingRate.carrierService || shippingRate.shipmentMethodTypeId)
   try {
     const payload = {
       shipmentId: shipmentDetails.value.shipmentId,
       shipmentRouteSegmentId: shipmentDetails.value.shipmentRouteSegmentId,
-      shipmentMethodTypeId: shippingRate.shipmentMethodTypeId,
+      shipmentMethodTypeId: shippingRate.shipmentMethodTypeId || shippingRate.carrierServiceCode,
       carrierPartyId: shippingRate.carrierPartyId,
       actualCost: shippingRate.shippingEstimateAmount,
       carrierServiceStatusId: 'SHRSCS_CONFIRMED'
@@ -443,13 +488,16 @@ async function updateCarrierAndShippingMethod(shippingRate: any) {
     if (shippingRate.actualCarrierCode) {
       payload.actualCarrierCode = shippingRate.actualCarrierCode;
     }
+    if (shippingRate.carrierService) {
+      payload.carrierService = shippingRate.carrierService;
+    }
     if (shippingRate.gatewayRateId) {
       payload.gatewayRateId = shippingRate.gatewayRateId;
     }
 
-    resp = await OrderService.updateShipmentCarrierAndMethod(payload);
+    resp = await OrderService.updateRouteShipmentCarrierAndMethod(payload);
     if(!hasError(resp)) {
-      await purchaseShippingLabel();
+      await generateShippingLabel();
     } else {
       throw resp.data
     }
@@ -478,8 +526,8 @@ async function shipOrder() {
       showToast(translate('Please enter a tracking number'));
       return;
     }
-  } else if(selectedSegment.value === "purchase" && shipment?.carrierServiceStatusId !== 'SHRSCS_ACCEPTED') {
-    showToast(translate('Please purchase a shipping label'))
+  } else if(selectedSegment.value === "generate" && shipment?.carrierServiceStatusId !== 'SHRSCS_ACCEPTED') {
+    showToast(translate('Please generate a shipping label'))
     return;
   }
 

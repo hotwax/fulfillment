@@ -742,6 +742,23 @@ const updateShipmentCarrierAndMethod = async (payload: any): Promise<any> => {
     data: payload,
   });
 }
+
+const updateRouteShipmentCarrierAndMethod = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return await apiClient({
+    url: `/poorti/updateRouteShipmentCarrierAndMethod`, //should handle the update of OISG, SRG, SPRG if needed
+    method: "PUT",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload,
+  });
+}
+
 const findOrderInvoicingInfo = async (payload: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
@@ -960,6 +977,7 @@ export const OrderService = {
   unpackOrder,
   updateOrderHeader,
   updateOrderFacility,
+  updateRouteShipmentCarrierAndMethod,
   updateShipmentCarrierAndMethod,
   voidShipmentLabel
 }
