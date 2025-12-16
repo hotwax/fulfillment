@@ -138,7 +138,7 @@ const shipTransferOrderShipment = async (payload: any): Promise<any> => {
   const omstoken = store.getters['user/getUserToken'];
   const baseURL = store.getters['user/getMaargBaseUrl'];
 
-  return apiClient({
+  return await apiClient({
     url: `poorti/transferShipments/${payload.shipmentId}/ship`,
     method: "post",
     baseURL,
