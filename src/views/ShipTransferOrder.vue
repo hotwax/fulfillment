@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button data-testid="ship-transfer-orders-back-btn" slot="start" defaultHref="/transfer-orders" />
+        <ion-back-button data-testid="ship-transfer-orders-back-btn" slot="start" :defaultHref="route?.params?.orderId ? `/transfer-order-details/${shipmentDetails.orderId}/open` : `/transfer-orders`" />
         <ion-title>{{ translate("Ship transfer order") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -151,7 +151,7 @@
       <ion-toolbar>
         <ion-buttons slot="end">
           <!-- need to add check here that after we print shiping label we need to disable this button. -->
-          <ion-button data-testid="ship-later-btn-ship-transfer-order-page" :disabled="shipmentDetails?.carrierServiceStatusId === 'SHRSCS_ACCEPTED' || isProcessingShipment || !!selectedCarrierService" fill="outline" color="primary" @click="router.replace('/transfer-orders')">{{ translate("Ship later") }}</ion-button>
+          <ion-button data-testid="ship-later-btn-ship-transfer-order-page" :disabled="shipmentDetails?.carrierServiceStatusId === 'SHRSCS_ACCEPTED' || isProcessingShipment || !!selectedCarrierService" fill="outline" color="primary" @click="shipLater()">{{ translate("Ship later") }}</ion-button>
           <ion-button data-testid="ship-order-btn" :disabled="isProcessingShipment || !!selectedCarrierService" fill="solid" color="primary" @click="shipOrder">
             <ion-spinner v-if="isProcessingShipment" slot="start" name="crescent" />
             {{ translate("Ship order") }}
@@ -165,7 +165,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useStore } from 'vuex';
-import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonSegment, IonSegmentButton, IonSpinner, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from '@ionic/vue'
+import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from '@ionic/vue'
 import { openOutline, pricetagOutline, printOutline, storefrontOutline } from 'ionicons/icons'
 import { DxpShopifyImg, getProductIdentificationValue, useProductIdentificationStore, translate } from '@hotwax/dxp-components';
 import { TransferOrderService } from '@/services/TransferOrderService';
@@ -226,46 +226,85 @@ onIonViewWillEnter(async() => {
 onBeforeRouteLeave(async () => {
   // If order is already shipped, allow navigation
   if(isOrderShipped.value) return true;
-
-  let canLeave = false;
-  const message = translate("Save this order without tracking details to ship later.");
-  const alert = await alertController.create({
-    header: translate("Ship later"),
-    message,
-    buttons: [
-      {
-        text: translate("Go back"),
-        role: 'cancel',
-        handler: () => {
-          canLeave = false;
-        },
-      },
-      {
-        text: translate("Ship later"),
-        handler: async () => {
-          try {
-            const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId);
-            if (!hasError(resp)) {
-              canLeave = true;
-              // When we will be coming from TO detail page in that case once successfull we need to clear the current TO details
-              await store.dispatch('transferorder/clearCurrentTransferOrder');
-              alertController.dismiss();
-            } else {
-              throw resp.data;
-            }
-          } catch (err) {
-            showToast(translate('Failed to cancel transfer order shipment'));
-            logger.error('Failed to cancel transfer order shipment', err);
+  //if origin is order detail page
+  if (route?.params?.orderId) {
+    let canLeave = false;
+    const message = translate("Are you sure that you want to discard this shipment?");
+    const alert = await alertController.create({
+      header: translate("Discard shipment"),
+      message,
+      buttons: [
+        {
+          text: translate("Cancel"),
+          handler: () => {
             canLeave = false;
           }
         },
-      },
-    ],
-  });
-
-  alert.present();
-  await alert.onDidDismiss();
-  return canLeave;
+        {
+          text: translate("Discard"),
+          handler: async () => {
+            try {
+              const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId);
+              if (!hasError(resp)) {
+                showToast(translate('Shipment is discarded.'));
+                canLeave = true;
+                alertController.dismiss();
+              } else {
+                throw resp.data;
+              }
+            } catch (err) {
+              showToast(translate('Failed to discard transfer order shipment'));
+              logger.error('Failed to discard transfer order shipment', err);
+              canLeave = false;
+            }
+          },
+        },
+      ],
+    });
+    alert.present();
+    await alert.onDidDismiss();
+    return canLeave;
+  } else {
+    //if origin is create order page
+    let canLeave = false;
+    const message = translate("Save this order without tracking details to ship later.");
+    const alert = await alertController.create({
+      header: translate("Ship later"),
+      message,
+      buttons: [
+        {
+          text: translate("Go back"),
+          role: 'cancel',
+          handler: () => {
+            canLeave = false;
+          },
+        },
+        {
+          text: translate("Ship later"),
+          handler: async () => {
+            try {
+              const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId);
+              if (!hasError(resp)) {
+                canLeave = true;
+                // When we will be coming from TO detail page in that case once successfull we need to clear the current TO details
+                await store.dispatch('transferorder/clearCurrentTransferOrder');
+                alertController.dismiss();
+              } else {
+                throw resp.data;
+              }
+            } catch (err) {
+              showToast(translate('Failed to cancel transfer order shipment'));
+              logger.error('Failed to cancel transfer order shipment', err);
+              canLeave = false;
+            }
+          },
+        },
+      ],
+    });
+    alert.present();
+    await alert.onDidDismiss();
+    return canLeave;
+  } 
 });
 
 function segmentChanged() {
@@ -508,6 +547,10 @@ async function updateCarrierAndShippingMethod(shippingRate: any) {
   }
 }
 
+async function shipLater() {
+  route?.params?.orderId ? router.replace({ path: `/transfer-order-details/${route?.params?.orderId}/open` }) : router.replace({ path: '/transfer-orders' });
+}
+
 async function shipOrder() {
   const shipment = shipmentDetails.value;
   if(!shipment) return;
@@ -553,7 +596,7 @@ async function shipOrder() {
     await TransferOrderService.shipTransferOrderShipment(payload)
     showToast(translate('Shipment shipped successfully.'));
     isProcessingShipment.value = false
-    router.replace({ path: '/transfer-orders' });
+    route?.params?.orderId ? router.replace({ path: `/transfer-order-details/${route?.params?.orderId}/open` }) : router.replace({ path: '/transfer-orders' });
   } catch (err) {
     isProcessingShipment.value = false
     isOrderShipped.value = false;

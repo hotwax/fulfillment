@@ -120,6 +120,13 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
+    path: '/transfer-order-details/:orderId/ship-transfer-order/:shipmentId',
+    name: 'ShipTransferOrderFromOrderDetail',
+    component: ShipTransferOrder,
+    beforeEnter: authGuard,
+    props: true
+  },
+  {
     path: '/:category/order-detail/:orderId/:shipGroupSeqId',
     name: 'OrderDetail',
     component: OrderDetail,

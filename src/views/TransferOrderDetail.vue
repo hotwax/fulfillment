@@ -260,7 +260,7 @@ export default defineComponent({
       this.isCreatingShipment = false;
       if (shipmentId) {
         await this.store.dispatch('transferorder/clearCurrentTransferShipment');
-        this.router.replace({ path: `/ship-transfer-order/${shipmentId}` })
+        this.router.push({ path: `/transfer-order-details/${this.currentOrder.orderId}/ship-transfer-order/${shipmentId}` })
       }
     },
     async confirmCreateShipment() {
