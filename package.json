@@ -1,6 +1,6 @@
 {
   "name": "fulfillment",
-  "version": "3.7.4",
+  "version": "3.7.6",
   "private": true,
   "description": "An Ionic project",
   "scripts": {
