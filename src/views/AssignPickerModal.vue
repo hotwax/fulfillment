@@ -216,10 +216,10 @@ export default defineComponent({
         query = `*:*`
       }
 
-      const facilityFilter = [];
+      /*const facilityFilter = [];
       if(!hasPermission(Actions.APP_SHOW_ALL_PICKERS)){
         facilityFilter.push(`facilityIds:${this.currentFacility.facilityId}`)
-      }
+      }*/
 
       const payload = {
         "json": {
@@ -230,7 +230,8 @@ export default defineComponent({
             "qf": "firstName lastName groupName partyId externalId",
             "sort": "firstName asc"
           },
-          "filter": ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true", ...facilityFilter]
+          //"filter": ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true", ...facilityFilter]
+          "filter": ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true"]
         }
       }
 
