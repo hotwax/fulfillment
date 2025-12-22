@@ -943,6 +943,22 @@ const updateOrderFacility = async (payload: any): Promise<any> => {
   });
 }
 
+const updateShipmentPackage = async (payload: any): Promise<any> => {
+  const omstoken = store.getters['user/getUserToken'];
+  const baseURL = store.getters['user/getMaargBaseUrl'];
+
+  return apiClient({
+    url: `/poorti/shipments/${payload.shipmentId}/shipmentPackages/${payload.shipmentPackageSeqId}`,
+    method: "PUT",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + omstoken,
+      "Content-Type": "application/json"
+    },
+    data: payload,
+  });
+}
+
 export const OrderService = {
   activateGiftCard,
   addShipmentBox,
@@ -979,5 +995,6 @@ export const OrderService = {
   updateOrderFacility,
   updateRouteShipmentCarrierAndMethod,
   updateShipmentCarrierAndMethod,
-  voidShipmentLabel
+  voidShipmentLabel,
+  updateShipmentPackage
 }
