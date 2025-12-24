@@ -167,7 +167,10 @@
           </ion-infinite-scroll>
         </div>
       </div>
-      <ion-fab v-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
+      <div v-if="isLoadingOrders" class="ion-padding ion-text-center">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
+      <ion-fab v-else-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button :disabled="hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click="bulkShipOrders()">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
@@ -294,7 +297,8 @@ export default defineComponent({
       selectedCarrierPartyId: "",
       carrierConfiguration: {} as any,
       isGeneratingManifest: false,
-      selectedShipmentMethods: [] as any
+      selectedShipmentMethods: [] as any,
+      isLoadingOrders: false
     }
   },
   computed: {
@@ -305,8 +309,8 @@ export default defineComponent({
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       getProductStock: 'stock/getProductStock',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
-      isShipNowDisabled: 'user/isShipNowDisabled',
-      isUnpackDisabled: 'user/isUnpackDisabled'
+      isShipNowDisabled: 'util/isShipNowDisabled',
+      isUnpackDisabled: 'util/isUnpackDisabled'
     }),
     getTotalPackages() {
       return this.carrierPartyIds.reduce((total: number, carrier: any) => total + Number(carrier.groups), 0);
@@ -314,13 +318,17 @@ export default defineComponent({
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
-    await this.fetchShipmentFacets()
-    //Remove the selected shipment methods and carriers that are no longer valid after editing the order detail page.
-    this.selectedShipmentMethods = this.selectedShipmentMethods?.filter((shipmentMethod: any) => this.shipmentMethods.includes(shipmentMethod));
-    const selectedCarrier = this.carrierPartyIds?.find((carrierPartyId: any) => carrierPartyId === this.selectedCarrierPartyId)
-    this.selectedCarrierPartyId = selectedCarrier ? selectedCarrier : ""
-
-    await this.initialiseOrderQuery()
+    this.isLoadingOrders = true;
+    try {
+      await this.fetchShipmentFacets()
+      //Remove the selected shipment methods and carriers that are no longer valid after editing the order detail page.
+      this.selectedShipmentMethods = this.selectedShipmentMethods?.filter((shipmentMethod: any) => this.shipmentMethods.includes(shipmentMethod));
+      const selectedCarrier = this.carrierPartyIds?.find((carrierPartyId: any) => carrierPartyId === this.selectedCarrierPartyId)
+      this.selectedCarrierPartyId = selectedCarrier ? selectedCarrier : ""
+      await this.initialiseOrderQuery()
+    } finally {
+      this.isLoadingOrders = false;
+    }
     emitter.on('updateOrderQuery', this.updateOrderQuery)
     this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
   },
@@ -637,13 +645,11 @@ export default defineComponent({
 
       order.isGeneratingShippingLabel = false;
     },
-    async showShippingLabelErrorModal(order: any){
-      // Getting all the shipment ids
-      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId);
+    async showShippingLabelErrorModal(order: any) {
       const shippingLabelErrorModal = await modalController.create({
         component: ShippingLabelErrorModal,
         componentProps: {
-          shipmentIds
+          shipmentId: order.shipmentId
         }
       });
       return shippingLabelErrorModal.present();

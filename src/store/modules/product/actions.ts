@@ -3,41 +3,34 @@ import { ActionTree } from 'vuex'
 import RootState from '@/store/RootState'
 import ProductState from './ProductState'
 import * as types from './mutation-types'
-import { hasError } from '@/adapter'
+import { hasError, searchProducts } from '@/adapter'
 import logger from "@/logger";
-import { useUserStore } from "@hotwax/dxp-components";
 
 const actions: ActionTree<ProductState, RootState> = {
 
   async fetchProducts ( { commit, state }, { productIds }) {
     const cachedProductIds = Object.keys(state.cached);
-    let viewSize = 0;
-    const productIdFilter= productIds.reduce((filter: string, productId: any) => {
-      // If product already exist in cached products skip
-      if (cachedProductIds.includes(productId)) {
-        return filter;
-      } else {
-        // checking condition that if the filter is not empty then adding 'OR' to the filter
-        if (filter !== '') filter += ' OR '
-        viewSize++; // updating viewSize when productId is not found in the cache state
-        return filter += productId;
-      }
-    }, '');
-
+    const productIdFilter = productIds.filter((productId: any) => !cachedProductIds.includes(productId));
+    const viewSize = productIdFilter.length;
     // If there are no products skip the API call
-    if (productIdFilter === '') return;
+    if (!viewSize) return;
 
     let resp;
     try {
-      resp = await ProductService.fetchProducts({
-        "filters": ['productId: (' + productIdFilter + ')'],
+      resp = await searchProducts({
+        filters: { 
+          "productId": {
+            value: productIdFilter,
+            op: 'OR'
+          }
+        },
         viewSize
       })
-      if (resp.status === 200 && resp.data?.response && !hasError(resp)) {
-        const products = resp.data.response.docs;
+      if (resp.total) {
+        const products = resp.products;
         commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
       } else {
-        throw resp.data
+        throw resp
       }
     } catch(err) {
       logger.error('Failed to fetch products information', err)

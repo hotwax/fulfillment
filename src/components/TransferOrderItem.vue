@@ -27,7 +27,7 @@
         <ion-button v-if="item.orderedQuantity" @click="pickAll(item)" slot="start" size="small" fill="outline" :disabled="isForceScanEnabled">
           {{ translate("Pick All") }}
         </ion-button>
-        <ion-button data-testid="book-qoh-btn" v-else :disabled="!item.qoh || item.qoh <= 0 || item.pickedQuantity === item.qoh" slot="start" size="small" fill="outline" @click="bookQoh(item)">
+        <ion-button data-testid="book-qoh-btn" v-else :disabled="!item.qoh || item.qoh <= 0 || item.pickedQuantity >= item.qoh" slot="start" size="small" fill="outline" @click="bookQoh(item)">
           {{ translate("Book qoh") }}
         </ion-button>
       </div>
@@ -52,20 +52,22 @@
         </ion-chip>
       </div>
 
-      <div class="to-item-history" v-else-if="item.shippedQuantity">
+      <div class="to-item-history" v-else-if="orderStatus !== 'created'">
         <ion-chip outline @click="item.shippedQuantity && shippedHistory(item.productId)">
           <ion-icon :icon="checkmarkDone"/>
-          <ion-label> {{ item.shippedQuantity }} {{ translate("shipped") }} </ion-label>
+          <ion-label> {{ item.shippedQuantity || 0 }} {{ translate("shipped") }} </ion-label>
         </ion-chip>
       </div>
 
-      <div class="qty-ordered" v-else-if="item.orderedQuantity">
+      <div class="qty-ordered" v-if="item.orderedQuantity">
         <ion-label>{{ item.orderedQuantity }} {{ translate("ordered") }}</ion-label>
       </div>
 
-      <ion-item v-else class="qty-ordered" lines="none">
-        <ion-label>{{ item.qoh >= 0 ? item.qoh : '-' }} {{ translate("Qoh") }}</ion-label>
-        <ion-icon data-testid="remove-item-btn" slot="end" color="danger" :icon="removeCircleOutline" @click="removeOrderItem(item)" />
+      <ion-item v-if="orderStatus === 'created'" class="qty-qoh" lines="none">
+        <ion-label>{{ item.qoh != null ? item.qoh : 0 }} {{ translate("Qoh") }}</ion-label>
+        <ion-button data-testid="remove-item-btn" size="default" fill="clear" slot="end" color="danger" @click="removeOrderItem(item)">
+          <ion-icon slot="icon-only" :icon="removeCircleOutline" />
+        </ion-button>
       </ion-item>
     </div>
   </ion-card>
@@ -85,7 +87,7 @@ import {
   modalController,
   popoverController,
 } from '@ionic/vue';
-import { computed, defineComponent, onMounted } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { add, caretDownOutline, checkmarkDone, closeCircleOutline, barcodeOutline, removeCircleOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from "vuex";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
@@ -99,6 +101,7 @@ import logger from '@/logger';
 import { showToast } from '@/utils';
 import ShippedHistoryModal from '@/components/ShippedHistoryModal.vue'
 import ReportIssuePopover from './ReportIssuePopover.vue';
+import emitter from '@/event-bus';
 
 export default defineComponent({
   name: "TransferOrderItem",
@@ -116,7 +119,7 @@ export default defineComponent({
   },
   // As we are using the same component on detail and review page, thus defined prop isRejectionSupported
   // for handing the case to enable rejection functionality
-  props: ["itemDetail", "isRejectionSupported", "lastScannedId"],
+  props: ["itemDetail", "isRejectionSupported", "lastScannedId", "orderStatus"],
   data() {
     return {
       pickedQuantity: this.itemDetail.pickedQuantity,
@@ -147,7 +150,12 @@ export default defineComponent({
       else return 'primary'
     },
     getPickedToOrderedFraction(item: any) {
-      return item.quantity ? item.pickedQuantity / item.qoh : (parseInt(item.pickedQuantity) + this.item.shippedQuantity) / item.orderedQuantity
+      if (item.orderedQuantity && item.orderedQuantity > 0) { 
+        return ((item.pickedQuantity || 0) + (item.shippedQuantity || 0)) / item.orderedQuantity;
+      } else if (item.qoh && item.qoh > 0) { 
+        return item.pickedQuantity / item.qoh;
+      }
+      return 0; 
     },
     async pickAll(item: any) {
       const selectedItem = this.currentOrder.items.find((ele: any) => ele.orderItemSeqId === item.orderItemSeqId);
@@ -167,6 +175,8 @@ export default defineComponent({
       if (selectedItem) {
         selectedItem.pickedQuantity = event.detail.value ? parseInt(event.detail.value) : 0;
         selectedItem.progress = parseInt(selectedItem.pickedQuantity);
+        item.pickedQuantity = selectedItem.pickedQuantity;
+        item.progress = selectedItem.progress;
       }
       await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
     },
@@ -180,8 +190,16 @@ export default defineComponent({
     },
     validatePickedQuantity(event: any, item: any) {
       const value = event.target.value;
+      const path = this.router.currentRoute.value.path;
+
       (this as any).$refs.pickedQuantity.$el.classList.remove('ion-valid');
       (this as any).$refs.pickedQuantity.$el.classList.remove('ion-invalid');
+
+      // Apply zero/negative check only on /create-transfer-order
+      if(path.includes('/create-transfer-order') && value <= 0) {
+        (this as any).$refs.pickedQuantity.$el.classList.add('ion-invalid');
+        return;
+      }
 
       if (value === '') return;
 
@@ -193,7 +211,10 @@ export default defineComponent({
       (this as any).$refs.pickedQuantity.$el.classList.add('ion-touched');
     },
     getErrorText(item: any) {
-      return translate('The picked quantity cannot exceed the ordered quantity.') + " " + (this.item.shippedQuantity > 0 ? translate("already shipped.", {shippedQuantity: this.item.shippedQuantity}): '')
+      const path = this.router.currentRoute.value.path;
+      return path.includes('/create-transfer-order')
+        ? translate("Please enter valid item quantity.")
+        : translate('The picked quantity cannot exceed the ordered quantity.') + " " + (this.item.shippedQuantity > 0 ? translate("already shipped.", {shippedQuantity: this.item.shippedQuantity}): '')
     },
     async openRejectReasonPopover(ev: Event, item: any) {
       const reportIssuePopover = await popoverController.create({
@@ -223,28 +244,32 @@ export default defineComponent({
     },
     async bookQoh(item: any) {
       if(item.qoh) {
-        // set pickedQuantity = qoh
-        if(item.pickedQuantity !== item.qoh) {
-          item.pickedQuantity = item.qoh;
-          await this.updateItemQuantity(item);
-        }
+        item.pickedQuantity = item.qoh;
+        // wait for the DOM to be updated after changing item.pickedQuantity
+        await this.$nextTick();
+        await this.updateItemQuantity(item);
       }
     },
     async updateItemQuantity(item: any) {
-      if(item.pickedQuantity < 0) {
-        showToast(translate("Quantity cannot be negative"));
-        return;
-      }
+      // Allow updating item quantity only if the order is in ORDER_CREATED status
+      if(this.currentOrder.statusId !== 'ORDER_CREATED') return;
+
+      const currentItem = this.currentOrder.items.find((orderItem: any) => orderItem.orderItemSeqId === item.orderItemSeqId);
+      const itemQuantity = parseInt((this.$refs.pickedQuantity as any).$el.value) || 0
+
+      // Skip if picked quantity is same as current or invalid (equal to or less than 0)
+      if(currentItem && itemQuantity === currentItem.quantity) return;
+      if(itemQuantity <= 0) return;
 
       try {
         const resp = await TransferOrderService.updateOrderItem({
           orderId: this.currentOrder.orderId,
           orderItemSeqId: item.orderItemSeqId,
-          quantity: item.pickedQuantity,
-          unitPrice: item.unitPrice || 0
+          quantity: itemQuantity
         });
         if(!hasError(resp)) {
-          item.quantity = item.pickedQuantity;
+          currentItem.quantity = itemQuantity;
+          currentItem.pickedQuantity = itemQuantity;
           await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
         } else {
           throw resp.data;
@@ -264,6 +289,7 @@ export default defineComponent({
         if(!hasError(resp)) {
           this.currentOrder.items = this.currentOrder.items?.filter((i: any) => i.orderItemSeqId !== item.orderItemSeqId);
           await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
+          emitter.emit('clearSearchedProduct')
           showToast(translate("Item removed from order"));
         } else {
           throw resp.data;
@@ -311,7 +337,7 @@ ion-thumbnail {
 
 .action {
   display: grid;
-  grid: "progressbar ordered"
+  grid: "progressbar ordered qoh"
         "pick     history" 
         / 1fr max-content; 
   gap: var(--spacer-xs);
@@ -337,12 +363,18 @@ ion-thumbnail {
   font-size: 16px;
 }
 
+.qty-qoh {
+  grid-area: qoh;
+  text-align: end;
+  font-size: 16px;
+}
+
 .scanned-item {
   outline: 2px solid var(--ion-color-medium-tint);
 }
 @media (min-width: 720px) {
   .action {
-    grid: "pick progressbar history ordered" /  max-content 1fr max-content max-content;
+    grid: "pick progressbar history ordered qoh" /  max-content 1fr max-content max-content;
     padding-left: var(--spacer-sm);
   }
 }

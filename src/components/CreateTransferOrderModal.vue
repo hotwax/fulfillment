@@ -51,12 +51,13 @@
 import { IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent, IonInput, IonSearchbar, IonList, IonListHeader, IonItem, IonRadio, IonLabel, IonFab, IonFabButton, modalController } from '@ionic/vue';
 import { closeOutline, saveOutline } from 'ionicons/icons';
 import { computed, ref, onMounted } from 'vue';
-import { translate, useUserStore } from '@hotwax/dxp-components';
+import { translate } from '@hotwax/dxp-components';
 import { UtilService } from '@/services/UtilService';
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { hasError } from '@/adapter';
 import { useStore } from 'vuex';
 import { getCurrentFacilityId, getProductStoreId, showToast } from '@/utils';
+import { DateTime } from 'luxon';
 import router from '@/router';
 import logger from '@/logger';
 
@@ -70,38 +71,30 @@ const facilities = ref([]) as any;
 const selectedDestinationFacilityId = ref('');
 const isLoading = ref(false);
 const saving = ref(false);
+const currencyUom = ref('');
 
 onMounted(async () => {
   await loadFacilities();
+  await fetchProductStoreDetails();
 });
 
 async function loadFacilities() {
+  isLoading.value = true;
+  facilities.value = await UtilService.fetchProductStoreFacilities();
+  isLoading.value = false;
+}
+
+async function fetchProductStoreDetails() {
   try {
-    isLoading.value = true;
-    const productStoreId = useUserStore().getCurrentEComStore?.productStoreId;
-    if(!productStoreId) return;
-
-    const resp = await UtilService.fetchProductStoreFacilities({
-      productStoreId,
-      facilityTypeId: 'VIRTUAL_FACILITY',
-      facilityTypeId_op: 'equals',
-      facilityTypeId_not: 'Y',
-      parentFacilityTypeId: 'VIRTUAL_FACILITY',
-      parentFacilityTypeId_op: 'equals',
-      parentFacilityTypeId_not: 'Y',
-      fieldsToSelect: ['facilityId', 'facilityName'],
-      pageSize: 200,
-    });
-
+    const resp = await UtilService.fetchProductStoreDetails({ productStoreId: getProductStoreId() });
     if(!hasError(resp)) {
-      facilities.value = resp.data;
+      currencyUom.value = resp.data.defaultCurrencyUomId;
     } else {
       throw resp.data;
     }
   } catch (err) {
     logger.error(err);
   }
-  isLoading.value = false;
 }
 
 function filteredFacilities() {
@@ -137,7 +130,8 @@ async function createTransferOrder() {
   
   const productStoreId = getProductStoreId() || '';
   const originFacilityId = getCurrentFacilityId() || '';
-  
+  const orderTimestamp = DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000")
+
   if(originFacilityId === selectedDestinationFacilityId.value) {
     showToast(translate('Origin and destination facility cannot be the same.'));
     return;
@@ -150,14 +144,17 @@ async function createTransferOrder() {
     customerId: 'COMPANY',
     statusId: 'ORDER_CREATED',
     statusFlowId: 'TO_Fulfill_And_Receive',
+    currencyUom: currencyUom.value || 'USD',
+    orderDate: orderTimestamp,
+		entryDate: orderTimestamp,
     grandTotal: 0,
     productStoreId,
     originFacilityId,
     shipGroups: [{
       facilityId: originFacilityId,
       orderFacilityId: selectedDestinationFacilityId.value,
-      carrierPartyId: '_NA_',
-      shipmentMethodTypeId: 'STANDARD'
+      //carrierPartyId: '_NA_',
+      //shipmentMethodTypeId: 'STANDARD'
     }],
   };
   
@@ -182,7 +179,7 @@ async function createTransferOrder() {
     const resp = await TransferOrderService.createTransferOrder({ payload: orderPayload })
     if(!hasError(resp) && resp.data?.orderId) {
       const orderId = resp.data.orderId
-      router.replace(`/create-transfer-order/${orderId}`)
+      router.push(`/create-transfer-order/${orderId}`)
       showToast(translate("Transfer order created successfully."))
     } else {
       throw resp.data;
