@@ -543,11 +543,11 @@ export default defineComponent({
       getMaargBaseUrl: 'user/getMaargBaseUrl'
     }),
     filteredFacilityCarriers(): any {
-      if (this.order?.shipmentMethodTypeId === 'SHIP_TO_STORE') {
-        const allowedPartyIds = this.productStoreShipmentMethods
+      if (this.initialShipmentMethodTypeId === 'SHIP_TO_STORE') {
+        const allowedPartyIds = new Set(this.productStoreShipmentMethods
           .filter((method: any) => method.shipmentMethodTypeId === 'SHIP_TO_STORE')
-          .map((method: any) => method.partyId);
-        return this.facilityCarriers.filter((carrier: any) => allowedPartyIds.includes(carrier.partyId));
+          .map((method: any) => method.partyId));
+        return this.facilityCarriers.filter((carrier: any) => allowedPartyIds.has(carrier.partyId));
       }
       return this.facilityCarriers;
     }
@@ -573,6 +573,7 @@ export default defineComponent({
       rejectEntireOrderReasonId: "REJ_AVOID_ORD_SPLIT",
       shipmentLabelErrorMessage: "",
       shipmentMethodTypeId: "",
+      initialShipmentMethodTypeId: "",
       carrierPartyId: "",
       carrierMethods:[] as any,
       isUpdatingCarrierDetail: false,
@@ -593,7 +594,8 @@ export default defineComponent({
     ? await this.store.dispatch('order/getOpenOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId})
     : this.category === 'in-progress'
     ? await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipmentId: this.shipmentId })
-    : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipmentId: this.shipmentId })
+    : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipmentId: this.shipmentId });
+    this.initialShipmentMethodTypeId = this.order?.shipmentMethodTypeId;
     await Promise.all([this.store.dispatch('util/fetchCarrierShipmentBoxTypes'), this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths'), this.fetchOrderInvoicingStatus()]);
     if (this.facilityCarriers) {
       const shipmentPackageRouteSegDetail = this.order.shipmentPackageRouteSegDetails?.[0];
@@ -654,10 +656,8 @@ export default defineComponent({
         emitter.emit("presentLoader");
         this.isUpdatingCarrierDetail = true;
         const carrierShipmentMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
-        if (shipmentMethodTypeId && !carrierShipmentMethods.some((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)) {
-          shipmentMethodTypeId = ""
-        }
-        shipmentMethodTypeId = shipmentMethodTypeId ? shipmentMethodTypeId : carrierShipmentMethods?.[0]?.shipmentMethodTypeId;
+        const isCurrentMethodSupported = shipmentMethodTypeId && carrierShipmentMethods.some((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId);
+        shipmentMethodTypeId = isCurrentMethodSupported ? shipmentMethodTypeId : (carrierShipmentMethods?.[0]?.shipmentMethodTypeId || "");
         const shipmentRouteSegmentId = this.order?.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
         const isTrackingRequired = carrierShipmentMethods.find((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)?.isTrackingRequired
 
@@ -1480,7 +1480,7 @@ export default defineComponent({
     async generateTrackingCodeForPacking(order: any, updateParameter?: string, documentOptions?: any, packingError?: string) {
       const modal = await modalController.create({
         component: GenerateTrackingCodeModal,
-        componentProps: { order, updateCarrierShipmentDetails: this.updateCarrierShipmentDetails, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError, isDetailPage: "Y" }
+        componentProps: { order, updateCarrierShipmentDetails: this.updateCarrierShipmentDetails, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError, isDetailPage: "Y", initialShipmentMethodTypeId: this.initialShipmentMethodTypeId }
       })
       modal.present();
     },
