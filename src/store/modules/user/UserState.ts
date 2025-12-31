@@ -17,4 +17,5 @@ export default interface UserState {
     firebaseDeviceId: string;
     hasUnreadNotifications: boolean;
     allNotificationPrefs: any;
+    shopifyApp: any;
 }

@@ -33,9 +33,14 @@ module.exports = {
     },
   },
   devServer: {
+    allowedHosts: "all",
+    host: '0.0.0.0', // Allows access from any IP address
     port: 8100, // Ensure this port is different from the host
     headers: {
       "Access-Control-Allow-Origin": "*", // Allow all origins (for development only)
+    },
+    client: {
+      webSocketURL: 'auto://0.0.0.0:0/ws'
     }
   },
   runtimeCompiler: true,
