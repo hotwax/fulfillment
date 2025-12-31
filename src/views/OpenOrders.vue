@@ -40,7 +40,7 @@
         <div class="results">
           <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picklist") }}</ion-button>
 
-          <ion-card class="order" v-for="(order, index) in getOpenOrders()" :key="index">
+          <ion-card class="order" data-testid="open-order-card" v-for="(order, index) in getOpenOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
@@ -50,7 +50,7 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
+                <ion-chip data-testid="open-order-actions" @click.stop="orderActionsPopover(order, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderName }}</ion-label>
                   <ion-icon :icon="caretDownOutline" />
