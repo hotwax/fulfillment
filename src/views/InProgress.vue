@@ -47,7 +47,7 @@
       <div v-if="inProgressOrders.total">
         <div class="results">
           <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" v-if="!isForceScanEnabled" @click="packOrders()">{{ translate("Pack orders") }}</ion-button>
-          <ion-card class="order" v-for="(order, index) in getInProgressOrders()" :key="index" :class="isForceScanEnabled ? 'ion-margin-top' : ''">
+          <ion-card class="order" data-testid="in-progress-order-card" v-for="(order, index) in getInProgressOrders()" :key="index" :class="isForceScanEnabled ? 'ion-margin-top' : ''">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
@@ -57,7 +57,7 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
+                <ion-chip data-testid="in-progress-order-actions" @click.stop="orderActionsPopover(order, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderName }}</ion-label>
                   <ion-icon :icon="caretDownOutline" />
@@ -1333,4 +1333,3 @@ ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-te
   grid-template-columns: repeat(3, 1fr);
 }
 </style>
-
