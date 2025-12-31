@@ -51,7 +51,7 @@
       <div v-if="completedOrders.total">
         <div class="results">
           <ion-button :disabled="isShipNowDisabled || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
-          <ion-card class="order" v-for="(order, index) in completedOrdersList" :key="index">
+          <ion-card class="order" data-testid="completed-order-card" v-for="(order, index) in completedOrdersList" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
@@ -61,7 +61,7 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
+                <ion-chip data-testid="completed-order-actions" @click.stop="orderActionsPopover(order, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderName }}</ion-label>
                   <ion-icon :icon="caretDownOutline" />
