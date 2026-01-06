@@ -145,6 +145,7 @@
               v-else-if="order.shipmentPackages"
             >
               <ion-button
+                data-test-id="add-box-btn"
                 :disabled="
                   order.items.length <= order.shipmentPackages.length ||
                   addingBoxForShipmentIds.includes(order.shipmentId)
@@ -161,6 +162,7 @@
                 <ion-chip
                   v-for="shipmentPackage in order.shipmentPackages"
                   :key="shipmentPackage.shipmentId"
+                  data-test-id="box-selector"
                   @click.stop="
                     updateShipmentBoxType(shipmentPackage, order, $event)
                   "
