@@ -9,12 +9,17 @@
         <ion-title v-else>{{ openOrders.query.viewSize }} {{ translate('of') }} {{ openOrders.total }} {{ translate('orders') }}</ion-title>
      
         <ion-buttons slot="end">
-          <ion-button @click="viewNotifications()">
+          <ion-button data-testid="fulfillment-open-notifications-btn"
+           @click="viewNotifications()">
             <ion-icon slot="icon-only" :icon="notificationsOutline" :color="(unreadNotificationsStatus && notifications.length) ? 'primary' : ''" />
-          </ion-button>
-          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !openOrders.total || isRejecting" fill="clear" color="danger" @click="recycleOutstandingOrders()">
-            {{ translate("Reject all") }}
-          </ion-button>
+          <ion-button
+  data-testid="fulfillment-open-reject-all-btn"
+  :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !openOrders.total || isRejecting"
+  fill="clear"
+  color="danger"
+  @click="recycleOuts">
+  {{ translate("Reject all") }}
+</ion-button>
           <ion-menu-button menu="view-size-selector-open" :disabled="!openOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
@@ -38,9 +43,10 @@
       <div v-if="openOrders.total">
 
         <div class="results">
-          <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picklist") }}</ion-button>
+          <ion-button data-testid="fulfillment-open-print-picklist-btn" class="bulk action desktop-only" size="large" @click="assignPickers"> {{ translate("Print Picklist") }}
+</ion-button>
 
-          <ion-card class="order" v-for="(order, index) in getOpenOrders()" :key="index">
+          <ion-card class="order" data-testid="fulfillment-open-order-card" v-for="(order, index) in getOpenOrders()" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
                 <ion-label>
