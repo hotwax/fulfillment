@@ -636,7 +636,7 @@ export default defineComponent({
       window.open('https://docs.hotwax.co/documents/v/system-admins/fulfillment/shipping-methods/carrier-and-shipment-methods', '_blank');
     },
     async getProductStoreShipmentMethods(carrierPartyId: string) { 
-      return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId) || [];
+      return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId && (this.initialShipmentMethodTypeId === 'SHIP_TO_STORE' || method.shipmentMethodTypeId !== 'SHIP_TO_STORE')) || [];
     },
     async shippingLabelActionPopover(ev: Event, currentOrder: any) {
       const popover = await popoverController.create({

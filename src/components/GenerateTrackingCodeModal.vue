@@ -236,7 +236,8 @@ export default defineComponent({
       return this.order.isTrackingRequired === 'Y'
     },
     async getProductStoreShipmentMethods(carrierPartyId: string) { 
-      return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId) || [];
+      const shipmentMethodTypeId = this.initialShipmentMethodTypeId ? this.initialShipmentMethodTypeId : this.order?.shipmentMethodTypeId
+      return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId && (shipmentMethodTypeId === 'SHIP_TO_STORE' || method.shipmentMethodTypeId !== 'SHIP_TO_STORE')) || [];
     },
     getCarrier() {
       const carrier = this.facilityCarriers.find((facilityCarrier: any) => facilityCarrier.partyId === this.carrierPartyId)
