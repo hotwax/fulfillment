@@ -136,18 +136,18 @@
 
                 <!--Adding checks to avoid any operations if order has missing info, mostly when after packing Solr is not updaing immediately-->
                 <div class="product-metadata">
-                  <ion-button v-if="isKit(item)" fill="clear" size="default" @click.stop="fetchKitComponents(item)">
+                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
-                  <ion-button color="medium" fill="clear" size="default" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
+                  <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
                     <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline"/>
                   </ion-button>
-                  <ion-button color="danger" fill="clear" size="default" @click.stop="openRejectReasonPopover($event, item, order)">
+                  <ion-button color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
                     <ion-icon slot="icon-only" :icon="trashBinOutline"/>
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button color="medium" fill="clear" v-else size="default" @click.stop="fetchProductStock(item.productId)">
+                  <ion-button color="medium" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
                 </div>
@@ -202,7 +202,10 @@
           </ion-infinite-scroll>
         </div>
       </div>
-      <template v-if="inProgressOrders.total">
+      <div v-if="isLoadingOrders" class="ion-padding ion-text-center">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
+      <template v-else-if="inProgressOrders.total">
         <ion-fab v-if="!isForceScanEnabled" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
           <ion-fab-button @click="packOrders()">
             <ion-icon :icon="checkmarkDoneOutline" />
@@ -373,6 +376,7 @@ export default defineComponent({
       isScrollingEnabled: false,
       isRejecting: false,
       rejectEntireOrderReasonId: "REJ_AVOID_ORD_SPLIT",
+      isLoadingOrders: false
     }
   },
   methods: {
@@ -750,37 +754,25 @@ export default defineComponent({
     },
     
     async reportIssue(order: any, itemsToReject: any) {
-      // finding is there any item that is `out of stock` as we need to display the message accordingly
-      const outOfStockItem = itemsToReject.find((item: any) => item.rejectReason === 'NOT_IN_STOCK')
-
-      // TODO: update alert message when itemsToReject contains a single item and also in some specific conditions
       let message;
-      if (!outOfStockItem) {
+      const rejectedItem = itemsToReject[0];
+      const productName = rejectedItem.productName
 
-        // This variable is used in messages to display name of first rejected item from the itemsToReject array
-        const rejectedItem = itemsToReject[0];
-        if (itemsToReject.length === 1) {
-          const rejectionReason = this.getRejectionReasonDescription(rejectedItem.rejectReason)
-          message = translate('is identified as. This order item will be unassigned from the store and sent to be rebrokered.', { productName: rejectedItem.productName, rejectReason: rejectionReason?.toLowerCase() });
-        } else {
-          message = translate(', and other products were identified as unfulfillable. These items will be unassigned from this store and sent to be rebrokered.', { productName: rejectedItem.productName, products: itemsToReject.length - 1, space: '<br /><br />' });
-        }
+      let ordersCount = 0;
+
+      if(this.collateralRejectionConfig) {
+        // TODO: ordersCount is not correct as current we are identifying orders count by only checking items visible on UI and not other orders
+        ordersCount = this.inProgressOrders.list.map((inProgressOrder: any) => inProgressOrder.items.filter((item: any) => itemsToReject.some((itemToReject: any) => itemToReject.productId === item.productId) && item.shipmentId !== order.shipmentId))?.filter((item: any) => item.length).length;
+      }
+
+      if (itemsToReject.length === 1 && ordersCount) {
+        message = translate("is identified as unfulfillable. other containing this product will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
+      } else if (itemsToReject.length === 1 && !ordersCount) {
+        message = translate("is identified as unfulfillable. This order item will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />' })
+      } else if (itemsToReject.length > 1 && ordersCount) {
+        message = translate(", and other products are identified as unfulfillable. other containing these products will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
       } else {
-        const productName = outOfStockItem.productName
-        const itemsToRejectNotInStock = itemsToReject.filter((item: any) => item.rejectReason === 'NOT_IN_STOCK');
-        
-        // TODO: ordersCount is not correct as current we are identifying orders count by only checking items visible on UI and not other orders        
-        const ordersCount = this.inProgressOrders.list.map((inProgressOrder: any) => inProgressOrder.items.filter((item: any) => itemsToRejectNotInStock.some((outOfStockItem: any) => outOfStockItem.productSku === item.productSku) && item.shipmentId !== order.shipmentId))?.filter((item: any) => item.length).length;
-
-        if (itemsToReject.length === 1 && ordersCount) {
-          message = translate("is identified as unfulfillable. other containing this product will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
-        } else if (itemsToReject.length === 1 && !ordersCount) {
-          message = translate("is identified as unfulfillable. This order item will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />' })
-        } else if (itemsToReject.length > 1 && ordersCount) {
-          message = translate(", and other products are identified as unfulfillable. other containing these products will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
-        } else {
-          message = translate(", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />' })
-        }
+        message = translate(", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />' })
       }
       const alert = await alertController
         .create({
@@ -818,9 +810,9 @@ export default defineComponent({
             "shipmentItemSeqId": item.shipmentItemSeqId,
             "productId": item.productId,
             "facilityId": this.currentFacility?.facilityId,
-            "updateQOH": this.affectQohConfig && this.affectQohConfig?.settingValue ? this.affectQohConfig?.settingValue : false,
+            "updateQOH": this.affectQohConfig || false,
             "maySplit": this.isEntierOrderRejectionEnabled(order) ? "N" : "Y",
-            "cascadeRejectByProduct": this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
+            "cascadeRejectByProduct": this.collateralRejectionConfig ? "Y" : "N",
             "rejectionReasonId": item.rejectReason,
             "kitComponents": item.kitComponents,
             "comments": "Store Rejected Inventory"
@@ -868,7 +860,7 @@ export default defineComponent({
       this.store.dispatch('order/updateInProgressOrder', order)
     },
     isEntierOrderRejectionEnabled(order: any) {
-      return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
+      return !this.partialOrderRejectionConfig && order.hasRejectedItem
     },
     
     updateBox(updatedBox: string, item: any, order: any) {
@@ -956,7 +948,7 @@ export default defineComponent({
     },
     enableScrolling() {
       const parentElement = (this as any).$refs.contentRef.$el
-      const scrollEl = parentElement.shadowRoot.querySelector("div[part='scroll']")
+      const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
       let scrollHeight = scrollEl.scrollHeight, infiniteHeight = (this as any).$refs.infiniteScrollRef.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
       const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
       if(distanceFromInfinite < 0) {
@@ -1208,7 +1200,7 @@ export default defineComponent({
       const shippingLabelErrorModal = await modalController.create({
         component: ShippingLabelErrorModal,
         componentProps: {
-          shipmentId : order.shipmentId
+          shipmentId: order.shipmentId
         }
       });
       return shippingLabelErrorModal.present();
@@ -1256,11 +1248,17 @@ export default defineComponent({
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
-    await this.fetchPickersInformation()
-    await Promise.all([
-      this.store.dispatch('util/fetchRejectReasonOptions'),
-      this.initialiseOrderQuery()
-    ]);
+    this.isLoadingOrders = true;
+    try {
+      await this.fetchPickersInformation()
+      await Promise.all([
+        this.store.dispatch('util/fetchRejectReasonOptions'),
+        this.initialiseOrderQuery()
+      ]);
+    } finally {
+      this.isLoadingOrders = false;
+    }
+
     emitter.on('updateOrderQuery', this.updateOrderQuery)
   },
   beforeRouteLeave() {

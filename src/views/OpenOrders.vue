@@ -84,12 +84,12 @@
                   </ion-item>
                 </div>
                 <div class="product-metadata">
-                  <ion-button v-if="isKit(item)" fill="clear" size="default" @click.stop="fetchKitComponents(item)">
+                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button fill="clear" v-else size="default" @click.stop="fetchProductStock(item.productId)">
+                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
                 </div>
@@ -132,7 +132,10 @@
           </ion-infinite-scroll>
         </div>
       </div>
-      <ion-fab v-if="openOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
+      <div v-if="isLoadingOrders" class="ion-padding ion-text-center">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
+      <ion-fab v-else-if="openOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="assignPickers">
           <ion-icon :icon="printOutline" />
         </ion-fab-button>
@@ -241,7 +244,8 @@ export default defineComponent({
       isScrollingEnabled: false,
       isRejecting: false,
       productCategoryFilterExt: "" as any,
-      selectedShipmentMethods: [] as any
+      selectedShipmentMethods: [] as any,
+      isLoadingOrders: false
     }
   },
   methods: {
@@ -260,7 +264,7 @@ export default defineComponent({
     },
     enableScrolling() {
       const parentElement = (this as any).$refs.contentRef.$el
-      const scrollEl = parentElement.shadowRoot.querySelector("div[part='scroll']")
+      const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
       let scrollHeight = scrollEl.scrollHeight, infiniteHeight = (this as any).$refs.infiniteScrollRef.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
       const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
       if(distanceFromInfinite < 0) {
@@ -437,7 +441,12 @@ export default defineComponent({
   },
   async ionViewWillEnter () {
     this.isScrollingEnabled = false;
-    await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
+    this.isLoadingOrders = true;
+    try {
+      await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
+    } finally {
+      this.isLoadingOrders = false;
+    }
     // Remove http://, https://, /api, or :port
     const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "")
     this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`});

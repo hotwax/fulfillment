@@ -12,6 +12,13 @@
 
   <ion-content>
     <ion-searchbar data-testid="viewmore-search-products-input" :value="queryString" :placeholder="translate('Search products')" @keyup.enter="queryString = $event.target.value; getProducts()"/>
+
+    <!-- Loading state -->
+    <div v-if="isLoading && !products.length" class="empty-state">
+      <ion-spinner name="crescent" />
+      <ion-label>{{ translate("Loading...") }}</ion-label>
+    </div>
+
     <!-- Product list -->
     <template v-if="products.length">
       <ion-item v-for="product in products" :key="product.productId">
@@ -19,16 +26,16 @@
           <DxpShopifyImg :src="product.mainImageUrl" />
         </ion-avatar>
         <ion-label>
-          <h2>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, product) ? getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, product) : product?.internalName }}</h2>
-          <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, product) }}</p>
+          <h2>{{ getProductIdentificationValue(productIdentificationPref.primaryId, product) ? getProductIdentificationValue(productIdentificationPref.primaryId, product) : product?.internalName }}</h2>
+          <p v-if="getProductIdentificationValue(productIdentificationPref.secondaryId, product) !== 'null'">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
         </ion-label>
 
-        <!-- Show Add button if not in currentOrder -->
-        <ion-button data-testid="viewmore-add-to-transfer-btn" v-if="!isItemAlreadyInOrder(product.productId)" slot="end" fill="outline" @click="addTransferOrderItem(product)">
-          {{ translate("Add to Transfer") }}
+        <!-- Show Add button if product is NOT in order -->
+        <ion-button data-testid="viewmore-add-to-transfer-btn" v-if="!isProductInOrder(product.productId)" slot="end" fill="outline" @click="addTransferOrderItem(product)" :disabled="pendingProductIds.has(product.productId)">
+          {{ pendingProductIds.has(product.productId) ? translate("Adding...") : translate("Add to Transfer") }}
         </ion-button>
 
-        <!-- Display a checkmark icon if the product is already added, otherwise display nothing. -->
+        <!-- Display checkmark only when product is actually in order -->
         <ion-icon v-else slot="end" :icon="checkmarkCircle" color="success" />
       </ion-item>
 
@@ -49,19 +56,17 @@ import { IonAvatar, IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonIn
 import { checkmarkCircle, closeOutline } from "ionicons/icons";
 import { computed, defineProps, onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
-import { TransferOrderService } from '@/services/TransferOrderService';
 import { modalController } from '@ionic/vue';
-import { ProductService } from '@/services/ProductService';
-import { StockService } from '@/services/StockService';
-import { hasError, showToast } from '@/utils';
+import { searchProducts } from '@/adapter';
 import { DxpShopifyImg, getProductIdentificationValue, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
 import logger from '@/logger';
 import emitter from '@/event-bus';
 
-const props = defineProps(["query"])
+const props = defineProps(["query", "addProductToQueue", "isProductInOrder", "pendingProductIds"]);
 
 const store = useStore()
 const productIdentificationStore = useProductIdentificationStore();
+const productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
 
 const queryString = ref(props.query)
 const products = ref([]) as any;
@@ -80,79 +85,22 @@ function closeModal() {
   modalController.dismiss()
 }
 
-// check if product already exists in currentOrder
-function isItemAlreadyInOrder(productId: string) {
-  return currentOrder.value?.items?.some((item: any) => item.productId === productId)
-}
+function addTransferOrderItem(product: any) {
 
-// Stock fetch helper
-async function fetchStock(productId: string) {
-  const facilityId = currentOrder.value.shipGroups?.[0]?.facilityId;
-  if(!facilityId) return;
-  try {
-    const resp: any = await StockService.getInventoryAvailableByFacility({ productId, facilityId });
-    if(!hasError(resp)) return resp.data;
-  } catch (err) {
-    logger.error(err);
-  }
-  return null;
-}
-
-/**
- * Adds a product to the current transfer order.
- * - Builds order item object
- * - Calls API to create order item
- * - Updates local currentOrder state
- */
-async function addTransferOrderItem(product: any) {
-  if (!product?.productId) return;
-
-  // Build new order item object
-  const newItem: any = {
-    productId: product.productId,
-    sku: product.sku,
-    quantity: 1,
-    pickedQuantity: 1,
-    shipGroupSeqId: "00001",
-    scannedId: queryString.value
-  };
-
-  // Fetch available stock
-  const stock = product.productId ? await fetchStock(product.productId) : null;
-  if (stock) newItem.qoh = stock.qoh ?? 0;
-
-  try {
-    // Fetch product's average cost before committing to order
-    const unitPrice = await ProductService.fetchProductAverageCost(
-      newItem.productId,
-      currentOrder.value.shipGroups?.[0]?.facilityId
-    );
-
-    // Prepare payload and call API to add order item
-    const payload = {
-      orderId: currentOrder.value.orderId,
-      productId: newItem.productId,
-      quantity: newItem.quantity,
-      shipGroupSeqId: newItem.shipGroupSeqId,
-      unitPrice: unitPrice || 0
-    };
-    const resp = await TransferOrderService.addOrderItem(payload);
-
-    if (!hasError(resp)) {
-      // Update local state with order item & refresh order in store
-      newItem.orderId = currentOrder.value.orderId;
-      newItem.orderItemSeqId = resp.data?.orderItemSeqId;
-
-      currentOrder.value.items.push(newItem);
-      await store.dispatch('transferorder/updateCurrentTransferOrder', currentOrder.value);
-      emitter.emit('clearSearchedProduct')
-    } else {
-      throw resp.data;
+  const itemToAdd = {
+    product: product,
+    orderId: currentOrder.value.orderId,
+    facilityId: currentOrder.value.shipGroups?.[0]?.facilityId,
+    scannedId: queryString.value,
+    onSuccess: () => {
+      emitter.emit('clearSearchedProduct');
+    },
+    onError: (product: any, error: any) => {
+      logger.error(`Failed to add product ${product.productId}:`, error);
     }
-  } catch (err) {
-    logger.error(err);
-    showToast(translate("Failed to add product to order"));
   }
+  
+  props.addProductToQueue(itemToAdd);
 }
 
 function isScrollable() {
@@ -174,20 +122,20 @@ async function getProducts(vSize?: any, vIndex?: any) {
   isLoading.value = true;
 
   try {
-    const resp = await ProductService.fetchProducts({
+    const resp = await searchProducts({
       keyword: queryString.value.trim(),
       viewSize, 
       viewIndex,
-      filters: ['isVirtual: false', 'isVariant: true'],
+      filters: {}
     });
 
-    if (!hasError(resp) && resp.data.response?.docs?.length) {
-      const productsList = resp.data.response.docs;
+    if (resp.total) {
+      const productsList = resp.products;
       if(viewIndex) {
         products.value = products.value.concat(productsList); 
       } else {
         products.value = productsList;
-        total.value = resp.data.response.numFound;
+        total.value = resp.total;
       }
     } else {
       products.value = viewIndex ? products.value : [];

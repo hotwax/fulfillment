@@ -99,10 +99,12 @@ const findShipments = async (orderId: string): Promise <any>  => {
 
   const params = {
     orderId: orderId,
-    statusId: ['SHIPMENT_INPUT', 'SHIPMENT_CANCELLED'],
-    statusId_op: "in",
-    statusId_not: "Y",
     pageSize: 100,
+    customParametersMap: {
+      statusId: ['SHIPMENT_INPUT', 'SHIPMENT_CANCELLED'],
+      statusId_op: "in",
+      statusId_not: "Y",
+    },
     shipmentTypeId: 'SALES_SHIPMENT', 
   } as any
 

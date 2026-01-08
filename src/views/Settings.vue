@@ -810,11 +810,4 @@ hr {
 ion-chip {
   flex-shrink: 0;
 }
-
-/* Added conditional hiding in standalone mode that respects user permissions */
-@media (display-mode: standalone) {
-  [standalone-hidden] {
-    display: none;
-  }
-}
 </style>

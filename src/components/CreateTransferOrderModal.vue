@@ -153,8 +153,8 @@ async function createTransferOrder() {
     shipGroups: [{
       facilityId: originFacilityId,
       orderFacilityId: selectedDestinationFacilityId.value,
-      carrierPartyId: '_NA_',
-      shipmentMethodTypeId: 'STANDARD'
+      //carrierPartyId: '_NA_',
+      //shipmentMethodTypeId: 'STANDARD'
     }],
   };
   
@@ -179,7 +179,7 @@ async function createTransferOrder() {
     const resp = await TransferOrderService.createTransferOrder({ payload: orderPayload })
     if(!hasError(resp) && resp.data?.orderId) {
       const orderId = resp.data.orderId
-      router.replace(`/create-transfer-order/${orderId}`)
+      router.push(`/create-transfer-order/${orderId}`)
       showToast(translate("Transfer order created successfully."))
     } else {
       throw resp.data;

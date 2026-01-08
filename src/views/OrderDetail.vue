@@ -160,7 +160,7 @@
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
               <ion-button fill="clear" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
-              <ion-button size="default" slot="end" fill="clear" color="medium" @click="packagingPopover">
+              <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
@@ -169,7 +169,7 @@
           <div v-else-if="category === 'completed'" class="mobile-only">
             <ion-item>
               <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
-              <ion-button size="default" slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
+              <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
@@ -279,13 +279,13 @@
               <ion-icon slot="end" :icon="cashOutline" />
             </ion-item>
             <ion-item>
-              <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, '')" :selected-text="getSelectedCarrier(carrierPartyId)">
-                <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
+              <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedCarrier(carrierPartyId)">
+                <ion-select-option v-for="carrier in filteredFacilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item>
               <template v-if="carrierMethods && carrierMethods.length > 0">
-                <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedShipmentMethod(shipmentMethodTypeId)">
+                <ion-select :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE' || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedShipmentMethod(shipmentMethodTypeId)">
                   <ion-select-option v-for="method in carrierMethods" :key="method.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
                 </ion-select>
               </template>
@@ -293,21 +293,21 @@
                 <ion-label>
                   {{ translate('No shipment methods linked to', {carrierName: getCarrierName(carrierPartyId)}) }}
                 </ion-label>
-                <ion-button size="default" @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
+                <ion-button @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
                   <ion-icon slot="icon-only" :icon="informationCircleOutline" />
                 </ion-button>
               </template>
             </ion-item>
             <template v-if="order.missingLabelImage">
-              <ion-item lines="none" v-if="shipmentLabelErrorMessages">
+              <ion-item lines="none" v-if="shipmentLabelErrorMessage">
                 <ion-label class="ion-text-wrap">
                   <p class=overline>{{ translate("Error Log") }}</p>
-                  {{ shipmentLabelErrorMessages }}
+                  {{ shipmentLabelErrorMessage }}
                 </ion-label>
               </ion-item>
               <template v-if="category === 'completed'">
                 <ion-button :disabled="!shipmentMethodTypeId || !hasPackedShipments(order)" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
-                  {{ shipmentLabelErrorMessages ? translate("Retry Label") : translate("Generate Label") }}
+                  {{ shipmentLabelErrorMessage ? translate("Retry Label") : translate("Generate Label") }}
                   <ion-spinner color="primary" slot="end" data-spinner-size="medium" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
                 <ion-button :disabled="!shipmentMethodTypeId || !carrierPartyId || !hasPackedShipments(order)" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
@@ -320,7 +320,7 @@
                 {{ order.trackingCode }}
                 <p>{{ translate("tracking code") }}</p>
               </ion-label>        
-              <ion-button size="default" slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, order)">
+              <ion-button slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, order)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
@@ -380,7 +380,7 @@
               <div class="other-shipment-actions">
                 <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
                 <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).qoh">{{ getProductStock(item.productId, item.facilityId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button slot="end" fill="clear" v-else-if="['open', 'in-progress', 'completed'].includes(shipGroup.category)" size="default" @click.stop="fetchProductStock(item.productId, item.facilityId)">
+                <ion-button slot="end" fill="clear" v-else-if="['open', 'in-progress', 'completed'].includes(shipGroup.category)" size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
               </div>
@@ -541,7 +541,16 @@ export default defineComponent({
       getShipmentMethodDesc: 'util/getShipmentMethodDesc',
       getUserToken: 'user/getUserToken',
       getMaargBaseUrl: 'user/getMaargBaseUrl'
-    })
+    }),
+    filteredFacilityCarriers(): any {
+      if (this.initialShipmentMethodTypeId === 'SHIP_TO_STORE') {
+        const allowedPartyIds = new Set(this.productStoreShipmentMethods
+          .filter((method: any) => method.shipmentMethodTypeId === 'SHIP_TO_STORE')
+          .map((method: any) => method.partyId));
+        return this.facilityCarriers.filter((carrier: any) => allowedPartyIds.has(carrier.partyId));
+      }
+      return this.facilityCarriers;
+    }
   },
   data() {
     return {
@@ -562,8 +571,9 @@ export default defineComponent({
         'PAYMENT_SETTLED': ''
       } as any,
       rejectEntireOrderReasonId: "REJ_AVOID_ORD_SPLIT",
-      shipmentLabelErrorMessages: "",
+      shipmentLabelErrorMessage: "",
       shipmentMethodTypeId: "",
+      initialShipmentMethodTypeId: "",
       carrierPartyId: "",
       carrierMethods:[] as any,
       isUpdatingCarrierDetail: false,
@@ -584,7 +594,8 @@ export default defineComponent({
     ? await this.store.dispatch('order/getOpenOrder', { orderId: this.orderId, shipGroupSeqId: this.shipGroupSeqId})
     : this.category === 'in-progress'
     ? await this.store.dispatch('order/getInProgressOrder', { orderId: this.orderId, shipmentId: this.shipmentId })
-    : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipmentId: this.shipmentId })
+    : await this.store.dispatch('order/getCompletedOrder', { orderId: this.orderId, shipmentId: this.shipmentId });
+    this.initialShipmentMethodTypeId = this.order?.shipmentMethodTypeId;
     await Promise.all([this.store.dispatch('util/fetchCarrierShipmentBoxTypes'), this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths'), this.fetchOrderInvoicingStatus()]);
     if (this.facilityCarriers) {
       const shipmentPackageRouteSegDetail = this.order.shipmentPackageRouteSegDetails?.[0];
@@ -612,9 +623,9 @@ export default defineComponent({
     },
     async fetchShipmentLabelError() {
       const shipmentId = this.order?.shipmentId
-      const labelErrors = await OrderService.fetchShipmentLabelError(shipmentId);
-      if (labelErrors && labelErrors.length) {
-        this.shipmentLabelErrorMessages = labelErrors.join(', ');
+      const labelError = await OrderService.fetchShipmentLabelError(shipmentId);
+      if (labelError) {
+        this.shipmentLabelErrorMessage = labelError
       }
     },
     getCarrierName(carrierPartyId: string) {
@@ -625,7 +636,7 @@ export default defineComponent({
       window.open('https://docs.hotwax.co/documents/v/system-admins/fulfillment/shipping-methods/carrier-and-shipment-methods', '_blank');
     },
     async getProductStoreShipmentMethods(carrierPartyId: string) { 
-      return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId) || [];
+      return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId && (this.initialShipmentMethodTypeId === 'SHIP_TO_STORE' || method.shipmentMethodTypeId !== 'SHIP_TO_STORE')) || [];
     },
     async shippingLabelActionPopover(ev: Event, currentOrder: any) {
       const popover = await popoverController.create({
@@ -645,7 +656,8 @@ export default defineComponent({
         emitter.emit("presentLoader");
         this.isUpdatingCarrierDetail = true;
         const carrierShipmentMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
-        shipmentMethodTypeId = shipmentMethodTypeId ? shipmentMethodTypeId : carrierShipmentMethods?.[0]?.shipmentMethodTypeId;
+        const isCurrentMethodSupported = shipmentMethodTypeId && carrierShipmentMethods.some((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId);
+        shipmentMethodTypeId = isCurrentMethodSupported ? shipmentMethodTypeId : (carrierShipmentMethods?.[0]?.shipmentMethodTypeId || "");
         const shipmentRouteSegmentId = this.order?.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
         const isTrackingRequired = carrierShipmentMethods.find((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)?.isTrackingRequired
 
@@ -685,7 +697,7 @@ export default defineComponent({
       this.carrierPartyId = carrierPartyId
       this.shipmentMethodTypeId = shipmentMethodTypeId
       this.carrierMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
-      this.shipmentLabelErrorMessages = ""
+      this.shipmentLabelErrorMessage = ""
     },
     async fetchKitComponent(orderItem: any, isOtherShipment = false ) {
       await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
@@ -710,7 +722,7 @@ export default defineComponent({
       return reason?.description ? reason.description : reason?.enumDescription ? reason.enumDescription : reason?.enumId;
     },
     isEntierOrderRejectionEnabled(order: any) {
-      return (!this.partialOrderRejectionConfig || !this.partialOrderRejectionConfig.settingValue || !JSON.parse(this.partialOrderRejectionConfig.settingValue)) && order.hasRejectedItem
+      return !this.partialOrderRejectionConfig && order.hasRejectedItem
     },
     async printPicklist (order: any) {
       await OrderService.printPicklist(order.picklistId)
@@ -1240,37 +1252,25 @@ export default defineComponent({
       return defaultBoxType;
     },
     async reportIssue(order: any, itemsToReject: any) {
-      // finding is there any item that is `out of stock` as we need to display the message accordingly
-      const outOfStockItem = itemsToReject.find((item: any) => item.rejectReason === 'NOT_IN_STOCK')
-
-      // TODO: update alert message when itemsToReject contains a single item and also in some specific conditions
       let message;
-      if (!outOfStockItem) {
+      const rejectedItem = itemsToReject[0];
+      const productName = rejectedItem.productName
 
-        // This variable is used in messages to display name of first rejected item from the itemsToReject array
-        const rejectedItem = itemsToReject[0];
-        if (itemsToReject.length === 1) {
-          const rejectionReason = this.getRejectionReasonDescription(rejectedItem.rejectReason)
-          message = translate('is identified as. This order item will be unassigned from the store and sent to be rebrokered.', { productName: rejectedItem.productName, rejectReason: rejectionReason?.toLowerCase() });
-        } else {
-          message = translate(', and other products were identified as unfulfillable. These items will be unassigned from this store and sent to be rebrokered.', { productName: rejectedItem.productName, products: itemsToReject.length - 1, space: '<br /><br />' });
-        }
+      let ordersCount = 0;
+
+      if(this.collateralRejectionConfig) {
+        // TODO: ordersCount is not correct as current we are identifying orders count by only checking items visible on UI and not other orders
+        ordersCount = this.inProgressOrders.list.map((inProgressOrder: any) => inProgressOrder.items.filter((item: any) => itemsToReject.some((itemToReject: any) => itemToReject.productId === item.productId) && item.shipmentId !== order.shipmentId))?.filter((item: any) => item.length).length;
+      }
+
+      if (itemsToReject.length === 1 && ordersCount) {
+        message = translate("is identified as unfulfillable. other containing this product will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
+      } else if (itemsToReject.length === 1 && !ordersCount) {
+        message = translate("is identified as unfulfillable. This order item will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />' })
+      } else if (itemsToReject.length > 1 && ordersCount) {
+        message = translate(", and other products are identified as unfulfillable. other containing these products will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
       } else {
-        const productName = outOfStockItem.productName
-        const itemsToRejectNotInStock = itemsToReject.filter((item: any) => item.rejectReason === 'NOT_IN_STOCK');
-        
-        // TODO: ordersCount is not correct as current we are identifying orders count by only checking items visible on UI and not other orders        
-        const ordersCount = this.inProgressOrders.list.map((inProgressOrder: any) => inProgressOrder.items.filter((item: any) => itemsToRejectNotInStock.some((outOfStockItem: any) => outOfStockItem.productSku === item.productSku) && item.shipmentId !== order.shipmentId))?.filter((item: any) => item.length).length;
-
-        if (itemsToReject.length === 1 && ordersCount) {
-          message = translate("is identified as unfulfillable. other containing this product will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
-        } else if (itemsToReject.length === 1 && !ordersCount) {
-          message = translate("is identified as unfulfillable. This order item will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />' })
-        } else if (itemsToReject.length > 1 && ordersCount) {
-          message = translate(", and other products are identified as unfulfillable. other containing these products will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
-        } else {
-          message = translate(", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />' })
-        }
+        message = translate(", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />' })
       }
       const alert = await alertController
         .create({
@@ -1306,9 +1306,9 @@ export default defineComponent({
             "shipmentItemSeqId": item.shipmentItemSeqId,
             "productId": item.productId,
             "facilityId": this.currentFacility?.facilityId,
-            "updateQOH": this.affectQohConfig && this.affectQohConfig?.settingValue ? this.affectQohConfig?.settingValue : false,
+            "updateQOH": this.affectQohConfig || false,
             "maySplit": this.isEntierOrderRejectionEnabled(order) ? "N" : "Y",
-            "cascadeRejectByProduct": this.collateralRejectionConfig?.settingValue === 'true' ? "Y" : "N",
+            "cascadeRejectByProduct": this.collateralRejectionConfig ? "Y" : "N",
             "rejectionReasonId": item.rejectReason,
             "kitComponents": item.kitComponents,
             "comments": "Store Rejected Inventory"
@@ -1480,7 +1480,7 @@ export default defineComponent({
     async generateTrackingCodeForPacking(order: any, updateParameter?: string, documentOptions?: any, packingError?: string) {
       const modal = await modalController.create({
         component: GenerateTrackingCodeModal,
-        componentProps: { order, updateCarrierShipmentDetails: this.updateCarrierShipmentDetails, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError, isDetailPage: "Y" }
+        componentProps: { order, updateCarrierShipmentDetails: this.updateCarrierShipmentDetails, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError, isDetailPage: "Y", initialShipmentMethodTypeId: this.initialShipmentMethodTypeId }
       })
       modal.present();
     },

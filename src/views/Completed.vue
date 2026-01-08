@@ -95,15 +95,15 @@
                   </ion-item>
                 </div>
                 <div class="product-metadata">
-                  <ion-button v-if="isKit(item)" fill="clear" size="default" @click.stop="fetchKitComponents(item)">
+                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
-                  <ion-button color="medium" fill="clear" size="default" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
+                  <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
                     <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline"/>
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button fill="clear" v-else size="default" @click.stop="fetchProductStock(item.productId)">
+                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
                 </div>
@@ -136,7 +136,7 @@
             <div class="mobile-only">
               <ion-item>
                 <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
-                <ion-button size="default" slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
+                <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -167,7 +167,10 @@
           </ion-infinite-scroll>
         </div>
       </div>
-      <ion-fab v-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
+      <div v-if="isLoadingOrders" class="ion-padding ion-text-center">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
+      <ion-fab v-else-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button :disabled="hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click="bulkShipOrders()">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
@@ -294,7 +297,8 @@ export default defineComponent({
       selectedCarrierPartyId: "",
       carrierConfiguration: {} as any,
       isGeneratingManifest: false,
-      selectedShipmentMethods: [] as any
+      selectedShipmentMethods: [] as any,
+      isLoadingOrders: false
     }
   },
   computed: {
@@ -314,13 +318,17 @@ export default defineComponent({
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
-    await this.fetchShipmentFacets()
-    //Remove the selected shipment methods and carriers that are no longer valid after editing the order detail page.
-    this.selectedShipmentMethods = this.selectedShipmentMethods?.filter((shipmentMethod: any) => this.shipmentMethods.includes(shipmentMethod));
-    const selectedCarrier = this.carrierPartyIds?.find((carrierPartyId: any) => carrierPartyId === this.selectedCarrierPartyId)
-    this.selectedCarrierPartyId = selectedCarrier ? selectedCarrier : ""
-
-    await this.initialiseOrderQuery()
+    this.isLoadingOrders = true;
+    try {
+      await this.fetchShipmentFacets()
+      //Remove the selected shipment methods and carriers that are no longer valid after editing the order detail page.
+      this.selectedShipmentMethods = this.selectedShipmentMethods?.filter((shipmentMethod: any) => this.shipmentMethods.includes(shipmentMethod));
+      const selectedCarrier = this.carrierPartyIds?.find((carrierPartyId: any) => carrierPartyId === this.selectedCarrierPartyId)
+      this.selectedCarrierPartyId = selectedCarrier ? selectedCarrier : ""
+      await this.initialiseOrderQuery()
+    } finally {
+      this.isLoadingOrders = false;
+    }
     emitter.on('updateOrderQuery', this.updateOrderQuery)
     this.completedOrdersList = JSON.parse(JSON.stringify(this?.completedOrders.list)).slice(0, (this.completedOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
   },
@@ -358,7 +366,7 @@ export default defineComponent({
     },
     enableScrolling() {
       const parentElement = (this as any).$refs.contentRef.$el
-      const scrollEl = parentElement.shadowRoot.querySelector("div[part='scroll']")
+      const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
       let scrollHeight = scrollEl.scrollHeight, infiniteHeight = (this as any).$refs.infiniteScrollRef.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
       const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
       if(distanceFromInfinite < 0) {
@@ -637,13 +645,11 @@ export default defineComponent({
 
       order.isGeneratingShippingLabel = false;
     },
-    async showShippingLabelErrorModal(order: any){
-      // Getting all the shipment ids
-      const shipmentIds = order.shipments?.map((shipment: any) => shipment.shipmentId);
+    async showShippingLabelErrorModal(order: any) {
       const shippingLabelErrorModal = await modalController.create({
         component: ShippingLabelErrorModal,
         componentProps: {
-          shipmentIds
+          shipmentId: order.shipmentId
         }
       });
       return shippingLabelErrorModal.present();

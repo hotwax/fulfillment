@@ -283,6 +283,9 @@ const actions: ActionTree<OrderState, RootState> = {
     const facilityTypeIds = otherShipments.map((shipment: any) => shipment.facilityTypeId)
     this.dispatch('util/fetchFacilityTypeInformation', facilityTypeIds)
 
+    const carrierPartyIds = otherShipments.map((shipment: any) => shipment.carrierPartyId).filter((id: any) => id);
+    this.dispatch('util/fetchPartyInformation', [...new Set(carrierPartyIds)])
+
     currentOrder.otherShipGroups = otherShipments
     commit(types.ORDER_CURRENT_UPDATED, currentOrder)
   },

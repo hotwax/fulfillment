@@ -120,14 +120,11 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/transfer-shipment-review/:shipmentId',
-    name: 'TransferShipmentReview',
-    component: TransferShipmentReview,
+    path: '/transfer-order-details/:orderId/ship-transfer-order/:shipmentId',
+    name: 'ShipTransferOrderFromOrderDetail',
+    component: ShipTransferOrder,
     beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_TRANSFER_ORDER_DETAIL_VIEW"
-    }
+    props: true
   },
   {
     path: '/:category/order-detail/:orderId/:shipGroupSeqId',

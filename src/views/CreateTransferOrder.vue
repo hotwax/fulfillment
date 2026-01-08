@@ -34,7 +34,10 @@
               </ion-item>
               <ion-item>
                 <ion-icon :icon="checkmarkDoneOutline" slot="start"/>
-                <ion-label class="ion-text-wrap">{{ translate("Complete order on fulfillment") }}</ion-label>
+                <ion-label>
+                  {{ translate("Return to warehouse") }}
+                  <p>{{ translate("Complete order on fulfillment") }}</p>
+                </ion-label>
                 <ion-toggle slot="end" data-testid="toggle-complete-on-fulfillment" :checked="currentOrder.statusFlowId === 'TO_Fulfill_Only'" @ionChange="toggleStatusFlow">
                 </ion-toggle>
               </ion-item>
@@ -43,7 +46,7 @@
   
           <!-- adding product card -->
           <ion-card class="add-items">
-            <div class="search-type">
+            <div class="mode">
               <h5 class="ion-margin-horizontal">{{ translate("Add items") }}</h5>
               <ion-segment v-model="mode" @ionChange="segmentChange($event.target.value)">
                 <ion-segment-button value="scan" content-id="scan">
@@ -58,7 +61,7 @@
             <div v-show="mode === 'scan'">
               <!-- scanning input -->
               <ion-item lines="full">
-                <ion-input ref="scanInput" :value="queryString" :label="translate('Scan barcode')" :placeholder="barcodeIdentifier" @ionBlur="isScanningEnabled = false" @ionFocus="isScanningEnabled = true" @keyup.enter="queryString = $event.target.value; scanProduct()" />
+                <ion-input ref="scanInput" v-model="queryString" :label="translate('Scan barcode')" :placeholder="barcodeIdentificationDesc[barcodeIdentifier] || barcodeIdentifier" @ionBlur="isScanningEnabled = false" @ionFocus="isScanningEnabled = true" @keyup.enter="queryString = $event.target.value; scanProduct()" />
               </ion-item>
               <!-- product found after scan (reads from searchedProduct) -->
               <ion-item lines="none" v-if="searchedProduct.productId">
@@ -68,9 +71,10 @@
                 <ion-label>
                   {{ getProductIdentificationValue(barcodeIdentifier, getProduct(searchedProduct.productId)) }}
                   <p>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) : getProduct(searchedProduct.productId)?.internalName }}</p>
-                  <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
+                  <p v-if="getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) !== 'null'">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
                 </ion-label>
-                <ion-icon :icon="checkmarkDoneOutline" color="success" slot="end"/>
+                <ion-icon v-if="!pendingProductIds.has(searchedProduct.productId)" :icon="checkmarkDoneOutline" color="success" slot="end"/>
+                <ion-spinner v-else name="crescent" slot="end" />
               </ion-item>
               
               <!-- scanned no match -->
@@ -94,7 +98,7 @@
                 </ion-thumbnail>
                 <ion-label>
                   {{ translate("Your scanner isn’t focused yet.") }}
-                  <p>{{ translate("Scanning is set to") }} {{ (barcodeIdentifier || '').toUpperCase() }}</p>
+                  <p>{{ translate("Scanning is set to") }} {{ barcodeIdentificationDesc[barcodeIdentifier] || barcodeIdentifier }}</p>
                   <p v-if="barcodeIdentifier !== 'SKU'">{{ translate("Swap to SKU from the settings page") }}</p>
                 </ion-label>
                 <ion-button slot="end" color="warning" size="small" @click="enableScan">
@@ -110,7 +114,7 @@
                 </ion-thumbnail>
                 <ion-label>
                   {{ translate("Begin scanning products to add them to this transfer") }}
-                  <p>{{ translate("Scanning is set to") }} {{ (barcodeIdentifier || '').toUpperCase() }}</p>
+                  <p>{{ translate("Scanning is set to") }} {{ barcodeIdentificationDesc[barcodeIdentifier] || barcodeIdentifier }}</p>
                   <p v-if="barcodeIdentifier !== 'SKU'">{{ translate("Swap to SKU from the settings page") }}</p>
                 </ion-label>
                 <ion-badge slot="end" color="success">{{ translate("start scanning") }}</ion-badge>
@@ -134,11 +138,11 @@
                   </ion-thumbnail>
                   <ion-label>
                     {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) : getProduct(searchedProduct.productId)?.internalName }}
-                    <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
+                    <p v-if="getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) !== 'null'">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
                   </ion-label>
-                  <template v-if="!isItemAlreadyInOrder(searchedProduct.productId)">
-                    <ion-button data-testid="add-to-transfer-btn" slot="end" fill="outline" @click="addSearchedOrderItem">
-                      {{ translate("Add to Transfer") }}
+                  <template v-if="!productQueue.isProductInOrder(searchedProduct.productId)">
+                    <ion-button data-testid="add-to-transfer-btn" :disabled="pendingProductIds.has(searchedProduct.productId)" slot="end" fill="outline" @click="addSearchedOrderItem">
+                      {{ pendingProductIds.has(searchedProduct.productId) ? translate("Adding...") : translate("Add to Transfer") }}
                     </ion-button>
                   </template>
                   <template v-else>
@@ -199,10 +203,10 @@
           <ion-button data-testid="discard-order-btn" size="small" color="danger" fill="outline" @click="router.replace('/transfer-orders')">
             {{ translate("Discard order") }}
           </ion-button>
-          <ion-button data-testid="ship-later-btn-create-transfer-order-page" size="small" fill="outline" :disabled="!currentOrder.items?.length || hasInvalidPickedQuantity()" @click="shiplater">
+          <ion-button data-testid="ship-later-btn-create-transfer-order-page" size="small" fill="outline" :disabled="!currentOrder.items?.length || hasInvalidPickedQuantity() || pendingProductIds.size" @click="shiplater">
             {{ translate("Ship later") }}
           </ion-button>
-          <ion-button data-testid="pack-and-ship-order-btn" size="small" color="primary" fill="solid" :disabled="!currentOrder.items?.length || hasInvalidPickedQuantity()" @click="packAndShipOrder">
+          <ion-button data-testid="pack-and-ship-order-btn" size="small" color="primary" fill="solid" :disabled="!currentOrder.items?.length || hasInvalidPickedQuantity() || pendingProductIds.size" @click="packAndShipOrder">
             {{ translate("Pack and ship order") }}
           </ion-button>
         </ion-buttons>
@@ -213,7 +217,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
-import { IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonCard, IonList, IonItem, IonLabel, IonButton, IonIcon, IonToggle, IonSegment, IonSegmentButton, IonThumbnail, IonBadge, IonSearchbar, IonSpinner, IonFooter, IonButtons, onIonViewWillEnter, alertController, modalController, onIonViewWillLeave } from '@ionic/vue';
+import { IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonCard, IonList, IonItem, IonInput, IonLabel, IonButton, IonIcon, IonToggle, IonSegment, IonSegmentButton, IonThumbnail, IonBadge, IonSearchbar, IonSpinner, IonFooter, IonButtons, onIonViewWillEnter, alertController, modalController, onIonViewWillLeave } from '@ionic/vue';
 import {
   barcodeOutline,
   checkmarkDoneOutline,
@@ -240,25 +244,35 @@ import { OrderService } from '@/services/OrderService';
 import TransferOrderItem from '@/components/TransferOrderItem.vue'
 import AddProductModal from "@/components/AddProductModal.vue";
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
+import { useProductQueue } from '@/composables/useProductQueue';
+import { searchProducts } from '@/adapter';
 
 const store = useStore();
 const route = useRoute();
 const productIdentificationStore = useProductIdentificationStore();
 const productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
 
+// Create single shared instance to prevent state isolation between components
+// Main component and modal will share the same queue state for proper UI sync
+const productQueue = useProductQueue();
+// Template cannot automatically unwrap Ref<Set> to access Set methods like .has()
+// Destructuring allows direct use in template: pendingProductIds.has(productId)
+const { pendingProductIds } = productQueue;
+
 const mode = ref('scan');
 const queryString = ref('');
 const isOrderLoading = ref(false);
 const isSearchingProduct = ref(false);
-const searchedProduct = ref({}) as any;
+const searchedProduct = ref({}) as any; // Stores the product found from scan/search - used to display product details below input
 const isScanningEnabled = ref(false);
-const lastScannedId = ref('');
+const lastScannedId = ref(''); // Stores the last successfully scanned product ID - used to highlight recently scanned items
 const scanInput = ref('') as any
 const searchInput = ref('') as any
 let timeoutId: any = null;
 let productSearchCount = ref(0);
 let facilities = ref([]) as any;
 let preventLeave = ref(false);
+let barcodeIdentificationDesc = ref({}) as any;
 
 const barcodeIdentifier = computed(() => store.getters["util/getBarcodeIdentificationPref"]);
 const getProduct = computed(() => store.getters["product/getProduct"]);
@@ -278,7 +292,7 @@ watch(queryString, (value) => {
 
   isSearchingProduct.value = true;
   timeoutId = setTimeout(() => {
-    findProduct();
+    findProduct(searchedString);
   }, 800);
 }, { deep: true });
 
@@ -287,7 +301,8 @@ onIonViewWillEnter(async () => {
   emitter.on('clearSearchedProduct', clearSearchedProduct as any);
   const isValidOrder = await fetchTransferOrderDetail(route?.params?.orderId as string);
   if(isValidOrder) {
-    await fetchProductInformation();
+    await productQueue.fetchProductInformation();
+    await fetchBarcodeIdentificationDesc();
     facilities.value = await UtilService.fetchProductStoreFacilities();
   }
   isOrderLoading.value = false;
@@ -360,6 +375,7 @@ const clearSearchedProduct = () => {
 
 onIonViewWillLeave(() => {
   emitter.off('clearSearchedProduct', clearSearchedProduct as any);
+  productQueue.clearQueue();
 });
 
 // Fetches transfer order details by orderId, including its items, and updates the store.
@@ -403,14 +419,20 @@ async function fetchTransferOrderDetail(orderId: string) {
   return false;
 }
 
-async function fetchProductInformation() {
+async function fetchBarcodeIdentificationDesc() {
   try {
-    const items = currentOrder.value.items;
-    if(!items.length) return;
-    const productIds = items.map((item: any) => item.productId)
-    await store.dispatch('product/fetchProducts', { productIds });
+    const resp = await ProductService.fetchBarcodeIdentificationDesc({ parentTypeId: 'HC_GOOD_ID_TYPE' });
+    
+    if (!hasError(resp) && resp.data?.length) {
+      barcodeIdentificationDesc.value = resp.data.reduce((identifierDesc: any, identifier: any) => {
+        identifierDesc[identifier.goodIdentificationTypeId] = identifier.description;
+        return identifierDesc;
+      }, {});
+    } else {
+      throw resp.data;
+    }
   } catch (err) {
-    logger.error("Failed to fetch product information", err);
+    logger.error("Failed to fetch product identification descriptions", err);
   }
 }
 
@@ -547,7 +569,7 @@ async function enableScan() {
   mode.value = 'scan';
   isScanningEnabled.value = true;
   setTimeout(() => {
-    scanInput.value?.setFocus?.()
+    scanInput.value?.$el.setFocus?.()
   }, 0)
 }
 
@@ -572,13 +594,14 @@ async function openAddProductModal() {
     component: AddProductModal,
     componentProps: {
       query: searchedProduct.value.scannedId || queryString.value,
+      addProductToQueue: productQueue.addProductToQueue,
+      isProductInOrder: productQueue.isProductInOrder,
+      pendingProductIds: productQueue.pendingProductIds.value // Pass the actual Set, not Ref
     }
   });
 
   addProductModal.onDidDismiss().then(async () => {
     queryString.value = '';
-    await fetchTransferOrderDetail(currentOrder.value.orderId as string);
-    await fetchProductInformation();
   })
   await addProductModal.present();
 }
@@ -591,6 +614,7 @@ function getFacilityName(facilityId: string) {
 async function scanProduct() {
   const scannedId = queryString.value?.trim();
   if(!scannedId) return;
+  queryString.value = '';
 
   // clear any watcher-scheduled timeout to avoid a later duplicate call
   if(timeoutId) {
@@ -600,71 +624,13 @@ async function scanProduct() {
 
   isSearchingProduct.value = true;
   // call findProduct which will update searchedProduct (found or not)
-  const productFound: any = await findProduct();
+  const productFound: any = await findProduct(scannedId);
   if(productFound) {
-    await addTransferOrderItem(productFound, scannedId);
-  }
-  // clear the input field after scanning the product
-  queryString.value = '';
-}
-
-async function addSearchedOrderItem() {
-  const productId = searchedProduct.value?.productId;
-  if(!productId) return;
-  const product = getProduct.value(productId);
-  await addTransferOrderItem(product);
-}
-
-// Find a product (shared by scan & search)
-// - On search: sets a preview in `searchedProduct`
-// - Returns the found product (or null)
-async function findProduct() {
-  const query = queryString.value?.trim();
-  if(!query) { 
-    isSearchingProduct.value = false; 
-    return null; 
-  }
-
-  try {
-    const payload: any = {
-      filters: ['isVirtual: false', 'isVariant: true'],
-      viewSize: 1
-    }
-
-    if(mode.value === 'scan') {
-      payload.filters.push(`goodIdentifications: ${barcodeIdentifier.value}/${query}`);
-    } else {
-      payload.keyword = queryString.value.trim();
-    }
-    const resp = await ProductService.fetchProducts(payload);
-
-    if(!hasError(resp) && resp.data.response?.docs?.length) {
-      productSearchCount.value = resp.data.response?.numFound
-      const item = resp.data.response.docs[0];
-      store.dispatch("product/addProductToCached", item);
-      searchedProduct.value = { productId: item.productId, mainImageUrl: item.mainImageUrl };
-      isSearchingProduct.value = false;
-      return item;
-    } else {
-      searchedProduct.value = { scannedId: query };
-      isSearchingProduct.value = false;
-      return null;
-    }
-  } catch (err) {
-    logger.error(err);
-    searchedProduct.value = {};
-    isSearchingProduct.value = false;
+    await addProductViaQueue(productFound, scannedId);
   }
 }
 
-/**
- * Commits a product to the current transfer order.
- * - Handles scanning or manual search add
- * - Fetches stock + average cost
- * - Calls API to create order item
- * - Updates local currentOrder state
- */
-async function addTransferOrderItem(product: any, scannedId?: string) {
+async function addProductViaQueue(product: any, scannedId?: string) {
   if (!product?.productId) return;
 
   // If product is already in order → scroll to existing row & exit
@@ -674,56 +640,79 @@ async function addTransferOrderItem(product: any, scannedId?: string) {
     return;
   }
 
-  const newItem: any = {
-    productId: product.productId,
-    sku: product.sku,
-    quantity: 1,
-    pickedQuantity: 1,
-    shipGroupSeqId: "00001",
-    scannedId
+  const itemToAdd = {
+    product: product,
+    orderId: currentOrder.value.orderId,
+    facilityId: currentOrder.value.shipGroups?.[0]?.facilityId,
+    scannedId: scannedId,
+    onSuccess: (product: any, newItem: any) => {
+      // Only keep the searchedProduct for scanning flow
+      if (scannedId) {
+        // Scanning flow - show success state
+        searchedProduct.value = { ...newItem, productId: product.productId };
+      } else {
+        // Search flow - clear and return to initial state
+        searchedProduct.value = {};
+        queryString.value = '';
+      }
+    },
+    onError: (product: any, error: any) => {
+      searchedProduct.value = {};
+      logger.error(`Failed to add product ${product.productId}:`, error);
+    }
   };
+  
+  productQueue.addProductToQueue(itemToAdd);
+}
 
-  // Fetch available stock
-  const stock = product.productId ? await fetchStock(product.productId) : null;
-  newItem.qoh = stock?.qoh;
-  searchedProduct.value = { ...newItem };
+async function addSearchedOrderItem() {
+  const productId = searchedProduct.value?.productId;
+  if(!productId) return;
+  const product = getProduct.value(productId);
+  // Use the queue system for search flow
+  await addProductViaQueue(product);
+}
+
+// Find a product (shared by scan & search)
+// - On search: sets a preview in `searchedProduct`
+// - Returns the found product (or null)
+async function findProduct(value: string) {
+  if(!value) { 
+    isSearchingProduct.value = false; 
+    return null; 
+  }
 
   try {
-    // Fetch product's average cost before committing to order
-    const unitPrice = await ProductService.fetchProductAverageCost(
-      newItem.productId,
-      currentOrder.value.shipGroups?.[0]?.facilityId
-    );
+    const payload: any = {
+      filters: {},
+      viewSize: 1
+    }
 
-    // Prepare payload and call API to add order item
-    const payload = {
-      orderId: currentOrder.value.orderId,
-      productId: newItem.productId,
-      quantity: newItem.quantity,
-      shipGroupSeqId: newItem.shipGroupSeqId,
-      unitPrice: unitPrice || 0
-    };
-    const resp = await TransferOrderService.addOrderItem(payload);
-
-    if(!hasError(resp)) {
-      // Update local state with order item & refresh order in store
-      newItem.orderId = currentOrder.value.orderId;
-      newItem.orderItemSeqId = resp.data?.orderItemSeqId;
-
-      currentOrder.value.items.push(newItem);
-      await store.dispatch('transferorder/updateCurrentTransferOrder', currentOrder.value);
+    if(mode.value === 'scan') {
+      payload.filters['goodIdentifications'] = { value: `${barcodeIdentifier.value}/${value}`}
     } else {
-      searchedProduct.value = {};
-      throw resp.data;
+      payload.keyword = value;
+    }
+    const resp = await searchProducts(payload);
+
+    if(resp.total) {
+      productSearchCount.value = resp.total
+      const item = resp.products[0];
+      store.dispatch("product/addProductToCached", item);
+      searchedProduct.value = { productId: item.productId, mainImageUrl: item.mainImageUrl };
+      isSearchingProduct.value = false;
+      return item;
+    } else {
+      searchedProduct.value = { scannedId: value };
+      isSearchingProduct.value = false;
+      return null;
     }
   } catch (err) {
     logger.error(err);
-    showToast(translate("Failed to add product to order"));
     searchedProduct.value = {};
+    isSearchingProduct.value = false;
   }
-  queryString.value = '';
 }
-
 
 // Stock fetch helper
 async function fetchStock(productId: string) {
@@ -753,11 +742,6 @@ function findAndScrollToExisting(identifier?: string, productId?: string) {
     return true;
   }
   return false;
-}
-
-// check if product already exists in currentOrder
-function isItemAlreadyInOrder(productId: string) {
-  return currentOrder.value?.items?.some((item: any) => item.productId === productId)
 }
 
 // Scrolls the view to the specified product item and highlights it temporarily.
@@ -880,11 +864,7 @@ async function packAndShipOrder() {
   align-items: start;
   gap: var(--spacer-base);
   padding: var(--spacer-base);
-}
-
-ion-segment {
-  grid-auto-columns: minmax(auto, 150px);
-  width: auto;
+  flex-wrap: wrap;
 }
 
 .transfer-order > * {
@@ -892,15 +872,21 @@ ion-segment {
 }
 
 .order-info {
-  flex: 1;
+  flex: 1 0 350px;
 }
 
 .add-items {
-  flex: 3;
+  flex: 3 1 375px;
 }
 
-.search-type { 
+.add-items .mode { 
   display: flex;
+}
+
+.add-items .mode ion-segment {
+  grid-auto-columns: minmax(auto, 150px);
+  justify-content: start;
+  flex: 0 1 max-content;
 }
 
 .order-items{

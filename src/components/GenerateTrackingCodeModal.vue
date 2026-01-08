@@ -24,9 +24,9 @@
     <ion-item lines="full" v-if="order.gatewayMessage || packingErrorMessage">
       <ion-label>
         <p class="overline">{{ translate("Gateway error") }}</p>
-        {{ order.gatewayMessage ?? packingErrorMessage }}
+        {{ order.gatewayMessage || packingErrorMessage }}
       </ion-label>
-      <ion-button fill="clear" color="medium" @click="copyToClipboard(order.gatewayMessage, 'Copied to clipboard')"> 
+      <ion-button fill="clear" color="medium" @click="copyToClipboard(order.gatewayMessage || packingErrorMessage, 'Copied to clipboard')">
         <ion-icon slot="icon-only" :icon="copyOutline" />
       </ion-button>
     </ion-item>
@@ -59,12 +59,12 @@
         <ion-list>
           <ion-item>
             <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" :selectedText="getCarrier()" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
-              <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
+              <ion-select-option v-for="carrier in filteredFacilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item>
             <template v-if="carrierMethods && carrierMethods.length > 0">
-              <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
+              <ion-select :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE'" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
                 <ion-select-option v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
               </ion-select>
             </template>
@@ -93,12 +93,12 @@
         <ion-list>
           <ion-item>
             <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" :selectedText="getCarrier()" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
-              <ion-select-option v-for="carrier in facilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
+              <ion-select-option v-for="carrier in filteredFacilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item>
             <template v-if="carrierMethods && carrierMethods.length > 0">
-              <ion-select :disabled="!order.missingLabelImage" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
+              <ion-select :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE'" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
                 <ion-select-option v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
               </ion-select>
             </template>
@@ -188,7 +188,17 @@ export default defineComponent({
       productStoreShipmentMethods: 'carrier/getProductStoreShipmentMethods',
       productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
       userProfile: 'user/getUserProfile'
-    })
+    }),
+    filteredFacilityCarriers(): any {
+      const shipmentMethodTypeId = this.initialShipmentMethodTypeId ? this.initialShipmentMethodTypeId : this.order?.shipmentMethodTypeId
+      if (shipmentMethodTypeId === 'SHIP_TO_STORE') {
+        const allowedPartyIds = new Set(this.productStoreShipmentMethods
+          .filter((method: any) => method.shipmentMethodTypeId === 'SHIP_TO_STORE')
+          .map((method: any) => method.partyId));
+        return this.facilityCarriers.filter((carrier: any) => allowedPartyIds.has(carrier.partyId));
+      }
+      return this.facilityCarriers;
+    }
   },
   data() {
     return {
@@ -204,7 +214,7 @@ export default defineComponent({
       packingErrorMessage: ""
     }
   },
-  props: ["order", "updateCarrierShipmentDetails", "executePackOrder", "rejectEntireOrder", "updateParameter", "documentOptions", "packingError", "isDetailPage"],
+  props: ["order", "updateCarrierShipmentDetails", "executePackOrder", "rejectEntireOrder", "updateParameter", "documentOptions", "packingError", "isDetailPage", "initialShipmentMethodTypeId"],
   async mounted() {
     await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths')])
     this.isTrackingRequired = this.isTrackingRequiredForAnyShipmentPackage()
@@ -226,7 +236,8 @@ export default defineComponent({
       return this.order.isTrackingRequired === 'Y'
     },
     async getProductStoreShipmentMethods(carrierPartyId: string) { 
-      return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId) || [];
+      const shipmentMethodTypeId = this.initialShipmentMethodTypeId ? this.initialShipmentMethodTypeId : this.order?.shipmentMethodTypeId
+      return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId && (shipmentMethodTypeId === 'SHIP_TO_STORE' || method.shipmentMethodTypeId !== 'SHIP_TO_STORE')) || [];
     },
     getCarrier() {
       const carrier = this.facilityCarriers.find((facilityCarrier: any) => facilityCarrier.partyId === this.carrierPartyId)
@@ -234,7 +245,8 @@ export default defineComponent({
     },
     async updateCarrier(carrierPartyId: string) {
       this.carrierMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
-      this.shipmentMethodTypeId = this.carrierMethods?.[0]?.shipmentMethodTypeId;
+      const isCurrentMethodSupported = this.shipmentMethodTypeId && this.carrierMethods.some((method: any) => method.shipmentMethodTypeId === this.shipmentMethodTypeId);
+      this.shipmentMethodTypeId = isCurrentMethodSupported ? this.shipmentMethodTypeId : (this.carrierMethods?.[0]?.shipmentMethodTypeId || "");
     },
     reinitializeData(){
       this.carrierPartyId = this.order.carrierPartyId
