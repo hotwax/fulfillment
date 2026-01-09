@@ -128,7 +128,9 @@
               </ion-item>
               <ion-item>
                 <ion-select data-testid="select-method-dropdown" :disabled="!shipmentMethods.length" :value="selectedShippingMethod" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="updateSelectedShippingMethod($event.detail.value)">
-                  <ion-select-option data-testid="select-method-dropdown-option" v-for="(method, index) in shipmentMethods" :key="index" :value="method.shipmentMethodTypeId">{{ method.description ? method.description : method.shipmentMethodTypeId }}</ion-select-option>
+                  <template v-for="(method, index) in shipmentMethods" :key="index">
+                    <ion-select-option data-testid="select-method-dropdown-option" v-if="method.shipmentMethodTypeId !== 'SHIP_TO_STORE'" :value="method.shipmentMethodTypeId">{{ method.description ? method.description : method.shipmentMethodTypeId }}</ion-select-option>
+                  </template>
                 </ion-select>
               </ion-item>
               <ion-item lines="full">
