@@ -127,6 +127,14 @@ export default defineComponent({
       defaultRejectReasonId: "NO_VARIANCE_LOG"  // default variance reason, to be used when any other item is selected for rejection
     }
   },
+  // Added this watcher to update local item reference when prop changes. 
+  // This fixes the issue of stale data usage where data properties were not being updated on change in props.
+  watch: {
+    itemDetail(newItem) {
+      this.item = newItem;
+      this.pickedQuantity = newItem.pickedQuantity;
+    }
+  },
   computed: {
     ...mapGetters({
       currentOrder: 'transferorder/getCurrent',
