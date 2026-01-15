@@ -8,10 +8,12 @@
       </ion-buttons>
       <ion-title>{{ translate("Assign Pickers") }}</ion-title>
     </ion-toolbar>
+    <ion-toolbar>
+      <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; findPickers()"/>
+    </ion-toolbar>
   </ion-header>
 
   <ion-content>
-    <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; findPickers()"/>
     <ion-row>
       <ion-chip v-for="picker in selectedPickers" :key="picker.id">
         <ion-label>{{ picker.name }}</ion-label>
