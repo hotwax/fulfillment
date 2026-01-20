@@ -175,6 +175,7 @@
   "Failed to reject order": "Failed to reject order",
   "Failed to reject outstanding orders": "Error al rechazar pedidos pendientes",
   "Failed to remove rejection reason.": "Error al eliminar la razon de rechazo.",
+  "Failed to update box.": "Failed to update box.",
   "Failed to update carrier and shipment method association.": "Error al actualizar transportadora y asociación de metodo de envio.",
   "Failed to update delivery days.": "Error al actualizar los dias de envio.",
   "Failed to update sequence for some rejection reasons.": "Error al actualizar la secuencia de alginas razones de rechazo.",
