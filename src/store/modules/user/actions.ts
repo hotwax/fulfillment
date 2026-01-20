@@ -16,6 +16,7 @@ import { useAuthStore, useUserStore, useProductIdentificationStore } from '@hotw
 import emitter from '@/event-bus'
 import { generateDeviceId, generateTopicName } from '@/utils/firebase'
 import router from '@/router';
+import { UtilService } from '@/services/UtilService';
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -77,6 +78,25 @@ const actions: ActionTree<UserState, RootState> = {
           useUserStore().currentFacility = facility
         } else {
           showToast(translate("Redirecting to home page due to incorrect information being passed."))
+        }
+      }
+
+      const authStore = useAuthStore()
+      if(authStore.isEmbedded) {
+        const locationId = authStore.posContext.locationId
+        const payload = {
+          shopifyLocationId: locationId
+        }
+        const resp = await UtilService.fetchShopifyShopLocation(omsRedirectionUrl, token, payload)
+        if(!hasError(resp) && resp.data.docs?.length) {
+          const facilityId = resp.data.docs[0].facilityId;
+          const facility = userProfile.facilities.find((facility: any) => facility.facilityId === facilityId);
+          if(!facility) {
+            throw "Unable to login. User is not associated with this location"
+          }
+          useUserStore().currentFacility = facility
+        } else {
+          throw "Failed to fetch location information"
         }
       }
 
