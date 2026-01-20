@@ -31,7 +31,7 @@
           </div>
         </div>
 
-        <ion-card class="order">
+        <ion-card class="order" data-testid="order-detail-card">
           <div class="order-header">
             <div class="order-primary-info">
               <ion-label>
@@ -60,11 +60,11 @@
               <ion-skeleton-text animated />
             </div>
             <div class="box-type desktop-only" v-else-if="order.shipmentPackages">
-              <ion-button :disabled="order.items.length <= order.shipmentPackages.length || addingBoxForShipmentIds.includes(order.orderId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />
+              <ion-button data-testid="order-add-box-btn" :disabled="order.items.length <= order.shipmentPackages.length || addingBoxForShipmentIds.includes(order.orderId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />
                 {{ translate("Add Box") }}
               </ion-button>
               <ion-row>
-                <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
+                <ion-chip data-testid="order-box-chip" v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
                   {{ `Box ${shipmentPackage?.packageName}` }} {{ `| ${boxTypeDesc(getShipmentPackageType(order, shipmentPackage))}`}}
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
@@ -179,7 +179,7 @@
             <!-- positive -->
             <div>
               <template v-if="category === 'in-progress'">
-                <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" @click="packOrder(order)">
+                <ion-button data-testid="order-pack-btn" :color="order.hasAllRejectedItem ? 'danger' : ''" @click="packOrder(order)">
                   <ion-icon slot="start" :icon="archiveOutline" />
                   {{ translate(order.hasAllRejectedItem ? "Reject order" : order.hasRejectedItem ? "Save and Pack Order" : "Pack order") }}
                 </ion-button>
@@ -194,7 +194,7 @@
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Shipped") }}
                 </ion-button>
-                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
+                <ion-button data-testid="order-ship-btn" v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Ship order") }}
                 </ion-button>
@@ -206,7 +206,7 @@
             </div>
             <!-- negative -->
             <div class="desktop-only" v-if="category === 'completed'">
-              <ion-button :disabled="isUnpackDisabled || !hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+              <ion-button data-testid="order-unpack-btn" :disabled="isUnpackDisabled || !hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
             </div>
           </div>
         </ion-card>
