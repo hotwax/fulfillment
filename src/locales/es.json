@@ -373,6 +373,7 @@
   "Pack using default packaging": "Empacar utilizando el empaque predeterminado",
   "Packed": "Empacado",
   "Partial rejections": "Rechazo Parcial",
+  "Party ID cannot be more than 20 characters.": "El ID del participante no puede tener más de 20 caracteres.",
   "Password": "Contraseña",
   "Payment": "Pago",
   "PAYMENT_AUTHORIZED": "PAGO_AUTORIZADO",
