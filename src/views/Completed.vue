@@ -245,7 +245,8 @@ import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
 import { OrderService } from '@/services/OrderService';
 import { UtilService } from '@/services/UtilService';
 import logger from '@/logger';
-import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
+
+import AiAssistantModal from '@/components/AiAssistantModal.vue';
 import { Actions, hasPermission } from '@/authorization'
 import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
 import { isKit, retryShippingLabel } from '@/utils/order'
@@ -647,7 +648,7 @@ export default defineComponent({
     },
     async showShippingLabelErrorModal(order: any) {
       const shippingLabelErrorModal = await modalController.create({
-        component: ShippingLabelErrorModal,
+        component: AiAssistantModal,
         componentProps: {
           shipmentId: order.shipmentId
         }
