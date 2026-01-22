@@ -9,6 +9,9 @@
         <ion-title v-else>{{ openOrders.query.viewSize }} {{ translate('of') }} {{ openOrders.total }} {{ translate('orders') }}</ion-title>
      
         <ion-buttons slot="end">
+          <ion-button @click="openAiChatModal()">
+            <ion-icon slot="icon-only" :icon="chatbubblesOutline" />
+          </ion-button>
           <ion-button @click="viewNotifications()">
             <ion-icon slot="icon-only" :icon="notificationsOutline" :color="(unreadNotificationsStatus && notifications.length) ? 'primary' : ''" />
           </ion-button>
@@ -177,8 +180,9 @@ import {
   popoverController
 } from '@ionic/vue';
 import { computed, defineComponent } from 'vue';
-import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
+import { caretDownOutline, chatbubblesOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
 import AssignPickerModal from '@/views/AssignPickerModal.vue';
+import AiChatModal from '@/components/AiChatModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import { formatUtcDate, getFeatures, getFacilityFilter, hasActiveFilters, showToast } from '@/utils'
@@ -435,6 +439,12 @@ export default defineComponent({
       });
       return popover.present();
     },
+    async openAiChatModal() {
+      const modal = await modalController.create({
+        component: AiChatModal
+      });
+      return modal.present();
+    },
     fetchProductStock(productId: string) {
       this.store.dispatch('stock/fetchStock', { productId })
     }
@@ -468,6 +478,7 @@ export default defineComponent({
     return{
       Actions,
       caretDownOutline,
+      chatbubblesOutline,
       chevronUpOutline,
       cubeOutline,
       currentEComStore,
