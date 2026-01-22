@@ -4,14 +4,21 @@
       <Menu />
       <ion-router-outlet id="main-content" />
     </ion-split-pane>
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab-button @click="openAiAssistant">
+        <ion-icon :icon="sparkles" />
+      </ion-fab-button>
+    </ion-fab>
   </ion-app>
 </template>
 
 <script lang="ts">
-import { createAnimation, IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
+import { createAnimation, IonApp, IonRouterOutlet, IonSplitPane, IonFab, IonFabButton, IonIcon, modalController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import Menu from '@/components/Menu.vue';
 import { loadingController } from '@ionic/vue';
+import { sparkles } from 'ionicons/icons';
+import AiAssistantModal from '@/components/AiAssistantModal.vue';
 import emitter from "@/event-bus";
 import { mapGetters, useStore } from 'vuex';
 import { initialise, resetConfig } from '@/adapter'
@@ -28,7 +35,10 @@ export default defineComponent({
     IonApp,
     IonRouterOutlet,
     IonSplitPane,
-    Menu
+    Menu,
+    IonFab,
+    IonFabButton,
+    IonIcon
   },
   data() {
     return {
@@ -100,6 +110,12 @@ export default defineComponent({
       createAnimation()
         .addAnimation([gapAnimation, revealAnimation])
         .play();
+    },
+    async openAiAssistant() {
+      const modal = await modalController.create({
+        component: AiAssistantModal,
+      });
+      return modal.present();
     }
   },
   created() {
@@ -177,7 +193,8 @@ export default defineComponent({
     return {
       router,
       store,
-      translate
+      translate,
+      sparkles
     }
   }
 });

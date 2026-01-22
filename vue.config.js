@@ -36,6 +36,13 @@ module.exports = {
     port: 8100, // Ensure this port is different from the host
     headers: {
       "Access-Control-Allow-Origin": "*", // Allow all origins (for development only)
+    },
+    proxy: {
+      '^/api/mastra': {
+        target: 'http:///hc-agents-uat.hotwax.io',
+        changeOrigin: true,
+        pathRewrite: { '^/api/mastra': '/api' }
+      }
     }
   },
   runtimeCompiler: true,
