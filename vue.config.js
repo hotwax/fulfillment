@@ -39,7 +39,7 @@ module.exports = {
     },
     proxy: {
       '^/api/mastra': {
-        target: 'http:///hc-agents-uat.hotwax.io',
+        target: 'http://hc-agents-uat.hotwax.io',
         changeOrigin: true,
         pathRewrite: { '^/api/mastra': '/api' }
       }
