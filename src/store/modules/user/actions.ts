@@ -88,8 +88,8 @@ const actions: ActionTree<UserState, RootState> = {
           shopifyLocationId: locationId
         }
         const resp = await UtilService.fetchShopifyShopLocation(omsRedirectionUrl, token, payload)
-        if(!hasError(resp) && resp.data.docs?.length) {
-          const facilityId = resp.data.docs[0].facilityId;
+        if(!hasError(resp) && resp.data?.length) {
+          const facilityId = resp.data[0].facilityId;
           const facility = userProfile.facilities.find((facility: any) => facility.facilityId === facilityId);
           if(!facility) {
             throw "Unable to login. User is not associated with this location"
