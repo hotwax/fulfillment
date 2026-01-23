@@ -29,6 +29,7 @@ const userModule: Module<UserState, RootState> = {
       firebaseDeviceId: '',
       hasUnreadNotifications: true,
       allNotificationPrefs: [],
+      shopifyApp: null
     },
     getters,
     actions,

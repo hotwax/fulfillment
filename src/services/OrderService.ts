@@ -1,12 +1,14 @@
 import { api, apiClient, hasError } from '@/adapter';
 import store from '@/store';
-import { getProductIdentificationValue, translate, useUserStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, translate, useAuthStore, useUserStore } from '@hotwax/dxp-components';
 import logger from '@/logger'
 import { cogOutline } from 'ionicons/icons';
 import { downloadCsv, getCurrentFacilityId, getFeatures, getProductStoreId, showToast } from '@/utils'
 import { removeKitComponents } from '@/utils/order';
 import { escapeSolrSpecialChars, prepareSolrQuery } from '@/utils/solrHelper';
 import { ZebraPrinterService } from './ZebraPrinterService';
+import ShopifyService from './ShopifyService';
+import { Redirect } from '@shopify/app-bridge/actions';
 
 const findOpenOrders = async (payload: any): Promise<any> => {
   const openOrderQuery = payload.openOrderQuery
@@ -149,7 +151,14 @@ const printPicklist = async (picklistId: string): Promise <any>  => {
     const pdfUrl = window.URL.createObjectURL(resp.data);
     // Open the file in new tab
     try {
-      (window as any).open(pdfUrl, "_blank").focus();
+      console.log('suthStore',useAuthStore().shopifyAppBridge.dispatch(Redirect.Action.REMOTE, pdfUrl))
+      console.log('ShopifyService.getApp()', ShopifyService.getApp())
+      // If we have an app bridge instance, use it to open the pdf
+      if (ShopifyService.getApp()) {
+        ShopifyService.redirect(pdfUrl);
+      } else {
+        window.open(pdfUrl, "_blank")?.focus();
+      }
     }
     catch {
       showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'picklist'}), { icon: cogOutline });
