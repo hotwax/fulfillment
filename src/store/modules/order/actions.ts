@@ -502,17 +502,22 @@ const actions: ActionTree<OrderState, RootState> = {
 
         if (currentShipGroup?.shipmentMethodTypeId === 'SHIP_TO_STORE') {
           const facilityId = currentShipGroup.orderFacilityId || currentShipGroup.facilityId;
-          const { data } = await UtilService.fetchFacilityAddresses({ facilityId });
-          const address = data?.facilityContactMechs?.find((cm: any) => cm.contactMechId === (order.destinationContactMechId || currentShipGroup.contactMechId));
-          if (address) {
-            shippingAddress = { 
-              ...address, 
-              stateName: address.stateGeoName, 
-              countryName: address.countryGeoName, 
-              toName: currentShipGroup.facilityName || address.facilityName || address.toName || shippingAddress?.toName 
+          const facilityContactResp = await UtilService.fetchFacilityAddresses({ facilityId });
+          if (!hasError(facilityContactResp)) {
+            const { data } = facilityContactResp;
+            const address = data?.facilityContactMechs?.find((cm: any) => cm.contactMechId === (order.destinationContactMechId || currentShipGroup.contactMechId));
+            if (address) {
+              shippingAddress = { 
+                ...address, 
+                stateName: address.stateGeoName, 
+                countryName: address.countryGeoName, 
+                toName: currentShipGroup.facilityName || address.facilityName || address.toName || shippingAddress?.toName 
+              }
+              const phone = data.facilityContactMechs.find((cm: any) => cm.contactMechId === currentShipGroup.telecomContactMechId);
+              if (phone?.telecomNumber) telecomNumber = phone.telecomNumber;
             }
-            const phone = data.facilityContactMechs.find((cm: any) => cm.contactMechId === currentShipGroup.telecomContactMechId);
-            if (phone) telecomNumber = { ...phone };
+          } else {
+            logger.error(`Failed to fetch facility addresses for facility ${facilityId}`, facilityContactResp.data);
           }
         }
 
