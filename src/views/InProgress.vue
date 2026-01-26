@@ -10,6 +10,9 @@
         <ion-title v-else>{{ inProgressOrders.query.viewSize }} {{ translate('of') }} {{ inProgressOrders.total }} {{ translate('orders') }}</ion-title>
 
         <ion-buttons slot="end">
+          <ion-button @click="openAiChatModal()">
+            <ion-icon slot="icon-only" :icon="chatbubblesOutline" />
+          </ion-button>
           <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !inProgressOrders.total || isRejecting" fill="clear" color="danger" @click="recycleInProgressOrders()">
             {{ translate("Reject all") }}
           </ion-button>
@@ -273,6 +276,7 @@ import { computed, defineComponent } from 'vue';
 import {
   addOutline,
   caretDownOutline,
+  chatbubblesOutline,
   chevronUpOutline,
   checkmarkDoneOutline,
   closeCircleOutline,
@@ -289,6 +293,7 @@ import {
   trashBinOutline
 } from 'ionicons/icons'
 import PackagingPopover from "@/views/PackagingPopover.vue";
+import AiChatModal from '@/components/AiChatModal.vue';
 import { mapGetters, useStore } from 'vuex';
 import { copyToClipboard, getFeatures, getFacilityFilter, hasActiveFilters, showToast } from '@/utils';
 import { isKit } from '@/utils/order'
@@ -1186,14 +1191,20 @@ export default defineComponent({
     async orderActionsPopover(order: any, ev: Event) {
       const popover = await popoverController.create({
         component: OrderActionsPopover,
-        componentProps: {
+        componentProps: { 
           order,
-          category: 'in-progress'
+          category: 'inprogress'
         },
         showBackdrop: false,
         event: ev
       });
       return popover.present();
+    },
+    async openAiChatModal() {
+      const modal = await modalController.create({
+        component: AiChatModal
+      });
+      return modal.present();
     },
     async showShippingLabelErrorModal(order: any) {
       // Getting all the shipment ids
@@ -1278,6 +1289,7 @@ export default defineComponent({
       Actions,
       addOutline,
       caretDownOutline,
+      chatbubblesOutline,
       chevronUpOutline,
       copyToClipboard,
       checkmarkDoneOutline,

@@ -15,6 +15,8 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.10",
+    "@ai-sdk/vue": "^3.0.42",
     "@capacitor/android": "^2.4.7",
     "@capacitor/core": "^2.4.7",
     "@casl/ability": "^6.0.0",
@@ -30,6 +32,7 @@
     "@types/encoding-japanese": "^2.0.5",
     "@types/file-saver": "^2.0.5",
     "@types/luxon": "^2.3.2",
+    "ai": "^6.0.42",
     "boon-js": "^2.0.3",
     "core-js": "^3.6.5",
     "encoding-japanese": "^2.1.0",
@@ -43,7 +46,8 @@
     "vue-logger-plugin": "^2.2.3",
     "vue-router": "^4.0.12",
     "vuex": "^4.0.1",
-    "vuex-persistedstate": "^4.0.0-beta.3"
+    "vuex-persistedstate": "^4.0.0-beta.3",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@capacitor/cli": "^2.4.7",
