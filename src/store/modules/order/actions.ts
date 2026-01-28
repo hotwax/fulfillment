@@ -505,7 +505,8 @@ const actions: ActionTree<OrderState, RootState> = {
           const facilityContactResp = await UtilService.fetchFacilityAddresses({ facilityId });
           if (!hasError(facilityContactResp)) {
             const { data } = facilityContactResp;
-            const address = data?.facilityContactMechs?.find((cm: any) => cm.contactMechId === (order.destinationContactMechId || currentShipGroup.contactMechId));
+            const address = data.facilityContactMechs?.find((contactMech: any) => contactMech.contactMechId === (order.destinationContactMechId || currentShipGroup.contactMechId));
+            console.log(address)
             if (address) {
               shippingAddress = { 
                 ...address, 
@@ -513,8 +514,8 @@ const actions: ActionTree<OrderState, RootState> = {
                 countryName: address.countryGeoName, 
                 toName: currentShipGroup.facilityName || address.facilityName || address.toName || shippingAddress?.toName 
               }
-              const phone = data.facilityContactMechs.find((cm: any) => cm.contactMechId === currentShipGroup.telecomContactMechId);
-              if (phone?.telecomNumber) telecomNumber = phone.telecomNumber;
+              const { contactNumber } = data.facilityContactMechs.find((contactMech: any) => contactMech.contactMechId === currentShipGroup.telecomContactMechId) || {};
+              if (contactNumber) telecomNumber = { contactNumber };
             }
           } else {
             logger.error(`Failed to fetch facility addresses for facility ${facilityId}`, facilityContactResp.data);
