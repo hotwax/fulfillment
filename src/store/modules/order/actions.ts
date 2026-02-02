@@ -506,7 +506,6 @@ const actions: ActionTree<OrderState, RootState> = {
           if (!hasError(facilityContactResp)) {
             const { data } = facilityContactResp;
             const address = data.facilityContactMechs?.find((contactMech: any) => contactMech.contactMechId === (order.destinationContactMechId || currentShipGroup.contactMechId));
-            console.log(address)
             if (address) {
               shippingAddress = { 
                 ...address, 
