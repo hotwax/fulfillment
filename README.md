@@ -1,7 +1,7 @@
 # Fulfillment App
 
 ## 1. Repository Overview
-**Logical Name**: Fulfillment (not a Sanskrit word).
+**Logical Name**: Fulfillment.
 
 **Business Purpose**: This repository provides the Fulfillment PWA used by store and warehouse teams to execute order fulfillment workflows, including picking, packing, shipping, and transfer order processing. It connects to HotWax Commerce services to retrieve work queues, manage shipments, and print fulfillment documents so organizations can ship customer orders and move inventory efficiently.
 
@@ -40,7 +40,8 @@
 **Key environment configuration** (see `.env.example`):
 - `VUE_APP_BASE_URL`: Base URL for OMS API calls.
 - `VUE_APP_LOGIN_URL`: Login entry for HotWax Launchpad.
-- `VUE_APP_FIREBASE_CONFIG` / `VUE_APP_FIREBASE_VAPID_KEY`: Firebase configuration for notifications.
+- `VUE_APP_FIREBASE_CONFIG`: Firebase configuration for notifications.
+- `VUE_APP_FIREBASE_VAPID_KEY`: Firebase VAPID key for notifications.
 - `VUE_APP_REMOTE_ENTRY`: Remote entry for module federation extensions.
 - `VUE_APP_DEFAULT_PRODUCT_STORE_SETTINGS`: Default store-level fulfillment flags.
 
@@ -50,7 +51,7 @@ This README is structured to help automated release notes systems classify chang
 
 ---
 
-# Prerequisite
+## Prerequisite
 Ionic CLI - If you don't have the ionic CLI installed refer [official documentation](https://ionicframework.com/docs/intro/cli) for the installation instructions.
 
 
