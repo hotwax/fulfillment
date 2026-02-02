@@ -1,4 +1,55 @@
-Fulfillment App
+# Fulfillment App
+
+## 1. Repository Overview
+**Logical Name**: Fulfillment (not a Sanskrit word).
+
+**Business Purpose**: This repository provides the Fulfillment PWA used by store and warehouse teams to execute order fulfillment workflows, including picking, packing, shipping, and transfer order processing. It connects to HotWax Commerce services to retrieve work queues, manage shipments, and print fulfillment documents so organizations can ship customer orders and move inventory efficiently.
+
+## 2. Core Responsibilities & Business Logic
+- **Order Fulfillment**: Locate open orders, create picklists, pick/scan items, pack shipments, generate labels, and ship orders.
+- **Transfer Order Handling**: Pick, ship, and reject transfer orders between facilities.
+- **Carrier & Shipping Operations**: Manage carrier shipment methods, generate tracking labels, and print packing slips.
+- **Inventory & Exception Handling**: Handle unfulfillable items, rejections, and order status updates.
+- **User & Facility Context**: Resolve user permissions, facilities, and product store context for fulfillment operations.
+
+**Core workflows implemented**:
+- **Open Orders → Picking**: Build Solr-backed order queues, create picklists/waves, and scan items to update picked quantities before packing and shipping.
+- **Packing & Shipping**: Generate packing slips, shipping labels, and tracking codes; update shipment status from approved → packed → shipped.
+- **Transfer Orders**: Retrieve transfer orders, scan items, create outbound shipments, and handle rejection reasons when inventory is not fulfillable.
+- **Printing & Device Support**: Print picklists, packing slips, and labels (including Zebra printer flows) for operational execution.
+
+## 3. Dependencies & Architecture
+**Tech Stack**:
+- **Frontend**: Vue 3, Ionic Vue, Vue Router, Vuex, TypeScript.
+- **Mobile/PWA**: Capacitor, Ionic PWA tooling, service workers.
+- **Platform/Utilities**: HotWax OMS API client (`@hotwax/oms-api`), HotWax DXP components, Firebase, Module Federation runtime.
+
+**Dependency Map (App Repo)**:
+- **HotWax OMS / Maarg services**: Core API for orders, shipments, picklists, and facility/user context via `@hotwax/oms-api`.
+- **Solr-backed search**: Order queues are retrieved via Solr query endpoints for open orders and fulfillment queues.
+- **Document services**: Printing endpoints for picklists, packing slips, shipping labels, and custom documents.
+- **Firebase**: Notifications and remote entry hosting for modular UI extensions.
+- **Zebra printer integration**: Dedicated services to support label/print workflows for Zebra devices.
+
+## 4. Technical Context
+**Run locally**:
+1. Install dependencies: `npm install`
+2. Copy `.env.example` to `.env` and set required environment values.
+3. Start the app: `ionic serve` (or `npm run serve`).
+
+**Key environment configuration** (see `.env.example`):
+- `VUE_APP_BASE_URL`: Base URL for OMS API calls.
+- `VUE_APP_LOGIN_URL`: Login entry for HotWax Launchpad.
+- `VUE_APP_FIREBASE_CONFIG` / `VUE_APP_FIREBASE_VAPID_KEY`: Firebase configuration for notifications.
+- `VUE_APP_REMOTE_ENTRY`: Remote entry for module federation extensions.
+- `VUE_APP_DEFAULT_PRODUCT_STORE_SETTINGS`: Default store-level fulfillment flags.
+
+---
+
+This README is structured to help automated release notes systems classify changes by fulfillment workflow, integrations, and operational domains.
+
+---
+
 # Prerequisite
 Ionic CLI - If you don't have the ionic CLI installed refer [official documentation](https://ionicframework.com/docs/intro/cli) for the installation instructions.
 
