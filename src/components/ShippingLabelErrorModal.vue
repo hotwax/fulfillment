@@ -2,14 +2,14 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal"> 
+        <ion-button data-testid="shipping-label-error-modal-close-button" @click="closeModal"> 
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
       <ion-title>{{ translate("Shipping label error") }}</ion-title>
       <ion-buttons slot="end">
         <!-- Copying first message, assuming only one message will be received -->
-        <ion-button @click="copyToClipboard(shipmentLabelErrorMessage, 'Copied to clipboard')"> 
+        <ion-button data-testid="shipping-label-error-modal-copy-button" @click="copyToClipboard(shipmentLabelErrorMessage, 'Copied to clipboard')"> 
           <ion-icon slot="icon-only" :icon="copyOutline" />
         </ion-button>
       </ion-buttons>
@@ -18,7 +18,7 @@
   <ion-content>
     <ion-list lines="none">
       <ion-item v-if="shipmentLabelErrorMessage">
-        <ion-label class="ion-text-wrap">{{ shipmentLabelErrorMessage }}</ion-label>
+        <ion-label data-testid="shipping-label-error-message" class="ion-text-wrap">{{ shipmentLabelErrorMessage }}</ion-label>
       </ion-item>
       <ion-item v-else>
         {{ translate("No shipping label error received from carrier") }}

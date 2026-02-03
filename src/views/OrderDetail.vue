@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button slot="start" :default-href="`/${category}`" />
+        <ion-back-button data-testid="order-detail-back-button" slot="start" :default-href="`/${category}`" />
         <ion-title>{{ translate("Order details") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -13,15 +13,15 @@
             <h3>{{ order.orderName }}</h3>
           </div>
           <div class="order-tags">
-            <ion-chip outline @click="copyToClipboard(order.orderId, 'Copied to clipboard')">
+            <ion-chip data-testid="order-detail-copy-id-chip" outline @click="copyToClipboard(order.orderId, 'Copied to clipboard')">
               <ion-icon :icon="pricetagOutline" />
               <ion-label>{{ order.orderId }}</ion-label>
             </ion-chip>
-            <ion-chip v-if="category !== 'open'" outline @click="printPicklist(order)">
+            <ion-chip data-testid="order-detail-picklist-chip" v-if="category !== 'open'" outline @click="printPicklist(order)">
               <ion-icon :icon="documentTextOutline" />
               <ion-label>{{ translate('Linked picklist') }}: {{ order.picklistId }}</ion-label>
             </ion-chip>
-            <ion-chip outline v-if="order?.paymentPreferences?.length > 0" :color="statusColor[order?.paymentPreferences[0]?.statusId]">
+            <ion-chip data-testid="order-detail-payment-chip" outline v-if="order?.paymentPreferences?.length > 0" :color="statusColor[order?.paymentPreferences[0]?.statusId]">
               <ion-icon :icon="cashOutline" />
               <ion-label>{{ translate(getPaymentMethodDesc(order?.paymentPreferences[0]?.paymentMethodTypeId)) }} : {{ translate(getStatusDesc(order?.paymentPreferences[0]?.statusId)) }}</ion-label>
             </ion-chip>
@@ -40,7 +40,7 @@
               </ion-label>
             </div>
             <div class="order-tags">
-              <ion-chip outline>
+              <ion-chip data-testid="order-detail-ship-group-chip" outline>
                 <ion-icon :icon="ribbonOutline" />
                 <ion-label>{{ order.primaryShipGroupSeqId ? order.primaryShipGroupSeqId : order.shipGroupSeqId }}</ion-label>
               </ion-chip>
@@ -60,11 +60,11 @@
               <ion-skeleton-text animated />
             </div>
             <div class="box-type desktop-only" v-else-if="order.shipmentPackages">
-              <ion-button :disabled="order.items.length <= order.shipmentPackages.length || addingBoxForShipmentIds.includes(order.orderId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />
+              <ion-button data-testid="order-detail-add-box-button" :disabled="order.items.length <= order.shipmentPackages.length || addingBoxForShipmentIds.includes(order.orderId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />
                 {{ translate("Add Box") }}
               </ion-button>
               <ion-row>
-                <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
+                <ion-chip data-testid="order-detail-box-type-chip" v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
                   {{ `Box ${shipmentPackage?.packageName}` }} {{ `| ${boxTypeDesc(getShipmentPackageType(order, shipmentPackage))}`}}
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
@@ -76,7 +76,7 @@
             <div class="order-item">
             <div class="product-info">
               <ion-item lines="none">
-                <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
+                <ion-thumbnail data-testid="order-detail-product-image" slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
                   <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                 </ion-thumbnail>
                 <ion-label>
@@ -92,18 +92,18 @@
 
             <div v-if="category === 'in-progress'" class="desktop-only ion-text-center" >
               <template v-if="item.rejectReason">
-                <ion-chip outline color="danger" >
+                <ion-chip data-testid="order-detail-remove-rejection-chip" outline color="danger" >
                   <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
                   <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)"/>
                 </ion-chip>
               </template>
               <template v-else-if="isEntierOrderRejectionEnabled(order)">
-                <ion-chip outline color="danger">
+                <ion-chip data-testid="order-detail-rejection-reason-chip" outline color="danger">
                   <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject to avoid order split (no variance)')}}</ion-label>
                 </ion-chip>
               </template>
               <template v-else>
-                <ion-chip outline @click="openShipmentBoxPopover($event, item, order)">
+                <ion-chip data-testid="order-detail-shipment-box-chip" outline @click="openShipmentBoxPopover($event, item, order)">
                   <ion-icon :icon="fileTrayOutline" />
                   {{ `Box ${item.selectedBox || ''}` }} 
                   <ion-icon :icon="caretDownOutline" />
@@ -118,21 +118,21 @@
              <!--Adding checks to avoid any operations if order has missing info, mostly when after packing Solr is not updaing immediately-->
             <div class="product-metadata">
               <ion-note v-if="getProductStock(item.productId).qoh" class="ion-padding-end">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-              <ion-button color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+              <ion-button data-testid="order-detail-check-stock-button" color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
                 {{ translate('Check stock') }}
                 <ion-icon slot="end" :icon="cubeOutline"/>
               </ion-button>
               <!-- TODO make functional -->
-              <ion-button v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
+              <ion-button data-testid="order-detail-report-issue-button" v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
                 {{ translate('Report an issue') }}
                 <ion-icon slot="end" :icon="trashBinOutline"/>
               </ion-button>
-              <ion-button v-if="isKit(item)" fill="clear" color="medium" size="small" @click.stop="fetchKitComponent(item)">
+              <ion-button data-testid="order-detail-kit-components-button" v-if="isKit(item)" fill="clear" color="medium" size="small" @click.stop="fetchKitComponent(item)">
                 {{ translate('Components') }}
                 <ion-icon v-if="item.showKitComponents" color="medium" slot="end" :icon="chevronUpOutline"/>
                 <ion-icon v-else color="medium" slot="end" :icon="listOutline"/>
               </ion-button>
-              <ion-button v-if="item.productTypeId === 'GIFT_CARD'" fill="clear" color="medium" size="small" @click="openGiftCardActivationModal(item)">
+              <ion-button data-testid="order-detail-gift-card-button" v-if="item.productTypeId === 'GIFT_CARD'" fill="clear" color="medium" size="small" @click="openGiftCardActivationModal(item)">
                 {{ translate('Gift card') }}
                 <ion-icon color="medium" slot="end" :icon="item.isGCActivated ? gift : giftOutline"/>
               </ion-button>
@@ -141,7 +141,7 @@
             <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
               <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                 <ion-item lines="none">
-                  <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
+                  <ion-thumbnail data-testid="order-detail-product-image" slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
                     <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
@@ -151,7 +151,7 @@
                     </div>
                     <p>{{ getFeatures(getProduct(productComponent.productIdTo).productFeatures)}}</p>
                   </ion-label>
-                  <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.kitComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
+                  <ion-checkbox data-testid="order-detail-kit-reject-checkbox" v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.kitComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
                 </ion-item>
               </ion-card>
             </div>
@@ -159,8 +159,8 @@
           
           <div v-if="category === 'in-progress'" class="mobile-only">
             <ion-item>
-              <ion-button fill="clear" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
-              <ion-button slot="end" fill="clear" color="medium" @click="packagingPopover">
+              <ion-button data-testid="order-detail-mobile-pack-button" fill="clear" @click="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+              <ion-button data-testid="order-detail-mobile-actions-button" slot="end" fill="clear" color="medium" @click="packagingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
@@ -168,8 +168,8 @@
 
           <div v-else-if="category === 'completed'" class="mobile-only">
             <ion-item>
-              <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
-              <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
+              <ion-button data-testid="order-detail-mobile-ship-button" :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
+              <ion-button data-testid="order-detail-mobile-actions-button" slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
@@ -179,13 +179,13 @@
             <!-- positive -->
             <div>
               <template v-if="category === 'in-progress'">
-                <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" @click="packOrder(order)">
+                <ion-button data-testid="order-detail-pack-action-button" :color="order.hasAllRejectedItem ? 'danger' : ''" @click="packOrder(order)">
                   <ion-icon slot="start" :icon="archiveOutline" />
                   {{ translate(order.hasAllRejectedItem ? "Reject order" : order.hasRejectedItem ? "Save and Pack Order" : "Pack order") }}
                 </ion-button>
                 <Component :is="printDocumentsExt" :category="category" :order="order" :currentFacility="currentFacility" :hasMissingInfo="order.missingLabelImage"/>
               </template>  
-              <ion-button v-else-if="category === 'open'" @click="assignPickers">
+              <ion-button data-testid="order-detail-pick-order-button" v-else-if="category === 'open'" @click="assignPickers">
                 <ion-icon slot="start" :icon="personAddOutline" />
                 {{ translate("Pick order") }}
               </ion-button>
@@ -194,11 +194,11 @@
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Shipped") }}
                 </ion-button>
-                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
+                <ion-button data-testid="order-detail-ship-order-button" v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Ship order") }}
                 </ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
+                <ion-button data-testid="order-detail-print-packing-slip-button" :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
                   {{ translate("Print Customer Letter") }}
                   <ion-spinner data-spinner-size="medium" color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
                 </ion-button>
@@ -206,7 +206,7 @@
             </div>
             <!-- negative -->
             <div class="desktop-only" v-if="category === 'completed'">
-              <ion-button :disabled="isUnpackDisabled || !hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+              <ion-button data-testid="order-detail-unpack-button" :disabled="isUnpackDisabled || !hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
             </div>
           </div>
         </ion-card>
@@ -279,13 +279,13 @@
               <ion-icon slot="end" :icon="cashOutline" />
             </ion-item>
             <ion-item>
-              <ion-select :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedCarrier(carrierPartyId)">
+              <ion-select data-testid="order-detail-carrier-select" :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedCarrier(carrierPartyId)">
                 <ion-select-option v-for="carrier in filteredFacilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item>
               <template v-if="carrierMethods && carrierMethods.length > 0">
-                <ion-select :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE' || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedShipmentMethod(shipmentMethodTypeId)">
+                <ion-select data-testid="order-detail-method-select" :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE' || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedShipmentMethod(shipmentMethodTypeId)">
                   <ion-select-option v-for="method in carrierMethods" :key="method.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
                 </ion-select>
               </template>
@@ -293,7 +293,7 @@
                 <ion-label>
                   {{ translate('No shipment methods linked to', {carrierName: getCarrierName(carrierPartyId)}) }}
                 </ion-label>
-                <ion-button @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
+                <ion-button data-testid="order-detail-shipping-help-button" @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
                   <ion-icon slot="icon-only" :icon="informationCircleOutline" />
                 </ion-button>
               </template>
@@ -306,11 +306,11 @@
                 </ion-label>
               </ion-item>
               <template v-if="category === 'completed'">
-                <ion-button :disabled="!shipmentMethodTypeId || !hasPackedShipments(order)" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
+                <ion-button data-testid="order-detail-regenerate-label-button" :disabled="!shipmentMethodTypeId || !hasPackedShipments(order)" fill="outline" expand="block" class="ion-margin" @click.stop="regenerateShippingLabel(order)">
                   {{ shipmentLabelErrorMessage ? translate("Retry Label") : translate("Generate Label") }}
                   <ion-spinner color="primary" slot="end" data-spinner-size="medium" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
-                <ion-button :disabled="!shipmentMethodTypeId || !carrierPartyId || !hasPackedShipments(order)" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
+                <ion-button data-testid="order-detail-add-tracking-button" :disabled="!shipmentMethodTypeId || !carrierPartyId || !hasPackedShipments(order)" fill="clear" expand="block" color="medium" @click="openTrackingCodeModal()">
                   {{ translate("Add tracking code manually") }}
                 </ion-button>
               </template>
@@ -320,7 +320,7 @@
                 {{ order.trackingCode }}
                 <p>{{ translate("tracking code") }}</p>
               </ion-label>        
-              <ion-button slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, order)">
+              <ion-button data-testid="order-detail-tracking-popover-button" slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, order)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </ion-item>
@@ -366,7 +366,7 @@
             </ion-item>
     
             <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
-              <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
+              <ion-thumbnail data-testid="order-detail-product-image" slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
                 <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
               </ion-thumbnail>
               <ion-label>
@@ -380,7 +380,7 @@
               <div class="other-shipment-actions">
                 <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
                 <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).qoh">{{ getProductStock(item.productId, item.facilityId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button slot="end" fill="clear" v-else-if="['open', 'in-progress', 'completed'].includes(shipGroup.category)" size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
+                <ion-button data-testid="order-detail-other-shipment-stock-button" slot="end" fill="clear" v-else-if="['open', 'in-progress', 'completed'].includes(shipGroup.category)" size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
               </div>
@@ -645,7 +645,10 @@ export default defineComponent({
           currentOrder: currentOrder,
         },
         event: ev,
-        showBackdrop: false
+        showBackdrop: false,
+        htmlAttributes: {
+          'data-testid': 'order-detail-label-action-popover'
+        }
       });
 
       return popover.present()
@@ -734,7 +737,10 @@ export default defineComponent({
           shipmentPackages: order.shipmentPackages
         },
         showBackdrop: false,
-        event: ev
+        event: ev,
+        htmlAttributes: {
+          'data-testid': 'order-detail-shipment-box-popover'
+        }
       });
 
       popover.present();
@@ -755,7 +761,10 @@ export default defineComponent({
         component: OrderActionsPopover,
         componentProps: { order },
         showBackdrop: false,
-        event: ev
+        event: ev,
+        htmlAttributes: {
+          'data-testid': 'order-detail-order-actions-popover'
+        }
       });
       return popover.present();
     },
@@ -829,19 +838,34 @@ export default defineComponent({
             label: translate('Shipping labels'),
             value: 'printShippingLabel',
             checked: this.userPreference.printShippingLabel,
+            attributes: {
+              'data-testid': 'order-detail-pack-shipping-label-input'
+            }
           }, {
             name: 'printPackingSlip',
             type: 'checkbox',
             label: translate('Packing slip'),
             value: 'printPackingSlip',
-            checked: this.userPreference.printPackingSlip
+            checked: this.userPreference.printPackingSlip,
+            attributes: {
+              'data-testid': 'order-detail-pack-packing-slip-input'
+            }
           }],
+          htmlAttributes: {
+            'data-testid': 'order-detail-pack-order-alert'
+          },
           buttons: [{
             text: translate("Cancel"),
-            role: 'cancel'
+            role: 'cancel',
+            htmlAttributes: {
+              'data-testid': 'order-detail-pack-order-cancel-button'
+            }
           }, {
             text: translate("Pack"),
             role: 'confirm',
+            htmlAttributes: {
+              'data-testid': 'order-detail-pack-order-confirm-button'
+            },
             handler: async (data) => {
               const packingResponse = await this.executePackOrder(order, updateParameter, trackingCode, data)
               if (!packingResponse.isPacked) {
@@ -984,6 +1008,9 @@ export default defineComponent({
         event: ev,
         translucent: true,
         showBackdrop: false,
+        htmlAttributes: {
+          'data-testid': 'order-detail-packaging-popover'
+        }
       });
       return popover.present();
     },
@@ -993,6 +1020,9 @@ export default defineComponent({
         event: ev,
         translucent: true,
         showBackdrop: false,
+        htmlAttributes: {
+          'data-testid': 'order-detail-reject-reason-popover'
+        }
       });
 
       reportIssuePopover.present();
@@ -1045,7 +1075,10 @@ export default defineComponent({
     async assignPickers() {
       const assignPickerModal = await modalController.create({
         component: AssignPickerModal,
-        componentProps: { order: this.order }
+        componentProps: { order: this.order },
+        htmlAttributes: {
+          'data-testid': 'order-detail-assign-picker-modal'
+        }
       });
 
       // dismissing the popover once the picker modal is closed
@@ -1115,6 +1148,9 @@ export default defineComponent({
         event: ev,
         translucent: true,
         showBackdrop: false,
+        htmlAttributes: {
+          'data-testid': 'order-detail-shipping-popover'
+        }
       });
       return popover.present();
     },
@@ -1207,7 +1243,10 @@ export default defineComponent({
         component: ShipmentBoxTypePopover,
         event: ev,
         showBackdrop: false,
-        componentProps: { shipmentBoxTypes }
+        componentProps: { shipmentBoxTypes },
+        htmlAttributes: {
+          'data-testid': 'order-detail-box-type-popover'
+        }
       });
 
       popover.present();
@@ -1278,10 +1317,16 @@ export default defineComponent({
           message,
           buttons: [{
             text: translate("Cancel"),
-            role: 'cancel'
+            role: 'cancel',
+            htmlAttributes: {
+              'data-testid': 'order-detail-report-issue-cancel-button'
+            }
           }, {
             text: translate("Report"),
             role: 'confirm',
+            htmlAttributes: {
+              'data-testid': 'order-detail-report-issue-confirm-button'
+            },
             handler: async() => {
               await this.initiatePackOrder(order, 'report')
             }
@@ -1436,11 +1481,20 @@ export default defineComponent({
         .create({
            header: translate("Unpack"),
            message: translate("Unpacking this order will send it back to 'In progress' and it will have to be repacked."),
+           htmlAttributes: {
+             'data-testid': 'order-detail-unpack-alert'
+           },
            buttons: [{
             role: "cancel",
             text: translate("Cancel"),
+            htmlAttributes: {
+              'data-testid': 'order-detail-unpack-cancel-button'
+            }
           }, {
             text: translate("Unpack"),
+            htmlAttributes: {
+              'data-testid': 'order-detail-unpack-confirm-button'
+            },
             handler: async () => {
               try {
                 const resp = await OrderService.unpackOrder({shipmentId: order.shipmentId, statusId: 'SHIPMENT_APPROVED'})
@@ -1466,7 +1520,10 @@ export default defineComponent({
     async scanOrder(order: any, updateParameter?: string) {
       const modal = await modalController.create({
         component: ScanOrderItemModal,
-        componentProps: { order }
+        componentProps: { order },
+        htmlAttributes: {
+          'data-testid': 'order-detail-scan-order-modal'
+        }
       })
 
       modal.onDidDismiss().then((result: any) => {
@@ -1480,14 +1537,20 @@ export default defineComponent({
     async generateTrackingCodeForPacking(order: any, updateParameter?: string, documentOptions?: any, packingError?: string) {
       const modal = await modalController.create({
         component: GenerateTrackingCodeModal,
-        componentProps: { order, updateCarrierShipmentDetails: this.updateCarrierShipmentDetails, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError, isDetailPage: "Y", initialShipmentMethodTypeId: this.initialShipmentMethodTypeId }
+        componentProps: { order, updateCarrierShipmentDetails: this.updateCarrierShipmentDetails, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError, isDetailPage: "Y", initialShipmentMethodTypeId: this.initialShipmentMethodTypeId },
+        htmlAttributes: {
+          'data-testid': 'order-detail-generate-tracking-modal'
+        }
       })
       modal.present();
     },
     async openTrackingCodeModal() {
       const addTrackingCodeModal = await modalController.create({
         component: TrackingCodeModal,
-        componentProps: { carrierPartyId: this.carrierPartyId }
+        componentProps: { carrierPartyId: this.carrierPartyId },
+        htmlAttributes: {
+          'data-testid': 'order-detail-tracking-code-modal'
+        }
       });
 
       return addTrackingCodeModal.present();
@@ -1495,7 +1558,10 @@ export default defineComponent({
     async openGiftCardActivationModal(item: any) {
       const modal = await modalController.create({
         component: GiftCardActivationModal,
-        componentProps: { item }
+        componentProps: { item },
+        htmlAttributes: {
+          'data-testid': 'order-detail-gift-card-modal'
+        }
       })
 
       modal.onDidDismiss().then((result: any) => {
@@ -1565,7 +1631,10 @@ export default defineComponent({
         const alert = await alertController.create({
           message: translate(message, { space: "<br/><br/>", facilityName, trackingCode }),
           header: translate("COD calculation"),
-          buttons
+          buttons,
+          htmlAttributes: {
+            'data-testid': 'order-detail-cod-alert'
+          }
         })
 
         return alert.present();
@@ -1578,6 +1647,9 @@ export default defineComponent({
             orderAdjustments: this.orderAdjustments,
             orderHeaderAdjustmentTotal: this.orderHeaderAdjustmentTotal,
             adjustmentsByGroup: this.adjustmentsByGroup
+          },
+          htmlAttributes: {
+            'data-testid': 'order-detail-adjustment-modal'
           }
         })
 

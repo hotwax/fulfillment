@@ -4,18 +4,18 @@
     
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-menu-button menu="start" slot="start" />
+        <ion-menu-button data-testid="open-main-menu-button" menu="start" slot="start" />
         <ion-title v-if="!openOrders.total">{{ openOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-title v-else>{{ openOrders.query.viewSize }} {{ translate('of') }} {{ openOrders.total }} {{ translate('orders') }}</ion-title>
      
         <ion-buttons slot="end">
-          <ion-button @click="viewNotifications()">
+          <ion-button data-testid="open-notifications-button" @click="viewNotifications()">
             <ion-icon slot="icon-only" :icon="notificationsOutline" :color="(unreadNotificationsStatus && notifications.length) ? 'primary' : ''" />
           </ion-button>
-          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !openOrders.total || isRejecting" fill="clear" color="danger" @click="recycleOutstandingOrders()">
+          <ion-button data-testid="open-reject-all-button" :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !openOrders.total || isRejecting" fill="clear" color="danger" @click="recycleOutstandingOrders()">
             {{ translate("Reject all") }}
           </ion-button>
-          <ion-menu-button menu="view-size-selector-open" :disabled="!openOrders.total">
+          <ion-menu-button data-testid="open-view-size-selector-button" menu="view-size-selector-open" :disabled="!openOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
         </ion-buttons>
@@ -23,10 +23,10 @@
     </ion-header>
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
-      <ion-searchbar class="searchbar" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)"/>
+      <ion-searchbar data-testid="open-order-searchbar" class="searchbar" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)"/>
       <div class="filters">
         <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
-          <ion-checkbox label-placement="end" :checked="openOrders.query.selectedShipmentMethods.includes(method.val)" @ionChange="updateSelectedShipmentMethods(method.val)">
+          <ion-checkbox data-testid="open-shipment-method-checkbox" label-placement="end" :checked="openOrders.query.selectedShipmentMethods.includes(method.val)" @ionChange="updateSelectedShipmentMethods(method.val)">
             <ion-label>
               {{ getShipmentMethodDesc(method.val) }}
               <p>{{ method.ordersCount }} {{ translate("orders") }}, {{ method.count }} {{ translate("items") }}</p>
@@ -38,7 +38,7 @@
       <div v-if="openOrders.total">
 
         <div class="results">
-          <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picklist") }}</ion-button>
+          <ion-button data-testid="open-print-picklist-button" class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picklist") }}</ion-button>
 
           <ion-card class="order" v-for="(order, index) in getOpenOrders()" :key="index">
             <div class="order-header">
@@ -50,7 +50,7 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
+                <ion-chip data-testid="open-order-actions-chip" @click.stop="orderActionsPopover(order, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderName }}</ion-label>
                   <ion-icon :icon="caretDownOutline" />
@@ -69,7 +69,7 @@
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
+                    <ion-thumbnail data-testid="open-product-image-preview" slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
                       <!-- TODO: Currently handled product image mismatch on the order list page — needs to be applied to other pages using DxpShopifyImg  -->
                       <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
@@ -84,12 +84,12 @@
                   </ion-item>
                 </div>
                 <div class="product-metadata">
-                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
+                  <ion-button data-testid="open-kit-components-button" v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                  <ion-button data-testid="open-product-stock-button" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
                 </div>
@@ -105,7 +105,7 @@
               <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
+                    <ion-thumbnail data-testid="open-product-image-preview" slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
                       <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
@@ -136,7 +136,7 @@
         <ion-spinner name="crescent"></ion-spinner>
       </div>
       <ion-fab v-else-if="openOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="assignPickers">
+        <ion-fab-button data-testid="open-mobile-print-picklist-button" @click="assignPickers">
           <ion-icon :icon="printOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -314,7 +314,10 @@ export default defineComponent({
     },
     async assignPickers() {
       const assignPickerModal = await modalController.create({
-        component: AssignPickerModal
+        component: AssignPickerModal,
+        htmlAttributes: {
+          'data-testid': 'open-assign-pickers-modal'
+        }
       });
       return assignPickerModal.present();
     },
@@ -389,11 +392,20 @@ export default defineComponent({
       const alert = await alertController.create({
         header: translate('Reject all open orders'),
         message: translate('Reject open orders.', { ordersCount: this.openOrders.total }),
+        htmlAttributes: {
+          'data-testid': 'open-recycle-orders-alert'
+        },
         buttons: [{
           text: translate('Cancel'),
-          role: 'cancel'
+          role: 'cancel',
+          htmlAttributes: {
+            'data-testid': 'open-recycle-orders-cancel-button'
+          }
         }, {
           text: translate('Reject'),
+          htmlAttributes: {
+            'data-testid': 'open-recycle-orders-reject-button'
+          },
           handler: async () => {
             this.isRejecting = true;
             emitter.emit("presentLoader")
@@ -431,7 +443,10 @@ export default defineComponent({
           category: 'open'
         },
         showBackdrop: false,
-        event: ev
+        event: ev,
+        htmlAttributes: {
+          'data-testid': 'open-order-actions-popover'
+        }
       });
       return popover.present();
     },

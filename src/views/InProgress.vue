@@ -3,17 +3,17 @@
     <ViewSizeSelector menu-id="view-size-selector-inprogress" content-id="view-size-selector" />
 
     <ion-header :translucent="true">
-      <ion-menu-button menu="start" slot="start" />
+      <ion-menu-button data-testid="in-progress-main-menu-button" menu="start" slot="start" />
       <ion-toolbar>
         <ion-menu-button slot="start" />
         <ion-title v-if="!inProgressOrders.total">{{ inProgressOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-title v-else>{{ inProgressOrders.query.viewSize }} {{ translate('of') }} {{ inProgressOrders.total }} {{ translate('orders') }}</ion-title>
 
         <ion-buttons slot="end">
-          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !inProgressOrders.total || isRejecting" fill="clear" color="danger" @click="recycleInProgressOrders()">
+          <ion-button data-testid="in-progress-reject-all-button" :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !inProgressOrders.total || isRejecting" fill="clear" color="danger" @click="recycleInProgressOrders()">
             {{ translate("Reject all") }}
           </ion-button>
-          <ion-menu-button menu="view-size-selector-inprogress" :disabled="!inProgressOrders.total">
+          <ion-menu-button data-testid="in-progress-view-size-selector-button" menu="view-size-selector-inprogress" :disabled="!inProgressOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
         </ion-buttons>
@@ -21,12 +21,12 @@
     </ion-header>
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
-      <ion-searchbar class="searchbar" :placeholder="translate('Search orders')" v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
+      <ion-searchbar data-testid="in-progress-order-searchbar" class="searchbar" :placeholder="translate('Search orders')" v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
       <ion-radio-group v-if="picklists?.length" v-model="selectedPicklistId" @ionChange="updateSelectedPicklist($event.detail.value)">
         <ion-row class="filters">
           <ion-item lines="none">
             <!-- empty value '' for 'All orders' radio -->
-            <ion-radio label-placement="end" value="">
+            <ion-radio data-testid="in-progress-picklist-all-radio" label-placement="end" value="">
               <ion-label class="ion-text-wrap">
                 {{ translate('All') }}
                 <p>{{ translate('picklists', { count: picklists.length }) }}</p>
@@ -34,7 +34,7 @@
             </ion-radio>
           </ion-item>
           <ion-item lines="none" v-for="picklist in picklists" :key="picklist.id">
-            <ion-radio label-placement="end" :value="picklist.id">
+            <ion-radio data-testid="in-progress-picklist-radio" label-placement="end" :value="picklist.id">
               <ion-label class="ion-text-wrap">
                 {{ picklist.pickersName }}
                 <p>{{ picklist.date }}</p>
@@ -46,7 +46,7 @@
 
       <div v-if="inProgressOrders.total">
         <div class="results">
-          <ion-button expand="block" class="bulk-action desktop-only" fill="outline" size="large" v-if="!isForceScanEnabled" @click="packOrders()">{{ translate("Pack orders") }}</ion-button>
+          <ion-button data-testid="in-progress-pack-orders-button" expand="block" class="bulk-action desktop-only" fill="outline" size="large" v-if="!isForceScanEnabled" @click="packOrders()">{{ translate("Pack orders") }}</ion-button>
           <ion-card class="order" v-for="(order, index) in getInProgressOrders()" :key="index" :class="isForceScanEnabled ? 'ion-margin-top' : ''">
             <div class="order-header">
               <div class="order-primary-info">
@@ -57,7 +57,7 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
+                <ion-chip data-testid="in-progress-order-actions-chip" @click.stop="orderActionsPopover(order, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderName }}</ion-label>
                   <ion-icon :icon="caretDownOutline" />
@@ -77,9 +77,9 @@
               <ion-skeleton-text animated />
             </div>
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
-              <ion-button :disabled="order.items.length <= order.shipmentPackages.length || addingBoxForShipmentIds.includes(order.shipmentId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
+              <ion-button data-testid="in-progress-add-box-button" :disabled="order.items.length <= order.shipmentPackages.length || addingBoxForShipmentIds.includes(order.shipmentId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
               <ion-row>
-                <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
+                <ion-chip data-testid="in-progress-shipment-package-chip" v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
                   {{ `Box ${shipmentPackage?.packageName}` }} {{ `| ${boxTypeDesc(getShipmentPackageType(order, shipmentPackage))}`}}
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
@@ -90,7 +90,7 @@
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
+                    <ion-thumbnail data-testid="in-progress-product-image-preview" slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
                       <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
@@ -117,7 +117,7 @@
                     <template v-if="item.rejectReason">
                       <ion-chip outline color="danger">
                         <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
-                        <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)"/>
+                        <ion-icon data-testid="in-progress-remove-rejection-reason-button" :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)"/>
                       </ion-chip>
                     </template>
                     <template v-else-if="isEntierOrderRejectionEnabled(order)">
@@ -126,7 +126,7 @@
                       </ion-chip>
                     </template>
                     <template v-else>
-                      <ion-chip :disabled="!order.shipmentPackages || order.shipmentPackages.length === 0" outline @click="openShipmentBoxPopover($event, item, item.orderItemSeqId, order)">
+                      <ion-chip data-testid="in-progress-shipment-box-chip" :disabled="!order.shipmentPackages || order.shipmentPackages.length === 0" outline @click="openShipmentBoxPopover($event, item, item.orderItemSeqId, order)">
                         {{ `Box ${item.selectedBox}` }}
                         <ion-icon :icon="caretDownOutline" />
                       </ion-chip>
@@ -136,18 +136,18 @@
 
                 <!--Adding checks to avoid any operations if order has missing info, mostly when after packing Solr is not updaing immediately-->
                 <div class="product-metadata">
-                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
+                  <ion-button data-testid="in-progress-kit-components-button" v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
-                  <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
+                  <ion-button data-testid="in-progress-gift-card-activation-button" color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
                     <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline"/>
                   </ion-button>
-                  <ion-button color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
+                  <ion-button data-testid="in-progress-reject-item-button" color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
                     <ion-icon slot="icon-only" :icon="trashBinOutline"/>
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button color="medium" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                  <ion-button data-testid="in-progress-product-stock-button" color="medium" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
                 </div>
@@ -164,7 +164,7 @@
               <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
+                    <ion-thumbnail data-testid="in-progress-product-image-preview" slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
                       <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
@@ -172,7 +172,7 @@
                       {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
                       <p>{{ getFeatures(getProduct(productComponent.productIdTo).productFeatures)}}</p>
                     </ion-label>
-                    <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.kitComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
+                    <ion-checkbox data-testid="in-progress-kit-component-reject-checkbox" v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.kitComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
                   </ion-item>
                 </ion-card>
               </div>
@@ -180,8 +180,8 @@
 
             <div class="mobile-only">
               <ion-item>
-                <ion-button fill="clear" @click.stop="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
-                <ion-button slot="end" fill="clear" color="medium" @click.stop="packagingPopover">
+                <ion-button data-testid="in-progress-mobile-pack-default-button" fill="clear" @click.stop="packOrder(order)">{{ translate("Pack using default packaging") }}</ion-button>
+                <ion-button data-testid="in-progress-mobile-packaging-popover-button" slot="end" fill="clear" color="medium" @click.stop="packagingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -189,11 +189,11 @@
 
             <div class="actions">
               <div>
-                <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" @click.stop="packOrder(order)">{{ translate(order.hasAllRejectedItem ? "Reject" : order.hasRejectedItem ? "Save and Pack"  : "Pack") }}</ion-button>
+                <ion-button data-testid="in-progress-order-pack-button" :color="order.hasAllRejectedItem ? 'danger' : ''" @click.stop="packOrder(order)">{{ translate(order.hasAllRejectedItem ? "Reject" : order.hasRejectedItem ? "Save and Pack"  : "Pack") }}</ion-button>
               </div>
 
               <div class="desktop-only">
-                <ion-button v-if="order.missingLabelImage && isAutoShippingLabelEnabled" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
+                <ion-button data-testid="in-progress-shipping-label-error-button" v-if="order.missingLabelImage && isAutoShippingLabelEnabled" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -207,7 +207,7 @@
       </div>
       <template v-else-if="inProgressOrders.total">
         <ion-fab v-if="!isForceScanEnabled" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-          <ion-fab-button @click="packOrders()">
+          <ion-fab-button data-testid="in-progress-mobile-pack-orders-button" @click="packOrders()">
             <ion-icon :icon="checkmarkDoneOutline" />
           </ion-fab-button>
         </ion-fab>
@@ -220,11 +220,11 @@
     <ion-footer v-if="selectedPicklistId && inProgressOrders.total">
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button fill="outline" color="primary" @click="editPickers(getPicklist(selectedPicklistId))">
+          <ion-button data-testid="in-progress-edit-pickers-button" fill="outline" color="primary" @click="editPickers(getPicklist(selectedPicklistId))">
             <ion-icon slot="start" :icon="pencilOutline" />
             {{ translate("Edit Pickers") }}
           </ion-button>
-          <ion-button fill="solid" color="primary" @click="printPicklist(getPicklist(selectedPicklistId))">
+          <ion-button data-testid="in-progress-print-picklist-button" fill="solid" color="primary" @click="printPicklist(getPicklist(selectedPicklistId))">
             <ion-spinner v-if="getPicklist(selectedPicklistId).isGeneratingPicklist" slot="start" name="crescent" />
             <ion-icon v-else slot="start" :icon="printOutline" />
             {{ translate("Print Picklist") }}
@@ -393,6 +393,9 @@ export default defineComponent({
         event: ev,
         translucent: true,
         showBackdrop: false,
+        htmlAttributes: {
+          'data-testid': 'in-progress-report-issue-popover'
+        }
       });
 
       reportIssuePopover.present();
@@ -437,7 +440,10 @@ export default defineComponent({
           shipmentPackages: order.shipmentPackages
         },
         showBackdrop: false,
-        event: ev
+        event: ev,
+        htmlAttributes: {
+          'data-testid': 'in-progress-shipment-box-popover'
+        }
       });
 
       popover.present();
@@ -460,6 +466,9 @@ export default defineComponent({
         event: ev,
         translucent: true,
         showBackdrop: false,
+        htmlAttributes: {
+          'data-testid': 'in-progress-packaging-popover'
+        }
       });
       return popover.present();
     },
@@ -522,25 +531,40 @@ export default defineComponent({
         .create({
           header: translate("Pack order"),
           message: translate("You are packing an order. Select additional documents that you would like to print.", {space: '<br /><br />'}),
+          htmlAttributes: {
+            'data-testid': 'in-progress-confirm-pack-order-alert'
+          },
           inputs: [{
             name: 'printShippingLabel',
             type: 'checkbox',
             label: translate('Shipping labels'),
             value: 'printShippingLabel',
             checked: this.userPreference.printShippingLabel,
+            attributes: {
+              'data-testid': 'in-progress-confirm-pack-shipping-label-input'
+            }
           }, {
             name: 'printPackingSlip',
             type: 'checkbox',
             label: translate('Packing slip'),
             value: 'printPackingSlip',
-            checked: this.userPreference.printPackingSlip
+            checked: this.userPreference.printPackingSlip,
+            attributes: {
+              'data-testid': 'in-progress-confirm-pack-packing-slip-input'
+            }
           }],
           buttons: [{
             text: translate("Cancel"),
-            role: 'cancel'
+            role: 'cancel',
+            htmlAttributes: {
+              'data-testid': 'in-progress-confirm-pack-cancel-button'
+            }
           }, {
             text: translate("Pack"),
             role: 'confirm',
+            htmlAttributes: {
+              'data-testid': 'in-progress-confirm-pack-button'
+            },
             handler: async (data) => {
               const packingResponse = await this.executePackOrder(order, updateParameter, trackingCode, data)
               if (!packingResponse.isPacked) {
@@ -634,25 +658,40 @@ export default defineComponent({
         .create({
           header: translate("Pack orders"),
           message: translate("You are packing orders. Select additional documents that you would like to print.", {count: this.inProgressOrders.list.length, space: '<br /><br />'}),
+          htmlAttributes: {
+            'data-testid': 'in-progress-pack-orders-alert'
+          },
           inputs: [{
             name: 'printShippingLabel',
             type: 'checkbox',
             label: translate('Shipping labels'),
             value: 'printShippingLabel',
             checked: this.userPreference.printShippingLabel,
+            attributes: {
+              'data-testid': 'in-progress-pack-orders-shipping-label-input'
+            }
           }, {
             name: 'printPackingSlip',
             type: 'checkbox',
             label: translate('Packing slip'),
             value: 'printPackingSlip',
-            checked: this.userPreference.printPackingSlip
+            checked: this.userPreference.printPackingSlip,
+            attributes: {
+              'data-testid': 'in-progress-pack-orders-packing-slip-input'
+            }
           }],
           buttons: [{
             text: translate("Cancel"),
-            role: 'cancel'
+            role: 'cancel',
+            htmlAttributes: {
+              'data-testid': 'in-progress-pack-orders-cancel-button'
+            }
           }, {
             text: translate("Pack"),
             role: 'confirm',
+            htmlAttributes: {
+              'data-testid': 'in-progress-pack-orders-pack-button'
+            },
             handler: async (data) => {
               emitter.emit('presentLoader');
               let orderList = JSON.parse(JSON.stringify(this.inProgressOrders.list))
@@ -778,12 +817,21 @@ export default defineComponent({
         .create({
           header: translate("Report an issue"),
           message,
+          htmlAttributes: {
+            'data-testid': 'in-progress-report-issue-alert'
+          },
           buttons: [{
             text: translate("Cancel"),
-            role: 'cancel'
+            role: 'cancel',
+            htmlAttributes: {
+              'data-testid': 'in-progress-report-issue-cancel-button'
+            }
           }, {
             text: translate("Report"),
             role: 'confirm',
+            htmlAttributes: {
+              'data-testid': 'in-progress-report-issue-report-button'
+            },
             handler: async() => {
               await this.initiatePackOrder(order, "report");
             }
@@ -1110,7 +1158,10 @@ export default defineComponent({
         component: ShipmentBoxTypePopover,
         event: ev,
         showBackdrop: false,
-        componentProps: { shipmentBoxTypes }
+        componentProps: { shipmentBoxTypes },
+        htmlAttributes: {
+          'data-testid': 'in-progress-shipment-box-type-popover'
+        }
       });
 
       popover.present();
@@ -1126,11 +1177,20 @@ export default defineComponent({
       const alert = await alertController.create({
         header: translate('Reject all in progress orders'),
         message: translate('Reject in progress orders.', { ordersCount: this.inProgressOrders.total }),
+        htmlAttributes: {
+          'data-testid': 'in-progress-recycle-orders-alert'
+        },
         buttons: [{
           text: translate('Cancel'),
-          role: 'cancel'
+          role: 'cancel',
+          htmlAttributes: {
+            'data-testid': 'in-progress-recycle-orders-cancel-button'
+          }
         }, {
           text: translate('Reject'),
+          htmlAttributes: {
+            'data-testid': 'in-progress-recycle-orders-reject-button'
+          },
           handler: async () => {
             this.isRejecting = true;
             emitter.emit("presentLoader")  
@@ -1166,6 +1226,9 @@ export default defineComponent({
         component: EditPickersModal,
         componentProps: {
           selectedPicklist
+        },
+        htmlAttributes: {
+          'data-testid': 'in-progress-edit-pickers-modal'
         }
       });
 
@@ -1191,7 +1254,10 @@ export default defineComponent({
           category: 'in-progress'
         },
         showBackdrop: false,
-        event: ev
+        event: ev,
+        htmlAttributes: {
+          'data-testid': 'in-progress-order-actions-popover'
+        }
       });
       return popover.present();
     },
@@ -1201,6 +1267,9 @@ export default defineComponent({
         component: ShippingLabelErrorModal,
         componentProps: {
           shipmentId: order.shipmentId
+        },
+        htmlAttributes: {
+          'data-testid': 'in-progress-shipping-label-error-modal'
         }
       });
       return shippingLabelErrorModal.present();
@@ -1208,7 +1277,10 @@ export default defineComponent({
     async scanOrder(order: any, updateParameter?: string) {
       const modal = await modalController.create({
         component: ScanOrderItemModal,
-        componentProps: { order }
+        componentProps: { order },
+        htmlAttributes: {
+          'data-testid': 'in-progress-scan-order-modal'
+        }
       })
 
       modal.onDidDismiss().then((result: any) => {
@@ -1222,7 +1294,10 @@ export default defineComponent({
     async generateTrackingCodeForPacking(order: any, updateParameter?: string, documentOptions = {}, packingError?: string) {
       const modal = await modalController.create({
         component: GenerateTrackingCodeModal,
-        componentProps: { order, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError }
+        componentProps: { order, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError },
+        htmlAttributes: {
+          'data-testid': 'in-progress-generate-tracking-code-modal'
+        }
       })
       modal.present();
     },
@@ -1230,7 +1305,10 @@ export default defineComponent({
     async openGiftCardActivationModal(item: any) {
       const modal = await modalController.create({
         component: GiftCardActivationModal,
-        componentProps: { item }
+        componentProps: { item },
+        htmlAttributes: {
+          'data-testid': 'in-progress-gift-card-activation-modal'
+        }
       })
 
       modal.onDidDismiss().then((result: any) => {

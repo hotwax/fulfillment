@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal"> 
+        <ion-button data-testid="edit-pickers-modal-close-button" @click="closeModal"> 
           <ion-icon slot="icon-only" :icon="close" />
         </ion-button>
       </ion-buttons>
@@ -11,11 +11,11 @@
   </ion-header>
   
   <ion-content>
-    <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; findPickers()" />
+    <ion-searchbar data-testid="edit-pickers-modal-searchbar" v-model="queryString" @keyup.enter="queryString = $event.target.value; findPickers()" />
     <ion-row>
-      <ion-chip v-for="picker in selectedPickers" :key="picker.id">
+      <ion-chip data-testid="edit-pickers-modal-selected-picker-chip" v-for="picker in selectedPickers" :key="picker.id">
         <ion-label>{{ picker.name }}</ion-label>
-        <ion-icon :icon="closeCircle" @click="updateSelectedPickers(picker.id)" />
+        <ion-icon data-testid="edit-pickers-modal-remove-picker-icon" :icon="closeCircle" @click="updateSelectedPickers(picker.id)" />
       </ion-chip>
     </ion-row>
 
@@ -31,8 +31,8 @@
         {{ 'No picker found' }}
       </div>
       <div v-else>
-        <ion-item v-for="(picker, index) in pickers" :key="index" @click="updateSelectedPickers(picker.id)">
-          <ion-checkbox :checked="isPickerSelected(picker.id)">
+        <ion-item data-testid="edit-pickers-modal-picker-item" v-for="(picker, index) in pickers" :key="index" @click="updateSelectedPickers(picker.id)">
+          <ion-checkbox data-testid="edit-pickers-modal-picker-checkbox" :checked="isPickerSelected(picker.id)">
             <ion-label>
               {{ picker.name }}
               <p>{{ picker.externalId ? picker.externalId : picker.id }}</p>
@@ -42,7 +42,7 @@
       </div>
     </ion-list>
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-      <ion-fab-button :disabled="arePickersNotSelected()" @click="confirmSave()">
+      <ion-fab-button data-testid="edit-pickers-modal-save-button" :disabled="arePickersNotSelected()" @click="confirmSave()">
         <ion-icon :icon="saveOutline" />
       </ion-fab-button>
     </ion-fab>
@@ -186,12 +186,21 @@ export default defineComponent({
       const alert = await alertController.create({
         header: translate("Replace pickers"),
         message,
+        htmlAttributes: {
+          'data-testid': 'edit-pickers-modal-alert'
+        },
         buttons: [
           {
             text: translate("Cancel"),
+            htmlAttributes: {
+              'data-testid': 'edit-pickers-modal-alert-cancel-button'
+            }
           },
           {
             text: translate("Replace"),
+            htmlAttributes: {
+              'data-testid': 'edit-pickers-modal-alert-replace-button'
+            },
             handler: () => {
               this.resetPicker().then(() => {
                 this.closeModal()
