@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal">
+        <ion-button @click="closeModal" data-testid="historical-manifest-modal-close-button">
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -14,12 +14,12 @@
       <ion-list-header>
         {{ translate("Manifests from the last seven days") }}
       </ion-list-header>
-      <ion-item v-for="manifest in carrierConfiguration[selectedCarrierPartyId]?.manifests" :key="manifest.fromDate">
+      <ion-item v-for="manifest in carrierConfiguration[selectedCarrierPartyId]?.manifests" :key="manifest.fromDate" :data-testid="`historical-manifest-modal-item-${manifest.contentId}`">
         <ion-label>
           {{ translate("Manifest") }}
           <p>{{ DateTime.fromMillis(manifest.fromDate).toFormat("dd MMMM yyyy hh:mm a ZZZZ") }}</p>
         </ion-label>
-        <ion-button fill="outline" @click="downloadCarrierManifest(manifest)">
+        <ion-button fill="outline" @click="downloadCarrierManifest(manifest)" :data-testid="`historical-manifest-modal-print-button-${manifest.contentId}`">
           <ion-icon :icon="printOutline" slot="start"/>
           {{ translate("Print") }}
           <ion-spinner name="crescent" slot="end" v-if="loadingContentId === manifest.contentId" />

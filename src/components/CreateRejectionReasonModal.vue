@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal()">
+        <ion-button @click="closeModal()" data-testid="create-rejection-reason-modal-close-button"> 
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -14,21 +14,21 @@
     <form>
       <ion-list>
         <ion-item>
-          <ion-input @ionBlur="formData.enumId ? null : setEnumId(formData.enumName)" v-model="formData.enumName">
+          <ion-input @ionBlur="formData.enumId ? null : setEnumId(formData.enumName)" v-model="formData.enumName" data-testid="create-rejection-reason-modal-name-input">
             <div slot="label">{{ translate('Name') }} <ion-text color="danger">*</ion-text></div>
           </ion-input>
         </ion-item>
         <ion-item ref="enumId" lines="none">
-          <ion-input :label="translate('ID')" v-model="formData.enumId" @ionChange="validateEnumId" @ionBlur="markEnumIdTouched" :errorText="translate('ID cannot be more than 20 characters.')" />
+          <ion-input :label="translate('ID')" v-model="formData.enumId" @ionChange="validateEnumId" @ionBlur="markEnumIdTouched" :errorText="translate('ID cannot be more than 20 characters.')" data-testid="create-rejection-reason-modal-id-input" />
         </ion-item>
         <ion-item>
-          <ion-input :label="translate('Description')" v-model="formData.description" />
+          <ion-input :label="translate('Description')" v-model="formData.description" data-testid="create-rejection-reason-modal-description-input" />
         </ion-item>
       </ion-list>
 
       <ion-list>
         <ion-item>
-          <ion-select :label="translate('Variance type')" interface="popover" v-model="formData.enumTypeId">
+          <ion-select :label="translate('Variance type')" interface="popover" v-model="formData.enumTypeId" data-testid="create-rejection-reason-modal-variance-type-select">
             <ion-select-option :data-testid="`variance-type-option-${type.enumTypeId}`" v-for="type in rejectReasonEnumTypes" :key="type.enumTypeId" :value="type.enumTypeId">{{ type.enumTypeId }}</ion-select-option>
           </ion-select>
         </ion-item>
@@ -40,7 +40,7 @@
       </ion-list>
 
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="createReason()">
+        <ion-fab-button @click="createReason()" data-testid="create-rejection-reason-modal-save-button">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>

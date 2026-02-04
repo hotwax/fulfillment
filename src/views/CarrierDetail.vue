@@ -15,14 +15,14 @@
               <p class="overline">{{ currentCarrier.partyId }}</p>
               {{ currentCarrier.groupName }}
             </ion-label>
-            <ion-button slot="end" @click="updateCarrierName">{{ translate('Edit') }}</ion-button>
+            <ion-button slot="end" @click="updateCarrierName" data-testid="carrier-detail-edit-name-button">{{ translate('Edit') }}</ion-button>
           </ion-item>
           <ion-item lines="none">
             <ion-icon slot="start" :icon="shieldCheckmarkOutline"></ion-icon>
             <ion-toggle v-if="selectedSegment != 'shipping-methods'" :checked="true" :disabled="selectedSegment != 'shipping-methods'">
               {{ translate("Only methods for this carrier") }}
             </ion-toggle>
-            <ion-toggle v-else  v-model="shipmentMethodQuery.showSelected" @ionChange="updateShipmentMethodQuery()">
+            <ion-toggle v-else  v-model="shipmentMethodQuery.showSelected" @ionChange="updateShipmentMethodQuery()" data-testid="carrier-detail-show-selected-toggle">
               {{ translate("Only methods for this carrier") }}
             </ion-toggle>
           </ion-item>
@@ -30,13 +30,13 @@
         <hr />
 
         <ion-segment scrollable v-model="selectedSegment">
-          <ion-segment-button value="shipping-methods">
+          <ion-segment-button value="shipping-methods" data-testid="carrier-detail-segment-shipping-methods">
             <ion-label>{{ translate("Methods") }}</ion-label>
           </ion-segment-button>
-          <ion-segment-button value="facilities">
+          <ion-segment-button value="facilities" data-testid="carrier-detail-segment-facilities">
             <ion-label>{{ translate("Facilities") }}</ion-label>
           </ion-segment-button>
-          <ion-segment-button v-for="(productStore, index) in productStores" :key="index" :value="productStore.productStoreId">
+          <ion-segment-button v-for="(productStore, index) in productStores" :key="index" :value="productStore.productStoreId" :data-testid="`carrier-detail-segment-product-store-${productStore.productStoreId}`">
             <ion-label>{{ productStore.storeName ? productStore.storeName : productStore.productStoreId }}</ion-label>
           </ion-segment-button>
         </ion-segment>
@@ -47,13 +47,13 @@
           </template>
           <template v-else-if="selectedSegment === 'facilities'">
             <section v-if="currentCarrier.facilities">
-              <ion-card v-for="(facility, index) in currentCarrier.facilities" :key="index">
+              <ion-card v-for="(facility, index) in currentCarrier.facilities" :key="index" :data-testid="`carrier-detail-facility-card-${facility.facilityId}`">
                 <ion-card-header>
                   <div>
                     <ion-card-title>{{ facility.facilityName }}</ion-card-title>
                     <ion-card-subtitle>{{ facility.facilityId }}</ion-card-subtitle>
                   </div>
-                  <ion-checkbox :checked="facility.isChecked" @click="updateCarrierFacility($event, facility)" />
+                  <ion-checkbox :checked="facility.isChecked" @click="updateCarrierFacility($event, facility)" :data-testid="`carrier-detail-facility-checkbox-${facility.facilityId}`" />
                 </ion-card-header>
               </ion-card>
             </section>
@@ -64,7 +64,7 @@
           <template v-for="(productStore, index) in productStores" :key="index">
             <template v-if="selectedSegment === productStore.productStoreId">
               <template v-if="Object.keys(carrierShipmentMethodsByProductStore).length != 0">
-                <div class="list-item ion-padding" v-for="(shipmentMethod, index) in carrierShipmentMethodsByProductStore[productStore.productStoreId]" :key="index">
+                <div class="list-item ion-padding" v-for="(shipmentMethod, index) in carrierShipmentMethodsByProductStore[productStore.productStoreId]" :key="index" :data-testid="`carrier-detail-shipment-method-item-${shipmentMethod.shipmentMethodTypeId}`">
                   <ion-item lines="none">
                     <ion-label>
                       {{ getShipmentMethodDescription(shipmentMethod.shipmentMethodTypeId) }}
@@ -72,21 +72,21 @@
                     </ion-label>
                   </ion-item>
                   <div class="tablet">
-                    <ion-chip v-if="shipmentMethod.shipmentGatewayConfigId" outline @click.stop="updateShipmentGatewayConfigId(shipmentMethod)">
+                    <ion-chip v-if="shipmentMethod.shipmentGatewayConfigId" outline @click.stop="updateShipmentGatewayConfigId(shipmentMethod)" :data-testid="`carrier-detail-gateway-config-chip-${shipmentMethod.shipmentMethodTypeId}`">
                       <ion-label>{{ getGatewayConfigDescription(shipmentMethod?.shipmentGatewayConfigId)}}</ion-label>
                     </ion-chip>
-                    <ion-chip v-else :disabled="!shipmentMethod.isChecked" outline @click.stop="updateShipmentGatewayConfigId(shipmentMethod)">
+                    <ion-chip v-else :disabled="!shipmentMethod.isChecked" outline @click.stop="updateShipmentGatewayConfigId(shipmentMethod)" :data-testid="`carrier-detail-add-gateway-config-chip-${shipmentMethod.shipmentMethodTypeId}`">
                       <ion-icon :icon="addCircleOutline" />
                       <ion-label>{{ translate('gateway') }}</ion-label>
                     </ion-chip>
                     <ion-note class="config-label">{{ translate('gateway') }}</ion-note>
                   </div>
                   <div class="tablet">
-                    <ion-toggle :checked="shipmentMethod.isTrackingRequired" :disabled="!shipmentMethod.isChecked" @ionChange="updateTrackingRequired($event, shipmentMethod)"/>
+                    <ion-toggle :checked="shipmentMethod.isTrackingRequired" :disabled="!shipmentMethod.isChecked" @ionChange="updateTrackingRequired($event, shipmentMethod)" :data-testid="`carrier-detail-tracking-required-toggle-${shipmentMethod.shipmentMethodTypeId}`"/>
                     <ion-note class="config-label">{{ translate("require tracking code") }}</ion-note>
                   </div>
                   <div class="tablet">
-                    <ion-checkbox :checked="shipmentMethod.isChecked" @click="updateProductStoreShipmentMethodAssociation($event, shipmentMethod, productStore)" />
+                    <ion-checkbox :checked="shipmentMethod.isChecked" @click="updateProductStoreShipmentMethodAssociation($event, shipmentMethod, productStore)" :data-testid="`carrier-detail-shipment-method-checkbox-${shipmentMethod.shipmentMethodTypeId}`" />
                   </div>
                 </div>
               </template>
@@ -98,7 +98,7 @@
         </div>
       </ion-content>
       <ion-fab v-if="selectedSegment === 'shipping-methods'" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="openCreateShipmentMethodModal()">
+        <ion-fab-button @click="openCreateShipmentMethodModal()" data-testid="carrier-detail-create-shipment-method-button">
           <ion-icon :icon="addOutline" />
         </ion-fab-button>
       </ion-fab>

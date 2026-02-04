@@ -2,7 +2,7 @@
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button @click="closeModal"> 
+          <ion-button @click="closeModal" data-testid="edit-shipment-method-sequence-modal-close-button"> 
             <ion-icon slot="icon-only" :icon="close" />
           </ion-button>
         </ion-buttons>
@@ -13,8 +13,8 @@
     <ion-content class="ion-padding">
       <main>
         <div v-if="shipmentMethods.length">
-          <ion-reorder-group @ionItemReorder="doReorder($event)" :disabled="false">
-            <div class="list-item" v-for="shipmentMethod in filteredShipmentMethods" :key="shipmentMethod.shipmentMethodTypeId">
+          <ion-reorder-group @ionItemReorder="doReorder($event)" :disabled="false" data-testid="edit-shipment-method-sequence-modal-reorder-group">
+            <div class="list-item" v-for="shipmentMethod in filteredShipmentMethods" :key="shipmentMethod.shipmentMethodTypeId" :data-testid="`edit-shipment-method-sequence-modal-item-${shipmentMethod.shipmentMethodTypeId}`">
               <ion-item lines="none">
                 <ion-label>
                   {{ shipmentMethod.description ? shipmentMethod.description : shipmentMethod.shipmentMethodTypeId }}
@@ -31,7 +31,7 @@
       </main>
 
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="saveShipmentMethodsOrder()">
+        <ion-fab-button @click="saveShipmentMethodsOrder()" data-testid="edit-shipment-method-sequence-modal-save-button">
           <ion-icon :icon="saveOutline" />
         </ion-fab-button>
       </ion-fab>

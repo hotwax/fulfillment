@@ -10,7 +10,7 @@
         <template v-if="carriers.total">
           <div class="results">
             <ion-list>
-              <ion-item v-for="(carrier, index) in carriers.list" :key="index" @click="viewCarrierDetail(carrier)" button detail>
+              <ion-item v-for="(carrier, index) in carriers.list" :key="index" @click="viewCarrierDetail(carrier)" button detail :data-testid="`carrier-list-item-${carrier.partyId}`">
                 <ion-label>
                   <p class="overline">{{ carrier.partyId }}</p>
                   {{ carrier.groupName }}
@@ -27,7 +27,7 @@
         </div>
       </ion-content>
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="createCarrier()">
+        <ion-fab-button @click="createCarrier()" data-testid="create-carrier-button">
           <ion-icon :icon="addOutline" />
         </ion-fab-button>
       </ion-fab>

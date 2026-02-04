@@ -2,7 +2,7 @@
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button @click="closeModal"> 
+          <ion-button @click="closeModal" data-testid="create-shipment-method-modal-close-button"> 
             <ion-icon slot="icon-only" :icon="close" />
           </ion-button>
         </ion-buttons>
@@ -12,17 +12,17 @@
     
     <ion-content>
       <ion-item>
-        <ion-input label-placement="floating" v-model="shipmentMethod.description" @ionBlur="setShipmentMethodTypeId($event)">
+        <ion-input label-placement="floating" v-model="shipmentMethod.description" @ionBlur="setShipmentMethodTypeId($event)" data-testid="create-shipment-method-modal-name-input">
           <div slot="label">{{ translate("Name") }} <ion-text color="danger">*</ion-text></div>
         </ion-input>
       </ion-item>
       <ion-item>
-        <ion-input label-placement="floating" v-model="shipmentMethod.shipmentMethodTypeId">
+        <ion-input label-placement="floating" v-model="shipmentMethod.shipmentMethodTypeId" data-testid="create-shipment-method-modal-id-input">
           <div slot="label">{{ translate("ID") }} <ion-text color="danger">*</ion-text></div>
         </ion-input>
       </ion-item>
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="createShipmentMethod()">
+        <ion-fab-button @click="createShipmentMethod()" data-testid="create-shipment-method-modal-save-button">
           <ion-icon :icon="saveOutline" />
         </ion-fab-button>
       </ion-fab>

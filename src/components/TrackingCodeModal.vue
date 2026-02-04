@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal"> 
+        <ion-button @click="closeModal" data-testid="tracking-code-modal-close-button"> 
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -13,7 +13,7 @@
   <ion-content>
     <ion-list lines="none">
       <ion-item>
-        <ion-input :label="translate('Tracking code')" :helper-text="translate('Carrier:', { carrierName: getCarrierInfo() ? getCarrierInfo().groupName : ''  })" v-model="trackingCode" />
+        <ion-input :label="translate('Tracking code')" :helper-text="translate('Carrier:', { carrierName: getCarrierInfo() ? getCarrierInfo().groupName : ''  })" v-model="trackingCode" data-testid="tracking-code-modal-input" />
       </ion-item>
       <ion-item>
         <ion-label color="medium">
@@ -21,7 +21,7 @@
         </ion-label>
       </ion-item>
       <ion-item>
-        <ion-button fill="clear" :disabled="!trackingCode.trim()" @click="redirectToTrackingUrl()" size="default">
+        <ion-button fill="clear" :disabled="!trackingCode.trim()" @click="redirectToTrackingUrl()" size="default" data-testid="tracking-code-modal-test-button">
           {{ translate("Test tracking url") }}
           <ion-icon :icon="openOutline" slot="end" />
         </ion-button>
@@ -30,7 +30,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button @click="saveTrackingCode()" :disabled="!trackingCode.trim()">
+    <ion-fab-button @click="saveTrackingCode()" :disabled="!trackingCode.trim()" data-testid="tracking-code-modal-save-button">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>
