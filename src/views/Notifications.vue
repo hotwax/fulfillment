@@ -2,7 +2,7 @@
     <ion-page>
       <ion-header>
         <ion-toolbar>
-          <ion-back-button slot="start" default-href="/tabs/orders" />
+          <ion-back-button data-testid="notifications-back-button" slot="start" default-href="/tabs/orders" />
           <ion-title>{{ translate("Notifications") }}</ion-title>
         </ion-toolbar>
       </ion-header>
@@ -10,7 +10,7 @@
       <ion-content>
         <main>
           <ion-list v-if="notifications.length">
-            <ion-item v-for="(notification, index) in notifications" :key="index">
+            <ion-item v-for="(notification, index) in notifications" :key="index" data-testid="notification-item">
               <ion-label class="ion-text-wrap">
                 <h3>{{ notification.data.title }}</h3>
                 <p>{{ notification.data.body }}</p>
@@ -23,7 +23,7 @@
           </div>
         </main>
         <ion-fab slot="fixed" size="small" vertical="top" horizontal="end" :edge="true">
-          <ion-fab-button size="small" @click="openNotificationSettings()">
+          <ion-fab-button data-testid="notification-settings-button" size="small" @click="openNotificationSettings()">
             <ion-icon :icon="cogOutline"></ion-icon>
           </ion-fab-button>
         </ion-fab>

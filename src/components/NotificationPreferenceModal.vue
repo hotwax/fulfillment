@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal"> 
+        <ion-button data-testid="notification-pref-close-button" @click="closeModal"> 
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -16,11 +16,11 @@
     </div>
     <ion-list v-else>
       <ion-item :key="pref.enumId" v-for="pref in notificationPrefs">
-        <ion-toggle label-placement="start" @click="toggleNotificationPref(pref.enumId, $event)" :checked="pref.isEnabled">{{ pref.description }}</ion-toggle>
+        <ion-toggle data-testid="notification-pref-toggle" label-placement="start" @click="toggleNotificationPref(pref.enumId, $event)" :checked="pref.isEnabled">{{ pref.description }}</ion-toggle>
       </ion-item>
     </ion-list>
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-      <ion-fab-button :disabled="isButtonDisabled" @click="confirmSave()">
+      <ion-fab-button data-testid="notification-pref-save-button" :disabled="isButtonDisabled" @click="confirmSave()">
         <ion-icon :icon="save" />
       </ion-fab-button>
     </ion-fab>
@@ -163,12 +163,21 @@ export default defineComponent({
       const alert = await alertController.create({
         header: translate("Update notification preferences"),
         message,
+        htmlAttributes: {
+          'data-testid': 'notification-pref-update-alert'
+        },
         buttons: [
           {
             text: translate("Cancel"),
+            htmlAttributes: {
+              'data-testid': 'notification-pref-update-cancel-button'
+            }
           },
           {
             text: translate("Confirm"),
+            htmlAttributes: {
+              'data-testid': 'notification-pref-update-confirm-button'
+            },
             handler: async () => {
               await this.updateNotificationPref();
               modalController.dismiss({ dismissed: true });
