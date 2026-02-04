@@ -13,9 +13,9 @@
   <ion-content>
     <ion-searchbar data-testid="edit-pickers-modal-searchbar" v-model="queryString" @keyup.enter="queryString = $event.target.value; findPickers()" />
     <ion-row>
-      <ion-chip data-testid="edit-pickers-modal-selected-picker-chip" v-for="picker in selectedPickers" :key="picker.id">
+      <ion-chip :data-testid="`edit-pickers-modal-selected-picker-chip-${picker.id}`" v-for="picker in selectedPickers" :key="picker.id">
         <ion-label>{{ picker.name }}</ion-label>
-        <ion-icon data-testid="edit-pickers-modal-remove-picker-icon" :icon="closeCircle" @click="updateSelectedPickers(picker.id)" />
+        <ion-icon :data-testid="`edit-pickers-modal-remove-picker-icon-${picker.id}`" :icon="closeCircle" @click="updateSelectedPickers(picker.id)" />
       </ion-chip>
     </ion-row>
 
@@ -31,8 +31,8 @@
         {{ 'No picker found' }}
       </div>
       <div v-else>
-        <ion-item data-testid="edit-pickers-modal-picker-item" v-for="(picker, index) in pickers" :key="index" @click="updateSelectedPickers(picker.id)">
-          <ion-checkbox data-testid="edit-pickers-modal-picker-checkbox" :checked="isPickerSelected(picker.id)">
+        <ion-item :data-testid="`edit-pickers-modal-picker-item-${picker.id}`" v-for="(picker, index) in pickers" :key="index" @click="updateSelectedPickers(picker.id)">
+          <ion-checkbox :data-testid="`edit-pickers-modal-picker-checkbox-${picker.id}`" :checked="isPickerSelected(picker.id)">
             <ion-label>
               {{ picker.name }}
               <p>{{ picker.externalId ? picker.externalId : picker.id }}</p>

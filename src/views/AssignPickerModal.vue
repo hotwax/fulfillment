@@ -15,9 +15,9 @@
 
   <ion-content>
     <ion-row>
-      <ion-chip data-testid="assign-picker-modal-selected-picker-chip" v-for="picker in selectedPickers" :key="picker.id">
+      <ion-chip :data-testid="`assign-picker-modal-selected-picker-chip-${picker.id}`" v-for="picker in selectedPickers" :key="picker.id">
         <ion-label>{{ picker.name }}</ion-label>
-        <ion-icon data-testid="assign-picker-modal-remove-picker-icon" :icon="closeCircle" @click="selectPicker(picker.id)" />
+        <ion-icon :data-testid="`assign-picker-modal-remove-picker-icon-${picker.id}`" :icon="closeCircle" @click="selectPicker(picker.id)" />
       </ion-chip>
     </ion-row>
 
@@ -33,8 +33,8 @@
       </div>
       <div class="empty-state" v-else-if="!pickers.length">{{ "No picker found" }}</div>
       <div v-else>
-        <ion-item data-testid="assign-picker-modal-picker-item" v-for="(picker, index) in pickers" :key="index" @click="selectPicker(picker.id)">
-          <ion-checkbox data-testid="assign-picker-modal-picker-checkbox" :checked="isPickerSelected(picker.id)">
+        <ion-item :data-testid="`assign-picker-modal-picker-item-${picker.id}`" v-for="(picker, index) in pickers" :key="index" @click="selectPicker(picker.id)">
+          <ion-checkbox :data-testid="`assign-picker-modal-picker-checkbox-${picker.id}`" :checked="isPickerSelected(picker.id)">
             <ion-label>
               {{ picker.name }}
               <p>{{ picker.externalId ? picker.externalId : picker.id }}</p>

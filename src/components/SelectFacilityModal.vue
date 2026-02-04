@@ -14,7 +14,7 @@
 
     <ion-radio-group v-model="selectedFacilityIdValue">
       <ion-item v-for="facility in filteredFacilities()" :key="facility.facilityId">
-        <ion-radio data-testid="update-facility-radio-options" label-placement="end" justify="start" :value="facility.facilityId">
+        <ion-radio :data-testid="`update-facility-radio-options-${facility.facilityId}`" label-placement="end" justify="start" :value="facility.facilityId">
           <ion-label>
             {{ facility.facilityName ? facility.facilityName : facility.facilityId }}
             <p>{{ facility.facilityId }}</p>

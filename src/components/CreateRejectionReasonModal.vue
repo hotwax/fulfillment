@@ -29,7 +29,7 @@
       <ion-list>
         <ion-item>
           <ion-select :label="translate('Variance type')" interface="popover" v-model="formData.enumTypeId">
-            <ion-select-option v-for="type in rejectReasonEnumTypes" :key="type.enumTypeId" :value="type.enumTypeId">{{ type.enumTypeId }}</ion-select-option>
+            <ion-select-option :data-testid="`variance-type-option-${type.enumTypeId}`" v-for="type in rejectReasonEnumTypes" :key="type.enumTypeId" :value="type.enumTypeId">{{ type.enumTypeId }}</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item lines="none">

@@ -9,13 +9,13 @@
     <ion-content>
       <ion-list>
         <ion-item>
-          <ion-select :label="translate('Duration')" interface="popover" :placeholder="translate('Select')" :value="rejectedOrders.query.rejectionPeriodId" @ionChange="applyFilter($event['detail'].value, 'duration')">
-            <ion-select-option v-for="rejectionPeriod in rejectionPeriods" :key="rejectionPeriod.id" :value="rejectionPeriod.id">{{ rejectionPeriod.description }}</ion-select-option>
+          <ion-select data-testid="rejected-orders-duration-select" :label="translate('Duration')" interface="popover" :placeholder="translate('Select')" :value="rejectedOrders.query.rejectionPeriodId" @ionChange="applyFilter($event['detail'].value, 'duration')">
+            <ion-select-option :data-testid="`rejected-orders-duration-option-${rejectionPeriod.id}`" v-for="rejectionPeriod in rejectionPeriods" :key="rejectionPeriod.id" :value="rejectionPeriod.id">{{ rejectionPeriod.description }}</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item>
-          <ion-select :label="translate('Reason')" interface="popover" :placeholder="translate('Select')" :value="rejectedOrders.query.rejectionReasons" :multiple="true" @ionChange="applyFilter($event['detail'].value, 'reason')">
-            <ion-select-option v-for="rejectionReason in rejectReasons" :key="rejectionReason.enumId" :value="rejectionReason.enumId">{{ rejectionReason.description ? rejectionReason.description : rejectionReason.enumId }}</ion-select-option>
+          <ion-select data-testid="rejected-orders-reason-select" :label="translate('Reason')" interface="popover" :placeholder="translate('Select')" :value="rejectedOrders.query.rejectionReasons" :multiple="true" @ionChange="applyFilter($event['detail'].value, 'reason')">
+            <ion-select-option :data-testid="`rejected-orders-reason-option-${rejectionReason.enumId}`" v-for="rejectionReason in rejectReasons" :key="rejectionReason.enumId" :value="rejectionReason.enumId">{{ rejectionReason.description ? rejectionReason.description : rejectionReason.enumId }}</ion-select-option>
           </ion-select>
         </ion-item>
       </ion-list>

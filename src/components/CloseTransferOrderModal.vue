@@ -16,7 +16,7 @@
   <ion-content>
     <ion-list>
       <ion-list-header>{{ translate("To close this transfer order, select all items.") }}</ion-list-header>
-      <ion-item button v-for="(item, index) in order.items.filter((item: any) => item.statusId === 'ITEM_PENDING_FULFILL')" :key="index" @click="item.isChecked = !item.isChecked">
+      <ion-item :data-testid="`close-transfer-order-item-${item.orderItemSeqId}`" button v-for="(item, index) in order.items.filter((item: any) => item.statusId === 'ITEM_PENDING_FULFILL')" :key="index" @click="item.isChecked = !item.isChecked">
         <ion-thumbnail slot="start">
           <DxpShopifyImg size="small" :src="getProduct(item.productId).mainImageUrl" />
         </ion-thumbnail>
@@ -28,7 +28,7 @@
             <ion-text> {{ translate('Fulfilled qty') }}: {{ Number(item.totalIssuedQuantity) }} </ion-text> | <ion-text color="danger"> {{ translate('Cancel qty') }}: {{ Number(item.orderedQuantity) - Number(item.totalIssuedQuantity) }} </ion-text>
           </p>
         </ion-label>
-        <ion-checkbox aria-label="itemStatus" slot="end" :modelValue="item.isChecked" />
+        <ion-checkbox :data-testid="`close-transfer-order-item-checkbox-${item.orderItemSeqId}`" aria-label="itemStatus" slot="end" :modelValue="item.isChecked" />
       </ion-item>
     </ion-list>
   </ion-content>

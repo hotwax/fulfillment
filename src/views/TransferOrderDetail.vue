@@ -40,7 +40,7 @@
         <div class="segments" v-if="currentOrder">
           <template v-if="selectedSegment === 'open'">
             <template v-if="getTOItems('open')?.length > 0">
-              <TransferOrderItem v-for="item in getTOItems('open')" :key="currentOrder.orderId + item.orderItemSeqId + 'ship' +item.shippedQuantity" :itemDetail="item" :class="item.internalName === lastScannedId ? 'scanned-item' : '' " :id="item.internalName" isRejectionSupported="true"/>
+              <TransferOrderItem v-for="item in getTOItems('open')" :key="currentOrder.orderId + item.orderItemSeqId + 'ship' +item.shippedQuantity" :itemDetail="item" :class="item.internalName === lastScannedId ? 'scanned-item' : '' " :id="item.internalName" isRejectionSupported="true" :data-testid="`transfer-order-open-item-${item.orderItemSeqId}`"/>
             </template>
             <template v-else>
               <div class="empty-state">
@@ -50,7 +50,7 @@
           </template>
           <template v-else>
             <template v-if="currentOrder?.shipments?.length > 0">
-              <ion-card class="order" v-for="(shipment, index) in currentOrder.shipments" :key="index">
+              <ion-card class="order" v-for="(shipment, index) in currentOrder.shipments" :key="index" :data-testid="`transfer-order-shipment-card-${shipment.shipmentId}`">
                 <div class="order-header">
                   <div class="order-primary-info">
                     <ion-label>
@@ -70,7 +70,7 @@
                   </ion-label>
                 </div>
               </div>
-                <div v-for="item in shipment.items" :key="item.shipmentItemSeqId" class="order-item order-line-item">
+                <div v-for="item in shipment.items" :key="item.shipmentItemSeqId" class="order-item order-line-item" :data-testid="`transfer-order-shipment-item-${item.shipmentItemSeqId}`">
                   <div class="product-info">
                     <ion-item lines="none">
                       <ion-thumbnail slot="start">

@@ -10,7 +10,7 @@
       <ion-content>
         <main>
           <ion-list v-if="notifications.length">
-            <ion-item v-for="(notification, index) in notifications" :key="index" data-testid="notification-item">
+            <ion-item v-for="(notification, index) in notifications" :key="index" :data-testid="`notification-item-${index}`">
               <ion-label class="ion-text-wrap">
                 <h3>{{ notification.data.title }}</h3>
                 <p>{{ notification.data.body }}</p>

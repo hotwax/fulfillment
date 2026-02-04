@@ -64,7 +64,7 @@
                 {{ translate("Add Box") }}
               </ion-button>
               <ion-row>
-                <ion-chip data-testid="order-detail-box-type-chip" v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
+                <ion-chip :data-testid="`order-detail-box-type-chip-${shipmentPackage.shipmentId || index}`" v-for="(shipmentPackage, index) in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
                   {{ `Box ${shipmentPackage?.packageName}` }} {{ `| ${boxTypeDesc(getShipmentPackageType(order, shipmentPackage))}`}}
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
@@ -76,7 +76,7 @@
             <div class="order-item">
             <div class="product-info">
               <ion-item lines="none">
-                <ion-thumbnail data-testid="order-detail-product-image" slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
+                <ion-thumbnail :data-testid="`order-detail-product-image-${item.orderItemSeqId || index}`" slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
                   <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
                 </ion-thumbnail>
                 <ion-label>
@@ -92,18 +92,18 @@
 
             <div v-if="category === 'in-progress'" class="desktop-only ion-text-center" >
               <template v-if="item.rejectReason">
-                <ion-chip data-testid="order-detail-remove-rejection-chip" outline color="danger" >
+                <ion-chip :data-testid="`order-detail-remove-rejection-chip-${item.orderItemSeqId || index}`" outline color="danger" >
                   <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
                   <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)"/>
                 </ion-chip>
               </template>
               <template v-else-if="isEntierOrderRejectionEnabled(order)">
-                <ion-chip data-testid="order-detail-rejection-reason-chip" outline color="danger">
+                <ion-chip :data-testid="`order-detail-rejection-reason-chip-${item.orderItemSeqId || index}`" outline color="danger">
                   <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject to avoid order split (no variance)')}}</ion-label>
                 </ion-chip>
               </template>
               <template v-else>
-                <ion-chip data-testid="order-detail-shipment-box-chip" outline @click="openShipmentBoxPopover($event, item, order)">
+                <ion-chip :data-testid="`order-detail-shipment-box-chip-${item.orderItemSeqId || index}`" outline @click="openShipmentBoxPopover($event, item, order)">
                   <ion-icon :icon="fileTrayOutline" />
                   {{ `Box ${item.selectedBox || ''}` }} 
                   <ion-icon :icon="caretDownOutline" />
@@ -118,21 +118,21 @@
              <!--Adding checks to avoid any operations if order has missing info, mostly when after packing Solr is not updaing immediately-->
             <div class="product-metadata">
               <ion-note v-if="getProductStock(item.productId).qoh" class="ion-padding-end">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-              <ion-button data-testid="order-detail-check-stock-button" color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
+              <ion-button :data-testid="`order-detail-check-stock-button-${item.orderItemSeqId || index}`" color="medium" fill="clear" v-else size="small" @click="fetchProductStock(item.productId)">
                 {{ translate('Check stock') }}
                 <ion-icon slot="end" :icon="cubeOutline"/>
               </ion-button>
               <!-- TODO make functional -->
-              <ion-button data-testid="order-detail-report-issue-button" v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
+              <ion-button :data-testid="`order-detail-report-issue-button-${item.orderItemSeqId || index}`" v-if="category === 'in-progress'" @click="openRejectReasonPopover($event, item, order)" class="desktop-only" color="danger" fill="clear" size="small">
                 {{ translate('Report an issue') }}
                 <ion-icon slot="end" :icon="trashBinOutline"/>
               </ion-button>
-              <ion-button data-testid="order-detail-kit-components-button" v-if="isKit(item)" fill="clear" color="medium" size="small" @click.stop="fetchKitComponent(item)">
+              <ion-button :data-testid="`order-detail-kit-components-button-${item.orderItemSeqId || index}`" v-if="isKit(item)" fill="clear" color="medium" size="small" @click.stop="fetchKitComponent(item)">
                 {{ translate('Components') }}
                 <ion-icon v-if="item.showKitComponents" color="medium" slot="end" :icon="chevronUpOutline"/>
                 <ion-icon v-else color="medium" slot="end" :icon="listOutline"/>
               </ion-button>
-              <ion-button data-testid="order-detail-gift-card-button" v-if="item.productTypeId === 'GIFT_CARD'" fill="clear" color="medium" size="small" @click="openGiftCardActivationModal(item)">
+              <ion-button :data-testid="`order-detail-gift-card-button-${item.orderItemSeqId || index}`" v-if="item.productTypeId === 'GIFT_CARD'" fill="clear" color="medium" size="small" @click="openGiftCardActivationModal(item)">
                 {{ translate('Gift card') }}
                 <ion-icon color="medium" slot="end" :icon="item.isGCActivated ? gift : giftOutline"/>
               </ion-button>
@@ -141,7 +141,7 @@
             <div v-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
               <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                 <ion-item lines="none">
-                  <ion-thumbnail data-testid="order-detail-product-image" slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
+                  <ion-thumbnail :data-testid="`order-detail-product-image-${productComponent.productIdTo}`" slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
                     <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                   </ion-thumbnail>
                   <ion-label>
@@ -151,7 +151,7 @@
                     </div>
                     <p>{{ getFeatures(getProduct(productComponent.productIdTo).productFeatures)}}</p>
                   </ion-label>
-                  <ion-checkbox data-testid="order-detail-kit-reject-checkbox" v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.kitComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
+                  <ion-checkbox :data-testid="`order-detail-kit-reject-checkbox-${productComponent.productIdTo}`" v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.kitComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
                 </ion-item>
               </ion-card>
             </div>
@@ -241,7 +241,7 @@
               <ion-card-title>{{ translate("Payment") }}</ion-card-title>
             </ion-card-header>
             <div v-if="order.paymentPreferences?.length">
-              <ion-list v-for="(orderPayment, index) in order.paymentPreferences" :key="`${order.orderId}-${orderPayment.orderPaymentPreferenceId}`">
+              <ion-list :data-testid="`order-detail-payment-preference-list-${orderPayment.orderPaymentPreferenceId}`" v-for="(orderPayment, index) in order.paymentPreferences" :key="`${order.orderId}-${orderPayment.orderPaymentPreferenceId}`">
                 <ion-item lines="none">
                   <ion-label class="ion-text-wrap">
                     <p class="overline">{{ orderPayment.paymentMethodTypeId }}</p>
@@ -280,13 +280,13 @@
             </ion-item>
             <ion-item>
               <ion-select data-testid="order-detail-carrier-select" :disabled="!order.missingLabelImage || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Carrier')" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedCarrier(carrierPartyId)">
-                <ion-select-option v-for="carrier in filteredFacilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
+                <ion-select-option :data-testid="`order-detail-carrier-option-${carrier.partyId}`" v-for="carrier in filteredFacilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
               </ion-select>
             </ion-item>
             <ion-item>
               <template v-if="carrierMethods && carrierMethods.length > 0">
                 <ion-select data-testid="order-detail-method-select" :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE' || !hasPermission(Actions.APP_ORDER_SHIPMENT_METHOD_UPDATE)" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover" @ionChange="updateCarrierAndShippingMethod(carrierPartyId, shipmentMethodTypeId)" :selected-text="getSelectedShipmentMethod(shipmentMethodTypeId)">
-                  <ion-select-option v-for="method in carrierMethods" :key="method.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
+                  <ion-select-option :data-testid="`order-detail-method-option-${method.shipmentMethodTypeId}`" v-for="method in carrierMethods" :key="method.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
                 </ion-select>
               </template>
               <template v-else-if="!isUpdatingCarrierDetail">
@@ -331,7 +331,7 @@
         
         <h4 class="ion-padding-top ion-padding-start" v-if="order.otherShipGroups?.length">{{ translate('Other shipments in this order') }}</h4>
         <div class="shipgroup-details">
-          <ion-card v-for="shipGroup in order.otherShipGroups" :key="shipGroup.shipmentId">
+          <ion-card :data-testid="`order-detail-other-ship-group-card-${shipGroup.shipmentId || index}`" v-for="(shipGroup, index) in order.otherShipGroups" :key="shipGroup.shipmentId">
             <ion-card-header>
               <div>
                 <ion-card-subtitle class="overline">{{ getfacilityTypeDesc(shipGroup.facilityTypeId) }}</ion-card-subtitle>
@@ -366,7 +366,7 @@
             </ion-item>
     
             <ion-item lines="none" v-for="item in shipGroup.items" :key="item">
-              <ion-thumbnail data-testid="order-detail-product-image" slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
+              <ion-thumbnail :data-testid="`order-detail-product-image-${item.orderItemSeqId || index}`" slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
                 <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
               </ion-thumbnail>
               <ion-label>
@@ -380,7 +380,7 @@
               <div class="other-shipment-actions">
                 <!-- TODO: add a spinner if the api takes too long to fetch the stock -->
                 <ion-note slot="end" v-if="getProductStock(item.productId, item.facilityId).qoh">{{ getProductStock(item.productId, item.facilityId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                <ion-button data-testid="order-detail-other-shipment-stock-button" slot="end" fill="clear" v-else-if="['open', 'in-progress', 'completed'].includes(shipGroup.category)" size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
+                <ion-button :data-testid="`order-detail-other-shipment-stock-button-${item.orderItemSeqId || index}`" slot="end" fill="clear" v-else-if="['open', 'in-progress', 'completed'].includes(shipGroup.category)" size="small" @click.stop="fetchProductStock(item.productId, item.facilityId)">
                   <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                 </ion-button>
               </div>

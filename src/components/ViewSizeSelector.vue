@@ -9,8 +9,8 @@
     <ion-content>
       <ion-list>
         <ion-radio-group data-testid="view-size-selector-radio-group" :value="viewSize" @ionChange="updateViewSize($event.detail.value)">
-          <ion-item data-testid="view-size-selector-item" v-for="count in prepareViewSizeOptions()" :key="count">
-            <ion-radio data-testid="view-size-selector-radio" label-placement="end" justify="start" :value="count">{{ count }} {{ count === 1 ? translate('order') : translate('orders') }}</ion-radio>
+          <ion-item :data-testid="`view-size-selector-item-${count}`" v-for="count in prepareViewSizeOptions()" :key="count">
+            <ion-radio :data-testid="`view-size-selector-radio-${count}`" label-placement="end" justify="start" :value="count">{{ count }} {{ count === 1 ? translate('order') : translate('orders') }}</ion-radio>
             <!-- TODO: add support to display the order items count -->
             <!-- <ion-note slot="end">10 items</ion-note> -->
           </ion-item>

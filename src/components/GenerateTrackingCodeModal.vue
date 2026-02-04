@@ -59,13 +59,13 @@
         <ion-list>
           <ion-item>
             <ion-select data-testid="generate-tracking-code-modal-manual-carrier-select" :disabled="!order.missingLabelImage" :label="translate('Carrier')" :selectedText="getCarrier()" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
-              <ion-select-option v-for="carrier in filteredFacilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
+              <ion-select-option :data-testid="`manual-carrier-option-${carrier.partyId}`" v-for="carrier in filteredFacilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item>
             <template v-if="carrierMethods && carrierMethods.length > 0">
               <ion-select data-testid="generate-tracking-code-modal-manual-method-select" :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE'" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
-                <ion-select-option v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
+                <ion-select-option :data-testid="`manual-method-option-${method.shipmentMethodTypeId}`" v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
               </ion-select>
             </template>
             <template v-else>
@@ -93,13 +93,13 @@
         <ion-list>
           <ion-item>
             <ion-select data-testid="generate-tracking-code-modal-update-carrier-select" :disabled="!order.missingLabelImage" :label="translate('Carrier')" :selectedText="getCarrier()" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
-              <ion-select-option v-for="carrier in filteredFacilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
+              <ion-select-option :data-testid="`update-carrier-option-${carrier.partyId}`" v-for="carrier in filteredFacilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item>
             <template v-if="carrierMethods && carrierMethods.length > 0">
               <ion-select data-testid="generate-tracking-code-modal-update-method-select" :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE'" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
-                <ion-select-option v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
+                <ion-select-option :data-testid="`update-method-option-${method.shipmentMethodTypeId}`" v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
               </ion-select>
             </template>
             <template v-else>

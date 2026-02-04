@@ -1,7 +1,7 @@
 <template>
   <ion-content>
     <ion-list>
-      <ion-item data-testid="shipment-box-type-popover-item" v-for="boxType in shipmentBoxTypes" :key="boxType.shipmentBoxTypeId" @click="updateBoxType(boxType.shipmentBoxTypeId)" button>
+      <ion-item :data-testid="`shipment-box-type-popover-item-${boxType.shipmentBoxTypeId}`" v-for="boxType in shipmentBoxTypes" :key="boxType.shipmentBoxTypeId" @click="updateBoxType(boxType.shipmentBoxTypeId)" button>
         {{ boxType.description ? boxType.description : boxType.shipmentBoxTypeId }}
       </ion-item>
     </ion-list>

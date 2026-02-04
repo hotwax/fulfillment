@@ -43,19 +43,19 @@
           <hr />
 
           <div v-if="ordersList.orders.length">
-            <div v-for="(order, index) in ordersList.orders" :key="index" @click="() => router.push(`/order-lookup/${order.orderId}`)" data-testid="order-lookup-order-card">
+            <div v-for="(order, index) in ordersList.orders" :key="index" @click="() => router.push(`/order-lookup/${order.orderId}`)" :data-testid="`order-lookup-order-card-${order.orderId}`">
               <section class="section-header">
                 <div class="primary-info">
                   <ion-item lines="none">
                     <ion-label>
-                      <strong data-testid="order-lookup-order-id">{{ order.orderId }}</strong>
+                      <strong :data-testid="`order-lookup-order-id-${order.orderId}`">{{ order.orderId }}</strong>
                       <p>{{ order.customer.name }}</p>
                     </ion-label>
                   </ion-item>
                 </div>
   
                 <div class="tags">
-                  <ion-chip data-testid="order-lookup-order-name-chip" @click.stop="copyToClipboard(order.orderName, 'Copied to clipboard')" outline v-if="order.orderName">
+                  <ion-chip :data-testid="`order-lookup-order-name-chip-${order.orderId}`" @click.stop="copyToClipboard(order.orderName, 'Copied to clipboard')" outline v-if="order.orderName">
                     <ion-icon :icon="pricetag" />
                     <ion-label>{{ order.orderName }}</ion-label>
                   </ion-chip>
@@ -70,7 +70,7 @@
               <section v-if="showOrderItems">
                 <div class="list-item" v-for="(item, index) in order.doclist.docs" :key="index">
                   <ion-item lines="none">
-                    <ion-thumbnail data-testid="order-lookup-item-thumbnail" slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl" @click.stop>
+                    <ion-thumbnail :data-testid="`order-lookup-item-thumbnail-${item.orderItemSeqId || index}`" slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl" @click.stop>
                       <Image :src="getProduct(item.productId)?.mainImageUrl" />
                     </ion-thumbnail>
                     <ion-label class="ion-text-wrap">

@@ -16,7 +16,7 @@
     </div>
     <ion-list v-else>
       <ion-item :key="pref.enumId" v-for="pref in notificationPrefs">
-        <ion-toggle data-testid="notification-pref-toggle" label-placement="start" @click="toggleNotificationPref(pref.enumId, $event)" :checked="pref.isEnabled">{{ pref.description }}</ion-toggle>
+        <ion-toggle :data-testid="`notification-pref-toggle-${pref.enumId}`" label-placement="start" @click="toggleNotificationPref(pref.enumId, $event)" :checked="pref.isEnabled">{{ pref.description }}</ion-toggle>
       </ion-item>
     </ion-list>
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
