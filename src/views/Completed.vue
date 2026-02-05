@@ -9,6 +9,9 @@
         <ion-title v-else>{{ completedOrders.query.viewSize }} {{ translate('of') }} {{ completedOrders.total }} {{ completedOrders.total ? translate('order') : translate('orders') }}</ion-title>
 
         <ion-buttons slot="end">
+          <ion-button @click="openAiChatModal()">
+            <ion-icon slot="icon-only" :icon="chatbubblesOutline" />
+          </ion-button>
           <ion-menu-button menu="view-size-selector-completed" :disabled="!completedOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
@@ -233,8 +236,9 @@ import {
   modalController
 } from '@ionic/vue';
 import { computed, defineComponent } from 'vue';
-import { caretDownOutline, chevronUpOutline, cubeOutline, printOutline, downloadOutline, gift, giftOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline, timeOutline, analytics } from 'ionicons/icons'
+import { caretDownOutline, chatbubblesOutline, chevronUpOutline, cubeOutline, printOutline, downloadOutline, gift, giftOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline, timeOutline, analytics } from 'ionicons/icons'
 import Popover from '@/views/ShippingPopover.vue'
+import AiChatModal from '@/components/AiChatModal.vue';
 import { useRouter } from 'vue-router';
 import { mapGetters, useStore } from 'vuex'
 import { copyToClipboard, getFeatures, hasActiveFilters, showToast } from '@/utils'
@@ -675,6 +679,12 @@ export default defineComponent({
       });
       return popover.present();
     },
+    async openAiChatModal() {
+      const modal = await modalController.create({
+        component: AiChatModal
+      });
+      return modal.present();
+    },
     async openGiftCardActivationModal(item: any) {
       const modal = await modalController.create({
         component: GiftCardActivationModal,
@@ -796,6 +806,7 @@ export default defineComponent({
     return {
       Actions,
       caretDownOutline,
+      chatbubblesOutline,
       chevronUpOutline,
       copyToClipboard,
       checkmarkDoneOutline,
