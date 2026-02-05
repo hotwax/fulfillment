@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-menu-button slot="start" />
+        <ion-menu-button slot="start" data-testid="settings-menu-button" />
         <ion-title>{{ translate("Settings") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -22,8 +22,8 @@
               <ion-card-title>{{ userProfile?.partyName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" v-if="!authStore.isEmbedded" @click="logout()">{{ translate("Logout") }}</ion-button>
-          <ion-button :standalone-hidden="!hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)" fill="outline" @click="goToLaunchpad()">
+          <ion-button color="danger" v-if="!authStore.isEmbedded" @click="logout()" data-testid="settings-logout-button">{{ translate("Logout") }}</ion-button>
+          <ion-button :standalone-hidden="!hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)" fill="outline" @click="goToLaunchpad()" data-testid="settings-launchpad-button">
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
@@ -55,15 +55,15 @@
           <ion-item lines="none" v-if="orderLimitType === 'custom'">
             <ion-text>{{ currentFacilityDetails?.orderCount }}</ion-text>
             <ion-progress-bar class="ion-margin" :value="currentFacilityDetails?.orderCount / fulfillmentOrderLimit"></ion-progress-bar>
-            <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{currentFacilityDetails?.maximumOrderLimit}}</ion-chip>
+            <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover" data-testid="settings-order-limit-chip">{{currentFacilityDetails?.maximumOrderLimit}}</ion-chip>
           </ion-item>      
           <ion-item lines="none" v-else-if="orderLimitType === 'unlimited'">
             <ion-label>{{ translate("orders allocated today", {orderCount: currentFacilityDetails?.orderCount}) }}</ion-label>
-            <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{ translate("Unlimited") }}</ion-chip>
+            <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover" data-testid="settings-unlimited-chip">{{ translate("Unlimited") }}</ion-chip>
           </ion-item>      
           <ion-item lines="none" v-else>
             <ion-label>{{ translate("orders in fulfillment queue", {orderCount: currentFacilityDetails?.orderCount}) }}</ion-label>
-            <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover" color="danger" fill="outline">{{ fulfillmentOrderLimit }}</ion-chip>
+            <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover" color="danger" fill="outline" data-testid="settings-fulfillment-limit-chip">{{ fulfillmentOrderLimit }}</ion-chip>
           </ion-item>
         </ion-card>
 
@@ -77,7 +77,7 @@
             {{ translate("Control whether the store's inventory should be made available for online sales or not.") }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG) || !facilityGroupDetails?.facilityGroupId">
-            <ion-toggle label-placement="start" v-model="isEComInvEnabled" @click.prevent="updateEComInvStatus($event)">{{ translate("Sell online") }}</ion-toggle>
+            <ion-toggle label-placement="start" v-model="isEComInvEnabled" @click.prevent="updateEComInvStatus($event)" data-testid="settings-sell-online-toggle">{{ translate("Sell online") }}</ion-toggle>
           </ion-item>
         </ion-card>
       </section>
@@ -101,10 +101,10 @@
             {{ translate('Print supplementary documents with the shipment for package identification.') }}
           </ion-card-content>
           <ion-item lines="none">
-            <ion-toggle label-placement="start" :checked="userPreference.printShippingLabel" @ionChange="setPrintShippingLabelPreference($event)">{{ translate("Generate shipping label") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="userPreference.printShippingLabel" @ionChange="setPrintShippingLabelPreference($event)" data-testid="settings-shipping-label-toggle">{{ translate("Generate shipping label") }}</ion-toggle>
           </ion-item>
           <ion-item lines="none">
-            <ion-toggle label-placement="start" :checked="userPreference.printPackingSlip" @ionChange="setPrintPackingSlipPreference($event)">{{ translate("Generate packing slip") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="userPreference.printPackingSlip" @ionChange="setPrintPackingSlipPreference($event)" data-testid="settings-packing-slip-toggle">{{ translate("Generate packing slip") }}</ion-toggle>
           </ion-item>
         </ion-card>
 
@@ -119,7 +119,7 @@
           </ion-card-content>
           <ion-list>
             <ion-item :key="pref.enumId" v-for="pref in notificationPrefs" lines="none">
-              <ion-toggle label-placement="start" @click.prevent="confirmNotificationPrefUpdate(pref.enumId, $event)" :checked="pref.isEnabled">{{ pref.description }}</ion-toggle>
+              <ion-toggle label-placement="start" @click.prevent="confirmNotificationPrefUpdate(pref.enumId, $event)" :checked="pref.isEnabled" :data-testid="`settings-notification-toggle-${pref.enumId}`">{{ pref.description }}</ion-toggle>
             </ion-item>
           </ion-list>
         </ion-card>
@@ -132,10 +132,10 @@
           </ion-card-header>
           <ion-card-content v-html="barcodeContentMessage"></ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_UPDT_FULFILL_FORCE_SCAN_CONFIG)">
-            <ion-toggle label-placement="start" :checked="isForceScanEnabled" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="isForceScanEnabled" @click.prevent="updateForceScanStatus($event)" data-testid="settings-require-scan-toggle">{{ translate("Require scan") }}</ion-toggle>
           </ion-item>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_BARCODE_IDENTIFIER_UPDATE)">
-            <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="barcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
+            <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="barcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)" data-testid="settings-barcode-identifier-select">
               <ion-select-option v-for="identification in barcodeIdentificationOptions" :key="identification" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -151,7 +151,7 @@
             {{ translate("Individual items within an order will be rejected without affecting the other items in the order.") }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="isPartialOrderRejectionEnabled" @click.prevent="confirmPartialOrderRejection($event)">{{ translate("Partial rejections") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="isPartialOrderRejectionEnabled" @click.prevent="confirmPartialOrderRejection($event)" data-testid="settings-partial-rejections-toggle">{{ translate("Partial rejections") }}</ion-toggle>
           </ion-item>
         </ion-card>
         <ion-card>
@@ -164,7 +164,7 @@
             {{ translate('When rejecting an item, automatically reject all other orders for that item as well.') }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_COLLATERAL_REJECTION_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="isCollateralRejectionEnabled" @click.prevent="confirmCollateralRejection($event)">{{ translate("Auto reject related items") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="isCollateralOrderRejectionEnabled" @click.prevent="confirmCollateralRejection($event)" data-testid="settings-auto-reject-toggle">{{ translate("Auto reject related items") }}</ion-toggle>
           </ion-item>
         </ion-card>
         <ion-card>
@@ -177,7 +177,7 @@
             {{ translate('Adjust the QOH along with ATP on rejection.') }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_AFFECT_QOH_CONFIG_UPDATE)">
-            <ion-toggle label-placement="start" :checked="affectQoh" @click.prevent="confirmAffectQohConfig($event)">{{ translate("Affect QOH") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="affectQoh" @click.prevent="confirmAffectQohConfig($event)" data-testid="settings-affect-qoh-toggle">{{ translate("Affect QOH") }}</ion-toggle>
           </ion-item>
         </ion-card>
       </section>
@@ -519,10 +519,16 @@ export default defineComponent({
         message: translate(message),
         buttons: [{
           text: translate('Cancel'),
-          role: ''
+          role: '',
+          htmlAttributes: {
+            'data-testid': 'settings-ecom-inventory-cancel-btn'
+          }
         }, {
           text: translate('Save'),
-          role: 'success'
+          role: 'success',
+          htmlAttributes: {
+            'data-testid': 'settings-ecom-inventory-save-btn'
+          }
         }],
       });
 
@@ -609,13 +615,19 @@ export default defineComponent({
         buttons: [
           {
             text: translate("Cancel"),
-            role: "cancel"
+            role: "cancel",
+            htmlAttributes: {
+              'data-testid': 'settings-notification-cancel-btn'
+            }
           },
           {
             text: translate("Confirm"),
             handler: async () => {
               alertController.dismiss()
               await this.updateNotificationPref(enumId)
+            },
+            htmlAttributes: {
+              'data-testid': 'settings-notification-confirm-btn'
             }
           }
         ],
@@ -634,13 +646,19 @@ export default defineComponent({
         buttons: [
           {
             text: translate("Cancel"),
-            role: "cancel"
+            role: "cancel",
+            htmlAttributes: {
+              'data-testid': 'settings-partial-rejection-cancel-btn'
+            }
           },
           {
             text: translate("Confirm"),
             handler: async () => {
               alertController.dismiss()
               await this.updatePartialOrderRejectionConfig(isChecked)
+            },
+            htmlAttributes: {
+              'data-testid': 'settings-partial-rejection-confirm-btn'
             }
           }
         ],
@@ -675,13 +693,19 @@ export default defineComponent({
         buttons: [
           {
             text: translate("Cancel"),
-            role: "cancel"
+            role: "cancel",
+            htmlAttributes: {
+              'data-testid': 'settings-collateral-rejection-cancel-btn'
+            }
           },
           {
             text: translate("Confirm"),
             handler: async () => {
               alertController.dismiss()
               await this.updateCollateralRejectionConfig(!event.target.checked)
+            },
+            htmlAttributes: {
+              'data-testid': 'settings-collateral-rejection-confirm-btn'
             }
           }
         ],
@@ -716,13 +740,19 @@ export default defineComponent({
         buttons: [
           {
             text: translate("Cancel"),
-            role: "cancel"
+            role: "cancel",
+            htmlAttributes: {
+              'data-testid': 'settings-affect-qoh-cancel-btn'
+            }
           },
           {
             text: translate("Confirm"),
             handler: async () => {
               alertController.dismiss()
               await this.updateAffectQohConfig(!event.target.checked)
+            },
+            htmlAttributes: {
+              'data-testid': 'settings-affect-qoh-confirm-btn'
             }
           }
         ],

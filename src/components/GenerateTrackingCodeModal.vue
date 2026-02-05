@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal"> 
+        <ion-button data-testid="generate-tracking-code-modal-close-button" @click="closeModal"> 
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -26,11 +26,11 @@
         <p class="overline">{{ translate("Gateway error") }}</p>
         {{ order.gatewayMessage || packingErrorMessage }}
       </ion-label>
-      <ion-button fill="clear" color="medium" @click="copyToClipboard(order.gatewayMessage || packingErrorMessage, 'Copied to clipboard')">
+      <ion-button data-testid="generate-tracking-code-modal-copy-error-button" fill="clear" color="medium" @click="copyToClipboard(order.gatewayMessage || packingErrorMessage, 'Copied to clipboard')">
         <ion-icon slot="icon-only" :icon="copyOutline" />
       </ion-button>
     </ion-item>
-    <ion-segment scrollable v-model="selectedSegment" @click="reinitializeData">
+    <ion-segment data-testid="generate-tracking-code-modal-segment" scrollable v-model="selectedSegment" @click="reinitializeData">
       <ion-segment-button value="update-carrier">
         <ion-label>{{ translate("Update carrier") }}</ion-label>
       </ion-segment-button>
@@ -45,44 +45,44 @@
       <template v-if="selectedSegment === 'reject-order'">
         <ion-list>
           <ion-item lines="none">
-            <ion-checkbox justify="start" label-placement="end" v-model="rejectOrder">
+            <ion-checkbox data-testid="generate-tracking-code-modal-reject-checkbox" justify="start" label-placement="end" v-model="rejectOrder">
               <div>
                 <ion-label>{{ translate('I am unable to provide tracking for this order and need to reject it.') }}</ion-label>
                 <ion-note>{{ translate('This will not affect the inventory for the ordered items at your store.') }}</ion-note>
               </div>
             </ion-checkbox>
           </ion-item>
-          <ion-textarea class="ion-padding" fill="outline" placeholder="Add a message" v-model="rejectionComment" />
+          <ion-textarea data-testid="generate-tracking-code-modal-rejection-comment" class="ion-padding" fill="outline" placeholder="Add a message" v-model="rejectionComment" />
         </ion-list>
       </template>
       <template v-else-if="selectedSegment === 'update-tracking-detail'">
         <ion-list>
           <ion-item>
-            <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" :selectedText="getCarrier()" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
-              <ion-select-option v-for="carrier in filteredFacilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
+            <ion-select data-testid="generate-tracking-code-modal-manual-carrier-select" :disabled="!order.missingLabelImage" :label="translate('Carrier')" :selectedText="getCarrier()" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
+              <ion-select-option :data-testid="`manual-carrier-option-${carrier.partyId}`" v-for="carrier in filteredFacilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item>
             <template v-if="carrierMethods && carrierMethods.length > 0">
-              <ion-select :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE'" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
-                <ion-select-option v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
+              <ion-select data-testid="generate-tracking-code-modal-manual-method-select" :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE'" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
+                <ion-select-option :data-testid="`manual-method-option-${method.shipmentMethodTypeId}`" v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
               </ion-select>
             </template>
             <template v-else>
               <ion-label>
                 {{ translate('No shipment methods linked to', {carrierName: getCarrier()}) }}
               </ion-label>
-              <ion-button @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
+              <ion-button data-testid="generate-tracking-code-modal-shipping-help-button" @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
                 <ion-icon slot="icon-only" :icon="informationCircleOutline" />
               </ion-button>
             </template>
           </ion-item>
           <ion-item>
-            <ion-input :label="translate('Tracking code')" :placeholder="translate('enter code')" v-model="trackingCode" />
+            <ion-input data-testid="generate-tracking-code-modal-tracking-code-input" :label="translate('Tracking code')" :placeholder="translate('enter code')" v-model="trackingCode" />
           </ion-item>
           <ion-item>
             <ion-label>{{ generateTrackingUrl() }}</ion-label>
-            <ion-button slot="end" fill="clear" size="default" :disabled="!trackingCode.trim() || !getCarrierTrackingUrl()" @click="redirectToTrackingUrl()">
+            <ion-button data-testid="generate-tracking-code-modal-test-tracking-button" slot="end" fill="clear" size="default" :disabled="!trackingCode.trim() || !getCarrierTrackingUrl()" @click="redirectToTrackingUrl()">
               {{ translate("Test") }}
               <ion-icon :icon="openOutline" slot="end" />
             </ion-button>
@@ -92,21 +92,21 @@
       <template v-else>
         <ion-list>
           <ion-item>
-            <ion-select :disabled="!order.missingLabelImage" :label="translate('Carrier')" :selectedText="getCarrier()" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
-              <ion-select-option v-for="carrier in filteredFacilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
+            <ion-select data-testid="generate-tracking-code-modal-update-carrier-select" :disabled="!order.missingLabelImage" :label="translate('Carrier')" :selectedText="getCarrier()" v-model="carrierPartyId" interface="popover" @ionChange="updateCarrier(carrierPartyId)">
+              <ion-select-option :data-testid="`update-carrier-option-${carrier.partyId}`" v-for="carrier in filteredFacilityCarriers" :key="carrier.partyId" :value="carrier.partyId">{{ translate(carrier.groupName) }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item>
             <template v-if="carrierMethods && carrierMethods.length > 0">
-              <ion-select :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE'" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
-                <ion-select-option v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
+              <ion-select data-testid="generate-tracking-code-modal-update-method-select" :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE'" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
+                <ion-select-option :data-testid="`update-method-option-${method.shipmentMethodTypeId}`" v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
               </ion-select>
             </template>
             <template v-else>
               <ion-label>
                 {{ translate('No shipment methods linked to', {carrierName: getCarrier()}) }}
               </ion-label>
-              <ion-button @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
+              <ion-button data-testid="generate-tracking-code-modal-update-help-button" @click="openShippingMethodDocumentReference()" fill="clear" color="medium" slot="end">
                 <ion-icon slot="icon-only" :icon="informationCircleOutline" />
               </ion-button>
             </template>
@@ -117,7 +117,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :color="selectedSegment === 'reject-order' ? 'danger' : ''" :disabled="(selectedSegment !== 'reject-order' && !shipmentMethodTypeId) || (selectedSegment === 'reject-order' && !rejectOrder)" @click="confirmSave()">
+    <ion-fab-button data-testid="generate-tracking-code-modal-save-button" :color="selectedSegment === 'reject-order' ? 'danger' : ''" :disabled="(selectedSegment !== 'reject-order' && !shipmentMethodTypeId) || (selectedSegment === 'reject-order' && !rejectOrder)" @click="confirmSave()">
       <ion-icon :icon="selectedSegment === 'reject-order' ? trashOutline : archiveOutline" />
     </ion-fab-button>
   </ion-fab>

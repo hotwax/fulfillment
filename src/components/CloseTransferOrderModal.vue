@@ -2,13 +2,13 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal">
+        <ion-button @click="closeModal" data-testid="close-transfer-order-modal-back-button">
           <ion-icon slot="icon-only" :icon="arrowBackOutline" />
         </ion-button>
       </ion-buttons>
       <ion-title>{{ translate("Close transfer order items") }}</ion-title>
       <ion-buttons slot="end" @click="selectAllItems">
-        <ion-button color="primary">{{ translate("Select all") }}</ion-button>
+        <ion-button color="primary" data-testid="close-transfer-order-modal-select-all-button">{{ translate("Select all") }}</ion-button>
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
@@ -16,7 +16,7 @@
   <ion-content>
     <ion-list>
       <ion-list-header>{{ translate("To close this transfer order, select all items.") }}</ion-list-header>
-      <ion-item button v-for="(item, index) in order.items.filter((item: any) => item.statusId === 'ITEM_PENDING_FULFILL')" :key="index" @click="item.isChecked = !item.isChecked">
+      <ion-item :data-testid="`close-transfer-order-item-${item.orderItemSeqId}`" button v-for="(item, index) in order.items.filter((item: any) => item.statusId === 'ITEM_PENDING_FULFILL')" :key="index" @click="item.isChecked = !item.isChecked">
         <ion-thumbnail slot="start">
           <DxpShopifyImg size="small" :src="getProduct(item.productId).mainImageUrl" />
         </ion-thumbnail>
@@ -28,13 +28,13 @@
             <ion-text> {{ translate('Fulfilled qty') }}: {{ Number(item.totalIssuedQuantity) }} </ion-text> | <ion-text color="danger"> {{ translate('Cancel qty') }}: {{ Number(item.orderedQuantity) - Number(item.totalIssuedQuantity) }} </ion-text>
           </p>
         </ion-label>
-        <ion-checkbox aria-label="itemStatus" slot="end" :modelValue="item.isChecked" />
+        <ion-checkbox :data-testid="`close-transfer-order-item-checkbox-${item.orderItemSeqId}`" aria-label="itemStatus" slot="end" :modelValue="item.isChecked" />
       </ion-item>
     </ion-list>
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleToCloseTOItems()" @click="confirmSave">
+    <ion-fab-button :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleToCloseTOItems()" @click="confirmSave" data-testid="close-transfer-order-modal-save-button">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -103,13 +103,22 @@ export default defineComponent({
       const alert = await alertController.create({
         header: translate('Close transfer order items'),
         message: translate("The selected items won't be available for receiving later."),
+        htmlAttributes: {
+          'data-testid': 'close-transfer-order-modal-alert'
+        },
         buttons: [{
           text: translate('Cancel'),
-          role: 'cancel'
+          role: 'cancel',
+          htmlAttributes: {
+            'data-testid': 'close-transfer-order-modal-alert-cancel-button'
+          }
         },
         {
           text: translate('Proceed'),
           role: 'proceed',
+          htmlAttributes: {
+            'data-testid': 'close-transfer-order-modal-alert-proceed-button'
+          },
           handler: async () => {
             const success = await this.closeOrderItems();
             if (success) {

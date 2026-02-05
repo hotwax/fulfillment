@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal"> 
+        <ion-button @click="closeModal" data-testid="used-reasons-modal-close-button"> 
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -11,7 +11,7 @@
   </ion-header>
   <ion-content>
     <ion-list v-if="usedReasons.length">
-      <ion-item v-for="(reason, index) in usedReasons" :key="reason.enumId" :lines="usedReasons.length -1 === index ? 'none' : 'inset'">
+      <ion-item v-for="(reason, index) in usedReasons" :key="reason.enumId" :lines="usedReasons.length -1 === index ? 'none' : 'inset'" :data-testid="`used-reasons-modal-reason-item-${reason.enumId}`">
         <ion-label>
           {{ reason.description }}
           <p>{{ reason.enumTypeId }}</p>
@@ -43,7 +43,7 @@ import { computed, defineComponent } from "vue";
 import { mapGetters } from 'vuex';
 import { closeOutline, pricetag } from "ionicons/icons";
 import { getProductIdentificationValue, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
-  
+   
 
 export default defineComponent({
   name: "RejectedItemsModal",
@@ -85,4 +85,3 @@ export default defineComponent({
   },
 });
 </script>
-  

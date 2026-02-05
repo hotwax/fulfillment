@@ -31,7 +31,7 @@
         </ion-label>
 
         <!-- Show Add button if product is NOT in order -->
-        <ion-button data-testid="viewmore-add-to-transfer-btn" v-if="!isProductInOrder(product.productId)" slot="end" fill="outline" @click="addTransferOrderItem(product)" :disabled="pendingProductIds.has(product.productId)">
+        <ion-button :data-testid="`viewmore-add-to-transfer-btn-${product.productId}`" v-if="!isProductInOrder(product.productId)" slot="end" fill="outline" @click="addTransferOrderItem(product)" :disabled="pendingProductIds.has(product.productId)">
           {{ pendingProductIds.has(product.productId) ? translate("Adding...") : translate("Add to Transfer") }}
         </ion-button>
 

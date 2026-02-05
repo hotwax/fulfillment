@@ -25,7 +25,7 @@
 
       <template v-else-if="filteredFacilities().length">
         <ion-item v-for="facility in filteredFacilities()" :key="facility.facilityId" @click="selectFacility(facility.facilityId)">
-          <ion-radio data-testid="facility-radio-options" label-placement="end" justify="start" :value="facility.facilityId" :checked="facility.facilityId === selectedDestinationFacilityId">
+          <ion-radio :data-testid="`facility-radio-options-${facility.facilityId}`" label-placement="end" justify="start" :value="facility.facilityId" :checked="facility.facilityId === selectedDestinationFacilityId">
             <ion-label>
               {{ facility.facilityName || facility.facilityId }}
               <p>{{ facility.facilityId }}</p>

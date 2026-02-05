@@ -1,5 +1,5 @@
 <template>
-  <ion-menu type="overlay" side="end">
+  <ion-menu data-testid="view-size-selector-menu" type="overlay" side="end">
     <ion-header>
       <ion-toolbar>
         <ion-title>{{ translate(title) }}</ion-title>
@@ -8,9 +8,9 @@
 
     <ion-content>
       <ion-list>
-        <ion-radio-group :value="viewSize" @ionChange="updateViewSize($event.detail.value)">
-          <ion-item v-for="count in prepareViewSizeOptions()" :key="count">
-            <ion-radio label-placement="end" justify="start" :value="count">{{ count }} {{ count === 1 ? translate('order') : translate('orders') }}</ion-radio>
+        <ion-radio-group data-testid="view-size-selector-radio-group" :value="viewSize" @ionChange="updateViewSize($event.detail.value)">
+          <ion-item :data-testid="`view-size-selector-item-${count}`" v-for="count in prepareViewSizeOptions()" :key="count">
+            <ion-radio :data-testid="`view-size-selector-radio-${count}`" label-placement="end" justify="start" :value="count">{{ count }} {{ count === 1 ? translate('order') : translate('orders') }}</ion-radio>
             <!-- TODO: add support to display the order items count -->
             <!-- <ion-note slot="end">10 items</ion-note> -->
           </ion-item>

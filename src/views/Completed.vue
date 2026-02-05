@@ -4,12 +4,12 @@
 
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-menu-button slot="start" />
+        <ion-menu-button data-testid="completed-main-menu-button" slot="start" />
         <ion-title v-if="!completedOrders.total">{{ completedOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-title v-else>{{ completedOrders.query.viewSize }} {{ translate('of') }} {{ completedOrders.total }} {{ completedOrders.total ? translate('order') : translate('orders') }}</ion-title>
 
         <ion-buttons slot="end">
-          <ion-menu-button menu="view-size-selector-completed" :disabled="!completedOrders.total">
+          <ion-menu-button data-testid="completed-view-size-selector-button" menu="view-size-selector-completed" :disabled="!completedOrders.total">
             <ion-icon :icon="optionsOutline" />
           </ion-menu-button>
         </ion-buttons>
@@ -17,19 +17,19 @@
     </ion-header>
     
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
-      <ion-searchbar class="searchbar" :value="completedOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)" />
+      <ion-searchbar data-testid="completed-order-searchbar" class="searchbar" :value="completedOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)" />
       <ion-radio-group v-if="carrierPartyIds?.length" v-model="selectedCarrierPartyId" @ionChange="updateSelectedCarrierPartyIds($event.detail.value)">
         <ion-row class="filters">
           <ion-item lines="none">
               <!-- empty value '' for 'All orders' radio -->
-            <ion-radio label-placement="end" value="">
+            <ion-radio data-testid="completed-carrier-radio-all" label-placement="end" value="">
               <ion-label class="ion-text-wrap">
                 {{ translate("All") }}
               </ion-label>
             </ion-radio>
           </ion-item>
           <ion-item lines="none" v-for="carrierPartyId in carrierPartyIds" :key="carrierPartyId">
-            <ion-radio label-placement="end" :value="carrierPartyId">
+            <ion-radio :data-testid="`completed-carrier-radio-${carrierPartyId}`" label-placement="end" :value="carrierPartyId">
               <ion-label>
                 {{ getPartyName(carrierPartyId) }}
               </ion-label>
@@ -40,7 +40,7 @@
 
       <div v-if="shipmentMethods?.length" class="filters">
         <ion-item lines="none" v-for="shipmentMethod in shipmentMethods" :key="shipmentMethod">
-          <ion-checkbox label-placement="end" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod)" @ionChange="updateSelectedShipmentMethods(shipmentMethod)">
+          <ion-checkbox :data-testid="`completed-shipment-method-checkbox-${shipmentMethod}`" label-placement="end" :checked="completedOrders.query.selectedShipmentMethods.includes(shipmentMethod)" @ionChange="updateSelectedShipmentMethods(shipmentMethod)">
             <ion-label>
               {{ getShipmentMethodDesc(shipmentMethod) }}
             </ion-label>
@@ -50,7 +50,7 @@
 
       <div v-if="completedOrders.total">
         <div class="results">
-          <ion-button :disabled="isShipNowDisabled || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
+          <ion-button data-testid="completed-bulk-ship-button" :disabled="isShipNowDisabled || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
           <ion-card class="order" v-for="(order, index) in completedOrdersList" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
@@ -61,7 +61,7 @@
               </div>
 
               <div class="order-tags">
-                <ion-chip @click.stop="orderActionsPopover(order, $event)" outline>
+                <ion-chip :data-testid="`completed-order-actions-chip-${order.orderId}`" @click.stop="orderActionsPopover(order, $event)" outline>
                   <ion-icon :icon="pricetagOutline" />
                   <ion-label>{{ order.orderName }}</ion-label>
                   <ion-icon :icon="caretDownOutline" />
@@ -81,7 +81,7 @@
               <div class="order-item">
                 <div class="product-info">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
+                    <ion-thumbnail :data-testid="`completed-product-image-preview-${item.orderItemSeqId || index}`" slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
                       <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
@@ -95,15 +95,15 @@
                   </ion-item>
                 </div>
                 <div class="product-metadata">
-                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
+                  <ion-button :data-testid="`completed-kit-components-button-${item.orderItemSeqId || index}`" v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
                   </ion-button>
-                  <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
+                  <ion-button :data-testid="`completed-gift-card-activation-button-${item.orderItemSeqId || index}`" color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
                     <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline"/>
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
-                  <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
+                  <ion-button :data-testid="`completed-product-stock-button-${item.orderItemSeqId || index}`" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
                     <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                   </ion-button>
                 </div>
@@ -119,7 +119,7 @@
               <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
-                    <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
+                    <ion-thumbnail :data-testid="`completed-product-image-preview-${productComponent.productIdTo}`" slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
                       <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
                     </ion-thumbnail>
                     <ion-label>
@@ -135,8 +135,8 @@
             <!-- TODO: implement functionality to mobile view -->
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
-                <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
+                <ion-button data-testid="completed-mobile-ship-now-button" :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear" >{{ translate("Ship Now") }}</ion-button>
+                <ion-button data-testid="completed-mobile-shipping-popover-button" slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -146,19 +146,19 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
-                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
+                <ion-button :data-testid="`completed-ship-now-button-${order.orderId}`" v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+                <ion-button :data-testid="`completed-print-shipping-label-button-${order.orderId}`" :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate(order.missingLabelImage ? "Regenerate Shipping Label" : "Print Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
+                <ion-button :data-testid="`completed-print-packing-slip-button-${order.orderId}`" :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
                   {{ translate("Print Customer Letter") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
                 </ion-button>
               </div>
               <div class="desktop-only">
-                <ion-button v-if="order.missingLabelImage" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
-                <ion-button :disabled="isUnpackDisabled || !hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+                <ion-button :data-testid="`completed-shipping-label-error-button-${order.orderId}`" v-if="order.missingLabelImage" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
+                <ion-button :data-testid="`completed-unpack-order-button-${order.orderId}`" :disabled="isUnpackDisabled || !hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -171,7 +171,7 @@
         <ion-spinner name="crescent"></ion-spinner>
       </div>
       <ion-fab v-else-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button :disabled="hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click="bulkShipOrders()">
+        <ion-fab-button data-testid="completed-mobile-bulk-ship-button" :disabled="hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click="bulkShipOrders()">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -183,11 +183,11 @@
     <ion-footer v-if="selectedCarrierPartyId">
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button fill="outline" color="primary" @click="openHistoricalManifestModal">
+          <ion-button data-testid="completed-view-historical-manifests-button" fill="outline" color="primary" @click="openHistoricalManifestModal">
             <ion-icon slot="start" :icon="timeOutline" />
             {{ translate("View historical manifests") }}
           </ion-button>
-          <ion-button fill="solid" color="primary" :disabled="!carrierConfiguration[selectedCarrierPartyId]?.['MANIFEST_GEN_REQUEST']" @click="generateCarrierManifest">
+          <ion-button data-testid="completed-generate-manifest-button" fill="solid" color="primary" :disabled="!carrierConfiguration[selectedCarrierPartyId]?.['MANIFEST_GEN_REQUEST']" @click="generateCarrierManifest">
             <ion-icon slot="start" :icon="printOutline" />
             {{ translate("Generate Manifest") }}
             <ion-spinner name="crescent" slot="end" v-if="isGeneratingManifest" />
@@ -428,11 +428,20 @@ export default defineComponent({
         .create({
            header: translate("Ship orders"),
            message: translate("You are shipping orders. You cannot unpack and edit orders after they have been shipped. Are you sure you are ready to ship this orders?", {count: packedOrdersCount, space: '<br /><br />'}),
+           htmlAttributes: {
+             'data-testid': 'completed-bulk-ship-orders-alert'
+           },
            buttons: [{
             role: "cancel",
             text: translate("Cancel"),
+            htmlAttributes: {
+              'data-testid': 'completed-bulk-ship-orders-cancel-button'
+            }
           }, {
             text: translate("Ship"),
+            htmlAttributes: {
+              'data-testid': 'completed-bulk-ship-orders-ship-button'
+            },
             handler: async () => {
               let orderList = JSON.parse(JSON.stringify(this.completedOrders.list))
               orderList = orderList.filter((order: any) =>  order.statusId === 'SHIPMENT_PACKED')
@@ -483,6 +492,9 @@ export default defineComponent({
         event: ev,
         translucent: true,
         showBackdrop: false,
+        htmlAttributes: {
+          'data-testid': 'completed-shipping-popover'
+        }
       });
       return popover.present();
     },
@@ -553,11 +565,20 @@ export default defineComponent({
         .create({
            header: translate("Unpack"),
            message: translate("Unpacking this order will send it back to 'In progress' and it will have to be repacked."),
+           htmlAttributes: {
+             'data-testid': 'completed-unpack-order-alert'
+           },
            buttons: [{
             role: "cancel",
             text: translate("Cancel"),
+            htmlAttributes: {
+              'data-testid': 'completed-unpack-order-cancel-button'
+            }
           }, {
             text: translate("Unpack"),
+            htmlAttributes: {
+              'data-testid': 'completed-unpack-order-confirm-button'
+            },
             handler: async () => {
               try {
                 const resp = await OrderService.unpackOrder({shipmentId: order.shipmentId})
@@ -650,6 +671,9 @@ export default defineComponent({
         component: ShippingLabelErrorModal,
         componentProps: {
           shipmentId: order.shipmentId
+        },
+        htmlAttributes: {
+          'data-testid': 'completed-shipping-label-error-modal'
         }
       });
       return shippingLabelErrorModal.present();
@@ -671,14 +695,20 @@ export default defineComponent({
           category: 'completed'
         },
         showBackdrop: false,
-        event: ev
+        event: ev,
+        htmlAttributes: {
+          'data-testid': 'completed-order-actions-popover'
+        }
       });
       return popover.present();
     },
     async openGiftCardActivationModal(item: any) {
       const modal = await modalController.create({
         component: GiftCardActivationModal,
-        componentProps: { item }
+        componentProps: { item },
+        htmlAttributes: {
+          'data-testid': 'completed-gift-card-activation-modal'
+        }
       })
 
       modal.onDidDismiss().then((result: any) => {
@@ -759,6 +789,9 @@ export default defineComponent({
         componentProps: {
           selectedCarrierPartyId: this.selectedCarrierPartyId,
           carrierConfiguration: this.carrierConfiguration
+        },
+        htmlAttributes: {
+          'data-testid': 'completed-historical-manifest-modal'
         }
       })
 

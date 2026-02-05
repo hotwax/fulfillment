@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button slot="start" :default-href="`/order-lookup`" />
+        <ion-back-button data-testid="order-lookup-detail-back-button" slot="start" :default-href="`/order-lookup`" />
         <ion-title>{{ translate("Order detail") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -17,8 +17,8 @@
             <ion-item lines="none">
               <ion-icon slot="start" :icon="ticketOutline" />
               <ion-label>
-                <h1>{{ order.orderName }}</h1>
-                <p>{{ order.orderId }}</p>
+                <h1 data-testid="order-lookup-detail-order-name">{{ order.orderName }}</h1>
+                <p data-testid="order-lookup-detail-order-id">{{ order.orderId }}</p>
               </ion-label>
               <ion-label slot="end">
                 <p>{{ formatCurrency(order.grandTotal, order.currencyUom) }}</p>
@@ -126,7 +126,7 @@
                   <ion-card-title>{{ translate("Payment") }}</ion-card-title>
                 </ion-card-header>
                 <div v-if="order.orderPayments?.length">
-                  <ion-list v-for="(orderPayment, index) in order.orderPayments" :key="index">
+                  <ion-list :data-testid="`order-lookup-detail-payment-info-${index}`" v-for="(orderPayment, index) in order.orderPayments" :key="index">
                     <ion-item lines="none">
                       <ion-label class="ion-text-wrap">
                         <p class="overline">{{ orderPayment.methodTypeId }}</p>
@@ -191,7 +191,7 @@
         <section>
           <div v-if="order.shipGroups && order.shipGroups.length">
             <div v-for="shipGroup in order.shipGroups as Array<any>" :key="shipGroup.shipGroupSeqId" class="ship-group-info ion-margin-vertical">
-              <ion-item lines="none">
+              <ion-item lines="none" :data-testid="`order-lookup-detail-ship-group-${shipGroup.shipGroupSeqId}`">
                 <ion-icon slot="start" :icon="shipGroup.facilityTypeId === 'RETAIL_STORE' ? storefrontOutline : golfOutline" />
                 <ion-label>
                   <p class="overline" v-if="shipGroup.facilityId !== '_NA_'">{{ shipGroup.facilityId }}</p>
@@ -199,7 +199,7 @@
                   <p v-if="shipGroup.facilityId !== '_NA_'">{{ getShipmentMethodDesc(shipGroup.shipmentMethodTypeId) || shipGroup.shipmentMethodTypeId }}</p>
                 </ion-label>
                 <ion-label slot="end" v-if="shipGroup.trackingIdNumber">{{ translate("Tracking Code") }}{{ ":" }} {{ shipGroup.trackingIdNumber }}</ion-label>
-                <ion-button slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, shipGroup)" v-if="shipGroup.trackingIdNumber">
+                <ion-button :data-testid="`order-lookup-detail-tracking-actions-${shipGroup.shipGroupSeqId}`" slot="end" fill="clear" color="medium" @click="shippingLabelActionPopover($event, shipGroup)" v-if="shipGroup.trackingIdNumber">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
@@ -238,7 +238,7 @@
                       {{ getProductStock(item.productId, shipGroup.facilityId).qoh }} {{ translate("pieces in stock") }}
                     </ion-note>
                     <ion-spinner slot="end" v-else-if="isFetchingStock" color="medium" name="crescent" />
-                    <ion-button v-else fill="clear" @click.stop="fetchProductStock(item.productId, shipGroup.facilityId)">
+                    <ion-button :data-testid="`order-lookup-detail-fetch-stock-button-${item.orderItemSeqId}`" v-else fill="clear" @click.stop="fetchProductStock(item.productId, shipGroup.facilityId)">
                       <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
                     </ion-button>
                   </ion-item>

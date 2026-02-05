@@ -18,7 +18,7 @@
             </ion-item>
             <ion-item lines="none">
               <ion-icon slot="start" :icon="shieldCheckmarkOutline"></ion-icon>
-              <ion-toggle v-model="shipmentMethodQuery.showSelected" @ionChange="updateShipmentMethodQuery()">
+              <ion-toggle v-model="shipmentMethodQuery.showSelected" @ionChange="updateShipmentMethodQuery()" data-testid="carrier-shipment-methods-show-selected-toggle">
                 {{ translate("Only methods for this carrier") }}
               </ion-toggle>
             </ion-item>
@@ -30,11 +30,11 @@
       <ion-footer>
         <ion-toolbar>
           <ion-buttons slot="end">
-            <ion-button fill="solid" color="medium" @click="openCreateShipmentMethodModal()">
+            <ion-button fill="solid" color="medium" @click="openCreateShipmentMethodModal()" data-testid="carrier-shipment-methods-create-button">
               <ion-icon :icon="addCircleOutline" />
               {{ translate("Create shipment method") }}
             </ion-button>
-            <ion-button fill="solid" color="primary" @click="viewCarrierDetail()" >
+            <ion-button fill="solid" color="primary" @click="viewCarrierDetail()" data-testid="carrier-shipment-methods-finish-setup-button">
               <ion-icon slot="start" :icon="checkmarkDoneOutline" />
               {{ translate("Finish setup") }}
             </ion-button>

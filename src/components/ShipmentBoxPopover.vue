@@ -1,7 +1,7 @@
 <template>
   <ion-content>
     <ion-list>
-      <ion-item v-for="shipmentPackage in shipmentPackages" :key="shipmentPackage" @click="updateBox(shipmentPackage.packageName)" button>
+      <ion-item :data-testid="`shipment-box-popover-item-${shipmentPackage.packageName}`" v-for="shipmentPackage in shipmentPackages" :key="shipmentPackage" @click="updateBox(shipmentPackage.packageName)" button>
         {{ shipmentPackage.packageName }}
       </ion-item>
     </ion-list>

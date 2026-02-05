@@ -2,22 +2,22 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal()">
+        <ion-button data-testid="assign-picker-modal-close-button" @click="closeModal()">
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
       <ion-title>{{ translate("Assign Pickers") }}</ion-title>
     </ion-toolbar>
     <ion-toolbar>
-      <ion-searchbar v-model="queryString" @keyup.enter="queryString = $event.target.value; findPickers()"/>
+      <ion-searchbar data-testid="assign-picker-modal-searchbar" v-model="queryString" @keyup.enter="queryString = $event.target.value; findPickers()"/>
     </ion-toolbar>
   </ion-header>
 
   <ion-content>
     <ion-row>
-      <ion-chip v-for="picker in selectedPickers" :key="picker.id">
+      <ion-chip :data-testid="`assign-picker-modal-selected-picker-chip-${picker.id}`" v-for="picker in selectedPickers" :key="picker.id">
         <ion-label>{{ picker.name }}</ion-label>
-        <ion-icon :icon="closeCircle" @click="selectPicker(picker.id)" />
+        <ion-icon :data-testid="`assign-picker-modal-remove-picker-icon-${picker.id}`" :icon="closeCircle" @click="selectPicker(picker.id)" />
       </ion-chip>
     </ion-row>
 
@@ -33,8 +33,8 @@
       </div>
       <div class="empty-state" v-else-if="!pickers.length">{{ "No picker found" }}</div>
       <div v-else>
-        <ion-item v-for="(picker, index) in pickers" :key="index" @click="selectPicker(picker.id)">
-          <ion-checkbox :checked="isPickerSelected(picker.id)">
+        <ion-item :data-testid="`assign-picker-modal-picker-item-${picker.id}`" v-for="(picker, index) in pickers" :key="index" @click="selectPicker(picker.id)">
+          <ion-checkbox :data-testid="`assign-picker-modal-picker-checkbox-${picker.id}`" :checked="isPickerSelected(picker.id)">
             <ion-label>
               {{ picker.name }}
               <p>{{ picker.externalId ? picker.externalId : picker.id }}</p>
@@ -46,7 +46,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="!selectedPickers.length" @click="printPicklist()">
+    <ion-fab-button data-testid="assign-picker-modal-save-button" :disabled="!selectedPickers.length" @click="printPicklist()">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>

@@ -1,12 +1,12 @@
 <template>
     <ion-content>
       <ion-list>
-        <ion-list-header>{{ currentOrder?.trackingCode }}</ion-list-header>
-        <ion-item button @click="printShippingLabel(currentOrder)">
+        <ion-list-header data-testid="shipping-label-action-popover-header">{{ currentOrder?.trackingCode }}</ion-list-header>
+        <ion-item data-testid="shipping-label-action-popover-view-label-item" button @click="printShippingLabel(currentOrder)">
           {{ translate("View Label") }}
           <ion-icon slot="end" :icon="documentOutline" />
         </ion-item>
-        <ion-item button lines="none" @click="voidShippingLabel(currentOrder)">
+        <ion-item data-testid="shipping-label-action-popover-void-label-item" button lines="none" @click="voidShippingLabel(currentOrder)">
           {{ translate("Void Label") }}
           <ion-icon slot="end" :icon="trashOutline" />
         </ion-item>

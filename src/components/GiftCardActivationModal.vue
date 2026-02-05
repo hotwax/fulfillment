@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal()">
+        <ion-button data-testid="gift-card-activation-modal-close-button" @click="closeModal()">
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -17,16 +17,16 @@
     </div>
     <ion-list v-else>
       <ion-item lines="none" v-if="!item.isGCActivated">
-        <ion-input :label="translate('Activation code')" :placeholder="translate('serial number')" :helper-text="translate('Scan or enter the unique code on the gift card')" v-model="activationCode" />
+        <ion-input data-testid="gift-card-activation-modal-code-input" :label="translate('Activation code')" :placeholder="translate('serial number')" :helper-text="translate('Scan or enter the unique code on the gift card')" v-model="activationCode" />
       </ion-item>
 
-      <ion-item v-else>
+      <ion-item data-testid="gift-card-activation-modal-activated-item" v-else>
         <ion-icon :icon="cardOutline" slot="start" />
         <ion-label>{{ item.gcInfo.cardNumber }}</ion-label>
         <ion-note slot="end">{{ getCreatedDateTime() }}</ion-note>
       </ion-item>
 
-      <ion-item lines="none">
+      <ion-item data-testid="gift-card-activation-modal-product-item" lines="none">
         <ion-icon :icon="giftOutline" slot="start" />
         <ion-label>
           {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
@@ -36,7 +36,7 @@
       </ion-item>
 
       <div class="ion-margin" v-if="!item.isGCActivated">
-        <ion-button expand="block" fill="outline" @click="isCameraEnabled ? stopScan() : scan()">
+        <ion-button data-testid="gift-card-activation-modal-scan-button" expand="block" fill="outline" @click="isCameraEnabled ? stopScan() : scan()">
           <ion-icon slot="start" :icon="isCameraEnabled ? stopOutline : cameraOutline" />
           {{ translate(isCameraEnabled ? "Stop" : "Scan") }}
         </ion-button>
@@ -49,7 +49,7 @@
   </ion-content>
 
   <ion-fab v-if="!item.isGCActivated" vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button @click="confirmSave()">
+    <ion-fab-button data-testid="gift-card-activation-modal-save-button" @click="confirmSave()">
       <ion-icon :icon="cardOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -137,12 +137,21 @@ export default defineComponent({
       const alert = await alertController.create({
         header: translate("Activate gift card"),
         message: translate("This gift card code will be activated. The customer may also receive a notification about this activation. Please verify all information is entered correctly. This cannot be edited after activation.", { space: "<br /><br />" }),
+        htmlAttributes: {
+          'data-testid': 'gift-card-activation-alert'
+        },
         buttons: [
           {
             text: translate("Cancel"),
+            htmlAttributes: {
+              'data-testid': 'gift-card-activation-alert-cancel-button'
+            }
           },
           {
             text: translate("Activate"),
+            htmlAttributes: {
+              'data-testid': 'gift-card-activation-alert-activate-button'
+            },
             handler: async () => {
               await this.activateGitCard()
             }

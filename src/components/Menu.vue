@@ -9,7 +9,7 @@
     <ion-content>
       <ion-list>
         <ion-menu-toggle auto-hide="false" v-for="(page, index) in getValidMenuItems(appPages)" :key="index">
-          <ion-item-divider color="light" v-if="!page.url">
+          <ion-item-divider color="light" v-if="!page.url" :data-testid="`menu-item-divider-${page.title.toLowerCase().replace(/\s+/g, '-')}`">
             <ion-label>
               {{ translate(page.title) }}
             </ion-label>
@@ -20,7 +20,8 @@
             router-direction="root"
             :router-link="page.url"
             class="hydrated"
-            :class="{ selected: selectedIndex === index }">
+            :class="{ selected: selectedIndex === index }"
+            :data-testid="`menu-item-${page.title}`">
             <ion-icon v-if="page.mdIcon || page.iosIcon" slot="start" :ios="page.iosIcon" :md="page.mdIcon" />
             <ion-label>{{ translate(page.title) }}</ion-label>
           </ion-item>

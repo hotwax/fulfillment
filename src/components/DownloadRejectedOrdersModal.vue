@@ -2,7 +2,7 @@
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button @click="closeModal"> 
+          <ion-button @click="closeModal" data-testid="download-rejected-orders-modal-close-button"> 
             <ion-icon slot="icon-only" :icon="closeOutline" />
           </ion-button>
         </ion-buttons>
@@ -17,33 +17,33 @@
         </ion-list-header>
         <ion-item v-for="selectedField in selectedFields" :key="selectedField.name">
           <template v-if="selectedField.name === 'primaryProductId'">
-            <ion-checkbox justify="start" label-placement="end" v-model="selectedField.value" :checked="selectedField.value" :disabled="selectedField.disabled">{{ translate(selectedField.description) }}</ion-checkbox>
-            <ion-select aria-label="primaryProduct" interface="popover" value="default" slot="end" v-model="selectedPrimaryProductId">
-              <ion-select-option v-for="(value, identificationsType) in productIdentifications" :key="identificationsType" :value="value">{{ identificationsType }}</ion-select-option>
+            <ion-checkbox justify="start" label-placement="end" v-model="selectedField.value" :checked="selectedField.value" :disabled="selectedField.disabled" data-testid="download-rejected-orders-modal-primary-product-id-checkbox">{{ translate(selectedField.description) }}</ion-checkbox>
+            <ion-select aria-label="primaryProduct" interface="popover" value="default" slot="end" v-model="selectedPrimaryProductId" data-testid="download-rejected-orders-modal-primary-product-id-select">
+              <ion-select-option :data-testid="`download-rejected-orders-modal-primary-product-id-option-${value}`" v-for="(value, identificationsType) in productIdentifications" :key="identificationsType" :value="value">{{ identificationsType }}</ion-select-option>
             </ion-select>
           </template>
           <template v-else-if="selectedField.name === 'secondaryProductId'">
-            <ion-checkbox justify="start" label-placement="end" v-model="selectedField.value" :checked="selectedField.value" :disabled="selectedField.disabled">{{ translate(selectedField.description) }}</ion-checkbox>
-            <ion-select aria-label="primaryProduct" interface="popover" value="default" slot="end" v-model="selectedSecondaryProductId">
-              <ion-select-option v-for="(value, identificationsType) in productIdentifications" :key="identificationsType" :value="value">{{ identificationsType }}</ion-select-option>
+            <ion-checkbox justify="start" label-placement="end" v-model="selectedField.value" :checked="selectedField.value" :disabled="selectedField.disabled" data-testid="download-rejected-orders-modal-secondary-product-id-checkbox">{{ translate(selectedField.description) }}</ion-checkbox>
+            <ion-select aria-label="primaryProduct" interface="popover" value="default" slot="end" v-model="selectedSecondaryProductId" data-testid="download-rejected-orders-modal-secondary-product-id-select">
+              <ion-select-option :data-testid="`download-rejected-orders-modal-secondary-product-id-option-${value}`" v-for="(value, identificationsType) in productIdentifications" :key="identificationsType" :value="value">{{ identificationsType }}</ion-select-option>
             </ion-select>
           </template>
           <template v-else-if="selectedField.name === 'rejectedFrom'">
-            <ion-checkbox justify="start" label-placement="end" v-model="selectedField.value" :checked="selectedField.value" :disabled="selectedField.disabled">{{ translate("Facility") }}</ion-checkbox>
-            <ion-select aria-label="facilityField" interface="popover" v-model="selectedFacilityId" slot="end">
-              <ion-select-option value="facilityId">Internal ID</ion-select-option>
-              <ion-select-option value="externalId">External ID</ion-select-option>
+            <ion-checkbox justify="start" label-placement="end" v-model="selectedField.value" :checked="selectedField.value" :disabled="selectedField.disabled" data-testid="download-rejected-orders-modal-facility-checkbox">{{ translate("Facility") }}</ion-checkbox>
+            <ion-select aria-label="facilityField" interface="popover" v-model="selectedFacilityId" slot="end" data-testid="download-rejected-orders-modal-facility-select">
+              <ion-select-option value="facilityId" data-testid="download-rejected-orders-modal-facility-option-internal-id">Internal ID</ion-select-option>
+              <ion-select-option value="externalId" data-testid="download-rejected-orders-modal-facility-option-external-id">External ID</ion-select-option>
             </ion-select>
           </template>
           <template v-else>
-            <ion-checkbox justify="start" label-placement="end" @ionChange="selectField(selectedField.name)" :checked="selectedField.value" :disabled="selectedField.disabled">{{ translate(selectedField.description) }}</ion-checkbox>
+            <ion-checkbox justify="start" label-placement="end" @ionChange="selectField(selectedField.name)" :checked="selectedField.value" :disabled="selectedField.disabled" :data-testid="`download-rejected-orders-modal-field-checkbox-${selectedField.name}`">{{ translate(selectedField.description) }}</ion-checkbox>
           </template>
         </ion-item>
       </ion-list>
     </ion-content>
   
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-      <ion-fab-button @click="downloadCSV">
+      <ion-fab-button @click="downloadCSV" data-testid="download-rejected-orders-modal-download-button">
         <ion-icon :icon="cloudDownloadOutline" />
       </ion-fab-button>
     </ion-fab>
@@ -153,11 +153,20 @@
         const alert = await alertController.create({
           header: translate("Download rejected orders"),
           message: translate("Are you sure you want to download the rejected orders?"),
+          htmlAttributes: {
+            'data-testid': 'download-rejected-orders-modal-alert'
+          },
           buttons: [{
             text: translate("Cancel"),
             role: 'cancel',
+            htmlAttributes: {
+              'data-testid': 'download-rejected-orders-modal-alert-cancel-button'
+            }
           }, {
             text: translate("Download"),
+            htmlAttributes: {
+              'data-testid': 'download-rejected-orders-modal-alert-download-button'
+            },
             handler: async () => {
               await modalController.dismiss({ dismissed: true });
               await alert.dismiss();

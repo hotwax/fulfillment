@@ -2,13 +2,13 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal"> 
+        <ion-button data-testid="edit-packaging-modal-close-button" @click="closeModal"> 
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
       <ion-title>{{ translate("Edit packaging") }}</ion-title>
       <ion-buttons slot="end">
-        <ion-button fill="clear">{{ translate("Save") }}</ion-button>
+        <ion-button data-testid="edit-packaging-modal-save-button" fill="clear">{{ translate("Save") }}</ion-button>
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
@@ -54,7 +54,7 @@
 
         <div class="product-metadata">
           <ion-item lines="none">
-            <ion-select :label="translate('Select box')">
+            <ion-select data-testid="edit-packaging-modal-product-box-select" :label="translate('Select box')">
               <ion-select-option>Box A Type 3</ion-select-option>
               <ion-select-option>Box B Type 2</ion-select-option>
             </ion-select>
@@ -66,13 +66,13 @@
     <ion-list>
       <ion-item lines="none">
         <ion-note slot="start">{{ translate('Boxes') }}</ion-note>
-        <ion-button fill="clear" slot="end">
+        <ion-button data-testid="edit-packaging-modal-add-box-button" fill="clear" slot="end">
           {{ translate("Add") }}
           <ion-icon :icon="addCircleOutline"/>
         </ion-button>
       </ion-item>
       <ion-item>
-        <ion-select label="Box A" value="3">
+        <ion-select data-testid="edit-packaging-modal-box-type-select" label="Box A" value="3">
           <ion-select-option value="1">Type 1</ion-select-option>
           <ion-select-option value="2">Type 2</ion-select-option>
           <ion-select-option value="3">Type 3</ion-select-option>  

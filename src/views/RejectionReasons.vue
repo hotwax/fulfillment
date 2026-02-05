@@ -20,19 +20,19 @@
               </ion-item>
 
               <div class="tablet">
-                <ion-chip outline @click="openVarianceTypeActionsPopover($event, reason)">
+                <ion-chip :data-testid="`rejection-reasons-variance-chip-${reason.enumId}`" outline @click="openVarianceTypeActionsPopover($event, reason)">
                   <ion-label>{{ reason.enumTypeId }}</ion-label>
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </div>
 
               <div class="tablet">
-                <ion-toggle :checked="fulfillmentRejectReasons[reason.enumId]" @click.prevent="updateFulfillmentRejectReasonAssocStatus($event, reason)" />
+                <ion-toggle :data-testid="`rejection-reasons-status-toggle-${reason.enumId}`" :checked="fulfillmentRejectReasons[reason.enumId]" @click.prevent="updateFulfillmentRejectReasonAssocStatus($event, reason)" />
               </div>
 
               <ion-reorder />
   
-              <ion-button fill="clear" color="medium" @click="openRejectionReasonActionsPopover($event, reason)">
+              <ion-button :data-testid="`rejection-reasons-actions-button-${reason.enumId}`" fill="clear" color="medium" @click="openRejectionReasonActionsPopover($event, reason)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </div>
@@ -43,7 +43,7 @@
         </div>
       </main>
 
-      <ion-fab @click="openCreateRejectionReasonModal()" vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab data-testid="rejection-reasons-create-button" @click="openCreateRejectionReasonModal()" vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button>
           <ion-icon :icon="addOutline" />
         </ion-fab-button>

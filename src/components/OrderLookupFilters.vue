@@ -10,7 +10,7 @@
       <ion-list>
         <ion-list-header><h3>{{ translate("Brand") }}</h3></ion-list-header>
         <ion-item v-for="productStore in productStoreOptions" :key="productStore">
-          <ion-checkbox :checked="isProductStoreSelected(productStore)" @ionChange="updateAppliedFilters($event['detail'].checked, 'productStore', productStore)">
+          <ion-checkbox :data-testid="`order-lookup-filter-brand-checkbox-${productStore}`" :checked="isProductStoreSelected(productStore)" @ionChange="updateAppliedFilters($event['detail'].checked, 'productStore', productStore)">
             <ion-label>{{ productStore }}</ion-label>
           </ion-checkbox>
         </ion-item>
@@ -19,12 +19,12 @@
       <ion-list>
         <ion-list-header><h3>{{ translate("Type") }}</h3></ion-list-header>
         <ion-item>
-          <ion-checkbox :checked="query.storePickup" @ionChange="updateAppliedFilters($event['detail'].checked, 'storePickup')">
+          <ion-checkbox data-testid="order-lookup-filter-store-pickup-checkbox" :checked="query.storePickup" @ionChange="updateAppliedFilters($event['detail'].checked, 'storePickup')">
             <ion-label>{{ translate("Store pickup") }}</ion-label>
           </ion-checkbox>
         </ion-item>
         <ion-item>
-          <ion-checkbox :checked="query.shipFromStore" @ionChange="updateAppliedFilters($event['detail'].checked, 'shipFromStore')">
+          <ion-checkbox data-testid="order-lookup-filter-ship-from-store-checkbox" :checked="query.shipFromStore" @ionChange="updateAppliedFilters($event['detail'].checked, 'shipFromStore')">
             <ion-label>{{ translate("Ship from store") }}</ion-label>
           </ion-checkbox>
         </ion-item>
@@ -39,20 +39,20 @@
           <h3>{{ translate("Fulfillment") }}</h3>
         </ion-list-header>
         <ion-item>
-          <ion-select :selected-text="!query.status.length ? translate('All') : query.status.length > 1 ? query.status.length + translate('items selected') : query.status" :label="translate('Status')" :disabled="!orderStatusOptions.length" :multiple="true" :value="query.status" @ionChange="updateAppliedFilters($event['detail'].value, 'status')" interface="popover">
-            <ion-select-option v-for="status in orderStatusOptions" :key="status" :value="status">{{ translate(status) }}</ion-select-option>
+          <ion-select data-testid="order-lookup-filter-status-select" :selected-text="!query.status.length ? translate('All') : query.status.length > 1 ? query.status.length + translate('items selected') : query.status" :label="translate('Status')" :disabled="!orderStatusOptions.length" :multiple="true" :value="query.status" @ionChange="updateAppliedFilters($event['detail'].value, 'status')" interface="popover">
+            <ion-select-option :data-testid="`order-lookup-filter-status-option-${status}`" v-for="status in orderStatusOptions" :key="status" :value="status">{{ translate(status) }}</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item>
-          <ion-select :selected-text="!query.facility.length ? translate('All') : query.facility.length > 1 ? query.facility.length + translate('items selected') : query.facility" :label="translate('Facility')" :disabled="!facilityOptions.length" :multiple="true" :value="query.facility" @ionChange="updateAppliedFilters($event['detail'].value, 'facility')" interface="popover">
-            <ion-select-option v-for="facility in facilityOptions" :key="facility" :value="facility">{{ facility }}</ion-select-option>
+          <ion-select data-testid="order-lookup-filter-facility-select" :selected-text="!query.facility.length ? translate('All') : query.facility.length > 1 ? query.facility.length + translate('items selected') : query.facility" :label="translate('Facility')" :disabled="!facilityOptions.length" :multiple="true" :value="query.facility" @ionChange="updateAppliedFilters($event['detail'].value, 'facility')" interface="popover">
+            <ion-select-option :data-testid="`order-lookup-filter-facility-option-${facility}`" v-for="facility in facilityOptions" :key="facility" :value="facility">{{ facility }}</ion-select-option>
           </ion-select>
         </ion-item>
       </ion-list>
       <ion-list>
         <ion-list-header><h3>{{ translate("Channel") }}</h3></ion-list-header>
         <ion-item v-for="channel in channelOptions" :key="channel">
-          <ion-checkbox :checked="isChannelSelected(channel)" @ionChange="updateAppliedFilters($event['detail'].checked, 'channel', channel)">
+          <ion-checkbox :data-testid="`order-lookup-filter-channel-checkbox-${channel}`" :checked="isChannelSelected(channel)" @ionChange="updateAppliedFilters($event['detail'].checked, 'channel', channel)">
             <ion-label>{{ translate(channel) }}</ion-label>
           </ion-checkbox>
         </ion-item>
@@ -61,18 +61,18 @@
       <ion-list>
         <ion-list-header><h3>{{ translate("Date") }}</h3></ion-list-header>
         <ion-item>
-          <ion-select :label="translate('Date range')" :value="query.date" @ionChange="updateAppliedFilters($event['detail'].value, 'date')" interface="popover">
-            <ion-select-option v-for="range in dateRanges" :key="range.label" :value="range.value">{{ translate(range.label) }}</ion-select-option>
+          <ion-select data-testid="order-lookup-filter-date-range-select" :label="translate('Date range')" :value="query.date" @ionChange="updateAppliedFilters($event['detail'].value, 'date')" interface="popover">
+            <ion-select-option :data-testid="`order-lookup-filter-date-range-option-${range.label}`" v-for="range in dateRanges" :key="range.label" :value="range.value">{{ translate(range.label) }}</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item v-if="query.date === 'custom'">
           <ion-label>{{ translate("From") }}</ion-label>
-          <ion-datetime-button datetime="fromDate" @click="enableFromDateFilter()"></ion-datetime-button>
+          <ion-datetime-button data-testid="order-lookup-filter-from-date-button" datetime="fromDate" @click="enableFromDateFilter()"></ion-datetime-button>
         </ion-item>
         <ion-datetime v-show="enableFromDate" @ionChange="updateAppliedFilters($event['detail'].value, 'fromDate')" id="fromDate" presentation="date" v-model="fromDate" :max="toDate || DateTime.now().toISO()"></ion-datetime>
         <ion-item v-if="query.date === 'custom'">
           <ion-label>{{ translate("To") }}</ion-label>
-          <ion-datetime-button datetime="toDate" @click="enableToDateFilter()"></ion-datetime-button>
+          <ion-datetime-button data-testid="order-lookup-filter-to-date-button" datetime="toDate" @click="enableToDateFilter()"></ion-datetime-button>
         </ion-item>
         <ion-datetime v-show="enableToDate" @ionChange="updateAppliedFilters($event['detail'].value, 'toDate')" id="toDate" presentation="date" v-model="toDate" :min="fromDate" :max="DateTime.now().toISO()"></ion-datetime>
       </ion-list>

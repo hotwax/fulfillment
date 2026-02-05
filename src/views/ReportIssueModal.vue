@@ -2,13 +2,13 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal"> 
+        <ion-button data-testid="report-issue-modal-close-button" @click="closeModal"> 
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
       <ion-title>{{ translate("Report an issue") }}</ion-title>
       <ion-buttons slot="end">
-        <ion-button fill="clear">{{ translate("Save") }}</ion-button>
+        <ion-button data-testid="report-issue-modal-save-button" fill="clear">{{ translate("Save") }}</ion-button>
       </ion-buttons>
     </ion-toolbar>
   </ion-header>
@@ -60,7 +60,7 @@
       </div>
 
       <ion-item>
-        <ion-select :label="translate('Select an issue')" value="a">
+        <ion-select data-testid="report-issue-modal-issue-select" :label="translate('Select an issue')" value="a">
           <ion-select-option value="a">Out of stock</ion-select-option>
           <ion-select-option value="b">Worn display</ion-select-option>
         </ion-select>

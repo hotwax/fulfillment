@@ -23,7 +23,7 @@
       <div v-if="transferOrders.total">
         <div class="results">
           <ion-list>
-            <ion-item v-for="(order, index) in transferOrders.list" :key="index" @click="viewTransferOrderDetail(order)" button>
+            <ion-item v-for="(order, index) in transferOrders.list" :key="index" @click="viewTransferOrderDetail(order)" :data-testid="`transfer-order-item-${order.orderId}`" button>
               <ion-label>
                 <p class="overline">{{ order.orderId }}</p>
                 {{ order.orderName }}

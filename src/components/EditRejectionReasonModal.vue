@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal()">
+        <ion-button @click="closeModal()" data-testid="edit-rejection-reason-modal-close-button">
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -13,18 +13,18 @@
   <ion-content>
     <form @keyup.enter="updateRejectionReason()">
       <ion-item>
-        <ion-input v-model="rejectionReason.enumName">
+        <ion-input v-model="rejectionReason.enumName" data-testid="edit-rejection-reason-modal-name-input">
           <div slot="label">{{ translate('Name') }} <ion-text color="danger">*</ion-text></div>
         </ion-input>
       </ion-item>
       <ion-item>
-        <ion-textarea :label="translate('Description')" v-model="rejectionReason.description" />
+        <ion-textarea :label="translate('Description')" v-model="rejectionReason.description" data-testid="edit-rejection-reason-modal-description-input" />
       </ion-item>
     </form>
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button @click="updateRejectionReason()" :disabled="!isReasonUpdated()">
+    <ion-fab-button @click="updateRejectionReason()" :disabled="!isReasonUpdated()" data-testid="edit-rejection-reason-modal-save-button">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>

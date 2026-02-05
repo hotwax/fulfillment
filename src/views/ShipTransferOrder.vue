@@ -106,7 +106,7 @@
                     <!-- <p>estimated delivery date</p> -->
                     <p v-if="shippingRate?.serviceDays">{{ "Service Days:" }} {{ shippingRate.serviceDays }}</p>
                   </ion-label>
-                  <ion-button data-testid="purchase-label-btn" slot="end" color="primary" fill="outline" :disabled="!!selectedCarrierService" @click="updateCarrierAndShippingMethod(shippingRate)">
+                  <ion-button :data-testid="`purchase-label-btn-${index}`" slot="end" color="primary" fill="outline" :disabled="!!selectedCarrierService" @click="updateCarrierAndShippingMethod(shippingRate)">
                     <ion-spinner v-if="selectedCarrierService ===  ((shippingRate.actualCarrier || shippingRate.carrierPartyId)+'_'+(shippingRate.carrierService || shippingRate.shipmentMethodTypeId))" slot="start" name="crescent" />
                     {{ translate("Generate label") }}
                   </ion-button>
@@ -123,13 +123,13 @@
             <ion-list v-if="selectedSegment === 'manual'">
               <ion-item>
                 <ion-select data-testid="select-carrier-dropdown" :value="selectedCarrier" :label="translate('Carrier')" interface="popover" :placeholder="translate('Select')" @ionChange="updateSelectedCarrier($event.detail.value)">
-                  <ion-select-option data-testid="select-carrier-dropdown-option" v-for="(carrierPartyId, index) in Object.keys(carrierShipmentMethods)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) }}</ion-select-option>
+                  <ion-select-option :data-testid="`select-carrier-dropdown-option-${carrierPartyId}`" v-for="(carrierPartyId, index) in Object.keys(carrierShipmentMethods)" :key="index" :value="carrierPartyId">{{ getCarrierDesc(carrierPartyId) }}</ion-select-option>
                 </ion-select>
               </ion-item>
               <ion-item>
                 <ion-select data-testid="select-method-dropdown" :disabled="!shipmentMethods.length" :value="selectedShippingMethod" :label="translate('Method')" interface="popover" :placeholder="translate('Select')" @ionChange="updateSelectedShippingMethod($event.detail.value)">
                   <template v-for="(method, index) in shipmentMethods" :key="index">
-                    <ion-select-option data-testid="select-method-dropdown-option" v-if="method.shipmentMethodTypeId !== 'SHIP_TO_STORE'" :value="method.shipmentMethodTypeId">{{ method.description ? method.description : method.shipmentMethodTypeId }}</ion-select-option>
+                    <ion-select-option :data-testid="`select-method-dropdown-option-${method.shipmentMethodTypeId}`" v-if="method.shipmentMethodTypeId !== 'SHIP_TO_STORE'" :value="method.shipmentMethodTypeId">{{ method.description ? method.description : method.shipmentMethodTypeId }}</ion-select-option>
                   </template>
                 </ion-select>
               </ion-item>
