@@ -1,15 +1,15 @@
 <template>
   <ion-content>
     <ion-list>
-      <ion-item button @click="editPackaging">
+      <ion-item data-testid="packaging-popover-edit-packaging-item" button @click="editPackaging">
         <ion-icon slot="start" :icon="pencil" />
         {{ translate("Edit packaging") }}
       </ion-item>
-      <ion-item button @click="reportIssue">
+      <ion-item data-testid="packaging-popover-report-issue-item" button @click="reportIssue">
         <ion-icon slot="start" :icon="warning" />
         {{ translate("Report an issue") }}
       </ion-item>
-      <ion-item button lines="none">
+      <ion-item data-testid="packaging-popover-reject-order-item" button lines="none">
         <ion-icon slot="start" :icon="refresh" />
         {{ translate("Reject order") }}
       </ion-item>

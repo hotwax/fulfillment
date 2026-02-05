@@ -2,15 +2,15 @@
   <ion-content>
     <ion-list>
       <!-- TODO: Need to give Shipping Label Error Option -->
-      <ion-item button>
+      <ion-item data-testid="shipping-popover-shipping-label-item" button>
         <ion-icon slot="start" :icon="printOutline" />
         {{ translate("Shipping label") }}
       </ion-item>
-      <ion-item button>
+      <ion-item data-testid="shipping-popover-customer-letter-item" button>
         <ion-icon slot="start" :icon="printOutline" />
         {{ translate("Customer letter") }}
       </ion-item>
-      <ion-item button lines="none">
+      <ion-item data-testid="shipping-popover-unpack-item" button lines="none">
         <ion-icon slot="start" :icon="lockOpenOutline" />
         {{ translate("Unpack") }}
       </ion-item>

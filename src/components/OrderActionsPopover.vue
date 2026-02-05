@@ -2,15 +2,15 @@
   <ion-content>
     <ion-list>
       <ion-list-header>{{ translate('Options') }}</ion-list-header>
-      <ion-item button @click="copyInfo">
+      <ion-item data-testid="order-actions-popover-copy-id-item" button @click="copyInfo">
         <ion-icon slot="end" :icon="copyOutline" />
         {{ translate("Copy ID") }}
       </ion-item>
-      <ion-item v-if="category === 'open'" button @click="assignPickers">
+      <ion-item data-testid="order-actions-popover-pick-order-item" v-if="category === 'open'" button @click="assignPickers">
         <ion-icon slot="end" :icon="bagCheckOutline" />
         {{ translate("Pick order") }}
       </ion-item>
-      <ion-item button lines="none" @click="viewOrder()">
+      <ion-item data-testid="order-actions-popover-view-details-item" button lines="none" @click="viewOrder()">
         <ion-icon slot="end" :icon="arrowForwardOutline" />
         {{ translate("View details") }}
       </ion-item>

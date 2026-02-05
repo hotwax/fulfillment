@@ -4,10 +4,10 @@
       <ion-list-header>
         {{ reason.enumName ? reason.enumName : reason.enumId }}
       </ion-list-header>
-      <ion-item button @click="openEditRejectionReasonModal()">
+      <ion-item data-testid="reject-reason-actions-popover-edit-item" button @click="openEditRejectionReasonModal()">
         {{ translate("Edit name and description") }}
       </ion-item>
-      <ion-item button lines="none" @click="removeRejectionReason()">
+      <ion-item data-testid="reject-reason-actions-popover-remove-item" button lines="none" @click="removeRejectionReason()">
         {{ translate("Remove reason") }}
       </ion-item>
     </ion-list>

@@ -2,21 +2,21 @@
     <ion-page>
       <ion-header>
         <ion-toolbar>
-          <ion-back-button default-href="/carriers" slot="start"></ion-back-button>
+          <ion-back-button data-testid="create-carrier-back-button" default-href="/carriers" slot="start"></ion-back-button>
           <ion-title>{{ translate("Create carrier") }}</ion-title>
         </ion-toolbar>
       </ion-header>
       <ion-content>
         <main>
           <ion-item>
-            <ion-input label-placement="floating" v-model="carrier.groupName" @ionBlur="setCarrierPartyId($event)">
+            <ion-input data-testid="create-carrier-name-input" label-placement="floating" v-model="carrier.groupName" @ionBlur="setCarrierPartyId($event)">
               <div slot="label">{{ translate("Name") }} <ion-text color="danger">*</ion-text></div>
             </ion-input>
           </ion-item>
           <ion-item>
-            <ion-input label-placement="floating" :label="translate('ID')" v-model="carrier.partyId"/>
+            <ion-input data-testid="create-carrier-id-input" label-placement="floating" :label="translate('ID')" v-model="carrier.partyId"/>
           </ion-item>
-          <ion-button class="ion-margin-top" @click="createCarrier()">
+          <ion-button data-testid="create-carrier-setup-methods-button" class="ion-margin-top" @click="createCarrier()">
             {{ translate("Setup methods") }}
             <ion-icon slot="end" :icon="arrowForwardOutline"/>
           </ion-button>

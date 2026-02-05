@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal"> 
+        <ion-button data-testid="rejected-items-modal-close-button" @click="closeModal"> 
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -11,7 +11,7 @@
   </ion-header>
   <ion-content>
     <ion-list v-if="rejectedItems.length">
-      <ion-item v-for="(item, index) in rejectedItems" :key="item.val" :lines="rejectedItems.length -1 === index ? 'none' : 'inset'">
+      <ion-item v-for="(item, index) in rejectedItems" :key="item.val" :lines="rejectedItems.length -1 === index ? 'none' : 'inset'" :data-testid="`rejected-items-modal-item-${item.val}`">
         <ion-thumbnail slot="start" v-image-preview="getProduct(item.val)" :key="getProduct(item.val)?.mainImageUrl">
           <DxpShopifyImg :src="getProduct(item.val).mainImageUrl" size="small"/>
         </ion-thumbnail>

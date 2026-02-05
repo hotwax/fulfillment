@@ -2,11 +2,11 @@
   <ion-content>
     <ion-list>
       <ion-list-header>{{ shipGroup?.trackingIdNumber }}</ion-list-header>
-      <ion-item data-testid="order-lookup-tracking-link" button :disabled="!getCarriersTrackingInfo(shipGroup.carrierPartyId)?.trackingUrl" @click="redirectToTrackingUrl()">
+      <ion-item data-testid="order-lookup-label-actions-popover-tracking-link" button :disabled="!getCarriersTrackingInfo(shipGroup.carrierPartyId)?.trackingUrl" @click="redirectToTrackingUrl()">
         {{ getCarriersTrackingInfo(shipGroup.carrierPartyId)?.carrierName ? getCarriersTrackingInfo(shipGroup.carrierPartyId).carrierName : shipGroup.carrierPartyId }}
         <ion-icon slot="end" :icon="openOutline" />
       </ion-item>
-      <ion-item data-testid="order-lookup-view-label-button" button @click="printShippingLabel(shipGroup.shipGroupSeqId)" lines="none">
+      <ion-item data-testid="order-lookup-label-actions-popover-view-label-button" button @click="printShippingLabel(shipGroup.shipGroupSeqId)" lines="none">
         {{ translate("View Label") }}
         <ion-icon slot="end" :icon="documentOutline" />
       </ion-item>

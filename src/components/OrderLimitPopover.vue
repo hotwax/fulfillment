@@ -4,15 +4,15 @@
       <ion-list-header>
         {{ translate("Fulfillment capacity") }}
       </ion-list-header>
-      <ion-item button @click="updateOrderLimitType('unlimited')">
+      <ion-item data-testid="order-limit-popover-unlimited-item" button @click="updateOrderLimitType('unlimited')">
         <ion-icon slot="end" :icon="lockOpenOutline" />
         {{ translate("Unlimited Capacity") }}
       </ion-item>
-      <ion-item button @click="updateOrderLimitType('no-capacity')">
+      <ion-item data-testid="order-limit-popover-no-capacity-item" button @click="updateOrderLimitType('no-capacity')">
         {{ translate("No Capacity") }}
         <ion-icon slot="end" :icon="lockClosedOutline" />
       </ion-item>
-      <ion-item button lines="none" @click="updateOrderLimitType('custom')">
+      <ion-item data-testid="order-limit-popover-custom-item" button lines="none" @click="updateOrderLimitType('custom')">
         {{ translate("Custom") }}
       </ion-item>
     </ion-list>
