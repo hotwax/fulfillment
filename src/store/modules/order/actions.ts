@@ -495,7 +495,31 @@ const actions: ActionTree<OrderState, RootState> = {
     try {
       const resp = await OrderService.fetchOrderDetail(order.orderId);
       if (!hasError(resp)) {
-        
+        const shipGroupSeqId = order.primaryShipGroupSeqId ? order.primaryShipGroupSeqId : order.shipGroupSeqId;
+        const currentShipGroup = resp.data.shipGroups.find((shipGroup: any) => shipGroup.shipGroupSeqId === shipGroupSeqId);
+        let shippingAddress = resp.data.contactMechs?.find((contactMech: any) => contactMech.contactMechPurposeTypeId === "SHIPPING_LOCATION")?.postalAddress;
+        let telecomNumber = resp.data.contactMechs?.find((contactMech: any) => contactMech.contactMechPurposeTypeId === "PHONE_SHIPPING")?.telecomNumber;
+
+        if (currentShipGroup?.shipmentMethodTypeId === 'SHIP_TO_STORE') {
+          const facilityId = currentShipGroup.orderFacilityId || currentShipGroup.facilityId;
+          const facilityContactResp = await UtilService.fetchFacilityAddresses({ facilityId });
+          if (!hasError(facilityContactResp)) {
+            const { data } = facilityContactResp;
+            const address = data.facilityContactMechs?.find((contactMech: any) => contactMech.contactMechId === (order.destinationContactMechId || currentShipGroup.contactMechId));
+            if (address) {
+              shippingAddress = { 
+                ...address, 
+                stateName: address.stateGeoName, 
+                countryName: address.countryGeoName, 
+                toName: currentShipGroup.facilityName || address.facilityName || address.toName || shippingAddress?.toName 
+              }
+              const { contactNumber } = data.facilityContactMechs.find((contactMech: any) => contactMech.contactMechId === currentShipGroup.telecomContactMechId) || {};
+              if (contactNumber) telecomNumber = { contactNumber };
+            }
+          } else {
+            logger.error(`Failed to fetch facility addresses for facility ${facilityId}`, facilityContactResp.data);
+          }
+        }
 
         order = {
           ...order,
@@ -504,8 +528,8 @@ const actions: ActionTree<OrderState, RootState> = {
           currencyUom:resp.data.currencyUom,
           adjustments: resp.data.adjustments,
           attributes: resp.data.attributes,
-          shippingAddress: resp.data.contactMechs?.find((contactMech:any) => contactMech.contactMechPurposeTypeId === "SHIPPING_LOCATION")?.postalAddress,
-          telecomNumber: resp.data.contactMechs?.find((contactMech:any) => contactMech.contactMechPurposeTypeId === "PHONE_SHIPPING")?.telecomNumber,
+          shippingAddress,
+          telecomNumber,
         }  
         if (order.paymentPreferences.length > 0) {
           const paymentMethodTypeIds = order?.paymentPreferences.map((orderPaymentPreference: any) => orderPaymentPreference.paymentMethodTypeId);

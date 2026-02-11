@@ -1,3 +1,4 @@
+import { getCurrentFacilityId } from ".";
 /* eslint-disable */
 const prepareOrderQuery = (params: any) => {
   const viewSize = params.viewSize ? params.viewSize : process.env.VUE_APP_VIEW_SIZE;
@@ -142,7 +143,7 @@ const prepareOrderLookupQuery = (query: any) => {
         "q.op": "AND"
       } as any,
       "query": "*:*",
-      "filter": ["docType: ORDER", "orderTypeId: SALES_ORDER"]
+      "filter": ["docType: ORDER", "orderTypeId: SALES_ORDER", "facilityId: " + getCurrentFacilityId()]
     }
   } as any
 
