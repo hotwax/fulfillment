@@ -126,9 +126,9 @@
                       </ion-chip>
                     </template>
                     <template v-else>
-                      <ion-chip :disabled="!order.shipmentPackages || order.shipmentPackages.length === 0" outline @click="openShipmentBoxPopover($event, item, item.orderItemSeqId, order)">
-                        {{ `Box ${item.selectedBox}` }}
-                        <ion-icon :icon="caretDownOutline" />
+                      <ion-chip :disabled="!order.shipmentPackages || order.shipmentPackages.length === 0" :color="item.isAIUnpacked ? 'danger' : ''" outline @click="openShipmentBoxPopover($event, item, item.orderItemSeqId, order)">
+                        {{ item.selectedBox ? `Box ${item.selectedBox}` : translate('Not Packed') }}
+                        <ion-icon :icon="item.isAIUnpacked ? alertCircleOutline : caretDownOutline" />
                       </ion-chip>
                     </template>
                   </div>
@@ -194,6 +194,10 @@
 
               <div class="desktop-only">
                 <ion-button v-if="order.missingLabelImage && isAutoShippingLabelEnabled" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
+                <ion-button fill="outline" color="secondary" @click.stop="getAIPackingPlan(order)">
+                  <ion-icon slot="start" :icon="cubeOutline" />
+                  {{ translate("AI Packing Help") }}
+                </ion-button>
               </div>
             </div>
           </ion-card>
@@ -272,6 +276,7 @@ import {
 import { computed, defineComponent } from 'vue';
 import {
   addOutline,
+  alertCircleOutline,
   caretDownOutline,
   chevronUpOutline,
   checkmarkDoneOutline,
@@ -310,6 +315,7 @@ import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
 import { OrderService } from '@/services/OrderService';
+import { PackingService } from '@/services/PackingService';
 import { useRouter } from "vue-router";
 
 
@@ -865,9 +871,11 @@ export default defineComponent({
     
     updateBox(updatedBox: string, item: any, order: any) {
       item.selectedBox = updatedBox;
+      item.isAIUnpacked = false;
       order.items.map((orderItem: any) => {
         if(orderItem.orderItemSeqId === item.orderItemSeqId) {
           orderItem.selectedBox = updatedBox;
+          orderItem.isAIUnpacked = false;
         }
       })
       this.store.dispatch('order/updateInProgressOrder', order)
@@ -1012,7 +1020,7 @@ export default defineComponent({
 
       return defaultBoxType;
     },
-    async addShipmentBox(order: any) {
+    async addShipmentBox(order: any, boxType: any = null) {
       this.addingBoxForShipmentIds.push(order.shipmentId)
 
       const { carrierPartyId, shipmentMethodTypeId } = order
@@ -1030,14 +1038,16 @@ export default defineComponent({
           packageName = String.fromCharCode(packageNames[0].charCodeAt(0) + 1);
       }
 
+      const selectedBoxType = boxType || this.defaultShipmentBoxType;
+
       const params = {
         shipmentId: order.shipmentId,
-        shipmentBoxTypeId: this.defaultShipmentBoxType?.shipmentBoxTypeId,
-        boxLength	: this.defaultShipmentBoxType?.boxLength,
-        boxHeight	: this.defaultShipmentBoxType?.boxHeight,
-        boxWidth	: this.defaultShipmentBoxType?.boxWidth,
-        weightUomId :	this.defaultShipmentBoxType?.weightUomId,
-        dimensionUomId : this.defaultShipmentBoxType?.dimensionUomId,
+        shipmentBoxTypeId: selectedBoxType?.shipmentBoxTypeId,
+        boxLength	: selectedBoxType?.boxLength,
+        boxHeight	: selectedBoxType?.boxHeight,
+        boxWidth	: selectedBoxType?.boxWidth,
+        weightUomId :	selectedBoxType?.weightUomId,
+        dimensionUomId : selectedBoxType?.dimensionUomId,
         packageName,
         dateCreated: DateTime.now().toMillis()
       } as any
@@ -1245,6 +1255,150 @@ export default defineComponent({
       await this.fetchPickersInformation();
       await this.updateOrderQuery(process.env.VUE_APP_VIEW_SIZE, "", true);
     },
+    async getAIPackingPlan(order: any) {
+      console.log('order', order)
+      emitter.emit('presentLoader');
+      try {
+        const items = order.items.map((item: any) => ({
+          id: item.productId,
+          width: item.shippingLength || 10,  // fallback to default if missing
+          height: item.shippingHeight || 10,
+          depth: item.shippingWidth || 10,
+          weight: item.shippingWeight || 1,
+          quantity: item.quantity
+        }));
+
+        const availableBoxes = this.getShipmentBoxTypes(order.carrierPartyId).map((box: any) => ({
+          id: box.shipmentBoxTypeId,
+          width: box.boxLength,
+          height: box.boxHeight,
+          depth: box.boxWidth
+        }));
+
+        if (availableBoxes.length === 0) {
+          showToast(translate("No available box types found for this carrier."));
+          return;
+        }
+
+        const plan = await PackingService.getPackingPlan(items, availableBoxes);
+        
+        emitter.emit('dismissLoader');
+
+        const alert = await alertController.create({
+          header: translate('AI Packing Plan'),
+          message: plan.summary,
+          buttons: [
+            {
+              text: translate('Cancel'),
+              role: 'cancel'
+            },
+            {
+              text: translate('Apply Plan'),
+              handler: () => {
+                this.applyPackingPlan(order, plan);
+              }
+            }
+          ]
+        });
+        await alert.present();
+
+      } catch (error) {
+        logger.error('Failed to get AI packing plan', error);
+        showToast(translate('Failed to get AI packing plan'));
+      } finally {
+        emitter.emit('dismissLoader');
+      }
+    },
+    async applyPackingPlan(order: any, plan: any) {
+      emitter.emit('presentLoader');
+      try {
+        console.log('Applying plan:', plan);
+
+        // 1. Resolve which boxes in the plan correspond to which packages in the order
+        const existingPackages = [...(order.shipmentPackages || [])];
+        const planBoxes = [...plan.boxes];
+        const boxAssignments = []; // Array<{ planBox: any, package: any }>
+
+        // PASS 1: Match plan boxes with existing packages of the EXACT SAME type
+        // This ensures Case 2 (Exact match reuse) works correctly.
+        for (let i = planBoxes.length - 1; i >= 0; i--) {
+          const planBox = planBoxes[i];
+          const matchIndex = existingPackages.findIndex(pkg => pkg.shipmentBoxTypeId === planBox.boxType);
+          if (matchIndex !== -1) {
+            boxAssignments.push({
+              planBox,
+              package: existingPackages.splice(matchIndex, 1)[0]
+            });
+            planBoxes.splice(i, 1);
+          }
+        }
+
+        // PASS 2: For any remaining plan boxes, ADD NEW boxes
+        // We do NOT use existingPackages that have a different type (Case 1 requirement)
+        const shipmentBoxTypes = this.getShipmentBoxTypes(order.carrierPartyId);
+
+        for (const planBox of planBoxes) {
+          // Find the specific box type object from the carrier's supported box types
+          const matchingBoxType = shipmentBoxTypes.find((type: any) => type.shipmentBoxTypeId === planBox.boxType);
+
+          await this.addShipmentBox(order, matchingBoxType);
+          
+          // Re-fetch the updated order state after addShipmentBox
+          const updatedOrder = this.inProgressOrders.list.find((o: any) => o.shipmentId === order.shipmentId);
+          const newPackage = updatedOrder.shipmentPackages[updatedOrder.shipmentPackages.length - 1];
+          order = updatedOrder;
+
+          boxAssignments.push({
+            planBox,
+            package: newPackage
+          });
+        }
+
+        // 2. Assign items to the resolved packages
+        const assignedItemKeys = new Set();
+        // Reset unpacked status for all items before applying new plan
+        order.items.forEach((it: any) => it.isAIUnpacked = false);
+
+        for (const assignment of boxAssignments) {
+          const packageName = assignment.package.packageName;
+          const planItems = assignment.planBox.items;
+
+          for (const itemPlan of planItems) {
+            // Find an item that matches the ID/Name AND hasn't been assigned in this plan yet
+            const item = order.items.find((it: any) => {
+              const key = `${it.productId}_${it.shipmentItemSeqId}`;
+              return !assignedItemKeys.has(key) && (
+                it.productId === itemPlan || 
+                it.productName === itemPlan || 
+                (typeof itemPlan === 'string' && itemPlan.includes(it.productId))
+              );
+            });
+
+            if (item) {
+              item.selectedBox = packageName;
+              assignedItemKeys.add(`${item.productId}_${item.shipmentItemSeqId}`);
+            }
+          }
+        }
+
+        // Mark items that were not packed
+        order.items.forEach((it: any) => {
+          if (!assignedItemKeys.has(`${it.productId}_${it.shipmentItemSeqId}`)) {
+            it.isAIUnpacked = true;
+          }
+        });
+
+        // 3. Dispatch final update to store
+        await this.store.dispatch('order/updateInProgressOrder', order);
+        showToast(translate('AI Packing Plan applied successfully'));
+
+      } catch (error) {
+        logger.error('Failed to apply packing plan', error);
+        showToast(translate('Failed to apply packing plan'));
+      } finally {
+        emitter.emit('dismissLoader');
+      }
+    },
   },
   async ionViewWillEnter() {
     this.isScrollingEnabled = false;
@@ -1277,6 +1431,7 @@ export default defineComponent({
     return {
       Actions,
       addOutline,
+      alertCircleOutline,
       caretDownOutline,
       chevronUpOutline,
       copyToClipboard,
