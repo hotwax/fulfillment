@@ -152,16 +152,7 @@ const prepareOrderLookupQuery = (query: any) => {
       "productStoreIdFacet":{
         "excludeTags":"orderLookupFilter",
         "field":"productStoreName",
-        "mincount":1,
-        "limit":-1,
-        "type":"terms",
-        "facet":{
-          "groups":"unique(orderId)"
-        }
-      },
-      "facilityNameFacet":{
-        "excludeTags":"orderLookupFilter",
-        "field":"facilityName",
+        "filter": "facilityId: " + getCurrentFacilityId(),
         "mincount":1,
         "limit":-1,
         "type":"terms",
@@ -211,10 +202,6 @@ const prepareOrderLookupQuery = (query: any) => {
 
   if (shipmentMethodTypeIdValues.length) {
     payload.json.filter.push(`{!tag=orderLookupFilter}shipmentMethodTypeId: (${shipmentMethodTypeIdValues.join(" OR ")})`)
-  }
-
-  if (query.facility?.length) {
-    payload.json.filter.push(`{!tag=orderLookupFilter}facilityName: (\"${query.facility.join('\" OR \"')}\")`)
   }
 
   if (query.productStore?.length) {
