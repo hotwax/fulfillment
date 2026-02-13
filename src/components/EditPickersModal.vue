@@ -49,263 +49,173 @@
   </ion-content>
 </template>
 
-<script lang="ts">
-import { 
-  IonButtons,
-  IonButton,
-  IonCheckbox,
-  IonChip,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonFab,
-  IonFabButton,
-  IonTitle,
-  IonToolbar,
-  IonLabel,
-  IonItem,
-  IonList,
-  IonListHeader,
-  IonRow,
-  IonSearchbar,
-  IonSpinner,
-  modalController,
-  alertController
-} from "@ionic/vue";
-import { defineComponent, computed } from "vue";
+<script setup lang="ts">
+import { IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonFab, IonFabButton, IonTitle, IonToolbar, IonLabel, IonItem, IonList, IonListHeader, IonRow, IonSearchbar, IonSpinner, modalController, alertController } from "@ionic/vue";
+import { computed, defineProps, onMounted, ref } from "vue";
 import { close, closeCircle, saveOutline } from "ionicons/icons";
-import { useStore } from "vuex";
-import { hasError, showToast } from '@/utils';
-import logger from "@/logger"
-import { OrderService } from "@/services/OrderService"
-import { UtilService } from "@/services/UtilService"
-import { translate, useUserStore } from '@hotwax/dxp-components'
+import { hasError, showToast } from "@/utils";
+import logger from "@/logger";
+import { OrderService } from "@/services/OrderService";
+import { UtilService } from "@/services/UtilService";
+import { translate, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
 import { Actions, hasPermission } from "@/authorization";
-import { DateTime } from 'luxon';
+import { DateTime } from "luxon";
 
-export default defineComponent({
-  name: "EditPickersModal",
-  components: { 
-    IonButtons,
-    IonButton,
-    IonCheckbox,
-    IonChip,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonFab,
-    IonFabButton,
-    IonTitle,
-    IonToolbar,
-    IonLabel,
-    IonItem,
-    IonList,
-    IonListHeader,
-    IonRow,
-    IonSearchbar,
-    IonSpinner,
-  },
-  data () {
-    return {
-      selectedPickers: [] as any,
-      queryString: '',
-      pickers: [] as any,
-      editedPicklist: {} as any,
-      isLoading: false,
-    }
-  },
-  async mounted() {
-    await this.findPickers()
-    this.selectAlreadyAssociatedPickers()
-  },
-  props: ['selectedPicklist'],
-  methods: {
-    isPickerSelected(id: string) {
-      return this.selectedPickers.some((picker: any) => picker.id == id)
-    },
-    updateSelectedPickers(id: string) {
-      const picker = this.isPickerSelected(id)
-      if (picker) {
-        // if picker is already selected then removing that picker from the list on click
-        this.selectedPickers = this.selectedPickers.filter((picker: any) => picker.id != id)
-      } else {
-        this.selectedPickers.push(this.pickers.find((picker: any) => picker.id == id))
-      }
-    },
-    async findPickers(pickerIds?: Array<any>) {
-      this.isLoading = true;
-      let partyIdsFilter = ""
-      let query = "*:*"
-      this.pickers = []
+const props = defineProps(["selectedPicklist"]);
+const currentFacility = computed(() => useDxpUserStore().getCurrentFacility);
 
-      if (pickerIds?.length) {
-        partyIdsFilter = pickerIds.map(id => `${id}`).join(' OR '); 
-      } else if (this.queryString.length > 0) {
-        let keyword = this.queryString.trim().split(' ')
-        query = `(${keyword.map(key => `*${key}*`).join(' OR ')}) OR "${this.queryString}"^100`;
-      }
+const selectedPickers = ref([] as any[]);
+const queryString = ref("");
+const pickers = ref([] as any[]);
+const editedPicklist = ref({} as any);
+const isLoading = ref(false);
 
-      const facilityFilter = [];
+const isPickerSelected = (id: string) => {
+  return selectedPickers.value.some((picker: any) => picker.id == id);
+};
 
-      if(!hasPermission(Actions.APP_SHOW_ALL_PICKERS)) {
-        facilityFilter.push(`facilityIds:${this.currentFacility.facilityId}`)
-      }
-
-      const payload = {
-        "json": {
-          "params": {
-            "rows": "50",
-            "q": query,
-            "defType" : "edismax",
-            "qf": "firstName lastName groupName partyId externalId",
-            "sort": "firstName asc"
-          },
-          "filter": ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true",...facilityFilter, partyIdsFilter.length ? `partyId:(${partyIdsFilter})` : ""]
-        }
-      }
-
-      try {
-        const resp = await UtilService.getAvailablePickers(payload);
-        if (resp.status === 200 && !hasError(resp)) {
-          this.pickers = resp.data.response.docs.map((picker: any) => ({
-            name: picker.groupName ? picker.groupName : (picker.firstName || picker.lastName)
-                ? (picker.firstName ? picker.firstName : '') + (picker.lastName ? ' ' + picker.lastName : '') : picker.partyId,           
-            id: picker.partyId,
-            externalId: picker.externalId
-          }))
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        logger.error('Failed to fetch the pickers information or there are no pickers available', err)
-      }
-      this.isLoading = false;
-    },
-    async confirmSave() {
-      const message = translate("Replace current pickers with new selection?");
-      const alert = await alertController.create({
-        header: translate("Replace pickers"),
-        message,
-        buttons: [
-          {
-            text: translate("Cancel"),
-          },
-          {
-            text: translate("Replace"),
-            handler: () => {
-              this.resetPicker().then(() => {
-                this.closeModal()
-              })
-            }
-          }
-        ],
-      });
-      return alert.present();
-    },
-    async resetPicker() {
-      // remove the 'System Generated' entry through filtering based on ID
-      let pickersNameArray = [] as any;
-      const pickerIds = this.selectedPickers.map((picker: any) => {
-        if (picker.id) {
-          pickersNameArray.push(picker.name.split(' ')[0])
-        }
-        return picker.id
-      }).filter((id: any) => id)
-
-      try {
-        //Removing pickers that were unselected
-        let roles = this.selectedPicklist.roles
-        .map((role:any) => {
-          if (!pickerIds.includes(role.partyId)) {
-            return { ...role, thruDate: DateTime.now().toMillis() };
-          }
-          return role;
-        });
-
-        //Adding the newly selected pickers
-        pickerIds.forEach((pickerId: any) => {
-          if (!roles.some((role: any) => role.partyId === pickerId)) {
-            roles.push({
-              picklistId: this.selectedPicklist.picklistId,
-              partyId: pickerId,
-              roleTypeId: "WAREHOUSE_PICKER",
-              fromDate: DateTime.now().toMillis()
-            });
-          }
-        });
-
-        const resp = await OrderService.resetPicker({ 
-          picklistId: this.selectedPicklist.id,
-          roles
-        });
-        if (resp.status === 200 && !hasError(resp)) {
-          showToast(translate("Pickers successfully replaced in the picklist with the new selections."))
-          // editedPicklist will be passed through modal to in-progress page for manually
-          // upading the UI due to solr issue
-          this.editedPicklist = {
-            ...this.selectedPicklist,
-            roles: roles.filter((role: any) => !role.thruDate),//only keeping active pickers
-            pickerIds,
-            pickersName: pickersNameArray.join(', ')
-          }
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        showToast(translate('Something went wrong, could not edit picker(s)'))
-        logger.error('Something went wrong, could not edit picker(s)')
-      }
-    },
-    arePickersNotSelected() {
-      // disable the save button if only 'System Generated' entry is there
-      // or if no pickers are selected
-      return (this.selectedPickers.length === 1
-        && !this.selectedPickers[0].id)
-        || (!this.selectedPickers.length)
-    },
-    closeModal() {
-      modalController.dismiss({
-        dismissed: true,
-        editedPicklist: this.editedPicklist
-      });
-    },
-    selectAlreadyAssociatedPickers() {
-      // for default selection of pickers already associated with the picklist
-      this.selectedPickers = this.pickers.filter((picker: any) => this.selectedPicklist.pickerIds.includes(picker.id))
-
-      // case for 'System Generated' picker -
-      // 'System Generated' picker will be visible only if no pickers are associated with the
-      // picklist. Hence, either 'System Generated' will be shown or all names will be shown
-      // and not both 
-      if (!this.selectedPickers.length) {
-        // as selectedPickers will be empty, we manually add the entry
-        this.selectedPickers = [{
-          name: this.selectedPicklist.pickersName,
-          id: null
-        }]
-      }
-    },
-    async refetchPickers() {
-      await this.findPickers()
-      this.selectAlreadyAssociatedPickers()
-    }
-  },
-  setup() {
-    const store = useStore();
-    const userStore = useUserStore()
-    let currentFacility = computed(() => userStore.getCurrentFacility) as any
-
-    return {
-      Actions,
-      close,
-      currentFacility,
-      hasPermission,
-      saveOutline,
-      closeCircle,
-      store,
-      translate
-    };
+const updateSelectedPickers = (id: string) => {
+  const picker = isPickerSelected(id);
+  if (picker) {
+    selectedPickers.value = selectedPickers.value.filter((picker: any) => picker.id != id);
+  } else {
+    selectedPickers.value.push(pickers.value.find((picker: any) => picker.id == id));
   }
+};
+
+const findPickers = async (pickerIds?: Array<any>) => {
+  isLoading.value = true;
+  let partyIdsFilter = "";
+  let query = "*:*";
+  pickers.value = [];
+
+  if (pickerIds?.length) {
+    partyIdsFilter = pickerIds.map((id) => `${id}`).join(" OR ");
+  } else if (queryString.value.length > 0) {
+    const keyword = queryString.value.trim().split(" ");
+    query = `(${keyword.map((key) => `*${key}*`).join(" OR ")}) OR "${queryString.value}"^100`;
+  }
+
+  const facilityFilter = [];
+
+  if (!hasPermission(Actions.APP_SHOW_ALL_PICKERS)) {
+    facilityFilter.push(`facilityIds:${currentFacility.value.facilityId}`);
+  }
+
+  const payload = {
+    json: {
+      params: {
+        rows: "50",
+        q: query,
+        defType: "edismax",
+        qf: "firstName lastName groupName partyId externalId",
+        sort: "firstName asc"
+      },
+      filter: ["docType:EMPLOYEE", "statusId:PARTY_ENABLED", "WAREHOUSE_PICKER_role:true", ...facilityFilter, partyIdsFilter.length ? `partyId:(${partyIdsFilter})` : ""]
+    }
+  };
+
+  try {
+    const resp = await UtilService.getAvailablePickers(payload);
+    if (resp.status === 200 && !hasError(resp)) {
+      pickers.value = resp.data.response.docs.map((picker: any) => ({
+        name: picker.groupName ? picker.groupName : (picker.firstName || picker.lastName) ? (picker.firstName ? picker.firstName : "") + (picker.lastName ? " " + picker.lastName : "") : picker.partyId,
+        id: picker.partyId,
+        externalId: picker.externalId
+      }));
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    logger.error("Failed to fetch the pickers information or there are no pickers available", err);
+  }
+  isLoading.value = false;
+};
+
+const confirmSave = async () => {
+  const message = translate("Replace current pickers with new selection?");
+  const alert = await alertController.create({
+    header: translate("Replace pickers"),
+    message,
+    buttons: [
+      { text: translate("Cancel") },
+      {
+        text: translate("Replace"),
+        handler: () => {
+          resetPicker().then(() => {
+            closeModal();
+          });
+        }
+      }
+    ]
+  });
+  return alert.present();
+};
+
+const resetPicker = async () => {
+  const pickersNameArray = [] as any;
+  const pickerIds = selectedPickers.value.map((picker: any) => {
+    if (picker.id) {
+      pickersNameArray.push(picker.name.split(" ")[0]);
+    }
+    return picker.id;
+  }).filter((id: any) => id);
+
+  try {
+    let roles = props.selectedPicklist.roles.map((role: any) => {
+      if (!pickerIds.includes(role.partyId)) {
+        return { ...role, thruDate: DateTime.now().toMillis() };
+      }
+      return role;
+    });
+
+    pickerIds.forEach((pickerId: any) => {
+      if (!roles.some((role: any) => role.partyId === pickerId)) {
+        roles.push({
+          picklistId: props.selectedPicklist.picklistId,
+          partyId: pickerId,
+          roleTypeId: "WAREHOUSE_PICKER",
+          fromDate: DateTime.now().toMillis()
+        });
+      }
+    });
+
+    const resp = await OrderService.resetPicker({ picklistId: props.selectedPicklist.id, roles });
+    if (resp.status === 200 && !hasError(resp)) {
+      showToast(translate("Pickers successfully replaced in the picklist with the new selections."));
+      editedPicklist.value = {
+        ...props.selectedPicklist,
+        roles: roles.filter((role: any) => !role.thruDate),
+        pickerIds,
+        pickersName: pickersNameArray.join(", ")
+      };
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    showToast(translate("Something went wrong, could not edit picker(s)"));
+    logger.error("Something went wrong, could not edit picker(s)");
+  }
+};
+
+const arePickersNotSelected = () => {
+  return (selectedPickers.value.length === 1 && !selectedPickers.value[0].id) || (!selectedPickers.value.length);
+};
+
+const closeModal = () => {
+  modalController.dismiss({ dismissed: true, editedPicklist: editedPicklist.value });
+};
+
+const selectAlreadyAssociatedPickers = () => {
+  selectedPickers.value = pickers.value.filter((picker: any) => props.selectedPicklist.pickerIds.includes(picker.id));
+  if (!selectedPickers.value.length) {
+    selectedPickers.value = [{ name: props.selectedPicklist.pickersName, id: null }];
+  }
+};
+
+onMounted(async () => {
+  await findPickers();
+  selectAlreadyAssociatedPickers();
 });
 </script>
 

@@ -1,4 +1,5 @@
-import store from '@/store';
+import { useOrderStore } from "@/store/order";
+import { useProductStore } from "@/store/product";
 import { translate } from '@hotwax/dxp-components';
 import { showToast } from '@/utils';
 import { OrderService } from '@/services/OrderService';
@@ -85,7 +86,8 @@ const getOrderCategory = (order: any) => {
 }
 
 const isKit = (item: any) => {
-  const product = store.getters['product/getProduct'](item.productId);
+  const productStore = useProductStore();
+  const product = productStore.getProduct(item.productId);
   return product && product.productTypeId === 'MARKETING_PKG_PICK';
 }
 
@@ -115,7 +117,7 @@ const retryShippingLabel = async (order: any, showSuccessToast = true) => {
   // Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
   // Temporarily handling this in app but should be handled in backend
   // Refetching the order tracking detail irrespective of api response since currently in SHIPHAWK api returns error whether label is generated
-  order = await store.dispatch('order/updateShipmentPackageDetail', order) 
+  order = await useOrderStore().updateShipmentPackageDetail(order)
   
   if(order.missingLabelImage) {
     showToast(translate("Failed to generate shipping label"))

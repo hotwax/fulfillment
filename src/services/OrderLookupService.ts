@@ -1,10 +1,19 @@
 import { api, apiClient, hasError } from "@/adapter"
-import store from '@/store';
+import { useUserStore } from "@/store/user";
+import { useUtilStore } from "@/store/util";
 import logger from '@/logger';
 import { showToast } from '@/utils';
 import { translate } from '@hotwax/dxp-components'
 import { cogOutline } from 'ionicons/icons';
 import { ZebraPrinterService } from './ZebraPrinterService';
+
+const getAuth = () => {
+  const userStore = useUserStore();
+  return {
+    omstoken: userStore.getUserToken,
+    baseURL: userStore.getMaargBaseUrl
+  };
+};
 
 const findOrder = async (payload: any): Promise<any> => {
   return api({
@@ -15,8 +24,7 @@ const findOrder = async (payload: any): Promise<any> => {
 }
 
 const fetchOrderDetail = async (orderId: string): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     url: `/poorti/orders/${orderId}`, //should handle the update of OISG, SRG, SPRG if needed
@@ -30,8 +38,7 @@ const fetchOrderDetail = async (orderId: string): Promise<any> => {
 }
 
 const fetchCarrierTrackingUrls = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     url: `/admin/systemProperties`, //should handle the update of OISG, SRG, SPRG if needed
@@ -46,8 +53,7 @@ const fetchCarrierTrackingUrls = async (payload: any): Promise<any> => {
 }
 
 const fetchPartyInformation = async (payload: any): Promise <any>  => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/parties`,
@@ -62,8 +68,7 @@ const fetchPartyInformation = async (payload: any): Promise <any>  => {
 }
 
 const fetchOrderFacilityChange = async (payload: any): Promise <any>  => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/orders/${payload.orderId}/facilityChange`,
@@ -78,8 +83,7 @@ const fetchOrderFacilityChange = async (payload: any): Promise <any>  => {
 }
 
 const fetchOrderItems = async (payload: any): Promise <any>  => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/orders/${payload.orderId}/items`,
@@ -94,8 +98,7 @@ const fetchOrderItems = async (payload: any): Promise <any>  => {
 }
 
 const findShipments = async (orderId: string): Promise <any>  => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   const params = {
     orderId: orderId,
@@ -121,8 +124,7 @@ const findShipments = async (orderId: string): Promise <any>  => {
 }
 
 const fetchFacilities = async (payload: any): Promise <any>  => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/facilities`,
@@ -137,8 +139,7 @@ const fetchFacilities = async (payload: any): Promise <any>  => {
 }
 
 const findOrderInvoicingInfo = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: "/oms/dataDocumentView",
@@ -154,15 +155,14 @@ const findOrderInvoicingInfo = async (payload: any): Promise<any> => {
 
 const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string): Promise<any> => {
   try {
-    const baseURL = store.getters['user/getMaargBaseUrl'];
-    const omstoken = store.getters['user/getUserToken'];
+    const { omstoken, baseURL } = getAuth();
 
     let pdfUrls = shippingLabelPdfUrls?.filter((pdfUrl: any) => pdfUrl);
     if (!pdfUrls || pdfUrls.length == 0) {
       let labelImageType = imageType || "PNG";
 
       if(!imageType && shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId) {
-        labelImageType = await store.dispatch("util/fetchLabelImageType", shipmentPackages[0].carrierPartyId);
+        labelImageType = await useUtilStore().fetchLabelImageType(shipmentPackages[0].carrierPartyId);
       }
 
       const labelImages = [] as Array<string>

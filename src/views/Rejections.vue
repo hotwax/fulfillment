@@ -1,7 +1,7 @@
 <template>
   <ion-page>
     <RejectedOrdersFilters menu-id="rejected-orders-filters" content-id="rejected-orders-filters" :queryString="rejectedOrders.query.queryString" />
-  
+
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button menu="start" slot="start" />
@@ -13,7 +13,7 @@
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
-  
+
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="rejected-orders-filters">
       <div class="rejection-summary">
         <ion-card>
@@ -38,9 +38,9 @@
             </ion-button>
           </ion-card-header>
           <ion-list v-if="getMostRejectedItems().length">
-            <ion-item v-for="(item, index) in getMostRejectedItems()" :key="item.val" :lines="getMostRejectedItems().length -1 === index ? 'none' : 'inset'">
+            <ion-item v-for="(item, index) in getMostRejectedItems()" :key="item.val" :lines="getMostRejectedItems().length - 1 === index ? 'none' : 'inset'">
               <ion-thumbnail slot="start" v-image-preview="getProduct(item.val)" :key="getProduct(item.val)?.mainImageUrl">
-                <DxpShopifyImg :src="getProduct(item.val).mainImageUrl" :key="getProduct(item.val).mainImageUrl" size="small"/>
+                <DxpShopifyImg :src="getProduct(item.val).mainImageUrl" :key="getProduct(item.val).mainImageUrl" size="small" />
               </ion-thumbnail>
               <ion-label>
                 <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.val)) }}</p>
@@ -58,12 +58,12 @@
             <ion-card-title>
               {{ translate("Most used reasons") }}
             </ion-card-title>
-            <ion-button :disabled="!getMostUsedReasons().length"  @click="showAllReasonsModal()" fill="clear">
+            <ion-button :disabled="!getMostUsedReasons().length" @click="showAllReasonsModal()" fill="clear">
               {{ translate('View All') }}
             </ion-button>
           </ion-card-header>
           <ion-list v-if="getMostUsedReasons().length">
-            <ion-item v-for="(reason, index) in getMostUsedReasons()" :key="reason.enumId" :lines="getMostUsedReasons().length -1 === index ? 'none' : 'inset'">
+            <ion-item v-for="(reason, index) in getMostUsedReasons()" :key="reason.enumId" :lines="getMostUsedReasons().length - 1 === index ? 'none' : 'inset'">
               <ion-label>
                 {{ reason.description }}
                 <p>{{ reason.enumTypeId }}</p>
@@ -76,9 +76,9 @@
           </div>
         </ion-card>
       </div>
-          
+
       <div class="rejection-search">
-        <ion-searchbar class="searchbar" :placeholder="translate('Search orders')" v-model="queryString" @keyup.enter="updateQueryString($event.target.value)"/>
+        <ion-searchbar class="searchbar" :placeholder="translate('Search orders')" v-model="queryString" @keyup.enter="updateQueryString($event.target.value)" />
         <div></div>
         <ion-button :disabled="!rejectedOrders.list.length" expand="block" fill="outline" @click="downloadRejections()" class="ion-margin-end">
           <ion-icon slot="end" :icon="cloudDownloadOutline" />{{ translate("Download rejections") }}
@@ -112,7 +112,7 @@
             <div class="product-info">
               <ion-item lines="none">
                 <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
-                  <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
+                  <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small" />
                 </ion-thumbnail>
                 <ion-label>
                   <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -125,7 +125,7 @@
               <p>{{ translate('rejected time') }}</p>
             </ion-label>
             <ion-label lines="none">
-              {{ item.availableToPromise}}
+              {{ item.availableToPromise }}
               <p>{{ translate('ATP') }}</p>
             </ion-label>
             <ion-label>
@@ -142,200 +142,126 @@
       <div v-else class="empty-state">
         <p>{{ translate("No orders found.") }}</p>
       </div>
-      <ion-infinite-scroll @ionInfinite="loadMoreRejectedOrders($event)" threshold="100px"  v-show="isRejectedOrdersScrollable()" ref="infiniteScrollRef">
-        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
+      <ion-infinite-scroll @ionInfinite="loadMoreRejectedOrders($event)" threshold="100px" v-show="isRejectedOrdersScrollable()" ref="infiniteScrollRef">
+        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
       </ion-infinite-scroll>
     </ion-content>
   </ion-page>
 </template>
-  
-<script lang="ts">
-import {
-  IonButton,
-  IonButtons,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonChip,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonInfiniteScroll,
-  IonInfiniteScrollContent,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonMenuButton,
-  IonNote,
-  IonPage,
-  IonSearchbar,
-  IonSelect,
-  IonSelectOption,
-  IonThumbnail,
-  IonTitle,
-  IonToolbar,
-  modalController
-} from '@ionic/vue';
-import { computed, defineComponent } from 'vue';
-import { addOutline, caretDownOutline, cloudDownloadOutline, ellipsisVerticalOutline, filterOutline, personCircleOutline, pricetagOutline } from 'ionicons/icons';
-import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { mapGetters, useStore } from 'vuex';
-import { formatUtcDate, jsonToCsv } from '@/utils';
-import RejectedItemsModal from '@/components/RejectedItemsModal.vue';
-import UsedReasonsModal from '@/components/UsedReasonsModal.vue';
-import RejectedOrdersFilters from '@/components/RejectedOrdersFilters.vue'
+
+<script setup lang="ts">
+import { IonButton, IonButtons, IonCard, IonCardHeader, IonCardTitle, IonChip, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonList, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter } from "@ionic/vue";
+import { computed, ref } from "vue";
+import { cloudDownloadOutline, filterOutline, personCircleOutline, pricetagOutline } from "ionicons/icons";
+import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { formatUtcDate } from "@/utils";
+import RejectedItemsModal from "@/components/RejectedItemsModal.vue";
+import UsedReasonsModal from "@/components/UsedReasonsModal.vue";
+import RejectedOrdersFilters from "@/components/RejectedOrdersFilters.vue";
 import DownloadRejectedOrdersModal from "@/components/DownloadRejectedOrdersModal.vue";
+import { useRejectionStore } from "@/store/rejection";
+import { useProductStore } from "@/store/product";
 
-export default defineComponent({
-  name: 'Rejections',
-  components: {
-    DxpShopifyImg,
-    IonButton,
-    IonButtons,
-    IonCard,
-    IonCardHeader,
-    IonCardTitle,
-    IonChip,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonInfiniteScroll,
-    IonInfiniteScrollContent,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonMenuButton,
-    IonNote,
-    IonPage,
-    IonSearchbar,
-    IonSelect,
-    IonSelectOption,
-    IonThumbnail,
-    IonTitle,
-    IonToolbar,
-    RejectedOrdersFilters
-  },
-  data() {
-    return {
-      queryString: '',
-      rejectionPeriods: [] as any,
-      searchedQuery: '',
-      isScrollingEnabled: false,
-    }
-  },
-  computed: {
-    ...mapGetters({
-      rejectionStats: 'rejection/getRejectedStats',
-      getProduct: 'product/getProduct',
-      rejectedOrders: 'rejection/getRejectedOrders'
-    })
-  },
-  async ionViewWillEnter() {
-    this.rejectionPeriods = [{"id": "LAST_TWENTY_FOUR_HOURS", "description": "Last 24 hours"}, {"id": "LAST_SEVEN_DAYS", "description": "Last 7 days"}]
-    this.isScrollingEnabled = false;
-    await this.initialiseRejectedOrderQuery();
-  },
-  
-  methods: {
-    enableScrolling() {
-      const parentElement = (this as any).$refs.contentRef.$el
-      const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
-      let scrollHeight = scrollEl.scrollHeight, infiniteHeight = (this as any).$refs.infiniteScrollRef.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
-      const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
-      if(distanceFromInfinite < 0) {
-        this.isScrollingEnabled = false;
-      } else {
-        this.isScrollingEnabled = true;
-      }
-    },
-    isRejectedOrdersScrollable() {
-      return this.rejectedOrders.list?.length > 0 && this.rejectedOrders.list?.length < this.rejectedOrders.total
-    },
-    async initialiseRejectedOrderQuery() {
-      const rejectedOrdersQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
-      rejectedOrdersQuery.viewIndex = 0 //If the size changes, list index should be reintialised
-      rejectedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      await this.store.dispatch('rejection/updateRejectedOrderQuery', { ...rejectedOrdersQuery })
-    },
-    async loadMoreRejectedOrders(event: any) {
-      // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
-      if (!(this.isScrollingEnabled && this.isRejectedOrdersScrollable())) {
-        await event.target.complete();
-      }
-      const rejectedOrdersQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
-      rejectedOrdersQuery.viewIndex = this.rejectedOrders.list?.length / (process.env.VUE_APP_VIEW_SIZE as any);
-      await this.store.dispatch('rejection/updateRejectedOrderQuery', { ...rejectedOrdersQuery })
-      event.target.complete();
-    },
-    getMostUsedReasons() {
-      return this.rejectionStats.usedReasons && this.rejectionStats.usedReasons.length >=3 ? this.rejectionStats.usedReasons.slice(0, 3) : this.rejectionStats.usedReasons;
-    },
-    getMostRejectedItems() {
-      return this.rejectionStats.rejectedItems && this.rejectionStats.rejectedItems.length >=3 ? this.rejectionStats.rejectedItems.slice(0, 3) : this.rejectionStats.rejectedItems;
-    },
-    async showAllRejectedItemsModal() {
-      const rejectedItemsModal = await modalController.create({
-        component: RejectedItemsModal
-      });
-      return rejectedItemsModal.present();
-    },
-    async showAllReasonsModal() {
-      const rejectedReasonsModal = await modalController.create({
-        component: UsedReasonsModal
-      });
-      return rejectedReasonsModal.present();
-    },
-    async downloadRejections() {
-      const downloadRejectedOrdersModal = await modalController.create({
-        component: DownloadRejectedOrdersModal,
-        showBackdrop: false,
-      });
-      await downloadRejectedOrdersModal.present();
-    },
-    async updateRejectionPeriod(rejectionPeriodId: string) {
-      const rejectedOrdersQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
-      rejectedOrdersQuery.rejectionPeriodId = rejectionPeriodId
-      await this.store.dispatch('rejection/updateRejectedOrderQuery', { ...rejectedOrdersQuery })
-    },
-    async updateQueryString(queryString: string) {
-      const rejectedOrdersQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
+const queryString = ref("");
+const rejectionPeriods = ref([] as any);
+const searchedQuery = ref("");
+const isScrollingEnabled = ref(false);
 
-      rejectedOrdersQuery.viewIndex = 0
-      rejectedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      rejectedOrdersQuery.queryString = queryString
-      await this.store.dispatch('rejection/updateRejectedOrderQuery', { ...rejectedOrdersQuery })
-      this.searchedQuery = queryString;
-    },
-    getErrorMessage() {
-    return this.searchedQuery === '' ? translate("doesn't have any rejected orders right now.", { facilityName: this.currentFacility.facilityName }) : translate( "No results found for . Try switching stores.", { searchedQuery: this.searchedQuery})
-  },
-  },
-  setup() {
-    const store = useStore()
-    const userStore = useUserStore()
-    const productIdentificationStore = useProductIdentificationStore();
-    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
-    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
+const contentRef = ref();
+const infiniteScrollRef = ref();
 
+const rejectionStats = computed(() => useRejectionStore().getRejectedStats);
+const rejectedOrders = computed(() => useRejectionStore().getRejectedOrders);
+const getProduct = (productId: string) => useProductStore().getProduct(productId);
+const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
 
-    return {
-      addOutline,
-      caretDownOutline,
-      cloudDownloadOutline,
-      ellipsisVerticalOutline,
-      filterOutline,
-      formatUtcDate,
-      getProductIdentificationValue,
-      personCircleOutline,
-      pricetagOutline,
-      productIdentificationPref,
-      store,
-      translate,
-      currentFacility
-    }
+const enableScrolling = () => {
+  const parentElement = contentRef.value?.$el;
+  const scrollEl = parentElement?.shadowRoot?.querySelector("main[part='scroll']");
+  if (!scrollEl || !infiniteScrollRef.value?.$el) return;
+  const scrollHeight = scrollEl.scrollHeight;
+  const infiniteHeight = infiniteScrollRef.value.$el.offsetHeight;
+  const scrollTop = scrollEl.scrollTop;
+  const threshold = 100;
+  const height = scrollEl.offsetHeight;
+  const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height;
+  isScrollingEnabled.value = !(distanceFromInfinite < 0);
+};
+
+const isRejectedOrdersScrollable = () => {
+  return rejectedOrders.value.list?.length > 0 && rejectedOrders.value.list?.length < rejectedOrders.value.total;
+};
+
+const initialiseRejectedOrderQuery = async () => {
+  const rejectedOrdersQuery = JSON.parse(JSON.stringify(rejectedOrders.value.query));
+  rejectedOrdersQuery.viewIndex = 0;
+  rejectedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  await useRejectionStore().updateRejectedOrderQuery({ ...rejectedOrdersQuery });
+};
+
+const loadMoreRejectedOrders = async (event: any) => {
+  if (!(isScrollingEnabled.value && isRejectedOrdersScrollable())) {
+    await event.target.complete();
   }
+  const rejectedOrdersQuery = JSON.parse(JSON.stringify(rejectedOrders.value.query));
+  rejectedOrdersQuery.viewIndex = rejectedOrders.value.list?.length / (process.env.VUE_APP_VIEW_SIZE as any);
+  await useRejectionStore().updateRejectedOrderQuery({ ...rejectedOrdersQuery });
+  event.target.complete();
+};
+
+const getMostUsedReasons = () => {
+  return rejectionStats.value.usedReasons && rejectionStats.value.usedReasons.length >= 3 ? rejectionStats.value.usedReasons.slice(0, 3) : rejectionStats.value.usedReasons;
+};
+
+const getMostRejectedItems = () => {
+  return rejectionStats.value.rejectedItems && rejectionStats.value.rejectedItems.length >= 3 ? rejectionStats.value.rejectedItems.slice(0, 3) : rejectionStats.value.rejectedItems;
+};
+
+const showAllRejectedItemsModal = async () => {
+  const rejectedItemsModal = await modalController.create({
+    component: RejectedItemsModal
+  });
+  return rejectedItemsModal.present();
+};
+
+const showAllReasonsModal = async () => {
+  const rejectedReasonsModal = await modalController.create({
+    component: UsedReasonsModal
+  });
+  return rejectedReasonsModal.present();
+};
+
+const downloadRejections = async () => {
+  const downloadRejectedOrdersModal = await modalController.create({
+    component: DownloadRejectedOrdersModal,
+    showBackdrop: false
+  });
+  await downloadRejectedOrdersModal.present();
+};
+
+const updateRejectionPeriod = async (rejectionPeriodId: string) => {
+  const rejectedOrdersQuery = JSON.parse(JSON.stringify(rejectedOrders.value.query));
+  rejectedOrdersQuery.rejectionPeriodId = rejectionPeriodId;
+  await useRejectionStore().updateRejectedOrderQuery({ ...rejectedOrdersQuery });
+};
+
+const updateQueryString = async (query: string) => {
+  const rejectedOrdersQuery = JSON.parse(JSON.stringify(rejectedOrders.value.query));
+
+  rejectedOrdersQuery.viewIndex = 0;
+  rejectedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  rejectedOrdersQuery.queryString = query;
+  await useRejectionStore().updateRejectedOrderQuery({ ...rejectedOrdersQuery });
+  searchedQuery.value = query;
+};
+
+onIonViewWillEnter(async () => {
+  rejectionPeriods.value = [{ id: "LAST_TWENTY_FOUR_HOURS", description: "Last 24 hours" }, { id: "LAST_SEVEN_DAYS", description: "Last 7 days" }];
+  isScrollingEnabled.value = false;
+  await initialiseRejectedOrderQuery();
 });
 </script>
+
 <style scoped>
 .rejection-count {
   font-size: 128px;
@@ -360,7 +286,7 @@ export default defineComponent({
   --columns-desktop: 5;
 }
 
-.searchbar{
+.searchbar {
   padding-top: 0;
   padding-bottom: 0;
 }

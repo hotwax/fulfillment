@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue';
-import { useStore } from 'vuex';
+import { useProductStore } from "@/store/product";
+import { useTransferOrderStore } from "@/store/transferorder";
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { ProductService } from '@/services/ProductService';
 import { StockService } from '@/services/StockService';
@@ -23,14 +24,15 @@ import logger from '@/logger';
  */
 
 export function useProductQueue() {
-  const store = useStore();
+  const productStore = useProductStore();
+  const transferOrderStore = useTransferOrderStore();
   
   const addQueue = ref([]) as any;
   const isProcessing = ref(false);
   const pendingProductIds = ref(new Set());
   let pendingItemsToast: any = null;
   
-  const currentOrder = computed(() => store.getters['transferorder/getCurrent']);
+  const currentOrder = computed(() => transferOrderStore.getCurrent);
 
   // Helper function to check if product is in order
   const isProductInOrder = (productId: string ) => {
@@ -64,7 +66,7 @@ export function useProductQueue() {
       const items = currentOrder.value.items;
       if(!items?.length) return;
       const productIds = items.map((item: any) => item.productId);
-      if (productIds.length) await store.dispatch('product/fetchProducts', { productIds });
+      if (productIds.length) await productStore.fetchProducts({ productIds });
     } catch (err) {
       logger.error("Failed to fetch product information", err);
     }
@@ -160,7 +162,7 @@ export function useProductQueue() {
           items: [...currentOrder.value.items, newItem]
         };
         
-        await store.dispatch('transferorder/updateCurrentTransferOrder', updatedOrder);
+        await transferOrderStore.updateCurrentTransferOrder(updatedOrder);
         onSuccess?.(product, newItem);
       } else {
         throw resp.data;

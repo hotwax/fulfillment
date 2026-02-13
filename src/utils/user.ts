@@ -1,11 +1,11 @@
 import { translate } from '@hotwax/dxp-components'
-import store from '@/store'
+import { useUserStore } from "@/store/user"
 import { loadingController } from '@ionic/vue'
 import { ProductService } from '@/services/ProductService';
 
-const login = async (payload: any) => store.dispatch('user/login', payload);
+const login = async (payload: any) => useUserStore().login(payload);
 
-const logout = async (payload: any) => store.dispatch('user/logout', payload);
+const logout = async (payload: any) => useUserStore().logout(payload);
 
 const fetchProducts = async (payload: any) => ProductService.fetchProducts(payload)
 

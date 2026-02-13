@@ -1,5 +1,6 @@
-import { translate, useUserStore } from '@hotwax/dxp-components';
-import store from '@/store';
+import { translate, useUserStore as useDxpUserStore } from '@hotwax/dxp-components';
+import { useUserStore as useAppUserStore } from "@/store/user";
+import { useUtilStore } from "@/store/util";
 import { JsonToCsvOption } from '@/types';
 import { Plugins } from '@capacitor/core';
 import { toastController } from '@ionic/vue';
@@ -60,7 +61,8 @@ const formatDate = (value: any, inFormat?: string, outFormat?: string) => {
 const formatUtcDate = (value: any, outFormat: string) => {
   // TODO Make default format configurable and from environment variables
   // TODO Fix this setDefault should set the default timezone instead of getting it everytiem and setting the tz
-  return DateTime.fromISO(value, { zone: 'utc' }).setZone(store.state.user.current.userTimeZone).toFormat(outFormat ? outFormat : 'MM-dd-yyyy')
+  const userStore = useAppUserStore();
+  return DateTime.fromISO(value, { zone: 'utc' }).setZone(userStore.current?.userTimeZone).toFormat(outFormat ? outFormat : 'MM-dd-yyyy')
 }
 
 const getFeatures = (productFeatures: any) => {
@@ -206,12 +208,12 @@ const dateOrdinalSuffix = {
 } as any
 
 const getCurrentFacilityId = () => {
-  const currentFacility: any = useUserStore().getCurrentFacility;
+  const currentFacility: any = useDxpUserStore().getCurrentFacility;
   return currentFacility?.facilityId
 }
 
 const getProductStoreId = () => {
-  const currentEComStore: any = useUserStore().getCurrentEComStore;
+  const currentEComStore: any = useDxpUserStore().getCurrentEComStore;
   return currentEComStore.productStoreId
 };
 
@@ -260,10 +262,27 @@ const hasActiveFilters = (query: any): boolean => {
 }
 
 const getFacilityFilter = (value: any): any => {
-  const isReservationFacilityFieldEnabled = store.getters["user/isReservationFacilityFieldEnabled"];
+  const utilStore = useUtilStore();
+  const isReservationFacilityFieldEnabled = utilStore.isReservationFacilityFieldEnabled;
   const facilityFilter = {} as any;
   facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value }
   return facilityFilter 
 }
 
-export { copyToClipboard, downloadCsv, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getFacilityFilter, getFeatures, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getIdentificationId, handleDateTimeInput, hasActiveFilters, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv }
+const parseBooleanSetting = (value: any): boolean => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value !== "string") return false;
+
+  const normalizedValue = value.trim().toLowerCase();
+  if (["true", "1", "y", "yes"].includes(normalizedValue)) return true;
+  if (["false", "0", "n", "no", ""].includes(normalizedValue)) return false;
+
+  try {
+    return parseBooleanSetting(JSON.parse(value));
+  } catch {
+    return false;
+  }
+}
+
+export { copyToClipboard, downloadCsv, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getFacilityFilter, getFeatures, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getIdentificationId, handleDateTimeInput, hasActiveFilters, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv, parseBooleanSetting }

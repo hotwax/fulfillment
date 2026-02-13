@@ -40,135 +40,73 @@
   </ion-fab>
 </template>
 
-<script lang="ts">
-import {
-  IonButton,
-  IonButtons,
-  IonCheckbox,
-  IonContent,
-  IonFab,
-  IonFabButton,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonTitle,
-  IonToolbar,
-  IonThumbnail,
-  alertController,
-  modalController
-} from '@ionic/vue';
-import { Actions, hasPermission } from '@/authorization'
-import { arrowBackOutline, saveOutline } from 'ionicons/icons';
-import { defineComponent, computed } from 'vue';
-import { mapGetters, useStore } from 'vuex'
-import { DxpShopifyImg, translate, getProductIdentificationValue, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { useRouter } from 'vue-router';
-import { TransferOrderService } from '@/services/TransferOrderService';
-import { getFeatures, showToast } from '@/utils';
+<script setup lang="ts">
+import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonTitle, IonToolbar, IonThumbnail, alertController, modalController } from "@ionic/vue";
+import { Actions, hasPermission } from "@/authorization";
+import { arrowBackOutline, saveOutline } from "ionicons/icons";
+import { computed } from "vue";
+import { DxpShopifyImg, translate, getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { useRouter } from "vue-router";
+import { TransferOrderService } from "@/services/TransferOrderService";
+import { getFeatures, showToast } from "@/utils";
+import { useTransferOrderStore } from "@/store/transferorder";
+import { useProductStore } from "@/store/product";
 
-export default defineComponent({
-  name: "CloseTransferOrderModal",
-  components: {
-    IonButton,
-    IonButtons,
-    IonCheckbox,
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonListHeader,
-    IonTitle,
-    IonThumbnail,
-    IonToolbar,
-    DxpShopifyImg
-  },
-  computed: {
-    ...mapGetters({
-      getProduct: 'product/getProduct',
-      order: 'transferorder/getCurrent'
-    })
-  },
-  methods: {
-    closeModal() {
-      modalController.dismiss({ dismissed: true });
-    },
-    async confirmSave() {
-      const alert = await alertController.create({
-        header: translate('Close transfer order items'),
-        message: translate("The selected items won't be available for receiving later."),
-        buttons: [{
-          text: translate('Cancel'),
-          role: 'cancel'
-        },
-        {
-          text: translate('Proceed'),
-          role: 'proceed',
-          handler: async () => {
-            const success = await this.closeOrderItems();
-            if (success) {
-              modalController.dismiss();
-              this.router.push('/transfer-orders');
-            }
-          }
-        }]
-      });
-      return alert.present();
-    },
-    async closeOrderItems() {
-      // Get only checked and pending items
-      const eligibleItems = this.order.items.filter((item: any) => item.isChecked);
-      if (!eligibleItems.length) return false;
+const router = useRouter();
+const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
+const order = computed(() => useTransferOrderStore().getCurrent);
+const getProduct = (productId: string) => useProductStore().getProduct(productId);
 
-      // Prepare payload for API, always sending quantityAccepted (default 0)&& this.isTOItemStatusPending(item)
-      const payload = {
-        orderId: this.order.orderId,
-        items: eligibleItems.map((item: any) => ({
-          orderItemSeqId: item.orderItemSeqId,
-        }))
-      };
-      try {
-        await TransferOrderService.closeOrderItems(payload);
-        return true;
-      } catch (error) {
-        showToast(translate("Failed to update the status of transfer order items."));
-        return false;
-      }
-    },
-    isEligibleToCloseTOItems() {
-      return this.order.items.some((item: any) => item.isChecked)
-    },
-    selectAllItems() {
-      this.order.items.map((item:any) => {
-          item.isChecked = true;
-    })
-    }
-  },
-  setup() {
-    const router = useRouter()
-    const store = useStore()
-    const userStore = useUserStore()
-    const productIdentificationStore = useProductIdentificationStore();
-    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+const closeModal = () => {
+  modalController.dismiss({ dismissed: true });
+};
 
-    return {
-      arrowBackOutline,
-      Actions,
-      getFeatures,
-      hasPermission,
-      router,
-      saveOutline,
-      store,
-      translate,
-      getProductIdentificationValue,
-      productIdentificationPref
-    };
+const closeOrderItems = async () => {
+  const eligibleItems = order.value.items.filter((item: any) => item.isChecked);
+  if (!eligibleItems.length) return false;
+
+  const payload = {
+    orderId: order.value.orderId,
+    items: eligibleItems.map((item: any) => ({ orderItemSeqId: item.orderItemSeqId }))
+  };
+  try {
+    await TransferOrderService.closeOrderItems(payload);
+    return true;
+  } catch (error) {
+    showToast(translate("Failed to update the status of transfer order items."));
+    return false;
   }
-});
+};
+
+const confirmSave = async () => {
+  const alert = await alertController.create({
+    header: translate("Close transfer order items"),
+    message: translate("The selected items won't be available for receiving later."),
+    buttons: [
+      { text: translate("Cancel"), role: "cancel" },
+      {
+        text: translate("Proceed"),
+        role: "proceed",
+        handler: async () => {
+          const success = await closeOrderItems();
+          if (success) {
+            modalController.dismiss();
+            router.push("/transfer-orders");
+          }
+        }
+      }
+    ]
+  });
+  return alert.present();
+};
+
+const isEligibleToCloseTOItems = () => {
+  return order.value.items.some((item: any) => item.isChecked);
+};
+
+const selectAllItems = () => {
+  order.value.items.map((item: any) => {
+    item.isChecked = true;
+  });
+};
 </script>

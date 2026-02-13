@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal"> 
+        <ion-button @click="closeModal">
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -13,30 +13,30 @@
     </ion-toolbar>
   </ion-header>
 
- <ion-content>
-   <ion-card>
-     <div class="card-header">
-       <div class="order-tags">
-         <ion-chip outline>
-           <ion-icon :icon="pricetag" />
-           <ion-label>NN10584</ion-label>
-         </ion-chip>
-       </div>
+  <ion-content>
+    <ion-card>
+      <div class="card-header">
+        <div class="order-tags">
+          <ion-chip outline>
+            <ion-icon :icon="pricetag" />
+            <ion-label>NN10584</ion-label>
+          </ion-chip>
+        </div>
 
-       <div class="order-primary-info">
-         <ion-label>
-           Darooty Magwood
-           <p>{{ translate("Ordered") }} 27th January 2020 9:24 PM EST</p>
-         </ion-label>
-       </div>
+        <div class="order-primary-info">
+          <ion-label>
+            Darooty Magwood
+            <p>{{ translate("Ordered") }} 27th January 2020 9:24 PM EST</p>
+          </ion-label>
+        </div>
 
-       <div class="order-metadata">
-         <ion-label>
-           Next Day Shipping
-           <p>{{ translate("Ordered") }} 28th January 2020 2:32 PM EST</p>
-         </ion-label>
-       </div>
-     </div>
+        <div class="order-metadata">
+          <ion-label>
+            Next Day Shipping
+            <p>{{ translate("Ordered") }} 28th January 2020 2:32 PM EST</p>
+          </ion-label>
+        </div>
+      </div>
     </ion-card>
 
     <ion-card>
@@ -65,62 +65,16 @@
           <ion-select-option value="b">Worn display</ion-select-option>
         </ion-select>
       </ion-item>
-    </ion-card> 
+    </ion-card>
   </ion-content>
 </template>
 
-<script>
-import { 
-  IonCard,
-  IonChip,  
-  IonButtons,
-  IonButton,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonNote,
-  IonSelect,
-  IonSelectOption,
-  IonTitle,
-  IonThumbnail,
-  IonToolbar,
-  modalController } from "@ionic/vue";
-import { defineComponent } from "vue";
+<script setup>
+import { IonCard, IonChip, IonButtons, IonButton, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonNote, IonSelect, IonSelectOption, IonTitle, IonThumbnail, IonToolbar, modalController } from "@ionic/vue";
 import { closeOutline, pricetag } from "ionicons/icons";
-import { translate } from '@hotwax/dxp-components'
+import { translate } from "@hotwax/dxp-components";
 
-export default defineComponent({
-  name: "ReportIssueModal",
-  components: { 
-     IonCard,
-     IonChip,  
-     IonButtons,
-     IonButton,
-     IonContent,
-     IonHeader,
-     IonIcon,
-     IonItem,
-     IonLabel,
-     IonNote,
-     IonSelect,
-     IonSelectOption,
-     IonTitle,
-     IonThumbnail,
-     IonToolbar
-  },
-  methods: {
-    closeModal() {
-      modalController.dismiss({ dismissed: true });
-    },
-  },
-  setup() {
-    return {
-      closeOutline,
-      pricetag,
-      translate
-    };
-  },
-});
+const closeModal = () => {
+  modalController.dismiss({ dismissed: true });
+};
 </script>

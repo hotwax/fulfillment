@@ -18,80 +18,47 @@
   </ion-content>
 </template>
 
-<script lang="ts">
-import {
-  IonContent,
-  IonIcon,
-  IonItem,
-  IonList,
-  IonListHeader,
-  modalController,
-  popoverController,
-} from "@ionic/vue";
-import { defineComponent } from "vue";
-import { arrowForwardOutline, bagCheckOutline, copyOutline } from 'ionicons/icons'
+<script setup lang="ts">
+import { defineProps } from "vue";
+import { IonContent, IonIcon, IonItem, IonList, IonListHeader, modalController, popoverController } from "@ionic/vue";
+import { arrowForwardOutline, bagCheckOutline, copyOutline } from "ionicons/icons";
 import { copyToClipboard } from "@/utils";
-import AssignPickerModal from '@/views/AssignPickerModal.vue';
+import AssignPickerModal from "@/views/AssignPickerModal.vue";
 import { translate } from "@hotwax/dxp-components";
-import { useStore } from 'vuex';
+import { useOrderStore } from "@/store/order";
 import emitter from "@/event-bus";
+import { useRouter } from "vue-router";
 
-export default defineComponent({
-  name: "OrderActionsPopover",
-  components: { 
-    IonContent,
-    IonIcon,
-    IonItem,
-    IonList,
-    IonListHeader
-  },
-  props: ["order", "category"],
-  methods: {
-    closePopover() {
-      popoverController.dismiss();
-    },
-    copyInfo() {
-      this.copyToClipboard(this.order.orderName, 'Copied to clipboard')
-      // closing the popover after copy action
-      this.closePopover();
-    },
-    async assignPickers() {
-      const assignPickerModal = await modalController.create({
-        component: AssignPickerModal,
-        componentProps: { order: this.order }
-      });
+const props = defineProps(["order", "category"]);
 
-      // dismissing the popover once the picker modal is closed
-      assignPickerModal.onDidDismiss().finally(() => {
-        this.closePopover();
-      });
+const router = useRouter();
+const closePopover = () => {
+  popoverController.dismiss();
+};
 
-      return assignPickerModal.present();
-    },
-    async viewOrder() {
-      emitter.emit("presentLoader")
-      this.store.dispatch('order/updateCurrent', this.order).then(() => {
-        this.closePopover();
-        emitter.emit("dismissLoader")
-        if (this.order.category === 'open') {
-          this.$router.push({ path: `${this.category}/order-detail/${this.order.orderId}/${this.order.shipGroupSeqId}` })
-        } else {
-          this.$router.push({ path: `${this.category}/shipment-detail/${this.order.orderId}/${this.order.shipmentId}` })
-        }
-      })
-    },
-  },
-  setup() {
-    const store = useStore();
+const copyInfo = () => {
+  copyToClipboard(props.order.orderName, "Copied to clipboard");
+  closePopover();
+};
 
-    return {
-      arrowForwardOutline,
-      bagCheckOutline,
-      copyOutline,
-      copyToClipboard,
-      store,
-      translate
+const assignPickers = async () => {
+  const assignPickerModal = await modalController.create({ component: AssignPickerModal, componentProps: { order: props.order } });
+  assignPickerModal.onDidDismiss().finally(() => {
+    closePopover();
+  });
+  return assignPickerModal.present();
+};
+
+const viewOrder = async () => {
+  emitter.emit("presentLoader");
+  useOrderStore().updateCurrent(props.order).then(() => {
+    closePopover();
+    emitter.emit("dismissLoader");
+    if (props.order.category === "open") {
+      router.push({ path: `${props.category}/order-detail/${props.order.orderId}/${props.order.shipGroupSeqId}` });
+    } else {
+      router.push({ path: `${props.category}/shipment-detail/${props.order.orderId}/${props.order.shipmentId}` });
     }
-  }
-});
+  });
+};
 </script>

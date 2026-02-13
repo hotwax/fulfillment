@@ -55,15 +55,12 @@ import { translate } from '@hotwax/dxp-components';
 import { UtilService } from '@/services/UtilService';
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { hasError } from '@/adapter';
-import { useStore } from 'vuex';
+import { useUtilStore } from "@/store/util";
 import { getCurrentFacilityId, getProductStoreId, showToast } from '@/utils';
 import { DateTime } from 'luxon';
 import router from '@/router';
 import logger from '@/logger';
-
-const store = useStore();
-
-const facilityAddresses = computed(() => store.getters['util/getFacilityAddress'])
+const facilityAddresses = computed(() => useUtilStore().getFacilityAddress)
 
 const transferOrderName = ref('');
 const queryString = ref('');
@@ -159,7 +156,7 @@ async function createTransferOrder() {
   };
   
   // Fetch origin and destination facility addresses directly from the store getter and assign them to the order payload.
-  await store.dispatch("util/fetchFacilityAddresses", [originFacilityId, selectedDestinationFacilityId.value])
+  await useUtilStore().fetchFacilityAddresses([originFacilityId, selectedDestinationFacilityId.value])
   const originAddress = facilityAddresses.value(originFacilityId)
   const destinationAddress = facilityAddresses.value(selectedDestinationFacilityId.value)
 

@@ -31,7 +31,7 @@
               </div>
 
               <ion-reorder />
-  
+
               <ion-button fill="clear" color="medium" @click="openRejectionReasonActionsPopover($event, reason)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -52,251 +52,198 @@
   </ion-page>
 </template>
 
-<script lang="ts">
-import {
-  IonButton,
-  IonContent,
-  IonChip,
-  IonFab,
-  IonFabButton,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonPage,
-  IonReorder,
-  IonReorderGroup,
-  IonTitle,
-  IonToggle,
-  IonToolbar,
-  alertController,
-  modalController,
-  popoverController
-} from '@ionic/vue';
-import { defineComponent } from 'vue';
-import { addOutline, caretDownOutline, ellipsisVerticalOutline } from 'ionicons/icons';
-import { translate } from '@hotwax/dxp-components';
-import CreateRejectionReasonModal from '@/components/CreateRejectionReasonModal.vue';
-import RejectReasonActionsPopver from '@/components/RejectReasonActionsPopver.vue';
-import VarianceTypeActionsPopover from '@/components/VarianceTypeActionsPopover.vue';
-import { mapGetters, useStore } from 'vuex';
-import { UtilService } from '@/services/UtilService';
-import { showToast } from '@/utils';
-import { DateTime } from 'luxon';
-import { hasError } from '@hotwax/oms-api';
-import logger from '@/logger';
+<script setup lang="ts">
+import { IonButton, IonContent, IonChip, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonPage, IonReorder, IonReorderGroup, IonTitle, IonToggle, IonToolbar, alertController, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
+import { computed, ref } from "vue";
+import { onBeforeRouteLeave } from "vue-router";
+import { addOutline, caretDownOutline, ellipsisVerticalOutline } from "ionicons/icons";
+import { translate } from "@hotwax/dxp-components";
+import CreateRejectionReasonModal from "@/components/CreateRejectionReasonModal.vue";
+import RejectReasonActionsPopver from "@/components/RejectReasonActionsPopver.vue";
+import VarianceTypeActionsPopover from "@/components/VarianceTypeActionsPopover.vue";
+import { useUtilStore } from "@/store/util";
+import { UtilService } from "@/services/UtilService";
+import { showToast } from "@/utils";
+import { DateTime } from "luxon";
+import { hasError } from "@hotwax/oms-api";
+import logger from "@/logger";
 
-export default defineComponent({
-  name: 'RejectionReasons',
-  components: {
-    IonButton,
-    IonContent,
-    IonChip,
-    IonFab,
-    IonFabButton,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonPage,
-    IonReorder,
-    IonReorderGroup,
-    IonTitle,
-    IonToggle,
-    IonToolbar,
-  },
-  data() {
-    return {
-      filteredReasons: [] as any,
-      toast: null as any
+const filteredReasons = ref([] as any);
+const toast = ref(null as any);
+
+const rejectReasons = computed(() => useUtilStore().getRejectReasons);
+const fulfillmentRejectReasons = computed(() => useUtilStore().getFulfillmentRejectReasons);
+
+const openCreateRejectionReasonModal = async () => {
+  const createRejectionReasonModal = await modalController.create({
+    component: CreateRejectionReasonModal
+  });
+
+  createRejectionReasonModal.onDidDismiss().then((result) => {
+    if (result.data?.isUpdated) {
+      filteredReasons.value = JSON.parse(JSON.stringify(rejectReasons.value));
     }
-  },
-  computed: {
-    ...mapGetters({
-      rejectReasons: 'util/getRejectReasons',
-      fulfillmentRejectReasons: 'util/getFulfillmentRejectReasons'
-    })
-  },
-  async ionViewWillEnter() {
-    await Promise.all([this.store.dispatch('util/fetchRejectReasons'), this.store.dispatch('util/fetchFulfillmentRejectReasons'), this.store.dispatch('util/fetchRejectReasonEnumTypes')])
-    this.filteredReasons = this.rejectReasons ? JSON.parse(JSON.stringify(this.rejectReasons)) : []
-  },
-  async beforeRouteLeave() {
-    if(!this.toast) return
+  });
 
-    let canLeave = false;
-    const alert = await alertController.create({
-      header: translate("Leave page"),
-      message: translate("Any edits made on this page will be lost."),
-      buttons: [
-        {
-          text: translate("STAY"),
-          handler: () => {
-            canLeave = false;
-          },
-        },
-        {
-          text: translate("LEAVE"),
-          handler: () => {
-            canLeave = true;
-            this.toast.dismiss()
-          },
-        },
-      ],
-    });
+  createRejectionReasonModal.present();
+};
 
-    alert.present()
-    await alert.onDidDismiss()
-    return canLeave
-  },
-  methods: {
-    async openCreateRejectionReasonModal() {
-      const createRejectionReasonModal = await modalController.create({
-        component: CreateRejectionReasonModal
-      });
+const openRejectionReasonActionsPopover = async (event: Event, reason: any) => {
+  const popover = await popoverController.create({
+    component: RejectReasonActionsPopver,
+    componentProps: { reason },
+    showBackdrop: false,
+    event
+  });
 
-      createRejectionReasonModal.onDidDismiss().then((result) => {
-        if(result.data?.isUpdated) {
-          // Updating filtered reasons with the updated reasons in state.
-          this.filteredReasons = JSON.parse(JSON.stringify(this.rejectReasons))
-        }
-      })
+  popover.onDidDismiss().then(() => {
+    filteredReasons.value = JSON.parse(JSON.stringify(rejectReasons.value));
+  });
 
-      createRejectionReasonModal.present()
-    },
-    async openRejectionReasonActionsPopover(event: Event, reason: any) {
-      const popover = await popoverController.create({
-        component: RejectReasonActionsPopver,
-        componentProps: { reason },
-        showBackdrop: false,
-        event
-      });
+  return popover.present();
+};
 
-      popover.onDidDismiss().then(() => {
-        this.filteredReasons = JSON.parse(JSON.stringify(this.rejectReasons))
-      })
+const openVarianceTypeActionsPopover = async (event: Event, reason: any) => {
+  const varianceTypeActionsPopover = await popoverController.create({
+    component: VarianceTypeActionsPopover,
+    componentProps: { reason },
+    showBackdrop: false,
+    event
+  });
 
-      return popover.present();
-    },
-    async openVarianceTypeActionsPopover(event: Event, reason: any) {
-      const varianceTypeActionsPopover = await popoverController.create({
-        component: VarianceTypeActionsPopover,
-        componentProps: { reason },
-        showBackdrop: false,
-        event
-      });
-
-      varianceTypeActionsPopover.onDidDismiss().then((result) => {
-        if(result.data?.isUpdated) {
-          // Updating filtered reasons with the updated reasons in state.
-          this.filteredReasons = JSON.parse(JSON.stringify(this.rejectReasons))
-        }
-      })
-
-      return varianceTypeActionsPopover.present();
-    },
-    async doReorder(event: CustomEvent) {
-      const previousSeq = JSON.parse(JSON.stringify(this.filteredReasons))
-
-      // returns the updated sequence after reordering
-      const updatedSeq = event.detail.complete(JSON.parse(JSON.stringify(this.filteredReasons)));
-
-      let diffSeq = this.findReasonsDiff(previousSeq, updatedSeq)
-
-      const updatedSeqenceNum = previousSeq.map((rejectionReason: any) => rejectionReason.sequenceNum)
-      Object.keys(diffSeq).map((key: any) => {
-        diffSeq[key].sequenceNum = updatedSeqenceNum[key]
-      })
-
-      diffSeq = Object.keys(diffSeq).map((key) => diffSeq[key])
-      this.filteredReasons = updatedSeq
-
-      if(diffSeq.length && !this.toast) {
-        this.toast = await showToast(translate("Rejection reasons order has been change. Click save button to update them."), {
-          buttons: [{
-            text: translate('Save'),
-            handler: () => {
-              this.toast = null
-              this.saveReasonsOrder()
-            }
-          }],
-          manualDismiss: true
-        }) as any
-
-        this.toast.present()
-      }
-    },
-    findReasonsDiff(previousSeq: any, updatedSeq: any) {
-      const diffSeq: any = Object.keys(previousSeq).reduce((diff, key) => {
-        if (updatedSeq[key].enumId === previousSeq[key].enumId && updatedSeq[key].sequenceNum === previousSeq[key].sequenceNum) return diff
-        return {
-          ...diff,
-          [key]: updatedSeq[key]
-        }
-      }, {})
-      return diffSeq;
-    },
-    async saveReasonsOrder() {
-      const diffReasons = this.filteredReasons.filter((reason: any) => this.rejectReasons.some((rejectReason: any) => rejectReason.enumId === reason.enumId && rejectReason.sequenceNum !== reason.sequenceNum))
-
-      const responses = await Promise.allSettled(diffReasons.map(async (reason: any) => {
-        await UtilService.updateEnumeration(reason)
-      }))
-
-      const isFailedToUpdateSomeReason = responses.some((response) => response.status === 'rejected')
-      if(isFailedToUpdateSomeReason) {
-        showToast(translate("Failed to update sequence for some rejection reasons."))
-      } else {
-        showToast(translate("Sequence for rejection reasons updated successfully."))
-      }
-    },
-
-    async updateFulfillmentRejectReasonAssocStatus(event: any, reason: any) {
-      event.stopImmediatePropagation();
-      let resp;
-
-      const payload = {
-        enumerationId: reason.enumId,
-        enumerationGroupId: "FF_REJ_RSN_GRP",
-        sequenceNum: reason.sequenceNum
-      }
-
-      try {
-        if(this.fulfillmentRejectReasons[reason.enumId]?.fromDate) {
-          resp = await UtilService.updateEnumerationGroupMember({
-            ...payload,
-            fromDate: this.fulfillmentRejectReasons[reason.enumId]?.fromDate,
-            thruDate: DateTime.now().toMillis()
-          })
-        } else {
-          resp = await UtilService.createEnumerationGroupMember({
-            ...payload,
-            fromDate: DateTime.now().toMillis()
-          })
-        }
-  
-        if(!hasError(resp)) {
-          await this.store.dispatch("util/fetchFulfillmentRejectReasons");
-        } else {
-          throw resp.data;
-        }
-      } catch(error: any) {
-        logger.error(error);
-        showToast(translate("Failed to update reason association with fulfillment group."))
-      }
-    },
-  },
-  setup() {
-    const store = useStore()
-
-    return {
-      addOutline,
-      caretDownOutline,
-      ellipsisVerticalOutline,
-      store,
-      translate,
+  varianceTypeActionsPopover.onDidDismiss().then((result) => {
+    if (result.data?.isUpdated) {
+      filteredReasons.value = JSON.parse(JSON.stringify(rejectReasons.value));
     }
+  });
+
+  return varianceTypeActionsPopover.present();
+};
+
+const doReorder = async (event: CustomEvent) => {
+  const previousSeq = JSON.parse(JSON.stringify(filteredReasons.value));
+
+  const updatedSeq = event.detail.complete(JSON.parse(JSON.stringify(filteredReasons.value)));
+
+  let diffSeq = findReasonsDiff(previousSeq, updatedSeq);
+
+  const updatedSeqenceNum = previousSeq.map((rejectionReason: any) => rejectionReason.sequenceNum);
+  Object.keys(diffSeq).map((key: any) => {
+    diffSeq[key].sequenceNum = updatedSeqenceNum[key];
+  });
+
+  diffSeq = Object.keys(diffSeq).map((key) => diffSeq[key]);
+  filteredReasons.value = updatedSeq;
+
+  if (diffSeq.length && !toast.value) {
+    toast.value = await showToast(translate("Rejection reasons order has been change. Click save button to update them."), {
+      buttons: [{
+        text: translate("Save"),
+        handler: () => {
+          toast.value = null;
+          saveReasonsOrder();
+        }
+      }],
+      manualDismiss: true
+    }) as any;
+
+    toast.value.present();
   }
+};
+
+const findReasonsDiff = (previousSeq: any, updatedSeq: any) => {
+  const diffSeq: any = Object.keys(previousSeq).reduce((diff, key) => {
+    if (updatedSeq[key].enumId === previousSeq[key].enumId && updatedSeq[key].sequenceNum === previousSeq[key].sequenceNum) return diff;
+    return {
+      ...diff,
+      [key]: updatedSeq[key]
+    };
+  }, {});
+  return diffSeq;
+};
+
+const saveReasonsOrder = async () => {
+  const diffReasons = filteredReasons.value.filter((reason: any) => rejectReasons.value.some((rejectReason: any) => rejectReason.enumId === reason.enumId && rejectReason.sequenceNum !== reason.sequenceNum));
+
+  const responses = await Promise.allSettled(diffReasons.map(async (reason: any) => {
+    await UtilService.updateEnumeration(reason);
+  }));
+
+  const isFailedToUpdateSomeReason = responses.some((response) => response.status === "rejected");
+  if (isFailedToUpdateSomeReason) {
+    showToast(translate("Failed to update sequence for some rejection reasons."));
+  } else {
+    showToast(translate("Sequence for rejection reasons updated successfully."));
+  }
+};
+
+const updateFulfillmentRejectReasonAssocStatus = async (event: any, reason: any) => {
+  event.stopImmediatePropagation();
+  let resp;
+
+  const payload = {
+    enumerationId: reason.enumId,
+    enumerationGroupId: "FF_REJ_RSN_GRP",
+    sequenceNum: reason.sequenceNum
+  };
+
+  try {
+    if (fulfillmentRejectReasons.value[reason.enumId]?.fromDate) {
+      resp = await UtilService.updateEnumerationGroupMember({
+        ...payload,
+        fromDate: fulfillmentRejectReasons.value[reason.enumId]?.fromDate,
+        thruDate: DateTime.now().toMillis()
+      });
+    } else {
+      resp = await UtilService.createEnumerationGroupMember({
+        ...payload,
+        fromDate: DateTime.now().toMillis()
+      });
+    }
+
+    if (!hasError(resp)) {
+      await useUtilStore().fetchFulfillmentRejectReasons();
+    } else {
+      throw resp.data;
+    }
+  } catch (error: any) {
+    logger.error(error);
+    showToast(translate("Failed to update reason association with fulfillment group."));
+  }
+};
+
+onIonViewWillEnter(async () => {
+  await Promise.all([useUtilStore().fetchRejectReasons(), useUtilStore().fetchFulfillmentRejectReasons(), useUtilStore().fetchRejectReasonEnumTypes()]);
+  filteredReasons.value = rejectReasons.value ? JSON.parse(JSON.stringify(rejectReasons.value)) : [];
+});
+
+onBeforeRouteLeave(async () => {
+  if (!toast.value) return true;
+
+  let canLeave = false;
+  const alert = await alertController.create({
+    header: translate("Leave page"),
+    message: translate("Any edits made on this page will be lost."),
+    buttons: [
+      {
+        text: translate("STAY"),
+        handler: () => {
+          canLeave = false;
+        }
+      },
+      {
+        text: translate("LEAVE"),
+        handler: () => {
+          canLeave = true;
+          toast.value.dismiss();
+        }
+      }
+    ]
+  });
+
+  alert.present();
+  await alert.onDidDismiss();
+  return canLeave;
 });
 </script>
 

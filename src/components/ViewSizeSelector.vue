@@ -20,95 +20,49 @@
   </ion-menu>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import emitter from "@/event-bus";
-import {
-  IonContent,
-  IonHeader,
-  IonItem,
-  IonList,
-  IonMenu,
-  IonRadio,
-  IonRadioGroup,
-  IonTitle,
-  IonToolbar,
-  menuController
-} from "@ionic/vue";
-import { computed, defineComponent } from "vue";
+import { IonContent, IonHeader, IonItem, IonList, IonMenu, IonRadio, IonRadioGroup, IonTitle, IonToolbar, menuController } from "@ionic/vue";
+import { computed } from "vue";
 import { useRoute } from "vue-router";
-import { useStore } from 'vuex';
+import { useOrderStore } from "@/store/order";
 import { translate } from "@hotwax/dxp-components";
+const route = useRoute();
 
-export default defineComponent({
-  name: "ViewSizeSelector",
-  components: {
-    IonContent,
-    IonHeader,
-    IonItem,
-    IonList,
-    IonMenu,
-    IonRadio,
-    IonRadioGroup,
-    IonTitle,
-    IonToolbar
-  },
-  methods: {
-    prepareViewSizeOptions () {
-      // Added check to only have 100 as the max option in size selector
-      const maxViewSize = this.total > 100 ? 100 : this.total
-      // creating an array of numbers using Array.keys method and then multiplying each by 5
-      return [ ...Array(Math.ceil(maxViewSize / 5)).keys() ].map( i => {
-        const count = (i+1) * 5
-        // added check that if the count is greater than the total orders available then assigning orders total as size option
-        return count > maxViewSize ? maxViewSize : count
-      })
-    },
-    async updateViewSize(size: number) {
-      // TODO: multiple api calls being made as viewSize is updated after fetching the orders
-      // not updating viewSize and calling solr-query when size in state and clicked size are same
-      // TODO: adding this check handles issue of multiple api calls, but results in wrong behaviour
-      if(this.viewSize == size) {
-        return;
-      }
-
-      emitter.emit('updateOrderQuery', size)
-      // closing the menu after selecting any view size
-      menuController.close()
-    }
-  },
-  setup () {
-    const store = useStore();
-    const route = useRoute();
-
-    let title = 'Result Size'
-    let viewSize: any = 0
-    let total: any = 0
-
-    if(route.name === 'OpenOrders') {
-      title = 'Picklist Size'
-      // TODO: check if we can use a single getter to get the data, currently when trying that the values are not reactive
-      viewSize = computed(() => store.getters['order/getOpenOrders'].query.viewSize)
-      total = computed(() => store.getters['order/getOpenOrders'].total)
-    } else if(route.name === 'InProgress') {
-      // TODO: check if we can use a single getter to get the data, currently when trying that the values are not reactive
-      viewSize = computed(() => store.getters['order/getInProgressOrders'].query.viewSize)
-      total = computed(() => store.getters['order/getInProgressOrders'].total)
-    } else if(route.name === 'Completed') {
-      // TODO: check if we can use a single getter to get the data, currently when trying that the values are not reactive
-      viewSize = computed(() => store.getters['order/getCompletedOrders'].query.viewSize)
-      total = computed(() => store.getters['order/getCompletedOrders'].total)
-    }
-
-    return {
-      store,
-      route,
-      title,
-      total,
-      translate,
-      viewSize
-    }
-  }
+const title = computed(() => {
+  if (route.name === "OpenOrders") return "Picklist Size";
+  return "Result Size";
 });
+
+const viewSize = computed(() => {
+  if (route.name === "OpenOrders") return useOrderStore().getOpenOrders.query.viewSize;
+  if (route.name === "InProgress") return useOrderStore().getInProgressOrders.query.viewSize;
+  if (route.name === "Completed") return useOrderStore().getCompletedOrders.query.viewSize;
+  return 0;
+});
+
+const total = computed(() => {
+  if (route.name === "OpenOrders") return useOrderStore().getOpenOrders.total;
+  if (route.name === "InProgress") return useOrderStore().getInProgressOrders.total;
+  if (route.name === "Completed") return useOrderStore().getCompletedOrders.total;
+  return 0;
+});
+
+const prepareViewSizeOptions = () => {
+  const maxViewSize = total.value > 100 ? 100 : total.value;
+  return [...Array(Math.ceil(maxViewSize / 5)).keys()].map((i) => {
+    const count = (i + 1) * 5;
+    return count > maxViewSize ? maxViewSize : count;
+  });
+};
+
+const updateViewSize = async (size: number) => {
+  if (viewSize.value === size) {
+    return;
+  }
+  emitter.emit("updateOrderQuery", size);
+  menuController.close();
+};
 </script>
 
 <style scoped>

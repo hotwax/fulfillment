@@ -30,106 +30,57 @@
   </ion-fab>
 </template>
 
-<script lang="ts">
-import {
-  IonButton,
-  IonButtons,
-  IonContent,
-  IonFab,
-  IonFabButton,
-  IonHeader,
-  IonIcon,
-  IonInput,
-  IonItem,
-  IonText,
-  IonTextarea,
-  IonTitle,
-  IonToolbar,
-  modalController
-} from "@ionic/vue";
-import { defineComponent } from "vue";
-import { mapGetters, useStore } from "vuex";
+<script setup lang="ts">
+import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonText, IonTextarea, IonTitle, IonToolbar, modalController } from "@ionic/vue";
+import { computed, defineProps, onBeforeMount, ref } from "vue";
+import { useUtilStore } from "@/store/util";
 import { closeOutline, saveOutline } from "ionicons/icons";
-import { translate } from '@hotwax/dxp-components'
+import { translate } from "@hotwax/dxp-components";
 import logger from "@/logger";
 import { UtilService } from "@/services/UtilService";
 import { hasError } from "@/adapter";
 import { showToast } from "@/utils";
 
-export default defineComponent({
-  name: "EditRejectionReasonModal",
-  components: {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonHeader,
-    IonIcon,
-    IonInput,
-    IonItem,
-    IonText,
-    IonTextarea,
-    IonTitle,
-    IonToolbar
-  },
-  computed: {
-    ...mapGetters({
-      rejectReasons: 'util/getRejectReasons',
-    })
-  },
-  data() {
-    return {
-      rejectionReason: {} as any,
-    }
-  },
-  props: ['reason'],
-  beforeMount() {
-    this.rejectionReason = JSON.parse(JSON.stringify(this.reason))
-  },
-  methods: {
-    closeModal() {
-      modalController.dismiss()
-    },
-    isReasonUpdated() {
-      return JSON.stringify(this.reason) !== JSON.stringify(this.rejectionReason)
-    },
-    async updateRejectionReason() {
-      if (!this.rejectionReason.enumName?.trim()) {
-        showToast(translate("Rejection reason name is required."))
-        return
-      }
+const props = defineProps(["reason"]);
+const rejectReasons = computed(() => useUtilStore().getRejectReasons);
 
-      try {
-        const resp = await UtilService.updateEnumeration(this.rejectionReason)
+const rejectionReason = ref({} as any);
 
-        if(!hasError(resp)) {
-          showToast(translate("Rejection reason updated successfully."))
-          const rejectReason = this.rejectReasons.find((reason: any) => reason.enumId === this.rejectionReason.enumId)
-          if(rejectReason) {
-            rejectReason.enumName = this.rejectionReason.enumName
-            rejectReason.description = this.rejectionReason.description
-          }
-          await this.store.dispatch('util/updateRejectReasons', this.rejectReasons)
-          modalController.dismiss()
-        } else {
-          throw resp.data;
-        }
-      } catch(err) {
-        logger.error(err)
-        showToast(translate("Failed to update rejection reason."))
-      }
-    }
-  },
-  setup() {
-    const store = useStore()
-
-    return {
-      closeOutline,
-      saveOutline,
-      store,
-      translate
-    };
-  },
+onBeforeMount(() => {
+  rejectionReason.value = JSON.parse(JSON.stringify(props.reason));
 });
+
+const closeModal = () => {
+  modalController.dismiss();
+};
+
+const isReasonUpdated = () => {
+  return JSON.stringify(props.reason) !== JSON.stringify(rejectionReason.value);
+};
+
+const updateRejectionReason = async () => {
+  if (!rejectionReason.value.enumName?.trim()) {
+    showToast(translate("Rejection reason name is required."));
+    return;
+  }
+
+  try {
+    const resp = await UtilService.updateEnumeration(rejectionReason.value);
+    if (!hasError(resp)) {
+      showToast(translate("Rejection reason updated successfully."));
+      const rejectReason = rejectReasons.value.find((reason: any) => reason.enumId === rejectionReason.value.enumId);
+      if (rejectReason) {
+        rejectReason.enumName = rejectionReason.value.enumName;
+        rejectReason.description = rejectionReason.value.description;
+      }
+      await useUtilStore().updateRejectReasons(rejectReasons.value);
+      modalController.dismiss();
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    logger.error(err);
+    showToast(translate("Failed to update rejection reason."));
+  }
+};
 </script>

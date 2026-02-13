@@ -15,7 +15,7 @@
       </div>
       <div class="product-count">
         <ion-item v-if="!item.shipmentId" lines="none">
-          <ion-input data-testid="qty-input" :label="translate('Qty')" label-placement="floating" ref="pickedQuantity" type="number" min="0" :value="item.pickedQuantity" @ionInput="updatePickedQuantity($event, item); validatePickedQuantity($event, item); markPickedQuantityTouched()" @ionBlur="updateItemQuantity(item)" :errorText="getErrorText(item)" :disabled="isForceScanEnabled" />
+          <ion-input data-testid="qty-input" :label="translate('Qty')" label-placement="floating" ref="pickedQuantityInput" type="number" min="0" :value="item.pickedQuantity" @ionInput="updatePickedQuantity($event, item); validatePickedQuantity($event, item); markPickedQuantityTouched()" @ionBlur="updateItemQuantity(item)" :errorText="getErrorText()" :disabled="isForceScanEnabled" />
         </ion-item>
         <ion-item v-else lines="none">
           <ion-label slot="end">{{ item.pickedQuantity }} {{ translate('packed') }}</ion-label>
@@ -73,265 +73,203 @@
   </ion-card>
 </template>
 
-<script lang="ts">
-import {
-  IonButton,
-  IonCard,
-  IonChip,
-  IonIcon,
-  IonItem,
-  IonInput,
-  IonLabel,
-  IonProgressBar,
-  IonThumbnail,
-  modalController,
-  popoverController,
-} from '@ionic/vue';
-import { computed, defineComponent } from 'vue';
-import { add, caretDownOutline, checkmarkDone, closeCircleOutline, barcodeOutline, removeCircleOutline } from 'ionicons/icons';
-import { mapGetters, useStore } from "vuex";
-import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
-import { TransferOrderService } from '@/services/TransferOrderService';
-import { OrderService } from '@/services/OrderService';
-import { useRouter } from 'vue-router';
-import { Actions } from '@/authorization'
-import { getFeatures } from '@/utils';
-import { hasError } from '@/adapter';
-import logger from '@/logger';
-import { showToast } from '@/utils';
-import ShippedHistoryModal from '@/components/ShippedHistoryModal.vue'
-import ReportIssuePopover from './ReportIssuePopover.vue';
-import emitter from '@/event-bus';
+<script setup lang="ts">
+import { IonButton, IonCard, IonChip, IonIcon, IonItem, IonInput, IonLabel, IonProgressBar, IonThumbnail, modalController, popoverController } from "@ionic/vue";
+import { computed, defineProps, nextTick, ref, watch } from "vue";
+import { caretDownOutline, checkmarkDone, closeCircleOutline, removeCircleOutline } from "ionicons/icons";
+import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { TransferOrderService } from "@/services/TransferOrderService";
+import { OrderService } from "@/services/OrderService";
+import { useRouter } from "vue-router";
+import { getFeatures, showToast } from "@/utils";
+import { hasError } from "@/adapter";
+import logger from "@/logger";
+import ShippedHistoryModal from "@/components/ShippedHistoryModal.vue";
+import ReportIssuePopover from "./ReportIssuePopover.vue";
+import emitter from "@/event-bus";
+import { useTransferOrderStore } from "@/store/transferorder";
+import { useProductStore } from "@/store/product";
+import { useUtilStore } from "@/store/util";
 
-export default defineComponent({
-  name: "TransferOrderItem",
-  components: {
-    IonButton,
-    IonCard,
-    IonChip,
-    IonIcon,
-    IonItem,
-    IonInput,
-    IonLabel,
-    IonProgressBar,
-    IonThumbnail,
-    DxpShopifyImg,
-  },
-  // As we are using the same component on detail and review page, thus defined prop isRejectionSupported
-  // for handing the case to enable rejection functionality
-  props: ["itemDetail", "isRejectionSupported", "lastScannedId", "orderStatus"],
-  data() {
-    return {
-      pickedQuantity: this.itemDetail.pickedQuantity,
-      item: this.itemDetail,
-      defaultRejectReasonId: "NO_VARIANCE_LOG"  // default variance reason, to be used when any other item is selected for rejection
-    }
-  },
-  // Added this watcher to update local item reference when prop changes. 
-  // This fixes the issue of stale data usage where data properties were not being updated on change in props.
-  watch: {
-    itemDetail(newItem) {
-      this.item = newItem;
-      this.pickedQuantity = newItem.pickedQuantity;
-    }
-  },
-  computed: {
-    ...mapGetters({
-      currentOrder: 'transferorder/getCurrent',
-      getProduct: 'product/getProduct',
-      isForceScanEnabled: 'util/isForceScanEnabled',
-      rejectReasons: "transferorder/getRejectReasons",
-      barcodeIdentifier: "util/getBarcodeIdentificationPref"
-    }),
-    isAnyItemSelectedForRejection() {
-      return this.currentOrder.items.some((item: any) => item.rejectReasonId)
-    },
-    isAnyItemShipped() {
-      return this.currentOrder.items.some((item: any) => item.shippedQuantity > 0)
-    }
-  },
-  methods: {
-    getProgressBarColor(item: any) {
-      const fraction = this.getPickedToOrderedFraction(item);
-      if(fraction > 1) return 'danger'
-      else if(fraction == 1) return 'success'
-      else return 'primary'
-    },
-    getPickedToOrderedFraction(item: any) {
-      if (item.orderedQuantity && item.orderedQuantity > 0) { 
-        return ((item.pickedQuantity || 0) + (item.shippedQuantity || 0)) / item.orderedQuantity;
-      } else if (item.qoh && item.qoh > 0) { 
-        return item.pickedQuantity / item.qoh;
-      }
-      return 0; 
-    },
-    async pickAll(item: any) {
-      const selectedItem = this.currentOrder.items.find((ele: any) => ele.orderItemSeqId === item.orderItemSeqId);
-      if (selectedItem) {
-        this.pickedQuantity = this.item.shippedQuantity ? selectedItem.quantity - this.item.shippedQuantity : selectedItem.quantity;
-        selectedItem.pickedQuantity = this.pickedQuantity
-        selectedItem.progress = selectedItem.pickedQuantity / selectedItem.quantity
-      }
-      //Removing validation erros if any
-      (this as any).$refs.pickedQuantity.$el.classList.remove('ion-valid');
-      (this as any).$refs.pickedQuantity.$el.classList.remove('ion-invalid');
+const props = defineProps(["itemDetail", "isRejectionSupported", "lastScannedId", "orderStatus"]);
 
-      await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
-    },
-    async updatePickedQuantity(event: any, item: any) {
-      const selectedItem = this.currentOrder.items.find((ele: any) => ele.orderItemSeqId === item.orderItemSeqId);
-      if (selectedItem) {
-        selectedItem.pickedQuantity = event.detail.value ? parseInt(event.detail.value) : 0;
-        selectedItem.progress = parseInt(selectedItem.pickedQuantity);
-        item.pickedQuantity = selectedItem.pickedQuantity;
-        item.progress = selectedItem.progress;
-      }
-      await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
-    },
-    async shippedHistory(productId?: string) {
-      const modal = await modalController
-        .create({
-          component: ShippedHistoryModal,
-          componentProps: {productId}
-        })
-      return modal.present();
-    },
-    validatePickedQuantity(event: any, item: any) {
-      const value = event.target.value;
-      const path = this.router.currentRoute.value.path;
+const router = useRouter();
+const pickedQuantityInput = ref<any>(null);
+const pickedQuantity = ref(props.itemDetail.pickedQuantity);
+const item = ref(props.itemDetail);
+const defaultRejectReasonId = "NO_VARIANCE_LOG";
 
-      (this as any).$refs.pickedQuantity.$el.classList.remove('ion-valid');
-      (this as any).$refs.pickedQuantity.$el.classList.remove('ion-invalid');
+const currentOrder = computed(() => useTransferOrderStore().getCurrent);
+const isForceScanEnabled = computed(() => useUtilStore().isForceScanEnabled);
+const rejectReasons = computed(() => useTransferOrderStore().getRejectReasons);
+const barcodeIdentifier = computed(() => useUtilStore().getBarcodeIdentificationPref);
+const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
+const getProduct = (productId: string) => useProductStore().getProduct(productId);
 
-      // Apply zero/negative check only on /create-transfer-order
-      if(path.includes('/create-transfer-order') && value <= 0) {
-        (this as any).$refs.pickedQuantity.$el.classList.add('ion-invalid');
-        return;
-      }
-
-      if (value === '') return;
-
-      value > (item.orderedQuantity - this.item.shippedQuantity)
-        ? (this as any).$refs.pickedQuantity.$el.classList.add('ion-invalid')
-        : (this as any).$refs.pickedQuantity.$el.classList.add('ion-valid');
-    },
-    markPickedQuantityTouched() {
-      (this as any).$refs.pickedQuantity.$el.classList.add('ion-touched');
-    },
-    getErrorText(item: any) {
-      const path = this.router.currentRoute.value.path;
-      return path.includes('/create-transfer-order')
-        ? translate("Please enter valid item quantity.")
-        : translate('The picked quantity cannot exceed the ordered quantity.') + " " + (this.item.shippedQuantity > 0 ? translate("already shipped.", {shippedQuantity: this.item.shippedQuantity}): '')
-    },
-    async openRejectReasonPopover(ev: Event, item: any) {
-      const reportIssuePopover = await popoverController.create({
-        component: ReportIssuePopover,
-        componentProps: { rejectReasons: this.rejectReasons },
-        event: ev,
-        translucent: true,
-        showBackdrop: false,
-      });
-
-      reportIssuePopover.present();
-
-      const result = await reportIssuePopover.onDidDismiss();
-
-      if(result.data) {
-        item.rejectReasonId = result.data
-        await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
-      }
-    },
-    async removeRejectionReason(item: any) {
-      delete item["rejectReasonId"];
-      await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
-    },
-    getRejectionReasonDescription(rejectionReasonId: string) {
-      const reason = this.rejectReasons?.find((reason: any) => reason.enumId === rejectionReasonId)
-      return reason?.description ? reason.description : reason?.enumDescription ? reason.enumDescription : reason?.enumId;
-    },
-    async bookQoh(item: any) {
-      if(item.qoh) {
-        item.pickedQuantity = item.qoh;
-        // wait for the DOM to be updated after changing item.pickedQuantity
-        await this.$nextTick();
-        await this.updateItemQuantity(item);
-      }
-    },
-    async updateItemQuantity(item: any) {
-      // Allow updating item quantity only if the order is in ORDER_CREATED status
-      if(this.currentOrder.statusId !== 'ORDER_CREATED') return;
-
-      const currentItem = this.currentOrder.items.find((orderItem: any) => orderItem.orderItemSeqId === item.orderItemSeqId);
-      const itemQuantity = parseInt((this.$refs.pickedQuantity as any).$el.value) || 0
-
-      // Skip if picked quantity is same as current or invalid (equal to or less than 0)
-      if(currentItem && itemQuantity === currentItem.quantity) return;
-      if(itemQuantity <= 0) return;
-
-      try {
-        const resp = await TransferOrderService.updateOrderItem({
-          orderId: this.currentOrder.orderId,
-          orderItemSeqId: item.orderItemSeqId,
-          quantity: itemQuantity
-        });
-        if(!hasError(resp)) {
-          currentItem.quantity = itemQuantity;
-          currentItem.pickedQuantity = itemQuantity;
-          await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
-        } else {
-          throw resp.data;
-        }
-      } catch (err) {
-        logger.error(err);
-        showToast(translate("Failed to update item quantity"));
-      }
-    },
-    async removeOrderItem(item: any) {
-      if(!item || !item.orderItemSeqId) return;
-      try {
-        const resp = await OrderService.deleteOrderItem({
-          orderId: this.currentOrder.orderId,
-          orderItemSeqId: item.orderItemSeqId
-        });
-        if(!hasError(resp)) {
-          this.currentOrder.items = this.currentOrder.items?.filter((i: any) => i.orderItemSeqId !== item.orderItemSeqId);
-          await this.store.dispatch('transferorder/updateCurrentTransferOrder', this.currentOrder)
-          emitter.emit('clearSearchedProduct')
-          showToast(translate("Item removed from order"));
-        } else {
-          throw resp.data;
-        }
-      } catch (err) {
-        logger.error(err);
-        showToast(translate("Failed to remove item from order"));
-      }
-    }
-  }, 
-  setup() {
-    const store = useStore(); 
-    const router = useRouter();
-    const productIdentificationStore = useProductIdentificationStore();
-    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
-
-
-    return {
-      Actions,
-      add,
-      barcodeOutline,
-      caretDownOutline,
-      checkmarkDone,
-      closeCircleOutline,
-      getFeatures,
-      getProductIdentificationValue,
-      productIdentificationPref,
-      store,
-      removeCircleOutline,
-      router,
-      translate
-    };
-  },
+watch(() => props.itemDetail, (newItem: any) => {
+  item.value = newItem;
+  pickedQuantity.value = newItem.pickedQuantity;
 });
+
+const isAnyItemSelectedForRejection = computed(() => {
+  return currentOrder.value.items.some((currentItem: any) => currentItem.rejectReasonId);
+});
+
+const isAnyItemShipped = computed(() => {
+  return currentOrder.value.items.some((currentItem: any) => currentItem.shippedQuantity > 0);
+});
+
+const getProgressBarColor = (currentItem: any) => {
+  const fraction = getPickedToOrderedFraction(currentItem);
+  if (fraction > 1) return "danger";
+  if (fraction === 1) return "success";
+  return "primary";
+};
+
+const getPickedToOrderedFraction = (currentItem: any) => {
+  if (currentItem.orderedQuantity && currentItem.orderedQuantity > 0) {
+    return ((currentItem.pickedQuantity || 0) + (currentItem.shippedQuantity || 0)) / currentItem.orderedQuantity;
+  } else if (currentItem.qoh && currentItem.qoh > 0) {
+    return currentItem.pickedQuantity / currentItem.qoh;
+  }
+  return 0;
+};
+
+const pickAll = async (selectedItem: any) => {
+  const currentItem = currentOrder.value.items.find((ele: any) => ele.orderItemSeqId === selectedItem.orderItemSeqId);
+  if (currentItem) {
+    pickedQuantity.value = item.value.shippedQuantity ? currentItem.quantity - item.value.shippedQuantity : currentItem.quantity;
+    currentItem.pickedQuantity = pickedQuantity.value;
+    currentItem.progress = currentItem.pickedQuantity / currentItem.quantity;
+  }
+  pickedQuantityInput.value?.$el.classList.remove("ion-valid");
+  pickedQuantityInput.value?.$el.classList.remove("ion-invalid");
+  await useTransferOrderStore().updateCurrentTransferOrder(currentOrder.value);
+};
+
+const updatePickedQuantity = async (event: any, selectedItem: any) => {
+  const currentItem = currentOrder.value.items.find((ele: any) => ele.orderItemSeqId === selectedItem.orderItemSeqId);
+  if (currentItem) {
+    currentItem.pickedQuantity = event.detail.value ? parseInt(event.detail.value) : 0;
+    currentItem.progress = parseInt(currentItem.pickedQuantity);
+    selectedItem.pickedQuantity = currentItem.pickedQuantity;
+    selectedItem.progress = currentItem.progress;
+  }
+  await useTransferOrderStore().updateCurrentTransferOrder(currentOrder.value);
+};
+
+const shippedHistory = async (productId?: string) => {
+  const modal = await modalController.create({ component: ShippedHistoryModal, componentProps: { productId } });
+  return modal.present();
+};
+
+const validatePickedQuantity = (event: any, selectedItem: any) => {
+  const value = event.target.value;
+  const path = router.currentRoute.value.path;
+
+  pickedQuantityInput.value?.$el.classList.remove("ion-valid");
+  pickedQuantityInput.value?.$el.classList.remove("ion-invalid");
+
+  if (path.includes("/create-transfer-order") && value <= 0) {
+    pickedQuantityInput.value?.$el.classList.add("ion-invalid");
+    return;
+  }
+
+  if (value === "") return;
+
+  value > (selectedItem.orderedQuantity - item.value.shippedQuantity)
+    ? pickedQuantityInput.value?.$el.classList.add("ion-invalid")
+    : pickedQuantityInput.value?.$el.classList.add("ion-valid");
+};
+
+const markPickedQuantityTouched = () => {
+  pickedQuantityInput.value?.$el.classList.add("ion-touched");
+};
+
+const getErrorText = () => {
+  const path = router.currentRoute.value.path;
+  return path.includes("/create-transfer-order")
+    ? translate("Please enter valid item quantity.")
+    : translate("The picked quantity cannot exceed the ordered quantity.") + " " + (item.value.shippedQuantity > 0 ? translate("already shipped.", { shippedQuantity: item.value.shippedQuantity }) : "");
+};
+
+const openRejectReasonPopover = async (ev: Event, selectedItem: any) => {
+  const reportIssuePopover = await popoverController.create({
+    component: ReportIssuePopover,
+    componentProps: { rejectReasons: rejectReasons.value },
+    event: ev,
+    translucent: true,
+    showBackdrop: false
+  });
+
+  reportIssuePopover.present();
+
+  const result = await reportIssuePopover.onDidDismiss();
+  if (result.data) {
+    selectedItem.rejectReasonId = result.data;
+    await useTransferOrderStore().updateCurrentTransferOrder(currentOrder.value);
+  }
+};
+
+const removeRejectionReason = async (selectedItem: any) => {
+  delete selectedItem["rejectReasonId"];
+  await useTransferOrderStore().updateCurrentTransferOrder(currentOrder.value);
+};
+
+const getRejectionReasonDescription = (rejectionReasonId: string) => {
+  const reason = rejectReasons.value?.find((reason: any) => reason.enumId === rejectionReasonId);
+  return reason?.description ? reason.description : reason?.enumDescription ? reason.enumDescription : reason?.enumId;
+};
+
+const bookQoh = async (selectedItem: any) => {
+  if (selectedItem.qoh) {
+    selectedItem.pickedQuantity = selectedItem.qoh;
+    await nextTick();
+    await updateItemQuantity(selectedItem);
+  }
+};
+
+const updateItemQuantity = async (selectedItem: any) => {
+  if (currentOrder.value.statusId !== "ORDER_CREATED") return;
+
+  const currentItem = currentOrder.value.items.find((orderItem: any) => orderItem.orderItemSeqId === selectedItem.orderItemSeqId);
+  const itemQuantity = parseInt(pickedQuantityInput.value?.$el.value) || 0;
+
+  if (currentItem && itemQuantity === currentItem.quantity) return;
+  if (itemQuantity <= 0) return;
+
+  try {
+    const resp = await TransferOrderService.updateOrderItem({ orderId: currentOrder.value.orderId, orderItemSeqId: selectedItem.orderItemSeqId, quantity: itemQuantity });
+    if (!hasError(resp)) {
+      currentItem.quantity = itemQuantity;
+      currentItem.pickedQuantity = itemQuantity;
+      await useTransferOrderStore().updateCurrentTransferOrder(currentOrder.value);
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    logger.error(err);
+    showToast(translate("Failed to update item quantity"));
+  }
+};
+
+const removeOrderItem = async (selectedItem: any) => {
+  if (!selectedItem || !selectedItem.orderItemSeqId) return;
+  try {
+    const resp = await OrderService.deleteOrderItem({ orderId: currentOrder.value.orderId, orderItemSeqId: selectedItem.orderItemSeqId });
+    if (!hasError(resp)) {
+      currentOrder.value.items = currentOrder.value.items?.filter((i: any) => i.orderItemSeqId !== selectedItem.orderItemSeqId);
+      await useTransferOrderStore().updateCurrentTransferOrder(currentOrder.value);
+      emitter.emit("clearSearchedProduct");
+      showToast(translate("Item removed from order"));
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    logger.error(err);
+    showToast(translate("Failed to remove item from order"));
+  }
+};
 </script>
 
 <style scoped>

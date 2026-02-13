@@ -55,164 +55,102 @@
   </ion-fab>
 </template>
 
-<script lang="ts">
-import {
-  IonButton,
-  IonButtons,
-  IonContent,
-  IonFab,
-  IonFabButton,
-  IonHeader,
-  IonIcon,
-  IonInput,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonNote,
-  IonSpinner,
-  IonTitle,
-  IonToolbar,
-  alertController,
-  modalController
-} from "@ionic/vue";
-import { computed, defineComponent } from "vue";
-import { mapGetters, useStore } from "vuex";
-import { cameraOutline, cardOutline, closeOutline, giftOutline, saveOutline, stopOutline } from "ionicons/icons";
-import { getProductIdentificationValue, translate, useProductIdentificationStore } from '@hotwax/dxp-components'
+<script setup lang="ts">
+import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonSpinner, IonTitle, IonToolbar, alertController, modalController } from "@ionic/vue";
+import { computed, defineProps, onMounted, ref } from "vue";
+import { cameraOutline, cardOutline, closeOutline, giftOutline, stopOutline } from "ionicons/icons";
+import { getProductIdentificationValue, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { OrderService } from "@/services/OrderService";
-import { formatCurrency, formatUtcDate, hasError, showToast, hasWebcamAccess } from '@/utils';
+import { formatCurrency, hasError, showToast, hasWebcamAccess } from "@/utils";
 import logger from "@/logger";
-import { DateTime } from 'luxon';
+import { DateTime } from "luxon";
 import { StreamBarcodeReader } from "vue-barcode-reader";
+import { useProductStore } from "@/store/product";
 
-export default defineComponent({
-  name: "GiftCardActivationModal",
-  components: {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonHeader,
-    IonIcon,
-    IonInput,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonNote,
-    IonSpinner,
-    IonTitle,
-    IonToolbar,
-    StreamBarcodeReader
-  },
-  computed: {
-    ...mapGetters({
-      getProduct: 'product/getProduct',
-    }),
-  },
-  data() {
-    return {
-      isLoading: false,
-      itemPriceInfo: {} as any,
-      activationCode: "",
-      isCameraEnabled: false
-    }
-  },
-  props: ["item"],
-  async mounted() {
-    this.isLoading = true;
-    this.itemPriceInfo = await OrderService.fetchGiftCardItemPriceInfo({ orderId: this.item.orderId, orderItemSeqId: this.item.orderItemSeqId })
-    this.isLoading = false;
-  },
-  methods: {
-    closeModal(payload = {}) {
-      modalController.dismiss({ dismissed: true, ...payload })
-    },
-    async confirmSave() {
-      if(!this.activationCode.trim()) {
-        showToast(translate("Please enter a activation code."))
-        return;
-      }
+const props = defineProps(["item"]);
+const isLoading = ref(false);
+const itemPriceInfo = ref({} as any);
+const activationCode = ref("");
+const isCameraEnabled = ref(false);
 
-      const alert = await alertController.create({
-        header: translate("Activate gift card"),
-        message: translate("This gift card code will be activated. The customer may also receive a notification about this activation. Please verify all information is entered correctly. This cannot be edited after activation.", { space: "<br /><br />" }),
-        buttons: [
-          {
-            text: translate("Cancel"),
-          },
-          {
-            text: translate("Activate"),
-            handler: async () => {
-              await this.activateGitCard()
-            }
-          }
-        ],
-      });
-      return alert.present();
-    },
-    async activateGitCard() {
-      try {
-        const resp = await OrderService.activateGiftCard({
-          orderId: this.item.orderId,
-          orderItemSeqId: this.item.orderItemSeqId,
-          amount: this.itemPriceInfo.unitPrice,
-          typeEnumId: "GC_ACTIVATE",
-          cardNumber: this.activationCode.trim(),
-          partyId: this.item.customerId
-        })
+const getProduct = (productId: string) => useProductStore().getProduct(productId);
+const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
 
-        if(!hasError(resp)) {
-          showToast(translate("Gift card activated successfully."))
-          this.closeModal({ isGCActivated: true, item: this.item })
-        } else {
-          throw resp.data;
-        }
-      } catch(error: any) {
-        showToast(translate("Failed to activate gift card."))
-        logger.error(error);
-      }
-    },
-    getCreatedDateTime() {
-      return DateTime.fromMillis(this.item.gcInfo.fulfillmentDate).toFormat("dd MMMM yyyy hh:mm a ZZZZ");
-    },
-    async scan() {
-      if (!(await hasWebcamAccess())) {
-        showToast(translate("Camera access not allowed, please check permissons."));
-        return;
-      } 
-
-      this.isCameraEnabled = true;
-    },
-    stopScan() {
-      this.isCameraEnabled = false
-    },
-    onDecode(result: any) {
-      if(result) this.activationCode = result
-      this.isCameraEnabled = false;
-    }
-  },
-  setup() {
-    const store = useStore()
-    const productIdentificationStore = useProductIdentificationStore();
-    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
-
-    return {
-      cameraOutline,
-      cardOutline,
-      closeOutline,
-      formatCurrency,
-      formatUtcDate,
-      getProductIdentificationValue,
-      giftOutline,
-      productIdentificationPref,
-      saveOutline,
-      stopOutline,
-      store,
-      translate
-    };
-  },
+onMounted(async () => {
+  isLoading.value = true;
+  itemPriceInfo.value = await OrderService.fetchGiftCardItemPriceInfo({ orderId: props.item.orderId, orderItemSeqId: props.item.orderItemSeqId });
+  isLoading.value = false;
 });
+
+const closeModal = (payload = {}) => {
+  modalController.dismiss({ dismissed: true, ...payload });
+};
+
+const activateGitCard = async () => {
+  try {
+    const resp = await OrderService.activateGiftCard({
+      orderId: props.item.orderId,
+      orderItemSeqId: props.item.orderItemSeqId,
+      amount: itemPriceInfo.value.unitPrice,
+      typeEnumId: "GC_ACTIVATE",
+      cardNumber: activationCode.value.trim(),
+      partyId: props.item.customerId
+    });
+
+    if (!hasError(resp)) {
+      showToast(translate("Gift card activated successfully."));
+      closeModal({ isGCActivated: true, item: props.item });
+    } else {
+      throw resp.data;
+    }
+  } catch (error: any) {
+    showToast(translate("Failed to activate gift card."));
+    logger.error(error);
+  }
+};
+
+const confirmSave = async () => {
+  if (!activationCode.value.trim()) {
+    showToast(translate("Please enter a activation code."));
+    return;
+  }
+
+  const alert = await alertController.create({
+    header: translate("Activate gift card"),
+    message: translate("This gift card code will be activated. The customer may also receive a notification about this activation. Please verify all information is entered correctly. This cannot be edited after activation.", { space: "<br /><br />" }),
+    buttons: [
+      { text: translate("Cancel") },
+      {
+        text: translate("Activate"),
+        handler: async () => {
+          await activateGitCard();
+        }
+      }
+    ]
+  });
+  return alert.present();
+};
+
+const getCreatedDateTime = () => {
+  return DateTime.fromMillis(props.item.gcInfo.fulfillmentDate).toFormat("dd MMMM yyyy hh:mm a ZZZZ");
+};
+
+const scan = async () => {
+  if (!(await hasWebcamAccess())) {
+    showToast(translate("Camera access not allowed, please check permissons."));
+    return;
+  }
+  isCameraEnabled.value = true;
+};
+
+const stopScan = () => {
+  isCameraEnabled.value = false;
+};
+
+const onDecode = (result: any) => {
+  if (result) activationCode.value = result;
+  isCameraEnabled.value = false;
+};
 </script>
 
 <style scoped>

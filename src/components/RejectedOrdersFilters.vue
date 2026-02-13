@@ -23,96 +23,41 @@
   </ion-menu>
 </template>
   
-<script lang="ts">
-import {
-  IonContent,
-  IonHeader,
-  IonItem,
-  IonList,
-  IonMenu,
-  IonSelect,
-  IonSelectOption,
-  IonTitle,
-  IonToolbar
-} from "@ionic/vue";
-import { defineComponent } from "vue";
-import { albumsOutline, banOutline, barChartOutline, calendarNumberOutline, checkmarkDoneOutline, closeOutline, filterOutline, iceCreamOutline, libraryOutline, pulseOutline, settings, shirtOutline, ticketOutline } from "ionicons/icons";
-import { mapGetters, useStore } from 'vuex'
-import { hasError } from '@/adapter';
-import logger from '@/logger';
-import { translate } from '@hotwax/dxp-components';
+<script setup lang="ts">
+import { IonContent, IonHeader, IonItem, IonList, IonMenu, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
+import { computed, defineProps, onMounted, onUnmounted, ref } from "vue";
+import { useUtilStore } from "@/store/util";
+import { useRejectionStore } from "@/store/rejection";
+import { translate } from "@hotwax/dxp-components";
 
-export default defineComponent({
-  name: "TransferOrderFilters",
-  components: {
-    IonContent,
-    IonHeader,
-    IonItem,
-    IonList,
-    IonMenu,
-    IonSelect,
-    IonSelectOption,
-    IonTitle,
-    IonToolbar
-  },
-  props: ["queryString"],
-  data () {
-    return {
-      shipmentMethods: [] as Array<any>,
-      statuses: [] as Array<any>,
-      rejectionPeriods: [] as Array<any>
-    }
-  },
-  computed: {
-    ...mapGetters({
-      rejectReasons: 'util/getRejectReasons',
-      rejectedOrders: 'rejection/getRejectedOrders',
-    })
-  },
-  async mounted() {
-    this.store.dispatch('util/fetchRejectReasons')
-    this.rejectionPeriods = [{"id": "LAST_TWENTY_FOUR_HOURS", "description": "Last 24 hours"}, {"id": "LAST_SEVEN_DAYS", "description": "Last 7 days"}]
-  },
-  unmounted() {
-    this.store.dispatch('rejection/clearRejectedOrdersFilters');
-  },
-  methods: {
-    async applyFilter(value: any, type: string) {
-      const rejectedOrdersQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
-      rejectedOrdersQuery.viewIndex = 0;
-      if (type === "duration") {
-        rejectedOrdersQuery.rejectionPeriodId = value
-      } else if (type === "reason") {
-        rejectedOrdersQuery.rejectionReasons = value
-      }
-      
-      await this.store.dispatch('rejection/updateRejectedOrderQuery', { ...rejectedOrdersQuery })
-      await this.store.dispatch('rejection/fetchRejectedOrders');
-      if (type === "duration") {
-        await this.store.dispatch('rejection/fetchRejectionStats')
-      }
-    },
-  },
-  setup() {
-    const store = useStore();
-    
-    return {
-      albumsOutline,
-      banOutline,
-      barChartOutline,
-      calendarNumberOutline,
-      checkmarkDoneOutline,
-      closeOutline,
-      filterOutline,
-      iceCreamOutline,
-      libraryOutline,
-      pulseOutline,
-      settings,
-      shirtOutline,
-      store,
-      ticketOutline,
-      translate
-    };
-  },
+defineProps(["queryString"]);
+const rejectionPeriods = ref([] as Array<any>);
+
+const rejectReasons = computed(() => useUtilStore().getRejectReasons);
+const rejectedOrders = computed(() => useRejectionStore().getRejectedOrders);
+
+onMounted(() => {
+  useUtilStore().fetchRejectReasons();
+  rejectionPeriods.value = [{ id: "LAST_TWENTY_FOUR_HOURS", description: "Last 24 hours" }, { id: "LAST_SEVEN_DAYS", description: "Last 7 days" }];
 });
+
+onUnmounted(() => {
+  useRejectionStore().clearRejectedOrdersFilters();
+});
+
+const applyFilter = async (value: any, type: string) => {
+  const rejectedOrdersQuery = JSON.parse(JSON.stringify(rejectedOrders.value.query));
+  rejectedOrdersQuery.viewIndex = 0;
+  if (type === "duration") {
+    rejectedOrdersQuery.rejectionPeriodId = value;
+  } else if (type === "reason") {
+    rejectedOrdersQuery.rejectionReasons = value;
+  }
+
+  await useRejectionStore().updateRejectedOrderQuery({ ...rejectedOrdersQuery });
+  await useRejectionStore().fetchRejectedOrders();
+  if (type === "duration") {
+    await useRejectionStore().fetchRejectionStats();
+  }
+};
 </script>

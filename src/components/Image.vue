@@ -2,69 +2,58 @@
   <img :src="imageUrl"/>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
+import { defineProps, onMounted, ref, watch } from "vue";
 import logger from "@/logger";
-import { defineComponent } from "vue";
+import defaultImage from "@/assets/images/defaultImage.png";
 
-export default defineComponent({
-  name: "Image",
-  props: ['src'],
-  components: {},
-  created() {
-    if (
-      process.env.VUE_APP_RESOURCE_URL
-    ) {
-      this.resourceUrl = process.env.VUE_APP_RESOURCE_URL;
+const props = defineProps(["src"]);
+
+const resourceUrl = ref("");
+const imageUrl = ref(defaultImage);
+
+const checkIfImageExists = (src: string) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = function () {
+      resolve(true);
+    };
+    img.onerror = function () {
+      reject(false);
+    };
+    img.src = src;
+  });
+};
+
+const setImageUrl = () => {
+  if (props.src) {
+    if (props.src.indexOf("assets/") != -1) {
+      imageUrl.value = props.src;
+    } else if (props.src.startsWith("http")) {
+      checkIfImageExists(props.src).then(() => {
+        imageUrl.value = props.src;
+      }).catch(() => {
+        logger.error("Image doesn't exist", props.src);
+      });
+    } else {
+      const url = resourceUrl.value.concat(props.src);
+      checkIfImageExists(url).then(() => {
+        imageUrl.value = url;
+      }).catch(() => {
+        logger.error("Image doesn't exist", url);
+      });
     }
-  },
-  mounted() {
-    this.setImageUrl();
-  },
-  updated() {
-    this.setImageUrl();
-  },
-  data() {
-    return {
-      resourceUrl: '',
-      imageUrl: require("@/assets/images/defaultImage.png")
-    }
-  },
-  methods: {
-    checkIfImageExists(src: string) {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = function () {
-          resolve(true);
-        }
-        img.onerror = function (error) {
-          reject(false);
-        }
-        img.src = src;
-      })
-    },
-    setImageUrl() {
-      if (this.src) {
-        if (this.src.indexOf('assets/') != -1) {
-          // Assign directly in case of assets
-          this.imageUrl = this.src;
-        } else if (this.src.startsWith('http')) {
-          // If starts with http, it is web url check for existence and assign
-          this.checkIfImageExists(this.src).then(() => {
-            this.imageUrl = this.src;
-          }).catch(() => {
-            logger.error("Image doesn't exist", this.src);
-          })
-        } else {
-          // Image is from resource server, hence append to base resource url, check for existence and assign
-          const imageUrl = this.resourceUrl.concat(this.src)
-          this.checkIfImageExists(imageUrl).then(() => {
-            this.imageUrl = imageUrl;
-          }).catch(() => {
-            logger.error("Image doesn't exist", imageUrl);
-          })
-        }
-      }
-    }
-  },
+  }
+};
+
+onMounted(() => {
+  if (process.env.VUE_APP_RESOURCE_URL) {
+    resourceUrl.value = process.env.VUE_APP_RESOURCE_URL;
+  }
+  setImageUrl();
+});
+
+watch(() => props.src, () => {
+  setImageUrl();
 });
 </script>

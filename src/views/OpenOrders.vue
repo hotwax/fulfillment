@@ -1,13 +1,13 @@
 <template>
   <ion-page :key="router.currentRoute.value.path">
     <ViewSizeSelector menu-id="view-size-selector-open" content-id="view-size-selector" />
-    
+
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-menu-button menu="start" slot="start" />
         <ion-title v-if="!openOrders.total">{{ openOrders.total }} {{ translate('orders') }}</ion-title>
         <ion-title v-else>{{ openOrders.query.viewSize }} {{ translate('of') }} {{ openOrders.total }} {{ translate('orders') }}</ion-title>
-     
+
         <ion-buttons slot="end">
           <ion-button @click="viewNotifications()">
             <ion-icon slot="icon-only" :icon="notificationsOutline" :color="(unreadNotificationsStatus && notifications.length) ? 'primary' : ''" />
@@ -21,9 +21,9 @@
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
-    
+
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
-      <ion-searchbar class="searchbar" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)"/>
+      <ion-searchbar class="searchbar" :value="openOrders.query.queryString" :placeholder="translate('Search orders')" @keyup.enter="updateQueryString($event.target.value)" />
       <div class="filters">
         <ion-item lines="none" v-for="method in shipmentMethods" :key="method.val">
           <ion-checkbox label-placement="end" :checked="openOrders.query.selectedShipmentMethods.includes(method.val)" @ionChange="updateSelectedShipmentMethods(method.val)">
@@ -36,7 +36,6 @@
       </div>
       <Component :is="productCategoryFilterExt" :orderQuery="openOrders.query" :currentFacility="currentFacility" :currentEComStore="currentEComStore" @updateOpenQuery="updateOpenQuery" />
       <div v-if="openOrders.total">
-
         <div class="results">
           <ion-button class="bulk-action desktop-only" size="large" @click="assignPickers">{{ translate("Print Picklist") }}</ion-button>
 
@@ -70,8 +69,7 @@
                 <div class="product-info">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
-                      <!-- TODO: Currently handled product image mismatch on the order list page — needs to be applied to other pages using DxpShopifyImg  -->
-                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
+                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small" />
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
@@ -79,56 +77,48 @@
                         {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
                         <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
                       </div>
-                      <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
+                      <p>{{ getFeatures(getProduct(item.productId).productFeatures) }}</p>
                     </ion-label>
                   </ion-item>
                 </div>
                 <div class="product-metadata">
                   <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
-                    <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
-                    <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
+                    <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline" />
+                    <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline" />
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
                   <ion-button fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
-                    <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                    <ion-icon color="medium" slot="icon-only" :icon="cubeOutline" />
                   </ion-button>
                 </div>
               </div>
               <div v-if="item.showKitComponents && !getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-item lines="none">
-                  <ion-skeleton-text animated style="height: 80%;"/>
+                  <ion-skeleton-text animated style="height: 80%;" />
                 </ion-item>
                 <ion-item lines="none">
-                  <ion-skeleton-text animated style="height: 80%;"/>
+                  <ion-skeleton-text animated style="height: 80%;" />
                 </ion-item>
               </div>
               <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
-                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
+                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small" />
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
                       {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
-                      <p>{{ getFeatures(getProduct(productComponent.productIdTo).productFeatures)}}</p>
+                      <p>{{ getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
                     </ion-label>
                   </ion-item>
                 </ion-card>
               </div>
             </div>
-            
-            <!-- TODO: add functionality to the buttons-->
-            <!-- <div class="actions">
-              <div class="positive-action"></div>
-              <div class="negative-action">
-                <ion-button fill="outline" color="danger">{{ translate("Recycle") }}</ion-button>
-              </div>
-            </div> -->
           </ion-card>
 
           <ion-infinite-scroll @ionInfinite="loadMoreOpenOrders($event)" threshold="100px" v-show="isOpenOrdersScrollable()" ref="infiniteScrollRef">
-            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
+            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
           </ion-infinite-scroll>
         </div>
       </div>
@@ -147,354 +137,275 @@
   </ion-page>
 </template>
 
-<script lang="ts">
-import { 
-  IonBadge,
-  IonButton, 
-  IonButtons, 
-  IonCard, 
-  IonChip, 
-  IonCheckbox, 
-  IonContent, 
-  IonFab, 
-  IonFabButton, 
-  IonHeader, 
-  IonIcon,
-  IonInfiniteScroll,
-  IonInfiniteScrollContent,
-  IonItem, 
-  IonLabel, 
-  IonMenuButton,
-  IonNote,
-  IonPage, 
-  IonSearchbar, 
-  IonSkeletonText,
-  IonThumbnail, 
-  IonTitle, 
-  IonToolbar, 
-  modalController,
-  alertController,
-  popoverController
-} from '@ionic/vue';
-import { computed, defineComponent } from 'vue';
-import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline,} from 'ionicons/icons';
-import AssignPickerModal from '@/views/AssignPickerModal.vue';
-import { mapGetters, useStore } from 'vuex';
-import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { formatUtcDate, getFeatures, getFacilityFilter, hasActiveFilters, showToast } from '@/utils'
-import { hasError } from '@/adapter';
-import { UtilService } from '@/services/UtilService';
-import { prepareSolrQuery } from '@/utils/solrHelper';
-import ViewSizeSelector from '@/components/ViewSizeSelector.vue'
-import emitter from '@/event-bus';
-import logger from '@/logger';
-import { translate } from '@hotwax/dxp-components';
-import { UserService } from '@/services/UserService';
-import { Actions, hasPermission } from '@/authorization'
-import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
-import { isKit } from '@/utils/order'
-import { OrderService } from '@/services/OrderService'
+<script setup lang="ts">
+import { IonBadge, IonButton, IonButtons, IonCard, IonChip, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSkeletonText, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
+import { computed, ref } from "vue";
+import { useRouter, onBeforeRouteLeave } from "vue-router";
+import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline } from "ionicons/icons";
+import AssignPickerModal from "@/views/AssignPickerModal.vue";
+import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
+import { formatUtcDate, getFeatures, getFacilityFilter, hasActiveFilters, showToast } from "@/utils";
+import { hasError } from "@/adapter";
+import { UtilService } from "@/services/UtilService";
+import { prepareSolrQuery } from "@/utils/solrHelper";
+import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
+import emitter from "@/event-bus";
+import logger from "@/logger";
+import { translate } from "@hotwax/dxp-components";
+import { Actions, hasPermission } from "@/authorization";
+import OrderActionsPopover from "@/components/OrderActionsPopover.vue";
+import { isKit } from "@/utils/order";
+import { OrderService } from "@/services/OrderService";
 import { useDynamicImport } from "@/utils/moduleFederation";
-import { useRouter } from "vue-router";
+import { useOrderStore } from "@/store/order";
+import { useProductStore } from "@/store/product";
+import { useStockStore } from "@/store/stock";
+import { useUtilStore } from "@/store/util";
+import { useUserStore } from "@/store/user";
 
-export default defineComponent({
-  name: 'OpenOrders',
-  components: {
-    DxpShopifyImg,
-    IonBadge,
-    IonButton,
-    IonButtons,  
-    IonCard,
-    IonChip,
-    IonCheckbox,
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonHeader,
-    IonIcon,
-    IonInfiniteScroll,
-    IonInfiniteScrollContent,
-    IonItem,
-    IonLabel,
-    IonMenuButton,
-    IonNote,
-    IonPage,
-    IonSearchbar,
-    IonSkeletonText,
-    IonThumbnail,
-    IonTitle,
-    IonToolbar,
-    ViewSizeSelector
-  },
-  computed: {
-    ...mapGetters({
-      openOrders: 'order/getOpenOrders',
-      getProduct: 'product/getProduct',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
-      getProductStock: 'stock/getProductStock',
-      notifications: 'user/getNotifications',
-      unreadNotificationsStatus: 'user/getUnreadNotificationsStatus',
-      instanceUrl: "user/getInstanceUrl"
-    })
-  },
-  data () {
-    return {
-      shipmentMethods: [] as Array<any>,
-      searchedQuery: '',
-      isScrollingEnabled: false,
-      isRejecting: false,
-      productCategoryFilterExt: "" as any,
-      selectedShipmentMethods: [] as any,
-      isLoadingOrders: false
-    }
-  },
-  methods: {
-    updateOpenQuery(payload: any) {
-      this.store.dispatch("order/updateOpenQuery", payload)
-    },
-    getErrorMessage() {
-      return this.searchedQuery ? (hasActiveFilters(this.openOrders.query) ? translate("No results found for . Try using different filters.", { searchedQuery: this.searchedQuery }) : translate("No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })) : translate("doesn't have any outstanding orders right now.", { facilityName: this.currentFacility?.facilityName });
-    },
-    viewNotifications() {
-      this.store.dispatch('user/setUnreadNotificationsStatus', false)
-      this.$router.push({ path: '/notifications' })
-    },
-    getOpenOrders() {
-      return JSON.parse(JSON.stringify(this.openOrders.list)).slice(0, (this.openOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
-    },
-    enableScrolling() {
-      const parentElement = (this as any).$refs.contentRef.$el
-      const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
-      let scrollHeight = scrollEl.scrollHeight, infiniteHeight = (this as any).$refs.infiniteScrollRef.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
-      const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
-      if(distanceFromInfinite < 0) {
-        this.isScrollingEnabled = false;
-      } else {
-        this.isScrollingEnabled = true;
-      }
-    },
-    async loadMoreOpenOrders(event: any) {
-      // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
-      if (!(this.isScrollingEnabled && this.isOpenOrdersScrollable())) {
-        await event.target.complete();
-      }
-      const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
-      openOrdersQuery.viewIndex++;
-      await this.store.dispatch('order/updateOpenOrderIndex', { ...openOrdersQuery })
-      event.target.complete();
-    },
-    isOpenOrdersScrollable() {
-      return ((this.openOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any)) <  this.openOrders.query.viewSize;
-    },
-    async updateSelectedShipmentMethods (method: string) {
-      const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
+const router = useRouter();
+const shipmentMethods = ref([] as Array<any>);
+const searchedQuery = ref("");
+const isScrollingEnabled = ref(false);
+const isRejecting = ref(false);
+const productCategoryFilterExt = ref("" as any);
+const selectedShipmentMethods = ref([] as any);
+const isLoadingOrders = ref(false);
 
-      const selectedShipmentMethods = openOrdersQuery.selectedShipmentMethods
-      const index = selectedShipmentMethods.indexOf(method)
-      if (index < 0) {
-        selectedShipmentMethods.push(method)
-      } else {
-        selectedShipmentMethods.splice(index, 1)
-      }
+const contentRef = ref();
+const infiniteScrollRef = ref();
 
-      // making view size default when changing the shipment method to correctly fetch orders
-      openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      openOrdersQuery.selectedShipmentMethods = selectedShipmentMethods
-      this.selectedShipmentMethods = selectedShipmentMethods
+const openOrders = computed(() => useOrderStore().getOpenOrders);
+const notifications = computed(() => useUserStore().getNotifications);
+const unreadNotificationsStatus = computed(() => useUserStore().getUnreadNotificationsStatus);
+const instanceUrl = computed(() => useUserStore().getInstanceUrl);
+const getProduct = (productId: string) => useProductStore().getProduct(productId);
+const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
+const getProductStock = (productId: string) => useStockStore().getProductStock(productId);
+const currentFacility = computed(() => useDxpUserStore().getCurrentFacility);
+const currentEComStore = computed(() => useDxpUserStore().getCurrentEComStore);
+const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
 
-      this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
-    },
-    async fetchKitComponents(orderItem: any) {
-      this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
-      
-      //update the order in order to toggle kit components section
-      const updatedOrder = this.openOrders.list.find((order: any) => order.orderId === orderItem.orderId);
-      const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
-      updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
-    },
-    async assignPickers() {
-      const assignPickerModal = await modalController.create({
-        component: AssignPickerModal
-      });
-      return assignPickerModal.present();
-    },
-    async fetchShipmentMethods() {
-      let resp: any;
+const updateOpenQuery = (payload: any) => {
+  useOrderStore().updateOpenQuery(payload);
+};
 
-      const payload = prepareSolrQuery({
-        docType: 'ORDER',
-        viewSize: '0',  // passed viewSize as 0 to not fetch any data
-        isGroupingRequired: false,
-        filters: {
-          '-shipmentMethodTypeId': { value: ['STOREPICKUP', 'POS_COMPLETED'] },
-          orderStatusId: { value: 'ORDER_APPROVED' },
-          orderTypeId: { value: 'SALES_ORDER' },
-          productStoreId: { value: this.currentEComStore.productStoreId },
-          ...getFacilityFilter(this.currentFacility?.facilityId)
-        },
-        solrFilters: [
-          //it should be explicit what is subtracting the first part of your OR statement from
-          "((*:* -fulfillmentStatus: [* TO *]) OR fulfillmentStatus:Created)",
-          "entryDate:[2025-01-01T00:00:00Z TO *]"
-        ],
-        facet: {
-          "shipmentMethodTypeIdFacet":{
-            "excludeTags":"shipmentMethodTypeIdFilter",
-            "field":"shipmentMethodTypeId",
-            "mincount":1,
-            "limit":-1,
-            "sort":"index",
-            "type":"terms",
-            "facet": {
-              "ordersCount": "unique(orderId)"
-            }
-          }
-        }
-      })
+const getErrorMessage = () => {
+  return searchedQuery.value ? (hasActiveFilters(openOrders.value.query) ? translate("No results found for . Try using different filters.", { searchedQuery: searchedQuery.value }) : translate("No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: searchedQuery.value, lineBreak: "<br />" })) : translate("doesn't have any outstanding orders right now.", { facilityName: currentFacility.value?.facilityName });
+};
 
-      try {
-        resp = await UtilService.fetchShipmentMethods(payload);
-        if(resp.status == 200 && !hasError(resp) && resp.data.facets?.count > 0) {
-          this.shipmentMethods = resp.data.facets.shipmentMethodTypeIdFacet.buckets
-          this.store.dispatch('util/fetchShipmentMethodTypeDesc', this.shipmentMethods.map((shipmentMethod: any) => shipmentMethod.val))
-        } else {
-          throw resp.data;
-        }
-      } catch(err) {
-        logger.error('Failed to fetch shipment methods information', err)
-      }
-    },
-    async updateQueryString(queryString: string) {
-      const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
+const viewNotifications = () => {
+  useUserStore().setUnreadNotificationsStatus(false);
+  router.push({ path: "/notifications" });
+};
 
-      openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      openOrdersQuery.queryString = queryString
-      await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
-      this.searchedQuery = queryString;
-    },
-    async updateOrderQuery(size: any) {
-      const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
+const getOpenOrders = () => {
+  return JSON.parse(JSON.stringify(openOrders.value.list)).slice(0, (openOrders.value.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
+};
 
-      openOrdersQuery.viewSize = size
-      await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
-    },
-    async initialiseOrderQuery() {
-      const openOrdersQuery = JSON.parse(JSON.stringify(this.openOrders.query))
-      openOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
-      openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      if(this.selectedShipmentMethods?.length) openOrdersQuery.selectedShipmentMethods = this.selectedShipmentMethods
-      await this.store.dispatch('order/updateOpenQuery', { ...openOrdersQuery })
-    },
-    async recycleOutstandingOrders() {
-      const alert = await alertController.create({
-        header: translate('Reject all open orders'),
-        message: translate('Reject open orders.', { ordersCount: this.openOrders.total }),
-        buttons: [{
-          text: translate('Cancel'),
-          role: 'cancel'
-        }, {
-          text: translate('Reject'),
-          handler: async () => {
-            this.isRejecting = true;
-            emitter.emit("presentLoader")
-            await alert.dismiss()
-            
-            let resp;
+const enableScrolling = () => {
+  const parentElement = contentRef.value?.$el;
+  const scrollEl = parentElement?.shadowRoot?.querySelector("main[part='scroll']");
+  if (!scrollEl || !infiniteScrollRef.value?.$el) return;
+  const scrollHeight = scrollEl.scrollHeight;
+  const infiniteHeight = infiniteScrollRef.value.$el.offsetHeight;
+  const scrollTop = scrollEl.scrollTop;
+  const threshold = 100;
+  const height = scrollEl.offsetHeight;
+  const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height;
+  isScrollingEnabled.value = !(distanceFromInfinite < 0);
+};
 
-            try {
-              resp = await OrderService.recycleOutstandingOrders({
-                "facilityId": this.currentFacility?.facilityId,
-                "productStoreId": this.currentEComStore.productStoreId,
-                "reasonId": "INACTIVE_STORE"
-              })
-
-              if (!hasError(resp)) {
-                showToast(translate('Rejecting has been started. All outstanding orders will be rejected shortly.'))
-              } else {
-                throw resp.data
-              }
-            } catch (err) {
-              showToast(translate('Failed to reject outstanding orders'))
-              logger.error('Failed to reject outstanding orders', err)
-            }
-            emitter.emit("dismissLoader")
-          }
-        }]
-      });
-      await alert.present();
-    },
-    async orderActionsPopover(order: any, ev: Event) {
-      const popover = await popoverController.create({
-        component: OrderActionsPopover,
-        componentProps: { 
-          order,
-          category: 'open'
-        },
-        showBackdrop: false,
-        event: ev
-      });
-      return popover.present();
-    },
-    fetchProductStock(productId: string) {
-      this.store.dispatch('stock/fetchStock', { productId })
-    }
-  },
-  async ionViewWillEnter () {
-    this.isScrollingEnabled = false;
-    this.isLoadingOrders = true;
-    try {
-      await Promise.all([this.initialiseOrderQuery(), this.fetchShipmentMethods()]);
-    } finally {
-      this.isLoadingOrders = false;
-    }
-    // Remove http://, https://, /api, or :port
-    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "")
-    this.productCategoryFilterExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter`});
-    emitter.on("updateOrderQuery", this.updateOrderQuery);
-  },
-  beforeRouteLeave() {
-    this.store.dispatch('order/clearOpenOrders');
-    emitter.off('updateOrderQuery', this.updateOrderQuery)
-  },
-  setup() {
-    const store = useStore();
-    const router = useRouter();
-    const userStore = useUserStore()
-    const productIdentificationStore = useProductIdentificationStore();
-    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
-    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
-    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
-
-    return{
-      Actions,
-      caretDownOutline,
-      chevronUpOutline,
-      cubeOutline,
-      currentEComStore,
-      currentFacility,
-      formatUtcDate,
-      getFeatures,
-      getFacilityFilter,
-      getProductIdentificationValue,
-      hasActiveFilters,
-      hasPermission,
-      isKit,
-      listOutline,
-      notificationsOutline,
-      optionsOutline,
-      pricetagOutline,
-      printOutline,
-      productIdentificationPref,
-      router,
-      store,
-      translate
-    }
+const loadMoreOpenOrders = async (event: any) => {
+  if (!(isScrollingEnabled.value && isOpenOrdersScrollable())) {
+    await event.target.complete();
   }
+  const openOrdersQuery = JSON.parse(JSON.stringify(openOrders.value.query));
+  openOrdersQuery.viewIndex++;
+  await useOrderStore().updateOpenOrderIndex({ ...openOrdersQuery });
+  event.target.complete();
+};
+
+const isOpenOrdersScrollable = () => {
+  return ((openOrders.value.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any)) < openOrders.value.query.viewSize;
+};
+
+const updateSelectedShipmentMethods = async (method: string) => {
+  const openOrdersQuery = JSON.parse(JSON.stringify(openOrders.value.query));
+  const updatedShipmentMethods = openOrdersQuery.selectedShipmentMethods;
+  const index = updatedShipmentMethods.indexOf(method);
+  if (index < 0) {
+    updatedShipmentMethods.push(method);
+  } else {
+    updatedShipmentMethods.splice(index, 1);
+  }
+
+  openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  openOrdersQuery.selectedShipmentMethods = updatedShipmentMethods;
+  selectedShipmentMethods.value = updatedShipmentMethods;
+
+  useOrderStore().updateOpenQuery({ ...openOrdersQuery });
+};
+
+const fetchKitComponents = async (orderItem: any) => {
+  useProductStore().fetchProductComponents({ productId: orderItem.productId });
+  const updatedOrder = openOrders.value.list.find((order: any) => order.orderId === orderItem.orderId);
+  const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId);
+  updatedItem.showKitComponents = orderItem.showKitComponents ? false : true;
+};
+
+const assignPickers = async () => {
+  const assignPickerModal = await modalController.create({
+    component: AssignPickerModal
+  });
+  return assignPickerModal.present();
+};
+
+const fetchShipmentMethods = async () => {
+  let resp: any;
+
+  const payload = prepareSolrQuery({
+    docType: "ORDER",
+    viewSize: "0",
+    isGroupingRequired: false,
+    filters: {
+      "-shipmentMethodTypeId": { value: ["STOREPICKUP", "POS_COMPLETED"] },
+      orderStatusId: { value: "ORDER_APPROVED" },
+      orderTypeId: { value: "SALES_ORDER" },
+      productStoreId: { value: currentEComStore.value.productStoreId },
+      ...getFacilityFilter(currentFacility.value?.facilityId)
+    },
+    solrFilters: [
+      "((*:* -fulfillmentStatus: [* TO *]) OR fulfillmentStatus:Created)",
+      "entryDate:[2025-01-01T00:00:00Z TO *]"
+    ],
+    facet: {
+      shipmentMethodTypeIdFacet: {
+        excludeTags: "shipmentMethodTypeIdFilter",
+        field: "shipmentMethodTypeId",
+        mincount: 1,
+        limit: -1,
+        sort: "index",
+        type: "terms",
+        facet: {
+          ordersCount: "unique(orderId)"
+        }
+      }
+    }
+  });
+
+  try {
+    resp = await UtilService.fetchShipmentMethods(payload);
+    if (resp.status == 200 && !hasError(resp) && resp.data.facets?.count > 0) {
+      shipmentMethods.value = resp.data.facets.shipmentMethodTypeIdFacet.buckets;
+      useUtilStore().fetchShipmentMethodTypeDesc(shipmentMethods.value.map((shipmentMethod: any) => shipmentMethod.val));
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    logger.error("Failed to fetch shipment methods information", err);
+  }
+};
+
+const updateQueryString = async (queryString: string) => {
+  const openOrdersQuery = JSON.parse(JSON.stringify(openOrders.value.query));
+  openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  openOrdersQuery.queryString = queryString;
+  await useOrderStore().updateOpenQuery({ ...openOrdersQuery });
+  searchedQuery.value = queryString;
+};
+
+const updateOrderQuery = async (size: any) => {
+  const openOrdersQuery = JSON.parse(JSON.stringify(openOrders.value.query));
+  openOrdersQuery.viewSize = size;
+  await useOrderStore().updateOpenQuery({ ...openOrdersQuery });
+};
+
+const initialiseOrderQuery = async () => {
+  const openOrdersQuery = JSON.parse(JSON.stringify(openOrders.value.query));
+  openOrdersQuery.viewIndex = 0;
+  openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  if (selectedShipmentMethods.value?.length) openOrdersQuery.selectedShipmentMethods = selectedShipmentMethods.value;
+  await useOrderStore().updateOpenQuery({ ...openOrdersQuery });
+};
+
+const recycleOutstandingOrders = async () => {
+  const alert = await alertController.create({
+    header: translate("Reject all open orders"),
+    message: translate("Reject open orders.", { ordersCount: openOrders.value.total }),
+    buttons: [{
+      text: translate("Cancel"),
+      role: "cancel"
+    }, {
+      text: translate("Reject"),
+      handler: async () => {
+        isRejecting.value = true;
+        emitter.emit("presentLoader");
+        await alert.dismiss();
+
+        let resp;
+
+        try {
+          resp = await OrderService.recycleOutstandingOrders({
+            facilityId: currentFacility.value?.facilityId,
+            productStoreId: currentEComStore.value.productStoreId,
+            reasonId: "INACTIVE_STORE"
+          });
+
+          if (!hasError(resp)) {
+            showToast(translate("Rejecting has been started. All outstanding orders will be rejected shortly."));
+          } else {
+            throw resp.data;
+          }
+        } catch (err) {
+          showToast(translate("Failed to reject outstanding orders"));
+          logger.error("Failed to reject outstanding orders", err);
+        }
+        emitter.emit("dismissLoader");
+      }
+    }]
+  });
+  await alert.present();
+};
+
+const orderActionsPopover = async (order: any, ev: Event) => {
+  const popover = await popoverController.create({
+    component: OrderActionsPopover,
+    componentProps: {
+      order,
+      category: "open"
+    },
+    showBackdrop: false,
+    event: ev
+  });
+  return popover.present();
+};
+
+const fetchProductStock = (productId: string) => {
+  useStockStore().fetchStock({ productId });
+};
+
+onIonViewWillEnter(async () => {
+  isScrollingEnabled.value = false;
+  isLoadingOrders.value = true;
+  try {
+    await Promise.all([initialiseOrderQuery(), fetchShipmentMethods()]);
+  } finally {
+    isLoadingOrders.value = false;
+  }
+  const instance = instanceUrl.value.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "");
+  productCategoryFilterExt.value = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter` });
+  emitter.on("updateOrderQuery", updateOrderQuery);
+});
+
+onBeforeRouteLeave(() => {
+  useOrderStore().clearOpenOrders();
+  emitter.off("updateOrderQuery", updateOrderQuery);
 });
 </script>
 
 <style scoped>
-.order-tags{
+.order-tags {
   display: flex;
   justify-content: space-between;
 }

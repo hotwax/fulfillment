@@ -7,11 +7,10 @@ import Settings from "@/views/Settings.vue"
 import RejectionReasons from '@/views/RejectionReasons.vue';
 import Carriers from '@/views/Carriers.vue'
 import CarrierDetail from '@/views/CarrierDetail.vue'
-import store from '@/store'
+import { useUserStore } from "@/store/user"
 import OrderDetail from "@/views/OrderDetail.vue"
 import TransferOrders from "@/views/TransferOrders.vue"
 import TransferOrderDetail from "@/views/TransferOrderDetail.vue"
-import TransferShipmentReview from "@/views/TransferShipmentReview.vue"
 import CreateCarrier from "@/views/CreateCarrier.vue"
 import CarrierShipmentMethods from "@/views/CarrierShipmentMethods.vue"
 import { hasPermission } from '@/authorization';
@@ -36,7 +35,8 @@ import Rejections from '@/views/Rejections.vue';
 
 const authGuard = async (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
-  if (!authStore.isAuthenticated || !store.getters['user/isAuthenticated']) {
+  const userStore = useUserStore()
+  if (!authStore.isAuthenticated || !userStore.isAuthenticated) {
     await loader.present('Authenticating')
     // TODO use authenticate() when support is there
     const redirectUrl = window.location.origin + '/login'

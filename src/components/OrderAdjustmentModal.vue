@@ -49,142 +49,98 @@
   </ion-content>
 </template>
 
-<script lang="ts">
-import {
-  IonAccordion,
-  IonAccordionGroup,
-  IonButtons,
-  IonButton,
-  IonContent,
-  IonHeader,
-  IonNote,
-  IonIcon,
-  IonTitle,
-  IonToolbar,
-  IonItem,
-  IonLabel,
-  IonList,
-  modalController
-} from "@ionic/vue";
-import { defineComponent } from "vue";
+<script setup lang="ts">
+import { IonAccordion, IonAccordionGroup, IonButtons, IonButton, IonContent, IonHeader, IonNote, IonIcon, IonTitle, IonToolbar, IonItem, IonLabel, IonList, modalController } from "@ionic/vue";
+import { defineProps, onMounted, ref } from "vue";
 import { close } from "ionicons/icons";
-import { translate } from '@hotwax/dxp-components'
+import { translate } from "@hotwax/dxp-components";
 import logger from "@/logger";
 import { OrderService } from "@/services/OrderService";
 import { UtilService } from "@/services/UtilService";
 import { hasError } from "@/adapter";
 
-export default defineComponent({
-  name: "OrderAdjustmentModal",
-  components: {
-    IonAccordion,
-    IonAccordionGroup,
-    IonButtons,
-    IonButton,
-    IonContent,
-    IonHeader,
-    IonNote,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonTitle,
-    IonToolbar
-  },
-  data() {
-    return {
-      grandTotal: 0,
-      currency: "",
-      orderAdjustmentTypeIds: [] as any,
-      orderAdjustmentTypeDesc: {} as any,
-      otherShipmentTotal: 0,
-      shipmentSubtotal: 0,
-      shipmentTotal: 0,
-      orderItemSeqIds: [] as Array<string>
+const props = defineProps(["order", "orderId", "orderAdjustments", "orderHeaderAdjustmentTotal", "adjustmentsByGroup"]);
+
+const grandTotal = ref(0);
+const currency = ref("");
+const orderAdjustmentTypeIds = ref([] as any[]);
+const orderAdjustmentTypeDesc = ref({} as any);
+const otherShipmentTotal = ref(0);
+const shipmentSubtotal = ref(0);
+const shipmentTotal = ref(0);
+const orderItemSeqIds = ref([] as string[]);
+
+const fetchOrderShipGroupInfo = async () => {
+  try {
+    const resp = await OrderService.fetchOrderItems({
+      orderId: props.orderId,
+      pageSize: 50,
+      fieldsToSelect: ["orderId", "orderItemseqId", "shipGroupSeqId", "unitPrice"]
+    });
+
+    if (!hasError(resp)) {
+      grandTotal.value = props.order.grandTotal;
+      currency.value = props.order.currencyUom;
+      resp.data.map((item: any) => {
+        if (item.shipGroupSeqId != props.order.shipGroupSeqId) {
+          otherShipmentTotal.value += item.unitPrice;
+        } else {
+          shipmentSubtotal.value += item.unitPrice;
+        }
+      });
+
+      Object.entries(props.adjustmentsByGroup).map(([seqId, adjustments]: any) => {
+        adjustments.map((adjustment: any) => {
+          if (seqId === props.order.shipGroupSeqId) {
+            shipmentSubtotal.value += adjustment.amount;
+          } else if (seqId && seqId !== "_NA_") {
+            otherShipmentTotal.value += adjustment.amount;
+          } else if (orderItemSeqIds.value.includes(adjustment.orderItemSeqId)) {
+            shipmentSubtotal.value += adjustment.amount;
+          } else {
+            otherShipmentTotal.value += adjustment.amount;
+          }
+        });
+      });
     }
-  },
-  props: ["order", "orderId", "orderAdjustments", "orderHeaderAdjustmentTotal", "adjustmentsByGroup"],
-  async mounted() {
-    // When calculating total we are not honoring the adjustments added directly on shipGroup level
-    // as in the currently flow its assumed that there is no way to add adjustment at shipGroup level
-    // If in the future we have such a support then the logic to calculate subtotal and total needs to be updated
-    this.orderAdjustments.map((adjustment: any) => {
-      this.orderAdjustmentTypeIds.push(adjustment.orderAdjustmentTypeId)
-    })
-
-    // Getting seqIds as need to add item level adjustment to specific shipment total
-    this.orderItemSeqIds = this.order.items.map((item: any) => item.orderItemSeqId)
-
-    await this.fetchOrderShipGroupInfo();
-    await this.fetchAdjustmentTypeDescription();
-    this.shipmentTotal = this.shipmentSubtotal + this.orderHeaderAdjustmentTotal
-  },
-  methods: {
-    async fetchOrderShipGroupInfo() {
-      try {
-        const resp = await OrderService.fetchOrderItems({
-          orderId: this.orderId,
-          pageSize: 50,
-          fieldsToSelect: ["orderId", "orderItemseqId", "shipGroupSeqId", "unitPrice"]
-        })
-
-        if(!hasError(resp)) {
-          this.grandTotal = this.order.grandTotal
-          this.currency = this.order.currencyUom
-          resp.data.map((item: any) => {
-            if (item.shipGroupSeqId != this.order.shipGroupSeqId) {
-              this.otherShipmentTotal += item.unitPrice
-            } else {
-              this.shipmentSubtotal += item.unitPrice
-            }
-          })
-
-          Object.entries(this.adjustmentsByGroup).map(([seqId, adjustments]: any) => {
-            adjustments.map((adjustment: any) => {
-              if(seqId === this.order.shipGroupSeqId) {
-                this.shipmentSubtotal += adjustment.amount
-              } else if(seqId && seqId !== "_NA_") {
-                this.otherShipmentTotal += adjustment.amount
-              } else if(this.orderItemSeqIds.includes(adjustment.orderItemSeqId)) {
-                this.shipmentSubtotal += adjustment.amount
-              } else {
-                this.otherShipmentTotal += adjustment.amount
-              }
-            })
-          })
-        }
-      } catch(err) {
-        logger.error("Failed to fetch ship group info for order", err)
-      }
-    },
-    async fetchAdjustmentTypeDescription() {
-      try {
-        const resp = await UtilService.fetchAdjustmentTypeDescription({
-          orderAdjustmentTypeId: this.orderAdjustmentTypeIds,
-          orderAdjustmentTypeId_op: "in",
-          pageSize: this.orderAdjustmentTypeIds.length,
-          fieldsToSelect: ["orderAdjustmentTypeId", "description"]
-        })
-
-        if(!hasError(resp)) {
-          this.orderAdjustmentTypeDesc = resp.data.reduce((adjustments: any, adjustment: any) => {
-            adjustments[adjustment.orderAdjustmentTypeId] = adjustment.description
-            return adjustments
-          }, {})
-        }
-      } catch(err) {
-        logger.error("Failed to fetch adjustment type descriptions", err)
-      }
-    },
-    closeModal() {
-      modalController.dismiss();
-    },
-  },
-  setup() {
-    return {
-      close,
-      translate
-    };
+  } catch (err) {
+    logger.error("Failed to fetch ship group info for order", err);
   }
+};
+
+const fetchAdjustmentTypeDescription = async () => {
+  try {
+    const resp = await UtilService.fetchAdjustmentTypeDescription({
+      orderAdjustmentTypeId: orderAdjustmentTypeIds.value,
+      orderAdjustmentTypeId_op: "in",
+      pageSize: orderAdjustmentTypeIds.value.length,
+      fieldsToSelect: ["orderAdjustmentTypeId", "description"]
+    });
+
+    if (!hasError(resp)) {
+      orderAdjustmentTypeDesc.value = resp.data.reduce((adjustments: any, adjustment: any) => {
+        adjustments[adjustment.orderAdjustmentTypeId] = adjustment.description;
+        return adjustments;
+      }, {});
+    }
+  } catch (err) {
+    logger.error("Failed to fetch adjustment type descriptions", err);
+  }
+};
+
+const closeModal = () => {
+  modalController.dismiss();
+};
+
+onMounted(async () => {
+  props.orderAdjustments.map((adjustment: any) => {
+    orderAdjustmentTypeIds.value.push(adjustment.orderAdjustmentTypeId);
+  });
+
+  orderItemSeqIds.value = props.order.items.map((item: any) => item.orderItemSeqId);
+
+  await fetchOrderShipGroupInfo();
+  await fetchAdjustmentTypeDescription();
+  shipmentTotal.value = shipmentSubtotal.value + props.orderHeaderAdjustmentTotal;
 });
 </script>

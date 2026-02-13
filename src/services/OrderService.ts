@@ -1,12 +1,23 @@
 import { api, apiClient, hasError } from '@/adapter';
-import store from '@/store';
-import { getProductIdentificationValue, translate, useUserStore } from '@hotwax/dxp-components';
+import { useUserStore } from "@/store/user";
+import { useOrderStore } from "@/store/order";
+import { useUtilStore } from "@/store/util";
+import { translate } from '@hotwax/dxp-components';
 import logger from '@/logger'
 import { cogOutline } from 'ionicons/icons';
-import { downloadCsv, getCurrentFacilityId, getFeatures, getProductStoreId, showToast } from '@/utils'
+import { downloadCsv, getCurrentFacilityId, getProductStoreId, showToast } from '@/utils'
 import { removeKitComponents } from '@/utils/order';
 import { escapeSolrSpecialChars, prepareSolrQuery } from '@/utils/solrHelper';
 import { ZebraPrinterService } from './ZebraPrinterService';
+
+const getAuth = () => {
+  const userStore = useUserStore();
+  return {
+    omstoken: userStore.getUserToken,
+    baseURL: userStore.getMaargBaseUrl,
+    maargUrl: userStore.getMaargUrl
+  };
+};
 
 const findOpenOrders = async (payload: any): Promise<any> => {
   const openOrderQuery = payload.openOrderQuery
@@ -103,8 +114,7 @@ const findOpenOrders = async (payload: any): Promise<any> => {
 }
 
 const createPicklist = async (payload: any): Promise <any>  => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/poorti/createOrderFulfillmentWave`,
@@ -119,11 +129,10 @@ const createPicklist = async (payload: any): Promise <any>  => {
 }
 
 const printPicklist = async (picklistId: string): Promise <any>  => {
-  const maargUrl = store.getters['user/getMaargUrl'];
-  const omstoken = store.getters['user/getUserToken'];
+  const { maargUrl, omstoken } = getAuth();
 
   try {
-    const isPicklistDownloadEnabled = store.getters["util/isPicklistDownloadEnabled"]
+  const isPicklistDownloadEnabled = useUtilStore().isPicklistDownloadEnabled
     if (isPicklistDownloadEnabled) {
       await downloadPicklist(picklistId)
       return;
@@ -162,8 +171,7 @@ const printPicklist = async (picklistId: string): Promise <any>  => {
 
 const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
   try {
-    const maargUrl = store.getters['user/getMaargUrl'];
-    const omstoken = store.getters['user/getUserToken'];
+    const { maargUrl, omstoken } = getAuth();
 
     // Get packing slip from the server
     const resp = await apiClient({
@@ -203,15 +211,14 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
 
 const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string): Promise<any> => {
   try {
-    const maargUrl = store.getters['user/getMaargUrl'];
-    const omstoken = store.getters['user/getUserToken'];
+    const { maargUrl, omstoken } = getAuth();
 
     let pdfUrls = shippingLabelPdfUrls;
     if (!pdfUrls || pdfUrls.length == 0) {
       let labelImageType = imageType || "PNG";
 
       if(!imageType && shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId) {
-        labelImageType = await store.dispatch("util/fetchLabelImageType", shipmentPackages[0].carrierPartyId);
+        labelImageType = await useUtilStore().fetchLabelImageType(shipmentPackages[0].carrierPartyId);
       }
 
       const labelImages = [] as Array<string>
@@ -283,7 +290,7 @@ const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>, ship
 
   let labelImageType = "PNG";
   if(shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId) {
-    labelImageType = await store.dispatch("util/fetchLabelImageType", shipmentPackages[0].carrierPartyId); 
+    labelImageType = await useUtilStore().fetchLabelImageType(shipmentPackages[0].carrierPartyId); 
   }
 
   if (labelImageType === "ZPLII") {
@@ -293,8 +300,7 @@ const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>, ship
   }
 
   try {
-    const maargUrl = store.getters['user/getMaargUrl'];
-    const omstoken = store.getters['user/getUserToken'];
+    const { maargUrl, omstoken } = getAuth();
 
     // Get packing slip from the server
     const resp = await apiClient({
@@ -332,8 +338,7 @@ const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>, ship
 }
 
 const downloadPicklist = async (picklistId: string): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   const resp = await apiClient({
     url: `/poorti/Picklist.csv`,
@@ -351,8 +356,7 @@ const downloadPicklist = async (picklistId: string): Promise<any> => {
 
 const recycleOutstandingOrders = async(payload: any): Promise<any> => {
 
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/poorti/rejectOutstandingOrders`,
@@ -367,9 +371,8 @@ const recycleOutstandingOrders = async(payload: any): Promise<any> => {
 }
 
 const findShipments = async (query: any): Promise <any>  => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-  const productStoreShipmentMethCount = store.getters['util/getProductStoreShipmentMethCount'];
+  const { omstoken, baseURL } = getAuth();
+  const productStoreShipmentMethCount = useUtilStore().getProductStoreShipmentMethCount;
   
   let orders = [], total = 0;
 
@@ -474,8 +477,7 @@ const findShipments = async (query: any): Promise <any>  => {
 }
 
 const fetchShipmentFacets = async (params: any): Promise <any>  => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/poorti/shipmentFacets`,
@@ -490,8 +492,7 @@ const fetchShipmentFacets = async (params: any): Promise <any>  => {
 }
 
 const fetchPicklists = async (payload: any): Promise <any>  => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/poorti/shipmentPicklists`,
@@ -507,8 +508,7 @@ const fetchPicklists = async (payload: any): Promise <any>  => {
 
 const recycleInProgressOrders = async(payload: any): Promise<any> => {
 
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/poorti/rejectInProgressOrders`,
@@ -524,8 +524,7 @@ const recycleInProgressOrders = async(payload: any): Promise<any> => {
 }
 
 const packOrder = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     url: `/poorti/shipments/${payload.shipmentId}/pack`,
@@ -540,8 +539,7 @@ const packOrder = async (payload: any): Promise<any> => {
 }
 
 const packOrders = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/poorti/shipments/bulkPack`,
@@ -556,8 +554,7 @@ const packOrders = async (payload: any): Promise<any> => {
 }
 
 const resetPicker = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/poorti/picklists/${payload.picklistId}`,
@@ -572,8 +569,7 @@ const resetPicker = async (payload: any): Promise<any> => {
 }
 
 const addShipmentBox = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/poorti/shipments/${payload.shipmentId}/shipmentPackages`,
@@ -587,8 +583,7 @@ const addShipmentBox = async (payload: any): Promise<any> => {
   });
 }
 const shipOrder = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/poorti/shipments/${payload.shipmentId}/ship`,
@@ -602,8 +597,7 @@ const shipOrder = async (payload: any): Promise<any> => {
   });
 }
 const bulkShipOrders = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/poorti/shipments/bulkShip`,
@@ -618,8 +612,7 @@ const bulkShipOrders = async (payload: any): Promise<any> => {
 }
 
 const unpackOrder = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/poorti/shipments/${payload.shipmentId}/unpack`,
@@ -634,8 +627,7 @@ const unpackOrder = async (payload: any): Promise<any> => {
 }
 
 const retryShippingLabel = async (shipmentId: string): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   try {
     const resp = await apiClient({
@@ -657,8 +649,7 @@ const retryShippingLabel = async (shipmentId: string): Promise<any> => {
 }
 
 const fetchShipmentLabelError = async (shipmentId: string): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
   let shipmentLabelError = ""
 
   try {
@@ -696,8 +687,7 @@ const fetchShipmentLabelError = async (shipmentId: string): Promise<any> => {
 }
 
 const fetchShipmentPackageRouteSegDetails = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     url: `/poorti/shipmentPackageRouteSegDetails`,
@@ -712,8 +702,7 @@ const fetchShipmentPackageRouteSegDetails = async (params: any): Promise<any> =>
 }
 
 const voidShipmentLabel = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     url: `/poorti/shipments/${payload.shipmentId}/shippingLabels/void`,
@@ -728,8 +717,7 @@ const voidShipmentLabel = async (payload: any): Promise<any> => {
 }
 
 const updateShipmentCarrierAndMethod = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     url: `/poorti/updateShipmentCarrierAndMethod`, //should handle the update of OISG, SRG, SPRG if needed
@@ -744,8 +732,7 @@ const updateShipmentCarrierAndMethod = async (payload: any): Promise<any> => {
 }
 
 const updateRouteShipmentCarrierAndMethod = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     url: `/poorti/updateRouteShipmentCarrierAndMethod`, //should handle the update of OISG, SRG, SPRG if needed
@@ -760,8 +747,7 @@ const updateRouteShipmentCarrierAndMethod = async (payload: any): Promise<any> =
 }
 
 const findOrderInvoicingInfo = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: "/oms/dataDocumentView",
@@ -776,8 +762,7 @@ const findOrderInvoicingInfo = async (payload: any): Promise<any> => {
 }
 
 const fetchOrderDetail = async (orderId: string): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     url: `/poorti/orders/${orderId}`, //should handle the update of OISG, SRG, SPRG if needed
@@ -791,8 +776,7 @@ const fetchOrderDetail = async (orderId: string): Promise<any> => {
 }
 
 const addTrackingCode = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     url: `/poorti/updateShipmentTracking`,
@@ -807,9 +791,8 @@ const addTrackingCode = async (payload: any): Promise<any> => {
 }
 
 const fetchGiftCardItemPriceInfo = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-  const currentOrder = store.getters['order/getCurrent'];
+  const { omstoken, baseURL } = getAuth();
+  const currentOrder = useOrderStore().getCurrent;
   
   let resp = {} as any;
   const itemPriceInfo = {} as any;
@@ -849,8 +832,7 @@ const fetchGiftCardItemPriceInfo = async (payload: any): Promise<any> => {
 }
 
 const activateGiftCard = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/poorti/giftCardFulfillments`,
@@ -865,8 +847,7 @@ const activateGiftCard = async (payload: any): Promise<any> => {
 }
 
 const fetchOrderItems = async (payload: any): Promise <any>  => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/orders/${payload.orderId}/items`,
@@ -881,8 +862,7 @@ const fetchOrderItems = async (payload: any): Promise <any>  => {
 }
 
 const createCommunicationEvent = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: "/oms/communicationEvents",
@@ -897,8 +877,7 @@ const createCommunicationEvent = async (payload: any): Promise<any> => {
 }
 
 const deleteOrderItem = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/orders/${payload.orderId}/items/${payload.orderItemSeqId}`,
@@ -912,8 +891,7 @@ const deleteOrderItem = async (payload: any): Promise<any> => {
 }
 
 const updateOrderHeader = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/orders/${payload.orderId}`,
@@ -928,8 +906,7 @@ const updateOrderHeader = async (payload: any): Promise<any> => {
 }
 
 const updateOrderFacility = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/orders/${payload.orderId}/shipGroups/${payload.shipGroupSeqId}`,

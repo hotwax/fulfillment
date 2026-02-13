@@ -120,7 +120,7 @@
                   </ion-item>
                 </ion-list>
               </ion-card>
-  
+
               <ion-card>
                 <ion-card-header>
                   <ion-card-title>{{ translate("Payment") }}</ion-card-title>
@@ -181,9 +181,9 @@
                 </ion-item>
                 <ion-item>
                   <ion-label class="ion-text-wrap">{{ translate("Invoicing facility") }}</ion-label>
-                  <ion-label class="ion-text-wrap" slot="end">{{ (invoicingFacility.facilityName ? invoicingFacility.facilityName : invoicingFacility.facilityId) || '-'  }}</ion-label>
+                  <ion-label class="ion-text-wrap" slot="end">{{ (invoicingFacility.facilityName ? invoicingFacility.facilityName : invoicingFacility.facilityId) || '-' }}</ion-label>
                 </ion-item>
-                <Component :is="additionalDetailItemExt" :order="order" :invoicingFacilityId="invoicingFacility.facilityId"/>
+                <Component :is="additionalDetailItemExt" :order="order" :invoicingFacilityId="invoicingFacility.facilityId" />
               </ion-list>
             </ion-card>
           </div>
@@ -203,7 +203,7 @@
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
               </ion-item>
-    
+
               <div class="product-card">
                 <ion-card v-for="item in shipGroup.items" :key="item.orderItemSeqId">
                   <ion-item>
@@ -239,7 +239,7 @@
                     </ion-note>
                     <ion-spinner slot="end" v-else-if="isFetchingStock" color="medium" name="crescent" />
                     <ion-button v-else fill="clear" @click.stop="fetchProductStock(item.productId, shipGroup.facilityId)">
-                      <ion-icon color="medium" slot="icon-only" :icon="cubeOutline"/>
+                      <ion-icon color="medium" slot="icon-only" :icon="cubeOutline" />
                     </ion-button>
                   </ion-item>
                 </ion-card>
@@ -258,188 +258,118 @@
   </ion-page>
 </template>
 
-<script lang="ts">
-import {
-  IonBackButton,
-  IonBadge,
-  IonButton,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonNote,
-  IonPage,
-  IonSpinner,
-  IonThumbnail,
-  IonTitle,
-  IonToolbar,
-  popoverController
-} from "@ionic/vue";
-import { computed, defineComponent } from "vue";
-import { translate, useUserStore } from '@hotwax/dxp-components';
-import { cubeOutline, golfOutline, callOutline, cashOutline, closeCircleOutline, ellipsisVerticalOutline, informationCircleOutline, ribbonOutline, mailOutline, ticketOutline, timeOutline, pulseOutline, storefrontOutline, sunnyOutline, checkmarkDoneOutline, downloadOutline } from "ionicons/icons";
-import { mapGetters, useStore } from "vuex";
+<script setup lang="ts">
+import { IonBackButton, IonBadge, IonButton, IonCard, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, onIonViewWillEnter, popoverController } from "@ionic/vue";
+import { computed, defineProps, ref } from "vue";
+import { translate } from "@hotwax/dxp-components";
+import { callOutline, cashOutline, checkmarkDoneOutline, cubeOutline, ellipsisVerticalOutline, golfOutline, mailOutline, pulseOutline, storefrontOutline, sunnyOutline, ticketOutline, timeOutline, downloadOutline } from "ionicons/icons";
 import { DateTime } from "luxon";
-import { formatCurrency, getColorByDesc } from "@/utils"
-import { prepareSolrQuery } from '@/utils/solrHelper';
-import OrderLookupLabelActionsPopover from '@/components/OrderLookupLabelActionsPopover.vue';
+import { formatCurrency, getColorByDesc } from "@/utils";
+import OrderLookupLabelActionsPopover from "@/components/OrderLookupLabelActionsPopover.vue";
 import { hasError } from "@hotwax/oms-api";
 import logger from "@/logger";
 import { OrderLookupService } from "@/services/OrderLookupService";
 import { useDynamicImport } from "@/utils/moduleFederation";
+import { useOrderLookupStore } from "@/store/orderLookup";
+import { useProductStore } from "@/store/product";
+import { useStockStore } from "@/store/stock";
+import { useUtilStore } from "@/store/util";
+import { useUserStore } from "@/store/user";
 
-export default defineComponent({
-  name: "OrderLookupDetail",
-  components: {
-    IonBackButton,
-    IonBadge,
-    IonButton,
-    IonCard,
-    IonCardHeader,
-    IonCardTitle,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonNote,
-    IonPage,
-    IonSpinner,
-    IonThumbnail,
-    IonTitle,
-    IonToolbar
-  },
-  props: ["orderId"],
-  data() {
-    return {
-      orderStatuses: JSON.parse(process.env.VUE_APP_ORDER_STATUS as any),
-      itemStatuses: JSON.parse(process.env.VUE_APP_ITEM_STATUS as any),
-      isFetchingStock: false,
-      isFetchingOrderInfo: false,
-      invoicingFacility: {} as any,
-      additionalDetailItemExt: "" as any
-    }
-  },
-  computed: {
-    ...mapGetters({
-      order: "orderLookup/getCurrentOrder",
-      getProduct: "product/getProduct",
-      getProductStock: "stock/getProductStock",
-      getStatusDesc: "util/getStatusDesc",
-      getShipmentMethodDesc: "util/getShipmentMethodDesc",
-      getPaymentMethodDesc: 'util/getPaymentMethodDesc',
-      userProfile: 'user/getUserProfile',
-      instanceUrl: "user/getInstanceUrl",
-      productStores: "util/getProductStores",
-      getEnumerationDesc: "util/getEnumerationDesc"
-    })
-  },
-  async ionViewWillEnter() {
-    this.isFetchingOrderInfo = true
-    await this.store.dispatch("orderLookup/getOrderDetails", this.orderId)
-    await this.store.dispatch("util/fetchProductStores")
-    await this.fetchOrderInvoicingFacility()
-    // Remove http://, https://, /api, or :port
-    const instance = this.instanceUrl.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "")
-    this.additionalDetailItemExt = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderLookupAdditionalDetailItem`})
-    this.isFetchingOrderInfo = false
-  },
-  methods: {
-    formatDateTime(date: any) {
-      return DateTime.fromMillis(date).toLocaleString({ hour: "numeric", minute: "2-digit", day: "numeric", month: "short", year: "numeric", hourCycle: "h12" })
-    },
-    findTimeDiff(startTime: any, endTime: any) {
-      const timeDiff = DateTime.fromMillis(endTime).diff(DateTime.fromMillis(startTime), ["years", "months", "days", "hours", "minutes"]);
-      let diffString = "+ ";
-      if(timeDiff.years) diffString += `${Math.round(timeDiff.years)} years `
-      if(timeDiff.months) diffString += `${Math.round(timeDiff.months)} months `
-      if(timeDiff.days) diffString += `${Math.round(timeDiff.days)} days `
-      if(timeDiff.hours) diffString += `${Math.round(timeDiff.hours)} hours `
-      if(timeDiff.minutes) diffString += `${Math.round(timeDiff.minutes)} minutes`
-      return diffString
-    },
-    async fetchProductStock(productId: string, facilityId: string) {
-      this.isFetchingStock = true
-      // TODO: fetch QOH only for brokered facility
-      await this.store.dispatch('stock/fetchStock', { productId, facilityId })
-      this.isFetchingStock = false
-    },
-    async shippingLabelActionPopover(ev: Event, shipGroup: any) {
-      const popover = await popoverController.create({
-        component: OrderLookupLabelActionsPopover,
-        componentProps: {
-          shipGroup: shipGroup,
-        },
-        event: ev,
-        showBackdrop: false
-      });
+const props = defineProps(["orderId"]);
 
-      return popover.present()
+const orderStatuses = JSON.parse(process.env.VUE_APP_ORDER_STATUS as any);
+const itemStatuses = JSON.parse(process.env.VUE_APP_ITEM_STATUS as any);
+const isFetchingStock = ref(false);
+const isFetchingOrderInfo = ref(false);
+const invoicingFacility = ref({} as any);
+const additionalDetailItemExt = ref("" as any);
+
+const order = computed(() => useOrderLookupStore().getCurrentOrder);
+const getProduct = (productId: string) => useProductStore().getProduct(productId);
+const getProductStock = (productId: string, facilityId?: string) => useStockStore().getProductStock(productId, facilityId);
+const getStatusDesc = (statusId: string) => useUtilStore().getStatusDesc(statusId);
+const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
+const getPaymentMethodDesc = (paymentMethodTypeId: string) => useUtilStore().getPaymentMethodDesc(paymentMethodTypeId);
+const productStores = computed(() => useUtilStore().getProductStores);
+const getEnumerationDesc = (enumId: string) => useUtilStore().getEnumerationDesc(enumId);
+const userProfile = computed(() => useUserStore().getUserProfile);
+const instanceUrl = computed(() => useUserStore().getInstanceUrl);
+
+const formatDateTime = (date: any) => {
+  return DateTime.fromMillis(date).toLocaleString({ hour: "numeric", minute: "2-digit", day: "numeric", month: "short", year: "numeric", hourCycle: "h12" });
+};
+
+const findTimeDiff = (startTime: any, endTime: any) => {
+  const timeDiff = DateTime.fromMillis(endTime).diff(DateTime.fromMillis(startTime), ["years", "months", "days", "hours", "minutes"]);
+  let diffString = "+ ";
+  if (timeDiff.years) diffString += `${Math.round(timeDiff.years)} years `;
+  if (timeDiff.months) diffString += `${Math.round(timeDiff.months)} months `;
+  if (timeDiff.days) diffString += `${Math.round(timeDiff.days)} days `;
+  if (timeDiff.hours) diffString += `${Math.round(timeDiff.hours)} hours `;
+  if (timeDiff.minutes) diffString += `${Math.round(timeDiff.minutes)} minutes`;
+  return diffString;
+};
+
+const fetchProductStock = async (productId: string, facilityId: string) => {
+  isFetchingStock.value = true;
+  await useStockStore().fetchStock({ productId, facilityId });
+  isFetchingStock.value = false;
+};
+
+const shippingLabelActionPopover = async (ev: Event, shipGroup: any) => {
+  const popover = await popoverController.create({
+    component: OrderLookupLabelActionsPopover,
+    componentProps: {
+      shipGroup
     },
-    async fetchOrderInvoicingFacility() {
-      const params = {
-        customParametersMap:{
-          "orderId": this.order.orderId,
-          "orderByField": "-entryDate",
-          "pageSize": 1
-        },
-        dataDocumentId: "ApiCommunicationEventOrder"
+    event: ev,
+    showBackdrop: false
+  });
+
+  return popover.present();
+};
+
+const fetchOrderInvoicingFacility = async () => {
+  const params = {
+    customParametersMap: {
+      orderId: order.value.orderId,
+      orderByField: "-entryDate",
+      pageSize: 1
+    },
+    dataDocumentId: "ApiCommunicationEventOrder"
+  };
+
+  try {
+    const resp = await OrderLookupService.findOrderInvoicingInfo(params);
+
+    if (!hasError(resp) && resp.data?.entityValueList?.length) {
+      const response = resp.data?.entityValueList[0];
+      const content = Object.keys(response.content).length ? JSON.parse(response.content) : {};
+      const invoicingFacilityValue = userProfile.value.facilities.find((facility: any) => facility.facilityId === content?.request?.InvoicingStore);
+      if (invoicingFacilityValue) {
+        invoicingFacility.value = invoicingFacilityValue;
       }
-
-      try {
-        const resp = await OrderLookupService.findOrderInvoicingInfo(params);
-
-        if(!hasError(resp) && resp.data?.entityValueList?.length) {
-          const response = resp.data?.entityValueList[0]
-          const content = Object.keys(response.content).length ? JSON.parse(response.content) : {}
-          const invoicingFacility = this.userProfile.facilities.find((facility: any) => facility.facilityId === content?.request?.InvoicingStore)
-          if(invoicingFacility) {
-            this.invoicingFacility = invoicingFacility
-          }
-        } else {
-          throw resp.data
-        }
-      } catch(error: any) {
-        logger.error(error);
-      }
-    },
-    getProductStoreName(productStoreId: string) {
-      return this.productStores.find((store: any) => store.productStoreId === productStoreId)?.storeName || productStoreId
+    } else {
+      throw resp.data;
     }
-  },
-  setup() {
-    const store = useStore();
-    const userStore = useUserStore()
-
-    return {
-      callOutline,
-      cashOutline,
-      checkmarkDoneOutline,
-      closeCircleOutline,
-      cubeOutline,
-      downloadOutline,
-      ellipsisVerticalOutline,
-      formatCurrency,
-      getColorByDesc,
-      golfOutline,
-      informationCircleOutline,
-      mailOutline,
-      pulseOutline,
-      ribbonOutline,
-      store,
-      storefrontOutline,
-      sunnyOutline,
-      ticketOutline,
-      timeOutline,
-      translate
-    }
+  } catch (error: any) {
+    logger.error(error);
   }
+};
+
+const getProductStoreName = (productStoreId: string) => {
+  return productStores.value.find((store: any) => store.productStoreId === productStoreId)?.storeName || productStoreId;
+};
+
+onIonViewWillEnter(async () => {
+  isFetchingOrderInfo.value = true;
+  await useOrderLookupStore().getOrderDetails(props.orderId);
+  await useUtilStore().fetchProductStores();
+  await fetchOrderInvoicingFacility();
+  const instance = instanceUrl.value.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "");
+  additionalDetailItemExt.value = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderLookupAdditionalDetailItem` });
+  isFetchingOrderInfo.value = false;
 });
 </script>
 
@@ -449,7 +379,7 @@ export default defineComponent({
   grid: "id timeline" min-content
         "cards timeline" 1fr
         / 1fr 500px;
-  justify-content: space-between;  
+  justify-content: space-between;
 }
 
 .id {

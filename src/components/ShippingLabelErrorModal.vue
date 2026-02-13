@@ -27,63 +27,25 @@
   </ion-content>
 </template>
 
-<script lang="ts">
-import { 
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonTitle,
-  IonToolbar,
-  modalController,
-  IonButton,
-  IonButtons,
-  IonLabel,
-  IonItem,
-  IonList
-} from "@ionic/vue";
-import { defineComponent } from "vue";
+<script setup lang="ts">
+import { IonContent, IonHeader, IonIcon, IonTitle, IonToolbar, modalController, IonButton, IonButtons, IonLabel, IonItem, IonList } from "@ionic/vue";
+import { defineProps, onMounted, ref } from "vue";
 import { closeOutline, copyOutline } from "ionicons/icons";
 import { OrderService } from "@/services/OrderService";
 import { translate } from "@hotwax/dxp-components";
 import { copyToClipboard } from "@/utils";
 
-export default defineComponent({
-  name: "ShippingLabelErrorModal",
-  components: { 
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonTitle,
-    IonToolbar,
-    IonButton,
-    IonButtons,
-    IonLabel,
-    IonItem,
-    IonList
-  },
-  data() {
-    return {
-      shipmentLabelErrorMessage: ""
-    }
-  },
-  props: ['shipmentId'],
-  async mounted() {
-    this.shipmentLabelErrorMessage = await OrderService.fetchShipmentLabelError(this.shipmentId);
-  },
-  methods: {
-    closeModal() {
-      modalController.dismiss({ dismissed: true });
-    },
-  },
-  setup() {
-    return {
-      closeOutline,
-      copyOutline,
-      copyToClipboard,
-      translate
-    };
-  },
+const props = defineProps(["shipmentId"]);
+
+const shipmentLabelErrorMessage = ref("");
+
+onMounted(async () => {
+  shipmentLabelErrorMessage.value = await OrderService.fetchShipmentLabelError(props.shipmentId);
 });
+
+const closeModal = () => {
+  modalController.dismiss({ dismissed: true });
+};
 </script>
 
 <style scoped>

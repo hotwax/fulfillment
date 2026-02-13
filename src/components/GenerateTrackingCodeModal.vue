@@ -123,241 +123,173 @@
   </ion-fab>
 </template>
 
-<script lang="ts">
-import {
-  IonButton,
-  IonButtons,
-  IonCheckbox,
-  IonContent,
-  IonFab,
-  IonFabButton,
-  IonHeader,
-  IonIcon,
-  IonInput,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonNote,
-  IonSegment,
-  IonSegmentButton,
-  IonSelect,
-  IonSelectOption,
-  IonTextarea,
-  IonTitle,
-  IonToolbar,
-  modalController,
-} from "@ionic/vue";
-import { defineComponent } from "vue";
-import { archiveOutline, barcodeOutline, closeOutline, copyOutline, informationCircleOutline, openOutline, saveOutline, trashOutline } from "ionicons/icons";
+<script setup lang="ts">
+import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonTextarea, IonTitle, IonToolbar, modalController } from "@ionic/vue";
+import { computed, defineProps, onMounted, ref } from "vue";
+import { archiveOutline, closeOutline, copyOutline, informationCircleOutline, openOutline, trashOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
-import { mapGetters, useStore } from "vuex";
-import { OrderService } from '@/services/OrderService';
+import { OrderService } from "@/services/OrderService";
 import logger from "@/logger";
 import { copyToClipboard, showToast } from "@/utils";
 import { hasError } from "@/adapter";
-import { retryShippingLabel } from "@/utils/order";
-import { useRouter } from 'vue-router'
+import { useRouter } from "vue-router";
+import { useCarrierStore } from "@/store/carrier";
+import { useUserStore } from "@/store/user";
 
-export default defineComponent({
-  name: "GenerateTrackingCodeModal",
-  components: { 
-    IonButton,
-    IonButtons,
-    IonCheckbox,
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonHeader,
-    IonIcon,
-    IonInput,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonNote,
-    IonSegment,
-    IonSegmentButton,
-    IonSelect,
-    IonSelectOption,
-    IonTextarea,
-    IonTitle,
-    IonToolbar,
-  },
-  computed: {
-    ...mapGetters({
-      facilityCarriers: 'carrier/getFacilityCarriers',
-      productStoreShipmentMethods: 'carrier/getProductStoreShipmentMethods',
-      productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
-      userProfile: 'user/getUserProfile'
-    }),
-    filteredFacilityCarriers(): any {
-      const shipmentMethodTypeId = this.initialShipmentMethodTypeId ? this.initialShipmentMethodTypeId : this.order?.shipmentMethodTypeId
-      if (shipmentMethodTypeId === 'SHIP_TO_STORE') {
-        const allowedPartyIds = new Set(this.productStoreShipmentMethods
-          .filter((method: any) => method.shipmentMethodTypeId === 'SHIP_TO_STORE')
-          .map((method: any) => method.partyId));
-        return this.facilityCarriers.filter((carrier: any) => allowedPartyIds.has(carrier.partyId));
-      }
-      return this.facilityCarriers;
-    }
-  },
-  data() {
-    return {
-      shippingRejectionReason: "NO_VARIANCE_LOG", //TODO: Specifc reason should be used in order to track rejection due to shipping label issues
-      rejectOrder: false,
-      rejectionComment: "",
-      selectedSegment: 'update-carrier',
-      isTrackingRequired: false,
-      carrierMethods:[] as any,
-      carrierPartyId: "",
-      shipmentMethodTypeId: "",
-      trackingCode: "",
-      packingErrorMessage: ""
-    }
-  },
-  props: ["order", "updateCarrierShipmentDetails", "executePackOrder", "rejectEntireOrder", "updateParameter", "documentOptions", "packingError", "isDetailPage", "initialShipmentMethodTypeId"],
-  async mounted() {
-    await Promise.all([this.store.dispatch('carrier/fetchFacilityCarriers'), this.store.dispatch('carrier/fetchProductStoreShipmentMeths')])
-    this.isTrackingRequired = this.isTrackingRequiredForAnyShipmentPackage()
-    if (this.facilityCarriers) {
-      this.carrierPartyId = this.order?.carrierPartyId ? this.order?.carrierPartyId : this.facilityCarriers[0].partyId;
-      this.carrierMethods = await this.getProductStoreShipmentMethods(this.carrierPartyId);
-      this.shipmentMethodTypeId = this.order?.shipmentMethodTypeId;
-    }
-    this.packingErrorMessage = this.packingError
-  },
-  methods: {
-    closeModal(payload = {}) {
-      modalController.dismiss({ dismissed: true, ...payload });
-    },
-    openShippingMethodDocumentReference() {
-      window.open('https://docs.hotwax.co/documents/v/system-admins/fulfillment/shipping-methods/carrier-and-shipment-methods', '_blank');
-    },
-    isTrackingRequiredForAnyShipmentPackage() {
-      return this.order.isTrackingRequired === 'Y'
-    },
-    async getProductStoreShipmentMethods(carrierPartyId: string) { 
-      const shipmentMethodTypeId = this.initialShipmentMethodTypeId ? this.initialShipmentMethodTypeId : this.order?.shipmentMethodTypeId
-      return this.productStoreShipmentMethods?.filter((method: any) => method.partyId === carrierPartyId && (shipmentMethodTypeId === 'SHIP_TO_STORE' || method.shipmentMethodTypeId !== 'SHIP_TO_STORE')) || [];
-    },
-    getCarrier() {
-      const carrier = this.facilityCarriers.find((facilityCarrier: any) => facilityCarrier.partyId === this.carrierPartyId)
-      return carrier?.groupName ? carrier?.groupName : carrier?.carrierPartyId ? carrier.carrierPartyId : this.carrierPartyId
-    },
-    async updateCarrier(carrierPartyId: string) {
-      this.carrierMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
-      const isCurrentMethodSupported = this.shipmentMethodTypeId && this.carrierMethods.some((method: any) => method.shipmentMethodTypeId === this.shipmentMethodTypeId);
-      this.shipmentMethodTypeId = isCurrentMethodSupported ? this.shipmentMethodTypeId : (this.carrierMethods?.[0]?.shipmentMethodTypeId || "");
-    },
-    reinitializeData(){
-      this.carrierPartyId = this.order.carrierPartyId
-      this.shipmentMethodTypeId = this.order.shipmentMethodTypeId
-      this.trackingCode = ""
-      this.rejectOrder = false;
-      this.rejectionComment = ""
-    },
-    async confirmSave() {
-      let order = this.order
-      let isSuccess = true;
-      if (this.selectedSegment !== 'reject-order' && (order.carrierPartyId !== this.carrierPartyId || order.shipmentMethodTypeId !== this.shipmentMethodTypeId)) {
-        const isUpdated = await this.updateCarrierAndShippingMethod(this.carrierPartyId, this.shipmentMethodTypeId)
-        if(!isUpdated) {
-          showToast(translate("Failed to update shipment method detail."));
-          return;
-        }
-      }
-      const rejectEntireOrder = this.selectedSegment === 'reject-order' && this.rejectOrder
-      if (rejectEntireOrder) {
-        order.items.map((orderItem: any) => {
-          orderItem.rejectReason = this.shippingRejectionReason
-        })
-        isSuccess = await this.rejectEntireOrder(order, 'report')
-        if (isSuccess) {
-          try {
-            OrderService.createCommunicationEvent({
-              "communicationEventTypeId": "FULFILLMENT_ERROR",
-              "statusId": "COM_COMPLETE",
-              "partyIdFrom": this.userProfile.partyId,
-              "content": this.rejectionComment
-            })
-          } catch (e) {
-            logger.log("Error in creating communication event for order rejection due to shipping label error")
-          }
-          if (this.isDetailPage) {
-            this.router.push('/in-progress')
-          }
-        }
-      } else {
-        const packingResponse = await this.executePackOrder(this.order, this.updateParameter, this.trackingCode.trim(), this.documentOptions);
-        isSuccess = packingResponse.isPacked
-        this.packingErrorMessage = packingResponse.errors
-      }
-      if (isSuccess) {
-        this.closeModal();
-      }
-    },
-    getCarrierTrackingUrl() {
-      return this.facilityCarriers.find((carrier: any) => carrier.partyId === this.carrierPartyId)?.trackingUrl
-    },
-    generateTrackingUrl() {
-      if(this.getCarrierTrackingUrl()) {
-        return translate("Tracking URL:", { trackingUrl: this.getCarrierTrackingUrl()?.replace("${trackingNumber}", this.trackingCode) })
-      }
-      return translate("A tracking URL is not configured for", { carrierName: this.getCarrier() })
-    },
-    async updateCarrierAndShippingMethod(carrierPartyId: string, shipmentMethodTypeId: string) {
-      let resp;
-      try{
-        const carrierShipmentMethods = await this.getProductStoreShipmentMethods(carrierPartyId);
-        shipmentMethodTypeId = shipmentMethodTypeId ? shipmentMethodTypeId : carrierShipmentMethods?.[0]?.shipmentMethodTypeId;
-        const shipmentRouteSegmentId = this.order?.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
+const props = defineProps(["order", "updateCarrierShipmentDetails", "executePackOrder", "rejectEntireOrder", "updateParameter", "documentOptions", "packingError", "isDetailPage", "initialShipmentMethodTypeId"]);
 
-        const isTrackingRequired = carrierShipmentMethods.find((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId)?.isTrackingRequired
-        const params = {
-          shipmentId: this.order.shipmentId,
-          shipmentRouteSegmentId,
-          shipmentMethodTypeId : shipmentMethodTypeId ? shipmentMethodTypeId : "",
-          carrierPartyId,
-          isTrackingRequired: isTrackingRequired ? isTrackingRequired : "Y"
-        }
+const router = useRouter();
+const shippingRejectionReason = "NO_VARIANCE_LOG";
+const rejectOrder = ref(false);
+const rejectionComment = ref("");
+const selectedSegment = ref("update-carrier");
+const isTrackingRequired = ref(false);
+const carrierMethods = ref([] as any[]);
+const carrierPartyId = ref("");
+const shipmentMethodTypeId = ref("");
+const trackingCode = ref("");
+const packingErrorMessage = ref("");
 
-        resp = await OrderService.updateShipmentCarrierAndMethod(params)
-        if (hasError(resp)) {
-          throw resp.data;
-        }
+const facilityCarriers = computed(() => useCarrierStore().getFacilityCarriers);
+const productStoreShipmentMethods = computed(() => useCarrierStore().getProductStoreShipmentMethods);
+const userProfile = computed(() => useUserStore().getUserProfile);
 
-        this.isTrackingRequired = isTrackingRequired === "N" ? false : true
-      } catch(error: any) {
-        logger.error("Failed to update carrier and method", error);
-        return false;
-      }
-
-      this.updateCarrierShipmentDetails && this.updateCarrierShipmentDetails(carrierPartyId, shipmentMethodTypeId);
-      return true;
-    },
-    redirectToTrackingUrl() {
-      window.open(this.getCarrierTrackingUrl().replace("${trackingNumber}", this.trackingCode), "_blank");
-    }
-  },
-  setup() {
-    const store = useStore();
-    const router = useRouter();
-    return {
-      archiveOutline,
-      barcodeOutline,
-      copyToClipboard,
-      closeOutline,
-      copyOutline,
-      informationCircleOutline,
-      openOutline,
-      retryShippingLabel,
-      router,
-      saveOutline,
-      store,
-      translate,
-      trashOutline
-    };
-  },
+const filteredFacilityCarriers = computed(() => {
+  const methodTypeId = props.initialShipmentMethodTypeId ? props.initialShipmentMethodTypeId : props.order?.shipmentMethodTypeId;
+  if (methodTypeId === "SHIP_TO_STORE") {
+    const allowedPartyIds = new Set(productStoreShipmentMethods.value.filter((method: any) => method.shipmentMethodTypeId === "SHIP_TO_STORE").map((method: any) => method.partyId));
+    return facilityCarriers.value.filter((carrier: any) => allowedPartyIds.has(carrier.partyId));
+  }
+  return facilityCarriers.value;
 });
+
+onMounted(async () => {
+  await Promise.all([useCarrierStore().fetchFacilityCarriers(), useCarrierStore().fetchProductStoreShipmentMeths()]);
+  isTrackingRequired.value = isTrackingRequiredForAnyShipmentPackage();
+  if (facilityCarriers.value) {
+    carrierPartyId.value = props.order?.carrierPartyId ? props.order?.carrierPartyId : facilityCarriers.value[0].partyId;
+    carrierMethods.value = await getProductStoreShipmentMethods(carrierPartyId.value);
+    shipmentMethodTypeId.value = props.order?.shipmentMethodTypeId;
+  }
+  packingErrorMessage.value = props.packingError;
+});
+
+const closeModal = (payload = {}) => {
+  modalController.dismiss({ dismissed: true, ...payload });
+};
+
+const openShippingMethodDocumentReference = () => {
+  window.open("https://docs.hotwax.co/documents/v/system-admins/fulfillment/shipping-methods/carrier-and-shipment-methods", "_blank");
+};
+
+const isTrackingRequiredForAnyShipmentPackage = () => {
+  return props.order.isTrackingRequired === "Y";
+};
+
+const getProductStoreShipmentMethods = async (partyId: string) => {
+  const methodTypeId = props.initialShipmentMethodTypeId ? props.initialShipmentMethodTypeId : props.order?.shipmentMethodTypeId;
+  return productStoreShipmentMethods.value?.filter((method: any) => method.partyId === partyId && (methodTypeId === "SHIP_TO_STORE" || method.shipmentMethodTypeId !== "SHIP_TO_STORE")) || [];
+};
+
+const getCarrier = () => {
+  const carrier = facilityCarriers.value.find((facilityCarrier: any) => facilityCarrier.partyId === carrierPartyId.value);
+  return carrier?.groupName ? carrier?.groupName : carrier?.carrierPartyId ? carrier.carrierPartyId : carrierPartyId.value;
+};
+
+const updateCarrier = async (partyId: string) => {
+  carrierMethods.value = await getProductStoreShipmentMethods(partyId);
+  const isCurrentMethodSupported = shipmentMethodTypeId.value && carrierMethods.value.some((method: any) => method.shipmentMethodTypeId === shipmentMethodTypeId.value);
+  shipmentMethodTypeId.value = isCurrentMethodSupported ? shipmentMethodTypeId.value : (carrierMethods.value?.[0]?.shipmentMethodTypeId || "");
+};
+
+const reinitializeData = () => {
+  carrierPartyId.value = props.order.carrierPartyId;
+  shipmentMethodTypeId.value = props.order.shipmentMethodTypeId;
+  trackingCode.value = "";
+  rejectOrder.value = false;
+  rejectionComment.value = "";
+};
+
+const confirmSave = async () => {
+  const order = props.order;
+  let isSuccess = true;
+  if (selectedSegment.value !== "reject-order" && (order.carrierPartyId !== carrierPartyId.value || order.shipmentMethodTypeId !== shipmentMethodTypeId.value)) {
+    const isUpdated = await updateCarrierAndShippingMethod(carrierPartyId.value, shipmentMethodTypeId.value);
+    if (!isUpdated) {
+      showToast(translate("Failed to update shipment method detail."));
+      return;
+    }
+  }
+  const rejectEntireOrder = selectedSegment.value === "reject-order" && rejectOrder.value;
+  if (rejectEntireOrder) {
+    order.items.map((orderItem: any) => {
+      orderItem.rejectReason = shippingRejectionReason;
+    });
+    isSuccess = await props.rejectEntireOrder(order, "report");
+    if (isSuccess) {
+      try {
+        OrderService.createCommunicationEvent({ communicationEventTypeId: "FULFILLMENT_ERROR", statusId: "COM_COMPLETE", partyIdFrom: userProfile.value.partyId, content: rejectionComment.value });
+      } catch (e) {
+        logger.log("Error in creating communication event for order rejection due to shipping label error");
+      }
+      if (props.isDetailPage) {
+        router.push("/in-progress");
+      }
+    }
+  } else {
+    const packingResponse = await props.executePackOrder(props.order, props.updateParameter, trackingCode.value.trim(), props.documentOptions);
+    isSuccess = packingResponse.isPacked;
+    packingErrorMessage.value = packingResponse.errors;
+  }
+  if (isSuccess) {
+    closeModal();
+  }
+};
+
+const getCarrierTrackingUrl = () => {
+  return facilityCarriers.value.find((carrier: any) => carrier.partyId === carrierPartyId.value)?.trackingUrl;
+};
+
+const generateTrackingUrl = () => {
+  if (getCarrierTrackingUrl()) {
+    return translate("Tracking URL:", { trackingUrl: getCarrierTrackingUrl()?.replace("${trackingNumber}", trackingCode.value) });
+  }
+  return translate("A tracking URL is not configured for", { carrierName: getCarrier() });
+};
+
+const updateCarrierAndShippingMethod = async (partyId: string, methodTypeId: string) => {
+  try {
+    const carrierShipmentMethods = await getProductStoreShipmentMethods(partyId);
+    methodTypeId = methodTypeId ? methodTypeId : carrierShipmentMethods?.[0]?.shipmentMethodTypeId;
+    const shipmentRouteSegmentId = props.order?.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId;
+
+    const trackingRequired = carrierShipmentMethods.find((method: any) => method.shipmentMethodTypeId === methodTypeId)?.isTrackingRequired;
+    const params = {
+      shipmentId: props.order.shipmentId,
+      shipmentRouteSegmentId,
+      shipmentMethodTypeId: methodTypeId ? methodTypeId : "",
+      carrierPartyId: partyId,
+      isTrackingRequired: trackingRequired ? trackingRequired : "Y"
+    };
+
+    const resp = await OrderService.updateShipmentCarrierAndMethod(params);
+    if (hasError(resp)) {
+      throw resp.data;
+    }
+
+    isTrackingRequired.value = trackingRequired === "N" ? false : true;
+  } catch (error: any) {
+    logger.error("Failed to update carrier and method", error);
+    return false;
+  }
+
+  props.updateCarrierShipmentDetails && props.updateCarrierShipmentDetails(partyId, methodTypeId);
+  return true;
+};
+
+const redirectToTrackingUrl = () => {
+  window.open(getCarrierTrackingUrl().replace("${trackingNumber}", trackingCode.value), "_blank");
+};
 </script>
 <style scoped>
 ion-content {

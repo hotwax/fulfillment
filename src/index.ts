@@ -1,4 +1,6 @@
-import { createApp } from 'vue'
+import { createApp, computed, reactive } from 'vue'
+import { createPinia, setActivePinia } from "pinia"
+import piniaPersist from "pinia-plugin-persistedstate"
 import App from './App.vue'
 import router from './router';
 import logger from './logger';
@@ -25,8 +27,7 @@ import '@ionic/vue/css/display.css';
 import './theme/variables.css';
 import "@hotwax/apps-theme";
 
-import store from './store'
-import permissionPlugin, { Actions, hasPermission } from '@/authorization';
+import permissionPlugin, { Actions, hasPermission, setPermissions } from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
 import { dxpComponents } from '@hotwax/dxp-components';
@@ -35,6 +36,11 @@ import { getConfig, fetchGoodIdentificationTypes, getEComStoresByFacility, getPr
   setUserPreference } from './adapter';
 import localeMessages from '@/locales';
 import { addNotification, storeClientRegistrationToken } from '@/utils/firebase';
+import { useUserStore } from "@/store/user";
+
+const pinia = createPinia()
+pinia.use(piniaPersist)
+setActivePinia(pinia)
 
 const app = createApp(App)
   .use(IonicVue, {
@@ -45,7 +51,7 @@ const app = createApp(App)
     level: process.env.VUE_APP_DEFAULT_LOG_LEVEL
   })
   .use(router)
-  .use(store)
+  .use(pinia)
   .use(permissionPlugin, {
     rules: permissionRules,
     actions: permissionActions
@@ -79,5 +85,23 @@ const app = createApp(App)
   });
 
 router.isReady().then(() => {
+  const userStore = useUserStore();
+  setPermissions(userStore.getUserPermissions);
   app.mount('#app');
 });
+
+//TODO: Remove this after dxp-components is updated to replace appContext.config.globalProperties.$store and stopped calling vuex pattern getters/actions
+app.config.globalProperties.$store = {
+  getters: reactive({
+    'user/getUserProfile': computed(() => useUserStore().getUserProfile),
+    'user/getInstanceUrl': computed(() => useUserStore().getInstanceUrl),
+    //'user/getCurrentFacility': computed(() => useUserStore().getCurrentFacility),
+    'user/getPwaState': computed(() => useUserStore().getPwaState),
+    //'user/getCurrentEComStore': computed(() => useUserStore().getCurrentEComStore),
+  }),
+  dispatch: (action: string, payload: any) => {
+    if (action === 'user/updatePwaState') {
+      useUserStore().updatePwaState(payload)
+    }
+  }
+}
