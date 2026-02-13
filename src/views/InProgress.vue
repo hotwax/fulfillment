@@ -78,6 +78,10 @@
             </div>
             <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
               <ion-button :disabled="order.items.length <= order.shipmentPackages.length || addingBoxForShipmentIds.includes(order.shipmentId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
+              <ion-button fill="outline" color="secondary" shape="round" size="small" class="ai-packing-button" @click.stop="getAIPackingPlan(order)">
+                <ion-icon slot="start" :icon="sparkles" />
+                {{ translate("AI Packing") }}
+              </ion-button>
               <ion-row>
                 <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
                   {{ `Box ${shipmentPackage?.packageName}` }} {{ `| ${boxTypeDesc(getShipmentPackageType(order, shipmentPackage))}`}}
@@ -194,10 +198,6 @@
 
               <div class="desktop-only">
                 <ion-button v-if="order.missingLabelImage && isAutoShippingLabelEnabled" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
-                <ion-button fill="outline" color="secondary" @click.stop="getAIPackingPlan(order)">
-                  <ion-icon slot="start" :icon="cubeOutline" />
-                  {{ translate("AI Packing Help") }}
-                </ion-button>
               </div>
             </div>
           </ion-card>
@@ -291,6 +291,7 @@ import {
   optionsOutline,
   pricetagOutline,
   printOutline,
+  sparkles,
   trashBinOutline
 } from 'ionicons/icons'
 import PackagingPopover from "@/views/PackagingPopover.vue";
@@ -1025,7 +1026,7 @@ export default defineComponent({
 
       const { carrierPartyId, shipmentMethodTypeId } = order
       
-      if(!Object.keys(this.defaultShipmentBoxType).length) {
+      if(!boxType && !Object.keys(this.defaultShipmentBoxType).length) {
         this.defaultShipmentBoxType = await this.fetchDefaultShipmentBox() as any;
       }
 
@@ -1343,10 +1344,9 @@ export default defineComponent({
 
           await this.addShipmentBox(order, matchingBoxType);
           
-          // Re-fetch the updated order state after addShipmentBox
-          const updatedOrder = this.inProgressOrders.list.find((o: any) => o.shipmentId === order.shipmentId);
-          const newPackage = updatedOrder.shipmentPackages[updatedOrder.shipmentPackages.length - 1];
-          order = updatedOrder;
+          // Use the most recently fetched order state (addShipmentBox updates inProgressOrders.list)
+          order = this.inProgressOrders.list.find((o: any) => o.shipmentId === order.shipmentId);
+          const newPackage = order.shipmentPackages[order.shipmentPackages.length - 1];
 
           boxAssignments.push({
             planBox,
@@ -1367,11 +1367,7 @@ export default defineComponent({
             // Find an item that matches the ID/Name AND hasn't been assigned in this plan yet
             const item = order.items.find((it: any) => {
               const key = `${it.productId}_${it.shipmentItemSeqId}`;
-              return !assignedItemKeys.has(key) && (
-                it.productId === itemPlan || 
-                it.productName === itemPlan || 
-                (typeof itemPlan === 'string' && itemPlan.includes(it.productId))
-              );
+              return !assignedItemKeys.has(key) && it.productId === itemPlan;
             });
 
             if (item) {
@@ -1457,6 +1453,7 @@ export default defineComponent({
       printOutline,
       productIdentificationPref,
       router,
+      sparkles,
       trashBinOutline,
       store,
       translate
@@ -1486,6 +1483,17 @@ ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-te
 
 .order-item {
   grid-template-columns: repeat(3, 1fr);
+}
+
+.ai-packing-button {
+  --color: var(--ion-color-secondary);
+  animation: shine 3s infinite;
+}
+
+@keyframes shine {
+  0% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 5px var(--ion-color-secondary)); }
+  100% { opacity: 0.7; transform: scale(1); }
 }
 </style>
 

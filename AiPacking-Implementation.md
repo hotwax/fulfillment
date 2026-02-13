@@ -41,6 +41,13 @@ Provided clear visual feedback for items that the AI could not fit into the avai
 - **UI Highlighting**: Displays a "Not Packed" badge and red highlighting for unassigned items.
 - **Auto-Reset**: Manually assigning a box to an item automatically clears the "unpacked" warning.
 
+### 6. Logic Optimization & Cleanup
+Tightened the implementation for better performance and reliability.
+- **File**: `src/views/InProgress.vue`
+- **Tightened Matching**: Strictly enforced `productId` matching for AI assignments.
+- **Optimized Lookups**: Refactored loops to avoid redundant list searches and state re-fetches.
+- **Lazy Fetching**: Optimized `addShipmentBox` to skip default box fetches when a specific type is already provided.
+
 ## Verification Summary
 
 ### Automated Tests
