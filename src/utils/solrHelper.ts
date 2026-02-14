@@ -152,7 +152,6 @@ const prepareOrderLookupQuery = (query: any) => {
       "productStoreIdFacet":{
         "excludeTags":"orderLookupFilter",
         "field":"productStoreName",
-        "filter": "facilityId: " + getCurrentFacilityId(),
         "mincount":1,
         "limit":-1,
         "type":"terms",
