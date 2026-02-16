@@ -1,5 +1,5 @@
-import { getCurrentFacilityId } from ".";
 /* eslint-disable */
+import { getCurrentFacilityId } from ".";
 const prepareOrderQuery = (params: any) => {
   const viewSize = params.viewSize ? params.viewSize : process.env.VUE_APP_VIEW_SIZE;
   const viewIndex = params.viewIndex ? params.viewIndex : 0;
