@@ -52,14 +52,12 @@ const actions: ActionTree<OrderLookupState, RootState> = {
 
         // Added check as we are fetching the facets only on first request call and do not fetch facets information on infinite scroll
         if(params?.fetchFacets) {
-          const facilities = resp.data.facets?.facilityNameFacet?.buckets.map((bucket: any) => bucket.val)
           const productStores = resp.data.facets?.productStoreIdFacet?.buckets.map((bucket: any) => bucket.val)
           const channels = resp.data.facets?.salesChannelDescFacet?.buckets.map((bucket: any) => bucket.val)
           const statuses = resp.data.facets?.orderStatusDescFacet?.buckets.map((bucket: any) => bucket.val)
 
           commit(types.ORDERLOOKUP_CHANNEL_OPTIONS_UPDATED, channels);
           commit(types.ORDERLOOKUP_PRODUCT_STORE_OPTIONS_UPDATED, productStores);
-          commit(types.ORDERLOOKUP_FACILITY_OPTIONS_UPDATED, facilities);
           commit(types.ORDERLOOKUP_STATUS_OPTIONS_UPDATED, statuses);
         }
 
