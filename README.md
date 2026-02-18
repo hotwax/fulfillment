@@ -127,7 +127,7 @@ node -v
 npm -v
 git --version
 
-**📌 2️⃣ Project Setup (First Time Only)
+**2. Project Setup (First Time Only)**
 **
 Clone the repository:
 git clone <repository-url>
