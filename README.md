@@ -114,7 +114,7 @@ This document explains how to run Playwright tests:
 On Local Machine
 Using CI/CD Pipeline
 
- **1️⃣ Prerequisites**
+**1. Prerequisites**
 
 Before running tests, make sure below tools are installed:
 Node.js (v16 or above recommended)
