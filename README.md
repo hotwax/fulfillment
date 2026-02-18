@@ -108,8 +108,7 @@ If you have any questions or ideas feel free to join our <a href="https://discor
 # The license
 
 Fulfillment app is completely free and released under the Apache v2.0 License. Check <a href="https://github.com/hotwax/fulfillment-pwa/blob/main/LICENSE" target="_blank">LICENSE</a> for more details.
-------------------------------------------------------------------------------
-**Playwright Automation – Execution Guidelines**
+## Playwright Automation – Execution Guidelines
 
 This document explains how to run Playwright tests:
 On Local Machine
