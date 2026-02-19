@@ -1,0 +1,21 @@
+frontend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/**
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/**
+
+playwright:
+  - changed-files:
+      - any-glob-to-any-file:
+          - Tests/e2e/**
+          - playwright.config.ts
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - package.json
+          - package-lock.json
