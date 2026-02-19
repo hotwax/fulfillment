@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal()">
+        <ion-button data-testid="giftcard-activation-close-modal-btn" @click="closeModal()">
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -11,13 +11,13 @@
   </ion-header>
 
   <ion-content>
-    <div v-if="isLoading" class="empty-state">
+    <div v-if="isLoading" class="empty-state" data-testid="giftcard-activation-loading">
       <ion-spinner name="crescent" />
       <ion-label>{{ translate("Fetching gift card info.") }}</ion-label>
     </div>
     <ion-list v-else>
       <ion-item lines="none" v-if="!item.isGCActivated">
-        <ion-input :label="translate('Activation code')" :placeholder="translate('serial number')" :helper-text="translate('Scan or enter the unique code on the gift card')" v-model="activationCode" />
+        <ion-input data-testid="giftcard-activation-code-input" :label="translate('Activation code')" :placeholder="translate('serial number')" :helper-text="translate('Scan or enter the unique code on the gift card')" v-model="activationCode" />
       </ion-item>
 
       <ion-item v-else>
@@ -36,11 +36,11 @@
       </ion-item>
 
       <div class="ion-margin" v-if="!item.isGCActivated">
-        <ion-button expand="block" fill="outline" @click="isCameraEnabled ? stopScan() : scan()">
+        <ion-button data-testid="giftcard-activation-toggle-scan-btn" expand="block" fill="outline" @click="isCameraEnabled ? stopScan() : scan()">
           <ion-icon slot="start" :icon="isCameraEnabled ? stopOutline : cameraOutline" />
           {{ translate(isCameraEnabled ? "Stop" : "Scan") }}
         </ion-button>
-        <StreamBarcodeReader class="scanning-preview"
+        <StreamBarcodeReader data-testid="giftcard-activation-scanner" class="scanning-preview"
           v-if="isCameraEnabled"
           @decode="onDecode"
         />
@@ -49,7 +49,7 @@
   </ion-content>
 
   <ion-fab v-if="!item.isGCActivated" vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button @click="confirmSave()">
+    <ion-fab-button data-testid="giftcard-activation-save-btn" @click="confirmSave()">
       <ion-icon :icon="cardOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -140,9 +140,15 @@ export default defineComponent({
         buttons: [
           {
             text: translate("Cancel"),
+            htmlAttributes: {
+              "data-testid": "giftcard-activation-cancel-btn"
+            }
           },
           {
             text: translate("Activate"),
+            htmlAttributes: {
+              "data-testid": "giftcard-activation-confirm-btn"
+            },
             handler: async () => {
               await this.activateGitCard()
             }
