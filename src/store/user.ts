@@ -39,7 +39,7 @@ interface UserState {
   allNotificationPrefs: any[]
 }
 
-export const useUserStore = defineStore("user", {
+export const useUserStore = defineStore("appUser", {
   state: (): UserState => ({
     token: "",
     permissions: [],

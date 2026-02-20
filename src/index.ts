@@ -84,9 +84,11 @@ const app = createApp(App)
     fetchProducts
   });
 
+// Setting permission before router ready, as router checks for permissions, if not set before ready,
+// user gets redirected to settings page on refresh even when having permissions
+setPermissions(useUserStore().getUserPermissions);
+
 router.isReady().then(() => {
-  const userStore = useUserStore();
-  setPermissions(userStore.getUserPermissions);
   app.mount('#app');
 });
 
