@@ -151,8 +151,6 @@ const printPicklist = async (picklistId: string): Promise <any>  => {
     const pdfUrl = window.URL.createObjectURL(resp.data);
     // Open the file in new tab
     try {
-      console.log('suthStore',useAuthStore().shopifyAppBridge.dispatch(Redirect.Action.REMOTE, pdfUrl))
-      console.log('ShopifyService.getApp()', ShopifyService.getApp())
       // If we have an app bridge instance, use it to open the pdf
       if (ShopifyService.getApp()) {
         ShopifyService.redirect(pdfUrl);

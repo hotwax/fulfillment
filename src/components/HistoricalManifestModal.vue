@@ -112,7 +112,6 @@ export default defineComponent({
 
         // Open the file in new tab
         try {
-          console.log('ShopifyService.getApp()', ShopifyService.getApp())
           // If we have an app bridge instance, use it to open the pdf
           if (ShopifyService.getApp()) {
             ShopifyService.redirect(pdfUrl);

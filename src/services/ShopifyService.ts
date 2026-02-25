@@ -5,14 +5,11 @@ class ShopifyService {
   private app: any;
 
   public initialize(apiKey: string, host: string) {
-    console.log('apiKey', apiKey)
-    console.log('host', host)
     if (!this.app) {
       this.app = createApp({
         apiKey,
         host,
       });
-      console.log('this.app', this.app)
     }
   }
 
