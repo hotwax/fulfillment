@@ -16,7 +16,7 @@ import CreateCarrier from "@/views/CreateCarrier.vue"
 import CarrierShipmentMethods from "@/views/CarrierShipmentMethods.vue"
 import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
-import { translate } from '@hotwax/dxp-components'
+import { translate, useUserStore } from '@hotwax/dxp-components'
 import 'vue-router'
 import Notifications from '@/views/Notifications.vue'
 import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
@@ -33,14 +33,20 @@ import { loader } from '@/utils/user';
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 import Rejections from '@/views/Rejections.vue';
+import Shopify from '@/views/Shopify.vue';
 
 const authGuard = async (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
   if (!authStore.isAuthenticated || !store.getters['user/isAuthenticated']) {
     await loader.present('Authenticating')
+    if (authStore.isEmbedded) {
+      loader.dismiss();
+      next('/login');
+      return;
+    }
     // TODO use authenticate() when support is there
     const redirectUrl = window.location.origin + '/login'
-    window.location.href = authStore.isEmbedded? getAppLoginUrl() : `${getAppLoginUrl()}?redirectUrl=${redirectUrl}`
+    window.location.href = `${getAppLoginUrl()}?redirectUrl=${redirectUrl}`
     loader.dismiss()
   }
   next()
@@ -48,6 +54,11 @@ const authGuard = async (to: any, from: any, next: any) => {
 
 const loginGuard = (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
+  const userStore = useUserStore();
+  if (to.query?.embedded === '1') {
+    authStore.$reset();
+    userStore.$reset();
+  }
   if (authStore.isAuthenticated && !to.query?.token && !to.query?.oms) {
     next('/')
   }
@@ -238,6 +249,11 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       permissionId: "APP_REJECTIONS_VIEW"
     }
+  },
+  {
+    path: '/shopify',
+    name: 'Shopify',
+    component: Shopify
   }
 ]
 

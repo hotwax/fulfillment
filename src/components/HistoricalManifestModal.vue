@@ -50,6 +50,7 @@ import {
   IonToolbar,
   modalController,
 } from '@ionic/vue';
+import ShopifyService from '@/services/ShopifyService';
 import { computed, defineComponent } from 'vue';
 import { cogOutline, closeOutline, printOutline } from 'ionicons/icons';
 import { translate, useUserStore } from '@hotwax/dxp-components';
@@ -108,9 +109,15 @@ export default defineComponent({
 
         // Generate local file URL for the blob received
         const pdfUrl = window.URL.createObjectURL(resp.data);
+
         // Open the file in new tab
         try {
-          window.open(pdfUrl, "_blank").focus();
+          // If we have an app bridge instance, use it to open the pdf
+          if (ShopifyService.getApp()) {
+            ShopifyService.redirect(pdfUrl);
+          } else {
+            window.open(pdfUrl, "_blank").focus();
+          }
         }
         catch {
           showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'carrier manifest'}), { icon: cogOutline });
