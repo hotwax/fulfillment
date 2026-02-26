@@ -17,7 +17,7 @@ import { mapGetters, useStore } from 'vuex';
 import { initialise, resetConfig } from '@/adapter'
 import { useRouter } from 'vue-router';
 import { Settings } from 'luxon'
-import { useAuthStore, getAppLoginUrl, initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
+import { useAuthStore, initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
 import logger from '@/logger'
 import { init, loadRemote } from '@module-federation/runtime';
 import { addNotification, storeClientRegistrationToken } from '@/utils/firebase';
@@ -72,11 +72,12 @@ export default defineComponent({
     async unauthorised() {
       const authStore = useAuthStore();
       const isEmbedded = authStore.isEmbedded;
-      const appLoginUrl = getAppLoginUrl();
+      const shop = authStore.shop;
+      const host = authStore.host;
       // Mark the user as unauthorised, this will help in not making the logout api call in actions
       this.store.dispatch("user/logout", { isUserUnauthorised: true });
       const redirectUrl = window.location.origin + '/login';
-      window.location.href = isEmbedded ? appLoginUrl :`${appLoginUrl}?redirectUrl=${redirectUrl}`;
+      window.location.href = isEmbedded ? `${redirectUrl}?embedded=1&shop=${shop}&host=${host}` :`${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`;
     },
     playAnimation() {
       const aside = document.querySelector('aside') as Element
