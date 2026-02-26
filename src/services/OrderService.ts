@@ -1,7 +1,8 @@
 import { api, apiClient, hasError } from '@/adapter';
 import { useOrderStore } from "@/store/order";
 import { useUtilStore } from "@/store/util";
-import { translate, useUserStore } from '@hotwax/dxp-components';
+import { useUserStore as useAppUserStore } from "@/store/user";
+import { translate } from '@hotwax/dxp-components';
 import logger from '@/logger'
 import { cogOutline } from 'ionicons/icons';
 import { downloadCsv, getCurrentFacilityId, getProductStoreId, showToast } from '@/utils'
@@ -11,11 +12,10 @@ import { ZebraPrinterService } from './ZebraPrinterService';
 import ShopifyService from './ShopifyService';
 
 const getAuth = () => {
-  const userStore = useUserStore();
   return {
-    omstoken: userStore.getUserToken,
-    baseURL: userStore.getMaargBaseUrl,
-    maargUrl: userStore.getMaargUrl
+    omstoken: useAppUserStore().getUserToken,
+    baseURL: useAppUserStore().getMaargBaseUrl,
+    maargUrl: useAppUserStore().getMaargUrl
   };
 };
 

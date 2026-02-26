@@ -111,9 +111,6 @@ export const useOrderLookupStore = defineStore("orderLookup", {
     updateProductStoreOptions(payload: any) {
       this.productStores = payload
     },
-    updateFacilityOptions(payload: any) {
-      this.facilities = payload
-    },
     updateStatusOptions(payload: any) {
       this.orderStatuses = payload
     },
@@ -143,7 +140,6 @@ export const useOrderLookupStore = defineStore("orderLookup", {
       this.current = {}
       this.channels = []
       this.productStores = []
-      this.facilities = []
       this.orderStatuses = []
     },
     async findOrders(params: any) {

@@ -7,7 +7,6 @@ import Settings from "@/views/Settings.vue"
 import RejectionReasons from '@/views/RejectionReasons.vue';
 import Carriers from '@/views/Carriers.vue'
 import CarrierDetail from '@/views/CarrierDetail.vue'
-import { useUserStore } from "@/store/user"
 import OrderDetail from "@/views/OrderDetail.vue"
 import TransferOrders from "@/views/TransferOrders.vue"
 import TransferOrderDetail from "@/views/TransferOrderDetail.vue"
@@ -15,11 +14,12 @@ import CreateCarrier from "@/views/CreateCarrier.vue"
 import CarrierShipmentMethods from "@/views/CarrierShipmentMethods.vue"
 import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
-import { translate, useUserStore } from '@hotwax/dxp-components'
+import { translate, useUserStore as useDxpUserStore } from '@hotwax/dxp-components'
 import 'vue-router'
 import Notifications from '@/views/Notifications.vue'
 import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
 import ShipTransferOrder from '@/views/ShipTransferOrder.vue';
+import { useUserStore as useAppUserStore } from '@/store/user'
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -36,8 +36,7 @@ import Shopify from '@/views/Shopify.vue';
 
 const authGuard = async (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
-  const userStore = useUserStore()
-  if (!authStore.isAuthenticated || !userStore.isAuthenticated) {
+  if (!authStore.isAuthenticated || !useAppUserStore().isAuthenticated) {
     await loader.present('Authenticating')
     if (authStore.isEmbedded) {
       loader.dismiss();
@@ -54,7 +53,7 @@ const authGuard = async (to: any, from: any, next: any) => {
 
 const loginGuard = (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
-  const userStore = useUserStore();
+  const userStore = useDxpUserStore();
   if (to.query?.embedded === '1') {
     authStore.$reset();
     userStore.$reset();
