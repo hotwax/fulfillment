@@ -115,5 +115,5 @@ export const useProductStore = defineStore("product", {
       return resp
     }
   },
-  persist: false
+  persist: true
 })
