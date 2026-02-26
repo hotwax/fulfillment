@@ -51,10 +51,11 @@ const dismissLoader = () => {
 
 const unauthorised = async () => {
   const isEmbedded = useAuthStore().isEmbedded;
-  const appLoginUrl = getAppLoginUrl();
+  const shop = useAuthStore().shop;
+  const host = useAuthStore().host;
   useUserStore().logout({ isUserUnauthorised: true });
   const redirectUrl = window.location.origin + "/login";
-  window.location.href = isEmbedded ? appLoginUrl : `${appLoginUrl}?redirectUrl=${redirectUrl}`;
+  window.location.href = isEmbedded ? `${redirectUrl}?embedded=1&shop=${shop}&host=${host}` :`${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`;
 };
 
 const playAnimation = () => {

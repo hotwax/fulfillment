@@ -33,7 +33,6 @@ interface OrderLookupState {
   current: any
   channels: any[]
   productStores: any[]
-  facilities: any[]
   orderStatuses: any[]
   carriersTrackingInfo: any
 }
@@ -62,7 +61,6 @@ export const useOrderLookupStore = defineStore("orderLookup", {
     current: {},
     channels: [],
     productStores: [],
-    facilities: [],
     orderStatuses: [],
     carriersTrackingInfo: {}
   }),
@@ -78,9 +76,6 @@ export const useOrderLookupStore = defineStore("orderLookup", {
     },
     getCurrentOrder(state) {
       return state.current
-    },
-    getFacilityOptions: (state) => {
-      return state.facilities || []
     },
     getProductStoreOptions: (state) => {
       return state.productStores || []
@@ -191,14 +186,12 @@ export const useOrderLookupStore = defineStore("orderLookup", {
           })
 
           if (params?.fetchFacets) {
-            const facilities = resp.data.facets?.facilityNameFacet?.buckets.map((bucket: any) => bucket.val)
             const productStores = resp.data.facets?.productStoreIdFacet?.buckets.map((bucket: any) => bucket.val)
             const channels = resp.data.facets?.salesChannelDescFacet?.buckets.map((bucket: any) => bucket.val)
             const statuses = resp.data.facets?.orderStatusDescFacet?.buckets.map((bucket: any) => bucket.val)
 
             this.updateChannelOptions(channels)
             this.updateProductStoreOptions(productStores)
-            this.updateFacilityOptions(facilities)
             this.updateStatusOptions(statuses)
           }
 

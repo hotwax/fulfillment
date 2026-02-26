@@ -36,6 +36,7 @@
 
 <script setup lang="ts">
 import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonSpinner, IonTitle, IonToolbar, modalController } from "@ionic/vue";
+import ShopifyService from '@/services/ShopifyService';
 import { computed, defineProps, ref } from "vue";
 import { cogOutline, closeOutline, printOutline } from "ionicons/icons";
 import { translate, useUserStore } from "@hotwax/dxp-components";
@@ -63,21 +64,31 @@ const downloadCarrierManifest = async (manifest: any) => {
   };
 
   try {
-    const resp = await UtilService.downloadCarrierManifest(payload);
-    if (!resp || resp.status !== 200 || hasError(resp)) {
-      throw resp.data;
-    }
+        const resp = await UtilService.downloadCarrierManifest(payload);
 
-    const pdfUrl = window.URL.createObjectURL(resp.data);
-    try {
-      window.open(pdfUrl, "_blank").focus();
-    } catch {
-      showToast(translate("Unable to open as browser is blocking pop-ups.", { documentName: "carrier manifest" }), { icon: cogOutline });
-    }
-  } catch (err) {
-    logger.error("Failed to print manifest", err);
-    showToast(translate("Failed to print manifest"));
-  }
-  loadingContentId.value = null;
+        if (!resp || resp.status !== 200 || hasError(resp)) {
+          throw resp.data
+        }
+
+        // Generate local file URL for the blob received
+        const pdfUrl = window.URL.createObjectURL(resp.data);
+
+        // Open the file in new tab
+        try {
+          // If we have an app bridge instance, use it to open the pdf
+          if (ShopifyService.getApp()) {
+            ShopifyService.redirect(pdfUrl);
+          } else {
+            window.open(pdfUrl, "_blank").focus();
+          }
+        }
+        catch {
+          showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'carrier manifest'}), { icon: cogOutline });
+        }
+      } catch(err) {
+        logger.error("Failed to print manifest", err)
+        showToast(translate("Failed to print manifest"));
+      }
+      this.loadingContentId = null;
 };
 </script>

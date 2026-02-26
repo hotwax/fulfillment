@@ -14,6 +14,7 @@ import { useOrderLookupStore } from "@/store/orderLookup"
 import { useTransferOrderStore } from "@/store/transferorder"
 import { useProductStore } from "@/store/product"
 import { useUtilStore } from "@/store/util"
+import { UtilService } from '@/services/UtilService';
 
 interface UserState {
   token: string
@@ -216,6 +217,24 @@ export const useUserStore = defineStore("appUser", {
             showToast(translate("Redirecting to home page due to incorrect information being passed."))
           }
         }
+
+        if(useAuthStore().isEmbedded) {
+        const locationId = useAuthStore().posContext.locationId
+        const payload = {
+          shopifyLocationId: locationId
+        }
+        const resp = await UtilService.fetchShopifyShopLocation(omsRedirectionUrl, token, payload)
+        if(!hasError(resp) && resp.data?.length) {
+          const facilityId = resp.data[0].facilityId;
+          const facility = userProfile.facilities.find((facility: any) => facility.facilityId === facilityId);
+          if(!facility) {
+            throw "Unable to login. User is not associated with this location"
+          }
+          useDxpUserStore().currentFacility = facility
+        } else {
+          throw "Failed to fetch location information"
+        }
+      }
 
         const currentFacility: any = useDxpUserStore().getCurrentFacility
         userProfile.stores = await useDxpUserStore().getEComStoresByFacility(currentFacility.facilityId)

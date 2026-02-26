@@ -645,6 +645,20 @@ const createProductStoreSetting = async (payload: any): Promise<any> => {
   });
 }
 
+const fetchShopifyShopLocation = async (omsRedirectionUrl: string, token: any, payload: any): Promise<any> => {
+  const baseURL = omsRedirectionUrl.startsWith("http") ? omsRedirectionUrl.includes("/rest/s1/oms") ? omsRedirectionUrl : `${omsRedirectionUrl}/rest/s1/oms/` : `https://${omsRedirectionUrl}.hotwax.io/rest/s1/oms/`;
+  return await apiClient({
+    url: "shopifyShops/locations",
+    method: "GET",
+    baseURL,
+    headers: {
+      "Authorization": "Bearer " + token,
+      "Content-Type": "application/json"
+    },
+    params: payload
+  });
+}
+
 export const UtilService = {
   fetchCarriers,
   createEnumerationGroupMember,
@@ -667,6 +681,7 @@ export const UtilService = {
   fetchShipmentBoxType,
   fetchShipmentMethods,
   fetchShipmentMethodTypeDesc,
+  fetchShopifyShopLocation,
   fetchStoreCarrierAndMethods,
   fetchPaymentMethodTypeDesc,
   fetchStatusDesc,

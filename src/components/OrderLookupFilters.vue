@@ -43,11 +43,6 @@
             <ion-select-option v-for="status in orderStatusOptions" :key="status" :value="status">{{ translate(status) }}</ion-select-option>
           </ion-select>
         </ion-item>
-        <ion-item>
-          <ion-select :selected-text="!query.facility.length ? translate('All') : query.facility.length > 1 ? query.facility.length + translate('items selected') : query.facility" :label="translate('Facility')" :disabled="!facilityOptions.length" :multiple="true" :value="query.facility" @ionChange="updateAppliedFilters($event['detail'].value, 'facility')" interface="popover">
-            <ion-select-option v-for="facility in facilityOptions" :key="facility" :value="facility">{{ facility }}</ion-select-option>
-          </ion-select>
-        </ion-item>
       </ion-list>
       <ion-list>
         <ion-list-header><h3>{{ translate("Channel") }}</h3></ion-list-header>
@@ -87,7 +82,6 @@ import { translate } from "@hotwax/dxp-components";
 import { DateTime } from "luxon";
 import { useOrderLookupStore } from "@/store/orderLookup";
 const query = computed(() => useOrderLookupStore().getOrderQuery);
-const facilityOptions = computed(() => useOrderLookupStore().getFacilityOptions);
 const productStoreOptions = computed(() => useOrderLookupStore().getProductStoreOptions);
 const channelOptions = computed(() => useOrderLookupStore().getChannelOptions);
 const orderStatusOptions = computed(() => useOrderLookupStore().getOrderStatusOptions);

@@ -1,14 +1,14 @@
 import { api, apiClient, hasError } from '@/adapter';
-import { useUserStore } from "@/store/user";
 import { useOrderStore } from "@/store/order";
 import { useUtilStore } from "@/store/util";
-import { translate } from '@hotwax/dxp-components';
+import { translate, useUserStore } from '@hotwax/dxp-components';
 import logger from '@/logger'
 import { cogOutline } from 'ionicons/icons';
 import { downloadCsv, getCurrentFacilityId, getProductStoreId, showToast } from '@/utils'
 import { removeKitComponents } from '@/utils/order';
 import { escapeSolrSpecialChars, prepareSolrQuery } from '@/utils/solrHelper';
 import { ZebraPrinterService } from './ZebraPrinterService';
+import ShopifyService from './ShopifyService';
 
 const getAuth = () => {
   const userStore = useUserStore();
@@ -158,7 +158,12 @@ const printPicklist = async (picklistId: string): Promise <any>  => {
     const pdfUrl = window.URL.createObjectURL(resp.data);
     // Open the file in new tab
     try {
-      (window as any).open(pdfUrl, "_blank").focus();
+      // If we have an app bridge instance, use it to open the pdf
+      if (ShopifyService.getApp()) {
+        ShopifyService.redirect(pdfUrl);
+      } else {
+        window.open(pdfUrl, "_blank")?.focus();
+      }
     }
     catch {
       showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'picklist'}), { icon: cogOutline });
