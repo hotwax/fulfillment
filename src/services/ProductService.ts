@@ -1,7 +1,15 @@
 import { api, apiClient } from '@/adapter';
-import store from '@/store';
+import { useUserStore } from "@/store/user";
 import logger from '@/logger';
 import { hasError } from '@/adapter';
+
+const getAuth = () => {
+  const userStore = useUserStore();
+  return {
+    omstoken: userStore.getUserToken,
+    baseURL: userStore.getMaargBaseUrl
+  };
+};
 
 const fetchProducts = async (query: any): Promise <any>  => {
   return api({
@@ -14,8 +22,7 @@ const fetchProducts = async (query: any): Promise <any>  => {
 }
 
 const fetchProductComponents = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/dataDocumentView`,
@@ -30,8 +37,7 @@ const fetchProductComponents = async (payload: any): Promise<any> => {
 }
 
 const fetchProductAverageCost = async (productId: string, facilityId: string): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   if(!productId) return;
   let productAverageCost = ''
@@ -73,8 +79,7 @@ const fetchProductAverageCost = async (productId: string, facilityId: string): P
 };
 
 const fetchBarcodeIdentificationDesc = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/goodIdentificationTypes`,

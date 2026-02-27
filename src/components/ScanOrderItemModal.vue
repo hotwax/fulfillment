@@ -31,9 +31,9 @@
               <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
               <div>
                 {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
-                <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
               </div>
-              <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
+              <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures)}}</p>
             </ion-label>
           </ion-item>
         </div>
@@ -52,151 +52,92 @@
   </ion-fab>
 </template>
 
-<script lang="ts">
-import { 
-  IonButton,
-  IonButtons,
-  IonCheckbox,
-  IonContent,
-  IonFab,
-  IonFabButton,
-  IonHeader,
-  IonIcon,
-  IonInput,
-  IonItem,
-  IonLabel,
-  IonThumbnail,
-  IonTitle,
-  IonToolbar,
-  modalController,
-} from "@ionic/vue";
-import { computed, defineComponent } from "vue";
-import { cameraOutline, closeOutline, copyOutline, saveOutline } from "ionicons/icons";
+<script setup lang="ts">
+import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonThumbnail, IonTitle, IonToolbar, modalController } from "@ionic/vue";
+import { computed, defineProps, onMounted, ref } from "vue";
+import { cameraOutline, closeOutline, saveOutline } from "ionicons/icons";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useAuthStore, openPosScanner } from '@hotwax/dxp-components';
-import { mapGetters } from 'vuex';
-import { getFeatures, showToast, hasWebcamAccess } from "@/utils"
-import Scanner from "@/components/Scanner.vue"
-import { isKit } from '@/utils/order'
+import { commonUtil } from "@/utils/commonUtil";
+import Scanner from "@/components/Scanner.vue";
+import { orderUtil } from "@/utils/orderUtil";
+import { useProductStore } from "@/store/product";
+import { useUtilStore } from "@/store/util";
 
-export default defineComponent({
-  name: "ScanOrderItemModal",
-  components: { 
-    DxpShopifyImg,
-    IonButton,
-    IonButtons,
-    IonCheckbox,
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonHeader,
-    IonIcon,
-    IonInput,
-    IonItem,
-    IonLabel,
-    IonThumbnail,
-    IonTitle,
-    IonToolbar,
-  },
-  computed: {
-    ...mapGetters({
-      getProduct: 'product/getProduct',
-      barcodeIdentifier: 'util/getBarcodeIdentificationPref'
-    }),
-  },
-  data() {
-    return {
-      orderItems: [] as any,
-      queryString: "",
-      lastScannedId: ""
-    }
-  },
-  props: ["order"],
-  mounted() {
-    const orderItems = this.order.items.length ? JSON.parse(JSON.stringify(this.order.items)) : []
-    this.orderItems = orderItems ? orderItems.filter((item: any) => !item.rejectReason) : []
-  },
-  methods: {
-    closeModal(payload= {}) {
-      modalController.dismiss({ dismissed: true, ...payload });
-    },
-    async scan() {
-      if (useAuthStore().isEmbedded) {
-        const scanData = await openPosScanner();
-        if(scanData) {
-          this.updateProductScannedStatus(scanData);
-        } else {
-          showToast(translate("No data received from scanner"));
-        }
-        return;
-      }
-      if (!(await hasWebcamAccess())) {
-        showToast(translate("Camera access not allowed, please check permissons."));
-        return;
-      } 
-      const modal = await modalController.create({
-        component: Scanner,
-      });
+const props = defineProps(["order"]);
+const orderItems = ref([] as any[]);
+const queryString = ref("");
+const lastScannedId = ref("");
 
-      modal.onDidDismiss().then((result) => {
-        if (result.role) {
-          this.updateProductScannedStatus(result.role);
-        }
-      })
+const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
+const barcodeIdentifier = computed(() => useUtilStore().getBarcodeIdentificationPref);
+const getProduct = (productId: string) => useProductStore().getProduct(productId);
 
-      modal.present();
-    },
-    async updateProductScannedStatus(payload?: any) {
-      if(!payload) payload = this.queryString
-
-      let currentItem = {} as any;
-      const item = this.orderItems.find((orderItem: any) => {
-        const itemVal = getProductIdentificationValue(this.barcodeIdentifier, this.getProduct(orderItem.productId)) ? getProductIdentificationValue(this.barcodeIdentifier, this.getProduct(orderItem.productId)) : this.getProduct(orderItem.productId)?.internalName
-        if(itemVal === payload) currentItem = orderItem;
-        return itemVal === payload && !orderItem.isChecked;
-      });
-
-      if(item) {
-        item.isChecked = true;
-        showToast(translate("Scanned successfully.", { itemName: payload }))
-
-        this.lastScannedId = item.orderItemSeqId
-        // Highlight specific element
-        const scannedElement = document.getElementById(item.orderItemSeqId);
-        scannedElement && (scannedElement.scrollIntoView());
-
-        // Scanned product should get un-highlighted after 3s for better experience hence adding setTimeOut
-        setTimeout(() => {
-          this.lastScannedId = ''
-        }, 3000)
-      } else {
-        showToast(translate((currentItem.productId ? "Product is already scanned:" : "Scanned item is not present within the shipment:"), { itemName: payload }))
-      }
-      this.queryString = ''
-    },
-    areAllItemsSelected() {
-      return !this.orderItems.some((item: any) => !item.isChecked)
-    },
-    packOrder() {
-      this.closeModal({ packOrder: true })
-    },
-  },
-  setup() {
-    const productIdentificationStore = useProductIdentificationStore();
-    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
-
-    return {
-      cameraOutline,
-      closeOutline,
-      copyOutline,
-      getFeatures,
-      getProductIdentificationValue,
-      isKit,
-      productIdentificationPref,
-      saveOutline,
-      translate
-    };
-  },
+onMounted(() => {
+  const items = props.order.items.length ? JSON.parse(JSON.stringify(props.order.items)) : [];
+  orderItems.value = items ? items.filter((item: any) => !item.rejectReason) : [];
 });
+
+const closeModal = (payload = {}) => {
+  modalController.dismiss({ dismissed: true, ...payload });
+};
+
+const scan = async () => {
+  if (useAuthStore().isEmbedded) {
+    const scanData = await openPosScanner();
+    if(scanData) {
+      updateProductScannedStatus(scanData);
+    } else {
+      commonUtil.showToast(translate("No data received from scanner"));
+    }
+    return;
+  }
+  if (!(await commonUtil.hasWebcamAccess())) {
+    commonUtil.showToast(translate("Camera access not allowed, please check permissons."));
+    return;
+  }
+  const modal = await modalController.create({ component: Scanner });
+  modal.onDidDismiss().then((result) => {
+    if (result.role) {
+      updateProductScannedStatus(result.role);
+    }
+  });
+  modal.present();
+};
+
+const updateProductScannedStatus = async (payload?: any) => {
+  if (!payload) payload = queryString.value;
+
+  let currentItem = {} as any;
+  const item = orderItems.value.find((orderItem: any) => {
+    const itemVal = getProductIdentificationValue(barcodeIdentifier.value, getProduct(orderItem.productId)) ? getProductIdentificationValue(barcodeIdentifier.value, getProduct(orderItem.productId)) : getProduct(orderItem.productId)?.internalName;
+    if (itemVal === payload) currentItem = orderItem;
+    return itemVal === payload && !orderItem.isChecked;
+  });
+
+  if (item) {
+    item.isChecked = true;
+    commonUtil.showToast(translate("Scanned successfully.", { itemName: payload }));
+
+    lastScannedId.value = item.orderItemSeqId;
+    const scannedElement = document.getElementById(item.orderItemSeqId);
+    scannedElement && scannedElement.scrollIntoView();
+
+    setTimeout(() => {
+      lastScannedId.value = "";
+    }, 3000);
+  } else {
+    commonUtil.showToast(translate((currentItem.productId ? "Product is already scanned:" : "Scanned item is not present within the shipment:"), { itemName: payload }));
+  }
+  queryString.value = "";
+};
+
+const areAllItemsSelected = () => {
+  return !orderItems.value.some((item: any) => !item.isChecked);
+};
+
+const packOrder = () => {
+  closeModal({ packOrder: true });
+};
 </script>
 
 <style scoped>

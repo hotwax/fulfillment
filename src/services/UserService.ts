@@ -1,6 +1,14 @@
 import { api, apiClient, hasError } from '@/adapter';
-import store from '@/store';
+import { useUserStore } from "@/store/user";
 import logger from '@/logger'
+
+const getAuth = () => {
+  const userStore = useUserStore();
+  return {
+    omstoken: userStore.getUserToken,
+    baseURL: userStore.getMaargBaseUrl
+  };
+};
 
 const login = async (username: string, password: string): Promise <any> => {
   return api({
@@ -42,8 +50,7 @@ const moquiLogin = async (omsRedirectionUrl: string, token: string): Promise <an
 }
 
 const getFacilityDetails = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/facilities/${payload.facilityId}`,
@@ -58,8 +65,7 @@ const getFacilityDetails = async (payload: any): Promise<any> => {
 }
 
 const getFacilityOrderCount = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/facilities/facilityOrderCounts`,
@@ -74,8 +80,7 @@ const getFacilityOrderCount = async (payload: any): Promise<any> => {
 }
 
 const updateFacility = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/facilities/${payload.facilityId}`,
@@ -90,8 +95,7 @@ const updateFacility = async (payload: any): Promise<any> => {
 }
 
 const updateFacilityToGroup = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/facilities/${payload.facilityId}/groups`,
@@ -106,8 +110,7 @@ const updateFacilityToGroup = async (payload: any): Promise<any> => {
 }
 
 const addFacilityToGroup = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/facilities/${payload.facilityId}/groups`,
@@ -122,8 +125,7 @@ const addFacilityToGroup = async (payload: any): Promise<any> => {
 }
 
 const getFacilityGroupDetails = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/facilityGroups`,
@@ -138,9 +140,9 @@ const getFacilityGroupDetails = async (payload: any): Promise<any> => {
 }
 
 const getPreferredStore = async (token: any): Promise<any> => {
-  const baseURL = store.getters['user/getBaseUrl'];
+  const userStore = useUserStore();
+  const baseURL = userStore.getMaargBaseUrl;
   try {
-    const baseURL = store.getters['user/getMaargBaseUrl'];
     const resp = await apiClient({
       url: `/oms/userPreferences`,
       method: "GET",
@@ -163,7 +165,8 @@ const getPreferredStore = async (token: any): Promise<any> => {
 }
 
 const getUserPermissions = async (payload: any, token: any): Promise<any> => {
-  const baseURL = store.getters['user/getBaseUrl'];
+  const userStore = useUserStore();
+  const baseURL = userStore.getBaseUrl;
   let serverPermissions = [] as any;
 
   // If the server specific permission list doesn't exist, getting server permissions will be of no use
@@ -252,7 +255,8 @@ const getUserPermissions = async (payload: any, token: any): Promise<any> => {
 }
 
 const getUserProfile = async (token: any): Promise<any> => {
-  const baseURL = store.getters['user/getBaseUrl'];
+  const userStore = useUserStore();
+  const baseURL = userStore.getBaseUrl;
   try {
     const resp = await apiClient({
       url: "user-profile",
@@ -271,8 +275,7 @@ const getUserProfile = async (token: any): Promise<any> => {
 }
 
 const setUserPreference = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/userPreferences`,
@@ -289,8 +292,7 @@ const setUserPreference = async (payload: any): Promise<any> => {
 
 
 const createEnumeration = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/admin/enums`,
@@ -306,8 +308,7 @@ const createEnumeration = async (payload: any): Promise<any> => {
 
 const isEnumExists = async (enumId: string): Promise<any> => {
   try {
-    const omstoken = store.getters['user/getUserToken'];
-    const baseURL = store.getters['user/getMaargBaseUrl'];
+    const { omstoken, baseURL } = getAuth();
 
     const resp = await apiClient({
       url: `/admin/enums`,

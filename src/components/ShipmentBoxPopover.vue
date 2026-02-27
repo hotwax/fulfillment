@@ -8,30 +8,13 @@
   </ion-content>
 </template>
 
-<script lang="ts">
-import {
-  IonContent,
-  IonItem,
-  IonList,
-  popoverController,
-} from "@ionic/vue";
-import { defineComponent } from "vue";
+<script setup lang="ts">
+import { defineProps } from "vue";
+import { IonContent, IonItem, IonList, popoverController } from "@ionic/vue";
 
-export default defineComponent({
-  name: "ShipmentBoxPopover",
-  components: { 
-    IonContent,
-    IonItem,
-    IonList
-  },
-  props: ["shipmentPackages"],
-  methods: {
-    closePopover() {
-      popoverController.dismiss();
-    },
-    updateBox(packageName: string) {
-      popoverController.dismiss(packageName);
-    },
-  }
-});
+defineProps(["shipmentPackages"]);
+
+const updateBox = (packageName: string) => {
+  popoverController.dismiss(packageName);
+};
 </script>

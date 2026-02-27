@@ -14,7 +14,7 @@
             <p class="overline">{{ currentOrder.orderId }}</p>
             {{ currentOrder.orderName }}
             <p>{{ currentOrder.externalId }}</p>
-            <p>{{ translate('Item count') }}: {{ getItemCount()}}</p>
+            <p>{{ translate('Item count') }}: {{ getItemCount() }}</p>
           </ion-label>
           <ion-badge slot="end">{{ currentOrder.orderStatusDesc ? currentOrder.orderStatusDesc : getStatusDesc(currentOrder.statusId) }}</ion-badge>
         </ion-item>
@@ -22,7 +22,7 @@
         <div class="scanner">
           <ion-item>
             <ion-input :disabled="currentOrder.statusId === 'ORDER_COMPLETED'" :label="translate('Scan items')" autofocus :placeholder="translate('Scan barcodes to pick them')" v-model="queryString" @keyup.enter="updateProductCount()" />
-         </ion-item>
+          </ion-item>
 
           <ion-button expand="block" fill="outline" :disabled="currentOrder.statusId === 'ORDER_COMPLETED'" @click="scanCode()">
             <ion-icon slot="start" :icon="barcodeOutline" />{{ translate("Scan") }}
@@ -40,7 +40,7 @@
         <div class="segments" v-if="currentOrder">
           <template v-if="selectedSegment === 'open'">
             <template v-if="getTOItems('open')?.length > 0">
-              <TransferOrderItem v-for="item in getTOItems('open')" :key="currentOrder.orderId + item.orderItemSeqId + 'ship' +item.shippedQuantity" :itemDetail="item" :class="item.internalName === lastScannedId ? 'scanned-item' : '' " :id="item.internalName" isRejectionSupported="true"/>
+              <TransferOrderItem v-for="item in getTOItems('open')" :key="currentOrder.orderId + item.orderItemSeqId + 'ship' + item.shippedQuantity" :itemDetail="item" :class="item.internalName === lastScannedId ? 'scanned-item' : ''" :id="item.internalName" isRejectionSupported="true" />
             </template>
             <template v-else>
               <div class="empty-state">
@@ -57,29 +57,29 @@
                       <p>{{ translate("Shipped") }} {{ getTime(shipment.statusDate) }}</p>
                     </ion-label>
                   </div>
-                <div class="order-tags">
-                  <ion-chip>
-                    <ion-icon :icon="pricetagOutline" />
-                    <ion-label>{{ shipment.shipmentId }}</ion-label>
-                  </ion-chip>
+                  <div class="order-tags">
+                    <ion-chip>
+                      <ion-icon :icon="pricetagOutline" />
+                      <ion-label>{{ shipment.shipmentId }}</ion-label>
+                    </ion-chip>
+                  </div>
+                  <div class="order-metadata">
+                    <ion-label>
+                      {{ shipment.routeSegShipmentMethodDescription ? shipment.routeSegShipmentMethodDescription : shipment.routeSegShipmentMethodTypeId }}
+                      <p v-if="shipment.trackingIdNumber">{{ translate("Tracking Code") }} {{ shipment.trackingIdNumber }}</p>
+                    </ion-label>
+                  </div>
                 </div>
-                <div class="order-metadata">
-                  <ion-label>
-                    {{ shipment.routeSegShipmentMethodDescription ? shipment.routeSegShipmentMethodDescription : shipment.routeSegShipmentMethodTypeId }}
-                    <p v-if="shipment.trackingIdNumber">{{ translate("Tracking Code") }} {{ shipment.trackingIdNumber }}</p>
-                  </ion-label>
-                </div>
-              </div>
                 <div v-for="item in shipment.items" :key="item.shipmentItemSeqId" class="order-item order-line-item">
                   <div class="product-info">
                     <ion-item lines="none">
                       <ion-thumbnail slot="start">
-                        <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
+                        <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small" />
                       </ion-thumbnail>
                       <ion-label>
                         <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                         {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                        <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
+                        <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
                       </ion-label>
                     </ion-item>
                   </div>
@@ -90,7 +90,7 @@
                     </ion-item>
                   </div>
                 </div>
-                
+
                 <div class="actions">
                   <div class="desktop-only">
                     <ion-button fill="outline" @click.stop="regenerateShippingLabel(shipment)">
@@ -125,343 +125,267 @@
             {{ translate("Reject Items") }}
           </ion-button>
           <ion-button color="primary" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || isCreatingShipment" @click="printTransferOrderPicklist()">
-          <ion-icon slot="start" :icon="printOutline" />
-            {{ translate('Picklist') }}   
+            <ion-icon slot="start" :icon="printOutline" />
+            {{ translate('Picklist') }}
           </ion-button>
           <ion-button color="primary" fill="solid" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment() || isCreatingShipment" @click="confirmCreateShipment">
             <ion-spinner v-if="isCreatingShipment" slot="start" name="crescent" />
-            {{ translate('Create shipment') }}   
+            {{ translate('Create shipment') }}
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-footer>
   </ion-page>
 </template>
-  
-<script lang="ts">
-import {
-  IonBadge,
-  IonBackButton,
-  IonButton,
-  IonButtons,
-  IonCard,
-  IonChip,
-  IonContent,
-  IonFooter,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonInput,
-  IonLabel,
-  IonPage,
-  IonSegment,
-  IonSegmentButton,
-  IonSpinner,
-  IonThumbnail,
-  IonTitle,
-  IonToolbar,
-  alertController,
-  modalController,
-} from '@ionic/vue';
-import { computed, defineComponent } from 'vue';
-import { barcodeOutline, pricetagOutline, printOutline, trashOutline } from 'ionicons/icons';
-import { mapGetters, useStore } from "vuex";
-import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useAuthStore, openPosScanner } from '@hotwax/dxp-components';
-import { useRouter } from 'vue-router';
+
+<script setup lang="ts">
+import { IonBadge, IonBackButton, IonButton, IonButtons, IonCard, IonChip, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonPage, IonSegment, IonSegmentButton, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewDidLeave, onIonViewWillEnter } from "@ionic/vue";
+import { computed, ref } from "vue";
+import { barcodeOutline, pricetagOutline, printOutline, trashOutline } from "ionicons/icons";
+import { getProductIdentificationValue, DxpShopifyImg, openPosScanner, translate, useAuthStore, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { useRoute, useRouter } from "vue-router";
 import Scanner from "@/components/Scanner.vue";
-import { Actions, hasPermission } from '@/authorization'
-import { DateTime } from 'luxon';
-import { getFeatures, showToast, hasWebcamAccess } from '@/utils';
-import { TransferOrderService } from '@/services/TransferOrderService'
-import { OrderService } from '@/services/OrderService'
-import TransferOrderItem from '@/components/TransferOrderItem.vue'
-import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue';
+import { Actions, hasPermission } from "@/authorization";
+import { DateTime } from "luxon";
+import { commonUtil } from "@/utils/commonUtil";
+import { TransferOrderService } from "@/services/TransferOrderService";
+import { OrderService } from "@/services/OrderService";
+import TransferOrderItem from "@/components/TransferOrderItem.vue";
+import ShippingLabelErrorModal from "@/components/ShippingLabelErrorModal.vue";
 import emitter from "@/event-bus";
-import CloseTransferOrderModal from '@/components/CloseTransferOrderModal.vue';
- 
-export default defineComponent({
-  name: "TransferOrderDetail",
-  components: {
-    IonBadge,
-    IonBackButton,
-    IonButton,
-    IonButtons,
-    IonCard,
-    IonChip,
-    IonContent,
-    IonFooter,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonInput,
-    IonLabel,
-    IonPage,
-    IonSegment,
-    IonSegmentButton,
-    IonSpinner,
-    IonThumbnail,
-    IonTitle,
-    IonToolbar,
-    DxpShopifyImg,
-    TransferOrderItem,
-  },
-  data() {
-    return {
-      queryString: '',
-      selectedSegment: 'open',
-      isCreatingShipment: false,
-      lastScannedId: '',
-      defaultRejectReasonId: "NO_VARIANCE_LOG"  // default variance reason, to be used when any other item is selected for rejection
-    }
-  },
-  async ionViewWillEnter() {
-    emitter.emit('presentLoader');
-    await this.store.dispatch("transferorder/fetchRejectReasons");
-    await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.$route.params.orderId });
-    this.selectedSegment = this.hasOpenItems? (this.$route.params.category === 'completed' ? 'completed' : 'open'): 'completed';
-    emitter.emit('dismissLoader');
-  },
-  computed: {
-    ...mapGetters({
-      currentOrder: 'transferorder/getCurrent',
-      getStatusDesc: 'util/getStatusDesc',
-      getProduct: 'product/getProduct',
-      productIdentificationPref: 'user/getProductIdentificationPref',
-      productStoreShipmentMethCount: 'util/getProductStoreShipmentMethCount',
-    }),
-    areItemsEligibleForRejection() {
-      return this.currentOrder.items?.some((item: any) => item.rejectReasonId);
-    },
-    hasOpenItems() {
-      const hasOpenItems:any = this.currentOrder?.items?.some((item: any) => item.statusId === 'ITEM_PENDING_FULFILL');
-      return hasOpenItems;
-    },
-  },
-  methods: {
-    async printTransferOrderPicklist() {
-      await TransferOrderService.printTransferOrderPicklist(this.currentOrder.orderId)
-    },
-    getItemCount() {
-      return this.currentOrder?.items?.reduce((totalItems: any, item: any) => totalItems + (item.quantity || 0), 0);
-    },
-    getTime(time: any) {
-      return DateTime.fromMillis(time).toFormat("dd MMMM yyyy t a")
-    },
-    getTOItems(orderType: string) {
-      if (orderType === 'completed') {
-        return this.currentOrder?.items?.filter((item: any) => item.statusId === 'ITEM_COMPLETED')
-      } else {
-        return this.currentOrder?.items?.filter((item: any) => item.statusId === 'ITEM_PENDING_FULFILL')
-      }
-    },
-    async createShipment() {
-      this.isCreatingShipment = true;
-      const shipmentId = await this.store.dispatch('transferorder/createOutboundTransferShipment', this.currentOrder)
-      this.isCreatingShipment = false;
-      if (shipmentId) {
-        await this.store.dispatch('transferorder/clearCurrentTransferShipment');
-        this.router.push({ path: `/transfer-order-details/${this.currentOrder.orderId}/ship-transfer-order/${shipmentId}` })
-      }
-    },
-    async confirmCreateShipment() {
-      const message = translate("Make sure you have entered the correct item quantities to create the shipment.");
-      const alert = await alertController.create({
-        header: translate("Create shipment"),
-        message,
-        buttons: [
-          {
-            text: translate("Cancel"),
-          },
-          {
-            text: translate("Create"),
-            handler: async () => {
-              this.createShipment();
-            }
-          }
-        ],
-      });
-      return alert.present();
-    },
-    isEligibleForCreatingShipment() {
-      let isEligible = this.currentOrder && this.currentOrder.items?.some((item: any) => item.pickedQuantity > 0);
-      if (isEligible) {
-        isEligible = !this.currentOrder.items?.some((item: any) =>  item.pickedQuantity > 0 && (item.shippedQuantity + item.pickedQuantity) > item.orderedQuantity);
-      }
-      return isEligible;
-    },
-    async updateProductCount(payload: any) {
-      if (this.queryString) {
-        payload = this.queryString;
-      }
-      
-      const result = await this.store.dispatch('transferorder/updateOrderProductCount', payload);
-      if (result.isCompleted) {
-        showToast(translate("Scanned item is already completed:", { itemName: payload }))
-      }
-      else if (result.isProductFound) {
-        const item = result.orderItem
-        if(item.pickedQuantity > item.orderedQuantity - item.shippedQuantity) {
-          showToast(translate('The picked quantity cannot exceed the ordered quantity.') + " " + translate("already shipped.", {shippedQuantity: item.shippedQuantity}))
-        } else {
-          showToast(translate("Scanned successfully.", { itemName: payload }))
-          this.lastScannedId = payload
-          // Highlight specific element
-          const scannedElement = document.getElementById(payload);
-          scannedElement && (scannedElement.scrollIntoView());
-          // Scanned product should get un-highlighted after 3s for better experience hence adding setTimeOut
-          setTimeout(() => {
-            this.lastScannedId = ''
-          }, 3000)
-        }
-      } else {
-        showToast(translate("Scanned item is not present within the order:", { itemName: payload }));
-      }
-      this.queryString = ''
-    },
-    
-    async scanCode () {
-      if (useAuthStore().isEmbedded) {
-        const scanData = await openPosScanner();
-        if(scanData) {
-          this.updateProductCount(scanData);
-        } else {
-          showToast(translate("No data received from scanner"));
-        }
-        return;
-      }
-      if (!(await hasWebcamAccess())) {
-        showToast(translate("Camera access not allowed, please check permissons."));
-        return;
-      } 
-      const modal = await modalController
-        .create({
-          component: Scanner,
-        });
-        modal.onDidDismiss()
-        .then((result) => {
-          this.updateProductCount(result.role);
-      });
-      return modal.present();
-    },
-    async showShippingLabelErrorModal(shipment: any){
-      const shippingLabelErrorModal = await modalController.create({
-        component: ShippingLabelErrorModal,
-        componentProps: {
-          shipmentId: shipment.shipmentId
-        }
-      });
-      return shippingLabelErrorModal.present();
-    },
-      async regenerateShippingLabel(currentShipment: any) {
-        // If there are no product store shipment method configured, then not generating the label and displaying an error toast
-        if (this.productStoreShipmentMethCount <= 0) {
-          showToast(translate('Unable to generate shipping label due to missing product store shipping method configuration'))
-          return;
-        }
+import CloseTransferOrderModal from "@/components/CloseTransferOrderModal.vue";
+import { useTransferOrderStore } from "@/store/transferorder";
+import { useUtilStore } from "@/store/util";
+import { useProductStore } from "@/store/product";
 
-        // if the request to print shipping label is not yet completed, then clicking multiple times on the button
-        // should not do anything
-        if (currentShipment.isGeneratingShippingLabel) {
-          return;
-        }
+const route = useRoute();
+const router = useRouter();
+const queryString = ref("");
+const selectedSegment = ref("open");
+const isCreatingShipment = ref(false);
+const lastScannedId = ref("");
+const defaultRejectReasonId = "NO_VARIANCE_LOG";
 
-        currentShipment.isGeneratingShippingLabel = true;
-        let shippingLabelPdfUrls = currentShipment?.labelImageUrls;
+const currentOrder = computed(() => useTransferOrderStore().getCurrent);
+const getStatusDesc = (statusId: string) => useUtilStore().getStatusDesc(statusId);
+const getProduct = (productId: string) => useProductStore().getProduct(productId);
+const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
+const productStoreShipmentMethCount = computed(() => useUtilStore().getProductStoreShipmentMethCount);
 
+const areItemsEligibleForRejection = computed(() => {
+  return currentOrder.value.items?.some((item: any) => item.rejectReasonId);
+});
 
-        if (!currentShipment.trackingIdNumber) {
-          //regenerate shipping label if missing tracking code
-          await OrderService.retryShippingLabel(currentShipment.shipmentId)
-          // retry shipping label will generate a new label and the label pdf url may get change/set in this process, hence fetching the shipment packages again.
-          // Refetching the order tracking detail irrespective of api response since currently in SHIPHAWK api returns error whether label is generated
-          // Temporarily handling this in app but should be handled in backend        
-          await this.store.dispatch('transferorder/fetchTransferOrderDetail', { orderId: this.currentOrder.orderId })
-          currentShipment = this.currentOrder?.shipments?.find((shipment:any) => shipment.shipmentId === currentShipment.shipmentId);
-          shippingLabelPdfUrls = currentShipment?.labelImageUrls;
+const hasOpenItems = computed(() => {
+  return currentOrder.value?.items?.some((item: any) => item.statusId === "ITEM_PENDING_FULFILL");
+});
 
+const printTransferOrderPicklist = async () => {
+  await TransferOrderService.printTransferOrderPicklist(currentOrder.value.orderId);
+};
 
-          if(currentShipment.trackingIdNumber) {
-            showToast(translate("Shipping Label generated successfully"))
-            await TransferOrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
-          } else {
-            showToast(translate("Failed to generate shipping label"))
-          }
-        } else {
-          //print shipping label if label already exists
-          await TransferOrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
-        }
+const getItemCount = () => {
+  return currentOrder.value?.items?.reduce((totalItems: any, item: any) => totalItems + (item.quantity || 0), 0);
+};
 
-        currentShipment.isGeneratingShippingLabel = false;
-      },
-      async rejectItems() {
-        const alert = await alertController.create({
-          header: translate("Reject transfer order"),
-          message: translate("Rejecting a transfer order will remove it from your facility. Your inventory levels will not be affected from this rejection.", { space: "<br/><br/>" }),
-          buttons: [{
-            text: translate("Cancel"),
-            role: 'cancel',
-          }, {
-            text: translate("Reject"),
-            handler: async() => {
-              emitter.emit("presentLoader")
-              const payload = {
-                orderId: this.currentOrder.orderId,
-                items: this.currentOrder.items.map((item: any) => ({
-                  orderItemSeqId: item.orderItemSeqId,
-                  rejectionReasonId: item.rejectReasonId || this.defaultRejectReasonId
-                }))
-              };
-              try {
-                await TransferOrderService.rejectOrderItems(payload);
-                showToast(translate("All order items are rejected"))
-                this.$router.replace("/transfer-orders")
-              } catch(err) {
-                console.error(err);
-                showToast(translate("Failed to reject order"))
-                // If there is any error in rejecting the order, fetch the updated order information
-                await this.store.dispatch("transferorder/fetchTransferOrderDetail", { orderId: this.$route.params.orderId })
-              }
-              emitter.emit("dismissLoader")
-            }
-          }]
-        });
-        return alert.present();
-      },
-      async closeTOItems() {
-        const modal = await modalController.create({
-          component: CloseTransferOrderModal
-        })
+const getTime = (time: any) => {
+  return DateTime.fromMillis(time).toFormat("dd MMMM yyyy t a");
+};
 
-        return modal.present();
-      },
-}, 
-ionViewDidLeave() {
-  const routeTo = this.router.currentRoute;
-  if (routeTo.value.name !== 'Transfer Orders') {
-    this.store.dispatch('transferorder/clearTransferOrderFilters');
+const getTOItems = (orderType: string) => {
+  if (orderType === "completed") {
+    return currentOrder.value?.items?.filter((item: any) => item.statusId === "ITEM_COMPLETED");
   }
-},
-setup() {
-  const store = useStore(); 
-  const router = useRouter();
-  const productIdentificationStore = useProductIdentificationStore();
-  let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
-  return {
-    Actions,
-    barcodeOutline,
-    getFeatures,
-    getProductIdentificationValue,
-    hasPermission,
-    pricetagOutline,
-    printOutline,
-    productIdentificationPref,
-    showToast,
-    store,
-    router,
-    translate,
-    trashOutline
-  };
-},
+  return currentOrder.value?.items?.filter((item: any) => item.statusId === "ITEM_PENDING_FULFILL");
+};
+
+const createShipment = async () => {
+  isCreatingShipment.value = true;
+  const shipmentId = await useTransferOrderStore().createOutboundTransferShipment(currentOrder.value);
+  isCreatingShipment.value = false;
+  if (shipmentId) {
+    await useTransferOrderStore().clearCurrentTransferShipment();
+    router.push({ path: `/transfer-order-details/${currentOrder.value.orderId}/ship-transfer-order/${shipmentId}` });
+  }
+};
+
+const confirmCreateShipment = async () => {
+  const message = translate("Make sure you have entered the correct item quantities to create the shipment.");
+  const alert = await alertController.create({
+    header: translate("Create shipment"),
+    message,
+    buttons: [
+      {
+        text: translate("Cancel")
+      },
+      {
+        text: translate("Create"),
+        handler: async () => {
+          createShipment();
+        }
+      }
+    ]
+  });
+  return alert.present();
+};
+
+const isEligibleForCreatingShipment = () => {
+  let isEligible = currentOrder.value && currentOrder.value.items?.some((item: any) => item.pickedQuantity > 0);
+  if (isEligible) {
+    isEligible = !currentOrder.value.items?.some((item: any) => item.pickedQuantity > 0 && (item.shippedQuantity + item.pickedQuantity) > item.orderedQuantity);
+  }
+  return isEligible;
+};
+
+const updateProductCount = async (payload: any) => {
+  if (queryString.value) {
+    payload = queryString.value;
+  }
+
+  const result = await useTransferOrderStore().updateOrderProductCount(payload);
+  if (result.isCompleted) {
+    commonUtil.showToast(translate("Scanned item is already completed:", { itemName: payload }));
+  } else if (result.isProductFound) {
+    const item = result.orderItem;
+    if (item.pickedQuantity > item.orderedQuantity - item.shippedQuantity) {
+      commonUtil.showToast(translate("The picked quantity cannot exceed the ordered quantity.") + " " + translate("already shipped.", { shippedQuantity: item.shippedQuantity }));
+    } else {
+      commonUtil.showToast(translate("Scanned successfully.", { itemName: payload }));
+      lastScannedId.value = payload;
+      const scannedElement = document.getElementById(payload);
+      scannedElement && (scannedElement.scrollIntoView());
+      setTimeout(() => {
+        lastScannedId.value = "";
+      }, 3000);
+    }
+  } else {
+    commonUtil.showToast(translate("Scanned item is not present within the order:", { itemName: payload }));
+  }
+  queryString.value = "";
+};
+
+const scanCode = async () => {
+  if (useAuthStore().isEmbedded) {
+    const scanData = await openPosScanner();
+    if(scanData) {
+      updateProductCount(scanData);
+    } else {
+      commonUtil.showToast(translate("No data received from scanner"));
+    }
+    return;
+  }
+  
+  if (!(await commonUtil.hasWebcamAccess())) {
+    commonUtil.showToast(translate("Camera access not allowed, please check permissons."));
+    return;
+  }
+  const modal = await modalController.create({
+    component: Scanner
+  });
+  modal.onDidDismiss()
+    .then((result) => {
+      updateProductCount(result.role);
+    });
+  return modal.present();
+};
+
+const showShippingLabelErrorModal = async (shipment: any) => {
+  const shippingLabelErrorModal = await modalController.create({
+    component: ShippingLabelErrorModal,
+    componentProps: {
+      shipmentId: shipment.shipmentId
+    }
+  });
+  return shippingLabelErrorModal.present();
+};
+
+const regenerateShippingLabel = async (currentShipment: any) => {
+  if (productStoreShipmentMethCount.value <= 0) {
+    commonUtil.showToast(translate("Unable to generate shipping label due to missing product store shipping method configuration"));
+    return;
+  }
+
+  if (currentShipment.isGeneratingShippingLabel) {
+    return;
+  }
+
+  currentShipment.isGeneratingShippingLabel = true;
+  let shippingLabelPdfUrls = currentShipment?.labelImageUrls;
+
+  if (!currentShipment.trackingIdNumber) {
+    await OrderService.retryShippingLabel(currentShipment.shipmentId);
+    await useTransferOrderStore().fetchTransferOrderDetail({ orderId: currentOrder.value.orderId });
+    currentShipment = currentOrder.value?.shipments?.find((shipment: any) => shipment.shipmentId === currentShipment.shipmentId);
+    shippingLabelPdfUrls = currentShipment?.labelImageUrls;
+
+    if (currentShipment.trackingIdNumber) {
+      commonUtil.showToast(translate("Shipping Label generated successfully"));
+      await TransferOrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
+    } else {
+      commonUtil.showToast(translate("Failed to generate shipping label"));
+    }
+  } else {
+    await TransferOrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
+  }
+
+  currentShipment.isGeneratingShippingLabel = false;
+};
+
+const rejectItems = async () => {
+  const alert = await alertController.create({
+    header: translate("Reject transfer order"),
+    message: translate("Rejecting a transfer order will remove it from your facility. Your inventory levels will not be affected from this rejection.", { space: "<br/><br/>" }),
+    buttons: [{
+      text: translate("Cancel"),
+      role: "cancel"
+    }, {
+      text: translate("Reject"),
+      handler: async () => {
+        emitter.emit("presentLoader");
+        const payload = {
+          orderId: currentOrder.value.orderId,
+          items: currentOrder.value.items.map((item: any) => ({
+            orderItemSeqId: item.orderItemSeqId,
+            rejectionReasonId: item.rejectReasonId || defaultRejectReasonId
+          }))
+        };
+        try {
+          await TransferOrderService.rejectOrderItems(payload);
+          commonUtil.showToast(translate("All order items are rejected"));
+          router.replace("/transfer-orders");
+        } catch (err) {
+          console.error(err);
+          commonUtil.showToast(translate("Failed to reject order"));
+          await useTransferOrderStore().fetchTransferOrderDetail({ orderId: route.params.orderId });
+        }
+        emitter.emit("dismissLoader");
+      }
+    }]
+  });
+  return alert.present();
+};
+
+const closeTOItems = async () => {
+  const modal = await modalController.create({
+    component: CloseTransferOrderModal
+  });
+
+  return modal.present();
+};
+
+onIonViewWillEnter(async () => {
+  emitter.emit("presentLoader");
+  await useTransferOrderStore().fetchRejectReasons();
+  await useTransferOrderStore().fetchTransferOrderDetail({ orderId: route.params.orderId });
+  selectedSegment.value = hasOpenItems.value ? (route.params.category === "completed" ? "completed" : "open") : "completed";
+  emitter.emit("dismissLoader");
+});
+
+onIonViewDidLeave(() => {
+  const routeTo = router.currentRoute;
+  if (routeTo.value.name !== "Transfer Orders") {
+    useTransferOrderStore().clearTransferOrderFilters();
+  }
 });
 </script>
 
@@ -472,10 +396,6 @@ ion-content > main {
   margin-left: auto;
 }
 .scanned-item {
-  /*
-    Todo: used outline for highliting items for now, need to use border
-    Done this because currently ion-item inside ion-card is not inheriting highlighted background property.
-  */
   outline: 2px solid var( --ion-color-medium-tint);
 }
 </style>

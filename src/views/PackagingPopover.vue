@@ -17,49 +17,24 @@
   </ion-content>
 </template>
 
-<script lang="ts">
-import {
-  IonContent,
-  IonIcon,
-  IonItem,
-  IonList,
-  modalController,
-} from "@ionic/vue";
-import { defineComponent } from "vue";
-import EditPackagingModal from '@/views/EditPackagingModal.vue'
-import ReportIssueModal from '@/views/ReportIssueModal.vue'
-import { pencil, warning, refresh } from 'ionicons/icons'
+<script setup lang="ts">
+import { IonContent, IonIcon, IonItem, IonList, modalController } from "@ionic/vue";
+import EditPackagingModal from "@/views/EditPackagingModal.vue";
+import ReportIssueModal from "@/views/ReportIssueModal.vue";
+import { pencil, warning, refresh } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
 
-export default defineComponent({
-  name: "PackagingPopover",
-  components: { 
-    IonContent,
-    IonIcon,
-    IonItem,
-    IonList,
-  },
-  methods: {
-    async editPackaging() {
-      const editmodal = await modalController.create({
-        component: EditPackagingModal
-      });
-      return editmodal.present();
-    },
-     async reportIssue() {
-      const reportmodal = await modalController.create({
-        component: ReportIssueModal
-      });
-      return reportmodal.present();
-    }
-  },
-  setup() {
-    return {
-      pencil,
-      warning,
-      refresh,
-      translate
-    }
-  }
-});
+const editPackaging = async () => {
+  const editmodal = await modalController.create({
+    component: EditPackagingModal
+  });
+  return editmodal.present();
+};
+
+const reportIssue = async () => {
+  const reportmodal = await modalController.create({
+    component: ReportIssueModal
+  });
+  return reportmodal.present();
+};
 </script>

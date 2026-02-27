@@ -14,74 +14,44 @@
     </ion-content>
   </template>
   
-  <script lang="ts">
-  import {
-    IonContent,
-    IonIcon,
-    IonItem,
-    IonList,
-    IonListHeader,
-    popoverController
-  } from "@ionic/vue";
-  import { defineComponent } from "vue";
+  <script setup lang="ts">
+import { defineProps } from "vue";
+  import { IonContent, IonIcon, IonItem, IonList, IonListHeader, popoverController } from "@ionic/vue";
   import { documentOutline, trashOutline } from "ionicons/icons";
   import { translate } from "@hotwax/dxp-components";
-  import { useStore } from "vuex";
-  import { OrderService } from '@/services/OrderService';
-  import { showToast } from '@/utils'
-  import logger from '@/logger';
+  import { useOrderStore } from "@/store/order";
+  import { OrderService } from "@/services/OrderService";
+  import { commonUtil } from "@/utils/commonUtil";
+  import logger from "@/logger";
   
-  export default defineComponent({
-    name: "ProductStorePopover",
-    components: {
-      IonContent,
-      IonIcon,
-      IonItem,
-      IonList,
-      IonListHeader
-    },
-    props: ['currentOrder'],
-    methods: {
-      async printShippingLabel(order: any) {
-        const shipmentIds = [order.shipmentId];
-        const shippingLabelPdfUrls: string[] = Array.from(
-          new Set(
-            (order.shipmentPackageRouteSegDetails ?? [])
-              .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
-              .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
-          )
-        );
-
-        await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackageRouteSegDetails)
-        popoverController.dismiss()
-      },
-      async voidShippingLabel(order: any) {
-        let resp = {} as any;
-        try {
-          resp = await OrderService.voidShipmentLabel({
-            "shipmentId": order.shipmentId,
-            "shipmentRouteSegmentId": order.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
-          })
-          
-          showToast(translate("Shipping label voided successfully."))
-          //fetching updated shipment packages
-          await this.store.dispatch('order/updateShipmentPackageDetail', order) 
-        } catch (err) {
-          logger.error('Failed to void shipping label', err);
-          showToast(translate("Failed to void shipping label"));
-        }
-        popoverController.dismiss()
-      }
-    },
-    setup() {
-      const store = useStore();
+  const props = defineProps(["currentOrder"]);
+  const printShippingLabel = async (order: any) => {
+    const shipmentIds = [order.shipmentId];
+    const shippingLabelPdfUrls: string[] = Array.from(
+      new Set(
+        (order.shipmentPackageRouteSegDetails ?? [])
+          .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+          .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+      )
+    );
   
-      return {
-        documentOutline,
-        trashOutline,
-        store,
-        translate
-      };
+    await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackageRouteSegDetails);
+    popoverController.dismiss();
+  };
+  
+  const voidShippingLabel = async (order: any) => {
+    try {
+      await OrderService.voidShipmentLabel({
+        shipmentId: order.shipmentId,
+        shipmentRouteSegmentId: order.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
+      });
+  
+      commonUtil.showToast(translate("Shipping label voided successfully."));
+      await useOrderStore().updateShipmentPackageDetail(order);
+    } catch (err) {
+      logger.error("Failed to void shipping label", err);
+      commonUtil.showToast(translate("Failed to void shipping label"));
     }
-  });
+    popoverController.dismiss();
+  };
   </script>

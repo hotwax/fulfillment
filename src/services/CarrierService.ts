@@ -1,10 +1,16 @@
 import { apiClient } from '@/adapter';
-import store from '@/store';
+import { useUserStore } from "@/store/user";
   
+const getAuth = () => {
+  const userStore = useUserStore();
+  return {
+    omstoken: userStore.getUserToken,
+    baseURL: userStore.getMaargBaseUrl
+  };
+};
 
 const fetchCarriers = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/shippingGateways/carrierShipmentMethods/counts`,
@@ -18,8 +24,7 @@ const fetchCarriers = async (params: any): Promise<any> => {
   });
 }
 const fetchCarrierShipmentMethods = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     url: `/oms/shippingGateways/carrierShipmentMethods`,
@@ -34,8 +39,7 @@ const fetchCarrierShipmentMethods = async (params: any): Promise<any> => {
 }
 
 const fetchShipmentMethodTypes = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     url: `/oms/shippingGateways/shipmentMethodTypes`,
@@ -49,8 +53,7 @@ const fetchShipmentMethodTypes = async (params: any): Promise<any> => {
   });
 }
 const fetchProductStoreShipmentMethodsByCarrier = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     url: `/oms/dataDocumentView`,
@@ -64,8 +67,7 @@ const fetchProductStoreShipmentMethodsByCarrier = async (payload: any): Promise<
   });
 }
 const  fetchProductStoreShipmentMethods = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     url: `/oms/dataDocumentView`,
@@ -79,8 +81,7 @@ const  fetchProductStoreShipmentMethods = async (payload: any): Promise<any> => 
   });
 }
 const removeCarrierShipmentMethod = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/shippingGateways/carrierShipmentMethods`,
@@ -94,8 +95,7 @@ const removeCarrierShipmentMethod = async (payload: any): Promise<any> => {
   });
 }
 const addCarrierShipmentMethod = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/shippingGateways/carrierShipmentMethods`,
@@ -109,8 +109,7 @@ const addCarrierShipmentMethod = async (payload: any): Promise<any> => {
   });
 }
 const updateShipmentMethodType = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/shippingGateways/shipmentMethodTypes/${payload.shipmentMethodTypeId}`,
@@ -124,8 +123,7 @@ const updateShipmentMethodType = async (payload: any): Promise<any> => {
   });
 }
 const updateCarrierShipmentMethod = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/shippingGateways/carrierShipmentMethods`,
@@ -140,8 +138,7 @@ const updateCarrierShipmentMethod = async (payload: any): Promise<any> => {
 }
 
 const createProductStoreShipmentMethod = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/productStores/${payload.productStoreId}/shipmentMethods`,
@@ -155,8 +152,7 @@ const createProductStoreShipmentMethod = async (payload: any): Promise<any> => {
   });
 }
 const updateProductStoreShipmentMethod = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/productStores/${payload.productStoreId}/shipmentMethods`,
@@ -170,8 +166,7 @@ const updateProductStoreShipmentMethod = async (payload: any): Promise<any> => {
   });
 }
 const removeProductStoreShipmentMethod = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/productStores/${payload.productStoreId}/shipmentMethods`,
@@ -185,8 +180,7 @@ const removeProductStoreShipmentMethod = async (payload: any): Promise<any> => {
   });
 }
 const addCarrierToFacility = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/facilities/${payload.facilityId}/parties`,
@@ -200,8 +194,7 @@ const addCarrierToFacility = async (payload: any): Promise<any> => {
   });
 }
 const removeCarrierFromFacility = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/facilities/${payload.facilityId}/parties`,
@@ -215,8 +208,7 @@ const removeCarrierFromFacility = async (payload: any): Promise<any> => {
   });
 }
 const fetchCarrierFacilities = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/dataDocumentView`,
@@ -230,8 +222,7 @@ const fetchCarrierFacilities = async (payload: any): Promise<any> => {
   });
 }
 const fetchFacilityCarriers = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/dataDocumentView`,
@@ -245,8 +236,7 @@ const fetchFacilityCarriers = async (payload: any): Promise<any> => {
   });
 }
 const createShipmentMethod = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/shippingGateways/shipmentMethodTypes`,
@@ -261,8 +251,7 @@ const createShipmentMethod = async (payload: any): Promise<any> => {
 }
 
 const createCarrier = async (payload: any): Promise <any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/shippingGateways/carrierParties`,
@@ -277,8 +266,7 @@ const createCarrier = async (payload: any): Promise <any> => {
 }
 
 const updateCarrier = async (payload: any): Promise <any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/admin/organizations/${payload.partyId}`,
@@ -293,8 +281,7 @@ const updateCarrier = async (payload: any): Promise <any> => {
 }
 
 const fetchCarrierTrackingUrls = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     url: `/admin/systemProperties`, //should handle the update of OISG, SRG, SPRG if needed
@@ -309,8 +296,7 @@ const fetchCarrierTrackingUrls = async (params: any): Promise<any> => {
 }
 
 const fetchShipmentGatewayConfigs = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/shippingGateways/config`,
@@ -325,8 +311,7 @@ const fetchShipmentGatewayConfigs = async (params: any): Promise<any> => {
 }
 
 const fetchShippingRates = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: 'poorti/shippingRate/',

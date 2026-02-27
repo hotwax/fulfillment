@@ -75,133 +75,62 @@
   </ion-menu>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
-import {
-  IonCheckbox,
-  IonContent,
-  IonDatetime,
-  IonDatetimeButton,
-  IonHeader,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonMenu,
-  IonSelect,
-  IonSelectOption,
-  IonTitle,
-  IonToolbar
-} from '@ionic/vue';
-import { close, checkmarkOutline } from "ionicons/icons";
-import { mapGetters, useStore } from "vuex";
-import { translate } from '@hotwax/dxp-components'; 
-import { DateTime } from 'luxon';
+<script setup lang="ts">
+import { IonCheckbox, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonItem, IonLabel, IonList, IonListHeader, IonMenu, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
+import { computed, ref } from "vue";
+import { translate } from "@hotwax/dxp-components";
+import { DateTime } from "luxon";
+import { useOrderLookupStore } from "@/store/orderLookup";
+const query = computed(() => useOrderLookupStore().getOrderQuery);
+const productStoreOptions = computed(() => useOrderLookupStore().getProductStoreOptions);
+const channelOptions = computed(() => useOrderLookupStore().getChannelOptions);
+const orderStatusOptions = computed(() => useOrderLookupStore().getOrderStatusOptions);
 
-export default defineComponent({
-  name: 'OrderLookupFilters',
-  components: {
-    IonCheckbox,
-    IonContent,
-    IonDatetime,
-    IonDatetimeButton,
-    IonHeader,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonListHeader,
-    IonMenu,
-    IonSelect,
-    IonSelectOption,
-    IonTitle,
-    IonToolbar
-  },
-  computed: {
-    ...mapGetters({
-      query: 'orderLookup/getOrderQuery',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
-      productStoreOptions: "orderLookup/getProductStoreOptions",
-      channelOptions: "orderLookup/getChannelOptions",
-      orderStatusOptions: "orderLookup/getOrderStatusOptions",
-      ordersList: 'orderLookup/getOrders'
-    })
-  },
-  data() {
-    return {
-      dateRanges: [{
-        label: "Last 7 days",
-        value: "NOW-7DAY TO NOW"
-      }, {
-        label: "Last 30 days",
-        value: "NOW-30DAY TO NOW"
-      }, {
-        label: "Custom",
-        value: "custom"
-      }, {
-        label: "All",
-        value: ""
-      }],
-      fromDate: DateTime.now().toISO(),
-      toDate: DateTime.now().toISO(),
-      enableFromDate: false,
-      enableToDate: false
-    }
-  },
-  methods: {
-    async updateAppliedFilters(value: string | boolean, filterName: string, filterLabel?: string) {
-      let updatedValue = []
-      if(filterName === "channel") {
-        updatedValue = JSON.parse(JSON.stringify(this.query.channel))
-        value ? updatedValue.push(filterLabel) : updatedValue.splice(updatedValue.indexOf(filterLabel), 1)
-      }
+const dateRanges = ref([{ label: "Last 7 days", value: "NOW-7DAY TO NOW" }, { label: "Last 30 days", value: "NOW-30DAY TO NOW" }, { label: "Custom", value: "custom" }, { label: "All", value: "" }]);
+const fromDate = ref(DateTime.now().toISO());
+const toDate = ref(DateTime.now().toISO());
+const enableFromDate = ref(false);
+const enableToDate = ref(false);
 
-      if(filterName === "productStore") {
-        updatedValue = JSON.parse(JSON.stringify(this.query.productStore))
-        value ? updatedValue.push(filterLabel) : updatedValue.splice(updatedValue.indexOf(filterLabel), 1)
-      }
-
-      // Remove the fromDate and toDate selection when the user selects a hardcoded option, as not clearning from-to date
-      // will result in applying the previous from-to selection whenever user again selects the custom option
-      if(filterName === "date") {
-        this.fromDate = DateTime.now().toISO()
-        this.toDate = DateTime.now().toISO()
-        this.enableFromDate = false
-        this.enableToDate = false
-      }
-
-      // TODO: handle the case when the applied filter type is date, as in that case the action is called
-      // multiple times (two times when date is applied and three times when date filter is removed)
-      await this.store.dispatch('orderLookup/updateAppliedFilters', { value: filterName === "channel" || filterName === "productStore" ? updatedValue : value, filterName })
-    },
-    isProductStoreSelected(value: string) {
-      return this.query.productStore.includes(value)
-    },
-    isChannelSelected(value: string) {
-      return this.query.channel.includes(value)
-    },
-    enableToDateFilter() {
-      this.enableFromDate = false
-      this.enableToDate = !this.enableToDate
-    },
-    enableFromDateFilter() {
-      this.enableToDate = false
-      this.enableFromDate = !this.enableFromDate
-    }
-  },
-  setup() {
-    const store = useStore();
-    const orderStatus = JSON.parse(process.env.VUE_APP_ORDER_STATUS as any)
-
-    return {
-      close,
-      checkmarkOutline,
-      DateTime,
-      orderStatus,
-      store,
-      translate
-    }
+const updateAppliedFilters = async (value: string | boolean, filterName: string, filterLabel?: string) => {
+  let updatedValue: any[] = [];
+  if (filterName === "channel") {
+    updatedValue = JSON.parse(JSON.stringify(query.value.channel));
+    value ? updatedValue.push(filterLabel) : updatedValue.splice(updatedValue.indexOf(filterLabel), 1);
   }
-})
+
+  if (filterName === "productStore") {
+    updatedValue = JSON.parse(JSON.stringify(query.value.productStore));
+    value ? updatedValue.push(filterLabel) : updatedValue.splice(updatedValue.indexOf(filterLabel), 1);
+  }
+
+  if (filterName === "date") {
+    fromDate.value = DateTime.now().toISO();
+    toDate.value = DateTime.now().toISO();
+    enableFromDate.value = false;
+    enableToDate.value = false;
+  }
+
+  await useOrderLookupStore().updateAppliedFilters({ value: filterName === "channel" || filterName === "productStore" ? updatedValue : value, filterName });
+};
+
+const isProductStoreSelected = (value: string) => {
+  return query.value.productStore.includes(value);
+};
+
+const isChannelSelected = (value: string) => {
+  return query.value.channel.includes(value);
+};
+
+const enableToDateFilter = () => {
+  enableFromDate.value = false;
+  enableToDate.value = !enableToDate.value;
+};
+
+const enableFromDateFilter = () => {
+  enableToDate.value = false;
+  enableFromDate.value = !enableFromDate.value;
+};
 </script>
 
 <style scoped>

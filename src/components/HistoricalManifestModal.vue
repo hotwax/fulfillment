@@ -34,76 +34,38 @@
   </ion-content>
 </template>
 
-<script>
-import {
-  IonButton,
-  IonButtons,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonSpinner,
-  IonTitle,
-  IonToolbar,
-  modalController,
-} from '@ionic/vue';
+<script setup lang="ts">
+import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonSpinner, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import ShopifyService from '@/services/ShopifyService';
-import { computed, defineComponent } from 'vue';
-import { cogOutline, closeOutline, printOutline } from 'ionicons/icons';
-import { translate, useUserStore } from '@hotwax/dxp-components';
-import { useStore } from "vuex";
-import { DateTime } from 'luxon';
-import logger from '@/logger';
-import { UtilService } from '@/services/UtilService';
-import { hasError } from '@hotwax/oms-api';
-import { showToast } from "@/utils";
+import { computed, defineProps, ref } from "vue";
+import { cogOutline, closeOutline, printOutline } from "ionicons/icons";
+import { translate, useUserStore } from "@hotwax/dxp-components";
+import { DateTime } from "luxon";
+import logger from "@/logger";
+import { UtilService } from "@/services/UtilService";
+import { commonUtil } from "@/utils/commonUtil";
 
-export default defineComponent({
-  name: "HistoricalManifestModal",
-  components: {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonListHeader,
-    IonSpinner,
-    IonTitle,
-    IonToolbar,
-  },
-  data() {
-    return {
-      items: [],
-      loadingContentId: null
-    }
-  },
-  props: ["selectedCarrierPartyId", "carrierConfiguration"],
-  methods: {
-    closeModal() {
-      modalController.dismiss({ dismissed: true });
-    },
-    getTime(time) {
-      return DateTime.fromMillis(time).toFormat("H:mm a dd/MM/yyyy")
-    },
-    async downloadCarrierManifest(manifest) {
-      this.loadingContentId = manifest?.contentId;
-      const payload = {
-        facilityId: this.currentFacility?.facilityId,
-        carrierPartyId: this.selectedCarrierPartyId,
-        manifestServiceName: this.carrierConfiguration[this.selectedCarrierPartyId]?.["MANIFEST_PRINT"],
-        manifestContentId: manifest.contentId
-      }
+const props = defineProps(["selectedCarrierPartyId", "carrierConfiguration"]);
+const currentFacility = computed(() => useUserStore().getCurrentFacility);
+const loadingContentId = ref(null as any);
 
-      try {
+const closeModal = () => {
+  modalController.dismiss({ dismissed: true });
+};
+
+const downloadCarrierManifest = async (manifest: any) => {
+  loadingContentId.value = manifest?.contentId;
+  const payload = {
+    facilityId: currentFacility.value?.facilityId,
+    carrierPartyId: props.selectedCarrierPartyId,
+    manifestServiceName: props.carrierConfiguration[props.selectedCarrierPartyId]?.["MANIFEST_PRINT"],
+    manifestContentId: manifest.contentId
+  };
+
+  try {
         const resp = await UtilService.downloadCarrierManifest(payload);
 
-        if (!resp || resp.status !== 200 || hasError(resp)) {
+        if (!resp || resp.status !== 200 || commonUtil.hasError(resp)) {
           throw resp.data
         }
 
@@ -120,29 +82,12 @@ export default defineComponent({
           }
         }
         catch {
-          showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'carrier manifest'}), { icon: cogOutline });
+          commonUtil.showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'carrier manifest'}), { icon: cogOutline });
         }
       } catch(err) {
         logger.error("Failed to print manifest", err)
-        showToast(translate("Failed to print manifest"));
+        commonUtil.showToast(translate("Failed to print manifest"));
       }
       this.loadingContentId = null;
-    }
-  },
-  setup() {
-    const store = useStore();
-    const userStore = useUserStore()
-
-    let currentFacility = computed(() => userStore.getCurrentFacility)
-
-    return {
-      closeOutline,
-      currentFacility,
-      printOutline,
-      store,
-      translate,
-      DateTime
-    };
-  },
-});
+};
 </script>

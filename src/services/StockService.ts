@@ -1,9 +1,16 @@
 import { apiClient } from '@/adapter';
-import store from '@/store';
+import { useUserStore } from "@/store/user";
+
+const getAuth = () => {
+  const userStore = useUserStore();
+  return {
+    omstoken: userStore.getUserToken,
+    baseURL: userStore.getMaargBaseUrl
+  };
+};
 
 const getInventoryAvailableByFacility = async (query: any): Promise <any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/poorti/getInventoryAvailableByFacility`,

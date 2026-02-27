@@ -36,108 +36,58 @@
   </ion-fab>
 </template>
 
-<script lang="ts">
-import { 
-  IonContent,
-  IonFab,
-  IonFabButton,
-  IonHeader,
-  IonIcon,
-  IonInput,
-  IonLabel,
-  IonTitle,
-  IonToolbar,
-  modalController,
-  IonButton,
-  IonButtons,
-  IonItem,
-  IonList
-} from "@ionic/vue";
-import { defineComponent } from "vue";
-import { closeOutline, copyOutline, openOutline, saveOutline } from "ionicons/icons";
+<script setup lang="ts">
+import { IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonLabel, IonTitle, IonToolbar, modalController, IonButton, IonButtons, IonItem, IonList } from "@ionic/vue";
+import { computed, defineProps, ref } from "vue";
+import { closeOutline, openOutline, saveOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
-import { mapGetters, useStore } from "vuex";
-import { OrderService } from '@/services/OrderService';
+import { useOrderStore } from "@/store/order";
+import { useCarrierStore } from "@/store/carrier";
+import { OrderService } from "@/services/OrderService";
 import logger from "@/logger";
-import { hasError, showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 
-export default defineComponent({
-  name: "TrackingCodeModal",
-  components: { 
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonHeader,
-    IonIcon,
-    IonInput,
-    IonLabel,
-    IonTitle,
-    IonToolbar,
-    IonButton,
-    IonButtons,
-    IonItem,
-    IonList
-  },
-  computed: {
-    ...mapGetters({
-      order: "order/getCurrent",
-      facilityCarriers: 'carrier/getFacilityCarriers',
-    })
-  },
-  data() {
-    return {
-      trackingCode: ""
+const props = defineProps(["carrierPartyId"]);
+const trackingCode = ref("");
+
+const order = computed(() => useOrderStore().getCurrent);
+const facilityCarriers = computed(() => useCarrierStore().getFacilityCarriers);
+
+const closeModal = () => {
+  modalController.dismiss({ dismissed: true });
+};
+
+const saveTrackingCode = async () => {
+  try {
+    const shipmentRouteSegmentId = order.value.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId;
+    const resp = await OrderService.addTrackingCode({
+      shipmentId: order.value.shipmentId,
+      shipmentRouteSegmentId,
+      trackingIdNumber: trackingCode.value
+    });
+    if (!commonUtil.hasError(resp)) {
+      commonUtil.showToast(translate("Tracking code added successfully."));
+      await useOrderStore().updateShipmentPackageDetail(order.value);
+      closeModal();
+    } else {
+      throw resp.data;
     }
-  },
-  props: ["carrierPartyId"],
-  methods: {
-    closeModal() {
-      modalController.dismiss({ dismissed: true });
-    },
-    async saveTrackingCode() {
-      try {
-        const shipmentRouteSegmentId = this.order.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
-        const resp = await OrderService.addTrackingCode({
-          shipmentId: this.order.shipmentId,
-          shipmentRouteSegmentId,
-          trackingIdNumber: this.trackingCode
-        })
-        if (!hasError(resp)) {
-          showToast(translate("Tracking code added successfully."));
-          await this.store.dispatch('order/updateShipmentPackageDetail', this.order) 
-          this.closeModal();
-        } else {
-          throw resp.data
-        }
-      } catch (error: any) {
-        logger.error('Failed to add tracking code', error);
-        showToast(translate("Failed to add tracking code."));
-      }
-    },
-    getCarrierInfo() {
-      return this.facilityCarriers.find((carrier: any) => carrier.partyId === this.carrierPartyId)
-    },
-    redirectToTrackingUrl() {
-      const trackingUrl = this.getCarrierInfo()?.trackingUrl
-      if(!trackingUrl) {
-        showToast(translate("Tracking url is not configured for following carrier."));
-        return;
-      }
+  } catch (error: any) {
+    logger.error("Failed to add tracking code", error);
+    commonUtil.showToast(translate("Failed to add tracking code."));
+  }
+};
 
-      window.open(trackingUrl.replace("${trackingNumber}", this.trackingCode), "_blank");
-    }
-  },
-  setup() {
-    const store = useStore();
+const getCarrierInfo = () => {
+  return facilityCarriers.value.find((carrier: any) => carrier.partyId === props.carrierPartyId);
+};
 
-    return {
-      closeOutline,
-      copyOutline,
-      openOutline,
-      saveOutline,
-      store,
-      translate
-    };
-  },
-});
+const redirectToTrackingUrl = () => {
+  const trackingUrl = getCarrierInfo()?.trackingUrl;
+  if (!trackingUrl) {
+    commonUtil.showToast(translate("Tracking url is not configured for following carrier."));
+    return;
+  }
+  window.open(trackingUrl.replace("${trackingNumber}", trackingCode.value), "_blank");
+};
 </script>

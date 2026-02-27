@@ -6,29 +6,24 @@
         <ion-title>{{ translate("Settings") }}</ion-title>
       </ion-toolbar>
     </ion-header>
-    
+
     <ion-content>
       <div class="user-profile">
         <ion-card>
           <ion-item lines="full">
             <ion-avatar slot="start" v-if="userProfile?.partyImageUrl">
-              <Image :src="userProfile.partyImageUrl"/>
+              <Image :src="userProfile.partyImageUrl" />
             </ion-avatar>
-            <!-- ion-no-padding to remove extra side/horizontal padding as additional padding 
-            is added on sides from ion-item and ion-padding-vertical to compensate the removed
-            vertical padding -->
             <ion-card-header class="ion-no-padding ion-padding-vertical">
               <ion-card-subtitle>{{ userProfile?.userLoginId }}</ion-card-subtitle>
               <ion-card-title>{{ userProfile?.partyName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" v-if="!authStore.isEmbedded" @click="logout()">{{ translate("Logout") }}</ion-button>
-          <ion-button :standalone-hidden="!hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)" v-if="!authStore.isEmbedded" fill="outline" @click="goToLaunchpad()">
+          <ion-button color="danger" v-if="!useAuthStore().isEmbedded" @click="logout()">{{ translate("Logout") }}</ion-button>
+          <ion-button :standalone-hidden="!hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)" v-if="!useAuthStore().isEmbedded" fill="outline" @click="goToLaunchpad()">
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
-          <!-- Commenting this code as we currently do not have reset password functionality -->
-          <!-- <ion-button fill="outline" color="medium">{{ translate("Reset password") }}</ion-button> -->
         </ion-card>
       </div>
 
@@ -38,8 +33,8 @@
 
       <section>
         <DxpOmsInstanceNavigator />
-        <DxpProductStoreSelector @updateEComStore="updateEComStore($event)"/>
-        <DxpFacilitySwitcher @updateFacility="updateFacility($event)"/>
+        <DxpProductStoreSelector @updateEComStore="updateEComStore($event)" />
+        <DxpFacilitySwitcher @updateFacility="updateFacility($event)" />
 
         <ion-card>
           <ion-card-header>
@@ -49,20 +44,20 @@
           </ion-card-header>
           <ion-card-content>
             {{ translate('Configure the order fulfillment capacity of your facility.') }}
-            <br/><br/>
+            <br /><br />
             {{ translate("Setting fulfillment capacity to 0 disables new order from being allocated to this facility. Leave this empty if this facility's fulfillment capacity is unrestricted.") }}
           </ion-card-content>
           <ion-item lines="none" v-if="orderLimitType === 'custom'">
             <ion-text>{{ currentFacilityDetails?.orderCount }}</ion-text>
             <ion-progress-bar class="ion-margin" :value="currentFacilityDetails?.orderCount / fulfillmentOrderLimit"></ion-progress-bar>
-            <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{currentFacilityDetails?.maximumOrderLimit}}</ion-chip>
-          </ion-item>      
+            <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{ currentFacilityDetails?.maximumOrderLimit }}</ion-chip>
+          </ion-item>
           <ion-item lines="none" v-else-if="orderLimitType === 'unlimited'">
-            <ion-label>{{ translate("orders allocated today", {orderCount: currentFacilityDetails?.orderCount}) }}</ion-label>
+            <ion-label>{{ translate("orders allocated today", { orderCount: currentFacilityDetails?.orderCount }) }}</ion-label>
             <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{ translate("Unlimited") }}</ion-chip>
-          </ion-item>      
+          </ion-item>
           <ion-item lines="none" v-else>
-            <ion-label>{{ translate("orders in fulfillment queue", {orderCount: currentFacilityDetails?.orderCount}) }}</ion-label>
+            <ion-label>{{ translate("orders in fulfillment queue", { orderCount: currentFacilityDetails?.orderCount }) }}</ion-label>
             <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover" color="danger" fill="outline">{{ fulfillmentOrderLimit }}</ion-chip>
           </ion-item>
         </ion-card>
@@ -136,7 +131,7 @@
           </ion-item>
           <ion-item lines="none" :disabled="!hasPermission(Actions.APP_BARCODE_IDENTIFIER_UPDATE)">
             <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="barcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
-              <ion-select-option v-for="identification in barcodeIdentificationOptions" :key="identification" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
+              <ion-select-option v-for="identification in barcodeIdentificationOptions" :key="identification" :value="identification.goodIdentificationTypeId">{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
             </ion-select>
           </ion-item>
         </ion-card>
@@ -185,601 +180,516 @@
   </ion-page>
 </template>
 
-<script lang="ts">
-import { 
-  IonAvatar,
-  IonButton, 
-  IonCard, 
-  IonCardContent,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardSubtitle,
-  IonChip,
-  IonContent, 
-  IonHeader,
-  IonIcon, 
-  IonItem, 
-  IonLabel,
-  IonList,
-  IonMenuButton,
-  IonPage, 
-  IonProgressBar,
-  IonSelect, 
-  IonSelectOption, 
-  IonTitle, 
-  IonText,
-  IonToggle,
-  IonToolbar,
-  alertController,
-  popoverController
-} from '@ionic/vue';
-import { computed, defineComponent } from 'vue';
-import { codeWorkingOutline, ellipsisVerticalOutline, globeOutline, openOutline, timeOutline } from 'ionicons/icons'
-import { mapGetters, useStore } from 'vuex';
-import { useRouter } from 'vue-router';
-import { UserService} from '@/services/UserService';
-import { showToast } from '@/utils';
-import { hasError, removeClientRegistrationToken, subscribeTopic, unsubscribeTopic } from '@/adapter'
-import { initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore, useAuthStore } from '@hotwax/dxp-components';
-import logger from '@/logger';
-import { Actions, hasPermission } from '@/authorization'
-import { DateTime } from 'luxon';
-import Image from '@/components/Image.vue';
-import OrderLimitPopover from '@/components/OrderLimitPopover.vue'
-import emitter from "@/event-bus"
-import { addNotification, generateTopicName, isFcmConfigured, storeClientRegistrationToken } from "@/utils/firebase";
-import { UtilService } from '@/services/UtilService';
+<script setup lang="ts">
+import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonProgressBar, IonSelect, IonSelectOption, IonTitle, IonText, IonToggle, IonToolbar, alertController, popoverController, onIonViewWillEnter } from "@ionic/vue";
+import { computed, ref } from "vue";
+import { openOutline } from "ionicons/icons";
+import { UserService } from "@/services/UserService";
+import { commonUtil } from "@/utils/commonUtil";
+import { hasError, removeClientRegistrationToken, subscribeTopic, unsubscribeTopic } from "@/adapter";
+import { initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore as useDxpUserStore, useAuthStore } from "@hotwax/dxp-components";
+import logger from "@/logger";
+import { Actions, hasPermission } from "@/authorization";
+import { DateTime } from "luxon";
+import Image from "@/components/Image.vue";
+import OrderLimitPopover from "@/components/OrderLimitPopover.vue";
+import emitter from "@/event-bus";
+import { fireBaseUtil } from "@/utils/fireBaseUtil";
+import { UtilService } from "@/services/UtilService";
+import { useUserStore } from "@/store/user";
+import { useUtilStore } from "@/store/util";
+import { useOrderStore } from "@/store/order";
 
+const currentFacilityDetails = ref({} as any);
+const orderLimitType = ref("unlimited");
+const fulfillmentOrderLimit = ref("" as number | string);
+const facilityGroupDetails = ref({} as any);
+const isEComInvEnabled = ref(false);
+const barcodeContentMessage = translate("Only allow shipped quantity to be incremented by scanning the barcode of products. If the identifier is not found, the scan will default to using the internal name.", { space: "<br /><br />" });
 
+const userProfile = computed(() => useUserStore().getUserProfile);
+const userPreference = computed(() => useUserStore().getUserPreference);
+const notificationPrefs = computed(() => useUserStore().getNotificationPrefs);
+const allNotificationPrefs = computed(() => useUserStore().getAllNotificationPrefs);
+const firebaseDeviceId = computed(() => useUserStore().getFirebaseDeviceId);
+const isForceScanEnabled = computed(() => useUtilStore().isForceScanEnabled);
+const isPartialOrderRejectionEnabled = computed(() => useUtilStore().getPartialOrderRejectionConfig);
+const isCollateralRejectionEnabled = computed(() => useUtilStore().getCollateralRejectionConfig);
+const affectQoh = computed(() => useUtilStore().getAffectQohConfig);
+const barcodeIdentificationPref = computed(() => useUtilStore().getBarcodeIdentificationPref);
+const currentFacility = computed(() => useDxpUserStore().getCurrentFacility as any);
+const preferredStore = computed(() => useDxpUserStore().getCurrentEComStore);
+const barcodeIdentificationOptions = computed(() => useProductIdentificationStore().getGoodIdentificationOptions);
 
-export default defineComponent({
-  name: 'Settings',
-  components: { 
-    IonAvatar,
-    IonButton,
-    IonCard,
-    IonCardContent,
-    IonCardHeader,
-    IonCardTitle,
-    IonCardSubtitle,
-    IonChip,
-    IonContent, 
-    IonHeader, 
-    IonIcon,
-    IonItem, 
-    IonList,
-    IonLabel,
-    IonMenuButton,
-    IonPage, 
-    IonProgressBar,
-    IonSelect, 
-    IonSelectOption,
-    IonTitle, 
-    IonText,
-    IonToggle,
-    IonToolbar,
-    Image
-  },
-  data() {
-    return {
-      baseURL: process.env.VUE_APP_BASE_URL,
-      locales: process.env.VUE_APP_LOCALES ? JSON.parse(process.env.VUE_APP_LOCALES) : {"en": "English"},
-      currentFacilityDetails: {} as any,
-      orderLimitType: 'unlimited',
-      fulfillmentOrderLimit: "" as number | string,
-      facilityGroupDetails: {} as any,
-      isEComInvEnabled: false,
-      barcodeContentMessage: translate("Only allow shipped quantity to be incremented by scanning the barcode of products. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
-    };
-  },
-  computed: {
-    ...mapGetters({
-      userProfile: 'user/getUserProfile',
-      instanceUrl: 'user/getInstanceUrl',
-      userPreference: 'user/getUserPreference',
-      locale: 'user/getLocale',
-      notificationPrefs: 'user/getNotificationPrefs',
-      allNotificationPrefs: 'user/getAllNotificationPrefs',
-      firebaseDeviceId: 'user/getFirebaseDeviceId',
-      isForceScanEnabled: 'util/isForceScanEnabled',
-      isPartialOrderRejectionEnabled: 'util/getPartialOrderRejectionConfig',
-      isCollateralRejectionEnabled: 'util/getCollateralRejectionConfig',
-      affectQoh: 'util/getAffectQohConfig',
-      barcodeIdentificationPref: 'util/getBarcodeIdentificationPref'
-    })
-  },
-  async ionViewWillEnter() {
-    Promise.all([this.getCurrentFacilityDetails(), this.getFacilityOrderCount(), this.getEcomInvStatus()]);
+const updateEComStore = (selectedProductStore: any) => {
+  useUserStore().fetchEComStoreDependencies(selectedProductStore?.productStoreId);
+};
 
-    // fetching all settings when entering setting page to have latest information
-    await this.store.dispatch("util/fetchProductStoreSettings",this.preferredStore.productStoreId)
-    
-    // as notification prefs can also be updated from the notification pref modal,
-    // latest state is fetched each time we open the settings page
-    await this.store.dispatch('user/fetchNotificationPreferences')
-  },
-  methods: {
-    updateEComStore(selectedProductStore: any) {
-      this.store.dispatch('user/setEComStore', selectedProductStore?.productStoreId)
-    },
-    async getCurrentFacilityDetails() {
-      let resp: any;
-      try {        
-        resp = await UserService.getFacilityDetails({
-          "facilityId": this.currentFacility?.facilityId,
-          "pageSize": 1,
-          "fieldsToSelect": ["maximumOrderLimit", "facilityId"]
-        })
+const getCurrentFacilityDetails = async () => {
+  let resp: any;
+  try {
+    resp = await UserService.getFacilityDetails({
+      facilityId: currentFacility.value?.facilityId,
+      pageSize: 1,
+      fieldsToSelect: ["maximumOrderLimit", "facilityId"]
+    });
 
-        if(!hasError(resp)) {
-          // using index 0 as we will only get a single record
-          this.currentFacilityDetails = {
-            ...this.currentFacilityDetails,
-            ...resp.data
-          }
-          this.updateOrderLimitType()
-        } else {
-          throw resp.data
-        }
-      } catch(err) {
-        logger.error('Failed to fetch current facility details', err)
-      }
-    },
-    async getFacilityOrderCount() {
-      let resp: any;
-      try {
-        resp = await UserService.getFacilityOrderCount({
-          "facilityId": this.currentFacility?.facilityId,
-          "entryDate": DateTime.now().toFormat('yyyy-MM-dd'),
-          "pageSize": 1,
-          "fieldsToSelect": ["entryDate", "lastOrderCount"],
-        })
-        if (!hasError(resp) && resp.data.length) {          
-          // using index 0 as we will only get a single record
-          this.currentFacilityDetails.orderCount = resp.data[0]?.lastOrderCount
-        } else {
-          throw resp.data
-        }
-      } catch(err) {
-        this.currentFacilityDetails.orderCount = 0
-        logger.error("Failed to fetch total orders count", err);
-      }
-    },
-    updateOrderLimitType() {
-      this.fulfillmentOrderLimit = this.currentFacilityDetails?.maximumOrderLimit
-      if (this.fulfillmentOrderLimit === 0) {
-        this.orderLimitType = 'no-capacity'
-      } else if (this.fulfillmentOrderLimit) {
-        this.orderLimitType = 'custom'
-      } else {
-        this.orderLimitType = 'unlimited'
-      }
-    },
-    async getEcomInvStatus() {
-      let resp: any;
-      try {
-        this.isEComInvEnabled = false
-        this.facilityGroupDetails = {}
-
-        resp = await UserService.getFacilityGroupDetails({
-          "facilityGroupTypeId": 'SHOPIFY_GROUP_FAC',
-          "fieldsToSelect": ["facilityGroupId", "facilityGroupTypeId"],
-          "pageSize": 1,
-        })
-
-        if (!hasError(resp)) {
-          // using facilityGroupId as a flag for getting data from getFacilityGroupDetails
-          this.facilityGroupDetails.facilityGroupId = resp.data[0].facilityGroupId
-          resp = await UtilService.getFacilityGroupAndMemberDetails({
-            customParametersMap:{
-              "facilityId": this.currentFacility?.facilityId,
-              "facilityGroupId": this.facilityGroupDetails.facilityGroupId,
-              pageIndex: 0,
-              pageSize: 1
-            },
-            dataDocumentId: "FacilityGroupAndMember",
-            filterByDate: true
-          })
-
-          if (!hasError(resp)) {
-            this.facilityGroupDetails = { ...this.facilityGroupDetails, ...resp.data.entityValueList[0] }
-
-            // When getting data from group member enabling the eCom inventory
-            this.isEComInvEnabled = true
-          } else {
-            throw resp.data
-          }
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        logger.error('Failed to fetch eCom inventory config', err)
-      }
-    },
-    async logout () {
-
-      // remove firebase notification registration token -
-      // OMS and auth is required hence, removing it before logout (clearing state)
-      try {
-        await removeClientRegistrationToken(this.firebaseDeviceId, process.env.VUE_APP_NOTIF_APP_ID as any)
-      } catch (error) {
-        logger.error(error)
-      }
-
-      this.store.dispatch('user/logout', { isUserUnauthorised: false }).then((redirectionUrl) => {
-        this.store.dispatch('order/clearOrders')
-
-        // if not having redirection url then redirect the user to launchpad
-        if(!redirectionUrl) {
-          const redirectUrl = window.location.origin + '/login'
-          window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
-        }
-      })
-    },
-    goToLaunchpad() {
-      window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
-    },
-    async changeOrderLimitPopover(ev: Event) {
-      const popover = await popoverController.create({
-        component: OrderLimitPopover,
-        event: ev,
-        showBackdrop: false,
-        componentProps: {fulfillmentOrderLimit: this.fulfillmentOrderLimit}
-      });
-      popover.present();
-
-      const result = await popover.onDidDismiss();
-      // Note: here result.data returns 0 in some cases that's why it is compared with 'undefined'.
-      if(result.data != undefined && result.data !== this.fulfillmentOrderLimit){
-        await this.updateFacilityMaximumOrderLimit(result.data)
-        this.updateOrderLimitType()
-      }
-    },
-    async updateFacility(facility: any) {
-      await this.store.dispatch('user/setFacility', facility);
-      await this.store.dispatch('user/fetchNotificationPreferences')
-      this.getCurrentFacilityDetails();
-      this.getFacilityOrderCount();
-      this.getEcomInvStatus();
-      await this.store.dispatch('util/fetchAutoShippingLabelConfig');
-    },
-    async timeZoneUpdated(tzId: string) {
-      await this.store.dispatch("user/setUserTimeZone", tzId)
-    },
-    async updateFacilityMaximumOrderLimit(maximumOrderLimit: number | string) {
-      let resp;
-
-      try {
-        resp = await UserService.updateFacility({
-          "facilityId": this.currentFacility?.facilityId,
-          maximumOrderLimit
-        })
-
-        if(!hasError(resp)) {
-          this.currentFacilityDetails.maximumOrderLimit = maximumOrderLimit === "" ? null : maximumOrderLimit
-          showToast(translate('Order fulfillment capacity updated successfully'))
-        } else {
-          throw resp.data
-        }
-      } catch(err) {
-        showToast(translate('Failed to update facility'))
-        logger.error('Failed to update facility', err)
-      }
-    },
-    async updateFacilityToGroup() {
-      let resp;
-      try {
-        resp = await UserService.updateFacilityToGroup({
-          "facilityId": this.currentFacility?.facilityId,
-          "facilityGroupId": this.facilityGroupDetails.facilityGroupId,
-          "fromDate": this.facilityGroupDetails.fromDate,
-          "thruDate": DateTime.now().toMillis()
-        })
-
-        if (!hasError(resp)) {
-          this.isEComInvEnabled = false
-          showToast(translate('ECom inventory status updated successfully'))
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        showToast(translate('Failed to update eCom inventory status'))
-        logger.error('Failed to update eCom inventory status', err)
-      }
-    },
-    async addFacilityToGroup() {
-      let resp;
-      try {
-        resp = await UserService.addFacilityToGroup({
-          "facilityId": this.currentFacility?.facilityId,
-          "facilityGroupId": this.facilityGroupDetails.facilityGroupId
-        })
-
-        if (!hasError(resp)) {
-          this.isEComInvEnabled = true
-          showToast(translate('ECom inventory status updated successfully'))
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        showToast(translate('Failed to update eCom inventory status'))
-        logger.error('Failed to update eCom inventory status', err)
-      }
-    },
-    async updateEComInvStatus(event: any) {
-      event.stopImmediatePropagation();
-
-      // Using `not` as the click event returns the current status of toggle, but on click we want to change the toggle status
-      const isChecked = !event.target.checked;
-      const header = isChecked ? 'Turn on eCom inventory for ' : 'Turn off eCom inventory for '
-      const message = 'Are you sure you want to perform this action?'
-
-      const alert = await alertController.create({
-        header: translate(header, { facilityName: this.currentFacility?.facilityName }),
-        message: translate(message),
-        buttons: [{
-          text: translate('Cancel'),
-          role: ''
-        }, {
-          text: translate('Save'),
-          role: 'success'
-        }],
-      });
-
-      await alert.present();
-
-      const { role } = await alert.onDidDismiss();
-
-      if(role) {
-        isChecked ? await this.addFacilityToGroup() : await this.updateFacilityToGroup()
-      }
-
-    },
-    async updateForceScanStatus(event: any) {
-      event.stopImmediatePropagation()
-      const params = {
-        settingValue: !this.isForceScanEnabled
+    if (!hasError(resp)) {
+      currentFacilityDetails.value = {
+        ...currentFacilityDetails.value,
+        ...resp.data
       };
-      await this.store.dispatch("util/updateProductStoreSettingConfig", {
-        enumId: "FULFILL_FORCE_SCAN",
-        payload: params,
-        createService: UtilService.createProductStoreSetting,
-        requireEnum: true,
-        enumMeta: {
-          description: "Impose force scanning of items while packing from fulfillment app",
-          enumName: "Fulfillment Force Scan"
-        }
-      });
-    },
-    setPrintShippingLabelPreference (ev: any) {
-      this.store.dispatch('user/setUserPreference', { printShippingLabel: ev.detail.checked })
-    },
-    setPrintPackingSlipPreference (ev: any){
-      this.store.dispatch('user/setUserPreference', { printPackingSlip: ev.detail.checked })
-    },
-    setLocale(locale: string) {
-      this.store.dispatch('user/setLocale',locale)
-    },
-    async updateNotificationPref(enumId: string) {
-      let isToggledOn = false;
-
-      try {
-        if (!isFcmConfigured()) {
-          logger.error("FCM is not configured.");
-          showToast(translate('Notification preferences not updated. Please try again.'))
-          return;
-        }
-
-        emitter.emit('presentLoader',  { backdropDismiss: false })
-        const facilityId = this.currentFacility?.facilityId
-        const topicName = generateTopicName(facilityId, enumId)
-
-        const notificationPref = this.notificationPrefs.find((pref: any) => pref.enumId === enumId)
-        notificationPref.isEnabled
-          ? await unsubscribeTopic(topicName, process.env.VUE_APP_NOTIF_APP_ID as any)
-          : await subscribeTopic(topicName, process.env.VUE_APP_NOTIF_APP_ID as any)
-          
-        notificationPref.isEnabled = !notificationPref.isEnabled
-        await this.store.dispatch('user/updateNotificationPreferences', this.notificationPrefs)
-        isToggledOn = notificationPref.isEnabled
-        showToast(translate('Notification preferences updated.'))
-      } catch (error) {
-        showToast(translate('Notification preferences not updated. Please try again.'))
-      } finally {
-        emitter.emit("dismissLoader")
-      }
-      try {
-        if(!this.allNotificationPrefs.length && isToggledOn) {
-          await initialiseFirebaseApp(JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any), process.env.VUE_APP_FIREBASE_VAPID_KEY, storeClientRegistrationToken, addNotification)
-        } else if(this.allNotificationPrefs.length == 1 && !isToggledOn) {
-          await removeClientRegistrationToken(this.firebaseDeviceId, process.env.VUE_APP_NOTIF_APP_ID as any)
-        }
-        await this.store.dispatch("user/fetchAllNotificationPrefs");
-      } catch(error) {
-        logger.error(error);
-      }
-    },
-    async confirmNotificationPrefUpdate(enumId: string, event: CustomEvent) {
-      event.stopImmediatePropagation();
-
-      const message = translate("Are you sure you want to update the notification preferences?");
-      const alert = await alertController.create({
-        header: translate("Update notification preferences"),
-        message,
-        buttons: [
-          {
-            text: translate("Cancel"),
-            role: "cancel"
-          },
-          {
-            text: translate("Confirm"),
-            handler: async () => {
-              alertController.dismiss()
-              await this.updateNotificationPref(enumId)
-            }
-          }
-        ],
-      });
-      return alert.present();
-    },
-    async confirmPartialOrderRejection(event: any) {
-      event.stopImmediatePropagation();
-      const isChecked = !event.target.checked;
-      const message = translate("Are you sure you want to perform this action?");
-      const header = isChecked ? translate('Allow partial rejections ') : translate('Disallow partial rejections')
-
-      const alert = await alertController.create({
-        header,
-        message,
-        buttons: [
-          {
-            text: translate("Cancel"),
-            role: "cancel"
-          },
-          {
-            text: translate("Confirm"),
-            handler: async () => {
-              alertController.dismiss()
-              await this.updatePartialOrderRejectionConfig(isChecked)
-            }
-          }
-        ],
-      });
-      return alert.present();
-    },
-    async updatePartialOrderRejectionConfig(value: any) {
-      const params = {
-        "settingValue": value
-      }
-      await this.store.dispatch("util/updateProductStoreSettingConfig", {
-        enumId: "FULFILL_PART_ODR_REJ",
-        payload: params,
-        createService: UtilService.createProductStoreSetting,
-        requireEnum: true,
-        enumMeta: {
-          description: "Fulfillment Partial Order Rejection",
-          enumName: "Fulfillment Partial Order Rejection"
-        }
-      });
-    },
-    async confirmCollateralRejection(event: any) {
-      event.stopImmediatePropagation();
-
-      const isChecked = !event.target.checked;
-      const message = translate("Are you sure you want to perform this action?");
-      const header = isChecked ? translate('Allow collateral rejections') : translate('Disallow collateral rejections')
-
-      const alert = await alertController.create({
-        header,
-        message,
-        buttons: [
-          {
-            text: translate("Cancel"),
-            role: "cancel"
-          },
-          {
-            text: translate("Confirm"),
-            handler: async () => {
-              alertController.dismiss()
-              await this.updateCollateralRejectionConfig(!event.target.checked)
-            }
-          }
-        ],
-      });
-      return alert.present();
-    },
-    async updateCollateralRejectionConfig(value: any) {
-      const params = {
-        "settingValue": value
-      }
-      await this.store.dispatch("util/updateProductStoreSettingConfig", {
-        enumId: "FF_COLLATERAL_REJ",
-        payload: params,
-        createService: UtilService.createProductStoreSetting,
-        requireEnum: true,
-        enumMeta: {
-          description: "Fulfillment Collateral Rejection",
-          enumName: "Fulfillment Collateral Rejection"
-        }
-      });
-    },
-    async confirmAffectQohConfig(event: any) {
-      event.stopImmediatePropagation();
-
-      const isChecked = !event.target.checked;
-      const message = translate("Are you sure you want to perform this action?");
-      const header = isChecked ? translate('Affect QOH on rejection') : translate('Do not affect QOH on rejection')
-
-      const alert = await alertController.create({
-        header,
-        message,
-        buttons: [
-          {
-            text: translate("Cancel"),
-            role: "cancel"
-          },
-          {
-            text: translate("Confirm"),
-            handler: async () => {
-              alertController.dismiss()
-              await this.updateAffectQohConfig(!event.target.checked)
-            }
-          }
-        ],
-      });
-      return alert.present();
-    },
-    async updateAffectQohConfig(value: any) {
-      const params = {
-        "settingValue": value
-      }
-      await this.store.dispatch("util/updateProductStoreSettingConfig", {
-        enumId: "AFFECT_QOH_ON_REJ",
-        payload: params,
-        createService: UtilService.createProductStoreSetting,
-        requireEnum: false
-      });
-    },
-    async setBarcodeIdentificationPref(value: string) {
-      await this.store.dispatch('util/updateProductStoreSettingConfig', {
-        enumId: 'BARCODE_IDEN_PREF',
-        payload: { settingValue: value },
-        createService: UtilService.createProductStoreSetting,
-        requireEnum: true,
-        enumMeta: {
-          description: 'Identification preference to be used for scanning items.',
-          enumName: 'Barcode Identification Preference'
-        }
-      });
+      updateOrderLimitType();
+    } else {
+      throw resp.data;
     }
-
-  },
-  setup() {
-    const store = useStore();
-    const router = useRouter();
-    const userStore = useUserStore()
-    const productIdentificationStore = useProductIdentificationStore();
-    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
-    let preferredStore: any = computed(() => userStore.currentEComStore)
-    let barcodeIdentificationOptions = computed(() => productIdentificationStore.getGoodIdentificationOptions)
-    const authStore = useAuthStore();
-    return {
-      Actions,
-      barcodeIdentificationOptions,
-      codeWorkingOutline,
-      currentFacility,
-      ellipsisVerticalOutline,
-      globeOutline,
-      openOutline,
-      timeOutline,
-      router,
-      store,
-      hasPermission,
-      translate,
-      preferredStore,
-      authStore
-    }
+  } catch (err) {
+    logger.error("Failed to fetch current facility details", err);
   }
+};
+
+const getFacilityOrderCount = async () => {
+  let resp: any;
+  try {
+    resp = await UserService.getFacilityOrderCount({
+      facilityId: currentFacility.value?.facilityId,
+      entryDate: DateTime.now().toFormat("yyyy-MM-dd"),
+      pageSize: 1,
+      fieldsToSelect: ["entryDate", "lastOrderCount"]
+    });
+    if (!hasError(resp) && resp.data.length) {
+      currentFacilityDetails.value.orderCount = resp.data[0]?.lastOrderCount;
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    currentFacilityDetails.value.orderCount = 0;
+    logger.error("Failed to fetch total orders count", err);
+  }
+};
+
+const updateOrderLimitType = () => {
+  fulfillmentOrderLimit.value = currentFacilityDetails.value?.maximumOrderLimit;
+  if (fulfillmentOrderLimit.value === 0) {
+    orderLimitType.value = "no-capacity";
+  } else if (fulfillmentOrderLimit.value) {
+    orderLimitType.value = "custom";
+  } else {
+    orderLimitType.value = "unlimited";
+  }
+};
+
+const getEcomInvStatus = async () => {
+  let resp: any;
+  try {
+    isEComInvEnabled.value = false;
+    facilityGroupDetails.value = {};
+
+    resp = await UserService.getFacilityGroupDetails({
+      facilityGroupTypeId: "SHOPIFY_GROUP_FAC",
+      fieldsToSelect: ["facilityGroupId", "facilityGroupTypeId"],
+      pageSize: 1
+    });
+
+    if (!hasError(resp)) {
+      facilityGroupDetails.value.facilityGroupId = resp.data[0].facilityGroupId;
+      resp = await UtilService.getFacilityGroupAndMemberDetails({
+        customParametersMap: {
+          facilityId: currentFacility.value?.facilityId,
+          facilityGroupId: facilityGroupDetails.value.facilityGroupId,
+          pageIndex: 0,
+          pageSize: 1
+        },
+        dataDocumentId: "FacilityGroupAndMember",
+        filterByDate: true
+      });
+
+      if (!hasError(resp)) {
+        facilityGroupDetails.value = { ...facilityGroupDetails.value, ...resp.data.entityValueList[0] };
+        isEComInvEnabled.value = true;
+      } else {
+        throw resp.data;
+      }
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    logger.error("Failed to fetch eCom inventory config", err);
+  }
+};
+
+const logout = async () => {
+  try {
+    await removeClientRegistrationToken(firebaseDeviceId.value, process.env.VUE_APP_NOTIF_APP_ID as any);
+  } catch (error) {
+    logger.error(error);
+  }
+
+  useUserStore().logout({ isUserUnauthorised: false }).then((redirectionUrl: any) => {
+    useOrderStore().clearOrders();
+
+    if (!redirectionUrl) {
+      const redirectUrl = window.location.origin + "/login";
+      window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+    }
+  });
+};
+
+const goToLaunchpad = () => {
+  window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
+};
+
+const changeOrderLimitPopover = async (ev: Event) => {
+  const popover = await popoverController.create({
+    component: OrderLimitPopover,
+    event: ev,
+    showBackdrop: false,
+    componentProps: { fulfillmentOrderLimit: fulfillmentOrderLimit.value }
+  });
+  popover.present();
+
+  const result = await popover.onDidDismiss();
+  if (result.data != undefined && result.data !== fulfillmentOrderLimit.value) {
+    await updateFacilityMaximumOrderLimit(result.data);
+    updateOrderLimitType();
+  }
+};
+
+const updateFacility = async (facility: any) => {
+  await useUserStore().setFacility({ facility });
+  await useUserStore().fetchNotificationPreferences();
+  getCurrentFacilityDetails();
+  getFacilityOrderCount();
+  getEcomInvStatus();
+  await useUtilStore().fetchAutoShippingLabelConfig();
+};
+
+const timeZoneUpdated = async (tzId: string) => {
+  await useUserStore().setUserTimeZone(tzId);
+};
+
+const updateFacilityMaximumOrderLimit = async (maximumOrderLimit: number | string) => {
+  let resp;
+
+  try {
+    resp = await UserService.updateFacility({
+      facilityId: currentFacility.value?.facilityId,
+      maximumOrderLimit
+    });
+
+    if (!hasError(resp)) {
+      currentFacilityDetails.value.maximumOrderLimit = maximumOrderLimit === "" ? null : maximumOrderLimit;
+      commonUtil.showToast(translate("Order fulfillment capacity updated successfully"));
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    commonUtil.showToast(translate("Failed to update facility"));
+    logger.error("Failed to update facility", err);
+  }
+};
+
+const updateFacilityToGroup = async () => {
+  let resp;
+  try {
+    resp = await UserService.updateFacilityToGroup({
+      facilityId: currentFacility.value?.facilityId,
+      facilityGroupId: facilityGroupDetails.value.facilityGroupId,
+      fromDate: facilityGroupDetails.value.fromDate,
+      thruDate: DateTime.now().toMillis()
+    });
+
+    if (!hasError(resp)) {
+      isEComInvEnabled.value = false;
+      commonUtil.showToast(translate("ECom inventory status updated successfully"));
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    commonUtil.showToast(translate("Failed to update eCom inventory status"));
+    logger.error("Failed to update eCom inventory status", err);
+  }
+};
+
+const addFacilityToGroup = async () => {
+  let resp;
+  try {
+    resp = await UserService.addFacilityToGroup({
+      facilityId: currentFacility.value?.facilityId,
+      facilityGroupId: facilityGroupDetails.value.facilityGroupId
+    });
+
+    if (!hasError(resp)) {
+      isEComInvEnabled.value = true;
+      commonUtil.showToast(translate("ECom inventory status updated successfully"));
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    commonUtil.showToast(translate("Failed to update eCom inventory status"));
+    logger.error("Failed to update eCom inventory status", err);
+  }
+};
+
+const updateEComInvStatus = async (event: any) => {
+  event.stopImmediatePropagation();
+
+  const isChecked = !event.target.checked;
+  const header = isChecked ? "Turn on eCom inventory for " : "Turn off eCom inventory for ";
+  const message = "Are you sure you want to perform this action?";
+
+  const alert = await alertController.create({
+    header: translate(header, { facilityName: currentFacility.value?.facilityName }),
+    message: translate(message),
+    buttons: [{
+      text: translate("Cancel"),
+      role: ""
+    }, {
+      text: translate("Save"),
+      role: "success"
+    }]
+  });
+
+  await alert.present();
+
+  const { role } = await alert.onDidDismiss();
+
+  if (role) {
+    isChecked ? await addFacilityToGroup() : await updateFacilityToGroup();
+  }
+};
+
+const updateForceScanStatus = async (event: any) => {
+  event.stopImmediatePropagation();
+  const params = {
+    settingValue: !isForceScanEnabled.value
+  };
+  await useUtilStore().updateProductStoreSettingConfig({
+    enumId: "FULFILL_FORCE_SCAN",
+    payload: params,
+    createService: UtilService.createProductStoreSetting,
+    requireEnum: true,
+    enumMeta: {
+      description: "Impose force scanning of items while packing from fulfillment app",
+      enumName: "Fulfillment Force Scan"
+    }
+  });
+};
+
+const setPrintShippingLabelPreference = (ev: any) => {
+  useUserStore().setUserPreference({ printShippingLabel: ev.detail.checked });
+};
+
+const setPrintPackingSlipPreference = (ev: any) => {
+  useUserStore().setUserPreference({ printPackingSlip: ev.detail.checked });
+};
+
+const updateNotificationPref = async (enumId: string) => {
+  let isToggledOn = false;
+
+  try {
+    if (!fireBaseUtil.isFcmConfigured()) {
+      logger.error("FCM is not configured.");
+      commonUtil.showToast(translate("Notification preferences not updated. Please try again."));
+      return;
+    }
+
+    emitter.emit("presentLoader", { backdropDismiss: false });
+    const facilityId = currentFacility.value?.facilityId;
+    const topicName = fireBaseUtil.generateTopicName(facilityId, enumId);
+
+    const notificationPref = notificationPrefs.value.find((pref: any) => pref.enumId === enumId);
+    notificationPref.isEnabled
+      ? await unsubscribeTopic(topicName, process.env.VUE_APP_NOTIF_APP_ID as any)
+      : await subscribeTopic(topicName, process.env.VUE_APP_NOTIF_APP_ID as any);
+
+    notificationPref.isEnabled = !notificationPref.isEnabled;
+    await useUserStore().updateNotificationPreferences(notificationPrefs.value);
+    isToggledOn = notificationPref.isEnabled;
+    commonUtil.showToast(translate("Notification preferences updated."));
+  } catch (error) {
+    commonUtil.showToast(translate("Notification preferences not updated. Please try again."));
+  } finally {
+    emitter.emit("dismissLoader");
+  }
+  try {
+    if (!allNotificationPrefs.value.length && isToggledOn) {
+      await initialiseFirebaseApp(JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any), process.env.VUE_APP_FIREBASE_VAPID_KEY, fireBaseUtil.storeClientRegistrationToken, fireBaseUtil.addNotification);
+    } else if (allNotificationPrefs.value.length == 1 && !isToggledOn) {
+      await removeClientRegistrationToken(firebaseDeviceId.value, process.env.VUE_APP_NOTIF_APP_ID as any);
+    }
+    await useUserStore().fetchAllNotificationPrefs();
+  } catch (error) {
+    logger.error(error);
+  }
+};
+
+const confirmNotificationPrefUpdate = async (enumId: string, event: CustomEvent) => {
+  event.stopImmediatePropagation();
+
+  const message = translate("Are you sure you want to update the notification preferences?");
+  const alert = await alertController.create({
+    header: translate("Update notification preferences"),
+    message,
+    buttons: [
+      {
+        text: translate("Cancel"),
+        role: "cancel"
+      },
+      {
+        text: translate("Confirm"),
+        handler: async () => {
+          alertController.dismiss();
+          await updateNotificationPref(enumId);
+        }
+      }
+    ]
+  });
+  return alert.present();
+};
+
+const confirmPartialOrderRejection = async (event: any) => {
+  event.stopImmediatePropagation();
+  const isChecked = !event.target.checked;
+  const message = translate("Are you sure you want to perform this action?");
+  const header = isChecked ? translate("Allow partial rejections ") : translate("Disallow partial rejections");
+
+  const alert = await alertController.create({
+    header,
+    message,
+    buttons: [
+      {
+        text: translate("Cancel"),
+        role: "cancel"
+      },
+      {
+        text: translate("Confirm"),
+        handler: async () => {
+          alertController.dismiss();
+          await updatePartialOrderRejectionConfig(isChecked);
+        }
+      }
+    ]
+  });
+  return alert.present();
+};
+
+const updatePartialOrderRejectionConfig = async (value: any) => {
+  const params = {
+    settingValue: value
+  };
+  await useUtilStore().updateProductStoreSettingConfig({
+    enumId: "FULFILL_PART_ODR_REJ",
+    payload: params,
+    createService: UtilService.createProductStoreSetting,
+    requireEnum: true,
+    enumMeta: {
+      description: "Fulfillment Partial Order Rejection",
+      enumName: "Fulfillment Partial Order Rejection"
+    }
+  });
+};
+
+const confirmCollateralRejection = async (event: any) => {
+  event.stopImmediatePropagation();
+
+  const isChecked = !event.target.checked;
+  const message = translate("Are you sure you want to perform this action?");
+  const header = isChecked ? translate("Allow collateral rejections") : translate("Disallow collateral rejections");
+
+  const alert = await alertController.create({
+    header,
+    message,
+    buttons: [
+      {
+        text: translate("Cancel"),
+        role: "cancel"
+      },
+      {
+        text: translate("Confirm"),
+        handler: async () => {
+          alertController.dismiss();
+          await updateCollateralRejectionConfig(!event.target.checked);
+        }
+      }
+    ]
+  });
+  return alert.present();
+};
+
+const updateCollateralRejectionConfig = async (value: any) => {
+  const params = {
+    settingValue: value
+  };
+  await useUtilStore().updateProductStoreSettingConfig({
+    enumId: "FF_COLLATERAL_REJ",
+    payload: params,
+    createService: UtilService.createProductStoreSetting,
+    requireEnum: true,
+    enumMeta: {
+      description: "Fulfillment Collateral Rejection",
+      enumName: "Fulfillment Collateral Rejection"
+    }
+  });
+};
+
+const confirmAffectQohConfig = async (event: any) => {
+  event.stopImmediatePropagation();
+
+  const isChecked = !event.target.checked;
+  const message = translate("Are you sure you want to perform this action?");
+  const header = isChecked ? translate("Affect QOH on rejection") : translate("Do not affect QOH on rejection");
+
+  const alert = await alertController.create({
+    header,
+    message,
+    buttons: [
+      {
+        text: translate("Cancel"),
+        role: "cancel"
+      },
+      {
+        text: translate("Confirm"),
+        handler: async () => {
+          alertController.dismiss();
+          await updateAffectQohConfig(!event.target.checked);
+        }
+      }
+    ]
+  });
+  return alert.present();
+};
+
+const updateAffectQohConfig = async (value: any) => {
+  const params = {
+    settingValue: value
+  };
+  await useUtilStore().updateProductStoreSettingConfig({
+    enumId: "AFFECT_QOH_ON_REJ",
+    payload: params,
+    createService: UtilService.createProductStoreSetting,
+    requireEnum: false
+  });
+};
+
+const setBarcodeIdentificationPref = async (value: string) => {
+  await useUtilStore().updateProductStoreSettingConfig({
+    enumId: "BARCODE_IDEN_PREF",
+    payload: { settingValue: value },
+    createService: UtilService.createProductStoreSetting,
+    requireEnum: true,
+    enumMeta: {
+      description: "Identification preference to be used for scanning items.",
+      enumName: "Barcode Identification Preference"
+    }
+  });
+};
+
+onIonViewWillEnter(async () => {
+  Promise.all([getCurrentFacilityDetails(), getFacilityOrderCount(), getEcomInvStatus()]);
+
+  await useUtilStore().fetchProductStoreSettings(preferredStore.value.productStoreId);
+  await useUserStore().fetchNotificationPreferences();
 });
 </script>
 

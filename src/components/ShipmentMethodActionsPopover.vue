@@ -28,198 +28,146 @@
     </ion-content>
   </template>
   
-  <script lang="ts">
-  import {
-    IonContent,
-    IonIcon,
-    IonItem,
-    IonList,
-    IonListHeader,
-    modalController,
-    popoverController,
-    alertController
-  } from "@ionic/vue";
-  import { defineComponent } from "vue";
-  import { pencilOutline, calendarClearOutline, codeWorkingOutline, listOutline,  unlinkOutline} from 'ionicons/icons'
-  import EditShipmentMethodSequenceModal from '@/components/EditShipmentMethodSequenceModal.vue';
+  <script setup lang="ts">
+import { defineProps } from "vue";
+  import { IonContent, IonIcon, IonItem, IonList, IonListHeader, modalController, popoverController, alertController } from "@ionic/vue";
+  import { computed } from "vue";
+  import { pencilOutline, calendarClearOutline, codeWorkingOutline, listOutline, unlinkOutline } from "ionicons/icons";
+  import EditShipmentMethodSequenceModal from "@/components/EditShipmentMethodSequenceModal.vue";
   import { translate } from "@hotwax/dxp-components";
-  import { mapGetters, useStore } from "vuex";
-  import { CarrierService } from '@/services/CarrierService';
-  import { hasError } from '@/adapter';
-  import { showToast } from '@/utils';
-  import logger from '@/logger';
+  import { CarrierService } from "@/services/CarrierService";
+  import { hasError } from "@/adapter";
+  import { commonUtil } from "@/utils/commonUtil";
+  import logger from "@/logger";
+  import { useCarrierStore } from "@/store/carrier";
   
-  export default defineComponent({
-    name: "ShipmentMethodActionsPopover",
-    components: { 
-      IonContent,
-      IonIcon,
-      IonItem,
-      IonList,
-      IonListHeader
-    },
-    computed: {
-      ...mapGetters({
-        currentCarrier: 'carrier/getCurrent',
-        shipmentMethods: "carrier/getShipmentMethods"
-      })
-    },
-    props: ["shipmentMethod"],
-    methods: {
-      closePopover() {
-        popoverController.dismiss();
-      },
-      async renameShipmentMethod() {
-        const alert = await alertController.create({
-          header: translate('Rename shipment method'),
-          inputs: [{
-            name: "shipmentMethodName",
-            value: this.shipmentMethod.description
-          }],
-          buttons: [{
-            text: translate('Cancel'),
-            role: "cancel"
-          },
-          {
-            text: translate('Apply'),
-            handler: (data) => {
-              const { shipmentMethodName } = data
-              this.updateShipmentMethodName(this.shipmentMethod, shipmentMethodName)
-            }
-          }]
-        })
-        await alert.present()
-        this.closePopover();
-      },
-      async editDeliveryDays() {
-        const alert = await alertController.create({
-          header: translate('Edit delivery days'),
-          inputs: [{
-            name: "deliveryDays",
-            value: this.shipmentMethod.deliveryDays
-          }],
-          buttons: [{
-            text: translate('Cancel'),
-            role: "cancel"
-          },
-          {
-            text: translate('Apply'),
-            handler: async (data) => {
-              let { deliveryDays } = data
-              deliveryDays = deliveryDays.trim() ;
-              const currentDeliveryDays = this.shipmentMethod.deliveryDays ? this.shipmentMethod.deliveryDays : "";
-
-              if (deliveryDays !== currentDeliveryDays) {
-                const messages = {"successMessage": "Delivery days updated.", "errorMessage": "Failed to update delivery days."}
-                const updatedData = {"fieldName": "deliveryDays", "fieldValue": deliveryDays}
-                await this.store.dispatch('carrier/updateCarrierShipmentMethod', {shipmentMethod: this.shipmentMethod, updatedData, messages});
-              }
-            }
-          }]
-        })
-        await alert.present()
-        this.closePopover();
-      },
-      async editCarrierCode() {
-        const alert = await alertController.create({
-          header: translate('Edit carrier code'),
-          inputs: [{
-            name: "carrierServiceCode",
-            value: this.shipmentMethod.carrierServiceCode
-          }],
-          buttons: [{
-            text: translate('Cancel'),
-            role: "cancel"
-          },
-          {
-            text: translate('Apply'),
-            handler: async (data) => {
-              let { carrierServiceCode } = data
-              carrierServiceCode = carrierServiceCode.trim();
-              const currentCarrierServiceCode = this.shipmentMethod.carrierServiceCode ? this.shipmentMethod.carrierServiceCode : "";
-
-              if (carrierServiceCode !== currentCarrierServiceCode) {
-                const messages = {"successMessage": "Carrier code updated.", "errorMessage": "Failed to update carrier code."}
-                const updatedData = {"fieldName": "carrierServiceCode", "fieldValue": carrierServiceCode};
-                await this.store.dispatch('carrier/updateCarrierShipmentMethod', {shipmentMethod: this.shipmentMethod, updatedData, messages});
-              }
-            }
-          }]
-        })
-        await alert.present()
-        this.closePopover();
-      },
-      async openEditSequenceModal() {
-        const shipmentMethodSequenceModal = await modalController.create({
-          component: EditShipmentMethodSequenceModal
-        });
+  const props = defineProps(["shipmentMethod"]);
+  const currentCarrier = computed(() => useCarrierStore().getCurrent);
+  const shipmentMethods = computed(() => useCarrierStore().getShipmentMethods);
   
-        // dismissing the popover once the picker modal is closed
-        shipmentMethodSequenceModal.onDidDismiss().finally(() => {
-          this.closePopover();
-        });
-        return shipmentMethodSequenceModal.present();
-      },
-      async removeCarrierShipmentMethod() {
-        let currentCarrierShipmentMethods = JSON.parse(JSON.stringify(this.currentCarrier.shipmentMethods))
-        try {
-            const resp = await CarrierService.removeCarrierShipmentMethod(this.shipmentMethod)
-            if (!hasError(resp)) {
-              delete currentCarrierShipmentMethods[this.shipmentMethod.shipmentMethodTypeId]
-              showToast(translate("Carrier and shipment method association updated successfully."))
-              await this.store.dispatch('carrier/updateCurrentCarrierShipmentMethods', currentCarrierShipmentMethods)
-              await this.store.dispatch('carrier/checkAssociatedShipmentMethods')
-              this.closePopover();
-            } else {
-              throw resp.data
-            }
-        } catch(err) {
-          showToast(translate("Failed to update product store and shipment method association."))
-          logger.error(err)
-        }
-      },
-      async updateShipmentMethodName(shipmentMethod: any, updatedShipmentMethodName: any) {
-        try {
-          updatedShipmentMethodName = updatedShipmentMethodName.trim()
-          if (!updatedShipmentMethodName) {
-            showToast(translate("Shipment method name can not be empty."));
-            return;
+  const closePopover = () => {
+    popoverController.dismiss();
+  };
+  
+  const renameShipmentMethod = async () => {
+    const alert = await alertController.create({
+      header: translate("Rename shipment method"),
+      inputs: [{ name: "shipmentMethodName", value: props.shipmentMethod.description }],
+      buttons: [
+        { text: translate("Cancel"), role: "cancel" },
+        {
+          text: translate("Apply"),
+          handler: (data) => {
+            const { shipmentMethodName } = data;
+            updateShipmentMethodName(props.shipmentMethod, shipmentMethodName);
           }
-          
-          if (updatedShipmentMethodName != shipmentMethod.description) {
-            const resp = await CarrierService.updateShipmentMethodType({
-              shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
-              description: updatedShipmentMethodName
-            })
-
-            if (!hasError(resp)) {
-              showToast(translate('Shipment method renamed.'))
-              const updatedShipmentMethods = JSON.parse(JSON.stringify(this.shipmentMethods));
-              const updatedShipmentMethod = updatedShipmentMethods[shipmentMethod.shipmentMethodTypeId];
-              updatedShipmentMethod.description = updatedShipmentMethodName;
-              this.store.dispatch('carrier/updateShipmentMethods', updatedShipmentMethods)
-            } else {
-              throw resp.data
+        }
+      ]
+    });
+    await alert.present();
+    closePopover();
+  };
+  
+  const editDeliveryDays = async () => {
+    const alert = await alertController.create({
+      header: translate("Edit delivery days"),
+      inputs: [{ name: "deliveryDays", value: props.shipmentMethod.deliveryDays }],
+      buttons: [
+        { text: translate("Cancel"), role: "cancel" },
+        {
+          text: translate("Apply"),
+          handler: async (data) => {
+            let { deliveryDays } = data;
+            deliveryDays = deliveryDays.trim();
+            const currentDeliveryDays = props.shipmentMethod.deliveryDays ? props.shipmentMethod.deliveryDays : "";
+            if (deliveryDays !== currentDeliveryDays) {
+              const messages = { successMessage: "Delivery days updated.", errorMessage: "Failed to update delivery days." };
+              const updatedData = { fieldName: "deliveryDays", fieldValue: deliveryDays };
+              await useCarrierStore().updateCarrierShipmentMethod({ shipmentMethod: props.shipmentMethod, updatedData, messages });
             }
           }
-        } catch (error) {
-          showToast(translate('Failed to rename facility group.'))
-          logger.error('Failed to rename facility group.', error)
         }
-      }
-    },
-    setup() {
-      const store = useStore();
+      ]
+    });
+    await alert.present();
+    closePopover();
+  };
   
-      return {
-        calendarClearOutline,
-        codeWorkingOutline,
-        listOutline,
-        pencilOutline,
-        unlinkOutline,
-        store,
-        translate
+  const editCarrierCode = async () => {
+    const alert = await alertController.create({
+      header: translate("Edit carrier code"),
+      inputs: [{ name: "carrierServiceCode", value: props.shipmentMethod.carrierServiceCode }],
+      buttons: [
+        { text: translate("Cancel"), role: "cancel" },
+        {
+          text: translate("Apply"),
+          handler: async (data) => {
+            let { carrierServiceCode } = data;
+            carrierServiceCode = carrierServiceCode.trim();
+            const currentCarrierServiceCode = props.shipmentMethod.carrierServiceCode ? props.shipmentMethod.carrierServiceCode : "";
+            if (carrierServiceCode !== currentCarrierServiceCode) {
+              const messages = { successMessage: "Carrier code updated.", errorMessage: "Failed to update carrier code." };
+              const updatedData = { fieldName: "carrierServiceCode", fieldValue: carrierServiceCode };
+              await useCarrierStore().updateCarrierShipmentMethod({ shipmentMethod: props.shipmentMethod, updatedData, messages });
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
+    closePopover();
+  };
+  
+  const openEditSequenceModal = async () => {
+    const shipmentMethodSequenceModal = await modalController.create({ component: EditShipmentMethodSequenceModal });
+    shipmentMethodSequenceModal.onDidDismiss().finally(() => {
+      closePopover();
+    });
+    return shipmentMethodSequenceModal.present();
+  };
+  
+  const removeCarrierShipmentMethod = async () => {
+    const currentCarrierShipmentMethods = JSON.parse(JSON.stringify(currentCarrier.value.shipmentMethods));
+    try {
+      const resp = await CarrierService.removeCarrierShipmentMethod(props.shipmentMethod);
+      if (!hasError(resp)) {
+        delete currentCarrierShipmentMethods[props.shipmentMethod.shipmentMethodTypeId];
+        commonUtil.showToast(translate("Carrier and shipment method association updated successfully."));
+        await useCarrierStore().updateCurrentCarrierShipmentMethods(currentCarrierShipmentMethods);
+        await useCarrierStore().checkAssociatedShipmentMethods();
+        closePopover();
+      } else {
+        throw resp.data;
       }
+    } catch (err) {
+      commonUtil.showToast(translate("Failed to update product store and shipment method association."));
+      logger.error(err);
     }
-  });
+  };
+  
+  const updateShipmentMethodName = async (shipmentMethod: any, updatedShipmentMethodName: any) => {
+    try {
+      updatedShipmentMethodName = updatedShipmentMethodName.trim();
+      if (!updatedShipmentMethodName) {
+        commonUtil.showToast(translate("Shipment method name can not be empty."));
+        return;
+      }
+  
+      if (updatedShipmentMethodName != shipmentMethod.description) {
+        const resp = await CarrierService.updateShipmentMethodType({ shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId, description: updatedShipmentMethodName });
+        if (!hasError(resp)) {
+          commonUtil.showToast(translate("Shipment method renamed."));
+          const updatedShipmentMethods = JSON.parse(JSON.stringify(shipmentMethods.value));
+          const updatedShipmentMethod = updatedShipmentMethods[shipmentMethod.shipmentMethodTypeId];
+          updatedShipmentMethod.description = updatedShipmentMethodName;
+          useCarrierStore().updateShipmentMethods(updatedShipmentMethods);
+        } else {
+          throw resp.data;
+        }
+      }
+    } catch (error) {
+      commonUtil.showToast(translate("Failed to rename facility group."));
+      logger.error("Failed to rename facility group.", error);
+    }
+  };
   </script>

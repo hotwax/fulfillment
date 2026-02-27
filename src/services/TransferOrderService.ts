@@ -1,14 +1,23 @@
 import { apiClient, hasError } from "@/adapter";
 import logger from "@/logger";
-import store from "@/store";
+import { useUserStore } from "@/store/user";
+import { useUtilStore } from "@/store/util";
 import { translate } from "@hotwax/dxp-components";
-import { showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import { cogOutline } from "ionicons/icons";
 import { ZebraPrinterService } from './ZebraPrinterService';
 
+const getAuth = () => {
+  const userStore = useUserStore();
+  return {
+    omstoken: userStore.getUserToken,
+    baseURL: userStore.getMaargBaseUrl,
+    maargUrl: userStore.getMaargUrl
+  };
+};
+
 const fetchTransferOrders = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: "oms/transferOrders/",
@@ -22,8 +31,7 @@ const fetchTransferOrders = async (params: any): Promise<any> => {
   });
 }
 const fetchCompletedTransferOrders = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: "poorti/transferShipments/orders/",
@@ -38,8 +46,7 @@ const fetchCompletedTransferOrders = async (params: any): Promise<any> => {
 }
 
 const fetchTransferOrderDetail = async (orderId: string): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/oms/transferOrders/${orderId}`,
@@ -53,8 +60,7 @@ const fetchTransferOrderDetail = async (orderId: string): Promise<any> => {
 }
 
 const fetchShippedTransferShipments = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: "poorti/transferShipments",
@@ -69,8 +75,7 @@ const fetchShippedTransferShipments = async (params: any): Promise<any> => {
 };
 
 const fetchTransferShipmentDetails = async (params: Record<string, any>): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: "poorti/transferShipments",
@@ -84,9 +89,8 @@ const fetchTransferShipmentDetails = async (params: Record<string, any>): Promis
   });
 };
 
-const fetchRejectReasons = async(query: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+const fetchRejectReasons = async (query: any): Promise<any> => {
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/admin/enums`,
@@ -101,8 +105,7 @@ const fetchRejectReasons = async(query: any): Promise<any> => {
 }
 
 const fetchFulfillmentRejectReasons = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `/admin/enumGroups/${payload.enumerationGroupId}/members`,
@@ -117,8 +120,7 @@ const fetchFulfillmentRejectReasons = async (payload: any): Promise<any> => {
 }
 
 const cancelTransferOrderShipment = async (shipmentId: string): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `poorti/shipments/${shipmentId}`,
@@ -135,8 +137,7 @@ const cancelTransferOrderShipment = async (shipmentId: string): Promise<any> => 
 };
 
 const shipTransferOrderShipment = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     url: `poorti/transferShipments/${payload.shipmentId}/ship`,
@@ -152,8 +153,7 @@ const shipTransferOrderShipment = async (payload: any): Promise<any> => {
 
 const printTransferOrderPicklist = async (orderId: string): Promise<any> => {
   try {
-    const omstoken = store.getters['user/getUserToken'];
-    const baseURL = store.getters['user/getMaargBaseUrl'];
+    const { omstoken, baseURL } = getAuth();
 
     // Get packing slip from the server
     const resp: any = await apiClient({
@@ -176,7 +176,7 @@ const printTransferOrderPicklist = async (orderId: string): Promise<any> => {
     try {
       (window as any).open(pdfUrl, "_blank").focus();
     } catch {
-      showToast(
+      commonUtil.showToast(
         translate("Unable to open as browser is blocking pop-ups.", {
           documentName: "picklist",
         }),
@@ -184,14 +184,13 @@ const printTransferOrderPicklist = async (orderId: string): Promise<any> => {
       );
     }
   } catch (err) {
-    showToast(translate("Failed to print picklist"));
+    commonUtil.showToast(translate("Failed to print picklist"));
     logger.error("Failed to load picklist", err);
   }
 };
 
 const createOutboundTransferShipment = async (query: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     method: "post",
@@ -207,15 +206,14 @@ const createOutboundTransferShipment = async (query: any): Promise<any> => {
 
 const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string): Promise<any> => {
   try {
-    const maargUrl = store.getters['user/getMaargUrl'];
-    const omstoken = store.getters['user/getUserToken'];
+    const { maargUrl, omstoken } = getAuth();
 
     let pdfUrls = shippingLabelPdfUrls?.filter((pdfUrl: any) => pdfUrl);
     if (!pdfUrls || pdfUrls.length == 0) {
       let labelImageType = imageType || "PNG";
 
       if (!imageType && shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId) {
-        labelImageType = await store.dispatch("util/fetchLabelImageType", shipmentPackages[0].carrierPartyId);
+        labelImageType = await useUtilStore().fetchLabelImageType(shipmentPackages[0].carrierPartyId);
       }
 
       const labelImages = [] as Array<string>
@@ -254,7 +252,7 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
       try {
         (window as any).open(pdfUrl, "_blank").focus();
       } catch {
-        showToast(
+        commonUtil.showToast(
           translate("Unable to open as browser is blocking pop-ups.", {
             documentName: "shipping label",
           }),
@@ -263,14 +261,13 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
       }
     });
   } catch (err) {
-    showToast(translate("Failed to print shipping label"));
+    commonUtil.showToast(translate("Failed to print shipping label"));
     logger.error("Failed to load shipping label", err);
   }
 };
 
 const rejectOrderItems = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `poorti/transferOrders/${payload.orderId}/reject`,
@@ -285,8 +282,7 @@ const rejectOrderItems = async (payload: any): Promise<any> => {
 };
 
 const closeOrderItems = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `poorti/transferOrders/${payload.orderId}/closeFulfillment`,
@@ -301,8 +297,7 @@ const closeOrderItems = async (payload: any): Promise<any> => {
 };
 
 const createTransferOrder = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return await apiClient({
     url: 'oms/transferOrders',
@@ -317,8 +312,7 @@ const createTransferOrder = async (payload: any): Promise<any> => {
 };
 
 const approveTransferOrder = async (orderId: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `oms/transferOrders/${orderId}/approve`,
@@ -332,8 +326,7 @@ const approveTransferOrder = async (orderId: any): Promise<any> => {
 };
 
 const addOrderItem = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: 'oms/transferOrders/orderItem',
@@ -348,8 +341,7 @@ const addOrderItem = async (payload: any): Promise<any> => {
 }
 
 const updateOrderItem = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: 'oms/transferOrders/orderItem',
@@ -364,8 +356,7 @@ const updateOrderItem = async (payload: any): Promise<any> => {
 }
 
 const cancelTransferOrder = async (orderId: string): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
+  const { omstoken, baseURL } = getAuth();
 
   return apiClient({
     url: `oms/transferOrders/${orderId}/cancel`,

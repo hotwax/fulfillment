@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal"> 
+        <ion-button @click="closeModal">
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -61,82 +61,33 @@
           </ion-item>
         </div>
       </div>
-    </ion-card> 
+    </ion-card>
 
     <ion-list>
       <ion-item lines="none">
         <ion-note slot="start">{{ translate('Boxes') }}</ion-note>
         <ion-button fill="clear" slot="end">
           {{ translate("Add") }}
-          <ion-icon :icon="addCircleOutline"/>
+          <ion-icon :icon="addCircleOutline" />
         </ion-button>
       </ion-item>
       <ion-item>
         <ion-select label="Box A" value="3">
           <ion-select-option value="1">Type 1</ion-select-option>
           <ion-select-option value="2">Type 2</ion-select-option>
-          <ion-select-option value="3">Type 3</ion-select-option>  
+          <ion-select-option value="3">Type 3</ion-select-option>
         </ion-select>
       </ion-item>
     </ion-list>
   </ion-content>
 </template>
 
-<script>
-import { 
-  IonButtons,
-  IonButton,
-  IonCard,
-  IonChip,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonNote,
-  IonSelect,
-  IonSelectOption,
-  IonThumbnail,
-  IonTitle,
-  IonToolbar,
-  modalController } from "@ionic/vue";
-import { defineComponent } from "vue";
+<script setup>
+import { IonButtons, IonButton, IonCard, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonSelect, IonSelectOption, IonThumbnail, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { addCircleOutline, closeOutline, pricetag } from "ionicons/icons";
-import { translate } from '@hotwax/dxp-components'
+import { translate } from "@hotwax/dxp-components";
 
-export default defineComponent({
-  name: "EditPackagingModal",
-  components: { 
-    IonButtons,
-    IonButton,
-    IonCard,
-    IonChip,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonNote,
-    IonSelect,
-    IonSelectOption,
-    IonThumbnail,
-    IonTitle,
-    IonToolbar,
-  },
-  methods: {
-    closeModal() {
-      modalController.dismiss({ dismissed: true });
-    },
-  },
-  setup() {
-    return {
-      addCircleOutline,
-      closeOutline,
-      pricetag,
-      translate
-    };
-  },
-});
+const closeModal = () => {
+  modalController.dismiss({ dismissed: true });
+};
 </script>

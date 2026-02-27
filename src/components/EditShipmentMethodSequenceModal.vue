@@ -38,132 +38,75 @@
     </ion-content>
   </template>
   
-  <script lang="ts">
-  import { 
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonReorder,
-    IonReorderGroup,
-    IonTitle,
-    IonToolbar,
-    modalController
-  } from "@ionic/vue";
-  import { defineComponent } from "vue";
-  import { close, closeCircle, saveOutline } from "ionicons/icons";
-  import { mapGetters, useStore } from 'vuex';
-  import { showToast, sortItems } from '@/utils';
-  import { CarrierService } from '@/services/CarrierService';
-  import { translate } from '@hotwax/dxp-components'
+  <script setup lang="ts">
+  import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonReorder, IonReorderGroup, IonTitle, IonToolbar, modalController } from "@ionic/vue";
+  import { computed, onMounted, ref } from "vue";
+  import { close, saveOutline } from "ionicons/icons";
+  import { commonUtil } from "@/utils/commonUtil";
+  import { CarrierService } from "@/services/CarrierService";
+  import { translate } from "@hotwax/dxp-components";
+  import { useCarrierStore } from "@/store/carrier";
+  const filteredShipmentMethods = ref([] as any[]);
+  const currentCarrier = computed(() => useCarrierStore().getCurrent);
+  const shipmentMethods = computed(() => useCarrierStore().getFilteredShipmentMethods);
   
-  export default defineComponent({
-    name: "SequenceShipmentMethods",
-    components: { 
-      IonButton,
-      IonButtons,
-      IonContent,
-      IonFab,
-      IonFabButton,
-      IonHeader,
-      IonIcon,
-      IonItem,
-      IonLabel,
-      IonReorder,
-      IonReorderGroup,
-      IonTitle,
-      IonToolbar
-    },
-    data() {
-      return {
-        filteredShipmentMethods: [] as any,
-        toast: null as any
-      }
-    },
-    computed: {
-      ...mapGetters({
-        currentCarrier: "carrier/getCurrent",
-        shipmentMethods: "carrier/getFilteredShipmentMethods"
-      })
-    },
-    async mounted() {
-      const methods = this.shipmentMethods.filter((shipmentMethod: any) => shipmentMethod.isChecked)
-      sortItems(methods, "sequenceNumber")
-      this.filteredShipmentMethods = methods;
-    },
-    methods: {
-      closeModal() {
-        modalController.dismiss({
-          dismissed: true
-        });
-      },
-      async doReorder(event: CustomEvent) {
-        const previousSeq = JSON.parse(JSON.stringify(this.filteredShipmentMethods))
-
-        // returns the updated sequence after reordering
-        const updatedSeq = event.detail.complete(JSON.parse(JSON.stringify(this.filteredShipmentMethods)));
-
-        let diffSeq = this.findShipmentMethodsDiff(previousSeq, updatedSeq)
-
-        const updatedSeqenceNum = previousSeq.map((shipmentMethod: any) => shipmentMethod.sequenceNumber)
-        Object.keys(diffSeq).map((key: any) => {
-          diffSeq[key].sequenceNumber = updatedSeqenceNum[key]
-        })
-
-        diffSeq = Object.keys(diffSeq).map((key) => diffSeq[key])
-        this.filteredShipmentMethods = updatedSeq
-
-        if (diffSeq.length && !this.toast) {
-          showToast(translate("Shipment methods order has been changed. Click save button to update them."));
-        }
-      },
-      findShipmentMethodsDiff(previousSeq: any, updatedSeq: any) {
-        const diffSeq: any = Object.keys(previousSeq).reduce((diff, key) => {
-          if (updatedSeq[key].shipmentMethodTypeId === previousSeq[key].shipmentMethodTypeId && updatedSeq[key].sequenceNumber === previousSeq[key].sequenceNumber) return diff
-          return {
-            ...diff,
-            [key]: updatedSeq[key]
-          }
-        }, {})
-        return diffSeq;
-      },
-      async saveShipmentMethodsOrder() {
-        const diffShipmentMethods = this.filteredShipmentMethods.filter((filteredShipmentMethod: any) => this.shipmentMethods.some((shipmentMethod: any) => shipmentMethod.shipmentMethodTypeId === filteredShipmentMethod.shipmentMethodTypeId && shipmentMethod.sequenceNumber !== filteredShipmentMethod.sequenceNumber))
-        let currentCarrierShipmentMethods = this.currentCarrier.shipmentMethods ? JSON.parse(JSON.stringify(this.currentCarrier.shipmentMethods)) : {}
-
-        const responses = await Promise.allSettled(diffShipmentMethods.map(async (method: any) => {
-          await CarrierService.updateCarrierShipmentMethod(method)
-          currentCarrierShipmentMethods[method.shipmentMethodTypeId] = method
-          await this.store.dispatch('carrier/updateCurrentCarrierShipmentMethods', currentCarrierShipmentMethods)
-          await this.store.dispatch('carrier/checkAssociatedShipmentMethods')
-        }))
-
-        const isFailedToUpdateSomeMethod = responses.some((response) => response.status === 'rejected')
-        if (isFailedToUpdateSomeMethod) {
-          showToast(translate("Failed to update sequence for some shipment methods."))
-        } else {
-          showToast(translate("Sequence for shipment methods updated successfully."))
-        }
-        
-        modalController.dismiss()
-      }
-    },
-    setup() {
-      const store = useStore();
-      return {
-        close,
-        saveOutline,
-        closeCircle,
-        store,
-        translate
-      };
-    }
+  onMounted(() => {
+    const methods = shipmentMethods.value.filter((shipmentMethod: any) => shipmentMethod.isChecked);
+    commonUtil.sortItems(methods, "sequenceNumber");
+    filteredShipmentMethods.value = methods;
   });
+  
+  const closeModal = () => {
+    modalController.dismiss({ dismissed: true });
+  };
+  
+  const findShipmentMethodsDiff = (previousSeq: any, updatedSeq: any) => {
+    const diffSeq: any = Object.keys(previousSeq).reduce((diff: any, key: any) => {
+      if (updatedSeq[key].shipmentMethodTypeId === previousSeq[key].shipmentMethodTypeId && updatedSeq[key].sequenceNumber === previousSeq[key].sequenceNumber) return diff;
+      return { ...diff, [key]: updatedSeq[key] };
+    }, {});
+    return diffSeq;
+  };
+  
+  const doReorder = async (event: CustomEvent) => {
+    const previousSeq = JSON.parse(JSON.stringify(filteredShipmentMethods.value));
+    const updatedSeq = event.detail.complete(JSON.parse(JSON.stringify(filteredShipmentMethods.value)));
+  
+    let diffSeq = findShipmentMethodsDiff(previousSeq, updatedSeq);
+  
+    const updatedSeqenceNum = previousSeq.map((shipmentMethod: any) => shipmentMethod.sequenceNumber);
+    Object.keys(diffSeq).map((key: any) => {
+      diffSeq[key].sequenceNumber = updatedSeqenceNum[key];
+    });
+  
+    diffSeq = Object.keys(diffSeq).map((key) => diffSeq[key]);
+    filteredShipmentMethods.value = updatedSeq;
+  
+    if (diffSeq.length) {
+      commonUtil.showToast(translate("Shipment methods order has been changed. Click save button to update them."));
+    }
+  };
+  
+  const saveShipmentMethodsOrder = async () => {
+    const diffShipmentMethods = filteredShipmentMethods.value.filter((filteredShipmentMethod: any) => shipmentMethods.value.some((shipmentMethod: any) => shipmentMethod.shipmentMethodTypeId === filteredShipmentMethod.shipmentMethodTypeId && shipmentMethod.sequenceNumber !== filteredShipmentMethod.sequenceNumber));
+    const currentCarrierShipmentMethods = currentCarrier.value.shipmentMethods ? JSON.parse(JSON.stringify(currentCarrier.value.shipmentMethods)) : {};
+  
+    const responses = await Promise.allSettled(diffShipmentMethods.map(async (method: any) => {
+      await CarrierService.updateCarrierShipmentMethod(method);
+      currentCarrierShipmentMethods[method.shipmentMethodTypeId] = method;
+      await useCarrierStore().updateCurrentCarrierShipmentMethods(currentCarrierShipmentMethods);
+      await useCarrierStore().checkAssociatedShipmentMethods();
+    }));
+  
+    const isFailedToUpdateSomeMethod = responses.some((response) => response.status === "rejected");
+    if (isFailedToUpdateSomeMethod) {
+      commonUtil.showToast(translate("Failed to update sequence for some shipment methods."));
+    } else {
+      commonUtil.showToast(translate("Sequence for shipment methods updated successfully."));
+    }
+  
+    modalController.dismiss();
+  };
   </script>
   <style scoped>
   .list-item {

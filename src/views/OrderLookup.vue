@@ -1,11 +1,10 @@
 <template>
   <ion-page>
-    <OrderLookupFilters menu-id="orderLookup-filter" content-id="orderLookup-filter"/>
+    <OrderLookupFilters menu-id="orderLookup-filter" content-id="orderLookup-filter" />
 
     <ion-header :translucent="true">
       <ion-menu-button menu="start" slot="start" />
       <ion-toolbar>
-        
         <ion-title>{{ translate("Orders") }}</ion-title>
         <ion-buttons slot="end">
           <ion-menu-button menu="orderLookup-filter">
@@ -21,7 +20,7 @@
           <section class="sort">
             <div>
               <div class="search">
-                <ion-searchbar :placeholder="translate('Search')" v-model="queryString" @keyup.enter="queryString = $event.target.value; updateQueryString()"/>
+                <ion-searchbar :placeholder="translate('Search')" v-model="queryString" @keyup.enter="queryString = $event.target.value; updateQueryString()" />
               </div>
 
               <ion-item lines="none">
@@ -39,7 +38,6 @@
             </div>
           </section>
 
-          <!-- Order Item Section -->
           <hr />
 
           <div v-if="ordersList.orders.length">
@@ -53,20 +51,20 @@
                     </ion-label>
                   </ion-item>
                 </div>
-  
+
                 <div class="tags">
-                  <ion-chip @click.stop="copyToClipboard(order.orderName, 'Copied to clipboard')" outline v-if="order.orderName">
+                  <ion-chip @click.stop="commonUtil.copyToClipboard(order.orderName, 'Copied to clipboard')" outline v-if="order.orderName">
                     <ion-icon :icon="pricetag" />
                     <ion-label>{{ order.orderName }}</ion-label>
                   </ion-chip>
                 </div>
-  
+
                 <div class="metadata">
-                  <ion-note>{{ translate("Ordered on") }} {{ formatUtcDate(order.orderDate, "dd LLL yyyy") }}</ion-note>
-                  <ion-badge :color="getColorByDesc(order.orderStatusDesc) || getColorByDesc('default')">{{ order.orderStatusDesc }}</ion-badge>
+                  <ion-note>{{ translate("Ordered on") }} {{ commonUtil.formatUtcDate(order.orderDate, "dd LLL yyyy") }}</ion-note>
+                  <ion-badge :color="commonUtil.getColorByDesc(order.orderStatusDesc) || commonUtil.getColorByDesc('default')">{{ order.orderStatusDesc }}</ion-badge>
                 </div>
               </section>
-  
+
               <section v-if="showOrderItems">
                 <div class="list-item" v-for="(item, index) in order.doclist.docs" :key="index">
                   <ion-item lines="none">
@@ -91,7 +89,7 @@
                     </ion-label>
                   </div>
                   <ion-item lines="none">
-                    <ion-badge slot="end" :color="getColorByDesc(item.orderItemStatusDesc) || getColorByDesc('default')">{{ translate(item.orderItemStatusDesc) }}</ion-badge>
+                    <ion-badge slot="end" :color="commonUtil.getColorByDesc(item.orderItemStatusDesc) || commonUtil.getColorByDesc('default')">{{ translate(item.orderItemStatusDesc) }}</ion-badge>
                   </ion-item>
                 </div>
               </section>
@@ -109,7 +107,7 @@
             <p>{{ translate("No orders found.") }}</p>
           </div>
           <ion-infinite-scroll @ionInfinite="loadMoreOrders($event)" threshold="100px" v-show="isScrollable" ref="infiniteScrollRef">
-            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
+            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
           </ion-infinite-scroll>
         </main>
       </div>
@@ -117,184 +115,94 @@
   </ion-page>
 </template>
 
-<script lang="ts">
-import {
-  
-  IonBadge,
-  IonButtons,
-  IonChip,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonInfiniteScroll,
-  IonInfiniteScrollContent,
-  IonItem,
-  IonLabel,
-  IonMenuButton,
-  IonNote,
-  IonPage,
-  IonSearchbar,
-  IonSelect,
-  IonSelectOption,
-  IonSpinner,
-  IonThumbnail,
-  IonTitle,
-  IonToggle,
-  IonToolbar,
-  menuController
-} from '@ionic/vue';
-import {
-  closeOutline,
-  documentTextOutline,
-  downloadOutline,
-  filterOutline,
-  pricetag,
-  ribbon,
-  swapVerticalOutline,
-  syncOutline
-} from 'ionicons/icons';
-import { defineComponent, ref } from "vue";
-import { mapGetters, useStore } from "vuex";
-import { copyToClipboard, getColorByDesc, formatUtcDate } from '@/utils'
-import { useRouter } from 'vue-router';
-import OrderLookupFilters from '@/components/OrderLookupFilters.vue'
-import { translate } from '@hotwax/dxp-components';
-import Image from '@/components/Image.vue'
-import store from "@/store"
+<script setup lang="ts">
+import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonThumbnail, IonTitle, IonToggle, IonToolbar, menuController, onIonViewWillEnter } from "@ionic/vue";
+import { computed, defineOptions, ref } from "vue";
+import { useRouter } from "vue-router";
+import { documentTextOutline, filterOutline, pricetag, swapVerticalOutline } from "ionicons/icons";
+import { commonUtil } from "@/utils/commonUtil";
+import { useOrderLookupStore } from "@/store/orderLookup";
+import { useProductStore } from "@/store/product";
+import { useUtilStore } from "@/store/util";
+import OrderLookupFilters from "@/components/OrderLookupFilters.vue";
+import { translate } from "@hotwax/dxp-components";
+import Image from "@/components/Image.vue";
 
-export default defineComponent ({
-  name: 'OrderLookup',
-  components: {
-    Image,
-    
-    IonBadge,
-    IonButtons,
-    IonChip,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonInfiniteScroll,
-    IonInfiniteScrollContent,
-    IonItem,
-    IonLabel,
-    IonMenuButton,
-    IonNote,
-    IonPage,
-    IonSelect,
-    IonSelectOption,
-    IonSearchbar,
-    IonSpinner,
-    IonThumbnail,
-    IonTitle,
-    IonToggle,
-    IonToolbar,
-    OrderLookupFilters
-  },
-  computed: {
-    ...mapGetters({
-      ordersList: 'orderLookup/getOrders',
-      getProduct: 'product/getProduct',
-      getProductStock: 'stock/getProductStock',
-      isScrollable: 'orderLookup/isScrollable',
-      query: 'orderLookup/getOrderQuery',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
-      eComStores: 'util/getEcomStores'
-    })
-  },
-  data() {
-    return {
-      sort: 'orderDate desc',
-      showOrderItems: true,
-      isLoading: false,
-      isScrollingEnabled: false
+defineOptions({
+  beforeRouteEnter(to, from) {
+    if (from.name !== "OrderLookupDetail") {
+      useOrderLookupStore().clearOrderLookup();
     }
-  },
-  async ionViewWillEnter() {
-    this.isScrollingEnabled = false;
-    await this.getOrders();
-  },
-  beforeRouteEnter(_, from) {
-    // Clearing the orderLookup filters only when coming from any page other than detail page
-    if(from.name !== "OrderLookupDetail") {
-      store.dispatch("orderLookup/clearOrderLookup")
-    }
-  },
-  methods: {
-    async closeMenu() {
-      await menuController.close();
-    },
-    async sortOrders(value: string) {
-      this.isLoading = true
-      this.sort = value
-      await this.store.dispatch('orderLookup/updateSort', this.sort)
-      this.isLoading = false
-    },
-    async getOrders() {
-      this.isLoading = true
-      await this.store.dispatch('orderLookup/findOrders', { fetchFacets: true })
-      this.isLoading = false
-    },
-    async updateQueryString() {
-      this.isLoading = true
-      await this.store.dispatch('orderLookup/updateAppliedFilters', { value: this.queryString, filterName: 'queryString' })
-      this.isLoading = false
-    },
-    async loadMoreOrders(event: any) {
-      // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
-      if(!(this.isScrollingEnabled && this.isScrollable)) {
-        await event.target.complete();
-      }
-      this.isLoading = true
-      await this.store.dispatch('orderLookup/findOrders', {
-        viewSize: undefined,
-        viewIndex: Math.ceil(this.ordersList.orders.length / 10).toString()
-      }).then(async () => {
-        await event.target.complete();
-      })
-      this.isLoading = false
-    },
-    async openOrderFilter() {
-      await menuController.open();
-    },
-    enableScrolling() {
-      const parentElement = (this as any).$refs.contentRef.$el
-      const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
-      let scrollHeight = scrollEl.scrollHeight, infiniteHeight = (this as any).$refs.infiniteScrollRef.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
-      const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
-      if(distanceFromInfinite < 0) {
-        this.isScrollingEnabled = false;
-      } else {
-        this.isScrollingEnabled = true;
-      }
-    },
-  },
-  setup() {
-    const router = useRouter();
-    const store = useStore();
-    const queryString = ref();
-    const orderStatus = JSON.parse(process.env.VUE_APP_ORDER_STATUS as any)
-    const itemStatus = JSON.parse(process.env.VUE_APP_ITEM_STATUS as any)
+  }
+});
 
-    return {
-      closeOutline,
-      copyToClipboard,
-      formatUtcDate,
-      documentTextOutline,
-      downloadOutline,
-      filterOutline,
-      itemStatus,
-      pricetag,
-      orderStatus,
-      ribbon,
-      swapVerticalOutline,
-      syncOutline,
-      router,
-      store,
-      translate,
-      queryString,
-      getColorByDesc
-    };
-  },
+const router = useRouter();
+const sort = ref("orderDate desc");
+const showOrderItems = ref(true);
+const isLoading = ref(false);
+const isScrollingEnabled = ref(false);
+const queryString = ref("" as any);
+
+const contentRef = ref();
+const infiniteScrollRef = ref();
+
+const ordersList = computed(() => useOrderLookupStore().getOrders);
+const isScrollable = computed(() => useOrderLookupStore().isScrollable);
+const query = computed(() => useOrderLookupStore().getOrderQuery);
+const getProduct = (productId: string) => useProductStore().getProduct(productId);
+const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
+
+
+const sortOrders = async (value: string) => {
+  isLoading.value = true;
+  sort.value = value;
+  await useOrderLookupStore().updateSort(sort.value);
+  isLoading.value = false;
+};
+
+const getOrders = async () => {
+  isLoading.value = true;
+  await useOrderLookupStore().findOrders({ fetchFacets: true });
+  isLoading.value = false;
+};
+
+const updateQueryString = async () => {
+  isLoading.value = true;
+  await useOrderLookupStore().updateAppliedFilters({ value: queryString.value, filterName: "queryString" });
+  isLoading.value = false;
+};
+
+const loadMoreOrders = async (event: any) => {
+  if (!(isScrollingEnabled.value && isScrollable.value)) {
+    await event.target.complete();
+  }
+  isLoading.value = true;
+  await useOrderLookupStore().findOrders({
+    viewSize: undefined,
+    viewIndex: Math.ceil(ordersList.value.orders.length / 10).toString()
+  }).then(async () => {
+    await event.target.complete();
+  });
+  isLoading.value = false;
+};
+
+
+const enableScrolling = () => {
+  const parentElement = contentRef.value?.$el;
+  const scrollEl = parentElement?.shadowRoot?.querySelector("main[part='scroll']");
+  if (!scrollEl || !infiniteScrollRef.value?.$el) return;
+  const scrollHeight = scrollEl.scrollHeight;
+  const infiniteHeight = infiniteScrollRef.value.$el.offsetHeight;
+  const scrollTop = scrollEl.scrollTop;
+  const threshold = 100;
+  const height = scrollEl.offsetHeight;
+  const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height;
+  isScrollingEnabled.value = !(distanceFromInfinite < 0);
+};
+
+onIonViewWillEnter(async () => {
+  isScrollingEnabled.value = false;
+  await getOrders();
 });
 </script>
 
@@ -302,7 +210,7 @@ export default defineComponent ({
 ion-menu {
   --width: 100%;
 }
-.section-header{
+.section-header {
   margin: 0 var(--spacer-sm);
 }
 
@@ -314,7 +222,7 @@ ion-menu {
   display: block;
 }
 
-main > div{
+main > div {
   cursor: pointer;
 }
 
@@ -337,7 +245,7 @@ ion-modal {
   margin: var(--spacer-sm) 0;
 }
 
-.sort > div > :first-child{
+.sort > div > :first-child {
   border-bottom: var(--border-medium);
 }
 
@@ -345,7 +253,7 @@ ion-modal {
   display: grid;
   grid-template-areas: "info metadata"
                        "tags tags";
-  align-items: center;                     
+  align-items: center;
 }
 
 .primary-info {
@@ -383,12 +291,12 @@ ion-modal {
 
   .find {
     grid: "search  main" min-content
-          "filters main" 1fr 
-          / 375px; 
-    column-gap: var(--spacer-2xl);      
-    margin: var(--spacer-lg);                            
+          "filters main" 1fr
+          / 375px;
+    column-gap: var(--spacer-2xl);
+    margin: var(--spacer-lg);
   }
-  
+
   .section-header {
     grid: "info tags metadata" / 1fr max-content 1fr;
   }
@@ -415,7 +323,7 @@ ion-modal {
     border-left: var(--border-medium);
   }
 
-  .sort > div > :first-child{
+  .sort > div > :first-child {
     border-bottom: unset;
   }
 
@@ -425,11 +333,11 @@ ion-modal {
 
   .mobile-only {
     display: none;
-  }  
+  }
 
-  .find > .filters{
+  .find > .filters {
     display: unset;
-  }  
+  }
 
   .product,
   .products {
@@ -457,20 +365,20 @@ ion-modal {
     grid: "id       timeline" min-content
           "cards    timeline" 1fr
           / 1fr 500px;
-    justify-content: space-between;  
+    justify-content: space-between;
   }
 
   .id {
     grid-area: id;
   }
-  
+
   .info {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(314px, max-content));
     align-items: start;
     grid-area: cards;
   }
-  
+
   .timeline {
     grid-area: timeline;
     border-left: var(--border-medium);

@@ -10,7 +10,7 @@
         <ion-title v-else>{{ inProgressOrders.query.viewSize }} {{ translate('of') }} {{ inProgressOrders.total }} {{ translate('orders') }}</ion-title>
 
         <ion-buttons slot="end">
-          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !inProgressOrders.total || isRejecting" fill="clear" color="danger" @click="recycleInProgressOrders()">
+          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !inProgressOrders.total || isRejecting" fill="clear" color="danger" @click="commonUtil.recycleInProgressOrders()">
             {{ translate("Reject all") }}
           </ion-button>
           <ion-menu-button menu="view-size-selector-inprogress" :disabled="!inProgressOrders.total">
@@ -19,13 +19,12 @@
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
-    
+
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="view-size-selector">
-      <ion-searchbar class="searchbar" :placeholder="translate('Search orders')" v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)"/>
+      <ion-searchbar class="searchbar" :placeholder="translate('Search orders')" v-model="inProgressOrders.query.queryString" @keyup.enter="updateQueryString($event.target.value)" />
       <ion-radio-group v-if="picklists?.length" v-model="selectedPicklistId" @ionChange="updateSelectedPicklist($event.detail.value)">
         <ion-row class="filters">
           <ion-item lines="none">
-            <!-- empty value '' for 'All orders' radio -->
             <ion-radio label-placement="end" value="">
               <ion-label class="ion-text-wrap">
                 {{ translate('All') }}
@@ -76,11 +75,11 @@
               <ion-skeleton-text animated />
               <ion-skeleton-text animated />
             </div>
-            <div class="box-type desktop-only"  v-else-if="order.shipmentPackages">
+            <div class="box-type desktop-only" v-else-if="order.shipmentPackages">
               <ion-button :disabled="order.items.length <= order.shipmentPackages.length || addingBoxForShipmentIds.includes(order.shipmentId)" @click.stop="addShipmentBox(order)" fill="outline" shape="round" size="small"><ion-icon :icon="addOutline" />{{ translate("Add Box") }}</ion-button>
               <ion-row>
                 <ion-chip v-for="shipmentPackage in order.shipmentPackages" :key="shipmentPackage.shipmentId" @click.stop="updateShipmentBoxType(shipmentPackage, order, $event)">
-                  {{ `Box ${shipmentPackage?.packageName}` }} {{ `| ${boxTypeDesc(getShipmentPackageType(order, shipmentPackage))}`}}
+                  {{ `Box ${shipmentPackage?.packageName}` }} {{ `| ${boxTypeDesc(getShipmentPackageType(order, shipmentPackage))}` }}
                   <ion-icon :icon="caretDownOutline" />
                 </ion-chip>
               </ion-row>
@@ -91,17 +90,16 @@
                 <div class="product-info">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start" v-image-preview="getProduct(item.productId)" :key="getProduct(item.productId)?.mainImageUrl">
-                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small"/>
+                      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small" />
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                       <div>
                         {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
-                        <ion-badge color="dark" class="kit-badge" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                        <ion-badge color="dark" class="kit-badge" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
                       </div>
-                      <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
+                      <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
                     </ion-label>
-                    
                   </ion-item>
                 </div>
 
@@ -112,17 +110,16 @@
                 </div>
 
                 <div class="desktop-only ion-text-center" v-else>
-                  <!-- Check to not call the segment change method autocatically as initially the data is not available and thus ionChange event is called when data is populated -->
                   <div>
                     <template v-if="item.rejectReason">
                       <ion-chip outline color="danger">
                         <ion-label> {{ getRejectionReasonDescription(item.rejectReason) }}</ion-label>
-                        <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)"/>
+                        <ion-icon :icon="closeCircleOutline" @click.stop="removeRejectionReason($event, item, order)" />
                       </ion-chip>
                     </template>
                     <template v-else-if="isEntierOrderRejectionEnabled(order)">
                       <ion-chip outline color="danger">
-                        <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject to avoid order split (no variance)')}}</ion-label>
+                        <ion-label> {{ getRejectionReasonDescription(rejectEntireOrderReasonId) ? getRejectionReasonDescription(rejectEntireOrderReasonId) : translate('Reject to avoid order split (no variance)') }}</ion-label>
                       </ion-chip>
                     </template>
                     <template v-else>
@@ -134,43 +131,42 @@
                   </div>
                 </div>
 
-                <!--Adding checks to avoid any operations if order has missing info, mostly when after packing Solr is not updaing immediately-->
                 <div class="product-metadata">
-                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
-                    <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline"/>
-                    <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline"/>
+                  <ion-button v-if="orderUtil.isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
+                    <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline" />
+                    <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline" />
                   </ion-button>
                   <ion-button color="medium" fill="clear" size="small" v-if="item.productTypeId === 'GIFT_CARD'" @click="openGiftCardActivationModal(item)">
-                    <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline"/>
+                    <ion-icon slot="icon-only" :icon="item.isGCActivated ? gift : giftOutline" />
                   </ion-button>
                   <ion-button color="danger" fill="clear" size="small" @click.stop="openRejectReasonPopover($event, item, order)">
-                    <ion-icon slot="icon-only" :icon="trashBinOutline"/>
+                    <ion-icon slot="icon-only" :icon="trashBinOutline" />
                   </ion-button>
                   <ion-note v-if="getProductStock(item.productId).qoh">{{ getProductStock(item.productId).qoh }} {{ translate('pieces in stock') }}</ion-note>
                   <ion-button color="medium" fill="clear" v-else size="small" @click.stop="fetchProductStock(item.productId)">
-                    <ion-icon slot="icon-only" :icon="cubeOutline"/>
+                    <ion-icon slot="icon-only" :icon="cubeOutline" />
                   </ion-button>
                 </div>
               </div>
 
               <div v-if="item.showKitComponents && !getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-item lines="none">
-                  <ion-skeleton-text animated style="height: 80%;"/>
+                  <ion-skeleton-text animated style="height: 80%;" />
                 </ion-item>
                 <ion-item lines="none">
-                  <ion-skeleton-text animated style="height: 80%;"/>
+                  <ion-skeleton-text animated style="height: 80%;" />
                 </ion-item>
               </div>
               <div v-else-if="item.showKitComponents && getProduct(item.productId)?.productComponents" class="kit-components">
                 <ion-card v-for="(productComponent, index) in getProduct(item.productId).productComponents" :key="index">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start" v-image-preview="getProduct(productComponent.productIdTo)" :key="getProduct(productComponent.productIdTo)?.mainImageUrl">
-                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small"/>
+                      <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small" />
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
                       {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
-                      <p>{{ getFeatures(getProduct(productComponent.productIdTo).productFeatures)}}</p>
+                      <p>{{ commonUtil.getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
                     </ion-label>
                     <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.kitComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
                   </ion-item>
@@ -189,7 +185,7 @@
 
             <div class="actions">
               <div>
-                <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" @click.stop="packOrder(order)">{{ translate(order.hasAllRejectedItem ? "Reject" : order.hasRejectedItem ? "Save and Pack"  : "Pack") }}</ion-button>
+                <ion-button :color="order.hasAllRejectedItem ? 'danger' : ''" @click.stop="packOrder(order)">{{ translate(order.hasAllRejectedItem ? "Reject" : order.hasRejectedItem ? "Save and Pack" : "Pack") }}</ion-button>
               </div>
 
               <div class="desktop-only">
@@ -197,8 +193,8 @@
               </div>
             </div>
           </ion-card>
-          <ion-infinite-scroll @ionInfinite="loadMoreInProgressOrders($event)" threshold="100px"  v-show="isInProgressOrderScrollable()" ref="infiniteScrollRef">
-            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"/>
+          <ion-infinite-scroll @ionInfinite="loadMoreInProgressOrders($event)" threshold="100px" v-show="isInProgressOrderScrollable()" ref="infiniteScrollRef">
+            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
           </ion-infinite-scroll>
         </div>
       </div>
@@ -216,7 +212,6 @@
         <p v-html="getErrorMessage()"></p>
       </div>
     </ion-content>
-    <!-- only show footer buttons if 'All orders' is not selected -->
     <ion-footer v-if="selectedPicklistId && inProgressOrders.total">
       <ion-toolbar>
         <ion-buttons slot="end">
@@ -235,1078 +230,977 @@
   </ion-page>
 </template>
 
-<script lang="ts">
-import {
-  IonBadge,
-  IonButton,
-  IonButtons,
-  IonCard,
-  IonCheckbox,
-  IonChip,
-  IonContent,
-  IonFab,
-  IonFabButton,
-  IonFooter,
-  IonHeader,
-  IonItem,
-  IonIcon,
-  IonInfiniteScroll,
-  IonInfiniteScrollContent,
-  IonLabel,
-  IonMenuButton,
-  IonNote,
-  IonPage,
-  IonRow,
-  IonRadio,
-  IonRadioGroup,
-  IonSearchbar,
-  IonSkeletonText,
-  IonSpinner,
-  IonThumbnail,
-  IonTitle,
-  IonToolbar,
-  alertController,
-  popoverController,
-  modalController,
-} from '@ionic/vue';
-import { computed, defineComponent } from 'vue';
-import {
-  addOutline,
-  caretDownOutline,
-  chevronUpOutline,
-  checkmarkDoneOutline,
-  closeCircleOutline,
-  cubeOutline,
-  ellipsisVerticalOutline,
-  fileTrayOutline,
-  gift,
-  giftOutline,
-  listOutline,
-  pencilOutline,
-  optionsOutline,
-  pricetagOutline,
-  printOutline,
-  trashBinOutline
-} from 'ionicons/icons'
+<script setup lang="ts">
+import { IonBadge, IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonItem, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonMenuButton, IonNote, IonPage, IonRow, IonRadio, IonRadioGroup, IonSearchbar, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, popoverController, modalController, onIonViewWillEnter } from "@ionic/vue";
+import { computed, ref } from "vue";
+import { addOutline, caretDownOutline, chevronUpOutline, checkmarkDoneOutline, closeCircleOutline, cubeOutline, ellipsisVerticalOutline, gift, giftOutline, listOutline, pencilOutline, optionsOutline, pricetagOutline, printOutline, trashBinOutline } from "ionicons/icons";
 import PackagingPopover from "@/views/PackagingPopover.vue";
-import { mapGetters, useStore } from 'vuex';
-import { copyToClipboard, getFeatures, getFacilityFilter, hasActiveFilters, showToast } from '@/utils';
-import { isKit } from '@/utils/order'
-import { hasError } from '@/adapter';
-import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import ViewSizeSelector from '@/components/ViewSizeSelector.vue';
-import emitter from '@/event-bus';
-import { UtilService } from '@/services/UtilService';
-import { DateTime } from 'luxon';
-import logger from '@/logger';
-import { Actions, hasPermission } from '@/authorization'
-import EditPickersModal from '@/components/EditPickersModal.vue';
-import ShipmentBoxTypePopover from '@/components/ShipmentBoxTypePopover.vue'
-import OrderActionsPopover from '@/components/OrderActionsPopover.vue'
-import ShippingLabelErrorModal from '@/components/ShippingLabelErrorModal.vue'
-import ReportIssuePopover from '@/components/ReportIssuePopover.vue'
-import ShipmentBoxPopover from '@/components/ShipmentBoxPopover.vue'
+import { commonUtil } from "@/utils/commonUtil";
+import { orderUtil } from "@/utils/orderUtil";
+import { solrUtil } from "@/utils/solrUtil";
+import { hasError } from "@/adapter";
+import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
+import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
+import emitter from "@/event-bus";
+import { UtilService } from "@/services/UtilService";
+import { DateTime } from "luxon";
+import logger from "@/logger";
+import { Actions, hasPermission } from "@/authorization";
+import EditPickersModal from "@/components/EditPickersModal.vue";
+import ShipmentBoxTypePopover from "@/components/ShipmentBoxTypePopover.vue";
+import OrderActionsPopover from "@/components/OrderActionsPopover.vue";
+import ShippingLabelErrorModal from "@/components/ShippingLabelErrorModal.vue";
+import ReportIssuePopover from "@/components/ReportIssuePopover.vue";
+import ShipmentBoxPopover from "@/components/ShipmentBoxPopover.vue";
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
-import GenerateTrackingCodeModal from '@/components/GenerateTrackingCodeModal.vue';
+import GenerateTrackingCodeModal from "@/components/GenerateTrackingCodeModal.vue";
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
-import { OrderService } from '@/services/OrderService';
-import { useRouter } from "vue-router";
+import { OrderService } from "@/services/OrderService";
+import { useRouter, onBeforeRouteLeave } from "vue-router";
+import { useOrderStore } from "@/store/order";
+import { useProductStore } from "@/store/product";
+import { useUtilStore } from "@/store/util";
+import { useStockStore } from "@/store/stock";
+import { useUserStore } from "@/store/user";
 
+const router = useRouter();
+const picklists = ref([] as any);
+const defaultShipmentBoxType = ref({} as any);
+const searchedQuery = ref("");
+const addingBoxForShipmentIds = ref([] as any);
+const selectedPicklistId = ref("");
+const isScrollingEnabled = ref(false);
+const isRejecting = ref(false);
+const rejectEntireOrderReasonId = "REJ_AVOID_ORD_SPLIT";
+const isLoadingOrders = ref(false);
 
-export default defineComponent({
-  name: 'InProgress',
-  components: {
-    IonBadge,
-    IonButton,
-    IonButtons,
-    IonCard,
-    IonCheckbox,
-    IonChip,
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonFooter,
-    IonHeader,
-    IonItem,
-    IonIcon,
-    IonInfiniteScroll,
-    IonInfiniteScrollContent,
-    IonLabel,
-    IonMenuButton,
-    IonNote,
-    IonPage,
-    IonRow,
-    IonRadio,
-    IonRadioGroup,
-    IonSearchbar,
-    IonSkeletonText,
-    IonSpinner,
-    IonThumbnail,   
-    IonTitle,
-    IonToolbar,
-    DxpShopifyImg,
-    ViewSizeSelector
-  },
-  computed: {
-    ...mapGetters({
-      inProgressOrders: 'order/getInProgressOrders',
-      getProduct: 'product/getProduct',
-      rejectReasonOptions: 'util/getRejectReasonOptions',
-      userPreference: 'user/getUserPreference',
-      boxTypeDesc: 'util/getShipmentBoxDesc',
-      getProductStock: 'stock/getProductStock',
-      isForceScanEnabled: 'util/isForceScanEnabled',
-      partialOrderRejectionConfig: 'util/getPartialOrderRejectionConfig',
-      collateralRejectionConfig: 'util/getCollateralRejectionConfig',
-      affectQohConfig: 'util/getAffectQohConfig',
-      excludeOrderBrokerDays: "util/getExcludeOrderBrokerDays",
-      carrierShipmentBoxTypes: 'util/getCarrierShipmentBoxTypes',
-      getShipmentMethodDesc: 'util/getShipmentMethodDesc',
-      isAutoShippingLabelEnabled: 'util/isAutoShippingLabelEnabled',
-    }),
-  },
-  data() {
-    return {
-      picklists: [] as any,
-      defaultShipmentBoxType: {} as any,
-      orderBoxes: [] as any,
-      searchedQuery: '',
-      addingBoxForShipmentIds: [] as any,
-      selectedPicklistId: '',
-      isScrollingEnabled: false,
-      isRejecting: false,
-      rejectEntireOrderReasonId: "REJ_AVOID_ORD_SPLIT",
-      isLoadingOrders: false
+const contentRef = ref();
+const infiniteScrollRef = ref();
+
+const inProgressOrders = computed(() => useOrderStore().getInProgressOrders);
+const rejectReasonOptions = computed(() => useUtilStore().getRejectReasonOptions);
+const userPreference = computed(() => useUserStore().getUserPreference);
+const isForceScanEnabled = computed(() => useUtilStore().isForceScanEnabled);
+const partialOrderRejectionConfig = computed(() => useUtilStore().getPartialOrderRejectionConfig);
+const collateralRejectionConfig = computed(() => useUtilStore().getCollateralRejectionConfig);
+const affectQohConfig = computed(() => useUtilStore().getAffectQohConfig);
+const excludeOrderBrokerDays = computed(() => useUtilStore().getExcludeOrderBrokerDays);
+const carrierShipmentBoxTypes = computed(() => useUtilStore().getCarrierShipmentBoxTypes);
+const isAutoShippingLabelEnabled = computed(() => useUtilStore().isAutoShippingLabelEnabled);
+const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
+const currentEComStore = computed(() => useDxpUserStore().getCurrentEComStore);
+const currentFacility = computed(() => useDxpUserStore().getCurrentFacility as any);
+
+const getProduct = (productId: string) => useProductStore().getProduct(productId);
+const boxTypeDesc = (boxTypeId: string) => useUtilStore().getShipmentBoxDesc(boxTypeId);
+const getProductStock = (productId: string) => useStockStore().getProductStock(productId);
+const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
+
+const getTime = (time: any) => {
+  return DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED);
+};
+
+const getRejectionReasonDescription = (rejectionReasonId: string) => {
+  const reason = rejectReasonOptions.value?.find((reason: any) => reason.enumId === rejectionReasonId);
+  return reason?.description ? reason.description : reason?.enumDescription ? reason.enumDescription : reason?.enumId;
+};
+
+const openRejectReasonPopover = async (ev: Event, item: any, order: any) => {
+  const reportIssuePopover = await popoverController.create({
+    component: ReportIssuePopover,
+    event: ev,
+    translucent: true,
+    showBackdrop: false
+  });
+
+  reportIssuePopover.present();
+
+  const result = await reportIssuePopover.onDidDismiss();
+
+  if (result.data) {
+    updateRejectReason(result.data, item, order);
+  }
+};
+
+const fetchKitComponents = async (orderItem: any) => {
+  await useProductStore().fetchProductComponents({ productId: orderItem.productId });
+  const updatedOrder = inProgressOrders.value.list.find((order: any) => order.orderId === orderItem.orderId && order.picklistBinId === orderItem.picklistBinId);
+  const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId);
+  updatedItem.showKitComponents = orderItem.showKitComponents ? false : true;
+  if (!updatedItem.kitComponents) {
+    updatedItem.kitComponents = getProduct(updatedItem.productId).productComponents.map((productComponent: any) => productComponent.productIdTo);
+  }
+  useOrderStore().updateInProgressOrder(updatedOrder);
+};
+
+const removeRejectionReason = async (ev: Event, item: any, order: any) => {
+  delete item["rejectReason"];
+  delete item["kitComponents"];
+  item.rejectReason = "";
+  order.items.map((orderItem: any) => {
+    if (orderItem.orderItemSeqId === item.orderItemSeqId) {
+      delete orderItem["rejectReason"];
+      delete orderItem["kitComponents"];
     }
-  },
-  methods: {
-    getTime(time: any) {
-      return DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED);
-    },
-    getRejectionReasonDescription (rejectionReasonId: string) {
-      const reason = this.rejectReasonOptions?.find((reason: any) => reason.enumId === rejectionReasonId)
-      return reason?.description ? reason.description : reason?.enumDescription ? reason.enumDescription : reason?.enumId;
-    },
-    async openRejectReasonPopover(ev: Event, item: any, order: any) {
-      const reportIssuePopover = await popoverController.create({
-        component: ReportIssuePopover,
-        event: ev,
-        translucent: true,
-        showBackdrop: false,
-      });
+  });
+  order.hasRejectedItem = order.items.some((item: any) => item.rejectReason);
+  order.hasAllRejectedItem = isEntierOrderRejectionEnabled(order) || order.items.every((item: any) => item.rejectReason);
+  useOrderStore().updateInProgressOrder(order);
+};
 
-      reportIssuePopover.present();
-
-      const result = await reportIssuePopover.onDidDismiss();
-
-      if (result.data) {
-        this.updateRejectReason(result.data, item, order)
-      }
+const openShipmentBoxPopover = async (ev: Event, item: any, orderItemSeqId: number, order: any) => {
+  const popover = await popoverController.create({
+    component: ShipmentBoxPopover,
+    componentProps: {
+      shipmentPackages: order.shipmentPackages
     },
-    async fetchKitComponents(orderItem: any) {
-      await this.store.dispatch('product/fetchProductComponents', { productId: orderItem.productId })
-      
-      //update the order in order to toggle kit components section
-      const updatedOrder = this.inProgressOrders.list.find((order: any) => order.orderId === orderItem.orderId && order.picklistBinId === orderItem.picklistBinId);
-      const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId)
-      updatedItem.showKitComponents = orderItem.showKitComponents ? false : true
-      if (!updatedItem.kitComponents) {
-        updatedItem.kitComponents = this.getProduct(updatedItem.productId).productComponents.map((productComponent: any) => productComponent.productIdTo)
-      }
-      this.store.dispatch('order/updateInProgressOrder', updatedOrder)
-    },
-    async removeRejectionReason(ev: Event, item: any, order: any) {
-      delete item["rejectReason"];
-      delete item["kitComponents"];
-      item.rejectReason = "";
-        order.items.map((orderItem: any) => {
-          if(orderItem.orderItemSeqId === item.orderItemSeqId) {
-            delete orderItem["rejectReason"];
-            delete orderItem["kitComponents"];
+    showBackdrop: false,
+    event: ev
+  });
+
+  popover.present();
+
+  const result = await popover.onDidDismiss();
+
+  if (result.data && item.selectedBox !== result.data) {
+    updateBox(result.data, item, order);
+  }
+};
+
+const getErrorMessage = () => {
+  return searchedQuery.value ? (commonUtil.hasActiveFilters(inProgressOrders.value.query) ? translate("No results found for . Try using different filters.", { searchedQuery: searchedQuery.value }) : translate("No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: searchedQuery.value, lineBreak: "<br />" })) : translate("doesn't have any orders in progress right now.", { facilityName: currentFacility.value?.facilityName });
+};
+
+const getInProgressOrders = () => {
+  return JSON.parse(JSON.stringify(inProgressOrders.value.list)).splice(0, (inProgressOrders.value.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
+};
+
+const packagingPopover = async (ev: Event) => {
+  const popover = await popoverController.create({
+    component: PackagingPopover,
+    event: ev,
+    translucent: true,
+    showBackdrop: false
+  });
+  return popover.present();
+};
+
+const packOrder = async (order: any) => {
+  if (order.hasRejectedItem) {
+    const itemsToReject = order.items.filter((item: any) => item.rejectReason);
+    reportIssue(order, itemsToReject);
+    return;
+  }
+  initiatePackOrder(order);
+};
+
+const initiatePackOrder = async (order: any, updateParameter?: string) => {
+  let forceScan = isForceScanEnabled.value;
+  if (isEntierOrderRejectionEnabled(order)) {
+    forceScan = false;
+  } else if (forceScan) {
+    forceScan = !order.items.every((item: any) => item.rejectReason);
+  }
+
+  if (order.hasAllRejectedItem) {
+    await rejectEntireOrder(order, updateParameter);
+  } else if (forceScan) {
+    await scanOrder(order, updateParameter);
+  } else {
+    confirmPackOrder(order, updateParameter);
+  }
+};
+
+const rejectEntireOrder = async (order: any, updateParameter?: string) => {
+  emitter.emit("presentLoader");
+  try {
+    const updatedOrderDetail = await getUpdatedOrderDetail(order, updateParameter);
+    const params = {
+      shipmentId: order.shipmentId,
+      orderId: order.orderId,
+      facilityId: order.originFacilityId,
+      rejectedOrderItems: updatedOrderDetail.rejectedOrderItems
+    };
+    const resp = await OrderService.packOrder(params);
+
+    if (hasError(resp)) {
+      throw resp.data;
+    }
+
+    await fetchOrderAndPickerInformation();
+    commonUtil.showToast(translate("Order rejected successfully"));
+    return true;
+  } catch (err) {
+    logger.error("Failed to reject order", err);
+    commonUtil.showToast(translate("Failed to reject order"));
+  } finally {
+    emitter.emit("dismissLoader");
+  }
+  return false;
+};
+
+const confirmPackOrder = async (order: any, updateParameter?: string, trackingCode?: string) => {
+  const confirmPackOrder = await alertController
+    .create({
+      header: translate("Pack order"),
+      message: translate("You are packing an order. Select additional documents that you would like to print.", { space: "<br /><br />" }),
+      inputs: [{
+        name: "printShippingLabel",
+        type: "checkbox",
+        label: translate("Shipping labels"),
+        value: "printShippingLabel",
+        checked: userPreference.value.printShippingLabel
+      }, {
+        name: "printPackingSlip",
+        type: "checkbox",
+        label: translate("Packing slip"),
+        value: "printPackingSlip",
+        checked: userPreference.value.printPackingSlip
+      }],
+      buttons: [{
+        text: translate("Cancel"),
+        role: "cancel"
+      }, {
+        text: translate("Pack"),
+        role: "confirm",
+        handler: async (data) => {
+          const packingResponse = await executePackOrder(order, updateParameter, trackingCode, data);
+          if (!packingResponse.isPacked) {
+            const updatedOrder = await useOrderStore().updateShipmentPackageDetail(order);
+            await generateTrackingCodeForPacking(updatedOrder, updateParameter, data, packingResponse.errors);
           }
-        })
-        order.hasRejectedItem = order.items.some((item:any) => item.rejectReason);
-        order.hasAllRejectedItem = this.isEntierOrderRejectionEnabled(order) || order.items.every((item: any) => item.rejectReason)
-      this.store.dispatch('order/updateInProgressOrder', order)
-    },
-
-    async openShipmentBoxPopover(ev: Event, item: any, orderItemSeqId: number, order: any) {
-      const popover = await popoverController.create({
-        component: ShipmentBoxPopover,
-        componentProps: { 
-          shipmentPackages: order.shipmentPackages
-        },
-        showBackdrop: false,
-        event: ev
-      });
-
-      popover.present();
-
-      const result = await popover.onDidDismiss();
-
-      if (result.data && item.selectedBox !== result.data) {
-        this.updateBox(result.data, item, order)
-      }
-    },
-    getErrorMessage() {
-      return this.searchedQuery ? (hasActiveFilters(this.inProgressOrders.query) ? translate("No results found for . Try using different filters.", { searchedQuery: this.searchedQuery }) : translate( "No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: this.searchedQuery, lineBreak: '<br />' })) : translate("doesn't have any orders in progress right now.", { facilityName: this.currentFacility?.facilityName });
-    },
-    getInProgressOrders() {
-      return JSON.parse(JSON.stringify(this.inProgressOrders.list)).splice(0, (this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
-    },
-    async packagingPopover(ev: Event) {
-      const popover = await popoverController.create({
-        component: PackagingPopover,
-        event: ev,
-        translucent: true,
-        showBackdrop: false,
-      });
-      return popover.present();
-    },
-    async packOrder(order: any) {
-      if (order.hasRejectedItem) {
-        const itemsToReject = order.items.filter((item: any) => item.rejectReason)
-        this.reportIssue(order, itemsToReject);
-        return;
-      }
-      this.initiatePackOrder(order);
-    },
-    async initiatePackOrder(order: any, updateParameter?: string) {
-      let forceScan = this.isForceScanEnabled;
-      if (this.isEntierOrderRejectionEnabled(order)) {
-        //no need to scan when all the items are going to reject when partial order rejection is not allowed
-        forceScan = false
-      } else if (forceScan) {
-        //no need to scan when all the items are going to reject
-        forceScan = !order.items.every((item: any) => item.rejectReason)
-      }
-
-      if (order.hasAllRejectedItem) {
-        await this.rejectEntireOrder(order, updateParameter)
-      } else if (forceScan) {
-        await this.scanOrder(order, updateParameter)
-      } else {
-        this.confirmPackOrder(order, updateParameter);
-      }
-    },
-    async rejectEntireOrder(order: any, updateParameter?: string) {
-      emitter.emit('presentLoader');
-      try {
-        const updatedOrderDetail = await this.getUpdatedOrderDetail(order, updateParameter)
-        const params = {
-          shipmentId: order.shipmentId,
-          orderId: order.orderId,
-          facilityId: order.originFacilityId,
-          rejectedOrderItems: updatedOrderDetail.rejectedOrderItems
         }
-        const resp = await OrderService.packOrder(params);
+      }]
+    });
+  return confirmPackOrder.present();
+};
 
-        if (hasError(resp)) {
-          throw resp.data
+const executePackOrder = async (order: any, updateParameter?: string, trackingCode?: string, documentOptions?: any) => {
+  emitter.emit("presentLoader");
+  let toast: any;
+  const shipmentIds = [order.shipmentId];
+  const manualTrackingCode = trackingCode;
+  try {
+    const updatedOrderDetail = await getUpdatedOrderDetail(order, updateParameter) as any;
+    const params = {
+      shipmentId: order.shipmentId,
+      orderId: order.orderId,
+      facilityId: order.originFacilityId,
+      rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
+      shipmentPackageContents: updatedOrderDetail.shipmentPackageContents,
+      trackingCode: manualTrackingCode
+    };
+    await OrderService.packOrder(params);
+
+    const updatedOrder = await useOrderStore().updateShipmentPackageDetail(order);
+
+    if (documentOptions.length) {
+      toast = await commonUtil.showToast(translate("Order packed successfully. Document generation in process"), { canDismiss: true, manualDismiss: true });
+      toast.present();
+
+      const shippingLabelPdfUrls: string[] = Array.from(
+        new Set(
+          (updatedOrder.shipmentPackages ?? [])
+            .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+            .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+        )
+      );
+
+      if (documentOptions.includes("printPackingSlip") && documentOptions.includes("printShippingLabel")) {
+        if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
+          await OrderService.printPackingSlip(shipmentIds);
+          await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, updatedOrder.shipmentPackages);
+        } else {
+          await OrderService.printShippingLabelAndPackingSlip(shipmentIds, updatedOrder.shipmentPackages);
         }
-
-        await this.fetchOrderAndPickerInformation();
-        showToast(translate('Order rejected successfully'));
-        return true
-
-      } catch (err) {
-        logger.error('Failed to reject order', err)
-        showToast(translate('Failed to reject order'))
-      } finally {
-        emitter.emit("dismissLoader");
+      } else if (documentOptions.includes("printPackingSlip")) {
+        await OrderService.printPackingSlip(shipmentIds);
+      } else if (documentOptions.includes("printShippingLabel") && !manualTrackingCode && !updatedOrder.missingLabelImage) {
+        await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, updatedOrder.shipmentPackages);
       }
-      return false
-    },
-    async confirmPackOrder(order: any, updateParameter?: string, trackingCode?: string) {
-      const confirmPackOrder = await alertController
-        .create({
-          header: translate("Pack order"),
-          message: translate("You are packing an order. Select additional documents that you would like to print.", {space: '<br /><br />'}),
-          inputs: [{
-            name: 'printShippingLabel',
-            type: 'checkbox',
-            label: translate('Shipping labels'),
-            value: 'printShippingLabel',
-            checked: this.userPreference.printShippingLabel,
-          }, {
-            name: 'printPackingSlip',
-            type: 'checkbox',
-            label: translate('Packing slip'),
-            value: 'printPackingSlip',
-            checked: this.userPreference.printPackingSlip
-          }],
-          buttons: [{
-            text: translate("Cancel"),
-            role: 'cancel'
-          }, {
-            text: translate("Pack"),
-            role: 'confirm',
-            handler: async (data) => {
-              const packingResponse = await this.executePackOrder(order, updateParameter, trackingCode, data)
-              if (!packingResponse.isPacked) {
-                //On error in packing, fetching update detail expecially to fetch carrier, shipment method, gteway message etc. If there is error (gatewayMessage not empty) opening Generate tracking code modal to enter tracking detail manually
-                const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
-                await this.generateTrackingCodeForPacking(updatedOrder, updateParameter, data, packingResponse.errors)
-              }
-            }
-          }]
-        });
-      return confirmPackOrder.present();
-    },
-    async executePackOrder(order: any, updateParameter?: string, trackingCode?: string, documentOptions?: any) {
-      emitter.emit('presentLoader');
-      let toast: any;
-      const shipmentIds = [order.shipmentId]
-      const manualTrackingCode = trackingCode
-      try {
-        const updatedOrderDetail = await this.getUpdatedOrderDetail(order, updateParameter) as any
-        const params = {
-          shipmentId: order.shipmentId,
-          orderId: order.orderId,
-          facilityId: order.originFacilityId,
-          rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
-          shipmentPackageContents: updatedOrderDetail.shipmentPackageContents,
-          trackingCode: manualTrackingCode
-        }
-        const resp = await OrderService.packOrder(params);
-        
-        //Fetching updated shipment detail after successful packing
-        const updatedOrder = await this.store.dispatch('order/updateShipmentPackageDetail', order)
-       
-        if (documentOptions.length) {
-          // additional parameters for dismiss button and manual dismiss ability
-          toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
-          toast.present()
+
+      const internationalInvoiceUrls: string[] = Array.from(
+        new Set(
+          updatedOrder.shipmentPackages
+            ?.filter((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl)
+            .map((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl) || []
+        )
+      );
+
+      if (internationalInvoiceUrls.length > 0) {
+        await OrderService.printCustomDocuments(internationalInvoiceUrls);
+      }
+
+      toast.dismiss();
+    } else {
+      commonUtil.showToast(translate("Order packed successfully"));
+    }
+    await fetchOrderAndPickerInformation();
+    return { isPacked: true };
+  } catch (err: any) {
+    if (toast) toast.dismiss();
+    commonUtil.showToast(translate("Failed to pack order"));
+    logger.error("Failed to pack order", err);
+    return { isPacked: false, errors: err?.response?.data?.errors };
+  } finally {
+    emitter.emit("dismissLoader");
+  }
+};
+
+const packOrders = async () => {
+  const alert = await alertController
+    .create({
+      header: translate("Pack orders"),
+      message: translate("You are packing orders. Select additional documents that you would like to print.", { count: inProgressOrders.value.list.length, space: "<br /><br />" }),
+      inputs: [{
+        name: "printShippingLabel",
+        type: "checkbox",
+        label: translate("Shipping labels"),
+        value: "printShippingLabel",
+        checked: userPreference.value.printShippingLabel
+      }, {
+        name: "printPackingSlip",
+        type: "checkbox",
+        label: translate("Packing slip"),
+        value: "printPackingSlip",
+        checked: userPreference.value.printPackingSlip
+      }],
+      buttons: [{
+        text: translate("Cancel"),
+        role: "cancel"
+      }, {
+        text: translate("Pack"),
+        role: "confirm",
+        handler: async (data) => {
+          emitter.emit("presentLoader");
+          const orderList = JSON.parse(JSON.stringify(inProgressOrders.value.list));
+
+          let toast: any;
+          const shipments = [] as any;
+          for (const order of orderList) {
+            const updatedOrderDetail = await getUpdatedOrderDetail(order) as any;
+            shipments.push({
+              shipmentId: order.shipmentId,
+              orderId: order.orderId,
+              facilityId: order.originFacilityId,
+              rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
+              shipmentPackageContents: updatedOrderDetail.shipmentPackageContents
+            });
+          }
+          const internationalInvoiceUrls: string[] = Array.from(
+            new Set(
+              orderList
+                .flatMap((order: any) => order.shipmentPackages ?? [])
+                .filter((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl)
+                .map((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl)
+            )
+          );
 
           const shippingLabelPdfUrls: string[] = Array.from(
             new Set(
-              (updatedOrder.shipmentPackages ?? [])
+              orderList
+                .flatMap((order: any) => order.shipmentPackages ?? [])
                 .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
                 .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
             )
           );
 
-          if (documentOptions.includes('printPackingSlip') && documentOptions.includes('printShippingLabel')) {
-            if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
-              await OrderService.printPackingSlip(shipmentIds)
-              await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, updatedOrder.shipmentPackages);
-            } else {
-              await OrderService.printShippingLabelAndPackingSlip(shipmentIds, updatedOrder.shipmentPackages)
-            }
-          } else if (documentOptions.includes('printPackingSlip')) {
-            await OrderService.printPackingSlip(shipmentIds)
-          } else if (documentOptions.includes('printShippingLabel') && !manualTrackingCode && !updatedOrder.missingLabelImage) {
-            await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, updatedOrder.shipmentPackages);
-          }
+          const shipmentPackages = orderList
+            .map((order: any) =>
+              [...new Set(order.shipmentPackages
+                .map((shipmentPackage: any) => shipmentPackage)
+              )]
+            ).flat() as Array<string>;
 
-          const internationalInvoiceUrls: string[] = Array.from(
-            new Set(
-              updatedOrder.shipmentPackages
-                ?.filter((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl)
-                .map((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl) || []
-            )
-          );
-
-          if (internationalInvoiceUrls.length > 0) {
-            await OrderService.printCustomDocuments(internationalInvoiceUrls);
-          }
-
-          toast.dismiss()
-        } else {
-          showToast(translate('Order packed successfully'));
-        }
-        // TODO: handle the case of fetching in progress orders after packing an order
-        // when packing an order the API runs too fast and the solr index does not update resulting in having the current packed order in the inProgress section
-        await this.fetchOrderAndPickerInformation();
-        return { isPacked: true }
-      } catch (err: any) {
-        // in case of error, if loader and toast are not dismissed above
-        if (toast) toast.dismiss()
-        showToast(translate('Failed to pack order'))
-        logger.error('Failed to pack order', err)
-        return {isPacked: false, errors: err?.response?.data?.errors}
-      } finally {
-        emitter.emit("dismissLoader");
-      }
-    },
-    async packOrders() {
-      const alert = await alertController
-        .create({
-          header: translate("Pack orders"),
-          message: translate("You are packing orders. Select additional documents that you would like to print.", {count: this.inProgressOrders.list.length, space: '<br /><br />'}),
-          inputs: [{
-            name: 'printShippingLabel',
-            type: 'checkbox',
-            label: translate('Shipping labels'),
-            value: 'printShippingLabel',
-            checked: this.userPreference.printShippingLabel,
-          }, {
-            name: 'printPackingSlip',
-            type: 'checkbox',
-            label: translate('Packing slip'),
-            value: 'printPackingSlip',
-            checked: this.userPreference.printPackingSlip
-          }],
-          buttons: [{
-            text: translate("Cancel"),
-            role: 'cancel'
-          }, {
-            text: translate("Pack"),
-            role: 'confirm',
-            handler: async (data) => {
-              emitter.emit('presentLoader');
-              let orderList = JSON.parse(JSON.stringify(this.inProgressOrders.list))
-              
-              let toast: any;
-              // Considering only unique shipment IDs
-              // TODO check reason for redundant shipment IDs
-              const shipments = [] as any
-              for (const order of orderList) {
-                const updatedOrderDetail = await this.getUpdatedOrderDetail(order) as any
-                shipments.push({
-                  shipmentId: order.shipmentId,
-                  orderId: order.orderId,
-                  facilityId: order.originFacilityId,
-                  rejectedOrderItems: updatedOrderDetail.rejectedOrderItems,
-                  shipmentPackageContents: updatedOrderDetail.shipmentPackageContents,
-                })
-              }
-              const shipmentIds = shipments.map((shipment: any) => shipment.shipmentId)
-
-              const internationalInvoiceUrls: string[] = Array.from(
-                new Set(
-                  orderList
-                    .flatMap((order: any) => order.shipmentPackages ?? []) // Flatten all shipments
-                    .filter((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl) // Filter shipments with invoice URL
-                    .map((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl) // Extract URLs
-                )
-              );
-
-              const shippingLabelPdfUrls: string[] = Array.from(
-                new Set(
-                  orderList
-                    .flatMap((order: any) => order.shipmentPackages ?? []) // Flatten all shipments
-                    .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl) // Filter shipments with label image URL
-                    .map((shipmentPackage: any) => shipmentPackage.labelImageUrl) // Extract URLs
-                )
-              );
-
-              const shipmentPackages = orderList.
-              map((order: any) =>
-                [...new Set(order.shipmentPackages
-                  .map((shipmentPackage: any) => shipmentPackage)
-                )]
-              ).flat() as Array<string>;
-
-              try {
-                const resp = await OrderService.packOrders({
-                  shipments
-                });
-
-                if (hasError(resp)) {
-                  throw resp.data
-                }
-
-                //Generate documents only for successfully packed shipments, not for those where packing failed.
-                const packedShipmentIds = resp.data?.packedShipmentIds ?? [];
-
-                if (!packedShipmentIds.length) {
-                  throw resp.data
-                }
-
-                if (data.length) {
-                  // additional parameters for dismiss button and manual dismiss ability
-                  toast = await showToast(translate('Order packed successfully. Document generation in process'), { canDismiss: true, manualDismiss: true })
-                  toast.present()
-                  if (data.includes('printPackingSlip') && data.includes('printShippingLabel')) {
-                    if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
-                      await OrderService.printPackingSlip(packedShipmentIds)
-                      await OrderService.printShippingLabel(packedShipmentIds, shippingLabelPdfUrls, shipmentPackages);
-                    } else {
-                      await OrderService.printShippingLabelAndPackingSlip(packedShipmentIds, shipmentPackages)
-                    }
-                  } else if (data.includes('printPackingSlip')) {
-                    await OrderService.printPackingSlip(packedShipmentIds)
-                  } else if (data.includes('printShippingLabel')) {
-                    await OrderService.printShippingLabel(packedShipmentIds, shippingLabelPdfUrls, shipmentPackages);
-                  }
-                  //print custom documents like international invoice 
-                  await OrderService.printCustomDocuments(internationalInvoiceUrls);
-
-                  toast.dismiss()
-                } else {
-                  showToast(translate('Order packed successfully'));
-                }
-                await this.fetchOrderAndPickerInformation();
-              } catch (err) {
-                // in case of error, if loader and toast are not dismissed above
-                if (toast) toast.dismiss()
-                emitter.emit('dismissLoader');
-                showToast(translate('Failed to pack orders'))
-                logger.error('Failed to pack orders', err)
-              } finally {
-                emitter.emit("dismissLoader")
-              }
-            }
-          }]
-        });
-      return alert.present();
-    },
-    
-    async reportIssue(order: any, itemsToReject: any) {
-      let message;
-      const rejectedItem = itemsToReject[0];
-      const productName = rejectedItem.productName
-
-      let ordersCount = 0;
-
-      if(this.collateralRejectionConfig) {
-        // TODO: ordersCount is not correct as current we are identifying orders count by only checking items visible on UI and not other orders
-        ordersCount = this.inProgressOrders.list.map((inProgressOrder: any) => inProgressOrder.items.filter((item: any) => itemsToReject.some((itemToReject: any) => itemToReject.productId === item.productId) && item.shipmentId !== order.shipmentId))?.filter((item: any) => item.length).length;
-      }
-
-      if (itemsToReject.length === 1 && ordersCount) {
-        message = translate("is identified as unfulfillable. other containing this product will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
-      } else if (itemsToReject.length === 1 && !ordersCount) {
-        message = translate("is identified as unfulfillable. This order item will be unassigned from this store and sent to be rebrokered.", { productName, space: '<br /><br />' })
-      } else if (itemsToReject.length > 1 && ordersCount) {
-        message = translate(", and other products are identified as unfulfillable. other containing these products will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />', orders: ordersCount, orderText: ordersCount > 1 ? 'orders' : 'order' })
-      } else {
-        message = translate(", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: '<br /><br />' })
-      }
-      const alert = await alertController
-        .create({
-          header: translate("Report an issue"),
-          message,
-          buttons: [{
-            text: translate("Cancel"),
-            role: 'cancel'
-          }, {
-            text: translate("Report"),
-            role: 'confirm',
-            handler: async() => {
-              await this.initiatePackOrder(order, "report");
-            }
-          }]
-        });
-      
-      return alert.present();
-    },
-    async findInProgressOrders () {
-      await this.store.dispatch('order/findInProgressOrders')
-    },
-    getUpdatedOrderDetail(order: any, updateParameter?: string) {
-      const items = JSON.parse(JSON.stringify(order.items));
-      // creating updated data for items
-      const rejectedOrderItems = [] as any;
-      const shipmentPackageContents = [] as any;
-      items.map((item: any, index: number) => {
-        const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox)
-        if (updateParameter === 'report' && item.rejectReason) {
-          const rejectedItemInfo = {
-            "orderId": item.orderId,
-            "orderItemSeqId": item.orderItemSeqId,
-            "shipmentId": item.shipmentId,
-            "shipmentItemSeqId": item.shipmentItemSeqId,
-            "productId": item.productId,
-            "facilityId": this.currentFacility?.facilityId,
-            "updateQOH": this.affectQohConfig || false,
-            "maySplit": this.isEntierOrderRejectionEnabled(order) ? "N" : "Y",
-            "cascadeRejectByProduct": this.collateralRejectionConfig ? "Y" : "N",
-            "rejectionReasonId": item.rejectReason,
-            "kitComponents": item.kitComponents,
-            "comments": "Store Rejected Inventory"
-          } as any
-          
-          if (this.excludeOrderBrokerDays !== undefined) {
-            rejectedItemInfo["excludeOrderFacilityDuration"] = this.excludeOrderBrokerDays
-          }
-          rejectedOrderItems.push(rejectedItemInfo)
-        } else if (item.selectedBox !== item.currentBox) {
-          shipmentPackageContents.push({
-            shipmentId: item.shipmentId,
-            shipmentItemSeqId: item.shipmentItemSeqId,
-            shipmentPackageSeqId: shipmentPackage.shipmentPackageSeqId,
-            quantity: item.quantity
-          })
-        }
-      })
-      return { rejectedOrderItems, shipmentPackageContents }
-    },
-    updateRejectReason(updatedReason: string, item: any, order: any) {
-      item.rejectReason = updatedReason;
-      order.items.map((orderItem: any) => {
-        if(orderItem.orderItemSeqId === item.orderItemSeqId) {
-          orderItem.rejectReason = updatedReason;
-        }
-      })
-      order.hasRejectedItem = true
-      order.hasAllRejectedItem = this.isEntierOrderRejectionEnabled(order) || order.items.every((item: any) => item.rejectReason)
-      this.store.dispatch('order/updateInProgressOrder', order)
-    },
-    rejectKitComponent(order: any, item: any, componentProductId: string) {
-      let kitComponents = item.kitComponents ? item.kitComponents : []
-      if (kitComponents.includes(componentProductId)) {
-        kitComponents = kitComponents.filter((rejectedComponent: any) => rejectedComponent !== componentProductId)
-      } else {
-        kitComponents.push(componentProductId);
-      }
-      item.kitComponents = kitComponents;
-      order.items.map((orderItem: any) => {
-        if (orderItem.orderItemSeqId === item.orderItemSeqId) {
-          orderItem.kitComponents = kitComponents;
-        }
-      })
-      this.store.dispatch('order/updateInProgressOrder', order)
-    },
-    isEntierOrderRejectionEnabled(order: any) {
-      return !this.partialOrderRejectionConfig && order.hasRejectedItem
-    },
-    
-    updateBox(updatedBox: string, item: any, order: any) {
-      item.selectedBox = updatedBox;
-      order.items.map((orderItem: any) => {
-        if(orderItem.orderItemSeqId === item.orderItemSeqId) {
-          orderItem.selectedBox = updatedBox;
-        }
-      })
-      this.store.dispatch('order/updateInProgressOrder', order)
-    },
-    async fetchPickersInformation() {
-      let pageIndex = 0;
-      let resp;
-      const picklistInfo = {} as any;
-
-      try {
-        do {
-          const payload = {
-            originFacilityId: this.currentFacility?.facilityId,
-            statusId: "SHIPMENT_APPROVED",
-            "shipmentMethodTypeId": "STOREPICKUP",
-            "shipmentMethodTypeId_op": "equals",
-            "shipmentMethodTypeId_not": "Y",
-            pageIndex, // Ensure updated pageIndex is used
-            pageSize: 50
-          };
-
-          resp = await OrderService.fetchPicklists(payload);
-
-          if (!hasError(resp)) {
-            resp.data?.forEach((shipment: any) => {
-              if (shipment?.order?.statusId === "ORDER_APPROVED" && shipment?.order?.productStoreId === this.currentEComStore.productStoreId) {
-                shipment?.picklistShipment?.forEach((picklistShipment: any) => {
-                  if (!picklistInfo[picklistShipment.picklistId]) {
-                    const picklistRoles = picklistShipment?.picklist?.roles.filter((role: any) => !role.thruDate)
-                    const pickerIds = (picklistRoles ?? []).map((role: any) => role?.partyId);
-
-                    const pickersName = (picklistRoles ?? [])
-                      .map((role: any) => {
-                        if (role?.person) {
-                          return `${role.person.firstName} ${role.person.lastName}`;
-                        } else if (role?.partyGroup) {
-                          return role.partyGroup.groupName;
-                        }
-                        return null;
-                      })
-                      .filter(Boolean)
-                      .join(", ");
-
-                    picklistInfo[picklistShipment.picklistId] = {
-                      ...picklistShipment.picklist,
-                      id: picklistShipment.picklistId,
-                      date: picklistShipment.picklist?.picklistDate
-                        ? DateTime.fromMillis(picklistShipment.picklist.picklistDate).toLocaleString(DateTime.TIME_SIMPLE)
-                        : null,
-                      pickersName,
-                      pickerIds
-                    };
-
-                  }
-                });
-              }
+          try {
+            const resp = await OrderService.packOrders({
+              shipments
             });
 
-            // Move pageIndex update **after** processing data
-            pageIndex++;
+            if (hasError(resp)) {
+              throw resp.data;
+            }
+
+            const packedShipmentIds = resp.data?.packedShipmentIds ?? [];
+
+            if (!packedShipmentIds.length) {
+              throw resp.data;
+            }
+
+            if (data.length) {
+              toast = await commonUtil.showToast(translate("Order packed successfully. Document generation in process"), { canDismiss: true, manualDismiss: true });
+              toast.present();
+              if (data.includes("printPackingSlip") && data.includes("printShippingLabel")) {
+                if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
+                  await OrderService.printPackingSlip(packedShipmentIds);
+                  await OrderService.printShippingLabel(packedShipmentIds, shippingLabelPdfUrls, shipmentPackages);
+                } else {
+                  await OrderService.printShippingLabelAndPackingSlip(packedShipmentIds, shipmentPackages);
+                }
+              } else if (data.includes("printPackingSlip")) {
+                await OrderService.printPackingSlip(packedShipmentIds);
+              } else if (data.includes("printShippingLabel")) {
+                await OrderService.printShippingLabel(packedShipmentIds, shippingLabelPdfUrls, shipmentPackages);
+              }
+              await OrderService.printCustomDocuments(internationalInvoiceUrls);
+
+              toast.dismiss();
+            } else {
+              commonUtil.showToast(translate("Order packed successfully"));
+            }
+            await fetchOrderAndPickerInformation();
+          } catch (err) {
+            if (toast) toast.dismiss();
+            emitter.emit("dismissLoader");
+            commonUtil.showToast(translate("Failed to pack orders"));
+            logger.error("Failed to pack orders", err);
+          } finally {
+            emitter.emit("dismissLoader");
+          }
+        }
+      }, {
+        text: translate("Recycle all"),
+        handler: async () => {
+          try {
+            await OrderService.recycleInProgressOrders({});
+            commonUtil.showToast(translate("All orders recycled successfully."));
+          } catch (err) {
+            commonUtil.showToast(translate("Failed to recycle all orders."));
+            console.error(err);
+          }
+        }
+      }]
+    });
+  return alert.present();
+};
+
+const reportIssue = async (order: any, itemsToReject: any) => {
+  let message;
+  const rejectedItem = itemsToReject[0];
+  const productName = rejectedItem.productName;
+
+  let ordersCount = 0;
+
+  if (collateralRejectionConfig.value) {
+    ordersCount = inProgressOrders.value.list.map((inProgressOrder: any) => inProgressOrder.items.filter((item: any) => itemsToReject.some((itemToReject: any) => itemToReject.productId === item.productId) && item.shipmentId !== order.shipmentId))?.filter((item: any) => item.length).length;
+  }
+
+  if (itemsToReject.length === 1 && ordersCount) {
+    message = translate("is identified as unfulfillable. other containing this product will be unassigned from this store and sent to be rebrokered.", { productName, space: "<br /><br />", orders: ordersCount, orderText: ordersCount > 1 ? "orders" : "order" });
+  } else if (itemsToReject.length === 1 && !ordersCount) {
+    message = translate("is identified as unfulfillable. This order item will be unassigned from this store and sent to be rebrokered.", { productName, space: "<br /><br />" });
+  } else if (itemsToReject.length > 1 && ordersCount) {
+    message = translate(", and other products are identified as unfulfillable. other containing these products will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: "<br /><br />", orders: ordersCount, orderText: ordersCount > 1 ? "orders" : "order" });
+  } else {
+    message = translate(", and other products are identified as unfulfillable. These order items will be unassigned from this store and sent to be rebrokered.", { productName, products: itemsToReject.length - 1, space: "<br /><br />" });
+  }
+  const alert = await alertController
+    .create({
+      header: translate("Report an issue"),
+      message,
+      buttons: [{
+        text: translate("Cancel"),
+        role: "cancel"
+      }, {
+        text: translate("Report"),
+        role: "confirm",
+        handler: async () => {
+          await initiatePackOrder(order, "report");
+        }
+      }]
+    });
+
+  return alert.present();
+};
+
+const findInProgressOrders = async () => {
+  await useOrderStore().findInProgressOrders();
+};
+
+const getUpdatedOrderDetail = (order: any, updateParameter?: string) => {
+  const items = JSON.parse(JSON.stringify(order.items));
+  const rejectedOrderItems = [] as any;
+  const shipmentPackageContents = [] as any;
+  items.map((item: any) => {
+    const shipmentPackage = order.shipmentPackages.find((shipmentPackage: any) => shipmentPackage.packageName === item.selectedBox);
+    if (updateParameter === "report" && item.rejectReason) {
+      const rejectedItemInfo = {
+        orderId: item.orderId,
+        orderItemSeqId: item.orderItemSeqId,
+        shipmentId: item.shipmentId,
+        shipmentItemSeqId: item.shipmentItemSeqId,
+        productId: item.productId,
+        facilityId: currentFacility.value?.facilityId,
+        updateQOH: affectQohConfig.value || false,
+        maySplit: isEntierOrderRejectionEnabled(order) ? "N" : "Y",
+        cascadeRejectByProduct: collateralRejectionConfig.value ? "Y" : "N",
+        rejectionReasonId: item.rejectReason,
+        kitComponents: item.kitComponents,
+        comments: "Store Rejected Inventory"
+      } as any;
+
+      if (excludeOrderBrokerDays.value !== undefined) {
+        rejectedItemInfo["excludeOrderFacilityDuration"] = excludeOrderBrokerDays.value;
+      }
+      rejectedOrderItems.push(rejectedItemInfo);
+    } else if (item.selectedBox !== item.currentBox) {
+      shipmentPackageContents.push({
+        shipmentId: item.shipmentId,
+        shipmentItemSeqId: item.shipmentItemSeqId,
+        shipmentPackageSeqId: shipmentPackage.shipmentPackageSeqId,
+        quantity: item.quantity
+      });
+    }
+  });
+  return { rejectedOrderItems, shipmentPackageContents };
+};
+
+const updateRejectReason = (updatedReason: string, item: any, order: any) => {
+  item.rejectReason = updatedReason;
+  order.items.map((orderItem: any) => {
+    if (orderItem.orderItemSeqId === item.orderItemSeqId) {
+      orderItem.rejectReason = updatedReason;
+    }
+  });
+  order.hasRejectedItem = true;
+  order.hasAllRejectedItem = isEntierOrderRejectionEnabled(order) || order.items.every((item: any) => item.rejectReason);
+  useOrderStore().updateInProgressOrder(order);
+};
+
+const rejectKitComponent = (order: any, item: any, componentProductId: string) => {
+  let kitComponents = item.kitComponents ? item.kitComponents : [];
+  if (kitComponents.includes(componentProductId)) {
+    kitComponents = kitComponents.filter((rejectedComponent: any) => rejectedComponent !== componentProductId);
+  } else {
+    kitComponents.push(componentProductId);
+  }
+  item.kitComponents = kitComponents;
+  order.items.map((orderItem: any) => {
+    if (orderItem.orderItemSeqId === item.orderItemSeqId) {
+      orderItem.kitComponents = kitComponents;
+    }
+  });
+  useOrderStore().updateInProgressOrder(order);
+};
+
+const isEntierOrderRejectionEnabled = (order: any) => {
+  return !partialOrderRejectionConfig.value && order.hasRejectedItem;
+};
+
+const updateBox = (updatedBox: string, item: any, order: any) => {
+  item.selectedBox = updatedBox;
+  order.items.map((orderItem: any) => {
+    if (orderItem.orderItemSeqId === item.orderItemSeqId) {
+      orderItem.selectedBox = updatedBox;
+    }
+  });
+  useOrderStore().updateInProgressOrder(order);
+};
+
+const fetchPickersInformation = async () => {
+  let pageIndex = 0;
+  let resp;
+  const picklistInfo = {} as any;
+
+  try {
+    do {
+      const payload = {
+        originFacilityId: currentFacility.value?.facilityId,
+        statusId: "SHIPMENT_APPROVED",
+        shipmentMethodTypeId: "STOREPICKUP",
+        shipmentMethodTypeId_op: "equals",
+        shipmentMethodTypeId_not: "Y",
+        pageIndex,
+        pageSize: 50
+      };
+
+      resp = await OrderService.fetchPicklists(payload);
+
+      if (!hasError(resp)) {
+        resp.data?.forEach((shipment: any) => {
+          if (shipment?.order?.statusId === "ORDER_APPROVED" && shipment?.order?.productStoreId === currentEComStore.value.productStoreId) {
+            shipment?.picklistShipment?.forEach((picklistShipment: any) => {
+              if (!picklistInfo[picklistShipment.picklistId]) {
+                const picklistRoles = picklistShipment?.picklist?.roles.filter((role: any) => !role.thruDate);
+                const pickerIds = (picklistRoles ?? []).map((role: any) => role?.partyId);
+
+                const pickersName = (picklistRoles ?? [])
+                  .map((role: any) => {
+                    if (role?.person) {
+                      return `${role.person.firstName} ${role.person.lastName}`;
+                    } else if (role?.partyGroup) {
+                      return role.partyGroup.groupName;
+                    }
+                    return null;
+                  })
+                  .filter(Boolean)
+                  .join(", ");
+
+                picklistInfo[picklistShipment.picklistId] = {
+                  ...picklistShipment.picklist,
+                  id: picklistShipment.picklistId,
+                  date: picklistShipment.picklist?.picklistDate
+                    ? DateTime.fromMillis(picklistShipment.picklist.picklistDate).toLocaleString(DateTime.TIME_SIMPLE)
+                    : null,
+                  pickersName,
+                  pickerIds
+                };
+              }
+            });
+          }
+        });
+
+        pageIndex++;
+      } else {
+        throw resp.data;
+      }
+    } while (resp.data.length >= 50);
+
+    picklists.value = Object.values(picklistInfo);
+    if (selectedPicklistId.value) {
+      const selectedPicklist = picklists.value.find((picklist: any) => picklist.id === selectedPicklistId.value);
+      selectedPicklistId.value = selectedPicklist ? selectedPicklist.id : "";
+    }
+  } catch (err) {
+    logger.error("Failed to fetch picklists", err);
+  }
+};
+
+const getPicklist = (id: string) => {
+  return picklists.value.find((picklist: any) => picklist.id === id);
+};
+
+const enableScrolling = () => {
+  const parentElement = contentRef.value?.$el;
+  const scrollEl = parentElement?.shadowRoot?.querySelector("main[part='scroll']");
+  if (!scrollEl || !infiniteScrollRef.value?.$el) return;
+  const scrollHeight = scrollEl.scrollHeight;
+  const infiniteHeight = infiniteScrollRef.value.$el.offsetHeight;
+  const scrollTop = scrollEl.scrollTop;
+  const threshold = 100;
+  const height = scrollEl.offsetHeight;
+  const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height;
+  isScrollingEnabled.value = !(distanceFromInfinite < 0);
+};
+
+const loadMoreInProgressOrders = async (event: any) => {
+  if (!(isScrollingEnabled.value && isInProgressOrderScrollable())) {
+    await event.target.complete();
+  }
+  const inProgressOrdersQuery = JSON.parse(JSON.stringify(inProgressOrders.value.query));
+  inProgressOrdersQuery.viewIndex++;
+  await useOrderStore().updateInProgressIndex({ ...inProgressOrdersQuery });
+  event.target.complete();
+};
+
+const isInProgressOrderScrollable = () => {
+  return ((inProgressOrders.value.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any)) < inProgressOrders.value.query.viewSize;
+};
+
+const updateSelectedPicklist = async (id: string) => {
+  const inProgressOrdersQuery = JSON.parse(JSON.stringify(inProgressOrders.value.query));
+  inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  inProgressOrdersQuery.selectedPicklist = id;
+  inProgressOrdersQuery.viewIndex = 0;
+
+  useOrderStore().updateInProgressQuery({ ...inProgressOrdersQuery });
+};
+
+const fetchDefaultShipmentBox = async () => {
+  let defaultBoxTypeId = "YOURPACKNG";
+  let defaultBoxType = {};
+
+  try {
+    let resp = await UtilService.fetchDefaultShipmentBox({
+      systemResourceId: "shipment",
+      systemPropertyId: "shipment.default.boxtype",
+      fieldsToSelect: ["systemPropertyValue", "systemResourceId"],
+      pageSize: 1
+    });
+
+    if (!hasError(resp)) {
+      defaultBoxTypeId = resp.data?.[0].systemPropertyValue;
+    } else {
+      throw resp.data;
+    }
+
+    const payload = {
+      shipmentBoxTypeId: defaultBoxTypeId,
+      pageSize: 1
+    };
+    resp = await UtilService.fetchShipmentBoxType(payload);
+    if (!hasError(resp)) {
+      defaultBoxType = resp.data[0];
+    }
+  } catch (err) {
+    logger.error("Failed to fetch default shipment box type information", err);
+  }
+
+  return defaultBoxType;
+};
+
+const addShipmentBox = async (order: any) => {
+  addingBoxForShipmentIds.value.push(order.shipmentId);
+
+  const { carrierPartyId, shipmentMethodTypeId } = order;
+
+  if (!Object.keys(defaultShipmentBoxType.value).length) {
+    defaultShipmentBoxType.value = await fetchDefaultShipmentBox() as any;
+  }
+
+  let packageName = "A";
+  const packageNames = order?.shipmentPackages
+    .filter((shipmentPackage: any) => shipmentPackage.packageName)
+    .map((shipmentPackage: any) => shipmentPackage.packageName);
+  if (packageNames && packageNames.length) {
+    packageNames.sort((a: any, b: any) => b.localeCompare(a));
+    packageName = String.fromCharCode(packageNames[0].charCodeAt(0) + 1);
+  }
+
+  const params = {
+    shipmentId: order.shipmentId,
+    shipmentBoxTypeId: defaultShipmentBoxType.value?.shipmentBoxTypeId,
+    boxLength: defaultShipmentBoxType.value?.boxLength,
+    boxHeight: defaultShipmentBoxType.value?.boxHeight,
+    boxWidth: defaultShipmentBoxType.value?.boxWidth,
+    weightUomId: defaultShipmentBoxType.value?.weightUomId,
+    dimensionUomId: defaultShipmentBoxType.value?.dimensionUomId,
+    packageName,
+    dateCreated: DateTime.now().toMillis()
+  } as any;
+
+  carrierPartyId && (params["carrierPartyId"] = carrierPartyId);
+  shipmentMethodTypeId && (params["shipmentMethodTypeId"] = shipmentMethodTypeId);
+
+  try {
+    const resp = await OrderService.addShipmentBox(params);
+
+    if (!hasError(resp)) {
+      commonUtil.showToast(translate("Box added successfully"));
+      await Promise.all([fetchPickersInformation(), findInProgressOrders()]);
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    commonUtil.showToast(translate("Failed to add box"));
+    console.error("Failed to add box", err);
+  }
+  addingBoxForShipmentIds.value.splice(addingBoxForShipmentIds.value.indexOf(order.shipmentId), 1);
+};
+
+const getShipmentPackageType = (order: any, shipmentPackage: any) => {
+  let packageType = shipmentPackage.shipmentBoxTypeId;
+  if (!packageType) {
+    const shipmentBoxTypes = getShipmentBoxTypes(order.carrierPartyId);
+    packageType = shipmentBoxTypes[0];
+  }
+  return packageType;
+};
+
+const getShipmentBoxTypes = (carrierPartyId: string) => {
+  return carrierShipmentBoxTypes.value[carrierPartyId] ? carrierShipmentBoxTypes.value[carrierPartyId] : [];
+};
+
+const updateQueryString = async (query: string) => {
+  const inProgressOrdersQuery = JSON.parse(JSON.stringify(inProgressOrders.value.query));
+
+  inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  inProgressOrdersQuery.queryString = query;
+  await useOrderStore().updateInProgressQuery({ ...inProgressOrdersQuery });
+  searchedQuery.value = query;
+};
+
+const updateOrderQuery = async (size?: any, queryStringValue?: any, hideLoader = false) => {
+  const inProgressOrdersQuery = JSON.parse(JSON.stringify(inProgressOrders.value.query));
+
+  size && (inProgressOrdersQuery.viewSize = size);
+  queryStringValue && (inProgressOrdersQuery.queryString = "");
+  inProgressOrdersQuery.viewIndex = 0;
+  inProgressOrdersQuery.selectedPicklist = selectedPicklistId.value;
+  await useOrderStore().updateInProgressQuery({ ...inProgressOrdersQuery, hideLoader });
+};
+
+const initialiseOrderQuery = async () => {
+  await updateOrderQuery(process.env.VUE_APP_VIEW_SIZE, "");
+};
+
+const printPicklist = async (picklist: any) => {
+  picklist.isGeneratingPicklist = true;
+  await OrderService.printPicklist(picklist.id);
+  picklist.isGeneratingPicklist = false;
+};
+
+const updateShipmentBoxType = async (shipmentPackage: any, order: any, ev: CustomEvent) => {
+  const shipmentBoxTypes = getShipmentBoxTypes(order.carrierPartyId);
+  if (!shipmentBoxTypes.length) {
+    logger.error("Failed to fetch shipment box types");
+    return;
+  }
+
+  const popover = await popoverController.create({
+    component: ShipmentBoxTypePopover,
+    event: ev,
+    showBackdrop: false,
+    componentProps: { shipmentBoxTypes }
+  });
+
+  popover.present();
+
+  const result = await popover.onDidDismiss();
+
+  if (result.data && shipmentPackage.shipmentBoxTypeId !== result.data) {
+    shipmentPackage.shipmentBoxTypeId = result.data;
+    useOrderStore().updateInProgressOrder(order);
+  }
+};
+
+const recycleInProgressOrders = async () => {
+  const alert = await alertController.create({
+    header: translate("Reject all in progress orders"),
+    message: translate("Reject in progress orders.", { ordersCount: inProgressOrders.value.total }),
+    buttons: [{
+      text: translate("Cancel"),
+      role: "cancel"
+    }, {
+      text: translate("Reject"),
+      handler: async () => {
+        isRejecting.value = true;
+        emitter.emit("presentLoader");
+        await alert.dismiss();
+
+        let resp;
+
+        try {
+          resp = await OrderService.recycleInProgressOrders({
+            facilityId: (currentFacility.value as any)?.facilityId,
+            productStoreId: (currentEComStore.value as any).productStoreId,
+            reasonId: "INACTIVE_STORE"
+          });
+
+          if (!hasError(resp)) {
+            commonUtil.showToast(translate("Rejecting has been started. All in progress orders will be rejected shortly."));
           } else {
             throw resp.data;
           }
-        } while (resp.data.length >= 50);
-
-        // Assign the processed picklists to `this.picklists`
-        this.picklists = Object.values(picklistInfo);
-        if (this.selectedPicklistId) {
-          const selectedPicklist = this.picklists.find((picklist: any) => picklist.id === this.selectedPicklistId)
-          this.selectedPicklistId = selectedPicklist ? selectedPicklist.id : ""
+        } catch (err) {
+          commonUtil.showToast(translate("Failed to reject in progress orders"));
+          logger.error("Failed to reject in progress orders", err);
         }
-      } catch (err) {
-        logger.error('Failed to fetch picklists', err);
+        emitter.emit("dismissLoader");
       }
-    },
-    getPicklist(id: string) {
-      return this.picklists.find((picklist: any) => picklist.id === id)
-    },
-    enableScrolling() {
-      const parentElement = (this as any).$refs.contentRef.$el
-      const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
-      let scrollHeight = scrollEl.scrollHeight, infiniteHeight = (this as any).$refs.infiniteScrollRef.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
-      const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
-      if(distanceFromInfinite < 0) {
-        this.isScrollingEnabled = false;
-      } else {
-        this.isScrollingEnabled = true;
-      }
-    },
-    async loadMoreInProgressOrders(event: any) {
-      // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
-      if (!(this.isScrollingEnabled && this.isInProgressOrderScrollable())) {
-        await event.target.complete();
-      }
-      const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
-      inProgressOrdersQuery.viewIndex++;
-      await this.store.dispatch('order/updateInProgressIndex', { ...inProgressOrdersQuery })
-      event.target.complete();
-    },
-    isInProgressOrderScrollable() {
-      return ((this.inProgressOrders.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any)) <  this.inProgressOrders.query.viewSize;
-    },
-    async updateSelectedPicklist(id: string) {
-      const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
+    }]
+  });
 
-      // making view size default when changing the shipment method to correctly fetch orders
-      inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      inProgressOrdersQuery.selectedPicklist = id
-      inProgressOrdersQuery.viewIndex = 0
+  await alert.present();
+};
 
-      this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
-    },
-    async fetchDefaultShipmentBox() {
-      let defaultBoxTypeId = 'YOURPACKNG'
-      let defaultBoxType = {}
-
-      try {
-        let resp = await UtilService.fetchDefaultShipmentBox({
-          systemResourceId: "shipment",
-          systemPropertyId: "shipment.default.boxtype",
-          fieldsToSelect: ["systemPropertyValue", "systemResourceId"],
-          pageSize: 1
-        })
-
-        if(!hasError(resp)) {
-          defaultBoxTypeId = resp.data?.[0].systemPropertyValue
-        } else {
-          throw resp.data
-        }
-        
-        const payload = {
-          "shipmentBoxTypeId": defaultBoxTypeId,
-          "pageSize": 1
-        }
-        resp = await UtilService.fetchShipmentBoxType(payload);
-        if (!hasError(resp)) {
-          defaultBoxType = resp.data[0];
-        }
-      } catch (err) {
-        logger.error('Failed to fetch default shipment box type information', err)
-      }
-
-      return defaultBoxType;
-    },
-    async addShipmentBox(order: any) {
-      this.addingBoxForShipmentIds.push(order.shipmentId)
-
-      const { carrierPartyId, shipmentMethodTypeId } = order
-      
-      if(!Object.keys(this.defaultShipmentBoxType).length) {
-        this.defaultShipmentBoxType = await this.fetchDefaultShipmentBox() as any;
-      }
-
-      let packageName = "A";
-      const packageNames = order?.shipmentPackages.
-          filter((shipmentPackage:any) => shipmentPackage.packageName).
-          map((shipmentPackage:any) => shipmentPackage.packageName);
-      if (packageNames && packageNames.length) {
-          packageNames.sort((a:any, b:any) => b.localeCompare(a));
-          packageName = String.fromCharCode(packageNames[0].charCodeAt(0) + 1);
-      }
-
-      const params = {
-        shipmentId: order.shipmentId,
-        shipmentBoxTypeId: this.defaultShipmentBoxType?.shipmentBoxTypeId,
-        boxLength	: this.defaultShipmentBoxType?.boxLength,
-        boxHeight	: this.defaultShipmentBoxType?.boxHeight,
-        boxWidth	: this.defaultShipmentBoxType?.boxWidth,
-        weightUomId :	this.defaultShipmentBoxType?.weightUomId,
-        dimensionUomId : this.defaultShipmentBoxType?.dimensionUomId,
-        packageName,
-        dateCreated: DateTime.now().toMillis()
-      } as any
-
-      carrierPartyId && (params['carrierPartyId'] = carrierPartyId)
-      shipmentMethodTypeId && (params['shipmentMethodTypeId'] = shipmentMethodTypeId)
-
-      try {
-        const resp = await OrderService.addShipmentBox(params)
-
-        if(!hasError(resp)) {
-          showToast(translate('Box added successfully'))
-          // TODO: only update the order in which the box is added instead of fetching all the inProgress orders
-          await Promise.all([this.fetchPickersInformation(), this.findInProgressOrders()])
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        showToast(translate('Failed to add box'))
-        logger.error('Failed to add box', err)
-      }
-      this.addingBoxForShipmentIds.splice(this.addingBoxForShipmentIds.indexOf(order.shipmentId), 1)
-    },
-    getShipmentPackageType(order: any, shipmentPackage: any) {
-      let packageType = shipmentPackage.shipmentBoxTypeId;
-      if (!packageType) {
-        const shipmentBoxTypes = this.getShipmentBoxTypes(order.carrierPartyId);
-        packageType = shipmentBoxTypes[0];
-      }
-      return packageType;
-    },
-    getShipmentBoxTypes(carrierPartyId: string) {
-      return this.carrierShipmentBoxTypes[carrierPartyId] ? this.carrierShipmentBoxTypes[carrierPartyId] : [];
-    },
-    async updateQueryString(queryString: string) {
-      const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
-
-      inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
-      inProgressOrdersQuery.queryString = queryString
-      await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery })
-      this.searchedQuery = queryString;
-    },
-    async updateOrderQuery(size?: any, queryString?: any, hideLoader = false) {
-      const inProgressOrdersQuery = JSON.parse(JSON.stringify(this.inProgressOrders.query))
-
-      size && (inProgressOrdersQuery.viewSize = size)
-      queryString && (inProgressOrdersQuery.queryString = '')
-      inProgressOrdersQuery.viewIndex = 0 // If the size changes, list index should be reintialised
-      inProgressOrdersQuery.selectedPicklist = this.selectedPicklistId
-      await this.store.dispatch('order/updateInProgressQuery', { ...inProgressOrdersQuery, hideLoader })
-    },
-    async initialiseOrderQuery() {
-      await this.updateOrderQuery(process.env.VUE_APP_VIEW_SIZE, '')
-    },
-    async printPicklist(picklist: any) {
-      picklist.isGeneratingPicklist = true;
-      await OrderService.printPicklist(picklist.id)
-      picklist.isGeneratingPicklist = false;
-    },
-    async updateShipmentBoxType(shipmentPackage: any, order: any, ev: CustomEvent) {
-
-      // Don't open popover when not having shipmentBoxTypes available
-      const shipmentBoxTypes = this.getShipmentBoxTypes(order.carrierPartyId)
-      if (!shipmentBoxTypes.length) {
-        logger.error('Failed to fetch shipment box types')
-        return;
-      }
-
-      const popover = await popoverController.create({
-        component: ShipmentBoxTypePopover,
-        event: ev,
-        showBackdrop: false,
-        componentProps: { shipmentBoxTypes }
-      });
-
-      popover.present();
-
-      const result = await popover.onDidDismiss();
-
-      if(result.data && shipmentPackage.shipmentBoxTypeId !== result.data) {
-        shipmentPackage.shipmentBoxTypeId = result.data;
-        this.store.dispatch('order/updateInProgressOrder', order);
-      }
-    },
-    async recycleInProgressOrders() {
-      const alert = await alertController.create({
-        header: translate('Reject all in progress orders'),
-        message: translate('Reject in progress orders.', { ordersCount: this.inProgressOrders.total }),
-        buttons: [{
-          text: translate('Cancel'),
-          role: 'cancel'
-        }, {
-          text: translate('Reject'),
-          handler: async () => {
-            this.isRejecting = true;
-            emitter.emit("presentLoader")  
-            await alert.dismiss()  
-
-            let resp;
-
-            try {
-              resp = await OrderService.recycleInProgressOrders({
-                "facilityId": this.currentFacility?.facilityId,
-                "productStoreId": this.currentEComStore.productStoreId,
-                "reasonId": "INACTIVE_STORE"
-              })
-
-              if(!hasError(resp)) {
-                showToast(translate('Rejecting has been started. All in progress orders will be rejected shortly.'))
-              } else {
-                throw resp.data
-              }
-            } catch(err) {
-              showToast(translate('Failed to reject in progress orders'))
-              logger.error('Failed to reject in progress orders', err)
-            }
-            emitter.emit("dismissLoader")
-          }
-        }]
-      });
-
-      await alert.present();
-    },
-    async editPickers(selectedPicklist: any) {
-      const editPickersModal = await modalController.create({
-        component: EditPickersModal,
-        componentProps: {
-          selectedPicklist
-        }
-      });
-
-      editPickersModal.onDidDismiss().then((result) => {
-        // manually updating the picklist data as UI is not updated because same data
-        // is returned from solr on fetchPickersInformation API call
-        if (result.data?.editedPicklist && Object.keys(result.data?.editedPicklist).length) {
-          const editedPicklist = result.data.editedPicklist
-          this.picklists = JSON.parse(JSON.stringify(this.picklists.map((picklist: any) => picklist.id === editedPicklist.id ? picklist = editedPicklist : picklist)))
-        }
-      })
-
-      return editPickersModal.present();
-    },
-    fetchProductStock(productId: string) {
-      this.store.dispatch('stock/fetchStock', { productId })
-    },
-    async orderActionsPopover(order: any, ev: Event) {
-      const popover = await popoverController.create({
-        component: OrderActionsPopover,
-        componentProps: {
-          order,
-          category: 'in-progress'
-        },
-        showBackdrop: false,
-        event: ev
-      });
-      return popover.present();
-    },
-    async showShippingLabelErrorModal(order: any) {
-      // Getting all the shipment ids
-      const shippingLabelErrorModal = await modalController.create({
-        component: ShippingLabelErrorModal,
-        componentProps: {
-          shipmentId: order.shipmentId
-        }
-      });
-      return shippingLabelErrorModal.present();
-    },
-    async scanOrder(order: any, updateParameter?: string) {
-      const modal = await modalController.create({
-        component: ScanOrderItemModal,
-        componentProps: { order }
-      })
-
-      modal.onDidDismiss().then((result: any) => {
-        if(result.data?.packOrder) {
-          this.confirmPackOrder(order, updateParameter);
-        }
-      })
-
-      modal.present();
-    },
-    async generateTrackingCodeForPacking(order: any, updateParameter?: string, documentOptions = {}, packingError?: string) {
-      const modal = await modalController.create({
-        component: GenerateTrackingCodeModal,
-        componentProps: { order, executePackOrder: this.executePackOrder, rejectEntireOrder: this.rejectEntireOrder, updateParameter, documentOptions, packingError }
-      })
-      modal.present();
-    },
-
-    async openGiftCardActivationModal(item: any) {
-      const modal = await modalController.create({
-        component: GiftCardActivationModal,
-        componentProps: { item }
-      })
-
-      modal.onDidDismiss().then((result: any) => {
-        if(result.data?.isGCActivated) {
-          this.store.dispatch("order/updateCurrentItemGCActivationDetails", { item, category: "in-progress", isDetailsPage: false })
-        }
-      })
-
-      modal.present();
-    },
-    async fetchOrderAndPickerInformation(){
-      await this.fetchPickersInformation();
-      await this.updateOrderQuery(process.env.VUE_APP_VIEW_SIZE, "", true);
-    },
-  },
-  async ionViewWillEnter() {
-    this.isScrollingEnabled = false;
-    this.isLoadingOrders = true;
-    try {
-      await this.fetchPickersInformation()
-      await Promise.all([
-        this.store.dispatch('util/fetchRejectReasonOptions'),
-        this.initialiseOrderQuery()
-      ]);
-    } finally {
-      this.isLoadingOrders = false;
+const editPickers = async (selectedPicklist: any) => {
+  const editPickersModal = await modalController.create({
+    component: EditPickersModal,
+    componentProps: {
+      selectedPicklist
     }
+  });
 
-    emitter.on('updateOrderQuery', this.updateOrderQuery)
-  },
-  beforeRouteLeave() {
-    this.store.dispatch('order/clearInProgressOrders')
-    emitter.off('updateOrderQuery', this.updateOrderQuery)
-  },
-  setup() {
-    const router = useRouter();
-    const store = useStore();
-    const userStore = useUserStore()
-    const productIdentificationStore = useProductIdentificationStore();
-    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
-    let currentEComStore: any = computed(() => userStore.getCurrentEComStore)
-    let currentFacility: any = computed(() => userStore.getCurrentFacility) 
-
-    return {
-      Actions,
-      addOutline,
-      caretDownOutline,
-      chevronUpOutline,
-      copyToClipboard,
-      checkmarkDoneOutline,
-      closeCircleOutline,
-      cubeOutline,
-      currentEComStore,
-      currentFacility,
-      ellipsisVerticalOutline,
-      fileTrayOutline,
-      getFeatures,
-      getFacilityFilter,
-      getProductIdentificationValue,
-      gift,
-      giftOutline,
-      hasActiveFilters,
-      hasPermission,
-      isKit,
-      listOutline,
-      optionsOutline,
-      pencilOutline,
-      pricetagOutline,
-      printOutline,
-      productIdentificationPref,
-      router,
-      trashBinOutline,
-      store,
-      translate
+  editPickersModal.onDidDismiss().then((result) => {
+    if (result.data?.editedPicklist && Object.keys(result.data?.editedPicklist).length) {
+      const editedPicklist = result.data.editedPicklist;
+      picklists.value = JSON.parse(JSON.stringify(picklists.value.map((picklist: any) => picklist.id === editedPicklist.id ? picklist = editedPicklist : picklist)));
     }
+  });
+
+  return editPickersModal.present();
+};
+
+const fetchProductStock = (productId: string) => {
+  useStockStore().fetchStock({ productId });
+};
+
+const orderActionsPopover = async (order: any, ev: Event) => {
+  const popover = await popoverController.create({
+    component: OrderActionsPopover,
+    componentProps: {
+      order,
+      category: "in-progress"
+    },
+    showBackdrop: false,
+    event: ev
+  });
+  return popover.present();
+};
+
+const showShippingLabelErrorModal = async (order: any) => {
+  const shippingLabelErrorModal = await modalController.create({
+    component: ShippingLabelErrorModal,
+    componentProps: {
+      shipmentId: order.shipmentId
+    }
+  });
+  return shippingLabelErrorModal.present();
+};
+
+const scanOrder = async (order: any, updateParameter?: string) => {
+  const modal = await modalController.create({
+    component: ScanOrderItemModal,
+    componentProps: { order }
+  });
+
+  modal.onDidDismiss().then((result: any) => {
+    if (result.data?.packOrder) {
+      confirmPackOrder(order, updateParameter);
+    }
+  });
+
+  modal.present();
+};
+
+const generateTrackingCodeForPacking = async (order: any, updateParameter?: string, documentOptions = {}, packingError?: string) => {
+  const modal = await modalController.create({
+    component: GenerateTrackingCodeModal,
+    componentProps: { order, executePackOrder, rejectEntireOrder, updateParameter, documentOptions, packingError }
+  });
+  modal.present();
+};
+
+const openGiftCardActivationModal = async (item: any) => {
+  const modal = await modalController.create({
+    component: GiftCardActivationModal,
+    componentProps: { item }
+  });
+
+  modal.onDidDismiss().then((result: any) => {
+    if (result.data?.isGCActivated) {
+      useOrderStore().updateCurrentItemGCActivationDetails({ item, category: "in-progress", isDetailsPage: false });
+    }
+  });
+
+  modal.present();
+};
+
+const fetchOrderAndPickerInformation = async () => {
+  await fetchPickersInformation();
+  await updateOrderQuery(process.env.VUE_APP_VIEW_SIZE, "", true);
+};
+
+onIonViewWillEnter(async () => {
+  isScrollingEnabled.value = false;
+  isLoadingOrders.value = true;
+  try {
+    await fetchPickersInformation();
+    await Promise.all([
+      useUtilStore().fetchRejectReasonOptions(),
+      initialiseOrderQuery()
+    ]);
+  } finally {
+    isLoadingOrders.value = false;
   }
+
+  emitter.on("updateOrderQuery", updateOrderQuery);
+});
+
+onBeforeRouteLeave(() => {
+  useOrderStore().clearInProgressOrders();
+  emitter.off("updateOrderQuery", updateOrderQuery);
 });
 </script>
 
@@ -1333,4 +1227,3 @@ ion-segment > ion-segment-button > ion-skeleton-text, ion-item > ion-skeleton-te
   grid-template-columns: repeat(3, 1fr);
 }
 </style>
-

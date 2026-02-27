@@ -7,180 +7,133 @@
   </ion-app>
 </template>
 
-<script lang="ts">
-import { createAnimation, IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
-import { defineComponent } from 'vue';
-import Menu from '@/components/Menu.vue';
-import { loadingController } from '@ionic/vue';
+<script setup lang="ts">
+import { createAnimation, IonApp, IonRouterOutlet, IonSplitPane, loadingController } from "@ionic/vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
+import Menu from "@/components/Menu.vue";
 import emitter from "@/event-bus";
-import { mapGetters, useStore } from 'vuex';
-import { initialise, resetConfig } from '@/adapter'
-import { useRouter } from 'vue-router';
-import { Settings } from 'luxon'
-import { useAuthStore, initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import logger from '@/logger'
-import { init, loadRemote } from '@module-federation/runtime';
-import { addNotification, storeClientRegistrationToken } from '@/utils/firebase';
+import { initialise, resetConfig } from "@/adapter";
+import { Settings } from "luxon";
+import { useAuthStore, getAppLoginUrl, initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
+import logger from "@/logger";
+import { init } from "@module-federation/runtime";
+import { fireBaseUtil } from "@/utils/fireBaseUtil";
+import { useUserStore } from "@/store/user";
+const loader = ref<any>(null);
+const maxAge = process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0;
+const appFirebaseConfig = JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any);
+const appFirebaseVapidKey = process.env.VUE_APP_FIREBASE_VAPID_KEY;
 
-export default defineComponent({
-  name: 'App',
-  components: {
-    IonApp,
-    IonRouterOutlet,
-    IonSplitPane,
-    Menu
-  },
-  data() {
-    return {
-      loader: null as any,
-      maxAge: process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0,
-      appFirebaseConfig: JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any),
-      appFirebaseVapidKey: process.env.VUE_APP_FIREBASE_VAPID_KEY,
-    }
-  },
-  computed: {
-    ...mapGetters({
-      userToken: 'user/getUserToken',
-      instanceUrl: 'user/getInstanceUrl',
-      userProfile: 'user/getUserProfile',
-      locale: 'user/getLocale',
-      currentEComStore: 'user/getCurrentEComStore',
-      allNotificationPrefs: 'user/getAllNotificationPrefs',
-    })
-  },
-  methods: {
-    async presentLoader(options = { message: '', backdropDismiss: false }) {
-      // When having a custom message remove already existing loader
-      if(options.message && this.loader) this.dismissLoader();
+const userToken = computed(() => useUserStore().getUserToken);
+const instanceUrl = computed(() => useUserStore().getInstanceUrl);
+const userProfile = computed(() => useUserStore().getUserProfile);
+const allNotificationPrefs = computed(() => useUserStore().getAllNotificationPrefs);
 
-      if (!this.loader) {
-        this.loader = await loadingController
-          .create({
-            message: options.message ? translate(options.message) : (options.backdropDismiss ? translate("Click the backdrop to dismiss.") : translate("Loading...")),
-            translucent: true,
-            backdropDismiss: options.backdropDismiss || false
-          });
-      }
-      this.loader.present();
-    },
-    dismissLoader() {
-      if (this.loader) {
-        this.loader.dismiss();
-        this.loader = null as any;
-      }
-    },
-    async unauthorised() {
-      const authStore = useAuthStore();
-      const isEmbedded = authStore.isEmbedded;
-      const shop = authStore.shop;
-      const host = authStore.host;
-      // Mark the user as unauthorised, this will help in not making the logout api call in actions
-      this.store.dispatch("user/logout", { isUserUnauthorised: true });
-      const redirectUrl = window.location.origin + '/login';
-      window.location.href = isEmbedded ? `${redirectUrl}?embedded=1&shop=${shop}&host=${host}` :`${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`;
-    },
-    playAnimation() {
-      const aside = document.querySelector('aside') as Element
-      const main = document.querySelector('main') as Element
+const presentLoader = async (options = { message: "", backdropDismiss: false }) => {
+  if (options.message && loader.value) dismissLoader();
 
-      const revealAnimation = createAnimation()
-        .addElement(aside)
-        .duration(1500)
-        .easing('ease')
-        .keyframes([
-          { offset: 0, flex: '0', opacity: '0' },
-          { offset: 0.5, flex: '1', opacity: '0' },
-          { offset: 1, flex: '1', opacity: '1' }
-        ])
-
-      const gapAnimation = createAnimation()
-        .addElement(main)
-        .duration(500)
-        .fromTo('gap', '0', 'var(--spacer-2xl)');
-
-      createAnimation()
-        .addAnimation([gapAnimation, revealAnimation])
-        .play();
-    }
-  },
-  created() {
-    initialise({
-      token: this.userToken,
-      instanceUrl: this.instanceUrl,
-      cacheMaxAge: this.maxAge,
-      events: {
-        unauthorised: this.unauthorised,
-        responseError: () => {
-          setTimeout(() => this.dismissLoader(), 100);
-        },
-        queueTask: (payload: any) => {
-          emitter.emit("queueTask", payload);
-        }
-      }
-    })
-  },
-  async mounted() {
-    init({
-      name: "fulfillment",
-      remotes: [
-        {
-          name: "fulfillment_extensions",
-          entry: process.env.VUE_APP_REMOTE_ENTRY as string,
-        }
-      ],
+  if (!loader.value) {
+    loader.value = await loadingController.create({
+      message: options.message ? translate(options.message) : (options.backdropDismiss ? translate("Click the backdrop to dismiss.") : translate("Loading...")),
+      translucent: true,
+      backdropDismiss: options.backdropDismiss || false
     });
+  }
+  loader.value.present();
+};
 
-    this.loader = await loadingController
-      .create({
-        message: translate("Loading..."),
-        translucent: true,
-        backdropDismiss: false
-      });
-    emitter.on('presentLoader', this.presentLoader);
-    emitter.on('dismissLoader', this.dismissLoader);
-    emitter.on('playAnimation', this.playAnimation);
+const dismissLoader = () => {
+  if (loader.value) {
+    loader.value.dismiss();
+    loader.value = null;
+  }
+};
 
-    // Handles case when user resumes or reloads the app
-    // Luxon timezzone should be set with the user's selected timezone
-    if (this.userProfile && this.userProfile.userTimeZone) {
-      Settings.defaultZone = this.userProfile.userTimeZone;
-    }
+const unauthorised = async () => {
+  const isEmbedded = useAuthStore().isEmbedded;
+  const shop = useAuthStore().shop;
+  const host = useAuthStore().host;
+  useUserStore().logout({ isUserUnauthorised: true });
+  const redirectUrl = window.location.origin + "/login";
+  window.location.href = isEmbedded ? `${redirectUrl}?embedded=1&shop=${shop}&host=${host}` :`${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`;
+};
 
-    const currentEComStore: any = useUserStore().getCurrentEComStore;
-    // If fetching identifier without checking token then on login the app stucks in a loop, as the mounted hook runs before
-    // token is available which results in api failure as unauthenticated, thus making logout call and then login call again and so on.
-    if(this.userToken && currentEComStore?.productStoreId) {
-      // Get product identification from api using dxp-component
-      await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId)
-        .catch((error) => logger.error(error));
+const playAnimation = () => {
+  const aside = document.querySelector("aside") as Element;
+  const main = document.querySelector("main") as Element;
 
-      // check if firebase configurations are there.
-      if (this.appFirebaseConfig && this.appFirebaseConfig.apiKey && this.allNotificationPrefs?.length) {
-        // initialising and connecting firebase app for notification support
-        await initialiseFirebaseApp(
-          this.appFirebaseConfig,
-          this.appFirebaseVapidKey,
-          storeClientRegistrationToken,
-          addNotification,
-        )
-      }
-    }
-  },
-  unmounted() {
-    emitter.off('presentLoader', this.presentLoader);
-    emitter.off('dismissLoader', this.dismissLoader);
-    emitter.off('playAnimation', this.playAnimation);
-    resetConfig()
-  },
-  setup() {
-    const store = useStore();
-    const router = useRouter();
-    return {
-      router,
-      store,
-      translate
+  const revealAnimation = createAnimation()
+    .addElement(aside)
+    .duration(1500)
+    .easing("ease")
+    .keyframes([
+      { offset: 0, flex: "0", opacity: "0" },
+      { offset: 0.5, flex: "1", opacity: "0" },
+      { offset: 1, flex: "1", opacity: "1" }
+    ]);
+
+  const gapAnimation = createAnimation()
+    .addElement(main)
+    .duration(500)
+    .fromTo("gap", "0", "var(--spacer-2xl)");
+
+  createAnimation().addAnimation([gapAnimation, revealAnimation]).play();
+};
+
+initialise({
+  token: userToken.value,
+  instanceUrl: instanceUrl.value,
+  cacheMaxAge: maxAge,
+  events: {
+    unauthorised,
+    responseError: () => {
+      setTimeout(() => dismissLoader(), 100);
+    },
+    queueTask: (payload: any) => {
+      emitter.emit("queueTask", payload);
     }
   }
 });
-</script>
 
+onMounted(async () => {
+  init({
+    name: "fulfillment",
+    remotes: [{ name: "fulfillment_extensions", entry: process.env.VUE_APP_REMOTE_ENTRY as string }]
+  });
+
+  loader.value = await loadingController.create({
+    message: translate("Loading..."),
+    translucent: true,
+    backdropDismiss: false
+  });
+
+  emitter.on("presentLoader", presentLoader);
+  emitter.on("dismissLoader", dismissLoader);
+  emitter.on("playAnimation", playAnimation);
+
+  if (userProfile.value && userProfile.value.userTimeZone) {
+    Settings.defaultZone = userProfile.value.userTimeZone;
+  }
+
+  const currentEComStore: any = useDxpUserStore().getCurrentEComStore;
+  if (userToken.value && currentEComStore?.productStoreId) {
+    await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId).catch((error) => logger.error(error));
+
+    if (appFirebaseConfig && appFirebaseConfig.apiKey && allNotificationPrefs.value?.length) {
+      await initialiseFirebaseApp(
+        appFirebaseConfig,
+        appFirebaseVapidKey,
+        fireBaseUtil.storeClientRegistrationToken,
+        fireBaseUtil.addNotification
+      );
+    }
+  }
+});
+
+onUnmounted(() => {
+  emitter.off("presentLoader", presentLoader);
+  emitter.off("dismissLoader", dismissLoader);
+  emitter.off("playAnimation", playAnimation);
+  resetConfig();
+});
+</script>

@@ -33,89 +33,44 @@
     </ion-content>
   </template>
   
-  <script>
-  import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonNote,
-    IonThumbnail,
-    IonTitle,
-    IonToolbar,
-    modalController,
-  } from '@ionic/vue';
-  import { defineComponent } from 'vue';
-  import { closeOutline } from 'ionicons/icons';
-  import { DxpShopifyImg, translate } from '@hotwax/dxp-components';
-  import { mapGetters, useStore } from "vuex";
-  import { DateTime } from 'luxon';
+  <script setup lang="ts">
+import { defineProps } from "vue";
+  import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonThumbnail, IonTitle, IonToolbar, modalController } from "@ionic/vue";
+  import { computed, onMounted, ref } from "vue";
+  import { closeOutline } from "ionicons/icons";
+  import { DxpShopifyImg, translate } from "@hotwax/dxp-components";
+  import { DateTime } from "luxon";
+  import { useTransferOrderStore } from "@/store/transferorder";
+  import { useProductStore } from "@/store/product";
   
-  export default defineComponent({
-    name: "ShippedHistoryModal",
-    components: {
-      DxpShopifyImg,
-      IonButton,
-      IonButtons,
-      IonContent,
-      IonHeader,
-      IonIcon,
-      IonItem,
-      IonLabel,
-      IonList,
-      IonNote,
-      IonThumbnail,
-      IonTitle,
-      IonToolbar,
-    },
-    data() {
-      return {
-        items: [],
-        emptyStateMessage: translate("No shipments have been shipped yet")
-      }
-    },
-    props: ["productId"],
-    mounted() {
-      const shippedHistory = [];
-      this.currentOrder.shipments.forEach(shipment => {
-        if (shipment.shipmentStatusId === 'SHIPMENT_SHIPPED') {
-          shipment.items.forEach(item => {
-            if (item.productId === this.productId) {
-              shippedHistory.push({...shipment, ...item});
-            }
-          });
-        }
-      });
-      this.items = shippedHistory;
-    },
-    computed: {
-      ...mapGetters({
-        currentOrder: 'transferorder/getCurrent',
-        getProduct: 'product/getProduct'
-      })
-    },
-    methods: {
-      closeModal() {
-        modalController.dismiss({ dismissed: true });
-      },
-      getTime(time) {
-        return DateTime.fromMillis(time).toFormat("H:mm a dd/MM/yyyy")
-      }
-    },
-    setup() {
-      const store = useStore();
+  const props = defineProps(["productId"]);
+  const items = ref([] as any[]);
+  const emptyStateMessage = translate("No shipments have been shipped yet");
   
-      return {
-        closeOutline,
-        store,
-        translate
-      };
-    },
+  const currentOrder = computed(() => useTransferOrderStore().getCurrent);
+  const getProduct = (productId: string) => useProductStore().getProduct(productId);
+  
+  onMounted(() => {
+    const shippedHistory = [] as any[];
+    currentOrder.value.shipments.forEach((shipment: any) => {
+      if (shipment.shipmentStatusId === "SHIPMENT_SHIPPED") {
+        shipment.items.forEach((item: any) => {
+          if (item.productId === props.productId) {
+            shippedHistory.push({ ...shipment, ...item });
+          }
+        });
+      }
+    });
+    items.value = shippedHistory;
   });
+  
+  const closeModal = () => {
+    modalController.dismiss({ dismissed: true });
+  };
+  
+  const getTime = (time: any) => {
+    return DateTime.fromMillis(time).toFormat("H:mm a dd/MM/yyyy");
+  };
   </script>
   
   <style scoped>

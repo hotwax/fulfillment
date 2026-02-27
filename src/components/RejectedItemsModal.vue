@@ -28,67 +28,18 @@
   </ion-content>
 </template>
 
-<script>
-import { 
-  IonButtons,
-  IonButton,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonNote,
-  IonTitle,
-  IonThumbnail,
-  IonToolbar,
-  modalController } from "@ionic/vue";
-import { computed, defineComponent } from "vue";
-import { mapGetters } from 'vuex';
-import { closeOutline, pricetag } from "ionicons/icons";
-import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
-  
+<script setup lang="ts">
+import { IonButtons, IonButton, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonTitle, IonThumbnail, IonToolbar, modalController } from "@ionic/vue";
+import { computed } from "vue";
+import { useRejectionStore } from "@/store/rejection";
+import { useProductStore } from "@/store/product";
+import { closeOutline } from "ionicons/icons";
+import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
+const rejectedItems = computed(() => useRejectionStore().getRejectedItems);
+const getProduct = (productId: string) => useProductStore().getProduct(productId);
+const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
 
-export default defineComponent({
-  name: "RejectedItemsModal",
-  components: { 
-      DxpShopifyImg,
-      IonButtons,
-      IonButton,
-      IonContent,
-      IonHeader,
-      IonIcon,
-      IonItem,
-      IonLabel,
-      IonList,
-      IonNote,
-      IonTitle,
-      IonThumbnail,
-      IonToolbar
-  },
-  computed: {
-    ...mapGetters({
-      rejectedItems: 'rejection/getRejectedItems',
-      getProduct: 'product/getProduct'
-    })
-  },
-  methods: {
-    closeModal() {
-      modalController.dismiss({ dismissed: true });
-    },
-  },
-  setup() {
-    const productIdentificationStore = useProductIdentificationStore();
-    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
-
-    return {
-      closeOutline,
-      pricetag,
-      productIdentificationPref,
-      productIdentificationStore,
-      getProductIdentificationValue,
-      translate
-    };
-  },
-});
+const closeModal = () => {
+  modalController.dismiss({ dismissed: true });
+};
 </script>

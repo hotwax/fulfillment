@@ -55,7 +55,7 @@
 import { IonAvatar, IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonSearchbar, IonText, IonTitle, IonToolbar } from '@ionic/vue';
 import { checkmarkCircle, closeOutline } from "ionicons/icons";
 import { computed, defineProps, onMounted, ref } from 'vue';
-import { useStore } from 'vuex';
+import { useTransferOrderStore } from "@/store/transferorder";
 import { modalController } from '@ionic/vue';
 import { searchProducts } from '@/adapter';
 import { DxpShopifyImg, getProductIdentificationValue, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
@@ -63,17 +63,14 @@ import logger from '@/logger';
 import emitter from '@/event-bus';
 
 const props = defineProps(["query", "addProductToQueue", "isProductInOrder", "pendingProductIds"]);
-
-const store = useStore()
-const productIdentificationStore = useProductIdentificationStore();
-const productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref)
 
 const queryString = ref(props.query)
 const products = ref([]) as any;
 const total = ref(0) as any;
 const isLoading = ref(false)
 
-const currentOrder = computed(() => store.getters['transferorder/getCurrent'])
+const currentOrder = computed(() => useTransferOrderStore().getCurrent)
 
 onMounted(() => {
   if(queryString.value) {

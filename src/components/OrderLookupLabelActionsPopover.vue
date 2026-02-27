@@ -14,69 +14,37 @@
   </ion-content>
 </template>
 
-<script lang="ts">
-import {
-  IonContent,
-  IonIcon,
-  IonItem,
-  IonList,
-  IonListHeader,
-  popoverController
-} from "@ionic/vue";
-import { defineComponent } from "vue";
+<script setup lang="ts">
+import { IonContent, IonIcon, IonItem, IonList, IonListHeader, popoverController } from "@ionic/vue";
 import { documentOutline, openOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
-import { mapGetters, useStore } from "vuex";
-import { OrderLookupService } from '@/services/OrderLookupService';
+import { defineProps } from "vue";
+import { useOrderLookupStore } from "@/store/orderLookup";
+import { OrderLookupService } from "@/services/OrderLookupService";
 
-export default defineComponent({
-  name: "OrderLookupLabelActionsPopover",
-  components: {
-    IonContent,
-    IonIcon,
-    IonItem,
-    IonList,
-    IonListHeader
-  },
-  computed: {
-    ...mapGetters({
-      getCarriersTrackingInfo: "orderLookup/getCarriersTrackingInfo",
-    })
-  },
-  props: ["shipGroup"],
-  methods: {
-    async printShippingLabel(shipGroupSeqId: any) {
-      const shipmentPackageRouteSegDetails = this.shipGroup.shipmentPackageRouteSegDetails;
-      const shippingLabelPdfUrls: string[] = Array.from(
-        new Set(
-          (shipmentPackageRouteSegDetails ?? [])
-            .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
-            .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
-        )
-      );
+const props = defineProps(["shipGroup"]);
+const getCarriersTrackingInfo = (partyId: string) => useOrderLookupStore().getCarriersTrackingInfo(partyId);
 
-      const shipmentIds: string[] = Array.from(new Set (shipmentPackageRouteSegDetails.map((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.shipmentId)))
+const printShippingLabel = async () => {
+  const shipmentPackageRouteSegDetails = props.shipGroup.shipmentPackageRouteSegDetails;
+  const shippingLabelPdfUrls: string[] = Array.from(
+    new Set(
+      (shipmentPackageRouteSegDetails ?? [])
+        .filter((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+        .map((shipmentPackageRouteSeg: any) => shipmentPackageRouteSeg.labelImageUrl)
+    )
+  );
 
-      await OrderLookupService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentPackageRouteSegDetails)
-      popoverController.dismiss()
-    },
+  const shipmentIds: string[] = Array.from(new Set(shipmentPackageRouteSegDetails.map((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.shipmentId)));
 
-    redirectToTrackingUrl() {
-      const trackingUrl = this.getCarriersTrackingInfo(this.shipGroup.carrierPartyId)?.trackingUrl
-      const trackingCode = this.shipGroup?.trackingIdNumber
-      window.open(trackingUrl.replace("${trackingNumber}", trackingCode), "_blank");
-      popoverController.dismiss()
-    }
-  },
-  setup() {
-    const store = useStore();
+  await OrderLookupService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentPackageRouteSegDetails);
+  popoverController.dismiss();
+};
 
-    return {
-      documentOutline,
-      openOutline,
-      store,
-      translate
-    };
-  }
-});
+const redirectToTrackingUrl = () => {
+  const trackingUrl = getCarriersTrackingInfo(props.shipGroup.carrierPartyId)?.trackingUrl;
+  const trackingCode = props.shipGroup?.trackingIdNumber;
+  window.open(trackingUrl.replace("${trackingNumber}", trackingCode), "_blank");
+  popoverController.dismiss();
+};
 </script>
