@@ -63,7 +63,7 @@ import RejectReasonActionsPopver from "@/components/RejectReasonActionsPopver.vu
 import VarianceTypeActionsPopover from "@/components/VarianceTypeActionsPopover.vue";
 import { useUtilStore } from "@/store/util";
 import { UtilService } from "@/services/UtilService";
-import { showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import { DateTime } from "luxon";
 import { hasError } from "@hotwax/oms-api";
 import logger from "@/logger";
@@ -136,7 +136,7 @@ const doReorder = async (event: CustomEvent) => {
   filteredReasons.value = updatedSeq;
 
   if (diffSeq.length && !toast.value) {
-    toast.value = await showToast(translate("Rejection reasons order has been change. Click save button to update them."), {
+    toast.value = await commonUtil.showToast(translate("Rejection reasons order has been change. Click save button to update them."), {
       buttons: [{
         text: translate("Save"),
         handler: () => {
@@ -171,9 +171,9 @@ const saveReasonsOrder = async () => {
 
   const isFailedToUpdateSomeReason = responses.some((response) => response.status === "rejected");
   if (isFailedToUpdateSomeReason) {
-    showToast(translate("Failed to update sequence for some rejection reasons."));
+    commonUtil.showToast(translate("Failed to update sequence for some rejection reasons."));
   } else {
-    showToast(translate("Sequence for rejection reasons updated successfully."));
+    commonUtil.showToast(translate("Sequence for rejection reasons updated successfully."));
   }
 };
 
@@ -208,7 +208,7 @@ const updateFulfillmentRejectReasonAssocStatus = async (event: any, reason: any)
     }
   } catch (error: any) {
     logger.error(error);
-    showToast(translate("Failed to update reason association with fulfillment group."));
+    commonUtil.showToast(translate("Failed to update reason association with fulfillment group."));
   }
 };
 

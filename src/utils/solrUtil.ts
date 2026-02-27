@@ -1,5 +1,6 @@
 /* eslint-disable */
-import { getCurrentFacilityId } from ".";
+import { commonUtil } from "./commonUtil";
+
 const prepareOrderQuery = (params: any) => {
   const viewSize = params.viewSize ? params.viewSize : process.env.VUE_APP_VIEW_SIZE;
   const viewIndex = params.viewIndex ? params.viewIndex : 0;
@@ -16,7 +17,7 @@ const prepareOrderQuery = (params: any) => {
         "q.op": "AND",
         "start": viewIndex * viewSize
       },
-      "query":"(*:*)",
+      "query": "(*:*)",
       "filter": [`docType: ${params.docType ? params.docType : 'OISGIR'}`]
     }
   } as any
@@ -34,7 +35,7 @@ const prepareOrderQuery = (params: any) => {
       const filterValue = params.filters[key].value;
 
       if (Array.isArray(filterValue)) {
-        const filterOperator = params.filters[key].op ? params.filters[key].op : 'OR' ;
+        const filterOperator = params.filters[key].op ? params.filters[key].op : 'OR';
         payload.json.filter += ` AND ${key}: (${filterValue.join(' ' + filterOperator + ' ')})`
       } else {
         payload.json.filter += ` AND ${key}: ${filterValue}`
@@ -42,7 +43,7 @@ const prepareOrderQuery = (params: any) => {
     })
   }
 
-  if(params.facet) {
+  if (params.facet) {
     payload.json['facet'] = params.facet
   }
 
@@ -54,7 +55,7 @@ const prepareSolrQuery = (params: any) => {
   const viewIndex = params.viewIndex ? params.viewIndex : 0;
   let groupParams = {} as any;
 
-  if(params.isGroupingRequired) {
+  if (params.isGroupingRequired) {
     groupParams = {
       "group": true,
       "group.field": params.groupBy ? params.groupBy : "orderId",
@@ -72,13 +73,13 @@ const prepareSolrQuery = (params: any) => {
         "start": viewIndex * viewSize,
         ...groupParams
       },
-      "query":"(*:*)",
+      "query": "(*:*)",
       "filter": [`docType: ${params.docType ? params.docType : 'OISGIR'}`]
     }
   } as any
 
   // Default coreName is "enterpriseSearch"
-  if(params.coreName) payload["coreName"] = params.coreName;
+  if (params.coreName) payload["coreName"] = params.coreName;
 
   if (params.queryString) {
     payload.json.query = `(*${params.queryString}*) OR "${params.queryString}"^100`
@@ -97,7 +98,7 @@ const prepareSolrQuery = (params: any) => {
       const filterValue = params.filters[key].value;
 
       if (Array.isArray(filterValue)) {
-        const filterOperator = params.filters[key].op ? params.filters[key].op : 'OR' ;
+        const filterOperator = params.filters[key].op ? params.filters[key].op : 'OR';
         payload.json.filter += ` AND ${key}: (${filterValue.join(' ' + filterOperator + ' ')})`
       } else {
         payload.json.filter += ` AND ${key}: ${filterValue}`
@@ -111,7 +112,7 @@ const prepareSolrQuery = (params: any) => {
     })
   }
 
-  if(params.facet) {
+  if (params.facet) {
     payload.json['facet'] = params.facet
   }
 
@@ -143,20 +144,20 @@ const prepareOrderLookupQuery = (query: any) => {
         "q.op": "AND"
       } as any,
       "query": "*:*",
-      "filter": ["docType: ORDER", "orderTypeId: SALES_ORDER", "facilityId: " + getCurrentFacilityId()]
+      "filter": ["docType: ORDER", "orderTypeId: SALES_ORDER", "facilityId: " + commonUtil.getCurrentFacilityId()]
     }
   } as any
 
-  if(query.fetchFacets) {
+  if (query.fetchFacets) {
     payload.json["facet"] = {
-      "productStoreIdFacet":{
-        "excludeTags":"orderLookupFilter",
-        "field":"productStoreName",
-        "mincount":1,
-        "limit":-1,
-        "type":"terms",
-        "facet":{
-          "groups":"unique(orderId)"
+      "productStoreIdFacet": {
+        "excludeTags": "orderLookupFilter",
+        "field": "productStoreName",
+        "mincount": 1,
+        "limit": -1,
+        "type": "terms",
+        "facet": {
+          "groups": "unique(orderId)"
         }
       },
       "salesChannelDescFacet": {
@@ -196,8 +197,8 @@ const prepareOrderLookupQuery = (query: any) => {
   // updating the filter value in json object as per the filters selected
   // TODO: optimize this code
   const shipmentMethodTypeIdValues = []
-  if(query.storePickup) shipmentMethodTypeIdValues.push("STOREPICKUP")
-  if(query.shipFromStore) shipmentMethodTypeIdValues.push("STANDARD")
+  if (query.storePickup) shipmentMethodTypeIdValues.push("STOREPICKUP")
+  if (query.shipFromStore) shipmentMethodTypeIdValues.push("STANDARD")
 
   if (shipmentMethodTypeIdValues.length) {
     payload.json.filter.push(`{!tag=orderLookupFilter}shipmentMethodTypeId: (${shipmentMethodTypeIdValues.join(" OR ")})`)
@@ -220,11 +221,11 @@ const prepareOrderLookupQuery = (query: any) => {
   } else {
     let dateFilter = ""
 
-    if(query.fromDate) dateFilter += query.fromDate.split("T")[0] + "T00:00:00Z"
+    if (query.fromDate) dateFilter += query.fromDate.split("T")[0] + "T00:00:00Z"
 
     // Added T23:59:59, as we need to include the orders for to date as well
-    if(query.toDate) dateFilter += ` TO ${query.toDate.split("T")[0]}` + "T23:59:59Z"
-    else if(query.fromDate) dateFilter += " TO *"
+    if (query.toDate) dateFilter += ` TO ${query.toDate.split("T")[0]}` + "T23:59:59Z"
+    else if (query.fromDate) dateFilter += " TO *"
 
     if (dateFilter) {
       payload.json.filter.push(`{!tag=orderLookupFilter}orderDate: [${dateFilter}]`)
@@ -235,4 +236,9 @@ const prepareOrderLookupQuery = (query: any) => {
   return payload
 }
 
-export { escapeSolrSpecialChars, prepareOrderQuery, prepareOrderLookupQuery, prepareSolrQuery }
+export const solrUtil = {
+  escapeSolrSpecialChars,
+  prepareOrderQuery,
+  prepareOrderLookupQuery,
+  prepareSolrQuery
+}

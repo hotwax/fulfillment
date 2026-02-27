@@ -40,7 +40,7 @@ import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, Ion
 import { defineProps, onMounted, ref } from "vue";
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { translate } from '@hotwax/dxp-components'
-import { showToast } from '@/utils';
+import { commonUtil } from '@/utils/commonUtil';
 
 const props = defineProps(["currentFacilityId", "selectedFacilityId", "facilities"]);
 
@@ -67,7 +67,7 @@ function closeModal(payload = {}) {
 
 function saveFacility() {
   if(props.currentFacilityId === selectedFacilityIdValue.value) {
-    showToast(translate('Origin and destination facility cannot be the same.'));
+    commonUtil.showToast(translate('Origin and destination facility cannot be the same.'));
     return;
   }
   closeModal({ selectedFacilityId: selectedFacilityIdValue.value })

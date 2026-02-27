@@ -1,7 +1,7 @@
 import { shallowRef } from 'vue';
 import { loadRemote } from '@module-federation/runtime';
 
-const useDynamicImport = ({ scope, module } : any) => {
+const useDynamicImport = ({ scope, module }: any) => {
   if (!module || !scope) return;
 
   const loadComponent = async () => {
@@ -16,6 +16,6 @@ const useDynamicImport = ({ scope, module } : any) => {
   return loadComponent();
 }
 
-export {
+export const moduleFederationUtil = {
   useDynamicImport
 }

@@ -38,8 +38,7 @@ import { closeOutline, saveOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
 import logger from "@/logger";
 import { UtilService } from "@/services/UtilService";
-import { hasError } from "@/adapter";
-import { showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 
 const props = defineProps(["reason"]);
 const rejectReasons = computed(() => useUtilStore().getRejectReasons);
@@ -60,14 +59,14 @@ const isReasonUpdated = () => {
 
 const updateRejectionReason = async () => {
   if (!rejectionReason.value.enumName?.trim()) {
-    showToast(translate("Rejection reason name is required."));
+    commonUtil.showToast(translate("Rejection reason name is required."));
     return;
   }
 
   try {
     const resp = await UtilService.updateEnumeration(rejectionReason.value);
-    if (!hasError(resp)) {
-      showToast(translate("Rejection reason updated successfully."));
+    if (!commonUtil.hasError(resp)) {
+      commonUtil.showToast(translate("Rejection reason updated successfully."));
       const rejectReason = rejectReasons.value.find((reason: any) => reason.enumId === rejectionReason.value.enumId);
       if (rejectReason) {
         rejectReason.enumName = rejectionReason.value.enumName;
@@ -80,7 +79,7 @@ const updateRejectionReason = async () => {
     }
   } catch (err) {
     logger.error(err);
-    showToast(translate("Failed to update rejection reason."));
+    commonUtil.showToast(translate("Failed to update rejection reason."));
   }
 };
 </script>

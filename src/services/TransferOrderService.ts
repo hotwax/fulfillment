@@ -3,7 +3,7 @@ import logger from "@/logger";
 import { useUserStore } from "@/store/user";
 import { useUtilStore } from "@/store/util";
 import { translate } from "@hotwax/dxp-components";
-import { showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import { cogOutline } from "ionicons/icons";
 import { ZebraPrinterService } from './ZebraPrinterService';
 
@@ -89,7 +89,7 @@ const fetchTransferShipmentDetails = async (params: Record<string, any>): Promis
   });
 };
 
-const fetchRejectReasons = async(query: any): Promise<any> => {
+const fetchRejectReasons = async (query: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -176,7 +176,7 @@ const printTransferOrderPicklist = async (orderId: string): Promise<any> => {
     try {
       (window as any).open(pdfUrl, "_blank").focus();
     } catch {
-      showToast(
+      commonUtil.showToast(
         translate("Unable to open as browser is blocking pop-ups.", {
           documentName: "picklist",
         }),
@@ -184,7 +184,7 @@ const printTransferOrderPicklist = async (orderId: string): Promise<any> => {
       );
     }
   } catch (err) {
-    showToast(translate("Failed to print picklist"));
+    commonUtil.showToast(translate("Failed to print picklist"));
     logger.error("Failed to load picklist", err);
   }
 };
@@ -252,7 +252,7 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
       try {
         (window as any).open(pdfUrl, "_blank").focus();
       } catch {
-        showToast(
+        commonUtil.showToast(
           translate("Unable to open as browser is blocking pop-ups.", {
             documentName: "shipping label",
           }),
@@ -261,7 +261,7 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
       }
     });
   } catch (err) {
-    showToast(translate("Failed to print shipping label"));
+    commonUtil.showToast(translate("Failed to print shipping label"));
     logger.error("Failed to load shipping label", err);
   }
 };

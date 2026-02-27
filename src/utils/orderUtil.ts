@@ -1,7 +1,7 @@
 import { useOrderStore } from "@/store/order";
 import { useProductStore } from "@/store/product";
 import { translate } from '@hotwax/dxp-components';
-import { showToast } from '@/utils';
+import { commonUtil } from '@/utils/commonUtil';
 import { OrderService } from '@/services/OrderService';
 
 const orderCategoryParameters = {
@@ -95,14 +95,14 @@ const removeKitComponents = (order: any) => {
   const kitItemSeqIds = new Set();
   const itemsWithoutKitComponents = [] as any;
 
-  order.items.forEach((item:any) => {
+  order.items.forEach((item: any) => {
     if (item.productTypeId === "MARKETING_PKG_PICK") {
       kitItemSeqIds.add(item.orderItemSeqId);
     }
   })
-  
+
   //In current implementation kit product and component product will have the same orderItemSeqId
-  order.items.forEach((item:any) => {
+  order.items.forEach((item: any) => {
     if (item.productTypeId === "MARKETING_PKG_PICK" || !kitItemSeqIds.has(item.orderItemSeqId)) {
       itemsWithoutKitComponents.push(item)
     }
@@ -118,18 +118,18 @@ const retryShippingLabel = async (order: any, showSuccessToast = true) => {
   // Temporarily handling this in app but should be handled in backend
   // Refetching the order tracking detail irrespective of api response since currently in SHIPHAWK api returns error whether label is generated
   order = await useOrderStore().updateShipmentPackageDetail(order)
-  
-  if(order.missingLabelImage) {
-    showToast(translate("Failed to generate shipping label"))
+
+  if (order.missingLabelImage) {
+    commonUtil.showToast(translate("Failed to generate shipping label"))
   } else {
-    if(showSuccessToast) showToast(translate("Shipping Label generated successfully"))
+    if (showSuccessToast) commonUtil.showToast(translate("Shipping Label generated successfully"))
     isGenerated = true;
   }
 
   return { isGenerated, order }
 }
 
-export {
+export const orderUtil = {
   getOrderCategory,
   isKit,
   removeKitComponents,

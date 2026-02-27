@@ -21,7 +21,7 @@ import { defineProps } from "vue";
   import { translate } from "@hotwax/dxp-components";
   import { useOrderStore } from "@/store/order";
   import { OrderService } from "@/services/OrderService";
-  import { showToast } from "@/utils";
+  import { commonUtil } from "@/utils/commonUtil";
   import logger from "@/logger";
   
   const props = defineProps(["currentOrder"]);
@@ -46,11 +46,11 @@ import { defineProps } from "vue";
         shipmentRouteSegmentId: order.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId
       });
   
-      showToast(translate("Shipping label voided successfully."));
+      commonUtil.showToast(translate("Shipping label voided successfully."));
       await useOrderStore().updateShipmentPackageDetail(order);
     } catch (err) {
       logger.error("Failed to void shipping label", err);
-      showToast(translate("Failed to void shipping label"));
+      commonUtil.showToast(translate("Failed to void shipping label"));
     }
     popoverController.dismiss();
   };

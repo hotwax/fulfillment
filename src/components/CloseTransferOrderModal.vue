@@ -23,7 +23,7 @@
         <ion-label>
           <h2>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}</h2>
           <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-          <p>{{ getFeatures(getProduct(item.productId).productFeatures) }}</p>
+          <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
           <p>
             <ion-text> {{ translate('Fulfilled qty') }}: {{ Number(item.totalIssuedQuantity) }} </ion-text> | <ion-text color="danger"> {{ translate('Cancel qty') }}: {{ Number(item.orderedQuantity) - Number(item.totalIssuedQuantity) }} </ion-text>
           </p>
@@ -48,7 +48,7 @@ import { computed } from "vue";
 import { DxpShopifyImg, translate, getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { useRouter } from "vue-router";
 import { TransferOrderService } from "@/services/TransferOrderService";
-import { getFeatures, showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useProductStore } from "@/store/product";
 
@@ -73,7 +73,7 @@ const closeOrderItems = async () => {
     await TransferOrderService.closeOrderItems(payload);
     return true;
   } catch (error) {
-    showToast(translate("Failed to update the status of transfer order items."));
+    commonUtil.showToast(translate("Failed to update the status of transfer order items."));
     return false;
   }
 };

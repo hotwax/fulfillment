@@ -32,7 +32,7 @@
           {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
           <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
         </ion-label>
-        <ion-label slot="end">{{ formatCurrency(itemPriceInfo.unitPrice, itemPriceInfo.currencyUom) }}</ion-label>
+        <ion-label slot="end">{{ commonUtil.formatCurrency(itemPriceInfo.unitPrice, itemPriceInfo.currencyUom) }}</ion-label>
       </ion-item>
 
       <div class="ion-margin" v-if="!item.isGCActivated">
@@ -61,7 +61,7 @@ import { computed, defineProps, onMounted, ref } from "vue";
 import { cameraOutline, cardOutline, closeOutline, giftOutline, stopOutline } from "ionicons/icons";
 import { getProductIdentificationValue, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { OrderService } from "@/services/OrderService";
-import { formatCurrency, hasError, showToast, hasWebcamAccess } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import logger from "@/logger";
 import { DateTime } from "luxon";
 import { StreamBarcodeReader } from "vue-barcode-reader";
@@ -97,21 +97,21 @@ const activateGitCard = async () => {
       partyId: props.item.customerId
     });
 
-    if (!hasError(resp)) {
-      showToast(translate("Gift card activated successfully."));
+    if (!commonUtil.hasError(resp)) {
+      commonUtil.showToast(translate("Gift card activated successfully."));
       closeModal({ isGCActivated: true, item: props.item });
     } else {
       throw resp.data;
     }
   } catch (error: any) {
-    showToast(translate("Failed to activate gift card."));
+    commonUtil.showToast(translate("Failed to activate gift card."));
     logger.error(error);
   }
 };
 
 const confirmSave = async () => {
   if (!activationCode.value.trim()) {
-    showToast(translate("Please enter a activation code."));
+    commonUtil.showToast(translate("Please enter a activation code."));
     return;
   }
 
@@ -136,8 +136,8 @@ const getCreatedDateTime = () => {
 };
 
 const scan = async () => {
-  if (!(await hasWebcamAccess())) {
-    showToast(translate("Camera access not allowed, please check permissons."));
+  if (!(await commonUtil.hasWebcamAccess())) {
+    commonUtil.showToast(translate("Camera access not allowed, please check permissons."));
     return;
   }
   isCameraEnabled.value = true;

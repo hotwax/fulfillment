@@ -33,7 +33,7 @@
   import { IonButtons, IonButton, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonText, IonTitle, IonToolbar, IonItem, modalController, onIonViewWillEnter } from "@ionic/vue";
   import { computed, ref } from "vue";
   import { close, saveOutline } from "ionicons/icons";
-  import { generateInternalId, showToast } from "@/utils";
+  import { commonUtil } from "@/utils/commonUtil";
   import { translate } from "@hotwax/dxp-components";
   import logger from "@/logger";
   import { hasError } from "@/adapter";
@@ -55,7 +55,7 @@
   };
   
   const setShipmentMethodTypeId = (event: any) => {
-    shipmentMethod.value.shipmentMethodTypeId = generateInternalId(event.target.value);
+    shipmentMethod.value.shipmentMethodTypeId = commonUtil.generateInternalId(event.target.value);
   };
   
   const updateCarrierShipmentMethodAssociation = async () => {
@@ -83,14 +83,14 @@
   
   const createShipmentMethod = async () => {
     if (!shipmentMethod.value.description?.trim() || !shipmentMethod.value.shipmentMethodTypeId?.trim()) {
-      showToast(translate("Please fill all the required fields"));
+      commonUtil.showToast(translate("Please fill all the required fields"));
       return;
     }
   
     try {
       const resp = await CarrierService.createShipmentMethod(shipmentMethod.value);
       if (!hasError(resp)) {
-        showToast(translate("Shipment method created successfully."));
+        commonUtil.showToast(translate("Shipment method created successfully."));
         await updateCarrierShipmentMethodAssociation();
         await useCarrierStore().fetchShipmentMethodTypes();
         await useCarrierStore().fetchCarrierShipmentMethods({ partyId: currentCarrier.value.partyId });
@@ -106,7 +106,7 @@
         errorMessage = err.response.data.error.message;
       }
       logger.error("error", err);
-      showToast(errorMessage);
+      commonUtil.showToast(errorMessage);
     }
   };
   </script>

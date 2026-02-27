@@ -2,7 +2,7 @@ import { defineStore } from "pinia"
 import { UtilService } from "@/services/UtilService"
 import { hasError } from "@/adapter"
 import logger from "@/logger"
-import { showToast, getProductStoreId, getCurrentFacilityId, parseBooleanSetting } from "@/utils"
+import { commonUtil } from "@/utils/commonUtil";
 import { useUserStore as useDxpUserStore } from "@hotwax/dxp-components"
 import { useUserStore } from "@/store/user"
 
@@ -115,7 +115,7 @@ export const useUtilStore = defineStore("util", {
       return state.facilities
     },
     isForceScanEnabled(state) {
-      return parseBooleanSetting(state.productStoreSettings.FULFILL_FORCE_SCAN)
+      return commonUtil.parseBooleanSetting(state.productStoreSettings.FULFILL_FORCE_SCAN)
     },
     getFulfillmentRejectReasons(state) {
       return state.fulfillmentRejectReasons
@@ -136,7 +136,7 @@ export const useUtilStore = defineStore("util", {
       return state.shipmentMethodsByCarrier
     },
     isPicklistDownloadEnabled(state) {
-      return parseBooleanSetting(state.productStoreSettings.FF_DOWNLOAD_PICKLIST)
+      return commonUtil.parseBooleanSetting(state.productStoreSettings.FF_DOWNLOAD_PICKLIST)
     },
     getExcludeOrderBrokerDays(state) {
       return state.productStoreSettings.EXCLUDE_ODR_BKR_DAYS
@@ -151,13 +151,13 @@ export const useUtilStore = defineStore("util", {
       return state.productStoreSettings.AFFECT_QOH_ON_REJ && JSON.parse(state.productStoreSettings.AFFECT_QOH_ON_REJ)
     },
     isShipNowDisabled(state) {
-      return parseBooleanSetting(state.productStoreSettings.DISABLE_SHIPNOW)
+      return commonUtil.parseBooleanSetting(state.productStoreSettings.DISABLE_SHIPNOW)
     },
     isUnpackDisabled(state) {
-      return parseBooleanSetting(state.productStoreSettings.DISABLE_UNPACK)
+      return commonUtil.parseBooleanSetting(state.productStoreSettings.DISABLE_UNPACK)
     },
     isReservationFacilityFieldEnabled(state) {
-      return parseBooleanSetting(state.productStoreSettings.USE_RES_FACILITY_ID)
+      return commonUtil.parseBooleanSetting(state.productStoreSettings.USE_RES_FACILITY_ID)
     },
     getProductStoreSetting(state) {
       return state.productStoreSettings
@@ -598,7 +598,7 @@ export const useUtilStore = defineStore("util", {
         partyId_op: "equals",
         partyId_not: "Y",
         roleTypeId: "CARRIER",
-        productStoreId: getProductStoreId(),
+        productStoreId: commonUtil.getProductStoreId(),
         fieldsToSelect: ["roleTypeId", "partyId"],
         pageSize: 1
       }
@@ -727,7 +727,7 @@ export const useUtilStore = defineStore("util", {
       try {
         const payload = {
           customParametersMap: {
-            productStoreId: getProductStoreId(),
+            productStoreId: commonUtil.getProductStoreId(),
             roleTypeId: "CARRIER",
             shipmentMethodTypeId: "STOREPICKUP",
             shipmentMethodTypeId_op: "equals",
@@ -777,7 +777,7 @@ export const useUtilStore = defineStore("util", {
             UtilService.fetchFacilityAddresses({
               contactMechPurposeTypeId: "PRIMARY_LOCATION",
               contactMechTypeId: "POSTAL_ADDRESS",
-              facilityId
+              facilityId: commonUtil.getCurrentFacilityId()
             })
           )
         )
@@ -821,7 +821,7 @@ export const useUtilStore = defineStore("util", {
       try {
         const resp = await UtilService.fetchLabelImageType(carrierId)
 
-        if (hasError(resp) || !resp.data.length) {
+        if (commonUtil.hasError(resp) || !resp.data.length) {
           throw resp.data
         }
 
@@ -856,7 +856,7 @@ export const useUtilStore = defineStore("util", {
               enumName: enumMeta.enumName
             }
             const enumResponse = await UtilService.createEnumeration(enumPayload)
-            if (hasError(enumResponse)) {
+            if (commonUtil.hasError(enumResponse)) {
               throw new Error("Failed to create enumeration")
             }
           }
@@ -865,7 +865,7 @@ export const useUtilStore = defineStore("util", {
         let isSettingAlreadyExists = false
         try {
           const fetchSetting = await UtilService.fetchProductStoreSetting({
-            productStoreId: getProductStoreId(),
+            productStoreId: commonUtil.getProductStoreId(),
             settingTypeEnumId: enumId,
             fieldsToSelect: ["settingTypeEnumId"],
             pageSize: 1
@@ -878,36 +878,36 @@ export const useUtilStore = defineStore("util", {
         let response
         if (isSettingAlreadyExists) {
           response = await UtilService.updateProductStoreSetting({
-            productStoreId: getProductStoreId(),
+            productStoreId: commonUtil.getProductStoreId(),
             settingTypeEnumId: enumId,
             ...payload
           })
         } else {
           response = await createService({
-            productStoreId: getProductStoreId(),
+            productStoreId: commonUtil.getProductStoreId(),
             settingTypeEnumId: enumId,
             ...payload
           })
         }
 
-        if (!hasError(response)) {
+        if (!commonUtil.hasError(response)) {
           this.updateProductStoreSetting({
             key: enumId,
             value: payload.settingValue
           })
-          showToast("Configuration updated")
+          commonUtil.showToast("Configuration updated")
         } else {
-          showToast("Failed to update configuration")
+          commonUtil.showToast("Failed to update configuration")
         }
       } catch (error) {
-        showToast("Failed to update configuration")
+        commonUtil.showToast("Failed to update configuration")
         logger.error("Error updating product store setting:", error)
       }
     },
     async fetchAutoShippingLabelConfig() {
       let resp: any
       try {
-        const currentFacility: any = getCurrentFacilityId()
+        const currentFacility: any = commonUtil.getCurrentFacilityId()
         resp = await UtilService.getFacilityGroupAndMemberDetails({
           customParametersMap: {
             facilityId: currentFacility,

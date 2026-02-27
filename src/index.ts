@@ -31,11 +31,11 @@ import permissionPlugin, { Actions, hasPermission, setPermissions } from '@/auth
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
 import { dxpComponents } from '@hotwax/dxp-components';
-import { login, logout, loader, fetchProducts } from '@/utils/user';
+import { userUtil } from "@/utils/userUtil";
 import { getConfig, fetchGoodIdentificationTypes, getEComStoresByFacility, getProductIdentificationPref, getUserFacilities, getUserPreference, initialise, setProductIdentificationPref, setUserLocale, getAvailableTimeZones, setUserTimeZone, 
   setUserPreference } from './adapter';
 import localeMessages from '@/locales';
-import { addNotification, storeClientRegistrationToken } from '@/utils/firebase';
+import { fireBaseUtil } from "@/utils/fireBaseUtil";
 import { useUserStore } from "@/store/user";
 
 const pinia = createPinia()
@@ -58,11 +58,11 @@ const app = createApp(App)
   })
   .use(dxpComponents, {
     Actions,
-    addNotification,
+    addNotification: fireBaseUtil.addNotification,
     defaultImgUrl: require("@/assets/images/defaultImage.png"),
-    login,
-    logout,
-    loader,
+    login: userUtil.login,
+    logout: userUtil.logout,
+    loader: userUtil.loader,
     appLoginUrl: process.env.VUE_APP_LOGIN_URL as string,
     appFirebaseConfig: JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any),
     appFirebaseVapidKey: process.env.VUE_APP_FIREBASE_VAPID_KEY,
@@ -75,13 +75,13 @@ const app = createApp(App)
     localeMessages,
     setUserLocale,
     setUserTimeZone,
-    storeClientRegistrationToken,
+    storeClientRegistrationToken: fireBaseUtil.storeClientRegistrationToken,
     getAvailableTimeZones,
     getUserFacilities,
     setUserPreference,
     getUserPreference,
     hasPermission,
-    fetchProducts
+    fetchProducts: userUtil.fetchProducts
   });
 
 // Setting permission before router ready, as router checks for permissions, if not set before ready,

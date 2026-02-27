@@ -9,7 +9,7 @@
       <ion-title>{{ translate("Shipping label error") }}</ion-title>
       <ion-buttons slot="end">
         <!-- Copying first message, assuming only one message will be received -->
-        <ion-button @click="copyToClipboard(shipmentLabelErrorMessage, 'Copied to clipboard')"> 
+        <ion-button @click="commonUtil.copyToClipboard(shipmentLabelErrorMessage, 'Copied to clipboard')"> 
           <ion-icon slot="icon-only" :icon="copyOutline" />
         </ion-button>
       </ion-buttons>
@@ -33,7 +33,7 @@ import { defineProps, onMounted, ref } from "vue";
 import { closeOutline, copyOutline } from "ionicons/icons";
 import { OrderService } from "@/services/OrderService";
 import { translate } from "@hotwax/dxp-components";
-import { copyToClipboard } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 
 const props = defineProps(["shipmentId"]);
 

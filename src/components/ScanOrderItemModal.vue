@@ -31,9 +31,9 @@
               <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
               <div>
                 {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
-                <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
               </div>
-              <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
+              <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures)}}</p>
             </ion-label>
           </ion-item>
         </div>
@@ -57,9 +57,9 @@ import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, I
 import { computed, defineProps, onMounted, ref } from "vue";
 import { cameraOutline, closeOutline, saveOutline } from "ionicons/icons";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useAuthStore, openPosScanner } from '@hotwax/dxp-components';
-import { getFeatures, showToast, hasWebcamAccess } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import Scanner from "@/components/Scanner.vue";
-import { isKit } from "@/utils/order";
+import { orderUtil } from "@/utils/orderUtil";
 import { useProductStore } from "@/store/product";
 import { useUtilStore } from "@/store/util";
 
@@ -85,14 +85,14 @@ const scan = async () => {
   if (useAuthStore().isEmbedded) {
     const scanData = await openPosScanner();
     if(scanData) {
-      this.updateProductScannedStatus(scanData);
+      updateProductScannedStatus(scanData);
     } else {
-      showToast(translate("No data received from scanner"));
+      commonUtil.showToast(translate("No data received from scanner"));
     }
     return;
   }
-  if (!(await hasWebcamAccess())) {
-    showToast(translate("Camera access not allowed, please check permissons."));
+  if (!(await commonUtil.hasWebcamAccess())) {
+    commonUtil.showToast(translate("Camera access not allowed, please check permissons."));
     return;
   }
   const modal = await modalController.create({ component: Scanner });
@@ -116,7 +116,7 @@ const updateProductScannedStatus = async (payload?: any) => {
 
   if (item) {
     item.isChecked = true;
-    showToast(translate("Scanned successfully.", { itemName: payload }));
+    commonUtil.showToast(translate("Scanned successfully.", { itemName: payload }));
 
     lastScannedId.value = item.orderItemSeqId;
     const scannedElement = document.getElementById(item.orderItemSeqId);
@@ -126,7 +126,7 @@ const updateProductScannedStatus = async (payload?: any) => {
       lastScannedId.value = "";
     }, 3000);
   } else {
-    showToast(translate((currentItem.productId ? "Product is already scanned:" : "Scanned item is not present within the shipment:"), { itemName: payload }));
+    commonUtil.showToast(translate((currentItem.productId ? "Product is already scanned:" : "Scanned item is not present within the shipment:"), { itemName: payload }));
   }
   queryString.value = "";
 };

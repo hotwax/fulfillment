@@ -2,7 +2,7 @@ import { defineStore } from "pinia"
 import { StockService } from "@/services/StockService"
 import { hasError } from "@/adapter"
 import logger from "@/logger"
-import { getCurrentFacilityId, showToast } from "@/utils"
+import { commonUtil } from "@/utils/commonUtil"
 import { translate } from "@hotwax/dxp-components"
 
 interface StockState {
@@ -15,7 +15,7 @@ export const useStockStore = defineStore("stock", {
   }),
   getters: {
     getProductStock: (state) => (productId: any, facilityId?: any) => {
-      const id = facilityId ? facilityId : getCurrentFacilityId()
+      const id = facilityId ? facilityId : commonUtil.getCurrentFacilityId()
       return state.products[productId] ? state.products[productId][id] ? state.products[productId][id] : {} : {}
     }
   },
@@ -30,7 +30,7 @@ export const useStockStore = defineStore("stock", {
       }
     },
     async fetchStock({ productId, facilityId = "" }: { productId: any; facilityId?: any }) {
-      const id = facilityId ? facilityId : getCurrentFacilityId()
+      const id = facilityId ? facilityId : commonUtil.getCurrentFacilityId()
       try {
         const payload = {
           productId,
@@ -46,7 +46,7 @@ export const useStockStore = defineStore("stock", {
         }
       } catch (err) {
         logger.error(err)
-        showToast(translate("No data available"))
+        commonUtil.showToast(translate("No data available"))
       }
     }
   },

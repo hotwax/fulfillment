@@ -24,7 +24,7 @@ import { IonContent, IonIcon, IonItem, IonList, IonListHeader, alertController, 
 import { defineProps, ref } from "vue";
 import { lockClosedOutline, lockOpenOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
-import { showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 
 const props = defineProps(["fulfillmentOrderLimit"]);
 
@@ -50,10 +50,10 @@ const showOrderLimitAlert = async (header: string, message: string, showInput: b
 
           if (data) {
             if (data.setLimit === "") {
-              showToast(translate("Please provide a value"));
+              commonUtil.showToast(translate("Please provide a value"));
               return false;
             } else if (data.setLimit <= 0) {
-              showToast(translate("Provide a value greater than 0"));
+              commonUtil.showToast(translate("Provide a value greater than 0"));
               return false;
             } else {
               updatedLimit = data.setLimit;

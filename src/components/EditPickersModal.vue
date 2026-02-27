@@ -53,7 +53,7 @@
 import { IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonFab, IonFabButton, IonTitle, IonToolbar, IonLabel, IonItem, IonList, IonListHeader, IonRow, IonSearchbar, IonSpinner, modalController, alertController } from "@ionic/vue";
 import { computed, defineProps, onMounted, ref } from "vue";
 import { close, closeCircle, saveOutline } from "ionicons/icons";
-import { hasError, showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import logger from "@/logger";
 import { OrderService } from "@/services/OrderService";
 import { UtilService } from "@/services/UtilService";
@@ -117,7 +117,7 @@ const findPickers = async (pickerIds?: Array<any>) => {
 
   try {
     const resp = await UtilService.getAvailablePickers(payload);
-    if (resp.status === 200 && !hasError(resp)) {
+    if (resp.status === 200 && !commonUtil.hasError(resp)) {
       pickers.value = resp.data.response.docs.map((picker: any) => ({
         name: picker.groupName ? picker.groupName : (picker.firstName || picker.lastName) ? (picker.firstName ? picker.firstName : "") + (picker.lastName ? " " + picker.lastName : "") : picker.partyId,
         id: picker.partyId,
@@ -181,8 +181,8 @@ const resetPicker = async () => {
     });
 
     const resp = await OrderService.resetPicker({ picklistId: props.selectedPicklist.id, roles });
-    if (resp.status === 200 && !hasError(resp)) {
-      showToast(translate("Pickers successfully replaced in the picklist with the new selections."));
+    if (resp.status === 200 && !commonUtil.hasError(resp)) {
+      commonUtil.showToast(translate("Pickers successfully replaced in the picklist with the new selections."));
       editedPicklist.value = {
         ...props.selectedPicklist,
         roles: roles.filter((role: any) => !role.thruDate),
@@ -193,7 +193,7 @@ const resetPicker = async () => {
       throw resp.data;
     }
   } catch (err) {
-    showToast(translate("Something went wrong, could not edit picker(s)"));
+    commonUtil.showToast(translate("Something went wrong, could not edit picker(s)"));
     logger.error("Something went wrong, could not edit picker(s)");
   }
 };

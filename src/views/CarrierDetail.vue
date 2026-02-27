@@ -112,7 +112,7 @@ import { addCircleOutline, addOutline, peopleOutline, shieldCheckmarkOutline } f
 import { translate } from "@hotwax/dxp-components";
 import { useRoute } from "vue-router";
 import { DateTime } from "luxon";
-import { showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import emitter from "@/event-bus";
 import { hasError } from "@/adapter";
 import logger from "@/logger";
@@ -162,7 +162,7 @@ const updateCarrierName = async () => {
       text: translate("Confirm"),
       handler: async (data: any) => {
         if (!data.groupName.trim()) {
-          showToast(translate("Carrier name can not be empty."));
+          commonUtil.showToast(translate("Carrier name can not be empty."));
           return;
         }
         if (data.groupName.trim() != currentCarrier.value.groupName) {
@@ -173,7 +173,7 @@ const updateCarrierName = async () => {
           try {
             resp = await CarrierService.updateCarrier(payload);
             if (!hasError(resp)) {
-              showToast(translate("Carrier name updated successfully."));
+              commonUtil.showToast(translate("Carrier name updated successfully."));
               await useCarrierStore().updateCurrentCarrier({ ...currentCarrier.value, ...payload });
             } else {
               throw resp.data;
@@ -230,13 +230,13 @@ const updateCarrierFacility = async (event: any, facility: any) => {
     }
 
     if (!hasError(resp)) {
-      showToast(translate("Facility carrier association updated successfully."));
+      commonUtil.showToast(translate("Facility carrier association updated successfully."));
       useCarrierStore().updateCarrierFacility(facility);
     } else {
       throw resp.data;
     }
   } catch (err) {
-    showToast(translate("Failed to update facility carrier association."));
+    commonUtil.showToast(translate("Failed to update facility carrier association."));
     logger.error(err);
   }
 };
@@ -293,7 +293,7 @@ const updateProductStoreShipmentMethod = async (shipmentMethod: any, modifiedDat
       resp = await CarrierService.updateProductStoreShipmentMethod(payload);
 
       if (!hasError(resp)) {
-        showToast(translate(messages.successMessage));
+        commonUtil.showToast(translate(messages.successMessage));
         productStoreShipmentMethods[shipmentMethod.productStoreId][shipmentMethod.shipmentMethodTypeId] = { ...shipmentMethod, [modifiedData.fieldName]: modifiedData.fieldValue };
         await useCarrierStore().updateCurrentCarrierProductStoreShipmentMethods(productStoreShipmentMethods);
         await useCarrierStore().checkAssociatedProductStoreShipmentMethods();
@@ -301,7 +301,7 @@ const updateProductStoreShipmentMethod = async (shipmentMethod: any, modifiedDat
         throw resp.data;
       }
     } catch (err) {
-      showToast(translate(messages.errorMessage));
+      commonUtil.showToast(translate(messages.errorMessage));
       logger.error(err);
     }
   }
@@ -354,14 +354,14 @@ const updateProductStoreShipmentMethodAssociation = async (event: any, shipmentM
     }
 
     if (!hasError(resp)) {
-      showToast(translate("Product store and shipment method association updated successfully."));
+      commonUtil.showToast(translate("Product store and shipment method association updated successfully."));
       await useCarrierStore().updateCurrentCarrierProductStoreShipmentMethods(productStoreShipmentMethods);
       await useCarrierStore().checkAssociatedProductStoreShipmentMethods();
     } else {
       throw resp.data;
     }
   } catch (err) {
-    showToast(translate("Failed to update product store and shipment method association."));
+    commonUtil.showToast(translate("Failed to update product store and shipment method association."));
     logger.error(err);
   }
 };

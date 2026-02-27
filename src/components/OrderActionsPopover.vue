@@ -22,7 +22,7 @@
 import { defineProps } from "vue";
 import { IonContent, IonIcon, IonItem, IonList, IonListHeader, modalController, popoverController } from "@ionic/vue";
 import { arrowForwardOutline, bagCheckOutline, copyOutline } from "ionicons/icons";
-import { copyToClipboard } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
 import { translate } from "@hotwax/dxp-components";
 import { useOrderStore } from "@/store/order";
@@ -37,7 +37,7 @@ const closePopover = () => {
 };
 
 const copyInfo = () => {
-  copyToClipboard(props.order.orderName, "Copied to clipboard");
+  commonUtil.copyToClipboard(props.order.orderName, "Copied to clipboard");
   closePopover();
 };
 

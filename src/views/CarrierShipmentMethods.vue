@@ -50,7 +50,7 @@ import { computed, onMounted } from "vue";
 import { addCircleOutline, checkmarkDoneOutline, peopleOutline, shieldCheckmarkOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
 import { useRoute, useRouter } from "vue-router";
-import { showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import ShipmentMethods from "@/components/ShipmentMethods.vue";
 import CreateShipmentMethodModal from "@/components/CreateShipmentMethodModal.vue";
 import { useCarrierStore } from "@/store/carrier";
@@ -63,7 +63,7 @@ const currentCarrier = computed(() => useCarrierStore().getCurrent);
 
 const viewCarrierDetail = async () => {
   await useCarrierStore().clearShipmentMethodQuery();
-  showToast(translate("Carrier and shipment methods have been set up successfully."));
+  commonUtil.showToast(translate("Carrier and shipment methods have been set up successfully."));
   router.replace({ path: `/carrier-details/${currentCarrier.value.partyId}` });
 };
 

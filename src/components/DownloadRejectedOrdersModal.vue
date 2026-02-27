@@ -54,13 +54,13 @@
   import { computed, ref } from "vue";
   import { closeOutline, cloudDownloadOutline } from "ionicons/icons";
   import { getProductIdentificationValue, translate, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
-  import { escapeSolrSpecialChars, prepareSolrQuery } from "@/utils/solrHelper";
   import { RejectionService } from "@/services/RejectionService";
   import { UtilService } from "@/services/UtilService";
   import { hasError } from "@/adapter";
   import logger from "@/logger";
   import emitter from "@/event-bus";
-  import { getDateWithOrdinalSuffix, jsonToCsv } from "@/utils";
+  import { commonUtil } from "@/utils/commonUtil";
+  import { solrUtil } from "@/utils/solrUtil";
   import { DateTime } from "luxon";
   import { useProductStore } from "@/store/product";
   import { useRejectionStore } from "@/store/rejection";
@@ -129,7 +129,7 @@
   const bulkFetchRejectedItems = async () => {
     const rejectedOrderQuery = rejectedOrders.value.query;
     const filters = {
-      rejectedFrom_txt_en: { value: escapeSolrSpecialChars(currentFacility.value.facilityId) }
+      rejectedFrom_txt_en: { value: solrUtil.escapeSolrSpecialChars(currentFacility.value.facilityId) }
     } as any;
   
     if (!rejectedOrderQuery.queryString) {
@@ -143,7 +143,7 @@
       filters.rejectionReasonId_s = { value: rejectedOrderQuery.rejectionReasons };
     }
   
-    const query = prepareSolrQuery({
+    const query = solrUtil.prepareSolrQuery({
       coreName: "logInsights",
       docType: "FULFILLMENT_REJECTION",
       queryString: rejectedOrderQuery.queryString,
@@ -218,7 +218,7 @@
               if (product) {
                 const rejectedItemDetails = selected.reduce((details: any, field: any) => {
                   if (field.name === "rejectedAt") {
-                    details[field.name] = getDateWithOrdinalSuffix(DateTime.fromISO(item.rejectedAt).toMillis());
+                    details[field.name] = commonUtil.getDateWithOrdinalSuffix(DateTime.fromISO(item.rejectedAt).toMillis());
                   } else if (field.name === "primaryProductId") {
                     details[field.name] = getProductIdentificationValue(selectedPrimaryProductId.value, product);
                   } else if (field.name === "secondaryProductId") {
@@ -236,7 +236,7 @@
             }));
   
             const fileName = `RejectedOrders-${currentFacility.value.facilityId}-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`;
-            await jsonToCsv(downloadData, { download: true, name: fileName });
+            await commonUtil.jsonToCsv(downloadData, { download: true, name: fileName });
             emitter.emit("dismissLoader");
           }
         }

@@ -26,7 +26,7 @@
         <p class="overline">{{ translate("Gateway error") }}</p>
         {{ order.gatewayMessage || packingErrorMessage }}
       </ion-label>
-      <ion-button fill="clear" color="medium" @click="copyToClipboard(order.gatewayMessage || packingErrorMessage, 'Copied to clipboard')">
+      <ion-button fill="clear" color="medium" @click="commonUtil.copyToClipboard(order.gatewayMessage || packingErrorMessage, 'Copied to clipboard')">
         <ion-icon slot="icon-only" :icon="copyOutline" />
       </ion-button>
     </ion-item>
@@ -130,8 +130,7 @@ import { archiveOutline, closeOutline, copyOutline, informationCircleOutline, op
 import { translate } from "@hotwax/dxp-components";
 import { OrderService } from "@/services/OrderService";
 import logger from "@/logger";
-import { copyToClipboard, showToast } from "@/utils";
-import { hasError } from "@/adapter";
+import { commonUtil } from "@/utils/commonUtil";
 import { useRouter } from "vue-router";
 import { useCarrierStore } from "@/store/carrier";
 import { useUserStore } from "@/store/user";
@@ -216,7 +215,7 @@ const confirmSave = async () => {
   if (selectedSegment.value !== "reject-order" && (order.carrierPartyId !== carrierPartyId.value || order.shipmentMethodTypeId !== shipmentMethodTypeId.value)) {
     const isUpdated = await updateCarrierAndShippingMethod(carrierPartyId.value, shipmentMethodTypeId.value);
     if (!isUpdated) {
-      showToast(translate("Failed to update shipment method detail."));
+      commonUtil.showToast(translate("Failed to update shipment method detail."));
       return;
     }
   }
@@ -273,7 +272,7 @@ const updateCarrierAndShippingMethod = async (partyId: string, methodTypeId: str
     };
 
     const resp = await OrderService.updateShipmentCarrierAndMethod(params);
-    if (hasError(resp)) {
+    if (commonUtil.hasError(resp)) {
       throw resp.data;
     }
 

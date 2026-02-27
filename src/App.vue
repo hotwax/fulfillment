@@ -17,7 +17,7 @@ import { Settings } from "luxon";
 import { useAuthStore, getAppLoginUrl, initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
 import logger from "@/logger";
 import { init } from "@module-federation/runtime";
-import { addNotification, storeClientRegistrationToken } from "@/utils/firebase";
+import { fireBaseUtil } from "@/utils/fireBaseUtil";
 import { useUserStore } from "@/store/user";
 const loader = ref<any>(null);
 const maxAge = process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0;
@@ -123,8 +123,8 @@ onMounted(async () => {
       await initialiseFirebaseApp(
         appFirebaseConfig,
         appFirebaseVapidKey,
-        storeClientRegistrationToken,
-        addNotification
+        fireBaseUtil.storeClientRegistrationToken,
+        fireBaseUtil.addNotification
       );
     }
   }

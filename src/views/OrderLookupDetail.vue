@@ -21,7 +21,7 @@
                 <p>{{ order.orderId }}</p>
               </ion-label>
               <ion-label slot="end">
-                <p>{{ formatCurrency(order.grandTotal, order.currencyUom) }}</p>
+                <p>{{ commonUtil.formatCurrency(order.grandTotal, order.currencyUom) }}</p>
               </ion-label>
             </ion-item>
           </div>
@@ -30,7 +30,7 @@
             <ion-item lines="none">
               <ion-icon slot="start" :icon="timeOutline" class="mobile-only" />
               <h2>{{ translate("Timeline") }}</h2>
-              <ion-badge slot="end" :color="getColorByDesc(orderStatuses[order.statusId].label) || getColorByDesc('default')">{{ translate(orderStatuses[order.statusId].label) }}</ion-badge>
+              <ion-badge slot="end" :color="commonUtil.getColorByDesc(orderStatuses[order.statusId].label) || commonUtil.getColorByDesc('default')">{{ translate(orderStatuses[order.statusId].label) }}</ion-badge>
             </ion-item>
 
             <ion-list class="desktop-only">
@@ -131,11 +131,11 @@
                       <ion-label class="ion-text-wrap">
                         <p class="overline">{{ orderPayment.methodTypeId }}</p>
                         <ion-label>{{ translate(getPaymentMethodDesc(orderPayment.methodTypeId)) || orderPayment.methodTypeId }}</ion-label>
-                        <ion-note :color="getColorByDesc(getStatusDesc(orderPayment.paymentStatus))">{{ translate(getStatusDesc(orderPayment.paymentStatus)) }}</ion-note>
+                        <ion-note :color="commonUtil.getColorByDesc(getStatusDesc(orderPayment.paymentStatus))">{{ translate(getStatusDesc(orderPayment.paymentStatus)) }}</ion-note>
                       </ion-label>
                       <div slot="end" class="ion-text-end">
                         <ion-badge v-if="order.orderPayments.length > 1 && index === 0" color="dark">{{ translate("Latest") }}</ion-badge>
-                        <ion-label slot="end">{{ formatCurrency(orderPayment.amount, order.currencyUom) }}</ion-label>
+                        <ion-label slot="end">{{ commonUtil.formatCurrency(orderPayment.amount, order.currencyUom) }}</ion-label>
                       </div>
                     </ion-item>
                   </ion-list>
@@ -214,12 +214,12 @@
                       <h1>{{ item.productId }}</h1>
                       <p>{{ getProduct(item.productId)?.productName }}</p>
                     </ion-label>
-                    <ion-badge slot="end" :color="getColorByDesc(itemStatuses[item.statusId].label) || getColorByDesc('default')">{{ translate(itemStatuses[item.statusId].label) }}</ion-badge>
+                    <ion-badge slot="end" :color="commonUtil.getColorByDesc(itemStatuses[item.statusId].label) || commonUtil.getColorByDesc('default')">{{ translate(itemStatuses[item.statusId].label) }}</ion-badge>
                   </ion-item>
 
                   <ion-item>
                     <ion-label class="ion-text-wrap">{{ translate("Price") }}</ion-label>
-                    <ion-label slot="end">{{ formatCurrency(item.unitPrice, order.currencyUom) }}</ion-label>
+                    <ion-label slot="end">{{ commonUtil.formatCurrency(item.unitPrice, order.currencyUom) }}</ion-label>
                   </ion-item>
 
                   <ion-item v-if="shipGroup.facilityId !== '_NA_'">
@@ -264,12 +264,12 @@ import { computed, defineProps, ref } from "vue";
 import { translate } from "@hotwax/dxp-components";
 import { callOutline, cashOutline, checkmarkDoneOutline, cubeOutline, ellipsisVerticalOutline, golfOutline, mailOutline, pulseOutline, storefrontOutline, sunnyOutline, ticketOutline, timeOutline, downloadOutline } from "ionicons/icons";
 import { DateTime } from "luxon";
-import { formatCurrency, getColorByDesc } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import OrderLookupLabelActionsPopover from "@/components/OrderLookupLabelActionsPopover.vue";
 import { hasError } from "@hotwax/oms-api";
 import logger from "@/logger";
 import { OrderLookupService } from "@/services/OrderLookupService";
-import { useDynamicImport } from "@/utils/moduleFederation";
+import { moduleFederationUtil } from "@/utils/moduleFederationUtil";
 import { useOrderLookupStore } from "@/store/orderLookup";
 import { useProductStore } from "@/store/product";
 import { useStockStore } from "@/store/stock";
@@ -368,7 +368,7 @@ onIonViewWillEnter(async () => {
   await useUtilStore().fetchProductStores();
   await fetchOrderInvoicingFacility();
   const instance = instanceUrl.value.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "");
-  additionalDetailItemExt.value = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderLookupAdditionalDetailItem` });
+  additionalDetailItemExt.value = await moduleFederationUtil.useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderLookupAdditionalDetailItem` });
   isFetchingOrderInfo.value = false;
 });
 </script>

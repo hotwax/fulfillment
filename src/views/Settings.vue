@@ -185,7 +185,7 @@ import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTi
 import { computed, ref } from "vue";
 import { openOutline } from "ionicons/icons";
 import { UserService } from "@/services/UserService";
-import { showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import { hasError, removeClientRegistrationToken, subscribeTopic, unsubscribeTopic } from "@/adapter";
 import { initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore as useDxpUserStore, useAuthStore } from "@hotwax/dxp-components";
 import logger from "@/logger";
@@ -194,7 +194,7 @@ import { DateTime } from "luxon";
 import Image from "@/components/Image.vue";
 import OrderLimitPopover from "@/components/OrderLimitPopover.vue";
 import emitter from "@/event-bus";
-import { addNotification, generateTopicName, isFcmConfigured, storeClientRegistrationToken } from "@/utils/firebase";
+import { fireBaseUtil } from "@/utils/fireBaseUtil";
 import { UtilService } from "@/services/UtilService";
 import { useUserStore } from "@/store/user";
 import { useUtilStore } from "@/store/util";
@@ -217,7 +217,7 @@ const isPartialOrderRejectionEnabled = computed(() => useUtilStore().getPartialO
 const isCollateralRejectionEnabled = computed(() => useUtilStore().getCollateralRejectionConfig);
 const affectQoh = computed(() => useUtilStore().getAffectQohConfig);
 const barcodeIdentificationPref = computed(() => useUtilStore().getBarcodeIdentificationPref);
-const currentFacility = computed(() => useDxpUserStore().getCurrentFacility);
+const currentFacility = computed(() => useDxpUserStore().getCurrentFacility as any);
 const preferredStore = computed(() => useDxpUserStore().getCurrentEComStore);
 const barcodeIdentificationOptions = computed(() => useProductIdentificationStore().getGoodIdentificationOptions);
 
@@ -379,12 +379,12 @@ const updateFacilityMaximumOrderLimit = async (maximumOrderLimit: number | strin
 
     if (!hasError(resp)) {
       currentFacilityDetails.value.maximumOrderLimit = maximumOrderLimit === "" ? null : maximumOrderLimit;
-      showToast(translate("Order fulfillment capacity updated successfully"));
+      commonUtil.showToast(translate("Order fulfillment capacity updated successfully"));
     } else {
       throw resp.data;
     }
   } catch (err) {
-    showToast(translate("Failed to update facility"));
+    commonUtil.showToast(translate("Failed to update facility"));
     logger.error("Failed to update facility", err);
   }
 };
@@ -401,12 +401,12 @@ const updateFacilityToGroup = async () => {
 
     if (!hasError(resp)) {
       isEComInvEnabled.value = false;
-      showToast(translate("ECom inventory status updated successfully"));
+      commonUtil.showToast(translate("ECom inventory status updated successfully"));
     } else {
       throw resp.data;
     }
   } catch (err) {
-    showToast(translate("Failed to update eCom inventory status"));
+    commonUtil.showToast(translate("Failed to update eCom inventory status"));
     logger.error("Failed to update eCom inventory status", err);
   }
 };
@@ -421,12 +421,12 @@ const addFacilityToGroup = async () => {
 
     if (!hasError(resp)) {
       isEComInvEnabled.value = true;
-      showToast(translate("ECom inventory status updated successfully"));
+      commonUtil.showToast(translate("ECom inventory status updated successfully"));
     } else {
       throw resp.data;
     }
   } catch (err) {
-    showToast(translate("Failed to update eCom inventory status"));
+    commonUtil.showToast(translate("Failed to update eCom inventory status"));
     logger.error("Failed to update eCom inventory status", err);
   }
 };
@@ -488,15 +488,15 @@ const updateNotificationPref = async (enumId: string) => {
   let isToggledOn = false;
 
   try {
-    if (!isFcmConfigured()) {
+    if (!fireBaseUtil.isFcmConfigured()) {
       logger.error("FCM is not configured.");
-      showToast(translate("Notification preferences not updated. Please try again."));
+      commonUtil.showToast(translate("Notification preferences not updated. Please try again."));
       return;
     }
 
     emitter.emit("presentLoader", { backdropDismiss: false });
     const facilityId = currentFacility.value?.facilityId;
-    const topicName = generateTopicName(facilityId, enumId);
+    const topicName = fireBaseUtil.generateTopicName(facilityId, enumId);
 
     const notificationPref = notificationPrefs.value.find((pref: any) => pref.enumId === enumId);
     notificationPref.isEnabled
@@ -506,15 +506,15 @@ const updateNotificationPref = async (enumId: string) => {
     notificationPref.isEnabled = !notificationPref.isEnabled;
     await useUserStore().updateNotificationPreferences(notificationPrefs.value);
     isToggledOn = notificationPref.isEnabled;
-    showToast(translate("Notification preferences updated."));
+    commonUtil.showToast(translate("Notification preferences updated."));
   } catch (error) {
-    showToast(translate("Notification preferences not updated. Please try again."));
+    commonUtil.showToast(translate("Notification preferences not updated. Please try again."));
   } finally {
     emitter.emit("dismissLoader");
   }
   try {
     if (!allNotificationPrefs.value.length && isToggledOn) {
-      await initialiseFirebaseApp(JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any), process.env.VUE_APP_FIREBASE_VAPID_KEY, storeClientRegistrationToken, addNotification);
+      await initialiseFirebaseApp(JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any), process.env.VUE_APP_FIREBASE_VAPID_KEY, fireBaseUtil.storeClientRegistrationToken, fireBaseUtil.addNotification);
     } else if (allNotificationPrefs.value.length == 1 && !isToggledOn) {
       await removeClientRegistrationToken(firebaseDeviceId.value, process.env.VUE_APP_NOTIF_APP_ID as any);
     }

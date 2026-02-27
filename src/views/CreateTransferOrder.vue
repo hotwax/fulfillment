@@ -205,7 +205,7 @@ import { ProductService } from "@/services/ProductService";
 import { StockService } from "@/services/StockService";
 import { hasError } from "@/adapter";
 import logger from "@/logger";
-import { getCurrentFacilityId, showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import { TransferOrderService } from "@/services/TransferOrderService";
 import { UtilService } from "@/services/UtilService";
 import { OrderService } from "@/services/OrderService";
@@ -309,7 +309,7 @@ onBeforeRouteLeave(async () => {
             }
 
             if (!hasError(resp)) {
-              showToast(translate("Order discarded successfully"));
+              commonUtil.showToast(translate("Order discarded successfully"));
               canLeave = true;
               alertController.dismiss();
             } else {
@@ -317,7 +317,7 @@ onBeforeRouteLeave(async () => {
             }
           } catch (err) {
             logger.error("Failed to discard order", err);
-            showToast(translate("Failed to discard order"));
+            commonUtil.showToast(translate("Failed to discard order"));
             canLeave = false;
           }
         }
@@ -425,7 +425,7 @@ async function editOrderName() {
           const currentOrderName = (currentOrder.value?.orderName || "").trim();
 
           if (!updatedOrderName) {
-            showToast(translate("Please enter a valid order name"));
+            commonUtil.showToast(translate("Please enter a valid order name"));
             return false;
           }
           if (currentOrderName === updatedOrderName) {
@@ -461,13 +461,13 @@ async function updateOrderProperty(property: string, value: any) {
         [property]: value
       });
 
-      property === "orderName" ? showToast(translate("Order name updated successfully")) : showToast(translate("Order flow updated successfully"));
+      property === "orderName" ? commonUtil.showToast(translate("Order name updated successfully")) : commonUtil.showToast(translate("Order flow updated successfully"));
     } else {
       throw resp.data;
     }
   } catch (err) {
     logger.error(`Failed to update order ${property}`, err);
-    property === "orderName" ? showToast(translate("Failed to update order name")) : showToast(translate("Failed to update order flow"));
+    property === "orderName" ? commonUtil.showToast(translate("Failed to update order name")) : commonUtil.showToast(translate("Failed to update order flow"));
   }
 }
 
@@ -504,13 +504,13 @@ async function updateOrderFacility(facilityId: string) {
     if (!hasError(resp)) {
       if (shipGroup) shipGroup.orderFacilityId = facilityId;
       await useTransferOrderStore().updateCurrentTransferOrder(currentOrder.value);
-      showToast(translate("Store name updated successfully"));
+      commonUtil.showToast(translate("Store name updated successfully"));
     } else {
       throw resp.data;
     }
   } catch (error) {
     logger.error("Failed to update destination facility", error);
-    showToast(translate("Failed to update store"));
+    commonUtil.showToast(translate("Failed to update store"));
   }
 }
 
@@ -658,7 +658,7 @@ async function fetchStock(productId: string) {
   try {
     const resp: any = await StockService.getInventoryAvailableByFacility({
       productId,
-      facilityId: getCurrentFacilityId()
+      facilityId: commonUtil.getCurrentFacilityId()
     });
     if (!hasError(resp)) return resp.data;
   } catch (err) {
@@ -739,7 +739,7 @@ async function shiplater() {
             router.replace({ path: "/transfer-orders" });
           } else {
             preventLeave.value = false;
-            showToast(translate("Failed to approve the transfer order to ship later."));
+            commonUtil.showToast(translate("Failed to approve the transfer order to ship later."));
           }
         }
       }
@@ -754,7 +754,7 @@ async function packAndShipOrder() {
     if (currentOrder.value.statusId === "ORDER_CREATED") {
       const success = await approveOrder(currentOrder.value.orderId);
       if (!success) {
-        showToast(translate("Order approval failed"));
+        commonUtil.showToast(translate("Order approval failed"));
         return;
       }
     }
@@ -786,7 +786,7 @@ async function packAndShipOrder() {
   } catch (error) {
     preventLeave.value = false;
     logger.error(error);
-    showToast(translate("Failed to create shipment"));
+    commonUtil.showToast(translate("Failed to create shipment"));
   }
 }
 </script>

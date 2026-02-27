@@ -45,7 +45,7 @@ import { useOrderStore } from "@/store/order";
 import { useCarrierStore } from "@/store/carrier";
 import { OrderService } from "@/services/OrderService";
 import logger from "@/logger";
-import { hasError, showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 
 const props = defineProps(["carrierPartyId"]);
 const trackingCode = ref("");
@@ -65,8 +65,8 @@ const saveTrackingCode = async () => {
       shipmentRouteSegmentId,
       trackingIdNumber: trackingCode.value
     });
-    if (!hasError(resp)) {
-      showToast(translate("Tracking code added successfully."));
+    if (!commonUtil.hasError(resp)) {
+      commonUtil.showToast(translate("Tracking code added successfully."));
       await useOrderStore().updateShipmentPackageDetail(order.value);
       closeModal();
     } else {
@@ -74,7 +74,7 @@ const saveTrackingCode = async () => {
     }
   } catch (error: any) {
     logger.error("Failed to add tracking code", error);
-    showToast(translate("Failed to add tracking code."));
+    commonUtil.showToast(translate("Failed to add tracking code."));
   }
 };
 
@@ -85,7 +85,7 @@ const getCarrierInfo = () => {
 const redirectToTrackingUrl = () => {
   const trackingUrl = getCarrierInfo()?.trackingUrl;
   if (!trackingUrl) {
-    showToast(translate("Tracking url is not configured for following carrier."));
+    commonUtil.showToast(translate("Tracking url is not configured for following carrier."));
     return;
   }
   window.open(trackingUrl.replace("${trackingNumber}", trackingCode.value), "_blank");

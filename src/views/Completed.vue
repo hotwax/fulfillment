@@ -87,14 +87,14 @@
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                       <div>
                         {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                        <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                        <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
                       </div>
-                      <p>{{ getFeatures(getProduct(item.productId).productFeatures) }}</p>
+                      <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
                     </ion-label>
                   </ion-item>
                 </div>
                 <div class="product-metadata">
-                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
+                  <ion-button v-if="orderUtil.isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline" />
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline" />
                   </ion-button>
@@ -124,7 +124,7 @@
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
                       {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
-                      <p>{{ getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
+                      <p>{{ commonUtil.getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
                     </ion-label>
                   </ion-item>
                 </ion-card>
@@ -201,7 +201,7 @@ import { computed, ref, watch } from "vue";
 import { useRouter, onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, printOutline, gift, giftOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline, timeOutline } from "ionicons/icons";
 import Popover from "@/views/ShippingPopover.vue";
-import { getFeatures, hasActiveFilters, showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import { hasError } from "@/adapter";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
 import emitter from "@/event-bus";
@@ -212,7 +212,7 @@ import logger from "@/logger";
 import ShippingLabelErrorModal from "@/components/ShippingLabelErrorModal.vue";
 import { Actions, hasPermission } from "@/authorization";
 import OrderActionsPopover from "@/components/OrderActionsPopover.vue";
-import { isKit, retryShippingLabel } from "@/utils/order";
+import { orderUtil } from "@/utils/orderUtil";
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
 import { DateTime } from "luxon";
 import HistoricalManifestModal from "@/components/HistoricalManifestModal.vue";
@@ -253,7 +253,7 @@ const getTime = (time: any) => {
 };
 
 const getErrorMessage = () => {
-  return searchedQuery.value ? (hasActiveFilters(completedOrders.value.query) ? translate("No results found for . Try using different filters.", { searchedQuery: searchedQuery.value }) : translate("No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: searchedQuery.value, lineBreak: "<br />" })) : translate("doesn't have any completed orders right now.", { facilityName: currentFacility.value?.facilityName });
+  return searchedQuery.value ? (commonUtil.hasActiveFilters(completedOrders.value.query) ? translate("No results found for . Try using different filters.", { searchedQuery: searchedQuery.value }) : translate("No results found for . Try searching In Progress or Open tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: searchedQuery.value, lineBreak: "<br />" })) : translate("doesn't have any completed orders right now.", { facilityName: currentFacility.value?.facilityName });
 };
 
 const hasAnyMissingInfo = () => {
@@ -318,7 +318,7 @@ const shipOrder = async (order: any) => {
     const resp = await OrderService.shipOrder({ shipmentId: order.shipmentId });
 
     if (!hasError(resp)) {
-      showToast(translate("Order shipped successfully"));
+      commonUtil.showToast(translate("Order shipped successfully"));
       const completedOrdersQuery = JSON.parse(JSON.stringify(completedOrders.value.query));
       await Promise.all([useOrderStore().updateCompletedQuery({ ...completedOrdersQuery }), fetchShipmentFacets()]);
     } else {
@@ -326,7 +326,7 @@ const shipOrder = async (order: any) => {
     }
   } catch (err) {
     logger.error("Failed to ship order", err);
-    showToast(translate("Failed to ship order"));
+    commonUtil.showToast(translate("Failed to ship order"));
   }
 };
 
@@ -356,7 +356,7 @@ const bulkShipOrders = async () => {
           }
 
           if (!orderList.length) {
-            showToast(translate("No orders are currently able to be shipped due to missing tracking codes."));
+            commonUtil.showToast(translate("No orders are currently able to be shipped due to missing tracking codes."));
             return;
           }
 
@@ -367,8 +367,8 @@ const bulkShipOrders = async () => {
 
             if (!hasError(resp)) {
               !trackingRequiredAndMissingCodeOrders.length
-                ? showToast(translate("Orders shipped successfully"))
-                : showToast(translate("out of cannot be shipped due to missing tracking codes.", { remainingOrders: trackingRequiredAndMissingCodeOrders.length, totalOrders: packedOrdersCount }));
+                ? commonUtil.showToast(translate("Orders shipped successfully"))
+                : commonUtil.showToast(translate("out of cannot be shipped due to missing tracking codes.", { remainingOrders: trackingRequiredAndMissingCodeOrders.length, totalOrders: packedOrdersCount }));
               const completedOrdersQuery = JSON.parse(JSON.stringify(completedOrders.value.query));
               await Promise.all([useOrderStore().updateCompletedQuery({ ...completedOrdersQuery }), fetchShipmentFacets()]);
             } else {
@@ -376,7 +376,7 @@ const bulkShipOrders = async () => {
             }
           } catch (err) {
             logger.error("Failed to ship orders", err);
-            showToast(translate("Failed to ship orders"));
+            commonUtil.showToast(translate("Failed to ship orders"));
           }
         }
       }]
@@ -468,14 +468,14 @@ const unpackOrder = async (order: any) => {
             const resp = await OrderService.unpackOrder({ shipmentId: order.shipmentId });
 
             if (resp.status == 200 && !hasError(resp)) {
-              showToast(translate("Order unpacked successfully"));
+              commonUtil.showToast(translate("Order unpacked successfully"));
               await Promise.all([useOrderStore().findCompletedOrders(), fetchShipmentFacets()]);
             } else {
               throw resp.data;
             }
           } catch (err) {
             logger.error("Failed to unpack the order", err);
-            showToast(translate("Failed to unpack the order"));
+            commonUtil.showToast(translate("Failed to unpack the order"));
           }
         }
       }]
@@ -510,7 +510,7 @@ const printShippingLabel = async (order: any) => {
   );
 
   if (!shipmentIds?.length) {
-    showToast(translate("Failed to generate shipping label"));
+    commonUtil.showToast(translate("Failed to generate shipping label"));
     return;
   }
 
@@ -526,7 +526,7 @@ const printShippingLabel = async (order: any) => {
 
 const regenerateShippingLabel = async (order: any) => {
   if (productStoreShipmentMethCount.value <= 0) {
-    showToast(translate("Unable to generate shipping label due to missing product store shipping method configuration"));
+    commonUtil.showToast(translate("Unable to generate shipping label due to missing product store shipping method configuration"));
     return;
   }
 
@@ -537,7 +537,7 @@ const regenerateShippingLabel = async (order: any) => {
   order.isGeneratingShippingLabel = true;
 
   if (order.missingLabelImage) {
-    const response = await retryShippingLabel(order);
+    const response = await orderUtil.retryShippingLabel(order);
     if (response?.isGenerated) {
       await printShippingLabel(response.order);
     }
@@ -683,11 +683,11 @@ const generateCarrierManifest = async () => {
 
   try {
     await UtilService.generateManifest(payload);
-    showToast(translate("Manifest has been generated successfully"));
+    commonUtil.showToast(translate("Manifest has been generated successfully"));
     await fetchCarrierManifestInformation([selectedCarrierPartyId.value]);
   } catch (err) {
     logger.error("Failed to generate manifest", err);
-    showToast(translate("Failed to generate manifest"));
+    commonUtil.showToast(translate("Failed to generate manifest"));
   }
   isGeneratingManifest.value = false;
 };

@@ -3,7 +3,7 @@ import { TransferOrderService } from "@/services/TransferOrderService"
 import { hasError } from "@/adapter"
 import logger from "@/logger"
 import { getProductIdentificationValue, translate } from "@hotwax/dxp-components"
-import { showToast, getCurrentFacilityId } from "@/utils"
+import { commonUtil } from "@/utils/commonUtil"
 import { useProductStore } from "@/store/product"
 import { useUtilStore } from "@/store/util"
 import { useUserStore } from "@/store/user"
@@ -108,7 +108,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
       const orderStatusId = transferOrderQuery.orderStatusId ?? "ORDER_APPROVED"
 
       const params: any = {
-        originFacilityId: getCurrentFacilityId(),
+        originFacilityId: commonUtil.getCurrentFacilityId(),
         limit: transferOrderQuery.viewSize,
         pageIndex: transferOrderQuery.viewIndex
       }
@@ -248,7 +248,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
         }
       } catch (error) {
         logger.error(error)
-        showToast(translate("Failed to create shipment"))
+        commonUtil.showToast(translate("Failed to create shipment"))
       }
       return shipmentId
     },

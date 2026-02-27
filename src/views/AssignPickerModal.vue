@@ -52,7 +52,7 @@
 import { IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonRow, IonSearchbar, IonSpinner, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { computed, defineProps, onMounted, ref } from "vue";
 import { closeOutline, closeCircle, saveOutline } from "ionicons/icons";
-import { showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import { hasError } from "@/adapter";
 import { translate, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
 import { UtilService } from "@/services/UtilService";
@@ -125,7 +125,7 @@ const printPicklist = async () => {
     resp = await OrderService.createPicklist(payload);
     if (resp.status === 200 && !hasError(resp)) {
       closeModal({ picklistId: resp.data.picklistId, shipmentIds: resp.data.shipmentIds });
-      showToast(translate("Picklist created successfully"));
+      commonUtil.showToast(translate("Picklist created successfully"));
 
       if (resp.data.picklistId) {
         await OrderService.printPicklist(resp.data.picklistId);
@@ -143,7 +143,7 @@ const printPicklist = async () => {
     }
   } catch (err) {
     logger.error("Failed to create picklist for orders", err);
-    showToast(translate("Failed to create picklist for orders"));
+    commonUtil.showToast(translate("Failed to create picklist for orders"));
   }
 
   emitter.emit("dismissLoader");

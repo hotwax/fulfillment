@@ -53,7 +53,7 @@ import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, Ion
 import { computed, ref } from "vue";
 import { checkmarkDoneOutline, closeOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
-import { generateInternalId, showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import { useUtilStore } from "@/store/util";
 import { UtilService } from "@/services/UtilService";
 import { hasError } from "@/adapter";
@@ -74,27 +74,27 @@ const closeModal = () => {
 };
 
 const setEnumId = (enumName: any) => {
-  formData.value.enumId = generateInternalId(enumName);
+  formData.value.enumId = commonUtil.generateInternalId(enumName);
 };
 
 const createReason = async () => {
   if (!formData.value.enumName?.trim()) {
-    showToast(translate("Rejection reason name is required."));
+    commonUtil.showToast(translate("Rejection reason name is required."));
     return;
   }
 
   if (formData.value.enumId.length > 20) {
-    showToast(translate("ID cannot be more than 20 characters."));
+    commonUtil.showToast(translate("ID cannot be more than 20 characters."));
     return;
   }
 
   if (!formData.value.enumTypeId) {
-    showToast(translate("Variance type is required."));
+    commonUtil.showToast(translate("Variance type is required."));
     return;
   }
 
   if (!formData.value.enumId) {
-    formData.value.enumId = generateInternalId(formData.value.enumName);
+    formData.value.enumId = commonUtil.generateInternalId(formData.value.enumName);
   }
 
   const sequenceNum = rejectReasons.value[rejectReasons.value.length - 1].sequenceNum;
@@ -103,7 +103,7 @@ const createReason = async () => {
   try {
     const resp = await UtilService.createEnumeration(formData.value);
     if (!hasError(resp)) {
-      showToast(translate("Rejection reason created successfully."));
+      commonUtil.showToast(translate("Rejection reason created successfully."));
       rejectReasons.value.push(formData.value);
       await useUtilStore().updateRejectReasons(rejectReasons.value);
       modalController.dismiss({ isUpdated: true });
@@ -111,7 +111,7 @@ const createReason = async () => {
       throw resp.data;
     }
   } catch (err) {
-    showToast(translate("Failed to create rejection reason."));
+    commonUtil.showToast(translate("Failed to create rejection reason."));
     logger.error(err);
   }
 };

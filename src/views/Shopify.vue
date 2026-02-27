@@ -14,7 +14,7 @@ import {
   IonPage,
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import { useRouter } from "vue-router";
 import ShopifyService from "@/services/ShopifyService";
 import emitter from "@/event-bus"
@@ -72,7 +72,7 @@ export default defineComponent({
     const router = useRouter();
     return {
       router,
-      showToast,
+      showToast: commonUtil.showToast,
     };
   },
 });

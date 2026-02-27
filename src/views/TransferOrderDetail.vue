@@ -79,7 +79,7 @@
                       <ion-label>
                         <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                         {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                        <p>{{ getFeatures(getProduct(item.productId).productFeatures) }}</p>
+                        <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
                       </ion-label>
                     </ion-item>
                   </div>
@@ -147,7 +147,7 @@ import { useRoute, useRouter } from "vue-router";
 import Scanner from "@/components/Scanner.vue";
 import { Actions, hasPermission } from "@/authorization";
 import { DateTime } from "luxon";
-import { getFeatures, showToast, hasWebcamAccess } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import { TransferOrderService } from "@/services/TransferOrderService";
 import { OrderService } from "@/services/OrderService";
 import TransferOrderItem from "@/components/TransferOrderItem.vue";
@@ -244,13 +244,13 @@ const updateProductCount = async (payload: any) => {
 
   const result = await useTransferOrderStore().updateOrderProductCount(payload);
   if (result.isCompleted) {
-    showToast(translate("Scanned item is already completed:", { itemName: payload }));
+    commonUtil.showToast(translate("Scanned item is already completed:", { itemName: payload }));
   } else if (result.isProductFound) {
     const item = result.orderItem;
     if (item.pickedQuantity > item.orderedQuantity - item.shippedQuantity) {
-      showToast(translate("The picked quantity cannot exceed the ordered quantity.") + " " + translate("already shipped.", { shippedQuantity: item.shippedQuantity }));
+      commonUtil.showToast(translate("The picked quantity cannot exceed the ordered quantity.") + " " + translate("already shipped.", { shippedQuantity: item.shippedQuantity }));
     } else {
-      showToast(translate("Scanned successfully.", { itemName: payload }));
+      commonUtil.showToast(translate("Scanned successfully.", { itemName: payload }));
       lastScannedId.value = payload;
       const scannedElement = document.getElementById(payload);
       scannedElement && (scannedElement.scrollIntoView());
@@ -259,7 +259,7 @@ const updateProductCount = async (payload: any) => {
       }, 3000);
     }
   } else {
-    showToast(translate("Scanned item is not present within the order:", { itemName: payload }));
+    commonUtil.showToast(translate("Scanned item is not present within the order:", { itemName: payload }));
   }
   queryString.value = "";
 };
@@ -268,15 +268,15 @@ const scanCode = async () => {
   if (useAuthStore().isEmbedded) {
     const scanData = await openPosScanner();
     if(scanData) {
-      this.updateProductCount(scanData);
+      updateProductCount(scanData);
     } else {
-      showToast(translate("No data received from scanner"));
+      commonUtil.showToast(translate("No data received from scanner"));
     }
     return;
   }
   
-  if (!(await hasWebcamAccess())) {
-    showToast(translate("Camera access not allowed, please check permissons."));
+  if (!(await commonUtil.hasWebcamAccess())) {
+    commonUtil.showToast(translate("Camera access not allowed, please check permissons."));
     return;
   }
   const modal = await modalController.create({
@@ -301,7 +301,7 @@ const showShippingLabelErrorModal = async (shipment: any) => {
 
 const regenerateShippingLabel = async (currentShipment: any) => {
   if (productStoreShipmentMethCount.value <= 0) {
-    showToast(translate("Unable to generate shipping label due to missing product store shipping method configuration"));
+    commonUtil.showToast(translate("Unable to generate shipping label due to missing product store shipping method configuration"));
     return;
   }
 
@@ -319,10 +319,10 @@ const regenerateShippingLabel = async (currentShipment: any) => {
     shippingLabelPdfUrls = currentShipment?.labelImageUrls;
 
     if (currentShipment.trackingIdNumber) {
-      showToast(translate("Shipping Label generated successfully"));
+      commonUtil.showToast(translate("Shipping Label generated successfully"));
       await TransferOrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
     } else {
-      showToast(translate("Failed to generate shipping label"));
+      commonUtil.showToast(translate("Failed to generate shipping label"));
     }
   } else {
     await TransferOrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
@@ -351,11 +351,11 @@ const rejectItems = async () => {
         };
         try {
           await TransferOrderService.rejectOrderItems(payload);
-          showToast(translate("All order items are rejected"));
+          commonUtil.showToast(translate("All order items are rejected"));
           router.replace("/transfer-orders");
         } catch (err) {
           console.error(err);
-          showToast(translate("Failed to reject order"));
+          commonUtil.showToast(translate("Failed to reject order"));
           await useTransferOrderStore().fetchTransferOrderDetail({ orderId: route.params.orderId });
         }
         emitter.emit("dismissLoader");

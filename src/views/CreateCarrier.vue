@@ -31,7 +31,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { arrowForwardOutline } from "ionicons/icons";
 import { translate } from "@hotwax/dxp-components";
-import { generateInternalId, showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import { CarrierService } from "@/services/CarrierService";
 import { hasError } from "@/adapter";
 import logger from "@/logger";
@@ -45,12 +45,12 @@ const clearCarrierData = () => {
 };
 
 const setCarrierPartyId = (event: any) => {
-  carrier.value.partyId = generateInternalId(event.target.value);
+  carrier.value.partyId = commonUtil.generateInternalId(event.target.value);
 };
 
 const createCarrier = async () => {
   if (!carrier.value.groupName?.trim()) {
-    showToast(translate("Carrier name can not be empty."));
+    commonUtil.showToast(translate("Carrier name can not be empty."));
     return;
   }
   const payload = {
@@ -66,7 +66,7 @@ const createCarrier = async () => {
     }
   } catch (err: any) {
     logger.error("error", err);
-    showToast("Failed to create carrier.");
+    commonUtil.showToast("Failed to create carrier.");
   }
 };
 

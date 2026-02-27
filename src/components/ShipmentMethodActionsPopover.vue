@@ -37,7 +37,7 @@ import { defineProps } from "vue";
   import { translate } from "@hotwax/dxp-components";
   import { CarrierService } from "@/services/CarrierService";
   import { hasError } from "@/adapter";
-  import { showToast } from "@/utils";
+  import { commonUtil } from "@/utils/commonUtil";
   import logger from "@/logger";
   import { useCarrierStore } from "@/store/carrier";
   
@@ -132,7 +132,7 @@ import { defineProps } from "vue";
       const resp = await CarrierService.removeCarrierShipmentMethod(props.shipmentMethod);
       if (!hasError(resp)) {
         delete currentCarrierShipmentMethods[props.shipmentMethod.shipmentMethodTypeId];
-        showToast(translate("Carrier and shipment method association updated successfully."));
+        commonUtil.showToast(translate("Carrier and shipment method association updated successfully."));
         await useCarrierStore().updateCurrentCarrierShipmentMethods(currentCarrierShipmentMethods);
         await useCarrierStore().checkAssociatedShipmentMethods();
         closePopover();
@@ -140,7 +140,7 @@ import { defineProps } from "vue";
         throw resp.data;
       }
     } catch (err) {
-      showToast(translate("Failed to update product store and shipment method association."));
+      commonUtil.showToast(translate("Failed to update product store and shipment method association."));
       logger.error(err);
     }
   };
@@ -149,14 +149,14 @@ import { defineProps } from "vue";
     try {
       updatedShipmentMethodName = updatedShipmentMethodName.trim();
       if (!updatedShipmentMethodName) {
-        showToast(translate("Shipment method name can not be empty."));
+        commonUtil.showToast(translate("Shipment method name can not be empty."));
         return;
       }
   
       if (updatedShipmentMethodName != shipmentMethod.description) {
         const resp = await CarrierService.updateShipmentMethodType({ shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId, description: updatedShipmentMethodName });
         if (!hasError(resp)) {
-          showToast(translate("Shipment method renamed."));
+          commonUtil.showToast(translate("Shipment method renamed."));
           const updatedShipmentMethods = JSON.parse(JSON.stringify(shipmentMethods.value));
           const updatedShipmentMethod = updatedShipmentMethods[shipmentMethod.shipmentMethodTypeId];
           updatedShipmentMethod.description = updatedShipmentMethodName;
@@ -166,7 +166,7 @@ import { defineProps } from "vue";
         }
       }
     } catch (error) {
-      showToast(translate("Failed to rename facility group."));
+      commonUtil.showToast(translate("Failed to rename facility group."));
       logger.error("Failed to rename facility group.", error);
     }
   };

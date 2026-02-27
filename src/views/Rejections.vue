@@ -90,7 +90,7 @@
             <div class="order-primary-info">
               <ion-label>
                 <strong>{{ order.customerName }}</strong>
-                <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+                <p>{{ translate("Ordered") }} {{ commonUtil.formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
               </ion-label>
             </div>
 
@@ -104,7 +104,7 @@
             <div class="order-metadata">
               <ion-label>
                 {{ order.shipmentMethod }}
-                <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+                <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ commonUtil.formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
               </ion-label>
             </div>
           </div>
@@ -121,7 +121,7 @@
               </ion-item>
             </div>
             <ion-label>
-              {{ formatUtcDate(item.rejectedAt, 'dd MMMM yyyy hh:mm a ZZZZ')}}
+              {{ commonUtil.formatUtcDate(item.rejectedAt, 'dd MMMM yyyy hh:mm a ZZZZ')}}
               <p>{{ translate('rejected time') }}</p>
             </ion-label>
             <ion-label lines="none">
@@ -154,7 +154,7 @@ import { IonButton, IonButtons, IonCard, IonCardHeader, IonCardTitle, IonChip, I
 import { computed, ref } from "vue";
 import { cloudDownloadOutline, filterOutline, personCircleOutline, pricetagOutline } from "ionicons/icons";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
-import { formatUtcDate } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import RejectedItemsModal from "@/components/RejectedItemsModal.vue";
 import UsedReasonsModal from "@/components/UsedReasonsModal.vue";
 import RejectedOrdersFilters from "@/components/RejectedOrdersFilters.vue";

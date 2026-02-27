@@ -16,7 +16,7 @@ const hasError = (response: any) => {
   return typeof response.data != "object" || !!response.data._ERROR_MESSAGE_ || !!response.data._ERROR_MESSAGE_LIST_ || !!response.data.error;
 }
 
-const showToast = async (message: string, options?: any) => {  
+const showToast = async (message: string, options?: any) => {
   const config = {
     message,
     ...options
@@ -46,13 +46,13 @@ const handleDateTimeInput = (dateTimeValue: any) => {
   // TODO Handle it in a better way
   // Remove timezone and then convert to timestamp
   // Current date time picker picks browser timezone and there is no supprt to change it
-  const dateTime = DateTime.fromISO(dateTimeValue, { setZone: true}).toFormat("yyyy-MM-dd'T'HH:mm:ss")
+  const dateTime = DateTime.fromISO(dateTimeValue, { setZone: true }).toFormat("yyyy-MM-dd'T'HH:mm:ss")
   return DateTime.fromISO(dateTime).toMillis()
 }
 
 const formatDate = (value: any, inFormat?: string, outFormat?: string) => {
   // TODO Make default format configurable and from environment variables
-  if(inFormat){
+  if (inFormat) {
     return DateTime.fromFormat(value, inFormat).toFormat(outFormat ? outFormat : 'MM-dd-yyyy');
   }
   return DateTime.fromISO(value).toFormat(outFormat ? outFormat : 'MM-dd-yyyy');
@@ -93,8 +93,8 @@ const jsonToCsv = (file: any, options: JsonToCsvOption = {}) => {
   let blob: Blob;
   if (encoding.default === 'shift-jis') {
     buffer = new Uint8Array(Encoding.convert(Encoding.stringToCode(csv), 'SJIS'));
-    blob = new Blob([buffer], { type: `application/csv;charset=${encoding.default}` });
-    
+    blob = new Blob([buffer as any], { type: `application/csv;charset=${encoding.default}` });
+
   } else {
     blob = new Blob([csv], { type: `application/csv;charset=${encoding.default}` });
   }
@@ -116,7 +116,7 @@ const copyToClipboard = async (value: string, text?: string) => {
 }
 
 const getIdentificationId = (identifications: any, id: string) => {
-  let  externalId = ''
+  let externalId = ''
   if (identifications) {
     const externalIdentification = identifications.find((identification: any) => identification.startsWith(id))
     const externalIdentificationSplit = externalIdentification ? externalIdentification.split('/') : [];
@@ -125,7 +125,7 @@ const getIdentificationId = (identifications: any, id: string) => {
   return externalId;
 }
 
-const formatPhoneNumber = (countryCode: string | null, areaCode: string | null, contactNumber: string | null)  => {
+const formatPhoneNumber = (countryCode: string | null, areaCode: string | null, contactNumber: string | null) => {
   if (countryCode && areaCode) {
     return `+${countryCode}-${areaCode}-${contactNumber}`;
   } else if (countryCode) {
@@ -141,31 +141,31 @@ const generateInternalId = (name: string) => {
 }
 
 const sortItems = (items: any, sortByField: any) => {
-  items.sort((firstMethod:any, secondMethod:any) => {
+  items.sort((firstMethod: any, secondMethod: any) => {
     if (firstMethod[sortByField] === null && secondMethod[sortByField] !== null) {
-        return 1;
+      return 1;
     } else if (firstMethod[sortByField] !== null && secondMethod[sortByField] === null) {
-        return -1;
+      return -1;
     } else {
-        return firstMethod[sortByField] - secondMethod[sortByField];
+      return firstMethod[sortByField] - secondMethod[sortByField];
     }
   });
 }
 
-const isValidDeliveryDays = (deliveryDays : any) => {
+const isValidDeliveryDays = (deliveryDays: any) => {
   // Regular expression pattern for a valid delivery days
   // Allow only positive integers (no decimals, no zero, no negative)
   const delieveryDaysPattern = /^(0*[1-9]\d*)$/;
   return delieveryDaysPattern.test(deliveryDays);
 }
 
-const isValidCarrierCode = (trackingCode : any) => {
+const isValidCarrierCode = (trackingCode: any) => {
   // Regular expression pattern for a valid tracking code
   const trackingCodePattern = /^[a-zA-Z0-9]*$/;
   return trackingCodePattern.test(trackingCode);
 }
 
-const  isPdf = (url: any) => {
+const isPdf = (url: any) => {
   const pdfUrlPattern = /\.pdf(\?.*)?$/;
   return url && pdfUrlPattern.test(url.toLowerCase());
 }
@@ -234,7 +234,7 @@ const hasWebcamAccess = async () => {
 }
 
 const parseCsv = async (file: File, options?: any) => {
-  return new Promise ((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
@@ -256,7 +256,7 @@ const parseCsv = async (file: File, options?: any) => {
  */
 const hasActiveFilters = (query: any): boolean => {
   const excludedFields = ["viewSize", "viewIndex", "queryString", "hideLoader"];
-  return Object.keys(query).some((key: string) => 
+  return Object.keys(query).some((key: string) =>
     !excludedFields.includes(key) && (Array.isArray(query[key]) ? query[key].length : query[key].trim())
   );
 }
@@ -266,7 +266,7 @@ const getFacilityFilter = (value: any): any => {
   const isReservationFacilityFieldEnabled = utilStore.isReservationFacilityFieldEnabled;
   const facilityFilter = {} as any;
   facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value }
-  return facilityFilter 
+  return facilityFilter
 }
 
 const parseBooleanSetting = (value: any): boolean => {
@@ -285,4 +285,31 @@ const parseBooleanSetting = (value: any): boolean => {
   }
 }
 
-export { copyToClipboard, downloadCsv, formatCurrency, formatDate, formatPhoneNumber, formatUtcDate, generateInternalId, getCurrentFacilityId, getFacilityFilter, getFeatures, getProductStoreId, getColorByDesc, getDateWithOrdinalSuffix, getIdentificationId, handleDateTimeInput, hasActiveFilters, isValidDeliveryDays, isValidCarrierCode, isPdf, showToast, sortItems, hasError, jsonToCsv, hasWebcamAccess, parseCsv, parseBooleanSetting }
+export const commonUtil = {
+  copyToClipboard,
+  downloadCsv,
+  formatCurrency,
+  formatDate,
+  formatPhoneNumber,
+  formatUtcDate,
+  generateInternalId,
+  getCurrentFacilityId,
+  getFacilityFilter,
+  getFeatures,
+  getProductStoreId,
+  getColorByDesc,
+  getDateWithOrdinalSuffix,
+  getIdentificationId,
+  handleDateTimeInput,
+  hasActiveFilters,
+  isValidDeliveryDays,
+  isValidCarrierCode,
+  isPdf,
+  showToast,
+  sortItems,
+  hasError,
+  jsonToCsv,
+  hasWebcamAccess,
+  parseCsv,
+  parseBooleanSetting
+}

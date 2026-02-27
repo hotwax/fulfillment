@@ -53,15 +53,15 @@
                 </div>
 
                 <div class="tags">
-                  <ion-chip @click.stop="copyToClipboard(order.orderName, 'Copied to clipboard')" outline v-if="order.orderName">
+                  <ion-chip @click.stop="commonUtil.copyToClipboard(order.orderName, 'Copied to clipboard')" outline v-if="order.orderName">
                     <ion-icon :icon="pricetag" />
                     <ion-label>{{ order.orderName }}</ion-label>
                   </ion-chip>
                 </div>
 
                 <div class="metadata">
-                  <ion-note>{{ translate("Ordered on") }} {{ formatUtcDate(order.orderDate, "dd LLL yyyy") }}</ion-note>
-                  <ion-badge :color="getColorByDesc(order.orderStatusDesc) || getColorByDesc('default')">{{ order.orderStatusDesc }}</ion-badge>
+                  <ion-note>{{ translate("Ordered on") }} {{ commonUtil.formatUtcDate(order.orderDate, "dd LLL yyyy") }}</ion-note>
+                  <ion-badge :color="commonUtil.getColorByDesc(order.orderStatusDesc) || commonUtil.getColorByDesc('default')">{{ order.orderStatusDesc }}</ion-badge>
                 </div>
               </section>
 
@@ -89,7 +89,7 @@
                     </ion-label>
                   </div>
                   <ion-item lines="none">
-                    <ion-badge slot="end" :color="getColorByDesc(item.orderItemStatusDesc) || getColorByDesc('default')">{{ translate(item.orderItemStatusDesc) }}</ion-badge>
+                    <ion-badge slot="end" :color="commonUtil.getColorByDesc(item.orderItemStatusDesc) || commonUtil.getColorByDesc('default')">{{ translate(item.orderItemStatusDesc) }}</ion-badge>
                   </ion-item>
                 </div>
               </section>
@@ -120,7 +120,7 @@ import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonInfin
 import { computed, defineOptions, ref } from "vue";
 import { useRouter } from "vue-router";
 import { documentTextOutline, filterOutline, pricetag, swapVerticalOutline } from "ionicons/icons";
-import { copyToClipboard, formatUtcDate, getColorByDesc } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import { useOrderLookupStore } from "@/store/orderLookup";
 import { useProductStore } from "@/store/product";
 import { useUtilStore } from "@/store/util";

@@ -9,7 +9,7 @@
           <ion-label class="ion-text-wrap">
             <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
             {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productId }}
-            <p>{{ getFeatures(getProduct(item.productId).productFeatures)}}</p>
+            <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures)}}</p>
           </ion-label>
         </ion-item>
       </div>
@@ -81,7 +81,7 @@ import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIden
 import { TransferOrderService } from "@/services/TransferOrderService";
 import { OrderService } from "@/services/OrderService";
 import { useRouter } from "vue-router";
-import { getFeatures, showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import { hasError } from "@/adapter";
 import logger from "@/logger";
 import ShippedHistoryModal from "@/components/ShippedHistoryModal.vue";
@@ -249,7 +249,7 @@ const updateItemQuantity = async (selectedItem: any) => {
     }
   } catch (err) {
     logger.error(err);
-    showToast(translate("Failed to update item quantity"));
+    commonUtil.showToast(translate("Failed to update item quantity"));
   }
 };
 
@@ -261,13 +261,13 @@ const removeOrderItem = async (selectedItem: any) => {
       currentOrder.value.items = currentOrder.value.items?.filter((i: any) => i.orderItemSeqId !== selectedItem.orderItemSeqId);
       await useTransferOrderStore().updateCurrentTransferOrder(currentOrder.value);
       emitter.emit("clearSearchedProduct");
-      showToast(translate("Item removed from order"));
+      commonUtil.showToast(translate("Item removed from order"));
     } else {
       throw resp.data;
     }
   } catch (err) {
     logger.error(err);
-    showToast(translate("Failed to remove item from order"));
+    commonUtil.showToast(translate("Failed to remove item from order"));
   }
 };
 </script>

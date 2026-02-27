@@ -4,7 +4,7 @@ import { useTransferOrderStore } from "@/store/transferorder";
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { ProductService } from '@/services/ProductService';
 import { StockService } from '@/services/StockService';
-import { hasError, showToast } from '@/utils';
+import { commonUtil } from '@/utils/commonUtil';
 import { translate } from "@hotwax/dxp-components";
 import logger from '@/logger';
 
@@ -26,28 +26,28 @@ import logger from '@/logger';
 export function useProductQueue() {
   const productStore = useProductStore();
   const transferOrderStore = useTransferOrderStore();
-  
+
   const addQueue = ref([]) as any;
   const isProcessing = ref(false);
   const pendingProductIds = ref(new Set());
   let pendingItemsToast: any = null;
-  
+
   const currentOrder = computed(() => transferOrderStore.getCurrent);
 
   // Helper function to check if product is in order
-  const isProductInOrder = (productId: string ) => {
+  const isProductInOrder = (productId: string) => {
     return currentOrder.value?.items?.some((item: any) => item.productId === productId);
   };
 
   // Helper function to check if product is being processed
-  const isProductBeingProcessed = (productId: string ) => {
+  const isProductBeingProcessed = (productId: string) => {
     return pendingProductIds.value.has(productId) || isProductInOrder(productId);
   };
 
   // Show pending items toast when bulk scanning
   const showPendingItemsToast = async () => {
     if (!pendingItemsToast) {
-      pendingItemsToast = await showToast(translate('Adding items to the order'), { manualDismiss: true });
+      pendingItemsToast = await commonUtil.showToast(translate('Adding items to the order'), { manualDismiss: true });
       await pendingItemsToast.present();
     }
   };
@@ -64,31 +64,31 @@ export function useProductQueue() {
   const fetchProductInformation = async () => {
     try {
       const items = currentOrder.value.items;
-      if(!items?.length) return;
+      if (!items?.length) return;
       const productIds = items.map((item: any) => item.productId);
       if (productIds.length) await productStore.fetchProducts({ productIds });
     } catch (err) {
       logger.error("Failed to fetch product information", err);
     }
   };
-  
+
   /**
    * Adds product to queue for sequential processing.
    * Validates input, checks for duplicates, and triggers processing.
    */
   const addProductToQueue = (itemToAdd: any) => {
     const { product } = itemToAdd;
-    
+
     if (!product?.productId || !itemToAdd.orderId) {
       logger.error('Missing product data or orderId');
       return;
     }
-    
+
     // Skip if already in order or being processed
     if (isProductBeingProcessed(product.productId)) {
       return;
     }
-    
+
     pendingProductIds.value.add(product.productId);
     addQueue.value.push(itemToAdd);
 
@@ -103,28 +103,28 @@ export function useProductQueue() {
    */
   const processQueue = async () => {
     if (isProcessing.value || addQueue.value.length === 0) return;
-    
+
     isProcessing.value = true;
-    
+
     while (addQueue.value.length > 0) {
       const itemToAdd = addQueue.value[0];
 
       await processSingleProduct(itemToAdd);
       addQueue.value.shift();
     }
-    
+
     isProcessing.value = false;
     hidePendingItemsToast();
     if (pendingProductIds.value.size === 0) await fetchProductInformation();
   };
-  
+
   /**
    * Processes single product addition with error handling.
    * Fetches stock, cost, calls API, updates store, and handles UI feedback.
    */
   const processSingleProduct = async (itemToAdd: any) => {
     const { product, orderId, facilityId, scannedId, onSuccess } = itemToAdd;
-    
+
     const newItem = {
       productId: product.productId,
       sku: product.sku,
@@ -140,7 +140,7 @@ export function useProductQueue() {
     }
 
     try {
-      const unitPrice = facilityId ? 
+      const unitPrice = facilityId ?
         await ProductService.fetchProductAverageCost(product.productId, facilityId) : 0;
 
       const payload = {
@@ -150,10 +150,10 @@ export function useProductQueue() {
         shipGroupSeqId: newItem.shipGroupSeqId,
         unitPrice: unitPrice || 0
       };
-      
+
       const resp = await TransferOrderService.addOrderItem(payload);
 
-      if (!hasError(resp)) {
+      if (!commonUtil.hasError(resp)) {
         newItem.orderId = orderId;
         newItem.orderItemSeqId = resp.data?.orderItemSeqId;
 
@@ -161,7 +161,7 @@ export function useProductQueue() {
           ...currentOrder.value,
           items: [...currentOrder.value.items, newItem]
         };
-        
+
         await transferOrderStore.updateCurrentTransferOrder(updatedOrder);
         onSuccess?.(product, newItem);
       } else {
@@ -169,7 +169,7 @@ export function useProductQueue() {
       }
     } catch (err) {
       itemToAdd.onError?.(product, err);
-      showToast(translate("Failed to add product to order"));
+      commonUtil.showToast(translate("Failed to add product to order"));
     } finally {
       pendingProductIds.value.delete(product.productId);
     }
@@ -177,13 +177,13 @@ export function useProductQueue() {
 
   const fetchStock = async (productId: string, facilityId: string) => {
     if (!facilityId) return null;
-    
+
     try {
-      const resp = await StockService.getInventoryAvailableByFacility({ 
-        productId, 
-        facilityId 
+      const resp = await StockService.getInventoryAvailableByFacility({
+        productId,
+        facilityId
       });
-      if (!hasError(resp)) return resp.data;
+      if (!commonUtil.hasError(resp)) return resp.data;
     } catch (err) {
       logger.error(err);
     }

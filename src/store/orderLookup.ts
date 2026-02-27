@@ -1,8 +1,8 @@
 import { defineStore } from "pinia"
 import { OrderLookupService } from "@/services/OrderLookupService"
-import { prepareOrderLookupQuery } from "@/utils/solrHelper"
+import { solrUtil } from "@/utils/solrUtil"
 import { hasError } from "@/adapter"
-import { showToast } from "@/utils"
+import { commonUtil } from "@/utils/commonUtil"
 import { translate } from "@hotwax/dxp-components"
 import logger from "@/logger"
 import { useProductStore } from "@/store/product"
@@ -147,7 +147,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
       let stateOrders = JSON.parse(JSON.stringify(this.list.orders))
       const shipmentMethodTypeIds: Array<string> = []
 
-      const query = prepareOrderLookupQuery({ ...this.query, ...params })
+      const query = solrUtil.prepareOrderLookupQuery({ ...this.query, ...params })
       try {
         resp = await OrderLookupService.findOrder(query)
         if (!hasError(resp) && resp.data?.grouped?.orderId?.groups?.length) {
@@ -158,7 +158,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
               emailId: order.doclist.docs[0].customerEmailId,
               phoneNumber: order.doclist.docs[0].customerPhoneNumber
             },
-            order.orderName = order.doclist.docs[0].orderName
+              order.orderName = order.doclist.docs[0].orderName
             order.orderDate = order.doclist.docs[0].orderDate
             order.orderStatusId = order.doclist.docs[0].orderStatusId
             order.orderStatusDesc = order.doclist.docs[0].orderStatusDesc
@@ -353,7 +353,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
           this.updateCurrent(order)
         }
       } catch (error) {
-        showToast(translate("Something went wrong"))
+        commonUtil.showToast(translate("Something went wrong"))
         logger.error(error)
       }
 

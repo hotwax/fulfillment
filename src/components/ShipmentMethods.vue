@@ -46,7 +46,7 @@
   import { addCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
   import { translate } from "@hotwax/dxp-components";
   import { DateTime } from "luxon";
-  import { showToast } from "@/utils";
+  import { commonUtil } from "@/utils/commonUtil";
   import emitter from "@/event-bus";
   import { hasError } from "@/adapter";
   import logger from "@/logger";
@@ -142,7 +142,7 @@
       }
   
       if (!hasError(resp)) {
-        showToast(translate("Carrier and shipment method association updated successfully."));
+        commonUtil.showToast(translate("Carrier and shipment method association updated successfully."));
         await useCarrierStore().updateCurrentCarrierShipmentMethods(currentCarrierShipmentMethods);
         await useCarrierStore().checkAssociatedShipmentMethods();
         await useCarrierStore().checkAssociatedProductStoreShipmentMethods();
@@ -151,7 +151,7 @@
         throw resp.data;
       }
     } catch (err) {
-      showToast(translate("Failed to update carrier and shipment method association."));
+      commonUtil.showToast(translate("Failed to update carrier and shipment method association."));
       logger.error(err);
     }
   };

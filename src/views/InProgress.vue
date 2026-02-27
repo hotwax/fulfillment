@@ -10,7 +10,7 @@
         <ion-title v-else>{{ inProgressOrders.query.viewSize }} {{ translate('of') }} {{ inProgressOrders.total }} {{ translate('orders') }}</ion-title>
 
         <ion-buttons slot="end">
-          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !inProgressOrders.total || isRejecting" fill="clear" color="danger" @click="recycleInProgressOrders()">
+          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !inProgressOrders.total || isRejecting" fill="clear" color="danger" @click="commonUtil.recycleInProgressOrders()">
             {{ translate("Reject all") }}
           </ion-button>
           <ion-menu-button menu="view-size-selector-inprogress" :disabled="!inProgressOrders.total">
@@ -96,9 +96,9 @@
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                       <div>
                         {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
-                        <ion-badge color="dark" class="kit-badge" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                        <ion-badge color="dark" class="kit-badge" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
                       </div>
-                      <p>{{ getFeatures(getProduct(item.productId).productFeatures) }}</p>
+                      <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
                     </ion-label>
                   </ion-item>
                 </div>
@@ -132,7 +132,7 @@
                 </div>
 
                 <div class="product-metadata">
-                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
+                  <ion-button v-if="orderUtil.isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline" />
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline" />
                   </ion-button>
@@ -166,7 +166,7 @@
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
                       {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
-                      <p>{{ getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
+                      <p>{{ commonUtil.getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
                     </ion-label>
                     <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.kitComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
                   </ion-item>
@@ -235,8 +235,9 @@ import { IonBadge, IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonCont
 import { computed, ref } from "vue";
 import { addOutline, caretDownOutline, chevronUpOutline, checkmarkDoneOutline, closeCircleOutline, cubeOutline, ellipsisVerticalOutline, gift, giftOutline, listOutline, pencilOutline, optionsOutline, pricetagOutline, printOutline, trashBinOutline } from "ionicons/icons";
 import PackagingPopover from "@/views/PackagingPopover.vue";
-import { getFeatures, hasActiveFilters, showToast } from "@/utils";
-import { isKit } from "@/utils/order";
+import { commonUtil } from "@/utils/commonUtil";
+import { orderUtil } from "@/utils/orderUtil";
+import { solrUtil } from "@/utils/solrUtil";
 import { hasError } from "@/adapter";
 import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
@@ -288,7 +289,7 @@ const carrierShipmentBoxTypes = computed(() => useUtilStore().getCarrierShipment
 const isAutoShippingLabelEnabled = computed(() => useUtilStore().isAutoShippingLabelEnabled);
 const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
 const currentEComStore = computed(() => useDxpUserStore().getCurrentEComStore);
-const currentFacility = computed(() => useDxpUserStore().getCurrentFacility);
+const currentFacility = computed(() => useDxpUserStore().getCurrentFacility as any);
 
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
 const boxTypeDesc = (boxTypeId: string) => useUtilStore().getShipmentBoxDesc(boxTypeId);
@@ -367,7 +368,7 @@ const openShipmentBoxPopover = async (ev: Event, item: any, orderItemSeqId: numb
 };
 
 const getErrorMessage = () => {
-  return searchedQuery.value ? (hasActiveFilters(inProgressOrders.value.query) ? translate("No results found for . Try using different filters.", { searchedQuery: searchedQuery.value }) : translate("No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: searchedQuery.value, lineBreak: "<br />" })) : translate("doesn't have any orders in progress right now.", { facilityName: currentFacility.value?.facilityName });
+  return searchedQuery.value ? (commonUtil.hasActiveFilters(inProgressOrders.value.query) ? translate("No results found for . Try using different filters.", { searchedQuery: searchedQuery.value }) : translate("No results found for . Try searching Open or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: searchedQuery.value, lineBreak: "<br />" })) : translate("doesn't have any orders in progress right now.", { facilityName: currentFacility.value?.facilityName });
 };
 
 const getInProgressOrders = () => {
@@ -427,11 +428,11 @@ const rejectEntireOrder = async (order: any, updateParameter?: string) => {
     }
 
     await fetchOrderAndPickerInformation();
-    showToast(translate("Order rejected successfully"));
+    commonUtil.showToast(translate("Order rejected successfully"));
     return true;
   } catch (err) {
     logger.error("Failed to reject order", err);
-    showToast(translate("Failed to reject order"));
+    commonUtil.showToast(translate("Failed to reject order"));
   } finally {
     emitter.emit("dismissLoader");
   }
@@ -494,7 +495,7 @@ const executePackOrder = async (order: any, updateParameter?: string, trackingCo
     const updatedOrder = await useOrderStore().updateShipmentPackageDetail(order);
 
     if (documentOptions.length) {
-      toast = await showToast(translate("Order packed successfully. Document generation in process"), { canDismiss: true, manualDismiss: true });
+      toast = await commonUtil.showToast(translate("Order packed successfully. Document generation in process"), { canDismiss: true, manualDismiss: true });
       toast.present();
 
       const shippingLabelPdfUrls: string[] = Array.from(
@@ -532,13 +533,13 @@ const executePackOrder = async (order: any, updateParameter?: string, trackingCo
 
       toast.dismiss();
     } else {
-      showToast(translate("Order packed successfully"));
+      commonUtil.showToast(translate("Order packed successfully"));
     }
     await fetchOrderAndPickerInformation();
     return { isPacked: true };
   } catch (err: any) {
     if (toast) toast.dismiss();
-    showToast(translate("Failed to pack order"));
+    commonUtil.showToast(translate("Failed to pack order"));
     logger.error("Failed to pack order", err);
     return { isPacked: false, errors: err?.response?.data?.errors };
   } finally {
@@ -627,7 +628,7 @@ const packOrders = async () => {
             }
 
             if (data.length) {
-              toast = await showToast(translate("Order packed successfully. Document generation in process"), { canDismiss: true, manualDismiss: true });
+              toast = await commonUtil.showToast(translate("Order packed successfully. Document generation in process"), { canDismiss: true, manualDismiss: true });
               toast.present();
               if (data.includes("printPackingSlip") && data.includes("printShippingLabel")) {
                 if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
@@ -645,16 +646,27 @@ const packOrders = async () => {
 
               toast.dismiss();
             } else {
-              showToast(translate("Order packed successfully"));
+              commonUtil.showToast(translate("Order packed successfully"));
             }
             await fetchOrderAndPickerInformation();
           } catch (err) {
             if (toast) toast.dismiss();
             emitter.emit("dismissLoader");
-            showToast(translate("Failed to pack orders"));
+            commonUtil.showToast(translate("Failed to pack orders"));
             logger.error("Failed to pack orders", err);
           } finally {
             emitter.emit("dismissLoader");
+          }
+        }
+      }, {
+        text: translate("Recycle all"),
+        handler: async () => {
+          try {
+            await OrderService.recycleInProgressOrders({});
+            commonUtil.showToast(translate("All orders recycled successfully."));
+          } catch (err) {
+            commonUtil.showToast(translate("Failed to recycle all orders."));
+            console.error(err);
           }
         }
       }]
@@ -964,14 +976,14 @@ const addShipmentBox = async (order: any) => {
     const resp = await OrderService.addShipmentBox(params);
 
     if (!hasError(resp)) {
-      showToast(translate("Box added successfully"));
+      commonUtil.showToast(translate("Box added successfully"));
       await Promise.all([fetchPickersInformation(), findInProgressOrders()]);
     } else {
       throw resp.data;
     }
   } catch (err) {
-    showToast(translate("Failed to add box"));
-    logger.error("Failed to add box", err);
+    commonUtil.showToast(translate("Failed to add box"));
+    console.error("Failed to add box", err);
   }
   addingBoxForShipmentIds.value.splice(addingBoxForShipmentIds.value.indexOf(order.shipmentId), 1);
 };
@@ -1060,18 +1072,18 @@ const recycleInProgressOrders = async () => {
 
         try {
           resp = await OrderService.recycleInProgressOrders({
-            facilityId: currentFacility.value?.facilityId,
-            productStoreId: currentEComStore.value.productStoreId,
+            facilityId: (currentFacility.value as any)?.facilityId,
+            productStoreId: (currentEComStore.value as any).productStoreId,
             reasonId: "INACTIVE_STORE"
           });
 
           if (!hasError(resp)) {
-            showToast(translate("Rejecting has been started. All in progress orders will be rejected shortly."));
+            commonUtil.showToast(translate("Rejecting has been started. All in progress orders will be rejected shortly."));
           } else {
             throw resp.data;
           }
         } catch (err) {
-          showToast(translate("Failed to reject in progress orders"));
+          commonUtil.showToast(translate("Failed to reject in progress orders"));
           logger.error("Failed to reject in progress orders", err);
         }
         emitter.emit("dismissLoader");

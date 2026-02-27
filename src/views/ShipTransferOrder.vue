@@ -54,7 +54,7 @@
                 <Image :src="getCarrierLogo(shipmentDetails.actualCarrierCode || shipmentDetails.routeSegCarrierPartyId)" />
               </ion-avatar>
               <ion-label>
-                {{ formatCurrency(shipmentDetails.shippingEstimateAmount, shipmentDetails.currencyUom) }}
+                {{ commonUtil.formatCurrency(shipmentDetails.shippingEstimateAmount, shipmentDetails.currencyUom) }}
                 <p>{{ generateRateName(shipmentDetails.actualCarrierCode || shipmentDetails.routeSegCarrierPartyId, shipmentDetails.carrierService || shipmentDetails.routeSegShipmentMethodTypeId) }}</p>
               </ion-label>
               <ion-note>{{ shipmentDetails.trackingIdNumber }}</ion-note>
@@ -86,7 +86,7 @@
                     <Image :src="getCarrierLogo(shippingRate.actualCarrier || shippingRate.carrierPartyId)" />
                   </ion-avatar>
                   <ion-label>
-                    {{ formatCurrency(shippingRate.shippingEstimateAmount, shipmentDetails.currencyUom) }}
+                    {{ commonUtil.formatCurrency(shippingRate.shippingEstimateAmount, shipmentDetails.currencyUom) }}
                     <p>{{ generateRateName(shippingRate.actualCarrier || shippingRate.carrierPartyId, shippingRate.carrierService || shippingRate.shipmentMethodTypeId) }}</p>
                     <p v-if="shippingRate?.serviceDays">{{ "Service Days:" }} {{ shippingRate.serviceDays }}</p>
                   </ion-label>
@@ -116,7 +116,7 @@
                 </ion-select>
               </ion-item>
               <ion-item lines="full">
-                <ion-input data-testid="tracking-code-input" :label="translate('Tracking code')" :placeholder="translate('Enter code')" :value="trackingCode" @ionInput="trackingCode = $event.target.value" />
+                <ion-input data-testid="tracking-code-input" :label="translate('Tracking code')" :placeholder="translate('Enter code')" :value="trackingCode" @ionInput="trackingCode = ($event.target as any).value" />
               </ion-item>
               <ion-item v-if="selectedCarrier || shipmentDetails.carrierPartyId" lines="none">
                 {{ generateTrackingUrl() }}
@@ -155,7 +155,7 @@ import { OrderService } from "@/services/OrderService";
 import { CarrierService } from "@/services/CarrierService";
 import { UtilService } from "@/services/UtilService";
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
-import { formatCurrency, showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import { hasError } from "@hotwax/oms-api";
 import Image from "@/components/Image.vue";
 import logger from "@/logger";
@@ -229,14 +229,14 @@ onBeforeRouteLeave(async () => {
             try {
               const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId);
               if (!hasError(resp)) {
-                showToast(translate("Shipment is discarded."));
+                commonUtil.showToast(translate("Shipment is discarded."));
                 canLeave = true;
                 alertController.dismiss();
               } else {
                 throw resp.data;
               }
             } catch (err) {
-              showToast(translate("Failed to discard transfer order shipment"));
+              commonUtil.showToast(translate("Failed to discard transfer order shipment"));
               logger.error("Failed to discard transfer order shipment", err);
               canLeave = false;
             }
@@ -274,7 +274,7 @@ onBeforeRouteLeave(async () => {
                 throw resp.data;
               }
             } catch (err) {
-              showToast(translate("Failed to cancel transfer order shipment"));
+              commonUtil.showToast(translate("Failed to cancel transfer order shipment"));
               logger.error("Failed to cancel transfer order shipment", err);
               canLeave = false;
             }
@@ -324,7 +324,8 @@ async function fetchShipmentOrderDetail(shipmentId: string) {
       throw resp.data;
     }
   } catch (err) {
-    logger.error("Failed to fetch shipment details.", err);
+    commonUtil.showToast(translate("Failed to update shipment status"));
+    console.error(err);
   }
 }
 
@@ -417,7 +418,7 @@ async function generateShippingLabel() {
     await printShippingLabel();
   } catch (error) {
     logger.error("Failed to generate shipping label", error);
-    showToast(translate("Failed to generate shipping label"));
+    commonUtil.showToast(translate("Failed to generate shipping label"));
   }
 }
 
@@ -434,8 +435,9 @@ async function printShippingLabel() {
       );
       await OrderService.printShippingLabel([shipment.shipmentId], shippingLabelPdfUrls, shipment.packages);
     }
-  } catch (error) {
-    logger.error(error);
+  } catch (err) {
+    commonUtil.showToast(translate("Failed to print shipping label"));
+    console.error(err);
   }
 }
 
@@ -449,11 +451,11 @@ async function voidShippingLabel() {
       shipmentRouteSegmentId: routeSegmentId
     });
 
-    showToast(translate("Shipping label voided successfully"));
+    commonUtil.showToast(translate("Shipping label voided successfully"));
     await fetchShipmentOrderDetail(shipmentDetails.value.shipmentId);
   } catch (err) {
     logger.error("Failed to void shipping label", err);
-    showToast(translate("Failed to void shipping label"));
+    commonUtil.showToast(translate("Failed to void shipping label"));
   }
 }
 
@@ -528,19 +530,19 @@ async function shipOrder() {
 
   if (selectedSegment.value === "manual") {
     if (!selectedCarrier.value) {
-      showToast(translate("Please select a carrier"));
+      commonUtil.showToast(translate("Please select a carrier"));
       return;
     }
     if (!selectedShippingMethod.value) {
-      showToast(translate("Please select a shipping method"));
+      commonUtil.showToast(translate("Please select a shipping method"));
       return;
     }
     if (!trackingCode.value) {
-      showToast(translate("Please enter a tracking number"));
+      commonUtil.showToast(translate("Please enter a tracking number"));
       return;
     }
   } else if (selectedSegment.value === "generate" && shipment?.carrierServiceStatusId !== "SHRSCS_ACCEPTED") {
-    showToast(translate("Please generate a shipping label"));
+    commonUtil.showToast(translate("Please generate a shipping label"));
     return;
   }
 
@@ -563,14 +565,14 @@ async function shipOrder() {
     }
     isOrderShipped.value = true;
     await TransferOrderService.shipTransferOrderShipment(payload);
-    showToast(translate("Shipment shipped successfully."));
+    commonUtil.showToast(translate("Shipment shipped successfully."));
     isProcessingShipment.value = false;
     route?.params?.orderId ? router.replace({ path: `/transfer-order-details/${route?.params?.orderId}/open` }) : router.replace({ path: "/transfer-orders" });
   } catch (err) {
     isProcessingShipment.value = false;
     isOrderShipped.value = false;
     logger.error("Failed to ship the shipment.", err);
-    showToast(translate("Something went wrong, could not ship the shipment"));
+    commonUtil.showToast(translate("Something went wrong, could not ship the shipment"));
   }
 }
 </script>

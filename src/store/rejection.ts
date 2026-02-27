@@ -1,10 +1,10 @@
 import { defineStore } from "pinia"
 import { RejectionService } from "@/services/RejectionService"
 import { hasError } from "@/adapter"
-import { escapeSolrSpecialChars, prepareSolrQuery } from "@/utils/solrHelper"
+import { solrUtil } from "@/utils/solrUtil"
 import { UtilService } from "@/services/UtilService"
 import logger from "@/logger"
-import { getCurrentFacilityId } from "@/utils"
+import { commonUtil } from "@/utils/commonUtil"
 import { useProductStore } from "@/store/product"
 import { useUtilStore } from "@/store/util"
 
@@ -91,14 +91,14 @@ export const useRejectionStore = defineStore("rejection", {
       if (rejectedOrderQuery.rejectionPeriodId === "LAST_SEVEN_DAYS") {
         rejectionPeriodFilter = "[NOW-7DAYS TO NOW]"
       }
-      const query = prepareSolrQuery({
+      const query = solrUtil.prepareSolrQuery({
         coreName: "logInsights",
         docType: "FULFILLMENT_REJECTION",
         sort: "orderId_s desc",
         viewSize: "0",
         filters: {
           rejectedAt_dt: { value: rejectionPeriodFilter },
-          rejectedFrom_txt_en: { value: escapeSolrSpecialChars(getCurrentFacilityId()) }
+          rejectedFrom_txt_en: { value: solrUtil.escapeSolrSpecialChars(commonUtil.getCurrentFacilityId()) }
         },
         facet: {
           total: "unique(orderId_s)",
@@ -171,7 +171,7 @@ export const useRejectionStore = defineStore("rejection", {
       const rejectedOrderQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
 
       const filters = {
-        rejectedFrom_txt_en: { value: escapeSolrSpecialChars(getCurrentFacilityId()) }
+        rejectedFrom_txt_en: { value: solrUtil.escapeSolrSpecialChars(commonUtil.getCurrentFacilityId()) }
       } as any
 
       if (!rejectedOrderQuery.queryString) {
@@ -185,7 +185,7 @@ export const useRejectionStore = defineStore("rejection", {
         filters.rejectionReasonId_s = { value: rejectedOrderQuery.rejectionReasons }
       }
 
-      const query = prepareSolrQuery({
+      const query = solrUtil.prepareSolrQuery({
         coreName: "logInsights",
         docType: "FULFILLMENT_REJECTION",
         queryString: rejectedOrderQuery.queryString,
@@ -268,7 +268,7 @@ export const useRejectionStore = defineStore("rejection", {
           }
         }
 
-        const orderQueryPayload = prepareSolrQuery(params)
+        const orderQueryPayload = solrUtil.prepareSolrQuery(params)
 
         resp = await RejectionService.findRejectedOrdersDetail(orderQueryPayload)
         if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.orderId.matches > 0) {

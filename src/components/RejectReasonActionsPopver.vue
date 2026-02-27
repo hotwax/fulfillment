@@ -21,7 +21,7 @@ import { translate } from "@hotwax/dxp-components";
 import EditRejectionReasonModal from "@/components/EditRejectionReasonModal.vue";
 import { UtilService } from "@/services/UtilService";
 import { hasError } from "@/adapter";
-import { showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 import logger from "@/logger";
 import { useUtilStore } from "@/store/util";
 
@@ -48,14 +48,14 @@ const removeRejectionReason = async () => {
           try {
             const resp = await UtilService.deleteEnumeration({ enumId: props.reason.enumId });
             if (!hasError(resp)) {
-              showToast(translate("Rejection reason removed successfully."));
+              commonUtil.showToast(translate("Rejection reason removed successfully."));
               const updatedRejectReasons = rejectReasons.value.filter((rejectReason: any) => rejectReason.enumId !== props.reason.enumId);
               await useUtilStore().updateRejectReasons(updatedRejectReasons);
             } else {
               throw resp.data;
             }
           } catch (err) {
-            showToast(translate("Failed to remove rejection reason."));
+            commonUtil.showToast(translate("Failed to remove rejection reason."));
             logger.error(err);
           }
           popoverController.dismiss();

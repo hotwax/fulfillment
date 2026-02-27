@@ -43,8 +43,7 @@ import { translate, useUserStore } from "@hotwax/dxp-components";
 import { DateTime } from "luxon";
 import logger from "@/logger";
 import { UtilService } from "@/services/UtilService";
-import { hasError } from "@hotwax/oms-api";
-import { showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 
 const props = defineProps(["selectedCarrierPartyId", "carrierConfiguration"]);
 const currentFacility = computed(() => useUserStore().getCurrentFacility);
@@ -66,7 +65,7 @@ const downloadCarrierManifest = async (manifest: any) => {
   try {
         const resp = await UtilService.downloadCarrierManifest(payload);
 
-        if (!resp || resp.status !== 200 || hasError(resp)) {
+        if (!resp || resp.status !== 200 || commonUtil.hasError(resp)) {
           throw resp.data
         }
 
@@ -83,11 +82,11 @@ const downloadCarrierManifest = async (manifest: any) => {
           }
         }
         catch {
-          showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'carrier manifest'}), { icon: cogOutline });
+          commonUtil.showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'carrier manifest'}), { icon: cogOutline });
         }
       } catch(err) {
         logger.error("Failed to print manifest", err)
-        showToast(translate("Failed to print manifest"));
+        commonUtil.showToast(translate("Failed to print manifest"));
       }
       this.loadingContentId = null;
 };

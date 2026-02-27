@@ -44,7 +44,7 @@
               <div class="order-primary-info">
                 <ion-label>
                   <strong>{{ order.customerName }}</strong>
-                  <p>{{ translate("Ordered") }} {{ formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+                  <p>{{ translate("Ordered") }} {{ commonUtil.formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
                 </ion-label>
               </div>
 
@@ -59,7 +59,7 @@
               <div class="order-metadata">
                 <ion-label>
                   {{ getShipmentMethodDesc(order.shipmentMethodTypeId) }}
-                  <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+                  <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ commonUtil.formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
                 </ion-label>
               </div>
             </div>
@@ -75,14 +75,14 @@
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                       <div>
                         {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
-                        <ion-badge class="kit-badge" color="dark" v-if="isKit(item)">{{ translate("Kit") }}</ion-badge>
+                        <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
                       </div>
-                      <p>{{ getFeatures(getProduct(item.productId).productFeatures) }}</p>
+                      <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
                     </ion-label>
                   </ion-item>
                 </div>
                 <div class="product-metadata">
-                  <ion-button v-if="isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
+                  <ion-button v-if="orderUtil.isKit(item)" fill="clear" size="small" @click.stop="fetchKitComponents(item)">
                     <ion-icon v-if="item.showKitComponents" color="medium" slot="icon-only" :icon="chevronUpOutline" />
                     <ion-icon v-else color="medium" slot="icon-only" :icon="listOutline" />
                   </ion-button>
@@ -109,7 +109,7 @@
                     <ion-label>
                       <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
                       {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
-                      <p>{{ getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
+                      <p>{{ commonUtil.getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
                     </ion-label>
                   </ion-item>
                 </ion-card>
@@ -144,19 +144,19 @@ import { useRouter, onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline } from "ionicons/icons";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
 import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
-import { formatUtcDate, getFeatures, getFacilityFilter, hasActiveFilters, showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
+import { solrUtil } from "@/utils/solrUtil";
 import { hasError } from "@/adapter";
 import { UtilService } from "@/services/UtilService";
-import { prepareSolrQuery } from "@/utils/solrHelper";
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
 import emitter from "@/event-bus";
 import logger from "@/logger";
 import { translate } from "@hotwax/dxp-components";
 import { Actions, hasPermission } from "@/authorization";
 import OrderActionsPopover from "@/components/OrderActionsPopover.vue";
-import { isKit } from "@/utils/order";
+import { orderUtil } from "@/utils/orderUtil";
 import { OrderService } from "@/services/OrderService";
-import { useDynamicImport } from "@/utils/moduleFederation";
+import { moduleFederationUtil } from "@/utils/moduleFederationUtil";
 import { useOrderStore } from "@/store/order";
 import { useProductStore } from "@/store/product";
 import { useStockStore } from "@/store/stock";
@@ -191,7 +191,7 @@ const updateOpenQuery = (payload: any) => {
 };
 
 const getErrorMessage = () => {
-  return searchedQuery.value ? (hasActiveFilters(openOrders.value.query) ? translate("No results found for . Try using different filters.", { searchedQuery: searchedQuery.value }) : translate("No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: searchedQuery.value, lineBreak: "<br />" })) : translate("doesn't have any outstanding orders right now.", { facilityName: currentFacility.value?.facilityName });
+  return searchedQuery.value ? (commonUtil.hasActiveFilters(openOrders.value.query) ? translate("No results found for . Try using different filters.", { searchedQuery: searchedQuery.value }) : translate("No results found for . Try searching In Progress or Completed tab instead. If you still can't find what you're looking for, try switching stores.", { searchedQuery: searchedQuery.value, lineBreak: "<br />" })) : translate("doesn't have any outstanding orders right now.", { facilityName: currentFacility.value?.facilityName });
 };
 
 const viewNotifications = () => {
@@ -264,7 +264,7 @@ const assignPickers = async () => {
 const fetchShipmentMethods = async () => {
   let resp: any;
 
-  const payload = prepareSolrQuery({
+  const payload = solrUtil.prepareSolrQuery({
     docType: "ORDER",
     viewSize: "0",
     isGroupingRequired: false,
@@ -273,7 +273,7 @@ const fetchShipmentMethods = async () => {
       orderStatusId: { value: "ORDER_APPROVED" },
       orderTypeId: { value: "SALES_ORDER" },
       productStoreId: { value: currentEComStore.value.productStoreId },
-      ...getFacilityFilter(currentFacility.value?.facilityId)
+      ...commonUtil.getFacilityFilter(currentFacility.value?.facilityId)
     },
     solrFilters: [
       "((*:* -fulfillmentStatus: [* TO *]) OR fulfillmentStatus:Created)",
@@ -353,12 +353,12 @@ const recycleOutstandingOrders = async () => {
           });
 
           if (!hasError(resp)) {
-            showToast(translate("Rejecting has been started. All outstanding orders will be rejected shortly."));
+            commonUtil.showToast(translate("Rejecting has been started. All outstanding orders will be rejected shortly."));
           } else {
             throw resp.data;
           }
         } catch (err) {
-          showToast(translate("Failed to reject outstanding orders"));
+          commonUtil.showToast(translate("Failed to reject outstanding orders"));
           logger.error("Failed to reject outstanding orders", err);
         }
         emitter.emit("dismissLoader");
@@ -394,7 +394,7 @@ onIonViewWillEnter(async () => {
     isLoadingOrders.value = false;
   }
   const instance = instanceUrl.value.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "");
-  productCategoryFilterExt.value = await useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter` });
+  productCategoryFilterExt.value = await moduleFederationUtil.useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter` });
   emitter.on("updateOrderQuery", updateOrderQuery);
 });
 

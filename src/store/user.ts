@@ -1,13 +1,13 @@
 import { defineStore } from "pinia"
 import { UserService } from "@/services/UserService"
-import { showToast, getCurrentFacilityId } from "@/utils"
+import { commonUtil } from "@/utils/commonUtil"
 import { hasError, updateInstanceUrl, updateToken, resetConfig, getNotificationEnumIds, getNotificationUserPrefTypeIds, logout as logoutAdapter, storeClientRegistrationToken as storeClientRegistrationTokenAdapter } from "@/adapter"
 import { translate, useAuthStore, useUserStore as useDxpUserStore, useProductIdentificationStore } from "@hotwax/dxp-components"
 import { DateTime, Settings } from "luxon"
 import logger from "@/logger"
 import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from "@/authorization"
 import emitter from "@/event-bus"
-import { generateDeviceId, generateTopicName } from "@/utils/firebase"
+import { fireBaseUtil } from "@/utils/fireBaseUtil"
 import router from "@/router"
 import { useOrderStore } from "@/store/order"
 import { useOrderLookupStore } from "@/store/orderLookup"
@@ -185,7 +185,7 @@ export const useUserStore = defineStore("appUser", {
           const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === permissionId)
           if (!hasPermission) {
             const permissionError = "You do not have permission to access the app."
-            showToast(translate(permissionError))
+            commonUtil.showToast(translate(permissionError))
             logger.error("error", permissionError)
             return Promise.reject(new Error(permissionError))
           }
@@ -214,27 +214,27 @@ export const useUserStore = defineStore("appUser", {
             isQueryFacilityFound = true
             useDxpUserStore().currentFacility = facility
           } else {
-            showToast(translate("Redirecting to home page due to incorrect information being passed."))
+            commonUtil.showToast(translate("Redirecting to home page due to incorrect information being passed."))
           }
         }
 
-        if(useAuthStore().isEmbedded) {
-        const locationId = useAuthStore().posContext.locationId
-        const payload = {
-          shopifyLocationId: locationId
-        }
-        const resp = await UtilService.fetchShopifyShopLocation(omsRedirectionUrl, token, payload)
-        if(!hasError(resp) && resp.data?.length) {
-          const facilityId = resp.data[0].facilityId;
-          const facility = userProfile.facilities.find((facility: any) => facility.facilityId === facilityId);
-          if(!facility) {
-            throw "Unable to login. User is not associated with this location"
+        if (useAuthStore().isEmbedded) {
+          const locationId = useAuthStore().posContext.locationId
+          const payload = {
+            shopifyLocationId: locationId
           }
-          useDxpUserStore().currentFacility = facility
-        } else {
-          throw "Failed to fetch location information"
+          const resp = await UtilService.fetchShopifyShopLocation(omsRedirectionUrl, token, payload)
+          if (!hasError(resp) && resp.data?.length) {
+            const facilityId = resp.data[0].facilityId;
+            const facility = userProfile.facilities.find((facility: any) => facility.facilityId === facilityId);
+            if (!facility) {
+              throw "Unable to login. User is not associated with this location"
+            }
+            useDxpUserStore().currentFacility = facility
+          } else {
+            throw "Failed to fetch location information"
+          }
         }
-      }
 
         const currentFacility: any = useDxpUserStore().getCurrentFacility
         userProfile.stores = await useDxpUserStore().getEComStoresByFacility(currentFacility.facilityId)
@@ -251,11 +251,11 @@ export const useUserStore = defineStore("appUser", {
           if (api_key) {
             this.setOmsRedirectionInfo({ url: omsRedirectionUrl, token: api_key })
           } else {
-            showToast(translate("Some of the app functionality will not work due to missing configuration."))
+            commonUtil.showToast(translate("Some of the app functionality will not work due to missing configuration."))
             logger.error("Some of the app functionality will not work due to missing configuration.")
           }
         } else {
-          showToast(translate("Some of the app functionality will not work due to missing configuration."))
+          commonUtil.showToast(translate("Some of the app functionality will not work due to missing configuration."))
           logger.error("Some of the app functionality will not work due to missing configuration.")
         }
 
@@ -279,7 +279,7 @@ export const useUserStore = defineStore("appUser", {
           return `/transfer-order-details/${orderId}/open`
         }
       } catch (err: any) {
-        showToast(translate("Something went wrong while login. Please contact administrator."))
+        commonUtil.showToast(translate("Something went wrong while login. Please contact administrator."))
         logger.error("error: ", err.toString())
         return Promise.reject(err instanceof Object ? err : new Error(err))
       }
@@ -404,7 +404,7 @@ export const useUserStore = defineStore("appUser", {
         // data and getNotificationUserPrefTypeIds fails or returns empty response (all disabled)
         if (enumerationResp.length) {
           notificationPreferences = enumerationResp.reduce((notifactionPref: any, pref: any) => {
-            const userPrefTypeIdToSearch = generateTopicName(getCurrentFacilityId(), pref.enumId)
+            const userPrefTypeIdToSearch = fireBaseUtil.generateTopicName(commonUtil.getCurrentFacilityId(), pref.enumId)
             notifactionPref.push({ ...pref, isEnabled: userPrefIds.includes(userPrefTypeIdToSearch) })
             return notifactionPref
           }, [])
@@ -413,7 +413,7 @@ export const useUserStore = defineStore("appUser", {
       }
     },
     async storeClientRegistrationToken(registrationToken: string) {
-      const firebaseDeviceId = generateDeviceId()
+      const firebaseDeviceId = fireBaseUtil.generateDeviceId()
       this.setFirebaseDeviceId(firebaseDeviceId)
 
       try {

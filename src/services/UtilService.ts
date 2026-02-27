@@ -1,5 +1,5 @@
 import { api, apiClient, hasError } from '@/adapter';
-import { getProductStoreId } from '@/utils'
+import { commonUtil } from '@/utils/commonUtil'
 import { useUserStore } from "@/store/user";
 import logger from '@/logger'
 
@@ -11,15 +11,15 @@ const getAuth = () => {
   };
 };
 
-const fetchShipmentMethods = async (query: any): Promise <any>  => {
+const fetchShipmentMethods = async (query: any): Promise<any> => {
   return api({
-    url: "solr-query", 
+    url: "solr-query",
     method: "post",
     data: query
   });
 }
 
-const fetchCarrierShipmentBoxTypes = async(params: any): Promise<any> => {
+const fetchCarrierShipmentBoxTypes = async (params: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -34,7 +34,7 @@ const fetchCarrierShipmentBoxTypes = async(params: any): Promise<any> => {
   });
 }
 
-const fetchDefaultShipmentBox = async(query: any) : Promise<any> => {
+const fetchDefaultShipmentBox = async (query: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -49,7 +49,7 @@ const fetchDefaultShipmentBox = async(query: any) : Promise<any> => {
   });
 }
 
-const fetchRejectReasons = async(query: any): Promise<any> => {
+const fetchRejectReasons = async (query: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -79,7 +79,7 @@ const fetchRejectReasonEnumTypes = async (payload: any): Promise<any> => {
   });
 }
 
-const getAvailablePickers = async (query: any): Promise <any> => {
+const getAvailablePickers = async (query: any): Promise<any> => {
   return api({
     url: "solr-query",
     method: "post",
@@ -87,7 +87,7 @@ const getAvailablePickers = async (query: any): Promise <any> => {
   })
 }
 
-const fetchConfiguredCarrierService = async(payload: any): Promise<any> => {
+const fetchConfiguredCarrierService = async (payload: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -102,7 +102,7 @@ const fetchConfiguredCarrierService = async(payload: any): Promise<any> => {
   });
 }
 
-const generateManifest = async(payload: any): Promise<any> => {
+const generateManifest = async (payload: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -117,7 +117,7 @@ const generateManifest = async(payload: any): Promise<any> => {
   });
 }
 
-const downloadCarrierManifest = async(params: any): Promise<any> => {
+const downloadCarrierManifest = async (params: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -132,7 +132,7 @@ const downloadCarrierManifest = async(params: any): Promise<any> => {
   });
 }
 
-const fetchPartyInformation = async (payload: any): Promise <any>  => {
+const fetchPartyInformation = async (payload: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -147,7 +147,7 @@ const fetchPartyInformation = async (payload: any): Promise <any>  => {
   });
 }
 
-const fetchShipmentMethodTypeDesc = async (payload: any): Promise <any>  => {
+const fetchShipmentMethodTypeDesc = async (payload: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -162,7 +162,7 @@ const fetchShipmentMethodTypeDesc = async (payload: any): Promise <any>  => {
   });
 }
 
-const fetchShipmentBoxType = async (query: any): Promise <any>  => {
+const fetchShipmentBoxType = async (query: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -177,7 +177,7 @@ const fetchShipmentBoxType = async (query: any): Promise <any>  => {
   });
 }
 
-const fetchFacilityTypeInformation = async (query: any): Promise <any>  => {
+const fetchFacilityTypeInformation = async (query: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -192,7 +192,7 @@ const fetchFacilityTypeInformation = async (query: any): Promise <any>  => {
   });
 }
 
-const fetchPaymentMethodTypeDesc = async (payload: any): Promise <any>  => {
+const fetchPaymentMethodTypeDesc = async (payload: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -207,7 +207,7 @@ const fetchPaymentMethodTypeDesc = async (payload: any): Promise <any>  => {
   });
 }
 
-const fetchStatusDesc = async (payload: any): Promise <any>  => {
+const fetchStatusDesc = async (payload: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -281,7 +281,7 @@ const deleteEnumeration = async (payload: any): Promise<any> => {
   });
 }
 
-const fetchEnumeration = async (payload: any): Promise <any> => {
+const fetchEnumeration = async (payload: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -342,9 +342,9 @@ const fetchFacilities = async (payload: any): Promise<any> => {
 
 const fetchProductStoreFacilities = async (): Promise<any> => {
   try {
-    const productStoreId = getProductStoreId();
-    
-    if(!productStoreId) {
+    const productStoreId = commonUtil.getProductStoreId();
+
+    if (!productStoreId) {
       logger.error('Product store ID not found');
       return [];
     }
@@ -373,7 +373,7 @@ const fetchProductStoreFacilities = async (): Promise<any> => {
       params
     });
 
-    if(!hasError(resp)) {
+    if (!hasError(resp)) {
       return resp.data;
     } else {
       logger.error('Failed to fetch product store facilities:', resp.data);
@@ -466,7 +466,7 @@ const updateEnumerationGroupMember = async (payload: any): Promise<any> => {
 const isEnumExists = async (enumId: string): Promise<any> => {
   try {
     const { omstoken, baseURL } = getAuth();
-  
+
     const resp = await apiClient({
       url: `/admin/enums`,
       method: "GET",
@@ -487,7 +487,7 @@ const isEnumExists = async (enumId: string): Promise<any> => {
   }
 }
 
-const fetchAdjustmentTypeDescription = async(payload: any): Promise<any> => {
+const fetchAdjustmentTypeDescription = async (payload: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -502,7 +502,7 @@ const fetchAdjustmentTypeDescription = async(payload: any): Promise<any> => {
   });
 }
 
-const fetchCarriers = async (params: any): Promise <any>  => {
+const fetchCarriers = async (params: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -517,7 +517,7 @@ const fetchCarriers = async (params: any): Promise <any>  => {
   });
 }
 
-const fetchStoreCarrierAndMethods = async (payload: any): Promise <any>  => {
+const fetchStoreCarrierAndMethods = async (payload: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -586,7 +586,7 @@ const fetchFacilityZPLGroupInfo = async (): Promise<any> => {
   return isFacilityZPLConfigured;
 }
 
-const fetchLabelImageType = async (carrierId : string): Promise<any> => {
+const fetchLabelImageType = async (carrierId: string): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -597,7 +597,7 @@ const fetchLabelImageType = async (carrierId : string): Promise<any> => {
       "Authorization": "Bearer " + omstoken,
       "Content-Type": "application/json"
     },
-    params: {"systemResourceId": carrierId, "systemPropertyId": "shipment.carrier.labelImageType", "pageSize": 1}
+    params: { "systemResourceId": carrierId, "systemPropertyId": "shipment.carrier.labelImageType", "pageSize": 1 }
   });
 }
 const getFacilityGroupAndMemberDetails = async (payload: any): Promise<any> => {

@@ -42,7 +42,7 @@
   import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonReorder, IonReorderGroup, IonTitle, IonToolbar, modalController } from "@ionic/vue";
   import { computed, onMounted, ref } from "vue";
   import { close, saveOutline } from "ionicons/icons";
-  import { showToast, sortItems } from "@/utils";
+  import { commonUtil } from "@/utils/commonUtil";
   import { CarrierService } from "@/services/CarrierService";
   import { translate } from "@hotwax/dxp-components";
   import { useCarrierStore } from "@/store/carrier";
@@ -52,7 +52,7 @@
   
   onMounted(() => {
     const methods = shipmentMethods.value.filter((shipmentMethod: any) => shipmentMethod.isChecked);
-    sortItems(methods, "sequenceNumber");
+    commonUtil.sortItems(methods, "sequenceNumber");
     filteredShipmentMethods.value = methods;
   });
   
@@ -83,7 +83,7 @@
     filteredShipmentMethods.value = updatedSeq;
   
     if (diffSeq.length) {
-      showToast(translate("Shipment methods order has been changed. Click save button to update them."));
+      commonUtil.showToast(translate("Shipment methods order has been changed. Click save button to update them."));
     }
   };
   
@@ -100,9 +100,9 @@
   
     const isFailedToUpdateSomeMethod = responses.some((response) => response.status === "rejected");
     if (isFailedToUpdateSomeMethod) {
-      showToast(translate("Failed to update sequence for some shipment methods."));
+      commonUtil.showToast(translate("Failed to update sequence for some shipment methods."));
     } else {
-      showToast(translate("Sequence for shipment methods updated successfully."));
+      commonUtil.showToast(translate("Sequence for shipment methods updated successfully."));
     }
   
     modalController.dismiss();

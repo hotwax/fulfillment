@@ -19,7 +19,7 @@ import { useUtilStore } from "@/store/util";
 import { UtilService } from "@/services/UtilService";
 import logger from "@/logger";
 import { hasError } from "@/adapter";
-import { showToast } from "@/utils";
+import { commonUtil } from "@/utils/commonUtil";
 
 const props = defineProps(["reason"]);
 const rejectReasons = computed(() => useUtilStore().getRejectReasons);
@@ -38,8 +38,8 @@ const updateVarianceType = async (selectedType: any) => {
       enumTypeId: selectedType.enumTypeId
     });
 
-    if (!hasError(resp)) {
-      showToast(translate("Variance type updated successfully."));
+    if (!commonUtil.hasError(resp)) {
+      commonUtil.showToast(translate("Variance type updated successfully."));
       const rejectReason = rejectReasons.value.find((reason: any) => reason.enumId === props.reason.enumId);
       if (rejectReason) {
         rejectReason.enumTypeId = selectedType.enumTypeId;
@@ -49,7 +49,7 @@ const updateVarianceType = async (selectedType: any) => {
       throw resp.data;
     }
   } catch (err) {
-    showToast(translate("Failed to update variance type."));
+    commonUtil.showToast(translate("Failed to update variance type."));
     logger.error(err);
   }
   popoverController.dismiss({ isUpdated: true });

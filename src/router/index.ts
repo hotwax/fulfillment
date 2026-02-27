@@ -13,7 +13,7 @@ import TransferOrderDetail from "@/views/TransferOrderDetail.vue"
 import CreateCarrier from "@/views/CreateCarrier.vue"
 import CarrierShipmentMethods from "@/views/CarrierShipmentMethods.vue"
 import { hasPermission } from '@/authorization';
-import { showToast } from '@/utils'
+import { commonUtil } from '@/utils/commonUtil'
 import { translate, useUserStore as useDxpUserStore } from '@hotwax/dxp-components'
 import 'vue-router'
 import Notifications from '@/views/Notifications.vue'
@@ -28,7 +28,7 @@ declare module 'vue-router' {
   }
 }
 import { useAuthStore, DxpLogin } from '@hotwax/dxp-components'
-import { loader } from '@/utils/user';
+import { userUtil } from '@/utils/userUtil';
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 import Rejections from '@/views/Rejections.vue';
@@ -37,16 +37,16 @@ import Shopify from '@/views/Shopify.vue';
 const authGuard = async (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
   if (!authStore.isAuthenticated || !useAppUserStore().isAuthenticated) {
-    await loader.present('Authenticating')
+    await userUtil.loader.present('Authenticating')
     if (authStore.isEmbedded) {
-      loader.dismiss();
+      userUtil.loader.dismiss();
       next('/login');
       return;
     }
     // TODO use authenticate() when support is there
     const redirectUrl = window.location.origin + '/login'
     window.location.href = `${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`
-    loader.dismiss()
+    userUtil.loader.dismiss()
   }
   next()
 };
@@ -266,7 +266,7 @@ router.beforeEach((to, from) => {
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
     if (redirectToPath == "/login" || redirectToPath == "/") redirectToPath = "/settings";
-    else showToast(translate('You do not have permission to access this page'));
+    else commonUtil.showToast(translate('You do not have permission to access this page'));
     return {
       path: redirectToPath,
     }

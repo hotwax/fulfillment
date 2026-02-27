@@ -2,7 +2,7 @@ import { api, apiClient, hasError } from "@/adapter"
 import { useUserStore } from "@/store/user";
 import { useUtilStore } from "@/store/util";
 import logger from '@/logger';
-import { showToast } from '@/utils';
+import { commonUtil } from '@/utils/commonUtil';
 import { translate } from '@hotwax/dxp-components'
 import { cogOutline } from 'ionicons/icons';
 import { ZebraPrinterService } from './ZebraPrinterService';
@@ -52,7 +52,7 @@ const fetchCarrierTrackingUrls = async (payload: any): Promise<any> => {
   });
 }
 
-const fetchPartyInformation = async (payload: any): Promise <any>  => {
+const fetchPartyInformation = async (payload: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -67,7 +67,7 @@ const fetchPartyInformation = async (payload: any): Promise <any>  => {
   });
 }
 
-const fetchOrderFacilityChange = async (payload: any): Promise <any>  => {
+const fetchOrderFacilityChange = async (payload: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -82,7 +82,7 @@ const fetchOrderFacilityChange = async (payload: any): Promise <any>  => {
   });
 }
 
-const fetchOrderItems = async (payload: any): Promise <any>  => {
+const fetchOrderItems = async (payload: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -97,7 +97,7 @@ const fetchOrderItems = async (payload: any): Promise <any>  => {
   });
 }
 
-const findShipments = async (orderId: string): Promise <any>  => {
+const findShipments = async (orderId: string): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   const params = {
@@ -108,7 +108,7 @@ const findShipments = async (orderId: string): Promise <any>  => {
       statusId_op: "in",
       statusId_not: "Y",
     },
-    shipmentTypeId: 'SALES_SHIPMENT', 
+    shipmentTypeId: 'SALES_SHIPMENT',
   } as any
 
   return await apiClient({
@@ -123,7 +123,7 @@ const findShipments = async (orderId: string): Promise <any>  => {
   }) as any;
 }
 
-const fetchFacilities = async (payload: any): Promise <any>  => {
+const fetchFacilities = async (payload: any): Promise<any> => {
   const { omstoken, baseURL } = getAuth();
 
   return apiClient({
@@ -161,7 +161,7 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
     if (!pdfUrls || pdfUrls.length == 0) {
       let labelImageType = imageType || "PNG";
 
-      if(!imageType && shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId) {
+      if (!imageType && shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId) {
         labelImageType = await useUtilStore().fetchLabelImageType(shipmentPackages[0].carrierPartyId);
       }
 
@@ -198,16 +198,16 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
     }
     // Open the file in new tab
     pdfUrls.forEach((pdfUrl: string) => {
-    try {
-      (window as any).open(pdfUrl, "_blank").focus();
-    }
-    catch {
-      showToast(translate('Unable to open as browser is blocking pop-ups.', {documentName: 'shipping label'}), { icon: cogOutline });
-    }
+      try {
+        (window as any).open(pdfUrl, "_blank").focus();
+      }
+      catch {
+        commonUtil.showToast(translate('Unable to open as browser is blocking pop-ups.', { documentName: 'shipping label' }), { icon: cogOutline });
+      }
     })
 
   } catch (err) {
-    showToast(translate('Failed to print shipping label'))
+    commonUtil.showToast(translate('Failed to print shipping label'))
     logger.error("Failed to load shipping label", err)
   }
 }
