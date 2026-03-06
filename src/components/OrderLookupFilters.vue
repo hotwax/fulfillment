@@ -78,7 +78,7 @@
 <script setup lang="ts">
 import { IonCheckbox, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonItem, IonLabel, IonList, IonListHeader, IonMenu, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
 import { computed, ref } from "vue";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import { DateTime } from "luxon";
 import { useOrderLookupStore } from "@/store/orderLookup";
 const query = computed(() => useOrderLookupStore().getOrderQuery);

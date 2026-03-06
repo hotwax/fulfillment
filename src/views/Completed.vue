@@ -202,13 +202,16 @@ import { useRouter, onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, printOutline, gift, giftOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline, timeOutline } from "ionicons/icons";
 import Popover from "@/views/ShippingPopover.vue";
 import { commonUtil } from "@/utils/commonUtil";
-import { hasError } from "@/adapter";
-import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
-import emitter from "@/event-bus";
+import { hasError } from "@common/utils/commonUtil";
+import { DxpShopifyImg, translate } from "@common";
+import emitter from "@common/core/emitter";
+import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useUserStore as useDxpUserStore } from "@/store/user";
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
 import { OrderService } from "@/services/OrderService";
 import { UtilService } from "@/services/UtilService";
-import logger from "@/logger";
+import logger from "@common/core/logger";
 import ShippingLabelErrorModal from "@/components/ShippingLabelErrorModal.vue";
 import { Actions, hasPermission } from "@/authorization";
 import OrderActionsPopover from "@/components/OrderActionsPopover.vue";
@@ -267,7 +270,7 @@ const fetchKitComponents = async (orderItem: any) => {
   const updatedOrder = completedOrders.value.list.find((order: any) => order.shipmentId === orderItem.shipmentId);
   const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId);
   updatedItem.showKitComponents = orderItem.showKitComponents ? false : true;
-  completedOrdersList.value = JSON.parse(JSON.stringify(completedOrders.value.list)).slice(0, (completedOrders.value.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
+  completedOrdersList.value = JSON.parse(JSON.stringify(completedOrders.value.list)).slice(0, (completedOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any));
 };
 
 const enableScrolling = () => {
@@ -290,18 +293,18 @@ const loadMoreCompletedOrders = async (event: any) => {
   const completedOrdersQuery = JSON.parse(JSON.stringify(completedOrders.value.query));
   completedOrdersQuery.viewIndex++;
   await useOrderStore().updateCompletedOrderIndex({ ...completedOrdersQuery });
-  completedOrdersList.value = JSON.parse(JSON.stringify(completedOrders.value.list)).slice(0, (completedOrders.value.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
+  completedOrdersList.value = JSON.parse(JSON.stringify(completedOrders.value.list)).slice(0, (completedOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any));
   event.target.complete();
 };
 
 const isCompletedOrderScrollable = () => {
-  return ((completedOrders.value.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any)) < completedOrders.value.query.viewSize;
+  return ((completedOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any)) < completedOrders.value.query.viewSize;
 };
 
 const initialiseOrderQuery = async () => {
   const completedOrdersQuery = JSON.parse(JSON.stringify(completedOrders.value.query));
   completedOrdersQuery.viewIndex = 0;
-  completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  completedOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
   if (selectedCarrierPartyId.value) completedOrdersQuery.selectedCarrierPartyId = selectedCarrierPartyId.value;
   if (selectedShipmentMethods.value?.length) completedOrdersQuery.selectedShipmentMethods = selectedShipmentMethods.value;
   await useOrderStore().updateCompletedQuery({ ...completedOrdersQuery });
@@ -422,7 +425,7 @@ const fetchShipmentFacets = async () => {
 
 const updateQueryString = async (queryString: string) => {
   const completedOrdersQuery = JSON.parse(JSON.stringify(completedOrders.value.query));
-  completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  completedOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
   completedOrdersQuery.queryString = queryString;
   await useOrderStore().updateCompletedQuery({ ...completedOrdersQuery });
   searchedQuery.value = queryString;
@@ -438,7 +441,7 @@ const updateSelectedShipmentMethods = async (method: string) => {
     updatedShipmentMethods.splice(index, 1);
   }
 
-  completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  completedOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
   completedOrdersQuery.selectedShipmentMethods = updatedShipmentMethods;
   selectedShipmentMethods.value = updatedShipmentMethods;
 
@@ -447,7 +450,7 @@ const updateSelectedShipmentMethods = async (method: string) => {
 
 const updateSelectedCarrierPartyIds = async (carrierPartyId: string) => {
   const completedOrdersQuery = JSON.parse(JSON.stringify(completedOrders.value.query));
-  completedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  completedOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
   completedOrdersQuery.selectedCarrierPartyId = carrierPartyId;
 
   useOrderStore().updateCompletedQuery({ ...completedOrdersQuery });
@@ -705,7 +708,7 @@ onIonViewWillEnter(async () => {
     isLoadingOrders.value = false;
   }
   emitter.on("updateOrderQuery", updateOrderQuery);
-  completedOrdersList.value = JSON.parse(JSON.stringify(completedOrders.value.list)).slice(0, (completedOrders.value.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
+  completedOrdersList.value = JSON.parse(JSON.stringify(completedOrders.value.list)).slice(0, (completedOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any));
 });
 
 onBeforeRouteLeave(() => {
@@ -714,6 +717,6 @@ onBeforeRouteLeave(() => {
 });
 
 watch(() => completedOrders.value.list, () => {
-  completedOrdersList.value = JSON.parse(JSON.stringify(completedOrders.value.list)).slice(0, (completedOrders.value.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
+  completedOrdersList.value = JSON.parse(JSON.stringify(completedOrders.value.list)).slice(0, (completedOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any));
 });
 </script>

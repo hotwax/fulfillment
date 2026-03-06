@@ -31,7 +31,7 @@
             <ion-list-header>{{ translate("Items") }}</ion-list-header>
             <ion-item v-for="item in shipmentItems" :key="item.shipmentItemSeqId">
               <ion-thumbnail slot="start">
-                <DxpShopifyImg size="small" :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" />
+                <Image :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" />
               </ion-thumbnail>
               <ion-label>
                 {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId)?.internalName }}
@@ -149,16 +149,18 @@
 import { computed, ref } from "vue";
 import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from "@ionic/vue";
 import { openOutline, pricetagOutline, printOutline, storefrontOutline } from "ionicons/icons";
-import { DxpShopifyImg, getProductIdentificationValue, useProductIdentificationStore, translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
+import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { useProductIdentificationStore } from "@/store/productIdentification";
 import { TransferOrderService } from "@/services/TransferOrderService";
 import { OrderService } from "@/services/OrderService";
 import { CarrierService } from "@/services/CarrierService";
 import { UtilService } from "@/services/UtilService";
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
 import { commonUtil } from "@/utils/commonUtil";
-import { hasError } from "@hotwax/oms-api";
+import { hasError } from "@common/utils/commonUtil";
 import Image from "@/components/Image.vue";
-import logger from "@/logger";
+import logger from "@common/core/logger";
 import { useProductStore } from "@/store/product";
 import { useUtilStore } from "@/store/util";
 import { useCarrierStore } from "@/store/carrier";

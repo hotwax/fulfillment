@@ -14,7 +14,8 @@ import CreateCarrier from "@/views/CreateCarrier.vue"
 import CarrierShipmentMethods from "@/views/CarrierShipmentMethods.vue"
 import { hasPermission } from '@/authorization';
 import { commonUtil } from '@/utils/commonUtil'
-import { translate, useUserStore as useDxpUserStore } from '@hotwax/dxp-components'
+import { translate } from "@common";
+import { useUserStore as useDxpUserStore } from "@/store/user";
 import 'vue-router'
 import Notifications from '@/views/Notifications.vue'
 import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
@@ -27,38 +28,25 @@ declare module 'vue-router' {
     permissionId?: string;
   }
 }
-import { useAuthStore, DxpLogin } from '@hotwax/dxp-components'
-import { userUtil } from '@/utils/userUtil';
+import { useAuth } from '@/composables/auth';
+import Login from '@/views/Login.vue';
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';
 import Rejections from '@/views/Rejections.vue';
 import Shopify from '@/views/Shopify.vue';
 
 const authGuard = async (to: any, from: any, next: any) => {
-  const authStore = useAuthStore()
-  if (!authStore.isAuthenticated || !useAppUserStore().isAuthenticated) {
-    await userUtil.loader.present('Authenticating')
-    if (authStore.isEmbedded) {
-      userUtil.loader.dismiss();
-      next('/login');
-      return;
-    }
-    // TODO use authenticate() when support is there
-    const redirectUrl = window.location.origin + '/login'
-    window.location.href = `${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`
-    userUtil.loader.dismiss()
+  const { isAuthenticated } = useAuth()
+  if (!isAuthenticated.value) {
+    next('/login');
+  } else {
+    next()
   }
-  next()
 };
 
 const loginGuard = (to: any, from: any, next: any) => {
-  const authStore = useAuthStore()
-  const userStore = useDxpUserStore();
-  if (to.query?.embedded === '1') {
-    authStore.$reset();
-    userStore.$reset();
-  }
-  if (authStore.isAuthenticated && !to.query?.token && !to.query?.oms) {
+  const { isAuthenticated } = useAuth()
+  if (isAuthenticated.value && !to.query?.token && !to.query?.oms) {
     next('/')
   }
   next();
@@ -159,7 +147,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/login',
     name: 'Login',
-    component: DxpLogin,
+    component: Login,
     beforeEnter: loginGuard
   },
   {
@@ -257,8 +245,8 @@ const routes: Array<RouteRecordRaw> = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
-  routes
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes: routes as any
 })
 
 router.beforeEach((to, from) => {

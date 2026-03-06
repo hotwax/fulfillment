@@ -1,6 +1,6 @@
 import { useOrderStore } from "@/store/order";
 import { useProductStore } from "@/store/product";
-import { translate } from '@hotwax/dxp-components';
+import { translate } from "@common";
 import { commonUtil } from '@/utils/commonUtil';
 import { OrderService } from '@/services/OrderService';
 

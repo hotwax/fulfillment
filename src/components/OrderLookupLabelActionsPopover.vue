@@ -17,7 +17,7 @@
 <script setup lang="ts">
 import { IonContent, IonIcon, IonItem, IonList, IonListHeader, popoverController } from "@ionic/vue";
 import { documentOutline, openOutline } from "ionicons/icons";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import { defineProps } from "vue";
 import { useOrderLookupStore } from "@/store/orderLookup";
 import { OrderLookupService } from "@/services/OrderLookupService";

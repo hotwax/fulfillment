@@ -153,7 +153,9 @@
 import { IonButton, IonButtons, IonCard, IonCardHeader, IonCardTitle, IonChip, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonList, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { cloudDownloadOutline, filterOutline, personCircleOutline, pricetagOutline } from "ionicons/icons";
-import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { DxpShopifyImg, translate } from "@common";
+import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { useProductIdentificationStore } from "@/store/productIdentification";
 import { commonUtil } from "@/utils/commonUtil";
 import RejectedItemsModal from "@/components/RejectedItemsModal.vue";
 import UsedReasonsModal from "@/components/UsedReasonsModal.vue";
@@ -195,7 +197,7 @@ const isRejectedOrdersScrollable = () => {
 const initialiseRejectedOrderQuery = async () => {
   const rejectedOrdersQuery = JSON.parse(JSON.stringify(rejectedOrders.value.query));
   rejectedOrdersQuery.viewIndex = 0;
-  rejectedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  rejectedOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
   await useRejectionStore().updateRejectedOrderQuery({ ...rejectedOrdersQuery });
 };
 
@@ -204,7 +206,7 @@ const loadMoreRejectedOrders = async (event: any) => {
     await event.target.complete();
   }
   const rejectedOrdersQuery = JSON.parse(JSON.stringify(rejectedOrders.value.query));
-  rejectedOrdersQuery.viewIndex = rejectedOrders.value.list?.length / (process.env.VUE_APP_VIEW_SIZE as any);
+  rejectedOrdersQuery.viewIndex = rejectedOrders.value.list?.length / (import.meta.env.VITE_VIEW_SIZE as any);
   await useRejectionStore().updateRejectedOrderQuery({ ...rejectedOrdersQuery });
   event.target.complete();
 };
@@ -249,7 +251,7 @@ const updateQueryString = async (query: string) => {
   const rejectedOrdersQuery = JSON.parse(JSON.stringify(rejectedOrders.value.query));
 
   rejectedOrdersQuery.viewIndex = 0;
-  rejectedOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  rejectedOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
   rejectedOrdersQuery.queryString = query;
   await useRejectionStore().updateRejectedOrderQuery({ ...rejectedOrdersQuery });
   searchedQuery.value = query;

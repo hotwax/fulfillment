@@ -52,12 +52,13 @@
 import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonSelect, IonSelectOption, IonText, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { checkmarkDoneOutline, closeOutline } from "ionicons/icons";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import { commonUtil } from "@/utils/commonUtil";
 import { useUtilStore } from "@/store/util";
 import { UtilService } from "@/services/UtilService";
-import { hasError } from "@/adapter";
-import logger from "@/logger";
+import { hasError } from "@common/utils/commonUtil";
+
+import logger from "@common/core/logger";
 
 const rejectReasons = computed(() => useUtilStore().getRejectReasons);
 const rejectReasonEnumTypes = computed(() => useUtilStore().getRejectReasonEnumTypes);

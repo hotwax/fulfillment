@@ -38,7 +38,7 @@
 import { IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewWillEnter } from "@ionic/vue";
 import { computed, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import { addOutline } from "ionicons/icons";
 import { useCarrierStore } from "@/store/carrier";
 

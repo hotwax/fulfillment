@@ -56,7 +56,10 @@
 import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonThumbnail, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { computed, defineProps, onMounted, ref } from "vue";
 import { cameraOutline, closeOutline, saveOutline } from "ionicons/icons";
-import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useAuthStore, openPosScanner } from '@hotwax/dxp-components';
+import { DxpShopifyImg, translate } from "@common";
+import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useUserStore as useAuthStore } from "@/store/user";
 import { commonUtil } from "@/utils/commonUtil";
 import Scanner from "@/components/Scanner.vue";
 import { orderUtil } from "@/utils/orderUtil";
@@ -82,15 +85,6 @@ const closeModal = (payload = {}) => {
 };
 
 const scan = async () => {
-  if (useAuthStore().isEmbedded) {
-    const scanData = await openPosScanner();
-    if(scanData) {
-      updateProductScannedStatus(scanData);
-    } else {
-      commonUtil.showToast(translate("No data received from scanner"));
-    }
-    return;
-  }
   if (!(await commonUtil.hasWebcamAccess())) {
     commonUtil.showToast(translate("Camera access not allowed, please check permissons."));
     return;

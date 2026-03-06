@@ -72,7 +72,7 @@
 <script setup>
 import { IonCard, IonChip, IonButtons, IonButton, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonNote, IonSelect, IonSelectOption, IonTitle, IonThumbnail, IonToolbar, modalController } from "@ionic/vue";
 import { closeOutline, pricetag } from "ionicons/icons";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 
 const closeModal = () => {
   modalController.dismiss({ dismissed: true });

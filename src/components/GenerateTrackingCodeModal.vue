@@ -127,9 +127,10 @@
 import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonTextarea, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { computed, defineProps, onMounted, ref } from "vue";
 import { archiveOutline, closeOutline, copyOutline, informationCircleOutline, openOutline, trashOutline } from "ionicons/icons";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import { OrderService } from "@/services/OrderService";
-import logger from "@/logger";
+import { hasError } from "@common/utils/commonUtil";
+import logger from "@common/core/logger";
 import { commonUtil } from "@/utils/commonUtil";
 import { useRouter } from "vue-router";
 import { useCarrierStore } from "@/store/carrier";
@@ -272,7 +273,7 @@ const updateCarrierAndShippingMethod = async (partyId: string, methodTypeId: str
     };
 
     const resp = await OrderService.updateShipmentCarrierAndMethod(params);
-    if (commonUtil.hasError(resp)) {
+    if (hasError(resp)) {
       throw resp.data;
     }
 

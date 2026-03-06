@@ -1,9 +1,9 @@
-import { createApp, computed, reactive } from 'vue'
+import { createApp } from 'vue'
 import { createPinia, setActivePinia } from "pinia"
 import piniaPersist from "pinia-plugin-persistedstate"
 import App from './App.vue'
 import router from './router';
-import logger from './logger';
+import logger from '@common/core/logger';
 
 import { IonicVue } from '@ionic/vue';
 
@@ -27,62 +27,35 @@ import '@ionic/vue/css/display.css';
 import './theme/variables.css';
 import "@hotwax/apps-theme";
 
-import permissionPlugin, { Actions, hasPermission, setPermissions } from '@/authorization';
+import permissionPlugin, { setPermissions } from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
-import { dxpComponents } from '@hotwax/dxp-components';
-import { userUtil } from "@/utils/userUtil";
-import { getConfig, fetchGoodIdentificationTypes, getEComStoresByFacility, getProductIdentificationPref, getUserFacilities, getUserPreference, initialise, setProductIdentificationPref, setUserLocale, getAvailableTimeZones, setUserTimeZone, 
-  setUserPreference } from './adapter';
-import localeMessages from '@/locales';
-import { fireBaseUtil } from "@/utils/fireBaseUtil";
 import { useUserStore } from "@/store/user";
+import localeMessages from '@/locales'
+import { createDxpI18n } from '@common'
 
 const pinia = createPinia()
 pinia.use(piniaPersist)
 setActivePinia(pinia)
+
+const i18n = createDxpI18n(localeMessages)
+
 
 const app = createApp(App)
   .use(IonicVue, {
     mode: 'md',
     innerHTMLTemplatesEnabled: true
   })
-  .use(logger, {
-    level: process.env.VUE_APP_DEFAULT_LOG_LEVEL
+  .use(logger as any, {
+    level: import.meta.env.VITE_DEFAULT_LOG_LEVEL
   })
   .use(router)
   .use(pinia)
+  .use(i18n)
   .use(permissionPlugin, {
     rules: permissionRules,
     actions: permissionActions
   })
-  .use(dxpComponents, {
-    Actions,
-    addNotification: fireBaseUtil.addNotification,
-    defaultImgUrl: require("@/assets/images/defaultImage.png"),
-    login: userUtil.login,
-    logout: userUtil.logout,
-    loader: userUtil.loader,
-    appLoginUrl: process.env.VUE_APP_LOGIN_URL as string,
-    appFirebaseConfig: JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any),
-    appFirebaseVapidKey: process.env.VUE_APP_FIREBASE_VAPID_KEY,
-    getConfig,
-    fetchGoodIdentificationTypes,
-    getEComStoresByFacility,
-    getProductIdentificationPref,
-    initialise,
-    setProductIdentificationPref,
-    localeMessages,
-    setUserLocale,
-    setUserTimeZone,
-    storeClientRegistrationToken: fireBaseUtil.storeClientRegistrationToken,
-    getAvailableTimeZones,
-    getUserFacilities,
-    setUserPreference,
-    getUserPreference,
-    hasPermission,
-    fetchProducts: userUtil.fetchProducts
-  });
 
 // Setting permission before router ready, as router checks for permissions, if not set before ready,
 // user gets redirected to settings page on refresh even when having permissions
@@ -91,19 +64,3 @@ setPermissions(useUserStore().getUserPermissions);
 router.isReady().then(() => {
   app.mount('#app');
 });
-
-//TODO: Remove this after dxp-components is updated to replace appContext.config.globalProperties.$store and stopped calling vuex pattern getters/actions
-app.config.globalProperties.$store = {
-  getters: reactive({
-    'user/getUserProfile': computed(() => useUserStore().getUserProfile),
-    'user/getInstanceUrl': computed(() => useUserStore().getInstanceUrl),
-    //'user/getCurrentFacility': computed(() => useUserStore().getCurrentFacility),
-    'user/getPwaState': computed(() => useUserStore().getPwaState),
-    //'user/getCurrentEComStore': computed(() => useUserStore().getCurrentEComStore),
-  }),
-  dispatch: (action: string, payload: any) => {
-    if (action === 'user/updatePwaState') {
-      useUserStore().updatePwaState(payload)
-    }
-  }
-}

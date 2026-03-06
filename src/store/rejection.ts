@@ -1,9 +1,10 @@
 import { defineStore } from "pinia"
 import { RejectionService } from "@/services/RejectionService"
-import { hasError } from "@/adapter"
+import { api } from '@common';
+import { hasError } from "@common/utils/commonUtil";
 import { solrUtil } from "@/utils/solrUtil"
 import { UtilService } from "@/services/UtilService"
-import logger from "@/logger"
+import logger from "@common/core/logger"
 import { commonUtil } from "@/utils/commonUtil"
 import { useProductStore } from "@/store/product"
 import { useUtilStore } from "@/store/util"
@@ -39,7 +40,7 @@ export const useRejectionStore = defineStore("rejection", {
       total: 0,
       query: {
         viewIndex: 0,
-        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        viewSize: import.meta.env.VITE_VIEW_SIZE,
         queryString: "",
         rejectionPeriodId: "LAST_TWENTY_FOUR_HOURS",
         rejectionReasons: []
@@ -74,7 +75,7 @@ export const useRejectionStore = defineStore("rejection", {
     clearRejectedOrderQuery() {
       this.rejectedOrders.query = {
         viewIndex: 0,
-        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        viewSize: import.meta.env.VITE_VIEW_SIZE,
         queryString: "",
         rejectionPeriodId: "LAST_TWENTY_FOUR_HOURS",
         rejectionReasons: []

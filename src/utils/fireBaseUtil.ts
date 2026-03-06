@@ -1,5 +1,45 @@
+import { initializeApp } from "firebase/app";
+import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
 import { DateTime } from "luxon"
 import { useUserStore } from "@/store/user"
+
+const initialiseFirebaseApp = async (
+  appFirebaseConfig: any,
+  appFirebaseVapidKey: string,
+  storeClientRegistrationToken: Function,
+  addNotification: Function
+) => {
+  const firebaseConfig = appFirebaseConfig
+
+  if (!await isSupported()) {
+    console.error("Notifications not supported");
+    return;
+  }
+
+  const app = initializeApp(firebaseConfig);
+  const messaging = getMessaging(app);
+  const permission = await Notification.requestPermission();
+
+  if (permission === "granted") {
+    const token = await getToken(messaging, {
+      vapidKey: appFirebaseVapidKey
+    });
+    await storeClientRegistrationToken(token)
+
+    // handle foreground message
+    onMessage(messaging, (payload: any) => {
+      addNotification({ notification: payload, isForeground: true });
+    });
+
+    // handle background message (service worker)
+    const broadcast = new BroadcastChannel('FB_BG_MESSAGES');
+    broadcast.onmessage = (event) => {
+      addNotification({ notification: event.data, isForeground: false });
+    };
+  } else {
+    alert("You denied notifications.");
+  }
+};
 
 const storeClientRegistrationToken = async (registrationToken: string) => useUserStore().storeClientRegistrationToken(registrationToken);
 
@@ -20,7 +60,7 @@ const generateTopicName = (facilityId: string, enumId: string) => {
 //Checking if firebase cloud messaging is configured.
 const isFcmConfigured = () => {
   try {
-    const config = JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any);
+    const config = JSON.parse(import.meta.env.VITE_FIREBASE_CONFIG as any);
     return !!(config && config.apiKey);
   } catch (e) {
     return false;
@@ -32,5 +72,6 @@ export const fireBaseUtil = {
   generateTopicName,
   generateDeviceId,
   isFcmConfigured,
+  initialiseFirebaseApp,
   storeClientRegistrationToken
 }

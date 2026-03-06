@@ -83,7 +83,7 @@
 
       <section>
         <DxpProductIdentifier />
-        <DxpTimeZoneSwitcher @timeZoneUpdated="timeZoneUpdated" />
+        <DxpTimeZoneSwitcher />
         <DxpLanguageSwitcher />
 
         <ion-card>
@@ -186,14 +186,25 @@ import { computed, ref } from "vue";
 import { openOutline } from "ionicons/icons";
 import { UserService } from "@/services/UserService";
 import { commonUtil } from "@/utils/commonUtil";
-import { hasError, removeClientRegistrationToken, subscribeTopic, unsubscribeTopic } from "@/adapter";
-import { initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore as useDxpUserStore, useAuthStore } from "@hotwax/dxp-components";
-import logger from "@/logger";
+import { translate } from "@common";
+import { hasError } from "@common/utils/commonUtil";
+import { NotificationService } from "@/services/NotificationService";
+import emitter from "@common/core/emitter";
+import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useUserStore as useDxpUserStore } from "@/store/user";
+import { useUserStore as useAuthStore } from "@/store/user";
+import logger from "@common/core/logger";
 import { Actions, hasPermission } from "@/authorization";
 import { DateTime } from "luxon";
 import Image from "@/components/Image.vue";
 import OrderLimitPopover from "@/components/OrderLimitPopover.vue";
-import emitter from "@/event-bus";
+import DxpOmsInstanceNavigator from "@/components/DxpOmsInstanceNavigator.vue";
+import DxpProductStoreSelector from "@/components/DxpProductStoreSelector.vue";
+import DxpFacilitySwitcher from "@/components/DxpFacilitySwitcher.vue";
+import DxpAppVersionInfo from "@/components/DxpAppVersionInfo.vue";
+import DxpProductIdentifier from "@/components/DxpProductIdentifier.vue";
+import DxpTimeZoneSwitcher from "@/components/DxpTimeZoneSwitcher.vue";
+import DxpLanguageSwitcher from "@/components/DxpLanguageSwitcher.vue";
 import { fireBaseUtil } from "@/utils/fireBaseUtil";
 import { UtilService } from "@/services/UtilService";
 import { useUserStore } from "@/store/user";
@@ -320,7 +331,7 @@ const getEcomInvStatus = async () => {
 
 const logout = async () => {
   try {
-    await removeClientRegistrationToken(firebaseDeviceId.value, process.env.VUE_APP_NOTIF_APP_ID as any);
+    await NotificationService.removeClientRegistrationToken(firebaseDeviceId.value, import.meta.env.VITE_NOTIF_APP_ID as any);
   } catch (error) {
     logger.error(error);
   }
@@ -330,13 +341,13 @@ const logout = async () => {
 
     if (!redirectionUrl) {
       const redirectUrl = window.location.origin + "/login";
-      window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+      window.location.href = `${import.meta.env.VITE_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
     }
   });
 };
 
 const goToLaunchpad = () => {
-  window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
+  window.location.href = `${import.meta.env.VITE_LOGIN_URL}`
 };
 
 const changeOrderLimitPopover = async (ev: Event) => {
@@ -362,10 +373,6 @@ const updateFacility = async (facility: any) => {
   getFacilityOrderCount();
   getEcomInvStatus();
   await useUtilStore().fetchAutoShippingLabelConfig();
-};
-
-const timeZoneUpdated = async (tzId: string) => {
-  await useUserStore().setUserTimeZone(tzId);
 };
 
 const updateFacilityMaximumOrderLimit = async (maximumOrderLimit: number | string) => {
@@ -500,8 +507,8 @@ const updateNotificationPref = async (enumId: string) => {
 
     const notificationPref = notificationPrefs.value.find((pref: any) => pref.enumId === enumId);
     notificationPref.isEnabled
-      ? await unsubscribeTopic(topicName, process.env.VUE_APP_NOTIF_APP_ID as any)
-      : await subscribeTopic(topicName, process.env.VUE_APP_NOTIF_APP_ID as any);
+      ? await NotificationService.unsubscribeTopic(topicName, import.meta.env.VITE_NOTIF_APP_ID as any)
+      : await NotificationService.subscribeTopic(topicName, import.meta.env.VITE_NOTIF_APP_ID as any);
 
     notificationPref.isEnabled = !notificationPref.isEnabled;
     await useUserStore().updateNotificationPreferences(notificationPrefs.value);
@@ -514,9 +521,9 @@ const updateNotificationPref = async (enumId: string) => {
   }
   try {
     if (!allNotificationPrefs.value.length && isToggledOn) {
-      await initialiseFirebaseApp(JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any), process.env.VUE_APP_FIREBASE_VAPID_KEY, fireBaseUtil.storeClientRegistrationToken, fireBaseUtil.addNotification);
+      await fireBaseUtil.initialiseFirebaseApp(JSON.parse(import.meta.env.VITE_FIREBASE_CONFIG as any), import.meta.env.VITE_FIREBASE_VAPID_KEY, fireBaseUtil.storeClientRegistrationToken, fireBaseUtil.addNotification);
     } else if (allNotificationPrefs.value.length == 1 && !isToggledOn) {
-      await removeClientRegistrationToken(firebaseDeviceId.value, process.env.VUE_APP_NOTIF_APP_ID as any);
+      await NotificationService.removeClientRegistrationToken(firebaseDeviceId.value, import.meta.env.VITE_NOTIF_APP_ID as any);
     }
     await useUserStore().fetchAllNotificationPrefs();
   } catch (error) {

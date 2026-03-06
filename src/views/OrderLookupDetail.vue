@@ -208,7 +208,7 @@
                 <ion-card v-for="item in shipGroup.items" :key="item.orderItemSeqId">
                   <ion-item>
                     <ion-thumbnail slot="start" v-image-preview="getProduct(shipGroup.productId)" :key="getProduct(shipGroup.productId)?.mainImageUrl">
-                      <DxpShopifyImg :src="getProduct(shipGroup.productId)?.mainImageUrl" size="small" />
+                      <Image :src="getProduct(shipGroup.productId)?.mainImageUrl" />
                     </ion-thumbnail>
                     <ion-label class="ion-text-wrap">
                       <h1>{{ item.productId }}</h1>
@@ -261,13 +261,13 @@
 <script setup lang="ts">
 import { IonBackButton, IonBadge, IonButton, IonCard, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, onIonViewWillEnter, popoverController } from "@ionic/vue";
 import { computed, defineProps, ref } from "vue";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import { callOutline, cashOutline, checkmarkDoneOutline, cubeOutline, ellipsisVerticalOutline, golfOutline, mailOutline, pulseOutline, storefrontOutline, sunnyOutline, ticketOutline, timeOutline, downloadOutline } from "ionicons/icons";
 import { DateTime } from "luxon";
 import { commonUtil } from "@/utils/commonUtil";
 import OrderLookupLabelActionsPopover from "@/components/OrderLookupLabelActionsPopover.vue";
-import { hasError } from "@hotwax/oms-api";
-import logger from "@/logger";
+import { hasError } from "@common/utils/commonUtil";
+import logger from "@common/core/logger";
 import { OrderLookupService } from "@/services/OrderLookupService";
 import { moduleFederationUtil } from "@/utils/moduleFederationUtil";
 import { useOrderLookupStore } from "@/store/orderLookup";
@@ -278,8 +278,8 @@ import { useUserStore } from "@/store/user";
 
 const props = defineProps(["orderId"]);
 
-const orderStatuses = JSON.parse(process.env.VUE_APP_ORDER_STATUS as any);
-const itemStatuses = JSON.parse(process.env.VUE_APP_ITEM_STATUS as any);
+const orderStatuses = JSON.parse(import.meta.env.VITE_ORDER_STATUS as any);
+const itemStatuses = JSON.parse(import.meta.env.VITE_ITEM_STATUS as any);
 const isFetchingStock = ref(false);
 const isFetchingOrderInfo = ref(false);
 const invoicingFacility = ref({} as any);

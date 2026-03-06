@@ -1,105 +1,62 @@
-import { api, apiClient, hasError } from "@/adapter"
-import { useUserStore } from "@/store/user";
+import { api } from '@common';
+import { getOmsURL } from '@common/utils/commonUtil';
+import { hasError } from "@common/utils/commonUtil";
 import { useUtilStore } from "@/store/util";
-import logger from '@/logger';
-import { commonUtil } from '@/utils/commonUtil';
-import { translate } from '@hotwax/dxp-components'
+import logger from '@common/core/logger';
+import { commonUtil } from '@/utils/commonUtil'
+import { translate } from "@common";
 import { cogOutline } from 'ionicons/icons';
 import { ZebraPrinterService } from './ZebraPrinterService';
-
-const getAuth = () => {
-  const userStore = useUserStore();
-  return {
-    omstoken: userStore.getUserToken,
-    baseURL: userStore.getMaargBaseUrl
-  };
-};
 
 const findOrder = async (payload: any): Promise<any> => {
   return api({
     url: "/solr-query",
     method: "post",
-    data: payload
+    data: payload,
+    baseURL: getOmsURL()
   });
 }
 
 const fetchOrderDetail = async (orderId: string): Promise<any> => {
-  const { omstoken, baseURL } = getAuth();
-
-  return await apiClient({
+  return await api({
     url: `/poorti/orders/${orderId}`, //should handle the update of OISG, SRG, SPRG if needed
     method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
   });
 }
 
 const fetchCarrierTrackingUrls = async (payload: any): Promise<any> => {
-  const { omstoken, baseURL } = getAuth();
-
-  return await apiClient({
+  return await api({
     url: `/admin/systemProperties`, //should handle the update of OISG, SRG, SPRG if needed
     method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
     params: payload
   });
 }
 
 const fetchPartyInformation = async (payload: any): Promise<any> => {
-  const { omstoken, baseURL } = getAuth();
-
-  return apiClient({
+  return api({
     url: `/oms/parties`,
     method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
     params: payload
   });
 }
 
 const fetchOrderFacilityChange = async (payload: any): Promise<any> => {
-  const { omstoken, baseURL } = getAuth();
-
-  return apiClient({
+  return api({
     url: `/oms/orders/${payload.orderId}/facilityChange`,
     method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
     params: payload
   });
 }
 
 const fetchOrderItems = async (payload: any): Promise<any> => {
-  const { omstoken, baseURL } = getAuth();
-
-  return apiClient({
+  return api({
     url: `/oms/orders/${payload.orderId}/items`,
     method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
     params: payload
   });
 }
 
 const findShipments = async (orderId: string): Promise<any> => {
-  const { omstoken, baseURL } = getAuth();
-
   const params = {
     orderId: orderId,
     pageSize: 100,
@@ -111,52 +68,31 @@ const findShipments = async (orderId: string): Promise<any> => {
     shipmentTypeId: 'SALES_SHIPMENT',
   } as any
 
-  return await apiClient({
+  return await api({
     url: `/poorti/shipments`,
     method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
     params
   }) as any;
 }
 
 const fetchFacilities = async (payload: any): Promise<any> => {
-  const { omstoken, baseURL } = getAuth();
-
-  return apiClient({
+  return api({
     url: `/oms/facilities`,
     method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
     params: payload
   });
 }
 
 const findOrderInvoicingInfo = async (payload: any): Promise<any> => {
-  const { omstoken, baseURL } = getAuth();
-
-  return apiClient({
+  return api({
     url: "/oms/dataDocumentView",
     method: "post",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
     data: payload,
   });
 }
 
 const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string): Promise<any> => {
   try {
-    const { omstoken, baseURL } = getAuth();
-
     let pdfUrls = shippingLabelPdfUrls?.filter((pdfUrl: any) => pdfUrl);
     if (!pdfUrls || pdfUrls.length == 0) {
       let labelImageType = imageType || "PNG";
@@ -174,14 +110,9 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
         return;
       }
       // Get packing slip from the server
-      const resp = await apiClient({
+      const resp = await api({
         url: "/poorti/Label.pdf",
         method: "GET",
-        baseURL,
-        headers: {
-          "Authorization": "Bearer " + omstoken,
-          "Content-Type": "application/json"
-        },
         params: {
           shipmentId: shipmentIds
         },

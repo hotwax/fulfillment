@@ -1,8 +1,10 @@
 import { defineStore } from "pinia"
 import { TransferOrderService } from "@/services/TransferOrderService"
-import { hasError } from "@/adapter"
-import logger from "@/logger"
-import { getProductIdentificationValue, translate } from "@hotwax/dxp-components"
+import { api } from '@common';
+import { hasError } from "@common/utils/commonUtil";
+import logger from "@common/core/logger"
+import { translate } from "@common";
+import { getProductIdentificationValue } from "@/utils/commonUtil";
 import { commonUtil } from "@/utils/commonUtil"
 import { useProductStore } from "@/store/product"
 import { useUtilStore } from "@/store/util"
@@ -35,7 +37,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
       total: 0,
       query: {
         viewIndex: 0,
-        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        viewSize: import.meta.env.VITE_VIEW_SIZE,
         queryString: "",
         selectedShipmentMethods: [],
         orderStatusId: "ORDER_APPROVED"
@@ -87,7 +89,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
     clearTransferOrderFilters() {
       this.transferOrder.query = {
         viewIndex: 0,
-        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        viewSize: import.meta.env.VITE_VIEW_SIZE,
         queryString: "",
         selectedShipmentMethods: [],
         orderStatusId: "ORDER_APPROVED"

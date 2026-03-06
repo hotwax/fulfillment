@@ -1,7 +1,7 @@
 <template>
   <ion-app>
     <ion-split-pane content-id="main-content" when="lg">
-      <Menu />
+      <Menu v-if="router && router.currentRoute.value.name !== 'Login'" />
       <ion-router-outlet id="main-content" />
     </ion-split-pane>
   </ion-app>
@@ -11,21 +11,20 @@
 import { createAnimation, IonApp, IonRouterOutlet, IonSplitPane, loadingController } from "@ionic/vue";
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import Menu from "@/components/Menu.vue";
-import emitter from "@/event-bus";
-import { initialise, resetConfig } from "@/adapter";
+import { translate } from "@common";
+import emitter from "@common/core/emitter";
 import { Settings } from "luxon";
-import { useAuthStore, getAppLoginUrl, initialiseFirebaseApp, translate, useProductIdentificationStore, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
-import logger from "@/logger";
+import logger from "@common/core/logger";
 import { init } from "@module-federation/runtime";
 import { fireBaseUtil } from "@/utils/fireBaseUtil";
 import { useUserStore } from "@/store/user";
+import { useProductIdentificationStore } from "@/store/productIdentification";
+import router from './router';
 const loader = ref<any>(null);
-const maxAge = process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0;
-const appFirebaseConfig = JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any);
-const appFirebaseVapidKey = process.env.VUE_APP_FIREBASE_VAPID_KEY;
+const appFirebaseConfig = JSON.parse(import.meta.env.VITE_FIREBASE_CONFIG as any);
+const appFirebaseVapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
 const userToken = computed(() => useUserStore().getUserToken);
-const instanceUrl = computed(() => useUserStore().getInstanceUrl);
 const userProfile = computed(() => useUserStore().getUserProfile);
 const allNotificationPrefs = computed(() => useUserStore().getAllNotificationPrefs);
 
@@ -47,15 +46,6 @@ const dismissLoader = () => {
     loader.value.dismiss();
     loader.value = null;
   }
-};
-
-const unauthorised = async () => {
-  const isEmbedded = useAuthStore().isEmbedded;
-  const shop = useAuthStore().shop;
-  const host = useAuthStore().host;
-  useUserStore().logout({ isUserUnauthorised: true });
-  const redirectUrl = window.location.origin + "/login";
-  window.location.href = isEmbedded ? `${redirectUrl}?embedded=1&shop=${shop}&host=${host}` :`${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`;
 };
 
 const playAnimation = () => {
@@ -80,25 +70,10 @@ const playAnimation = () => {
   createAnimation().addAnimation([gapAnimation, revealAnimation]).play();
 };
 
-initialise({
-  token: userToken.value,
-  instanceUrl: instanceUrl.value,
-  cacheMaxAge: maxAge,
-  events: {
-    unauthorised,
-    responseError: () => {
-      setTimeout(() => dismissLoader(), 100);
-    },
-    queueTask: (payload: any) => {
-      emitter.emit("queueTask", payload);
-    }
-  }
-});
-
 onMounted(async () => {
   init({
     name: "fulfillment",
-    remotes: [{ name: "fulfillment_extensions", entry: process.env.VUE_APP_REMOTE_ENTRY as string }]
+    remotes: [{ name: "fulfillment_extensions", entry: import.meta.env.VITE_REMOTE_ENTRY as string }]
   });
 
   loader.value = await loadingController.create({
@@ -115,12 +90,12 @@ onMounted(async () => {
     Settings.defaultZone = userProfile.value.userTimeZone;
   }
 
-  const currentEComStore: any = useDxpUserStore().getCurrentEComStore;
+  const currentEComStore: any = useUserStore().getCurrentEComStore;
   if (userToken.value && currentEComStore?.productStoreId) {
     await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId).catch((error) => logger.error(error));
 
     if (appFirebaseConfig && appFirebaseConfig.apiKey && allNotificationPrefs.value?.length) {
-      await initialiseFirebaseApp(
+      await fireBaseUtil.initialiseFirebaseApp(
         appFirebaseConfig,
         appFirebaseVapidKey,
         fireBaseUtil.storeClientRegistrationToken,
@@ -134,6 +109,5 @@ onUnmounted(() => {
   emitter.off("presentLoader", presentLoader);
   emitter.off("dismissLoader", dismissLoader);
   emitter.off("playAnimation", playAnimation);
-  resetConfig();
 });
 </script>

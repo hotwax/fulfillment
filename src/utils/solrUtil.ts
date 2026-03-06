@@ -2,7 +2,7 @@
 import { commonUtil } from "./commonUtil";
 
 const prepareOrderQuery = (params: any) => {
-  const viewSize = params.viewSize ? params.viewSize : process.env.VUE_APP_VIEW_SIZE;
+  const viewSize = params.viewSize ? params.viewSize : import.meta.env.VITE_VIEW_SIZE;
   const viewIndex = params.viewIndex ? params.viewIndex : 0;
 
   const payload = {
@@ -51,7 +51,7 @@ const prepareOrderQuery = (params: any) => {
 }
 
 const prepareSolrQuery = (params: any) => {
-  const viewSize = params.viewSize ? params.viewSize : process.env.VUE_APP_VIEW_SIZE;
+  const viewSize = params.viewSize ? params.viewSize : import.meta.env.VITE_VIEW_SIZE;
   const viewIndex = params.viewIndex ? params.viewIndex : 0;
   let groupParams = {} as any;
 
@@ -128,7 +128,7 @@ const escapeSolrSpecialChars = (input: any) => {
 }
 
 const prepareOrderLookupQuery = (query: any) => {
-  const viewSize = query.viewSize ? query.viewSize : process.env.VUE_APP_VIEW_SIZE;
+  const viewSize = query.viewSize ? query.viewSize : import.meta.env.VITE_VIEW_SIZE;
   const viewIndex = query.viewIndex ? query.viewIndex : 0;
 
   const payload = {

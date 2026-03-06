@@ -35,9 +35,10 @@ import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, Ion
 import { computed, defineProps, onBeforeMount, ref } from "vue";
 import { useUtilStore } from "@/store/util";
 import { closeOutline, saveOutline } from "ionicons/icons";
-import { translate } from "@hotwax/dxp-components";
-import logger from "@/logger";
+import { translate } from "@common";
+import logger from "@common/core/logger";
 import { UtilService } from "@/services/UtilService";
+import { hasError } from "@common/utils/commonUtil";
 import { commonUtil } from "@/utils/commonUtil";
 
 const props = defineProps(["reason"]);
@@ -65,7 +66,7 @@ const updateRejectionReason = async () => {
 
   try {
     const resp = await UtilService.updateEnumeration(rejectionReason.value);
-    if (!commonUtil.hasError(resp)) {
+    if (!hasError(resp)) {
       commonUtil.showToast(translate("Rejection reason updated successfully."));
       const rejectReason = rejectReasons.value.find((reason: any) => reason.enumId === rejectionReason.value.enumId);
       if (rejectReason) {

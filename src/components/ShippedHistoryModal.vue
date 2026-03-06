@@ -38,7 +38,7 @@ import { defineProps } from "vue";
   import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonThumbnail, IonTitle, IonToolbar, modalController } from "@ionic/vue";
   import { computed, onMounted, ref } from "vue";
   import { closeOutline } from "ionicons/icons";
-  import { DxpShopifyImg, translate } from "@hotwax/dxp-components";
+  import { DxpShopifyImg, translate } from "@common";
   import { DateTime } from "luxon";
   import { useTransferOrderStore } from "@/store/transferorder";
   import { useProductStore } from "@/store/product";

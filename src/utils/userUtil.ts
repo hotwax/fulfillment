@@ -1,4 +1,4 @@
-import { translate } from '@hotwax/dxp-components'
+import { translate } from "@common";
 import { useUserStore } from "@/store/user"
 import { loadingController } from '@ionic/vue'
 import { ProductService } from '@/services/ProductService';

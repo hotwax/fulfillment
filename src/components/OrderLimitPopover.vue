@@ -23,7 +23,7 @@
 import { IonContent, IonIcon, IonItem, IonList, IonListHeader, alertController, popoverController } from "@ionic/vue";
 import { defineProps, ref } from "vue";
 import { lockClosedOutline, lockOpenOutline } from "ionicons/icons";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import { commonUtil } from "@/utils/commonUtil";
 
 const props = defineProps(["fulfillmentOrderLimit"]);

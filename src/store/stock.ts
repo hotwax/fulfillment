@@ -1,9 +1,11 @@
 import { defineStore } from "pinia"
 import { StockService } from "@/services/StockService"
-import { hasError } from "@/adapter"
-import logger from "@/logger"
+import { api } from '@common';
+import { hasError } from "@common/utils/commonUtil";
+
+import logger from "@common/core/logger"
 import { commonUtil } from "@/utils/commonUtil"
-import { translate } from "@hotwax/dxp-components"
+import { translate } from "@common";
 
 interface StockState {
   products: Record<string, any>

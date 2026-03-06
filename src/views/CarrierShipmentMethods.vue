@@ -48,7 +48,7 @@
 import { IonButton, IonButtons, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonTitle, IonToggle, IonToolbar, modalController } from "@ionic/vue";
 import { computed, onMounted } from "vue";
 import { addCircleOutline, checkmarkDoneOutline, peopleOutline, shieldCheckmarkOutline } from "ionicons/icons";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import { useRoute, useRouter } from "vue-router";
 import { commonUtil } from "@/utils/commonUtil";
 import ShipmentMethods from "@/components/ShipmentMethods.vue";

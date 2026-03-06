@@ -1,7 +1,8 @@
 import { defineStore } from "pinia"
 import { ProductService } from "@/services/ProductService"
-import { hasError, searchProducts } from "@/adapter"
-import logger from "@/logger"
+import { api } from '@common';
+import { hasError } from "@common/utils/commonUtil";
+import logger from "@common/core/logger"
 
 interface ProductState {
   cached: Record<string, any>
@@ -41,7 +42,7 @@ export const useProductStore = defineStore("product", {
 
       let resp
       try {
-        resp = await searchProducts({
+        resp = await ProductService.searchProducts({
           filters: {
             productId: {
               value: productIdFilter,

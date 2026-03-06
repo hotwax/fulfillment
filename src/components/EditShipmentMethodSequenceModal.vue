@@ -44,7 +44,7 @@
   import { close, saveOutline } from "ionicons/icons";
   import { commonUtil } from "@/utils/commonUtil";
   import { CarrierService } from "@/services/CarrierService";
-  import { translate } from "@hotwax/dxp-components";
+  import { translate } from "@common";
   import { useCarrierStore } from "@/store/carrier";
   const filteredShipmentMethods = ref([] as any[]);
   const currentCarrier = computed(() => useCarrierStore().getCurrent);

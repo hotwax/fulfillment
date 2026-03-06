@@ -30,7 +30,7 @@ import { IonButtons, IonButton, IonContent, IonHeader, IonIcon, IonItem, IonLabe
 import { computed } from "vue";
 import { useRejectionStore } from "@/store/rejection";
 import { closeOutline } from "ionicons/icons";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 const usedReasons = computed(() => useRejectionStore().getUsedReasons);
 
 const closeModal = () => {

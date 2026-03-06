@@ -57,7 +57,7 @@ import { IonButton, IonContent, IonChip, IonFab, IonFabButton, IonHeader, IonIco
 import { computed, ref } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
 import { addOutline, caretDownOutline, ellipsisVerticalOutline } from "ionicons/icons";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import CreateRejectionReasonModal from "@/components/CreateRejectionReasonModal.vue";
 import RejectReasonActionsPopver from "@/components/RejectReasonActionsPopver.vue";
 import VarianceTypeActionsPopover from "@/components/VarianceTypeActionsPopover.vue";
@@ -65,8 +65,8 @@ import { useUtilStore } from "@/store/util";
 import { UtilService } from "@/services/UtilService";
 import { commonUtil } from "@/utils/commonUtil";
 import { DateTime } from "luxon";
-import { hasError } from "@hotwax/oms-api";
-import logger from "@/logger";
+import { hasError } from "@common/utils/commonUtil";
+import logger from "@common/core/logger";
 
 const filteredReasons = ref([] as any);
 const toast = ref(null as any);

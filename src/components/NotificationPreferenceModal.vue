@@ -31,12 +31,13 @@
 import { IonButtons, IonButton, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonList, IonTitle, IonToggle, IonToolbar, modalController, alertController } from "@ionic/vue";
 import { computed, onBeforeMount, ref } from "vue";
 import { closeOutline, save } from "ionicons/icons";
-import { translate, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
+import { translate } from "@common";
+import emitter from "@common/core/emitter";
+import { useUserStore as useDxpUserStore } from "@/store/user";
 import { commonUtil } from "@/utils/commonUtil";
-import emitter from "@/event-bus";
 import { fireBaseUtil } from "@/utils/fireBaseUtil";
-import { subscribeTopic, unsubscribeTopic } from "@/adapter";
-import logger from "@/logger";
+import { NotificationService } from "@/services/NotificationService";
+import logger from "@common/core/logger";
 import { useUserStore } from "@/store/user";
 const notificationPrefState = ref<Record<string, boolean>>({});
 const notificationPrefToUpdate = ref({ subscribe: [] as string[], unsubscribe: [] as string[] });
@@ -78,13 +79,13 @@ const handleTopicSubscription = async () => {
   const subscribeRequests = [] as any;
   notificationPrefToUpdate.value.subscribe.map(async (enumId: string) => {
     const topicName = fireBaseUtil.generateTopicName(facilityId, enumId);
-    await subscribeRequests.push(subscribeTopic(topicName, process.env.VUE_APP_NOTIF_APP_ID as any));
+    await subscribeRequests.push(NotificationService.subscribeTopic(topicName, import.meta.env.VITE_NOTIF_APP_ID as any));
   });
 
   const unsubscribeRequests = [] as any;
   notificationPrefToUpdate.value.unsubscribe.map(async (enumId: string) => {
     const topicName = fireBaseUtil.generateTopicName(facilityId, enumId);
-    await unsubscribeRequests.push(unsubscribeTopic(topicName, process.env.VUE_APP_NOTIF_APP_ID as any));
+    await unsubscribeRequests.push(NotificationService.unsubscribeTopic(topicName, import.meta.env.VITE_NOTIF_APP_ID as any));
   });
 
   const responses = await Promise.allSettled([...subscribeRequests, ...unsubscribeRequests]);

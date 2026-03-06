@@ -143,16 +143,19 @@ import { computed, ref } from "vue";
 import { useRouter, onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline } from "ionicons/icons";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
-import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
+import { DxpShopifyImg } from "@common";
+import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useUserStore as useDxpUserStore } from "@/store/user";
 import { commonUtil } from "@/utils/commonUtil";
 import { solrUtil } from "@/utils/solrUtil";
-import { hasError } from "@/adapter";
+import { hasError } from "@common/utils/commonUtil";
 import { UtilService } from "@/services/UtilService";
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
-import emitter from "@/event-bus";
-import logger from "@/logger";
-import { translate } from "@hotwax/dxp-components";
+import logger from "@common/core/logger";
 import { Actions, hasPermission } from "@/authorization";
+import { translate } from "@common";
+import emitter from "@common/core/emitter";
 import OrderActionsPopover from "@/components/OrderActionsPopover.vue";
 import { orderUtil } from "@/utils/orderUtil";
 import { OrderService } from "@/services/OrderService";
@@ -200,7 +203,7 @@ const viewNotifications = () => {
 };
 
 const getOpenOrders = () => {
-  return JSON.parse(JSON.stringify(openOrders.value.list)).slice(0, (openOrders.value.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
+  return JSON.parse(JSON.stringify(openOrders.value.list)).slice(0, (openOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any));
 };
 
 const enableScrolling = () => {
@@ -227,7 +230,7 @@ const loadMoreOpenOrders = async (event: any) => {
 };
 
 const isOpenOrdersScrollable = () => {
-  return ((openOrders.value.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any)) < openOrders.value.query.viewSize;
+  return ((openOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any)) < openOrders.value.query.viewSize;
 };
 
 const updateSelectedShipmentMethods = async (method: string) => {
@@ -240,7 +243,7 @@ const updateSelectedShipmentMethods = async (method: string) => {
     updatedShipmentMethods.splice(index, 1);
   }
 
-  openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  openOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
   openOrdersQuery.selectedShipmentMethods = updatedShipmentMethods;
   selectedShipmentMethods.value = updatedShipmentMethods;
 
@@ -309,7 +312,7 @@ const fetchShipmentMethods = async () => {
 
 const updateQueryString = async (queryString: string) => {
   const openOrdersQuery = JSON.parse(JSON.stringify(openOrders.value.query));
-  openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  openOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
   openOrdersQuery.queryString = queryString;
   await useOrderStore().updateOpenQuery({ ...openOrdersQuery });
   searchedQuery.value = queryString;
@@ -324,7 +327,7 @@ const updateOrderQuery = async (size: any) => {
 const initialiseOrderQuery = async () => {
   const openOrdersQuery = JSON.parse(JSON.stringify(openOrders.value.query));
   openOrdersQuery.viewIndex = 0;
-  openOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  openOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
   if (selectedShipmentMethods.value?.length) openOrdersQuery.selectedShipmentMethods = selectedShipmentMethods.value;
   await useOrderStore().updateOpenQuery({ ...openOrdersQuery });
 };

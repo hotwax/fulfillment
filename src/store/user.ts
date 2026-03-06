@@ -1,26 +1,26 @@
 import { defineStore } from "pinia"
 import { UserService } from "@/services/UserService"
-import { commonUtil } from "@/utils/commonUtil"
-import { hasError, updateInstanceUrl, updateToken, resetConfig, getNotificationEnumIds, getNotificationUserPrefTypeIds, logout as logoutAdapter, storeClientRegistrationToken as storeClientRegistrationTokenAdapter } from "@/adapter"
-import { translate, useAuthStore, useUserStore as useDxpUserStore, useProductIdentificationStore } from "@hotwax/dxp-components"
+import { NotificationService } from "@/services/NotificationService"
+import { commonUtil } from "@/utils/commonUtil";
+import { translate } from "@common";
+import { hasError, hasPermission, getOmsURL, getMaargURL } from "@common/utils/commonUtil";
+import { UtilService } from "@/services/UtilService"
+import { api } from "@common"
 import { DateTime, Settings } from "luxon"
-import logger from "@/logger"
-import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from "@/authorization"
-import emitter from "@/event-bus"
+import logger from "@common/core/logger"
+import { getServerPermissionsFromRules, prepareAppPermissions, setPermissions } from "@/authorization"
 import { fireBaseUtil } from "@/utils/fireBaseUtil"
-import router from "@/router"
-import { useOrderStore } from "@/store/order"
-import { useOrderLookupStore } from "@/store/orderLookup"
-import { useTransferOrderStore } from "@/store/transferorder"
-import { useProductStore } from "@/store/product"
 import { useUtilStore } from "@/store/util"
-import { UtilService } from '@/services/UtilService';
+import { useAuth } from "@/composables/auth";
+import { useProductIdentificationStore } from "@/store/productIdentification";
+import { cookieHelper } from "@common/helpers/cookieHelper";
 
 interface UserState {
-  token: string
   permissions: any[]
   current: any
   instanceUrl: string
+  currentFacility: any
+  currentEComStore: any
   preference: {
     printShippingLabel: boolean
     printPackingSlip: boolean
@@ -29,23 +29,24 @@ interface UserState {
     updateExists: boolean
     registration: any
   }
-  omsRedirectionInfo: {
-    url: string
-    token: string
-  }
   notifications: any[]
   notificationPrefs: any[]
   firebaseDeviceId: string
   hasUnreadNotifications: boolean
-  allNotificationPrefs: any[]
+  allNotificationPrefs: any[],
+  timeZones: any[],
+  currentTimeZoneId: string,
+  localeOptions: any,
+  locale: string
 }
 
 export const useUserStore = defineStore("appUser", {
   state: (): UserState => ({
-    token: "",
     permissions: [],
     current: {},
     instanceUrl: "",
+    currentFacility: {},
+    currentEComStore: {},
     preference: {
       printShippingLabel: false,
       printPackingSlip: false
@@ -54,85 +55,66 @@ export const useUserStore = defineStore("appUser", {
       updateExists: false,
       registration: null
     },
-    omsRedirectionInfo: {
-      url: "",
-      token: ""
-    },
     notifications: [],
     notificationPrefs: [],
     firebaseDeviceId: "",
     hasUnreadNotifications: true,
-    allNotificationPrefs: []
+    allNotificationPrefs: [],
+    timeZones: [],
+    currentTimeZoneId: '',
+    localeOptions: import.meta.env.VITE_LOCALES ? JSON.parse(import.meta.env.VITE_LOCALES) : { "en-US": "English" },
+    locale: 'en-US'
+
   }),
   getters: {
-    isAuthenticated(state) {
-      return !!state.token
-    },
-    isUserAuthenticated(state) {
-      return state.token && state.current
-    },
-    getUserToken(state) {
-      return state.token
-    },
-    getUserPermissions(state) {
+    getTimeZones: (state) => state.timeZones,
+    getCurrentTimeZone: (state) => state.currentTimeZoneId,
+    getLocale: (state) => state.locale,
+    getLocaleOptions: (state) => state.localeOptions,
+    getUserPermissions(state: UserState) {
       return state.permissions
     },
-    getUserProfile(state) {
+    getUserProfile(state: UserState) {
       return state.current
     },
-    getInstanceUrl(state) {
-      const baseUrl = process.env.VUE_APP_BASE_URL
+    getInstanceUrl(state: UserState) {
+      const baseUrl = import.meta.env.VITE_BASE_URL
       return baseUrl ? baseUrl : state.instanceUrl
     },
-    getBaseUrl(state) {
-      let baseURL = process.env.VUE_APP_BASE_URL
+    getBaseUrl(state: UserState): string {
+      let baseURL = import.meta.env.VITE_BASE_URL
       if (!baseURL) baseURL = state.instanceUrl
-      return baseURL.startsWith("http") ? baseURL.includes("/api") ? baseURL : `${baseURL}/api/` : `https://${baseURL}.hotwax.io/api/`
+      return baseURL.startsWith("http") ? baseURL.includes("/api") ? baseURL : `${baseURL} /api/` : `https://${baseURL}.hotwax.io/api/`
     },
-    getUserPreference(state) {
+    getUserPreferenceState(state: UserState) {
       return state.preference
     },
-    getPwaState(state) {
+    getPwaState(state: UserState) {
       return state.pwaState
     },
-    getMaargUrl(state) {
-      const url = state.omsRedirectionInfo.url
-      return url.startsWith("http") ? new URL(url).origin : `https://${url}.hotwax.io`
-    },
-    getMaargBaseUrl(state) {
-      const url = state.omsRedirectionInfo.url
-      return url.startsWith("http") ? url.includes("/rest/s1") ? url : `${url}/rest/s1/` : `https://${url}.hotwax.io/rest/s1`
-    },
-    getOmsRedirectionInfo(state) {
-      return state.omsRedirectionInfo
-    },
-    getNotifications(state) {
+    getNotifications(state: UserState) {
       return state.notifications.sort((a: any, b: any) => b.time - a.time)
     },
-    getNotificationPrefs(state) {
+    getNotificationPrefs(state: UserState) {
       return state.notificationPrefs
     },
-    getFirebaseDeviceId(state) {
+    getFirebaseDeviceId(state: UserState) {
       return state.firebaseDeviceId
     },
-    getUnreadNotificationsStatus(state) {
+    getUnreadNotificationsStatus(state: UserState) {
       return state.hasUnreadNotifications
     },
-    getAllNotificationPrefs(state) {
+    getAllNotificationPrefs(state: UserState) {
       return state.allNotificationPrefs
+    },
+    getCurrentFacility(state: UserState) {
+      return state.currentFacility
+    },
+    getCurrentEComStore(state: UserState) {
+      return state.currentEComStore
     }
   },
   actions: {
-    setToken(payload: any) {
-      this.token = payload.newToken
-    },
-    endSession() {
-      this.token = ""
-      this.current = {}
-      this.permissions = []
-      this.allNotificationPrefs = []
-      this.omsRedirectionInfo = { url: "", token: "" }
-    },
     updateUserInfo(payload: any) {
       this.current = { ...this.current, ...payload }
     },
@@ -164,171 +146,237 @@ export const useUserStore = defineStore("appUser", {
     setAllNotificationPrefs(payload: any) {
       this.allNotificationPrefs = payload
     },
-    setOmsRedirectionInfoState(payload: any) {
-      this.omsRedirectionInfo = payload
+    setCurrentFacility(facility: any) {
+      this.currentFacility = facility
     },
-    async login(payload: any) {
+    getProductStores() {
+      return this.current.stores
+    },
+    async setCurrentEComStore(store: any) {
+      this.currentEComStore = store
+      await this.fetchEComStoreDependencies(store.productStoreId)
+    },
+
+    async samlLogin(token: string, expirationTime: string) {
       try {
-        const { token, oms, omsRedirectionUrl } = payload
-        this.setUserInstanceUrl(oms)
-
-        const permissionId = process.env.VUE_APP_PERMISSION_ID
-        const serverPermissionsFromRules = getServerPermissionsFromRules()
-        if (permissionId) serverPermissionsFromRules.push(permissionId)
-
-        const serverPermissions = await UserService.getUserPermissions({
-          permissionIds: [...new Set(serverPermissionsFromRules)]
-        }, token)
-        const appPermissions = prepareAppPermissions(serverPermissions)
-
-        if (permissionId) {
-          const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === permissionId)
-          if (!hasPermission) {
-            const permissionError = "You do not have permission to access the app."
-            commonUtil.showToast(translate(permissionError))
-            logger.error("error", permissionError)
-            return Promise.reject(new Error(permissionError))
-          }
-        }
-
-        const userProfile = await UserService.getUserProfile(token)
-
-        const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_STOREFULFILLMENT_ADMIN")
-        const facilities = await useDxpUserStore().getUserFacilities(userProfile?.partyId, "OMS_FULFILLMENT", isAdminUser)
-        await useDxpUserStore().getFacilityPreference("SELECTED_FACILITY")
-
-        if (!facilities.length) throw "Unable to login. User is not assocaited with any facility"
-
-        userProfile.facilities = facilities
-        userProfile.facilities.reduce((uniqueFacilities: any, facility: any, index: number) => {
-          if (uniqueFacilities.includes(facility.facilityId)) userProfile.facilities.splice(index, 1)
-          else uniqueFacilities.push(facility.facilityId)
-          return uniqueFacilities
-        }, [])
-
-        const facilityId = router.currentRoute.value.query.facilityId
-        let isQueryFacilityFound = false
-        if (facilityId) {
-          const facility = userProfile.facilities.find((facility: any) => facility.facilityId === facilityId)
-          if (facility) {
-            isQueryFacilityFound = true
-            useDxpUserStore().currentFacility = facility
-          } else {
-            commonUtil.showToast(translate("Redirecting to home page due to incorrect information being passed."))
-          }
-        }
-
-        if (useAuthStore().isEmbedded) {
-          const locationId = useAuthStore().posContext.locationId
-          const payload = {
-            shopifyLocationId: locationId
-          }
-          const resp = await UtilService.fetchShopifyShopLocation(omsRedirectionUrl, token, payload)
-          if (!hasError(resp) && resp.data?.length) {
-            const facilityId = resp.data[0].facilityId;
-            const facility = userProfile.facilities.find((facility: any) => facility.facilityId === facilityId);
-            if (!facility) {
-              throw "Unable to login. User is not associated with this location"
-            }
-            useDxpUserStore().currentFacility = facility
-          } else {
-            throw "Failed to fetch location information"
-          }
-        }
-
-        const currentFacility: any = useDxpUserStore().getCurrentFacility
-        userProfile.stores = await useDxpUserStore().getEComStoresByFacility(currentFacility.facilityId)
-        await useDxpUserStore().getEComStorePreference("SELECTED_BRAND")
-        const preferredStore: any = useDxpUserStore().getCurrentEComStore
-
-        setPermissions(appPermissions)
-        if (userProfile.userTimeZone) {
-          Settings.defaultZone = userProfile.userTimeZone
-        }
-
-        if (omsRedirectionUrl) {
-          const api_key = await UserService.moquiLogin(omsRedirectionUrl, token)
-          if (api_key) {
-            this.setOmsRedirectionInfo({ url: omsRedirectionUrl, token: api_key })
-          } else {
-            commonUtil.showToast(translate("Some of the app functionality will not work due to missing configuration."))
-            logger.error("Some of the app functionality will not work due to missing configuration.")
-          }
-        } else {
-          commonUtil.showToast(translate("Some of the app functionality will not work due to missing configuration."))
-          logger.error("Some of the app functionality will not work due to missing configuration.")
-        }
-
-        updateToken(token)
-
-        this.updateUserInfo(userProfile)
-        this.setPermissionsState(appPermissions)
-        this.setToken({ newToken: token })
-
-        await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
-          .catch((error) => logger.error(error))
-
-        await this.fetchAllNotificationPrefs()
-        useUtilStore().findProductStoreShipmentMethCount()
-        await useUtilStore().fetchCarrierShipmentBoxTypes()
-        await useUtilStore().fetchProductStoreSettings(preferredStore.productStoreId)
-        await useUtilStore().fetchAutoShippingLabelConfig()
-
-        const orderId = router.currentRoute.value.query.orderId
-        if (isQueryFacilityFound && orderId) {
-          return `/transfer-order-details/${orderId}/open`
-        }
-      } catch (err: any) {
-        commonUtil.showToast(translate("Something went wrong while login. Please contact administrator."))
-        logger.error("error: ", err.toString())
-        return Promise.reject(err instanceof Object ? err : new Error(err))
-      }
-    },
-    async logout(payload: any) {
-      let redirectionUrl = ""
-
-      if (!payload?.isUserUnauthorised) {
-        emitter.emit("presentLoader", { message: "Logging out", backdropDismiss: false })
-        let resp
+        cookieHelper().set("token", token)
+        cookieHelper().set("expirationTime", expirationTime)
 
         try {
-          resp = await logoutAdapter()
-          resp = JSON.parse(resp.startsWith("//") ? resp.replace("//", "") : resp)
-        } catch (err) {
-          logger.error("Error parsing data", err)
+          const userProfileResp = await api({
+            url: "admin/user/profile",
+            method: "get",
+            baseUrl: getMaargURL()
+          });
+          this.current = userProfileResp.data
+        } catch (error: any) {
+          useAuth().clearAuth();
+          commonUtil.showToast(translate("Failed to fetch user profile information"));
+          console.error("error", error);
+          return Promise.reject(new Error(error));
         }
 
-        if (resp?.logoutAuthType == "SAML2SSO") {
-          redirectionUrl = resp.logoutUrl
-        }
-
-        emitter.emit("dismissLoader")
+        await this.fetchPermissions();
+      } catch (error: any) {
+        // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
+        // TODO Check if handling of specific status codes is required.
+        commonUtil.showToast(translate('Something went wrong while login. Please contact administrator.'));
+        console.error("error: ", error);
+        return Promise.reject(new Error(error))
       }
-
-      const authStore = useAuthStore()
-      const userStore = useDxpUserStore()
-      this.endSession()
-      useOrderStore().clearOrders()
-      useOrderLookupStore().clearOrderLookup()
-      this.clearNotificationState()
-      useTransferOrderStore().clearTransferOrdersList()
-      useTransferOrderStore().clearTransferOrderFilters()
-      useTransferOrderStore().clearCurrentTransferOrder()
-      useTransferOrderStore().clearCurrentTransferShipment()
-      useProductStore().clearProductState()
-      useUtilStore().clearUtilState()
-      resetConfig()
-      resetPermissions()
-
-      authStore.$reset()
-      userStore.$reset()
-
-      if (redirectionUrl) {
-        window.location.href = redirectionUrl
-      }
-
-      return redirectionUrl
     },
+
+    async fetchUserProfile() {
+      try {
+        const userProfileResp = await api({
+          url: "admin/user/profile",
+          method: "get",
+        });
+        this.current = userProfileResp.data
+
+        if (this.current.timeZone) {
+          Settings.defaultZone = this.current.timeZone;
+        }
+      } catch (error: any) {
+        commonUtil.showToast(translate("Failed to fetch user profile information"));
+        console.error("error", error);
+        useAuth().clearAuth();
+        return Promise.reject(new Error(error));
+      }
+    },
+    async fetchPermissions() {
+      const permissionId = import.meta.env.VITE_VUE_APP_PERMISSION_ID;
+      // Prepare permissions list
+      const serverPermissionsFromRules = [...new Set(getServerPermissionsFromRules())];
+      if (permissionId) serverPermissionsFromRules.push(permissionId);
+      let serverPermissions = [] as any;
+
+      // If the server specific permission list doesn't exist, getting server permissions will be of no use
+      // It means there are no rules yet depending upon the server permissions.
+      if (serverPermissionsFromRules && serverPermissionsFromRules.length == 0) return serverPermissions;
+      // TODO pass specific permissionIds
+      let resp;
+      // TODO Make it configurable from the environment variables.
+      // Though this might not be an server specific configuration, 
+      // we will be adding it to environment variable for easy configuration at app level
+      const viewSize = 200;
+
+      try {
+        const params = {
+          "viewIndex": 0,
+          viewSize,
+          permissionIds: serverPermissionsFromRules
+        }
+        resp = await api({
+          url: "getPermissions",
+          method: "post",
+          baseURL: getOmsURL(),
+          data: params,
+        })
+        if (resp.status === 200 && resp.data.docs?.length && !hasError(resp)) {
+          serverPermissions = resp.data.docs.map((permission: any) => permission.permissionId);
+          const total = resp.data.count;
+          const remainingPermissions = total - serverPermissions.length;
+          if (remainingPermissions > 0) {
+            // We need to get all the remaining permissions
+            const apiCallsNeeded = Math.floor(remainingPermissions / viewSize) + (remainingPermissions % viewSize != 0 ? 1 : 0);
+            const responses = await Promise.all([...Array(apiCallsNeeded).keys()].map(async (index: any) => {
+              const response = await api({
+                url: "getPermissions",
+                method: "post",
+                baseURL: getOmsURL(),
+                data: {
+                  "viewIndex": index + 1,
+                  viewSize,
+                  permissionIds: serverPermissionsFromRules
+                }
+              })
+              if (!hasError(response)) {
+                return Promise.resolve(response);
+              } else {
+                return Promise.reject(response);
+              }
+            }))
+            const permissionResponses = {
+              success: [],
+              failed: []
+            }
+            responses.reduce((permissionResponses: any, permissionResponse: any) => {
+              if (permissionResponse.status !== 200 || hasError(permissionResponse) || !permissionResponse.data?.docs) {
+                permissionResponses.failed.push(permissionResponse);
+              } else {
+                permissionResponses.success.push(permissionResponse);
+              }
+              return permissionResponses;
+            }, permissionResponses)
+
+            serverPermissions = permissionResponses.success.reduce((serverPermissions: any, response: any) => {
+              serverPermissions.push(...response.data.docs.map((permission: any) => permission.permissionId));
+              return serverPermissions;
+            }, serverPermissions)
+
+            // If partial permissions are received and we still allow user to login, some of the functionality might not work related to the permissions missed.
+            // Show toast to user intimiting about the failure
+            // Allow user to login
+            // TODO Implement Retry or improve experience with show in progress icon and allowing login only if all the data related to user profile is fetched.
+            if (permissionResponses.failed.length > 0) Promise.reject("Something went wrong while getting complete user permissions.");
+          }
+        }
+        const appPermissions = prepareAppPermissions(serverPermissions);
+
+        // Checking if the user has permission to access the app
+        // If there is no configuration, the permission check is not enabled
+        if (permissionId) {
+          const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === permissionId);
+          if (!hasPermission) {
+            const permissionError = "You do not have permission to access the app.";
+            commonUtil.showToast(translate(permissionError));
+            logger.error("error", permissionError);
+            return Promise.reject(new Error(permissionError));
+          }
+        }
+
+        // Update the state with the fetched permissions
+        this.permissions = appPermissions;
+        // Set permissions in the authorization module
+        setPermissions(appPermissions);
+      } catch (error: any) {
+        return Promise.reject(error);
+      }
+    },
+
+    async fetchFacilities() {
+      try {
+        this.current.stores = [];
+        const isAdminUser = hasPermission("APP_STOREFULFILLMENT_ADMIN");
+        const facilities = await UserService.getUserFacilities(this.getUserProfile?.partyId, "OMS_FULFILLMENT", isAdminUser, {})
+        this.current.facilities = facilities
+        this.setCurrentFacility(facilities[0])
+      } catch (error: any) {
+        logger.error("error", error);
+        return Promise.reject(new Error(error));
+      }
+    },
+    async fetchFacilityPreference() {
+      try {
+        const preferredFacilityResp = await api({
+          url: "admin/user/preferences",
+          method: "GET",
+          params: {
+            pageSize: 1,
+            userId: this.current.userId,
+            preferenceKey: "SELECTED_FACILITY"
+          },
+        });
+        const preferredFacilityId = preferredFacilityResp.data?.[0]?.preferenceValue;
+        if (preferredFacilityId) {
+          const currentFacility = this.current.facilities.find((facility: any) => facility.facilityId === preferredFacilityId);
+          currentFacility && this.setCurrentFacility(currentFacility)
+        }
+      } catch (err) {
+        logger.error('Favourite facility not found', err)
+      }
+    },
+    async fetchProductStores() {
+      try {
+        const productStoresResp = await api({
+          url: "admin/productStores",
+          method: "get",
+        });
+        this.current.stores = productStoresResp.data
+
+        this.current.stores.push({
+          productStoreId: "",
+          storeName: "None",
+        });
+
+        this.setCurrentEComStore(this.current.stores[0])
+      } catch (error: any) {
+        logger.error("error", error);
+        return Promise.reject(new Error(error));
+      }
+    },
+    async fetchProductStorePreference() {
+      try {
+        const preferredStoreResp = await api({
+          url: "admin/user/preferences",
+          method: "GET",
+          params: {
+            pageSize: 1,
+            userId: this.current.userId,
+            preferenceKey: "SELECTED_BRAND"
+          },
+        });
+        const preferredStoreId = preferredStoreResp.data
+        if (preferredStoreId) {
+          const store = this.current.stores.find((store: any) => store.productStoreId === preferredStoreId);
+          store && this.setCurrentEComStore(store)
+        }
+      } catch (err) {
+        logger.error('Favourite product store not found', err)
+      }
+    },
+
     async setFacility({ facility }: any) {
       try {
         const resp = await UserService.updateFacility({
@@ -349,10 +397,6 @@ export const useUserStore = defineStore("appUser", {
     },
     setUserTimeZone(tzId: string) {
       this.updateUserInfo({ userTimeZone: tzId })
-    },
-    async setUserInstanceUrl(oms: any) {
-      this.setInstanceUrl(oms)
-      updateInstanceUrl(oms)
     },
     async fetchEComStoreDependencies(productStoreId: string) {
       if (!productStoreId) return
@@ -382,9 +426,6 @@ export const useUserStore = defineStore("appUser", {
     async updatePwaState(payload: any) {
       this.setPwaState(payload)
     },
-    async setOmsRedirectionInfo(payload: any) {
-      this.setOmsRedirectionInfoState(payload)
-    },
     async addNotification(payload: any) {
       this.setNotifications([payload, ...this.notifications])
     },
@@ -393,9 +434,9 @@ export const useUserStore = defineStore("appUser", {
       let enumerationResp: any[] = []
       let userPrefIds: any[] = []
       try {
-        let resp: any = await getNotificationEnumIds(process.env.VUE_APP_NOTIF_ENUM_TYPE_ID as any)
+        let resp: any = await NotificationService.getNotificationEnumIds(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID as any)
         enumerationResp = resp.docs
-        resp = await getNotificationUserPrefTypeIds(process.env.VUE_APP_NOTIF_APP_ID as any, (this.current as any).userLoginId)
+        resp = await NotificationService.getNotificationUserPrefTypeIds(import.meta.env.VITE_NOTIF_APP_ID as any, (this.current as any).userLoginId)
         userPrefIds = resp.docs.map((userPref: any) => userPref.userPrefTypeId)
       } catch (error) {
         logger.error(error)
@@ -417,7 +458,7 @@ export const useUserStore = defineStore("appUser", {
       this.setFirebaseDeviceId(firebaseDeviceId)
 
       try {
-        await storeClientRegistrationTokenAdapter(registrationToken, firebaseDeviceId, process.env.VUE_APP_NOTIF_APP_ID as any)
+        await NotificationService.storeClientRegistrationToken(registrationToken, firebaseDeviceId, import.meta.env.VITE_NOTIF_APP_ID as any)
       } catch (error) {
         logger.error(error)
       }
@@ -426,7 +467,7 @@ export const useUserStore = defineStore("appUser", {
       let allNotificationPrefs: any[] = []
 
       try {
-        const resp = await getNotificationUserPrefTypeIds(process.env.VUE_APP_NOTIF_APP_ID as any, (this.current as any).userLoginId)
+        const resp = await NotificationService.getNotificationUserPrefTypeIds(import.meta.env.VITE_NOTIF_APP_ID as any, (this.current as any).userLoginId)
         allNotificationPrefs = resp.docs
       } catch (error) {
         logger.error(error)
@@ -446,6 +487,55 @@ export const useUserStore = defineStore("appUser", {
     },
     setUnreadNotificationsStatus(payload: any) {
       this.setUnreadNotificationsStatusState(payload)
+    },
+    async setEComStorePreference(payload: any) {
+      try {
+        await UserService.setUserPreference({
+          userPrefTypeId: 'SELECTED_BRAND',
+          userPrefValue: payload.productStoreId,
+          userId: this.current.userId
+        })
+      } catch (error) {
+        console.error('error', error)
+      }
+      this.currentEComStore = payload;
+    },
+    async getAvailableTimeZones() {
+      // Do not fetch timeZones information, if already available
+      if (this.timeZones.length) {
+        return;
+      }
+
+      try {
+        const resp = await UtilService.getAvailableTimeZones();
+        if (!hasError(resp)) {
+          this.timeZones = resp.data.timeZones.filter((timeZone: any) => DateTime.local().setZone(timeZone.id).isValid);
+        }
+      } catch (err) {
+        console.error('Error', err)
+      }
+    },
+
+    async setLocale(locale: string) {
+      let newLocale, matchingLocale
+      newLocale = this.locale
+      // handling if locale is not coming from userProfile
+      try {
+        const userProfile = this.current
+        if (locale) {
+          matchingLocale = Object.keys(this.localeOptions).find((option: string) => option === locale)
+          // If exact locale is not found, try to match the first two characters i.e primary code
+          matchingLocale = matchingLocale || Object.keys(this.localeOptions).find((option: string) => option.slice(0, 2) === locale.slice(0, 2))
+          newLocale = matchingLocale || this.locale
+          // update locale in state and globally
+          await UserService.setUserLocale({ userId: userProfile.userId, newLocale })
+        }
+      } catch (error) {
+        console.error(error)
+      } finally {
+        i18n.global.locale.value = newLocale
+        this.locale = newLocale
+      }
     }
   },
   persist: true

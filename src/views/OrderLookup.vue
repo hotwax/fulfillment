@@ -117,7 +117,7 @@
 
 <script setup lang="ts">
 import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonThumbnail, IonTitle, IonToggle, IonToolbar, menuController, onIonViewWillEnter } from "@ionic/vue";
-import { computed, defineOptions, ref } from "vue";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { documentTextOutline, filterOutline, pricetag, swapVerticalOutline } from "ionicons/icons";
 import { commonUtil } from "@/utils/commonUtil";
@@ -125,16 +125,10 @@ import { useOrderLookupStore } from "@/store/orderLookup";
 import { useProductStore } from "@/store/product";
 import { useUtilStore } from "@/store/util";
 import OrderLookupFilters from "@/components/OrderLookupFilters.vue";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import Image from "@/components/Image.vue";
 
-defineOptions({
-  beforeRouteEnter(to, from) {
-    if (from.name !== "OrderLookupDetail") {
-      useOrderLookupStore().clearOrderLookup();
-    }
-  }
-});
+
 
 const router = useRouter();
 const sort = ref("orderDate desc");
@@ -202,6 +196,10 @@ const enableScrolling = () => {
 
 onIonViewWillEnter(async () => {
   isScrollingEnabled.value = false;
+  // Clear the store if the user is entering from a page other than the detail page
+  if (window.history.state?.back && !window.history.state.back.includes('/order-lookup/')) {
+    useOrderLookupStore().clearOrderLookup();
+  }
   await getOrders();
 });
 </script>

@@ -53,11 +53,12 @@ import { IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFab, IonFab
 import { computed, defineProps, onMounted, ref } from "vue";
 import { closeOutline, closeCircle, saveOutline } from "ionicons/icons";
 import { commonUtil } from "@/utils/commonUtil";
-import { hasError } from "@/adapter";
-import { translate, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
+import { translate } from "@common";
+import { hasError } from "@common/utils/commonUtil";
+import emitter from "@common/core/emitter";
+import { useUserStore as useDxpUserStore } from "@/store/user";
 import { UtilService } from "@/services/UtilService";
-import emitter from "@/event-bus";
-import logger from "@/logger";
+import logger from "@common/core/logger";
 import { OrderService } from "@/services/OrderService";
 import { Actions, hasPermission } from "@/authorization";
 import { useOrderStore } from "@/store/order";

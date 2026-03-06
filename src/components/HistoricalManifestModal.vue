@@ -39,10 +39,12 @@ import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonItem, IonLabe
 import ShopifyService from '@/services/ShopifyService';
 import { computed, defineProps, ref } from "vue";
 import { cogOutline, closeOutline, printOutline } from "ionicons/icons";
-import { translate, useUserStore } from "@hotwax/dxp-components";
+import { translate } from "@common";
+import { useUserStore } from "@/store/user";
 import { DateTime } from "luxon";
-import logger from "@/logger";
+import logger from "@common/core/logger";
 import { UtilService } from "@/services/UtilService";
+import { hasError } from "@common/utils/commonUtil";
 import { commonUtil } from "@/utils/commonUtil";
 
 const props = defineProps(["selectedCarrierPartyId", "carrierConfiguration"]);
@@ -65,7 +67,7 @@ const downloadCarrierManifest = async (manifest: any) => {
   try {
         const resp = await UtilService.downloadCarrierManifest(payload);
 
-        if (!resp || resp.status !== 200 || commonUtil.hasError(resp)) {
+        if (!resp || resp.status !== 200 || hasError(resp)) {
           throw resp.data
         }
 

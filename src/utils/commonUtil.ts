@@ -1,4 +1,5 @@
-import { translate, useUserStore as useDxpUserStore } from '@hotwax/dxp-components';
+import { translate } from '@common';
+import { hasError } from '@common/utils/commonUtil';
 import { useUserStore as useAppUserStore } from "@/store/user";
 import { useUtilStore } from "@/store/util";
 import { JsonToCsvOption } from '@/types';
@@ -8,13 +9,6 @@ import { saveAs } from 'file-saver';
 import { DateTime } from 'luxon';
 import Papa from 'papaparse';
 import Encoding from 'encoding-japanese';
-
-// TODO Use separate files for specific utilities
-
-// TODO Remove it when HC APIs are fully REST compliant
-const hasError = (response: any) => {
-  return typeof response.data != "object" || !!response.data._ERROR_MESSAGE_ || !!response.data._ERROR_MESSAGE_LIST_ || !!response.data.error;
-}
 
 const showToast = async (message: string, options?: any) => {
   const config = {
@@ -208,12 +202,12 @@ const dateOrdinalSuffix = {
 } as any
 
 const getCurrentFacilityId = () => {
-  const currentFacility: any = useDxpUserStore().getCurrentFacility;
+  const currentFacility: any = useAppUserStore().getCurrentFacility;
   return currentFacility?.facilityId
 }
 
 const getProductStoreId = () => {
-  const currentEComStore: any = useDxpUserStore().getCurrentEComStore;
+  const currentEComStore: any = useAppUserStore().getCurrentEComStore;
   return currentEComStore.productStoreId
 };
 
@@ -285,6 +279,31 @@ const parseBooleanSetting = (value: any): boolean => {
   }
 }
 
+export const getProductIdentificationValue = (productIdentifier: string, product: any) => {
+  // handled this case as on page load initially the data is not available, so not to execute furthur code
+  // untill product is not available
+  if (!Object.keys(product).length) {
+    return;
+  }
+
+  let value = product[productIdentifier]
+
+  // considered that the goodIdentification will always have values in the format "productIdentifier/value" and there will be no entry like "productIdentifier/"
+  const identification = product['goodIdentifications']?.find((identification: string) => identification.startsWith(productIdentifier + "/"))
+
+  if (identification) {
+    const goodIdentification = identification.split('/')
+    value = goodIdentification[1]
+  }
+
+  return value;
+}
+
+// TimeZone format = 04:16 PM EDT
+const getCurrentTime = (zone: string, format = 't ZZZZ') => {
+  return DateTime.now().setZone(zone).toFormat(format)
+}
+
 export const commonUtil = {
   copyToClipboard,
   downloadCsv,
@@ -296,10 +315,12 @@ export const commonUtil = {
   getCurrentFacilityId,
   getFacilityFilter,
   getFeatures,
+  getProductIdentificationValue,
   getProductStoreId,
   getColorByDesc,
   getDateWithOrdinalSuffix,
   getIdentificationId,
+  getCurrentTime,
   handleDateTimeInput,
   hasActiveFilters,
   isValidDeliveryDays,

@@ -1,5 +1,5 @@
 <template>
-  <ion-menu side="start" content-id="main-content" type="overlay" :disabled="!isUserAuthenticated">
+  <ion-menu side="start" content-id="main-content" type="overlay" :disabled="!useAuth().isAuthenticated">
     <ion-header>
       <ion-toolbar>
         <ion-title>{{ currentFacility.facilityName }}</ion-title>
@@ -36,12 +36,12 @@ import { computed } from "vue";
 import { businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
 import { useRouter } from "vue-router";
 import { hasPermission } from "@/authorization";
-import { translate, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import { useUserStore } from "@/store/user";
+import { useAuth } from "@/composables/auth";
 
 const router = useRouter();
-const currentFacility = computed(() => useDxpUserStore().getCurrentFacility);
-const isUserAuthenticated = computed(() => useUserStore().isUserAuthenticated);
+const currentFacility = computed(() => useUserStore().getCurrentFacility);
 
 const appPages = [
   {

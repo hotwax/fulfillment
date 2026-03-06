@@ -21,12 +21,12 @@
 </template>
 
 <script setup lang="ts">
-import emitter from "@/event-bus";
 import { IonContent, IonHeader, IonItem, IonList, IonMenu, IonRadio, IonRadioGroup, IonTitle, IonToolbar, menuController } from "@ionic/vue";
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 import { useOrderStore } from "@/store/order";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
+import emitter from "@common/core/emitter";
 const route = useRoute();
 
 const title = computed(() => {

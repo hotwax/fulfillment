@@ -53,16 +53,18 @@
 import { IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonFab, IonFabButton, IonTitle, IonToolbar, IonLabel, IonItem, IonList, IonListHeader, IonRow, IonSearchbar, IonSpinner, modalController, alertController } from "@ionic/vue";
 import { computed, defineProps, onMounted, ref } from "vue";
 import { close, closeCircle, saveOutline } from "ionicons/icons";
+import { hasError } from "@common/utils/commonUtil";
 import { commonUtil } from "@/utils/commonUtil";
-import logger from "@/logger";
+import logger from "@common/core/logger";
 import { OrderService } from "@/services/OrderService";
 import { UtilService } from "@/services/UtilService";
-import { translate, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import { Actions, hasPermission } from "@/authorization";
 import { DateTime } from "luxon";
+import { useUserStore } from "@/store/user";
 
 const props = defineProps(["selectedPicklist"]);
-const currentFacility = computed(() => useDxpUserStore().getCurrentFacility);
+const currentFacility = computed(() => useUserStore().getCurrentFacility);
 
 const selectedPickers = ref([] as any[]);
 const queryString = ref("");
@@ -117,7 +119,7 @@ const findPickers = async (pickerIds?: Array<any>) => {
 
   try {
     const resp = await UtilService.getAvailablePickers(payload);
-    if (resp.status === 200 && !commonUtil.hasError(resp)) {
+    if (resp.status === 200 && !hasError(resp)) {
       pickers.value = resp.data.response.docs.map((picker: any) => ({
         name: picker.groupName ? picker.groupName : (picker.firstName || picker.lastName) ? (picker.firstName ? picker.firstName : "") + (picker.lastName ? " " + picker.lastName : "") : picker.partyId,
         id: picker.partyId,
@@ -181,7 +183,7 @@ const resetPicker = async () => {
     });
 
     const resp = await OrderService.resetPicker({ picklistId: props.selectedPicklist.id, roles });
-    if (resp.status === 200 && !commonUtil.hasError(resp)) {
+    if (resp.status === 200 && !hasError(resp)) {
       commonUtil.showToast(translate("Pickers successfully replaced in the picklist with the new selections."));
       editedPicklist.value = {
         ...props.selectedPicklist,

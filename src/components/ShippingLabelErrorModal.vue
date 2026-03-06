@@ -32,7 +32,7 @@ import { IonContent, IonHeader, IonIcon, IonTitle, IonToolbar, modalController, 
 import { defineProps, onMounted, ref } from "vue";
 import { closeOutline, copyOutline } from "ionicons/icons";
 import { OrderService } from "@/services/OrderService";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import { commonUtil } from "@/utils/commonUtil";
 
 const props = defineProps(["shipmentId"]);

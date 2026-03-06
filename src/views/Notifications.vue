@@ -37,7 +37,7 @@ import { computed } from "vue";
 import { cogOutline } from "ionicons/icons";
 import { DateTime } from "luxon";
 import NotificationPreferenceModal from "@/components/NotificationPreferenceModal.vue";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import { useUserStore } from "@/store/user";
 const notifications = computed(() => useUserStore().getNotifications);
 

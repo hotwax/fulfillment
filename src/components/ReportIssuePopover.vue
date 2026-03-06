@@ -12,7 +12,7 @@
 <script setup lang="ts">
 import { IonContent, IonItem, IonList, popoverController } from "@ionic/vue";
 import { computed, defineProps } from "vue";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import { useUtilStore } from "@/store/util";
 
 defineProps(["rejectReasons"]);

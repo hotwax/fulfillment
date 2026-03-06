@@ -142,7 +142,10 @@
 import { IonBadge, IonBackButton, IonButton, IonButtons, IonCard, IonChip, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonPage, IonSegment, IonSegmentButton, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewDidLeave, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { barcodeOutline, pricetagOutline, printOutline, trashOutline } from "ionicons/icons";
-import { getProductIdentificationValue, DxpShopifyImg, openPosScanner, translate, useAuthStore, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { DxpShopifyImg, translate } from "@common";
+import emitter from "@common/core/emitter";
+import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { useProductIdentificationStore } from "@/store/productIdentification";
 import { useRoute, useRouter } from "vue-router";
 import Scanner from "@/components/Scanner.vue";
 import { Actions, hasPermission } from "@/authorization";
@@ -152,7 +155,6 @@ import { TransferOrderService } from "@/services/TransferOrderService";
 import { OrderService } from "@/services/OrderService";
 import TransferOrderItem from "@/components/TransferOrderItem.vue";
 import ShippingLabelErrorModal from "@/components/ShippingLabelErrorModal.vue";
-import emitter from "@/event-bus";
 import CloseTransferOrderModal from "@/components/CloseTransferOrderModal.vue";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useUtilStore } from "@/store/util";
@@ -265,16 +267,6 @@ const updateProductCount = async (payload: any) => {
 };
 
 const scanCode = async () => {
-  if (useAuthStore().isEmbedded) {
-    const scanData = await openPosScanner();
-    if(scanData) {
-      updateProductCount(scanData);
-    } else {
-      commonUtil.showToast(translate("No data received from scanner"));
-    }
-    return;
-  }
-  
   if (!(await commonUtil.hasWebcamAccess())) {
     commonUtil.showToast(translate("Camera access not allowed, please check permissons."));
     return;

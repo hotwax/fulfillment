@@ -30,11 +30,11 @@ import { IonButton, IonBackButton, IonContent, IonHeader, IonIcon, IonInput, Ion
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { arrowForwardOutline } from "ionicons/icons";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import { commonUtil } from "@/utils/commonUtil";
 import { CarrierService } from "@/services/CarrierService";
-import { hasError } from "@/adapter";
-import logger from "@/logger";
+import { hasError } from "@common/utils/commonUtil";
+import logger from "@common/core/logger";
 import { useCarrierStore } from "@/store/carrier";
 
 const router = useRouter();

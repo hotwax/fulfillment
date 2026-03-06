@@ -45,12 +45,15 @@ import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, I
 import { Actions, hasPermission } from "@/authorization";
 import { arrowBackOutline, saveOutline } from "ionicons/icons";
 import { computed } from "vue";
-import { DxpShopifyImg, translate, getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import { useRouter } from "vue-router";
 import { TransferOrderService } from "@/services/TransferOrderService";
 import { commonUtil } from "@/utils/commonUtil";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useProductStore } from "@/store/product";
+import { useProductIdentificationStore } from "@/store/productIdentification";
+import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { DxpShopifyImg } from "@common"
 
 const router = useRouter();
 const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);

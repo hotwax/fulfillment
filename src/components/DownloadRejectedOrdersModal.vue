@@ -53,18 +53,20 @@
   import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonSelect, IonSelectOption, IonTitle, IonToolbar, modalController, alertController } from "@ionic/vue";
   import { computed, ref } from "vue";
   import { closeOutline, cloudDownloadOutline } from "ionicons/icons";
-  import { getProductIdentificationValue, translate, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
+  import { translate } from "@common";
+  import emitter from "@common/core/emitter";
   import { RejectionService } from "@/services/RejectionService";
   import { UtilService } from "@/services/UtilService";
-  import { hasError } from "@/adapter";
-  import logger from "@/logger";
-  import emitter from "@/event-bus";
-  import { commonUtil } from "@/utils/commonUtil";
+  import { hasError } from "@common/utils/commonUtil";
+  import { useUserStore } from "@/store/user";
+
+  import logger from "@common/core/logger";
+  import { commonUtil, getProductIdentificationValue } from "@/utils/commonUtil";
   import { solrUtil } from "@/utils/solrUtil";
   import { DateTime } from "luxon";
   import { useProductStore } from "@/store/product";
   import { useRejectionStore } from "@/store/rejection";
-  const currentFacility = computed(() => useDxpUserStore().getCurrentFacility);
+  const currentFacility = computed(() => useUserStore().getCurrentFacility);
   const rejectedOrders = computed(() => useRejectionStore().getRejectedOrders);
   const getProduct = (productId: string) => useProductStore().getProduct(productId);
   

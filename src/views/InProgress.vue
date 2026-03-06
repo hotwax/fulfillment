@@ -238,13 +238,16 @@ import PackagingPopover from "@/views/PackagingPopover.vue";
 import { commonUtil } from "@/utils/commonUtil";
 import { orderUtil } from "@/utils/orderUtil";
 import { solrUtil } from "@/utils/solrUtil";
-import { hasError } from "@/adapter";
-import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore, useUserStore as useDxpUserStore } from "@hotwax/dxp-components";
+import { DxpShopifyImg, translate } from "@common";
+import { hasError } from "@common/utils/commonUtil";
+import emitter from "@common/core/emitter";
+import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useUserStore as useDxpUserStore } from "@/store/user";
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
-import emitter from "@/event-bus";
 import { UtilService } from "@/services/UtilService";
 import { DateTime } from "luxon";
-import logger from "@/logger";
+import logger from "@common/core/logger";
 import { Actions, hasPermission } from "@/authorization";
 import EditPickersModal from "@/components/EditPickersModal.vue";
 import ShipmentBoxTypePopover from "@/components/ShipmentBoxTypePopover.vue";
@@ -372,7 +375,7 @@ const getErrorMessage = () => {
 };
 
 const getInProgressOrders = () => {
-  return JSON.parse(JSON.stringify(inProgressOrders.value.list)).splice(0, (inProgressOrders.value.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any));
+  return JSON.parse(JSON.stringify(inProgressOrders.value.list)).splice(0, (inProgressOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any));
 };
 
 const packagingPopover = async (ev: Event) => {
@@ -894,12 +897,12 @@ const loadMoreInProgressOrders = async (event: any) => {
 };
 
 const isInProgressOrderScrollable = () => {
-  return ((inProgressOrders.value.query.viewIndex + 1) * (process.env.VUE_APP_VIEW_SIZE as any)) < inProgressOrders.value.query.viewSize;
+  return ((inProgressOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any)) < inProgressOrders.value.query.viewSize;
 };
 
 const updateSelectedPicklist = async (id: string) => {
   const inProgressOrdersQuery = JSON.parse(JSON.stringify(inProgressOrders.value.query));
-  inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  inProgressOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
   inProgressOrdersQuery.selectedPicklist = id;
   inProgressOrdersQuery.viewIndex = 0;
 
@@ -1004,7 +1007,7 @@ const getShipmentBoxTypes = (carrierPartyId: string) => {
 const updateQueryString = async (query: string) => {
   const inProgressOrdersQuery = JSON.parse(JSON.stringify(inProgressOrders.value.query));
 
-  inProgressOrdersQuery.viewSize = process.env.VUE_APP_VIEW_SIZE;
+  inProgressOrdersQuery.viewSize = import.meta.env.VITE_VIEW_SIZE;
   inProgressOrdersQuery.queryString = query;
   await useOrderStore().updateInProgressQuery({ ...inProgressOrdersQuery });
   searchedQuery.value = query;
@@ -1021,7 +1024,7 @@ const updateOrderQuery = async (size?: any, queryStringValue?: any, hideLoader =
 };
 
 const initialiseOrderQuery = async () => {
-  await updateOrderQuery(process.env.VUE_APP_VIEW_SIZE, "");
+  await updateOrderQuery(import.meta.env.VITE_VIEW_SIZE, "");
 };
 
 const printPicklist = async (picklist: any) => {
@@ -1179,7 +1182,7 @@ const openGiftCardActivationModal = async (item: any) => {
 
 const fetchOrderAndPickerInformation = async () => {
   await fetchPickersInformation();
-  await updateOrderQuery(process.env.VUE_APP_VIEW_SIZE, "", true);
+  await updateOrderQuery(import.meta.env.VITE_VIEW_SIZE, "", true);
 };
 
 onIonViewWillEnter(async () => {

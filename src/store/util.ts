@@ -1,9 +1,9 @@
 import { defineStore } from "pinia"
 import { UtilService } from "@/services/UtilService"
-import { hasError } from "@/adapter"
-import logger from "@/logger"
+import { hasError } from "@common/utils/commonUtil";
+
+import logger from "@common/core/logger"
 import { commonUtil } from "@/utils/commonUtil";
-import { useUserStore as useDxpUserStore } from "@hotwax/dxp-components"
 import { useUserStore } from "@/store/user"
 
 interface UtilState {
@@ -235,7 +235,7 @@ export const useUtilStore = defineStore("util", {
       this.shipmentBoxTypeDesc = {}
       this.carrierShipmentBoxTypes = {}
       this.excludeOrderBrokerDays = undefined
-      this.productStoreSettings = JSON.parse(process.env.VUE_APP_DEFAULT_PRODUCT_STORE_SETTINGS as any)
+      this.productStoreSettings = JSON.parse(import.meta.env.VITE_DEFAULT_PRODUCT_STORE_SETTINGS as any)
       this.isAutoShippingLabelEnabled = false
     },
     updateFacilityShippingLabelImageType(payload: any) {
@@ -257,7 +257,7 @@ export const useUtilStore = defineStore("util", {
       this.isAutoShippingLabelEnabled = payload
     },
     async fetchProductStoreSettings(productStoreId: string) {
-      const defaultProductStoreSettings = JSON.parse(process.env.VUE_APP_DEFAULT_PRODUCT_STORE_SETTINGS as any)
+      const defaultProductStoreSettings = JSON.parse(import.meta.env.VITE_DEFAULT_PRODUCT_STORE_SETTINGS as any)
       const productStoreSettings: any = { ...defaultProductStoreSettings }
       const payload = {
         productStoreId,
@@ -329,7 +329,7 @@ export const useUtilStore = defineStore("util", {
             FF_REJ_RSN_RES_GRP: {}
           })
 
-          fulfillmentRejectReasons = (useDxpUserStore().getCurrentFacility as any).facilityTypeId === "WAREHOUSE" && Object.keys(rejectionsReasons.FF_REJ_RSN_RES_GRP).length ? rejectionsReasons.FF_REJ_RSN_RES_GRP : rejectionsReasons.FF_REJ_RSN_GRP
+          fulfillmentRejectReasons = (useUserStore().getCurrentFacility as any).facilityTypeId === "WAREHOUSE" && Object.keys(rejectionsReasons.FF_REJ_RSN_RES_GRP).length ? rejectionsReasons.FF_REJ_RSN_RES_GRP : rejectionsReasons.FF_REJ_RSN_GRP
         } else {
           throw resp.data
         }
@@ -821,7 +821,7 @@ export const useUtilStore = defineStore("util", {
       try {
         const resp = await UtilService.fetchLabelImageType(carrierId)
 
-        if (commonUtil.hasError(resp) || !resp.data.length) {
+        if (hasError(resp) || !resp.data.length) {
           throw resp.data
         }
 
@@ -856,7 +856,7 @@ export const useUtilStore = defineStore("util", {
               enumName: enumMeta.enumName
             }
             const enumResponse = await UtilService.createEnumeration(enumPayload)
-            if (commonUtil.hasError(enumResponse)) {
+            if (hasError(enumResponse)) {
               throw new Error("Failed to create enumeration")
             }
           }
@@ -890,7 +890,7 @@ export const useUtilStore = defineStore("util", {
           })
         }
 
-        if (!commonUtil.hasError(response)) {
+        if (!hasError(response)) {
           this.updateProductStoreSetting({
             key: enumId,
             value: payload.settingValue

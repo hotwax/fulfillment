@@ -1,9 +1,12 @@
+import { useUserStore } from "./user"
+import emitter from "@common/core/emitter"
 import { defineStore } from "pinia"
-import emitter from "@/event-bus"
 import { OrderService } from "@/services/OrderService"
 import { UtilService } from "@/services/UtilService"
-import { hasError } from "@/adapter"
-import logger from "@/logger"
+import { api } from '@common';
+import { hasError } from "@common/utils/commonUtil";
+
+import logger from "@common/core/logger"
 import { DateTime } from "luxon"
 import { useProductStore } from "@/store/product"
 import { useUtilStore } from "@/store/util"
@@ -51,7 +54,7 @@ export const useOrderStore = defineStore("order", {
       total: 0,
       query: {
         viewIndex: 0,
-        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        viewSize: import.meta.env.VITE_VIEW_SIZE,
         queryString: "",
         selectedShipmentMethods: [],
         selectedCategories: []
@@ -62,7 +65,7 @@ export const useOrderStore = defineStore("order", {
       total: 0,
       query: {
         viewIndex: 0,
-        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        viewSize: import.meta.env.VITE_VIEW_SIZE,
         queryString: "",
         selectedCarrierPartyId: "",
         selectedShipmentMethods: []
@@ -73,7 +76,7 @@ export const useOrderStore = defineStore("order", {
       total: 0,
       query: {
         viewIndex: 0,
-        viewSize: process.env.VUE_APP_VIEW_SIZE,
+        viewSize: import.meta.env.VITE_VIEW_SIZE,
         selectedPicklist: "",
         queryString: ""
       }
@@ -108,7 +111,7 @@ export const useOrderStore = defineStore("order", {
         total: 0,
         query: {
           viewIndex: 0,
-          viewSize: process.env.VUE_APP_VIEW_SIZE,
+          viewSize: import.meta.env.VITE_VIEW_SIZE,
           queryString: "",
           selectedShipmentMethods: [],
           selectedCategories: []
@@ -128,7 +131,7 @@ export const useOrderStore = defineStore("order", {
         total: 0,
         query: {
           viewIndex: 0,
-          viewSize: process.env.VUE_APP_VIEW_SIZE,
+          viewSize: import.meta.env.VITE_VIEW_SIZE,
           selectedCarrierPartyId: "",
           selectedShipmentMethods: [],
           queryString: ""
@@ -148,7 +151,7 @@ export const useOrderStore = defineStore("order", {
         total: 0,
         query: {
           viewIndex: 0,
-          viewSize: process.env.VUE_APP_VIEW_SIZE,
+          viewSize: import.meta.env.VITE_VIEW_SIZE,
           selectedPicklist: "",
           queryString: ""
         }
@@ -324,7 +327,7 @@ export const useOrderStore = defineStore("order", {
       openOrderQuery.groupBy = "shipGroupSeqId"
       openOrderQuery.orderId = currentOrder.orderId
       openOrderQuery.viewIndex = 0
-      openOrderQuery.viewSize = process.env.VUE_APP_VIEW_SIZE
+      openOrderQuery.viewSize = import.meta.env.VITE_VIEW_SIZE
 
       openOrderQuery.shipGroupFilter = { "-shipGroupSeqId": { value: shipGroupSeqId } }
       const openOrderResp = await OrderService.findOpenOrders({ openOrderQuery })

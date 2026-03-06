@@ -51,15 +51,15 @@
 import { IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent, IonInput, IonSearchbar, IonList, IonListHeader, IonItem, IonRadio, IonLabel, IonFab, IonFabButton, modalController } from '@ionic/vue';
 import { closeOutline, saveOutline } from 'ionicons/icons';
 import { computed, ref, onMounted } from 'vue';
-import { translate } from '@hotwax/dxp-components';
+import { translate } from "@common";
+import { hasError } from "@common/utils/commonUtil";
 import { UtilService } from '@/services/UtilService';
 import { TransferOrderService } from '@/services/TransferOrderService';
-import { hasError } from '@/adapter';
 import { useUtilStore } from "@/store/util";
 import { commonUtil } from '@/utils/commonUtil';
 import { DateTime } from 'luxon';
 import router from '@/router';
-import logger from '@/logger';
+import logger from '@common/core/logger';
 const facilityAddresses = computed(() => useUtilStore().getFacilityAddress)
 
 const transferOrderName = ref('');

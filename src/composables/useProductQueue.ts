@@ -4,9 +4,10 @@ import { useTransferOrderStore } from "@/store/transferorder";
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { ProductService } from '@/services/ProductService';
 import { StockService } from '@/services/StockService';
+import { translate } from "@common";
+import { hasError } from "@common/utils/commonUtil";
 import { commonUtil } from '@/utils/commonUtil';
-import { translate } from "@hotwax/dxp-components";
-import logger from '@/logger';
+import logger from '@common/core/logger';
 
 /**
  * Sequential product addition queue to prevent API deadlocks.
@@ -153,7 +154,7 @@ export function useProductQueue() {
 
       const resp = await TransferOrderService.addOrderItem(payload);
 
-      if (!commonUtil.hasError(resp)) {
+      if (!hasError(resp)) {
         newItem.orderId = orderId;
         newItem.orderItemSeqId = resp.data?.orderItemSeqId;
 
@@ -183,7 +184,7 @@ export function useProductQueue() {
         productId,
         facilityId
       });
-      if (!commonUtil.hasError(resp)) return resp.data;
+      if (!hasError(resp)) return resp.data;
     } catch (err) {
       logger.error(err);
     }

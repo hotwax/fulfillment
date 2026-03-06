@@ -197,14 +197,16 @@
 import { ref, computed, watch, nextTick } from "vue";
 import { IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonCard, IonList, IonItem, IonInput, IonLabel, IonButton, IonIcon, IonToggle, IonSegment, IonSegmentButton, IonThumbnail, IonBadge, IonSearchbar, IonSpinner, IonFooter, IonButtons, onIonViewWillEnter, alertController, modalController, onIonViewWillLeave } from "@ionic/vue";
 import { barcodeOutline, checkmarkDoneOutline, checkmarkCircle, cloudOfflineOutline, locateOutline, searchOutline, shirtOutline, storefrontOutline } from "ionicons/icons";
-import emitter from "@/event-bus";
 import { onBeforeRouteLeave, useRoute } from "vue-router";
 import router from "@/router";
-import { DxpShopifyImg, getProductIdentificationValue, useProductIdentificationStore, translate } from "@hotwax/dxp-components";
+import { DxpShopifyImg, translate } from "@common";
+import emitter from "@common/core/emitter";
+import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { useProductIdentificationStore } from "@/store/productIdentification";
 import { ProductService } from "@/services/ProductService";
 import { StockService } from "@/services/StockService";
-import { hasError } from "@/adapter";
-import logger from "@/logger";
+import { hasError } from "@common/utils/commonUtil";
+import logger from "@common/core/logger";
 import { commonUtil } from "@/utils/commonUtil";
 import { TransferOrderService } from "@/services/TransferOrderService";
 import { UtilService } from "@/services/UtilService";
@@ -213,7 +215,6 @@ import TransferOrderItem from "@/components/TransferOrderItem.vue";
 import AddProductModal from "@/components/AddProductModal.vue";
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue";
 import { useProductQueue } from "@/composables/useProductQueue";
-import { searchProducts } from "@/adapter";
 import { useProductStore } from "@/store/product";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useUtilStore } from "@/store/util";
@@ -633,7 +634,7 @@ async function findProduct(value: string) {
     } else {
       payload.keyword = value;
     }
-    const resp = await searchProducts(payload);
+    const resp = await ProductService.searchProducts(payload);
 
     if (resp.total) {
       productSearchCount.value = resp.total;

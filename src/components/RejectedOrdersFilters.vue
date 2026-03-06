@@ -28,7 +28,7 @@ import { IonContent, IonHeader, IonItem, IonList, IonMenu, IonSelect, IonSelectO
 import { computed, defineProps, onMounted, onUnmounted, ref } from "vue";
 import { useUtilStore } from "@/store/util";
 import { useRejectionStore } from "@/store/rejection";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 
 defineProps(["queryString"]);
 const rejectionPeriods = ref([] as Array<any>);

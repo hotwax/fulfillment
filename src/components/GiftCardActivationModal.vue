@@ -29,8 +29,8 @@
       <ion-item lines="none">
         <ion-icon :icon="giftOutline" slot="start" />
         <ion-label>
-          {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
-          <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+          {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
+          <p>{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
         </ion-label>
         <ion-label slot="end">{{ commonUtil.formatCurrency(itemPriceInfo.unitPrice, itemPriceInfo.currencyUom) }}</ion-label>
       </ion-item>
@@ -59,13 +59,15 @@
 import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonSpinner, IonTitle, IonToolbar, alertController, modalController } from "@ionic/vue";
 import { computed, defineProps, onMounted, ref } from "vue";
 import { cameraOutline, cardOutline, closeOutline, giftOutline, stopOutline } from "ionicons/icons";
-import { getProductIdentificationValue, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { translate } from "@common";
+import { hasError } from "@common/utils/commonUtil";
 import { OrderService } from "@/services/OrderService";
 import { commonUtil } from "@/utils/commonUtil";
-import logger from "@/logger";
+import logger from "@common/core/logger";
 import { DateTime } from "luxon";
 import { StreamBarcodeReader } from "vue-barcode-reader";
 import { useProductStore } from "@/store/product";
+import { useProductIdentificationStore } from "@/store/productIdentification";
 
 const props = defineProps(["item"]);
 const isLoading = ref(false);
@@ -97,7 +99,7 @@ const activateGitCard = async () => {
       partyId: props.item.customerId
     });
 
-    if (!commonUtil.hasError(resp)) {
+    if (!hasError(resp)) {
       commonUtil.showToast(translate("Gift card activated successfully."));
       closeModal({ isGCActivated: true, item: props.item });
     } else {

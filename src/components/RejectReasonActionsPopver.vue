@@ -17,12 +17,13 @@
 <script setup lang="ts">
 import { IonContent, IonItem, IonList, IonListHeader, alertController, modalController, popoverController } from "@ionic/vue";
 import { computed, defineProps } from "vue";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 import EditRejectionReasonModal from "@/components/EditRejectionReasonModal.vue";
 import { UtilService } from "@/services/UtilService";
-import { hasError } from "@/adapter";
+import { hasError } from "@common/utils/commonUtil";
+
 import { commonUtil } from "@/utils/commonUtil";
-import logger from "@/logger";
+import logger from "@common/core/logger";
 import { useUtilStore } from "@/store/util";
 
 const props = defineProps(["reason"]);

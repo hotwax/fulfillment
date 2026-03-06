@@ -20,5 +20,5 @@
 <script setup lang="ts">
 import { IonContent, IonIcon, IonItem, IonList } from "@ionic/vue";
 import { printOutline, lockOpenOutline } from "ionicons/icons";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 </script>

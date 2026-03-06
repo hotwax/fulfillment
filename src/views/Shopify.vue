@@ -16,8 +16,10 @@ import {
 import { defineComponent } from "vue";
 import { commonUtil } from "@/utils/commonUtil";
 import { useRouter } from "vue-router";
+import { useUserStore } from '@/store/user'
+import { translate } from "@common";
+import emitter from "@common/core/emitter";
 import ShopifyService from "@/services/ShopifyService";
-import emitter from "@/event-bus"
 
 export default defineComponent({
   name: "Shopify",
@@ -27,13 +29,13 @@ export default defineComponent({
   },
   data() {
     return {
-      apiKey: process.env.VUE_APP_SHOPIFY_API_KEY,
-      shopConfigs: JSON.parse(process.env.VUE_APP_SHOPIFY_SHOP_CONFIG),
+      apiKey: import.meta.env.VITE_SHOPIFY_API_KEY,
+      shopConfigs: JSON.parse(import.meta.env.VITE_SHOPIFY_SHOP_CONFIG),
       shopOrigin: '',
       session: this.$route.query['session'],
       shop: this.$route.query['shop'],
       host: this.$route.query['host'],
-      locale: this.$route.query['locale'] || process.env.VUE_APP_I18N_LOCALE || process.env.VUE_APP_I18N_FALLBACK_LOCALE,
+      locale: this.$route.query['locale'] || import.meta.env.VITE_I18N_LOCALE || import.meta.env.VITE_I18N_FALLBACK_LOCALE,
     };
   },
   async mounted () {
@@ -49,11 +51,11 @@ export default defineComponent({
   },
   methods: {
     authorise(shop, host, apiKey) {
-      const scopes = process.env.VUE_APP_SHOPIFY_SCOPES
+      const scopes = import.meta.env.VITE_SHOPIFY_SCOPES
       emitter.emit("presentLoader");
       const shopConfig = this.shopConfigs[shop];
       if (!apiKey) apiKey = shopConfig ? shopConfig.apiKey : '';
-      const redirectUri = process.env.VUE_APP_SHOPIFY_REDIRECT_URI;
+      const redirectUri = import.meta.env.VITE_SHOPIFY_REDIRECT_URI;
       const permissionUrl = `https://${shop}/admin/oauth/authorize?client_id=${apiKey}&scope=${scopes}&redirect_uri=${redirectUri}`;
 
       if (window.top == window.self) {

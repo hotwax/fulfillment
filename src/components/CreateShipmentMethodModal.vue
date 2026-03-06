@@ -34,9 +34,10 @@
   import { computed, ref } from "vue";
   import { close, saveOutline } from "ionicons/icons";
   import { commonUtil } from "@/utils/commonUtil";
-  import { translate } from "@hotwax/dxp-components";
-  import logger from "@/logger";
-  import { hasError } from "@/adapter";
+  import { translate } from "@common";
+import { hasError } from "@common/utils/commonUtil";
+  import logger from "@common/core/logger";
+
   import { CarrierService } from "@/services/CarrierService";
   import { useCarrierStore } from "@/store/carrier";
   

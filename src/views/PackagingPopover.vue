@@ -22,7 +22,7 @@ import { IonContent, IonIcon, IonItem, IonList, modalController } from "@ionic/v
 import EditPackagingModal from "@/views/EditPackagingModal.vue";
 import ReportIssueModal from "@/views/ReportIssueModal.vue";
 import { pencil, warning, refresh } from "ionicons/icons";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
 
 const editPackaging = async () => {
   const editmodal = await modalController.create({

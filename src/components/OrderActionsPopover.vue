@@ -24,9 +24,9 @@ import { IonContent, IonIcon, IonItem, IonList, IonListHeader, modalController, 
 import { arrowForwardOutline, bagCheckOutline, copyOutline } from "ionicons/icons";
 import { commonUtil } from "@/utils/commonUtil";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from "@common";
+import emitter from "@common/core/emitter";
 import { useOrderStore } from "@/store/order";
-import emitter from "@/event-bus";
 import { useRouter } from "vue-router";
 
 const props = defineProps(["order", "category"]);
