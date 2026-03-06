@@ -1,133 +1,72 @@
-import { apiClient, hasError } from "@/adapter";
-import logger from "@/logger";
-import store from "@/store";
-import { translate } from "@hotwax/dxp-components";
-import { showToast } from "@/utils";
+import { api } from '@common';
+import { hasError } from "@common/utils/commonUtil";
+
+import logger from "@common/core/logger";
+import { useUserStore as useAppUserStore } from "@/store/user";
+import { useUtilStore } from "@/store/util";
+import { translate } from "@common";
+import { commonUtil } from "@/utils/commonUtil";
 import { cogOutline } from "ionicons/icons";
 import { ZebraPrinterService } from './ZebraPrinterService';
 
 const fetchTransferOrders = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
+  return api({
     url: "oms/transferOrders/",
     method: "get",
-    baseURL,
     params,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    }
   });
 }
 const fetchCompletedTransferOrders = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
+  return api({
     url: "poorti/transferShipments/orders/",
     method: "get",
-    baseURL,
     params,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    }
   });
 }
 
 const fetchTransferOrderDetail = async (orderId: string): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
+  return api({
     url: `/oms/transferOrders/${orderId}`,
     method: "get",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    }
   });
 }
 
 const fetchShippedTransferShipments = async (params: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
+  return api({
     url: "poorti/transferShipments",
     method: "get",
-    baseURL,
     params,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    }
   });
 };
 
 const fetchTransferShipmentDetails = async (params: Record<string, any>): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
+  return api({
     url: "poorti/transferShipments",
     method: "get",
-    baseURL,
     params,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    }
   });
 };
 
-const fetchRejectReasons = async(query: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
+const fetchRejectReasons = async (query: any): Promise<any> => {
+  return api({
     url: `/admin/enums`,
     method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
     params: query,
   });
 }
 
 const fetchFulfillmentRejectReasons = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
+  return api({
     url: `/admin/enumGroups/${payload.enumerationGroupId}/members`,
     method: "GET",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
     params: payload,
   });
 }
 
 const cancelTransferOrderShipment = async (shipmentId: string): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
+  return api({
     url: `poorti/shipments/${shipmentId}`,
     method: "put",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
     data: {
       "statusId": "SHIPMENT_CANCELLED"
     }
@@ -135,35 +74,20 @@ const cancelTransferOrderShipment = async (shipmentId: string): Promise<any> => 
 };
 
 const shipTransferOrderShipment = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return await apiClient({
+  return await api({
     url: `poorti/transferShipments/${payload.shipmentId}/ship`,
     method: "post",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
     data: payload
   });
 };
 
 const printTransferOrderPicklist = async (orderId: string): Promise<any> => {
   try {
-    const omstoken = store.getters['user/getUserToken'];
-    const baseURL = store.getters['user/getMaargBaseUrl'];
-
     // Get packing slip from the server
-    const resp: any = await apiClient({
+    const resp: any = await api({
       method: "get",
       url: `poorti/transferOrders/${orderId}/printPicklist`,
       responseType: "blob",
-      baseURL,
-      headers: {
-        "Authorization": "Bearer " + omstoken,
-      }
     })
 
     if (!resp || resp.status !== 200 || hasError(resp)) {
@@ -176,7 +100,7 @@ const printTransferOrderPicklist = async (orderId: string): Promise<any> => {
     try {
       (window as any).open(pdfUrl, "_blank").focus();
     } catch {
-      showToast(
+      commonUtil.showToast(
         translate("Unable to open as browser is blocking pop-ups.", {
           documentName: "picklist",
         }),
@@ -184,38 +108,27 @@ const printTransferOrderPicklist = async (orderId: string): Promise<any> => {
       );
     }
   } catch (err) {
-    showToast(translate("Failed to print picklist"));
+    commonUtil.showToast(translate("Failed to print picklist"));
     logger.error("Failed to load picklist", err);
   }
 };
 
 const createOutboundTransferShipment = async (query: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return await apiClient({
+  return await api({
     method: "post",
     url: "poorti/transferShipments",
-    baseURL,
     data: query,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    }
   })
 };
 
 const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string): Promise<any> => {
   try {
-    const maargUrl = store.getters['user/getMaargUrl'];
-    const omstoken = store.getters['user/getUserToken'];
-
     let pdfUrls = shippingLabelPdfUrls?.filter((pdfUrl: any) => pdfUrl);
     if (!pdfUrls || pdfUrls.length == 0) {
       let labelImageType = imageType || "PNG";
 
       if (!imageType && shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId) {
-        labelImageType = await store.dispatch("util/fetchLabelImageType", shipmentPackages[0].carrierPartyId);
+        labelImageType = await useUtilStore().fetchLabelImageType(shipmentPackages[0].carrierPartyId);
       }
 
       const labelImages = [] as Array<string>
@@ -228,17 +141,14 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
       }
 
       // Get packing slip from the server
-      const resp: any = await apiClient({
+      const resp: any = await api({
         method: "get",
         url: "/fop/apps/pdf/PrintLabel",
         params: {
           shipmentId: shipmentIds[0]
         },
         responseType: "blob",
-        baseURL: maargUrl,
-        headers: {
-          "Authorization": "Bearer " + omstoken,
-        }
+        baseURL: useAppUserStore().getMaargUrl,
       });
 
       if (!resp || resp.status !== 200 || hasError(resp)) {
@@ -254,7 +164,7 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
       try {
         (window as any).open(pdfUrl, "_blank").focus();
       } catch {
-        showToast(
+        commonUtil.showToast(
           translate("Unable to open as browser is blocking pop-ups.", {
             documentName: "shipping label",
           }),
@@ -263,118 +173,62 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
       }
     });
   } catch (err) {
-    showToast(translate("Failed to print shipping label"));
+    commonUtil.showToast(translate("Failed to print shipping label"));
     logger.error("Failed to load shipping label", err);
   }
 };
 
 const rejectOrderItems = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
+  return api({
     url: `poorti/transferOrders/${payload.orderId}/reject`,
     method: "post",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
     data: payload
   });
 };
 
 const closeOrderItems = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
+  return api({
     url: `poorti/transferOrders/${payload.orderId}/closeFulfillment`,
     method: "post",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
     data: payload
   });
 };
 
 const createTransferOrder = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return await apiClient({
+  return await api({
     url: 'oms/transferOrders',
     method: "post",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
     data: payload
   });
 };
 
 const approveTransferOrder = async (orderId: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
+  return api({
     url: `oms/transferOrders/${orderId}/approve`,
     method: "post",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    }
   });
 };
 
 const addOrderItem = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
+  return api({
     url: 'oms/transferOrders/orderItem',
     method: "POST",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
     data: payload
   });
 }
 
 const updateOrderItem = async (payload: any): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
+  return api({
     url: 'oms/transferOrders/orderItem',
     method: "PUT",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    },
     data: payload
   });
 }
 
 const cancelTransferOrder = async (orderId: string): Promise<any> => {
-  const omstoken = store.getters['user/getUserToken'];
-  const baseURL = store.getters['user/getMaargBaseUrl'];
-
-  return apiClient({
+  return api({
     url: `oms/transferOrders/${orderId}/cancel`,
     method: "post",
-    baseURL,
-    headers: {
-      "Authorization": "Bearer " + omstoken,
-      "Content-Type": "application/json"
-    }
   });
 }
 

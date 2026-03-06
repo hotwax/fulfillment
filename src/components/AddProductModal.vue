@@ -55,25 +55,23 @@
 import { IonAvatar, IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonSearchbar, IonText, IonTitle, IonToolbar } from '@ionic/vue';
 import { checkmarkCircle, closeOutline } from "ionicons/icons";
 import { computed, defineProps, onMounted, ref } from 'vue';
-import { useStore } from 'vuex';
+import { useTransferOrderStore } from "@/store/transferorder";
 import { modalController } from '@ionic/vue';
-import { searchProducts } from '@/adapter';
-import { DxpShopifyImg, getProductIdentificationValue, translate, useProductIdentificationStore } from "@hotwax/dxp-components";
-import logger from '@/logger';
-import emitter from '@/event-bus';
+import { ProductService } from '@/services/ProductService';
+import { translate, emitter } from "@common";
+import { useProductIdentificationStore } from '@/store/productIdentification';
+import logger from '@common/core/logger';
+import { getProductIdentificationValue } from "@/utils/commonUtil";
 
 const props = defineProps(["query", "addProductToQueue", "isProductInOrder", "pendingProductIds"]);
-
-const store = useStore()
-const productIdentificationStore = useProductIdentificationStore();
-const productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref)
 
 const queryString = ref(props.query)
 const products = ref([]) as any;
 const total = ref(0) as any;
 const isLoading = ref(false)
 
-const currentOrder = computed(() => store.getters['transferorder/getCurrent'])
+const currentOrder = computed(() => useTransferOrderStore().getCurrent)
 
 onMounted(() => {
   if(queryString.value) {
@@ -110,19 +108,19 @@ function isScrollable() {
 async function loadMoreProducts(event: any) {
   await getProducts(
     undefined,
-    Math.ceil(products.value.length / Number(process.env.VUE_APP_VIEW_SIZE || 20)).toString()
+    Math.ceil(products.value.length / Number(import.meta.env.VITE_VIEW_SIZE || 20)).toString()
   );
   event.target.complete();
 }
 
 // product search
 async function getProducts(vSize?: any, vIndex?: any) {
-  const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
+  const viewSize = vSize ? vSize : import.meta.env.VITE_VIEW_SIZE;
   const viewIndex = vIndex ? vIndex : 0;
   isLoading.value = true;
 
   try {
-    const resp = await searchProducts({
+    const resp = await ProductService.searchProducts({
       keyword: queryString.value.trim(),
       viewSize, 
       viewIndex,

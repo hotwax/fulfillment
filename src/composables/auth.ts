@@ -1,0 +1,156 @@
+import { resetPermissions } from "@/authorization";
+import { api, client, translate } from "@common";
+import { getOmsURL, hasError } from "@common/utils/commonUtil";
+import { cookieHelper } from "@common/helpers/cookieHelper";
+import emitter from "@common/core/emitter";
+import logger from "@common/core/logger";
+import { useUserStore } from "@/store/user";
+import { useUtilStore } from "@/store/util";
+import { commonUtil } from "@/utils/commonUtil";
+import { DateTime } from "luxon";
+import { computed, ref } from "vue";
+import router from '@/router';
+
+interface LoginOption {
+  loginAuthType?: string,
+  maargInstanceUrl?: string,
+  loginAuthUrl?: string
+}
+
+export function useAuth() {
+  const loginOption = ref<LoginOption>({})
+
+  const clearAuth = () => {
+    cookieHelper().remove('token');
+    cookieHelper().remove('expirationTime');
+    cookieHelper().remove('maarg');
+    cookieHelper().remove('oms');
+  }
+
+  const isAuthenticated = computed(() => {
+    let isTokenExpired = false;
+    const token = cookieHelper().get("token");
+    const expirationTime = Number(cookieHelper().get("expirationTime"));
+    if (expirationTime) {
+      const currTime = DateTime.now().toMillis();
+      isTokenExpired = expirationTime < currTime;
+    }
+    return !!(token && !isTokenExpired);
+  })
+
+  const login = async (username: string, password: string) => {
+    try {
+      const resp = await client({
+        url: "login",
+        method: "post",
+        data: {
+          "USERNAME": username,
+          "PASSWORD": password
+        },
+        baseURL: getOmsURL()
+      });
+      if (hasError(resp)) {
+        commonUtil.showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
+        console.error("error", resp.data._ERROR_MESSAGE_);
+        return Promise.reject(new Error(resp.data._ERROR_MESSAGE_));
+      }
+
+      cookieHelper().set("token", resp.data.token)
+      cookieHelper().set("expirationTime", resp.data.expirationTime)
+      await useUserStore().fetchPermissions()
+      await useUserStore().fetchUserProfile()
+      await useUserStore().fetchFacilities()
+      await useUserStore().fetchFacilityPreference();
+      await useUserStore().fetchProductStores()
+      await useUserStore().fetchProductStorePreference();
+
+      await useUserStore().fetchAllNotificationPrefs()
+      useUtilStore().findProductStoreShipmentMethCount()
+      await useUtilStore().fetchCarrierShipmentBoxTypes()
+      await useUtilStore().fetchAutoShippingLabelConfig()
+
+      const facilityId = router.currentRoute.value.query.facilityId
+      let isQueryFacilityFound = false
+      if (facilityId) {
+        const facility = useUserStore().getUserProfile.facilities.find((facility: any) => facility.facilityId === facilityId);
+        if (facility) {
+          isQueryFacilityFound = true
+          useUserStore().currentFacility = facility
+        } else {
+          commonUtil.showToast(translate("Redirecting to home page due to incorrect information being passed."))
+        }
+      }
+
+    } catch (err: any) {
+      commonUtil.showToast(translate("Something went wrong while login. Please contact administrator."));
+      logger.error("error: ", err.toString());
+      return Promise.reject(err instanceof Object ? err : new Error(err));
+    }
+  }
+
+  const logout = async (payload?: any) => {
+    let redirectionUrl = "";
+    emitter.emit("presentLoader", {
+      message: "Logging out",
+      backdropDismiss: false,
+    });
+
+    if (!payload?.isUserUnauthorised) {
+      let resp;
+      try {
+        resp = await api({
+          url: "logout",
+          method: "GET",
+          baseURL: getOmsURL()
+        });
+        resp = JSON.parse(
+          resp.data.startsWith("//") ? resp.data.replace("//", "") : resp
+        );
+      } catch (err) {
+        logger.error("Error logging out", err);
+      }
+
+      if (resp?.logoutAuthType == "SAML2SSO") {
+        redirectionUrl = resp.logoutUrl;
+      }
+    }
+
+    useUserStore().$reset();
+    resetPermissions();
+    cookieHelper().remove('token');
+    cookieHelper().remove('expirationTime');
+
+    emitter.emit("dismissLoader");
+    return redirectionUrl;
+  }
+
+  const fetchLoginOptions = async () => {
+    loginOption.value = {}
+    try {
+      const resp = await client({
+        url: "checkLoginOptions",
+        method: "GET",
+        baseURL: getOmsURL()
+      });
+      if (!hasError(resp)) {
+        loginOption.value = resp.data
+        cookieHelper().set("maarg", resp.data.maargInstanceUrl)
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  };
+
+
+  return {
+    // Variables
+    loginOption,
+    // Functions
+    fetchLoginOptions,
+    login,
+    logout,
+    clearAuth,
+    // Getters
+    isAuthenticated
+  }
+}

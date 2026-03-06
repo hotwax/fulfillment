@@ -13,11 +13,17 @@
     "baseUrl": ".",
     "resolveJsonModule": true,
     "types": [
-      "webpack-env"
+      "vite/client"
     ],
     "paths": {
       "@/*": [
         "src/*"
+      ],
+      "@common": [
+        "../../common/index.ts"
+      ],
+      "@common/*": [
+        "../../common/*"
       ]
     },
     "lib": [

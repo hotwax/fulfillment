@@ -1,7 +1,9 @@
 import { createApp } from 'vue'
+import { createPinia, setActivePinia } from "pinia"
+import piniaPersist from "pinia-plugin-persistedstate"
 import App from './App.vue'
 import router from './router';
-import logger from './logger';
+import logger from '@common/core/logger';
 
 import { IonicVue } from '@ionic/vue';
 
@@ -25,58 +27,39 @@ import '@ionic/vue/css/display.css';
 import './theme/variables.css';
 import "@hotwax/apps-theme";
 
-import store from './store'
-import permissionPlugin, { Actions, hasPermission } from '@/authorization';
+import permissionPlugin, { setPermissions } from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
-import { dxpComponents } from '@hotwax/dxp-components';
-import { login, logout, loader, fetchProducts } from '@/utils/user';
-import { getConfig, fetchGoodIdentificationTypes, getEComStoresByFacility, getProductIdentificationPref, getUserFacilities, getUserPreference, initialise, setProductIdentificationPref, setUserLocale, getAvailableTimeZones, setUserTimeZone, 
-  setUserPreference } from './adapter';
-import localeMessages from '@/locales';
-import { addNotification, storeClientRegistrationToken } from '@/utils/firebase';
+import { useUserStore } from "@/store/user";
+import localeMessages from '@/locales'
+import { createDxpI18n } from '@common'
+
+const pinia = createPinia()
+pinia.use(piniaPersist)
+setActivePinia(pinia)
+
+const i18n = createDxpI18n(localeMessages)
+
 
 const app = createApp(App)
   .use(IonicVue, {
     mode: 'md',
     innerHTMLTemplatesEnabled: true
   })
-  .use(logger, {
-    level: process.env.VUE_APP_DEFAULT_LOG_LEVEL
+  .use(logger as any, {
+    level: import.meta.env.VITE_DEFAULT_LOG_LEVEL
   })
   .use(router)
-  .use(store)
+  .use(pinia)
+  .use(i18n)
   .use(permissionPlugin, {
     rules: permissionRules,
     actions: permissionActions
   })
-  .use(dxpComponents, {
-    Actions,
-    addNotification,
-    defaultImgUrl: require("@/assets/images/defaultImage.png"),
-    login,
-    logout,
-    loader,
-    appLoginUrl: process.env.VUE_APP_LOGIN_URL as string,
-    appFirebaseConfig: JSON.parse(process.env.VUE_APP_FIREBASE_CONFIG as any),
-    appFirebaseVapidKey: process.env.VUE_APP_FIREBASE_VAPID_KEY,
-    getConfig,
-    fetchGoodIdentificationTypes,
-    getEComStoresByFacility,
-    getProductIdentificationPref,
-    initialise,
-    setProductIdentificationPref,
-    localeMessages,
-    setUserLocale,
-    setUserTimeZone,
-    storeClientRegistrationToken,
-    getAvailableTimeZones,
-    getUserFacilities,
-    setUserPreference,
-    getUserPreference,
-    hasPermission,
-    fetchProducts
-  });
+
+// Setting permission before router ready, as router checks for permissions, if not set before ready,
+// user gets redirected to settings page on refresh even when having permissions
+setPermissions(useUserStore().getUserPermissions);
 
 router.isReady().then(() => {
   app.mount('#app');

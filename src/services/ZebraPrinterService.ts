@@ -1,4 +1,4 @@
-import logger from "@/logger";
+import logger from "@common/core/logger";
 
 export class ZebraPrinterService {
     static getDefaultPrinter(): Promise<any> {
