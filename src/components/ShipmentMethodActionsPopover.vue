@@ -34,11 +34,9 @@ import { defineProps } from "vue";
   import { computed } from "vue";
   import { pencilOutline, calendarClearOutline, codeWorkingOutline, listOutline, unlinkOutline } from "ionicons/icons";
   import EditShipmentMethodSequenceModal from "@/components/EditShipmentMethodSequenceModal.vue";
-  import { translate } from "@common";
+import { commonUtil, logger, translate } from "@common";
   import { CarrierService } from "@/services/CarrierService";
-  import { commonUtil } from "@common/utils/commonUtil";
 
-  import logger from "@common/core/logger";
   import { useCarrierStore } from "@/store/carrier";
   
   const props = defineProps(["shipmentMethod"]);

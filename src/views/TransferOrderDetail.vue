@@ -142,9 +142,7 @@
 import { IonBadge, IonBackButton, IonButton, IonButtons, IonCard, IonChip, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonPage, IonSegment, IonSegmentButton, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewDidLeave, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { barcodeOutline, pricetagOutline, printOutline, trashOutline } from "ionicons/icons";
-import { DxpShopifyImg, translate } from "@common";
-import emitter from "@common/core/emitter";
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil, DxpShopifyImg, emitter, translate } from "@common";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import { useRoute, useRouter } from "vue-router";
 import Scanner from "@/components/Scanner.vue";

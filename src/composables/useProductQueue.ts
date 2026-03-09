@@ -4,9 +4,8 @@ import { useTransferOrderStore } from "@/store/transferorder";
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { ProductService } from '@/services/ProductService';
 import { StockService } from '@/services/StockService';
-import { translate } from "@common";
-import { commonUtil } from "@common/utils/commonUtil";
-import logger from '@common/core/logger';
+import { commonUtil, logger, translate } from "@common";
+
 
 /**
  * Sequential product addition queue to prevent API deadlocks.

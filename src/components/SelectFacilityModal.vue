@@ -39,8 +39,7 @@
 import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonRadio, IonRadioGroup, IonSearchbar, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { defineProps, onMounted, ref } from "vue";
 import { closeOutline, saveOutline } from "ionicons/icons";
-import { translate } from "@common";
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil, translate } from "@common";
 
 const props = defineProps(["currentFacilityId", "selectedFacilityId", "facilities"]);
 

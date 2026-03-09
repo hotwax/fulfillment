@@ -42,9 +42,8 @@
   import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonReorder, IonReorderGroup, IonTitle, IonToolbar, modalController } from "@ionic/vue";
   import { computed, onMounted, ref } from "vue";
   import { close, saveOutline } from "ionicons/icons";
-  import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil, translate } from "@common";
   import { CarrierService } from "@/services/CarrierService";
-  import { translate } from "@common";
   import { useCarrierStore } from "@/store/carrier";
   const filteredShipmentMethods = ref([] as any[]);
   const currentCarrier = computed(() => useCarrierStore().getCurrent);

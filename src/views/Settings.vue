@@ -185,13 +185,10 @@ import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTi
 import { computed, ref } from "vue";
 import { openOutline } from "ionicons/icons";
 import { UserService } from "@/services/UserService";
-import emitter from "@common/core/emitter";
+import { commonUtil, DxpShopifyImg, emitter, firebaseMessaging, logger, translate, useNotificationStore } from "@common";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import { useUserStore } from "@/store/user";
-import logger from "@common/core/logger";
 
-import { DxpShopifyImg, useNotificationStore, translate, firebaseMessaging } from "@common";
-import { commonUtil } from "@common/utils/commonUtil";
 import { DateTime } from "luxon";
 import Image from "@/components/Image.vue";
 import OrderLimitPopover from "@/components/OrderLimitPopover.vue";

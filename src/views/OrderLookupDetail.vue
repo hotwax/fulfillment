@@ -261,14 +261,11 @@
 <script setup lang="ts">
 import { IonBackButton, IonBadge, IonButton, IonCard, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, onIonViewWillEnter, popoverController } from "@ionic/vue";
 import { computed, defineProps, ref } from "vue";
-import { translate } from "@common";
+import { commonUtil, logger, moduleFederationUtil, translate } from "@common";
 import { callOutline, cashOutline, checkmarkDoneOutline, cubeOutline, ellipsisVerticalOutline, golfOutline, mailOutline, pulseOutline, storefrontOutline, sunnyOutline, ticketOutline, timeOutline, downloadOutline } from "ionicons/icons";
 import { DateTime } from "luxon";
-import { commonUtil } from "@common/utils/commonUtil";
 import OrderLookupLabelActionsPopover from "@/components/OrderLookupLabelActionsPopover.vue";
-import logger from "@common/core/logger";
 import { OrderLookupService } from "@/services/OrderLookupService";
-import { moduleFederationUtil } from "@common/utils/moduleFederationUtil";
 import { useOrderLookupStore } from "@/store/orderLookup";
 import { useProductStore } from "@/store/product";
 import { useStockStore } from "@/store/stock";

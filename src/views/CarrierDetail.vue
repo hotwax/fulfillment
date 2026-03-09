@@ -109,12 +109,9 @@
 import { IonButton, IonBackButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonPage, IonSegment, IonSegmentButton, IonTitle, IonToggle, IonToolbar, alertController, modalController } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
 import { addCircleOutline, addOutline, peopleOutline, shieldCheckmarkOutline } from "ionicons/icons";
-import { translate } from "@common";
-import emitter from "@common/core/emitter";
+import { commonUtil, emitter, logger, translate } from "@common";
 import { useRoute } from "vue-router";
 import { DateTime } from "luxon";
-import { commonUtil } from "@common/utils/commonUtil";
-import logger from "@common/core/logger";
 import { CarrierService } from "@/services/CarrierService";
 import CreateShipmentMethodModal from "@/components/CreateShipmentMethodModal.vue";
 import ShipmentMethods from "@/components/ShipmentMethods.vue";

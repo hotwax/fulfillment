@@ -47,10 +47,8 @@ import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonIco
 import { useProductIdentificationStore } from '@/store/productIdentification';
 import { useUserStore } from '@/store/user'
 import { computed, onMounted } from 'vue';
-import { DxpShopifyImg } from "@common";
+import { commonUtil, DxpShopifyImg, translate } from "@common";
 import { shuffleOutline } from "ionicons/icons";
-import { translate } from '@common';
-import { commonUtil } from "@common/utils/commonUtil"
 
 const productIdentificationStore = useProductIdentificationStore();
 const userStore = useUserStore()

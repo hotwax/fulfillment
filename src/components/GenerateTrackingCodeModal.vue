@@ -127,10 +127,8 @@
 import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonTextarea, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { computed, defineProps, onMounted, ref } from "vue";
 import { archiveOutline, closeOutline, copyOutline, informationCircleOutline, openOutline, trashOutline } from "ionicons/icons";
-import { translate } from "@common";
+import { commonUtil, logger, translate } from "@common";
 import { OrderService } from "@/services/OrderService";
-import { commonUtil } from "@common/utils/commonUtil";
-import logger from "@common/core/logger";
 import { useRouter } from "vue-router";
 import { useCarrierStore } from "@/store/carrier";
 import { useUserStore } from "@/store/user";

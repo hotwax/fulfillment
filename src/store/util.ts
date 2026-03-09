@@ -1,8 +1,7 @@
 import { defineStore } from "pinia"
 import { UtilService } from "@/services/UtilService"
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil, logger } from "@common";
 
-import logger from "@common/core/logger"
 import { useUserStore } from "@/store/user"
 
 interface UtilState {

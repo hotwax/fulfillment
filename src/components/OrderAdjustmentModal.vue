@@ -53,11 +53,9 @@
 import { IonAccordion, IonAccordionGroup, IonButtons, IonButton, IonContent, IonHeader, IonNote, IonIcon, IonTitle, IonToolbar, IonItem, IonLabel, IonList, modalController } from "@ionic/vue";
 import { defineProps, onMounted, ref } from "vue";
 import { close } from "ionicons/icons";
-import { translate } from "@common";
-import logger from "@common/core/logger";
+import { commonUtil, logger, translate } from "@common";
 import { OrderService } from "@/services/OrderService";
 import { UtilService } from "@/services/UtilService";
-import { commonUtil } from "@common/utils/commonUtil";
 
 
 const props = defineProps(["order", "orderId", "orderAdjustments", "orderHeaderAdjustmentTotal", "adjustmentsByGroup"]);

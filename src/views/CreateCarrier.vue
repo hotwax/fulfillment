@@ -30,10 +30,8 @@ import { IonButton, IonBackButton, IonContent, IonHeader, IonIcon, IonInput, Ion
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { arrowForwardOutline } from "ionicons/icons";
-import { translate } from "@common";
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil, logger, translate } from "@common";
 import { CarrierService } from "@/services/CarrierService";
-import logger from "@common/core/logger";
 import { useCarrierStore } from "@/store/carrier";
 
 const router = useRouter();

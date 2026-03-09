@@ -35,10 +35,8 @@ import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, Ion
 import { computed, defineProps, onBeforeMount, ref } from "vue";
 import { useUtilStore } from "@/store/util";
 import { closeOutline, saveOutline } from "ionicons/icons";
-import { translate } from "@common";
-import logger from "@common/core/logger";
+import { commonUtil, logger, translate } from "@common";
 import { UtilService } from "@/services/UtilService";
-import { commonUtil } from "@common/utils/commonUtil";
 
 const props = defineProps(["reason"]);
 const rejectReasons = computed(() => useUtilStore().getRejectReasons);

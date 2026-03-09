@@ -18,11 +18,9 @@
 import { defineProps } from "vue";
   import { IonContent, IonIcon, IonItem, IonList, IonListHeader, popoverController } from "@ionic/vue";
   import { documentOutline, trashOutline } from "ionicons/icons";
-  import { translate } from "@common";
+import { commonUtil, logger, translate } from "@common";
   import { useOrderStore } from "@/store/order";
   import { OrderService } from "@/services/OrderService";
-  import { commonUtil } from "@common/utils/commonUtil";
-  import logger from "@common/core/logger";
   
   const props = defineProps(["currentOrder"]);
   const printShippingLabel = async (order: any) => {

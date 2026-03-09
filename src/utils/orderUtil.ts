@@ -1,7 +1,7 @@
 import { useOrderStore } from "@/store/order";
 import { useProductStore } from "@/store/product";
-import { translate } from "@common";
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil, translate } from "@common";
+
 import { OrderService } from '@/services/OrderService';
 
 const orderCategoryParameters = {

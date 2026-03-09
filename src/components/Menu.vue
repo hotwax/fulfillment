@@ -35,8 +35,7 @@ import { IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonL
 import { computed } from "vue";
 import { businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
 import { useRouter } from "vue-router";
-import { translate } from "@common";
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil, translate } from "@common";
 import { useUserStore } from "@/store/user";
 import { useAuth } from "@/composables/auth";
 

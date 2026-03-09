@@ -25,8 +25,7 @@ import { IonContent, IonHeader, IonItem, IonList, IonMenu, IonRadio, IonRadioGro
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 import { useOrderStore } from "@/store/order";
-import { translate } from "@common";
-import emitter from "@common/core/emitter";
+import { emitter, translate } from "@common";
 const route = useRoute();
 
 const title = computed(() => {

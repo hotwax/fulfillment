@@ -44,12 +44,9 @@
   import { IonButton, IonCheckbox, IonChip, IonIcon, IonItem, IonLabel, IonNote, alertController, popoverController } from "@ionic/vue";
   import { computed } from "vue";
   import { addCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
-  import { translate } from "@common";
-  import emitter from "@common/core/emitter";
+import { commonUtil, emitter, logger, translate } from "@common";
   import { DateTime } from "luxon";
-  import { commonUtil } from "@common/utils/commonUtil";
 
-  import logger from "@common/core/logger";
   import { CarrierService } from "@/services/CarrierService";
   import ShipmentMethodActionsPopover from "@/components/ShipmentMethodActionsPopover.vue";
   import { useCarrierStore } from "@/store/carrier";

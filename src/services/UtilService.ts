@@ -1,6 +1,6 @@
 import { api } from '@common';
-import { commonUtil } from "@common/utils/commonUtil";
-import logger from '@common/core/logger'
+import { commonUtil } from "@common";
+import { logger } from '@common'
 import { useUserStore } from "@/store/user";
 
 const fetchShipmentMethods = async (query: any): Promise<any> => {

@@ -1,4 +1,4 @@
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil } from "@common";
 import { defineStore } from "pinia";
 import { ProductService } from '@/services/ProductService';
 

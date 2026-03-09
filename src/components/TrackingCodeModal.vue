@@ -40,12 +40,10 @@
 import { IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonLabel, IonTitle, IonToolbar, modalController, IonButton, IonButtons, IonItem, IonList } from "@ionic/vue";
 import { computed, defineProps, ref } from "vue";
 import { closeOutline, openOutline, saveOutline } from "ionicons/icons";
-import { translate } from "@common";
+import { commonUtil, logger, translate } from "@common";
 import { useOrderStore } from "@/store/order";
 import { useCarrierStore } from "@/store/carrier";
 import { OrderService } from "@/services/OrderService";
-import { commonUtil } from "@common/utils/commonUtil";
-import logger from "@common/core/logger";
 
 const props = defineProps(["carrierPartyId"]);
 const trackingCode = ref("");

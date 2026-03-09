@@ -1,5 +1,5 @@
 import { api } from '@common';
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil } from "@common";
 const fetchRejectionStats = async (query: any): Promise<any> => {
   return api({
     url: "solr-query",

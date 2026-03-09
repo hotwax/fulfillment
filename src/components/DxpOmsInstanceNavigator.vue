@@ -28,10 +28,8 @@ import {
   IonCardTitle,
   IonIcon
 } from '@ionic/vue';
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil, cookieHelper, translate } from "@common";
 import { openOutline } from 'ionicons/icons'
-import { translate } from "@common";
-import { cookieHelper } from "@common/helpers/cookieHelper";
 
 const props = defineProps({
   isEmbedded: {

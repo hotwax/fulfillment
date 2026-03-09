@@ -14,11 +14,9 @@
 <script setup lang="ts">
 import { IonContent, IonItem, IonList, IonListHeader, popoverController } from "@ionic/vue";
 import { computed, defineProps } from "vue";
-import { translate } from "@common";
+import { commonUtil, logger, translate } from "@common";
 import { useUtilStore } from "@/store/util";
 import { UtilService } from "@/services/UtilService";
-import logger from "@common/core/logger";
-import { commonUtil } from "@common/utils/commonUtil";
 
 
 const props = defineProps(["reason"]);

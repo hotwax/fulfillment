@@ -56,8 +56,7 @@
 import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonThumbnail, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { computed, defineProps, onMounted, ref } from "vue";
 import { cameraOutline, closeOutline, saveOutline } from "ionicons/icons";
-import { DxpShopifyImg, translate } from "@common";
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil, DxpShopifyImg, translate } from "@common";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import { useUserStore as useAuthStore } from "@/store/user";
 import Scanner from "@/components/Scanner.vue";

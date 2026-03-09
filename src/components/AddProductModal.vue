@@ -57,11 +57,9 @@ import { checkmarkCircle, closeOutline } from "ionicons/icons";
 import { computed, defineProps, onMounted, ref } from 'vue';
 import { useTransferOrderStore } from "@/store/transferorder";
 import { modalController } from '@ionic/vue';
-import { ProductService } from '@/services/ProductService';
-import { translate, emitter } from "@common";
+import { translate, emitter, logger, commonUtil } from "@common";
 import { useProductIdentificationStore } from '@/store/productIdentification';
-import logger from '@common/core/logger';
-import { commonUtil } from "@common/utils/commonUtil";
+import { ProductService } from '@/services/ProductService';
 
 const props = defineProps(["query", "addProductToQueue", "isProductInOrder", "pendingProductIds"]);
 const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref)

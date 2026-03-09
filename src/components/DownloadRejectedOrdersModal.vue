@@ -53,15 +53,11 @@
   import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonSelect, IonSelectOption, IonTitle, IonToolbar, modalController, alertController } from "@ionic/vue";
   import { computed, ref } from "vue";
   import { closeOutline, cloudDownloadOutline } from "ionicons/icons";
-  import { translate } from "@common";
-  import emitter from "@common/core/emitter";
+import { commonUtil, emitter, logger, solrUtil, translate } from "@common";
   import { RejectionService } from "@/services/RejectionService";
   import { UtilService } from "@/services/UtilService";
-  import { commonUtil } from "@common/utils/commonUtil";
   import { useUserStore } from "@/store/user";
 
-  import logger from "@common/core/logger";
-  import { solrUtil } from "@common/utils/solrUtil";
   import { DateTime } from "luxon";
   import { useProductStore } from "@/store/product";
   import { useRejectionStore } from "@/store/rejection";

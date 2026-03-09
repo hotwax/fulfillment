@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from "pinia"
 import piniaPersist from "pinia-plugin-persistedstate"
 import App from './App.vue'
 import router from './router';
-import logger from '@common/core/logger';
+import { logger, createDxpI18n } from '@common';
 
 import { IonicVue } from '@ionic/vue';
 
@@ -27,9 +27,7 @@ import '@ionic/vue/css/display.css';
 import './theme/variables.css';
 import "@hotwax/apps-theme";
 
-import { useUserStore } from "@/store/user";
 import localeMessages from '@/locales'
-import { createDxpI18n } from '@common'
 
 const pinia = createPinia()
 pinia.use(piniaPersist)

@@ -1,9 +1,7 @@
 import { defineStore } from "pinia"
 import { TransferOrderService } from "@/services/TransferOrderService"
-import { api } from '@common';
-import { commonUtil } from "@common/utils/commonUtil";
-import logger from "@common/core/logger"
-import { translate } from "@common";
+import { api, commonUtil, logger, translate } from "@common";
+
 import { useProductStore } from "@/store/product"
 import { useUtilStore } from "@/store/util"
 import { useUserStore } from "@/store/user"

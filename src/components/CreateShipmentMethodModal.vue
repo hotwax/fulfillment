@@ -33,9 +33,7 @@
   import { IonButtons, IonButton, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonText, IonTitle, IonToolbar, IonItem, modalController, onIonViewWillEnter } from "@ionic/vue";
   import { computed, ref } from "vue";
   import { close, saveOutline } from "ionicons/icons";
-  import { commonUtil } from "@common/utils/commonUtil";
-  import { translate } from "@common";
-  import logger from "@common/core/logger";
+import { commonUtil, logger, translate } from "@common";
 
   import { CarrierService } from "@/services/CarrierService";
   import { useCarrierStore } from "@/store/carrier";

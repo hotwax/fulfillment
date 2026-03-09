@@ -118,7 +118,7 @@ import {
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { useUserStore } from '@/store/user';
 import { computed, onBeforeMount, ref } from "vue";
-import { commonUtil } from "@common/utils/commonUtil"
+import { commonUtil } from "@common"
 import { translate } from '@common';
 
 const userStore = useUserStore();

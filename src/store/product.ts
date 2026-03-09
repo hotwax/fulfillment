@@ -1,8 +1,7 @@
 import { defineStore } from "pinia"
 import { ProductService } from "@/services/ProductService"
-import { api } from '@common';
-import { commonUtil } from "@common/utils/commonUtil";
-import logger from "@common/core/logger"
+import { api, commonUtil, logger } from "@common";
+
 
 interface ProductState {
   cached: Record<string, any>

@@ -31,11 +31,8 @@
 import { IonButtons, IonButton, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonList, IonTitle, IonToggle, IonToolbar, modalController, alertController } from "@ionic/vue";
 import { computed, onBeforeMount, ref } from "vue";
 import { closeOutline, save } from "ionicons/icons";
-import { translate, useNotificationStore, firebaseMessaging } from "@common";
-import emitter from "@common/core/emitter";
+import { commonUtil, emitter, firebaseMessaging, logger, translate, useNotificationStore } from "@common";
 import { useUserStore as useDxpUserStore } from "@/store/user";
-import { commonUtil } from "@common/utils/commonUtil";
-import logger from "@common/core/logger";
 const notificationPrefState = ref<Record<string, boolean>>({});
 const notificationPrefToUpdate = ref({ subscribe: [] as string[], unsubscribe: [] as string[] });
 const initialNotificationPrefState = ref<Record<string, boolean>>({});

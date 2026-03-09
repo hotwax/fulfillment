@@ -199,13 +199,10 @@ import { IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, Io
 import { barcodeOutline, checkmarkDoneOutline, checkmarkCircle, cloudOfflineOutline, locateOutline, searchOutline, shirtOutline, storefrontOutline } from "ionicons/icons";
 import { onBeforeRouteLeave, useRoute } from "vue-router";
 import router from "@/router";
-import { DxpShopifyImg, translate } from "@common";
-import emitter from "@common/core/emitter";
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil, DxpShopifyImg, emitter, logger, translate } from "@common";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import { ProductService } from "@/services/ProductService";
 import { StockService } from "@/services/StockService";
-import logger from "@common/core/logger";
 import { TransferOrderService } from "@/services/TransferOrderService";
 import { UtilService } from "@/services/UtilService";
 import { OrderService } from "@/services/OrderService";

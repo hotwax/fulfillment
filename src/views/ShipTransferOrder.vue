@@ -149,8 +149,7 @@
 import { computed, ref } from "vue";
 import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from "@ionic/vue";
 import { openOutline, pricetagOutline, printOutline, storefrontOutline } from "ionicons/icons";
-import { translate } from "@common";
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil, logger, translate } from "@common";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import { TransferOrderService } from "@/services/TransferOrderService";
 import { OrderService } from "@/services/OrderService";
@@ -158,7 +157,6 @@ import { CarrierService } from "@/services/CarrierService";
 import { UtilService } from "@/services/UtilService";
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
 import Image from "@/components/Image.vue";
-import logger from "@common/core/logger";
 import { useProductStore } from "@/store/product";
 import { useUtilStore } from "@/store/util";
 import { useCarrierStore } from "@/store/carrier";

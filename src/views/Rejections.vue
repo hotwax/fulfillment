@@ -153,8 +153,7 @@
 import { IonButton, IonButtons, IonCard, IonCardHeader, IonCardTitle, IonChip, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonList, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { cloudDownloadOutline, filterOutline, personCircleOutline, pricetagOutline } from "ionicons/icons";
-import { DxpShopifyImg, translate } from "@common";
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil, DxpShopifyImg, translate } from "@common";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import { useUserStore } from "@/store/user";
 import RejectedItemsModal from "@/components/RejectedItemsModal.vue";

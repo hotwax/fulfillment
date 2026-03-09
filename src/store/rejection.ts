@@ -1,10 +1,7 @@
 import { defineStore } from "pinia"
 import { RejectionService } from "@/services/RejectionService"
-import { api } from '@common';
-import { commonUtil } from "@common/utils/commonUtil";
-import { solrUtil } from "@common/utils/solrUtil"
+import { api, commonUtil, logger, solrUtil } from "@common";
 import { UtilService } from "@/services/UtilService"
-import logger from "@common/core/logger"
 import { useProductStore } from "@/store/product"
 import { useUtilStore } from "@/store/util"
 import { useUserStore } from "@/store/user"

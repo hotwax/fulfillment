@@ -1,7 +1,7 @@
 import { api } from '@common';
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil } from "@common";
 import { useUserStore } from "@/store/user";
-import logger from '@common/core/logger'
+import { logger } from '@common'
 
 const login = async (username: string, password: string): Promise<any> => {
   return api({

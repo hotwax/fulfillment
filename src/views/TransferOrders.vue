@@ -55,8 +55,8 @@ import { IonBadge, IonIcon, IonContent, IonFab, IonFabButton, IonHeader, IonInfi
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { addOutline } from "ionicons/icons";
-import { translate } from "@common";
-import emitter from "@common/core/emitter";
+import { emitter, translate } from "@common";
+
 import { useUserStore as useDxpUserStore } from "@/store/user";
 import { DateTime } from "luxon";
 import CreateTransferOrderModal from "@/components/CreateTransferOrderModal.vue";

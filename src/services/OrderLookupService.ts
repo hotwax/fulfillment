@@ -1,8 +1,5 @@
-import { api } from '@common';
-import { commonUtil } from "@common/utils/commonUtil";
+import { api, commonUtil, logger, translate } from "@common";
 import { useUtilStore } from "@/store/util";
-import logger from '@common/core/logger';
-import { translate } from "@common";
 import { cogOutline } from 'ionicons/icons';
 import { ZebraPrinterService } from './ZebraPrinterService';
 

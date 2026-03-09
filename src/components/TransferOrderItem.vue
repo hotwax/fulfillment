@@ -77,15 +77,12 @@
 import { IonButton, IonCard, IonChip, IonIcon, IonItem, IonInput, IonLabel, IonProgressBar, IonThumbnail, modalController, popoverController } from "@ionic/vue";
 import { computed, defineProps, nextTick, ref, watch } from "vue";
 import { caretDownOutline, checkmarkDone, closeCircleOutline, removeCircleOutline } from "ionicons/icons";
-import { DxpShopifyImg, translate } from "@common";
-import emitter from "@common/core/emitter";
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil, DxpShopifyImg, emitter, logger, translate } from "@common";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import { TransferOrderService } from "@/services/TransferOrderService";
 import { OrderService } from "@/services/OrderService";
 import { useRouter } from "vue-router";
 
-import logger from "@common/core/logger";
 import ShippedHistoryModal from "@/components/ShippedHistoryModal.vue";
 import ReportIssuePopover from "./ReportIssuePopover.vue";
 import { useTransferOrderStore } from "@/store/transferorder";

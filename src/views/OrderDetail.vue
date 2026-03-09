@@ -206,14 +206,11 @@
 import { IonBackButton, IonBadge, IonButton, IonCard, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonNote, IonPage, IonRow, IonSkeletonText, IonTitle, IonToolbar, IonThumbnail, alertController, popoverController, modalController, onIonViewDidEnter } from "@ionic/vue";
 import { computed, defineProps, onMounted, ref } from "vue";
 import { addOutline, archiveOutline, bagCheckOutline, cashOutline, caretDownOutline, chevronUpOutline, closeCircleOutline, cubeOutline, documentTextOutline, ellipsisVerticalOutline, fileTrayOutline, gift, giftOutline, listOutline, personAddOutline, pricetagOutline, ribbonOutline, trashBinOutline } from "ionicons/icons";
-import { DxpShopifyImg, translate } from "@common";
-import { commonUtil } from "@common/utils/commonUtil";
-import emitter from "@common/core/emitter";
+import { commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, translate } from "@common";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import { useUserStore as useDxpUserStore } from "@/store/user";
 
 import { OrderService } from "@/services/OrderService";
-import logger from "@common/core/logger";
 import { UtilService } from "@/services/UtilService";
 import { DateTime } from "luxon";
 import Popover from "@/views/ShippingPopover.vue";
@@ -226,7 +223,6 @@ import { orderUtil } from "@/utils/orderUtil";
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import GenerateTrackingCodeModal from "@/components/GenerateTrackingCodeModal.vue";
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
-import { moduleFederationUtil } from "@common/utils/moduleFederationUtil";
 import { useRouter } from "vue-router";
 import { useOrderStore } from "@/store/order";
 import { useProductStore } from "@/store/product";

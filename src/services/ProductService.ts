@@ -1,7 +1,7 @@
 import { api } from '@common';
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil } from "@common";
 
-import logger from '@common/core/logger';
+import { logger } from '@common';
 
 enum OPERATOR {
   AND = 'AND',

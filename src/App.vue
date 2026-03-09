@@ -11,12 +11,9 @@
 import { createAnimation, IonApp, IonRouterOutlet, IonSplitPane, loadingController } from "@ionic/vue";
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import Menu from "@/components/Menu.vue";
-import { translate } from "@common";
-import emitter from "@common/core/emitter";
+import { translate, emitter, logger, firebaseMessaging, useNotificationStore } from "@common";
 import { Settings } from "luxon";
-import logger from "@common/core/logger";
 import { init } from "@module-federation/runtime";
-import { firebaseMessaging, useNotificationStore } from "@common";
 import { useUserStore } from "@/store/user";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import router from './router';

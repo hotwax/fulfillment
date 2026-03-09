@@ -12,10 +12,11 @@ import TransferOrders from "@/views/TransferOrders.vue"
 import TransferOrderDetail from "@/views/TransferOrderDetail.vue"
 import CreateCarrier from "@/views/CreateCarrier.vue"
 import CarrierShipmentMethods from "@/views/CarrierShipmentMethods.vue"
-import { commonUtil } from "@common/utils/commonUtil"
+import { commonUtil, translate } from "@common";
+
 import { useUserStore } from '@/store/user'
-import { translate } from "@common";
 import { useUserStore as useDxpUserStore } from "@/store/user";
+
 import 'vue-router'
 import Notifications from '@/views/Notifications.vue'
 import CreateTransferOrder from '@/views/CreateTransferOrder.vue';

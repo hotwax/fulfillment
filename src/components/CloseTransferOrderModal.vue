@@ -44,10 +44,9 @@
 import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonTitle, IonToolbar, IonThumbnail, alertController, modalController } from "@ionic/vue";
 import { arrowBackOutline, saveOutline } from "ionicons/icons";
 import { computed } from "vue";
-import { translate, DxpShopifyImg } from "@common";
+import { commonUtil, translate, DxpShopifyImg } from "@common";
 import { useRouter } from "vue-router";
 import { TransferOrderService } from "@/services/TransferOrderService";
-import { commonUtil } from "@common/utils/commonUtil";
 import { useUserStore } from "@/store/user";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useProductStore } from "@/store/product";

@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { defineProps, onMounted, ref, watch } from "vue";
-import logger from "@common/core/logger";
+import { logger } from "@common";
 import defaultImage from "@/assets/images/defaultImage.png";
 
 const props = defineProps(["src"]);

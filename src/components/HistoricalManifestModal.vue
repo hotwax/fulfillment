@@ -39,12 +39,10 @@ import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonItem, IonLabe
 import ShopifyService from '@/services/ShopifyService';
 import { computed, defineProps, ref } from "vue";
 import { cogOutline, closeOutline, printOutline } from "ionicons/icons";
-import { translate } from "@common";
+import { commonUtil, logger, translate } from "@common";
 import { useUserStore } from "@/store/user";
 import { DateTime } from "luxon";
-import logger from "@common/core/logger";
 import { UtilService } from "@/services/UtilService";
-import { commonUtil } from "@common/utils/commonUtil";
 
 const props = defineProps(["selectedCarrierPartyId", "carrierConfiguration"]);
 const currentFacility = computed(() => useUserStore().getCurrentFacility);

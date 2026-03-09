@@ -53,11 +53,9 @@
 import { IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonHeader, IonIcon, IonFab, IonFabButton, IonTitle, IonToolbar, IonLabel, IonItem, IonList, IonListHeader, IonRow, IonSearchbar, IonSpinner, modalController, alertController } from "@ionic/vue";
 import { computed, defineProps, onMounted, ref } from "vue";
 import { close, closeCircle, saveOutline } from "ionicons/icons";
-import { commonUtil } from "@common/utils/commonUtil";
-import logger from "@common/core/logger";
+import { commonUtil, logger, translate } from "@common";
 import { OrderService } from "@/services/OrderService";
 import { UtilService } from "@/services/UtilService";
-import { translate } from "@common";
 import { DateTime } from "luxon";
 import { useUserStore } from "@/store/user";
 

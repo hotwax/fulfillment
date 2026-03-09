@@ -48,9 +48,8 @@
 import { IonButton, IonButtons, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonTitle, IonToggle, IonToolbar, modalController } from "@ionic/vue";
 import { computed, onMounted } from "vue";
 import { addCircleOutline, checkmarkDoneOutline, peopleOutline, shieldCheckmarkOutline } from "ionicons/icons";
-import { translate } from "@common";
+import { commonUtil, translate } from "@common";
 import { useRoute, useRouter } from "vue-router";
-import { commonUtil } from "@common/utils/commonUtil";
 import ShipmentMethods from "@/components/ShipmentMethods.vue";
 import CreateShipmentMethodModal from "@/components/CreateShipmentMethodModal.vue";
 import { useCarrierStore } from "@/store/carrier";

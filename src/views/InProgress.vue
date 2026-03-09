@@ -235,15 +235,11 @@ import { IonBadge, IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonCont
 import { computed, ref } from "vue";
 import { addOutline, caretDownOutline, chevronUpOutline, checkmarkDoneOutline, closeCircleOutline, cubeOutline, ellipsisVerticalOutline, gift, giftOutline, listOutline, pencilOutline, optionsOutline, pricetagOutline, printOutline, trashBinOutline } from "ionicons/icons";
 import PackagingPopover from "@/views/PackagingPopover.vue";
-import { commonUtil } from "@common/utils/commonUtil";
+import { commonUtil, DxpShopifyImg, emitter, logger, solrUtil, translate } from "@common";
 import { orderUtil } from "@/utils/orderUtil";
-import { solrUtil } from "@common/utils/solrUtil";
-import { DxpShopifyImg, translate } from "@common";
-import emitter from "@common/core/emitter";
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
 import { UtilService } from "@/services/UtilService";
 import { DateTime } from "luxon";
-import logger from "@common/core/logger";
 
 import EditPickersModal from "@/components/EditPickersModal.vue";
 import ShipmentBoxTypePopover from "@/components/ShipmentBoxTypePopover.vue";
