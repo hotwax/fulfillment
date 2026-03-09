@@ -27,9 +27,6 @@ import '@ionic/vue/css/display.css';
 import './theme/variables.css';
 import "@hotwax/apps-theme";
 
-import permissionPlugin, { setPermissions } from '@/authorization';
-import permissionRules from '@/authorization/Rules';
-import permissionActions from '@/authorization/Actions';
 import { useUserStore } from "@/store/user";
 import localeMessages from '@/locales'
 import { createDxpI18n } from '@common'
@@ -38,7 +35,7 @@ const pinia = createPinia()
 pinia.use(piniaPersist)
 setActivePinia(pinia)
 
-const i18n = createDxpI18n(localeMessages)
+export const i18n = createDxpI18n(localeMessages)
 
 
 const app = createApp(App)
@@ -52,14 +49,10 @@ const app = createApp(App)
   .use(router)
   .use(pinia)
   .use(i18n)
-  .use(permissionPlugin, {
-    rules: permissionRules,
-    actions: permissionActions
-  })
 
 // Setting permission before router ready, as router checks for permissions, if not set before ready,
 // user gets redirected to settings page on refresh even when having permissions
-setPermissions(useUserStore().getUserPermissions);
+// useUserStore().getUserPermissions;
 
 router.isReady().then(() => {
   app.mount('#app');

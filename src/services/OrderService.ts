@@ -1,16 +1,14 @@
 import { api } from '@common';
-import { getOmsURL } from '@common/utils/commonUtil';
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 
 import { useOrderStore } from "@/store/order";
 import { useUtilStore } from "@/store/util";
-import { useUserStore as useAppUserStore } from "@/store/user";
+import { useUserStore } from "@/store/user";
 import { translate } from "@common";
 import logger from '@common/core/logger'
 import { cogOutline } from 'ionicons/icons';
-import { commonUtil } from '@/utils/commonUtil'
 import { orderUtil } from '@/utils/orderUtil';
-import { solrUtil } from '@/utils/solrUtil';
+import { solrUtil } from '@common/utils/solrUtil';
 import { ZebraPrinterService } from './ZebraPrinterService';
 import ShopifyService from './ShopifyService';
 
@@ -29,7 +27,7 @@ const findOpenOrders = async (payload: any): Promise<any> => {
       '-shipmentMethodTypeId': { value: ['STOREPICKUP', 'POS_COMPLETED'] },
       orderStatusId: { value: 'ORDER_APPROVED' },
       orderTypeId: { value: 'SALES_ORDER' },
-      productStoreId: { value: commonUtil.getProductStoreId() }
+      productStoreId: { value: useUserStore().getCurrentEComStore?.productStoreId }
     },
     solrFilters: [
       //it should be explicit what is subtracting the first part of your OR statement from
@@ -38,7 +36,7 @@ const findOpenOrders = async (payload: any): Promise<any> => {
     ]
   } as any
   if (!openOrderQuery.excludeFacilityFilter) {
-    params.filters['facilityId'] = { value: solrUtil.escapeSolrSpecialChars(commonUtil.getCurrentFacilityId()) }
+    params.filters['facilityId'] = { value: solrUtil.escapeSolrSpecialChars(useUserStore().getCurrentFacility?.facilityId) }
   }
   if (shipGroupFilter && Object.keys(shipGroupFilter).length) {
     Object.assign(params.filters, shipGroupFilter);
@@ -75,7 +73,7 @@ const findOpenOrders = async (payload: any): Promise<any> => {
       url: "solr-query",
       method: "post",
       data: orderQueryPayload,
-      baseURL: getOmsURL()
+      baseURL: commonUtil.getOmsURL()
     }) as any;
     if (!hasError(resp) && resp.data.grouped[params.groupBy]?.matches > 0) {
       total = resp.data.grouped[params.groupBy].ngroups
@@ -130,7 +128,7 @@ const printPicklist = async (picklistId: string): Promise<any> => {
     const resp = await api({
       url: "/fop/apps/pdf/PrintPicklist",
       method: "GET",
-      baseURL: useAppUserStore().getMaargUrl,
+      baseURL: getMaargBaseURL(),
       responseType: "blob",
       params: { picklistId }
     });
@@ -166,7 +164,7 @@ const printPackingSlip = async (shipmentIds: Array<string>): Promise<any> => {
     const resp = await api({
       url: "/fop/apps/pdf/PrintPackingSlip",
       method: "GET",
-      baseURL: useAppUserStore().getMaargUrl,
+      baseURL: getMaargBaseURL(),
       params: {
         shipmentId: shipmentIds
       },
@@ -217,7 +215,7 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
       const resp = await api({
         url: "/fop/apps/pdf/PrintLabel",
         method: "GET",
-        baseURL: useAppUserStore().getMaargUrl,
+        baseURL: getMaargBaseURL(),
         params: {
           shipmentId: shipmentIds
         },
@@ -285,7 +283,7 @@ const printShippingLabelAndPackingSlip = async (shipmentIds: Array<string>, ship
     const resp = await api({
       url: "/fop/apps/pdf/PrintPackingSlipAndLabel",
       method: "GET",
-      baseURL: useAppUserStore().getMaargUrl,
+      baseURL: getMaargBaseURL(),
       params: {
         shipmentId: shipmentIds
       },
@@ -342,14 +340,14 @@ const findShipments = async (query: any): Promise<any> => {
       pageSize: query.viewSize,
       orderBy: 'orderDate',
       shipmentTypeId: 'SALES_SHIPMENT',
-      productStoreId: commonUtil.getProductStoreId(),
+      productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
     } as any
 
     if (query.queryString) {
       params.keyword = query.queryString
     }
     if (!query.excludeFacilityFilter) {
-      params.originFacilityId = commonUtil.getCurrentFacilityId()
+      params.originFacilityId = useUserStore().getCurrentFacility?.facilityId
     }
     if (query.orderStatusId) {
       params.orderStatusId = query.orderStatusId

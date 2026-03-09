@@ -129,9 +129,8 @@ import { computed, defineProps, onMounted, ref } from "vue";
 import { archiveOutline, closeOutline, copyOutline, informationCircleOutline, openOutline, trashOutline } from "ionicons/icons";
 import { translate } from "@common";
 import { OrderService } from "@/services/OrderService";
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import logger from "@common/core/logger";
-import { commonUtil } from "@/utils/commonUtil";
 import { useRouter } from "vue-router";
 import { useCarrierStore } from "@/store/carrier";
 import { useUserStore } from "@/store/user";
@@ -273,7 +272,7 @@ const updateCarrierAndShippingMethod = async (partyId: string, methodTypeId: str
     };
 
     const resp = await OrderService.updateShipmentCarrierAndMethod(params);
-    if (hasError(resp)) {
+    if (commonUtil.hasError(resp)) {
       throw resp.data;
     }
 

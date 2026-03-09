@@ -1,11 +1,9 @@
 import { defineStore } from "pinia"
 import { TransferOrderService } from "@/services/TransferOrderService"
 import { api } from '@common';
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import logger from "@common/core/logger"
 import { translate } from "@common";
-import { getProductIdentificationValue } from "@/utils/commonUtil";
-import { commonUtil } from "@/utils/commonUtil"
 import { useProductStore } from "@/store/product"
 import { useUtilStore } from "@/store/util"
 import { useUserStore } from "@/store/user"
@@ -110,7 +108,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
       const orderStatusId = transferOrderQuery.orderStatusId ?? "ORDER_APPROVED"
 
       const params: any = {
-        originFacilityId: commonUtil.getCurrentFacilityId(),
+        originFacilityId: useUserStore().getCurrentFacility?.facilityId,
         limit: transferOrderQuery.viewSize,
         pageIndex: transferOrderQuery.viewIndex
       }
@@ -132,7 +130,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
           resp = await TransferOrderService.fetchTransferOrders(params)
         }
 
-        if (!hasError(resp) && resp.data.ordersCount > 0) {
+        if (!commonUtil.hasError(resp) && resp.data.ordersCount > 0) {
           total = resp.data.ordersCount
           if (transferOrderQuery.viewIndex > 0) {
             orders = this.transferOrder.list.concat(resp.data.orders)
@@ -158,12 +156,12 @@ export const useTransferOrderStore = defineStore("transferorder", {
       try {
         orderResp = await TransferOrderService.fetchTransferOrderDetail(payload.orderId)
 
-        if (!hasError(orderResp)) {
+        if (!commonUtil.hasError(orderResp)) {
           orderDetail = orderResp.data.order || {}
 
           shipmentResp = await TransferOrderService.fetchShippedTransferShipments({ orderId: payload.orderId, shipmentStatusId: "SHIPMENT_SHIPPED" })
 
-          if (!hasError(shipmentResp)) {
+          if (!commonUtil.hasError(shipmentResp)) {
             const shipmentData = shipmentResp.data || {}
             const shipments = shipmentData.shipments || []
 
@@ -243,7 +241,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
           }
         }
         const resp = await TransferOrderService.createOutboundTransferShipment(params)
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           shipmentId = resp.data.shipmentId
         } else {
           throw resp.data
@@ -261,7 +259,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
       const barcodeIdentifier = utilStore.getBarcodeIdentificationPref
 
       const item = this.current.items.find((orderItem: any) => {
-        const itemVal = getProductIdentificationValue(barcodeIdentifier, getProduct(orderItem.productId)) ? getProductIdentificationValue(barcodeIdentifier, getProduct(orderItem.productId)) : getProduct(orderItem.productId)?.internalName
+        const itemVal = commonUtil.getProductIdentificationValue(barcodeIdentifier, getProduct(orderItem.productId)) ? commonUtil.getProductIdentificationValue(barcodeIdentifier, getProduct(orderItem.productId)) : getProduct(orderItem.productId)?.internalName
         return itemVal === payload && orderItem.statusId === "ITEM_PENDING_FULFILL"
       })
       if (item) {
@@ -304,7 +302,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
 
           const resp = await TransferOrderService.fetchRejectReasons(payload)
 
-          if (!hasError(resp)) {
+          if (!commonUtil.hasError(resp)) {
             rejectReasons = resp.data
           } else {
             throw resp.data
@@ -322,7 +320,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
 
           const resp = await TransferOrderService.fetchFulfillmentRejectReasons(payload)
 
-          if (!hasError(resp)) {
+          if (!commonUtil.hasError(resp)) {
             rejectReasons = resp.data
           } else {
             throw resp.data

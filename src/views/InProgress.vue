@@ -10,7 +10,7 @@
         <ion-title v-else>{{ inProgressOrders.query.viewSize }} {{ translate('of') }} {{ inProgressOrders.total }} {{ translate('orders') }}</ion-title>
 
         <ion-buttons slot="end">
-          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !inProgressOrders.total || isRejecting" fill="clear" color="danger" @click="commonUtil.recycleInProgressOrders()">
+          <ion-button :disabled="!userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN') || !inProgressOrders.total || isRejecting" fill="clear" color="danger" @click="recycleInProgressOrders()">
             {{ translate("Reject all") }}
           </ion-button>
           <ion-menu-button menu="view-size-selector-inprogress" :disabled="!inProgressOrders.total">
@@ -235,20 +235,16 @@ import { IonBadge, IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonCont
 import { computed, ref } from "vue";
 import { addOutline, caretDownOutline, chevronUpOutline, checkmarkDoneOutline, closeCircleOutline, cubeOutline, ellipsisVerticalOutline, gift, giftOutline, listOutline, pencilOutline, optionsOutline, pricetagOutline, printOutline, trashBinOutline } from "ionicons/icons";
 import PackagingPopover from "@/views/PackagingPopover.vue";
-import { commonUtil } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { orderUtil } from "@/utils/orderUtil";
-import { solrUtil } from "@/utils/solrUtil";
+import { solrUtil } from "@common/utils/solrUtil";
 import { DxpShopifyImg, translate } from "@common";
-import { hasError } from "@common/utils/commonUtil";
 import emitter from "@common/core/emitter";
-import { getProductIdentificationValue } from "@/utils/commonUtil";
-import { useProductIdentificationStore } from "@/store/productIdentification";
-import { useUserStore as useDxpUserStore } from "@/store/user";
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
 import { UtilService } from "@/services/UtilService";
 import { DateTime } from "luxon";
 import logger from "@common/core/logger";
-import { Actions, hasPermission } from "@/authorization";
+
 import EditPickersModal from "@/components/EditPickersModal.vue";
 import ShipmentBoxTypePopover from "@/components/ShipmentBoxTypePopover.vue";
 import OrderActionsPopover from "@/components/OrderActionsPopover.vue";
@@ -262,9 +258,13 @@ import { OrderService } from "@/services/OrderService";
 import { useRouter, onBeforeRouteLeave } from "vue-router";
 import { useOrderStore } from "@/store/order";
 import { useProductStore } from "@/store/product";
+import { useUserStore } from "@/store/user";
 import { useUtilStore } from "@/store/util";
 import { useStockStore } from "@/store/stock";
-import { useUserStore } from "@/store/user";
+import { useProductIdentificationStore } from "@/store/productIdentification";
+
+const userStore = useUserStore();
+const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
 
 const router = useRouter();
 const picklists = ref([] as any);
@@ -282,7 +282,7 @@ const infiniteScrollRef = ref();
 
 const inProgressOrders = computed(() => useOrderStore().getInProgressOrders);
 const rejectReasonOptions = computed(() => useUtilStore().getRejectReasonOptions);
-const userPreference = computed(() => useUserStore().getUserPreference);
+const userPreference = computed(() => useUserStore().getUserPreferenceState);
 const isForceScanEnabled = computed(() => useUtilStore().isForceScanEnabled);
 const partialOrderRejectionConfig = computed(() => useUtilStore().getPartialOrderRejectionConfig);
 const collateralRejectionConfig = computed(() => useUtilStore().getCollateralRejectionConfig);
@@ -291,8 +291,8 @@ const excludeOrderBrokerDays = computed(() => useUtilStore().getExcludeOrderBrok
 const carrierShipmentBoxTypes = computed(() => useUtilStore().getCarrierShipmentBoxTypes);
 const isAutoShippingLabelEnabled = computed(() => useUtilStore().isAutoShippingLabelEnabled);
 const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
-const currentEComStore = computed(() => useDxpUserStore().getCurrentEComStore);
-const currentFacility = computed(() => useDxpUserStore().getCurrentFacility as any);
+const currentEComStore = computed(() => userStore.getCurrentEComStore);
+const currentFacility = computed(() => userStore.getCurrentFacility as any);
 
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
 const boxTypeDesc = (boxTypeId: string) => useUtilStore().getShipmentBoxDesc(boxTypeId);
@@ -426,7 +426,7 @@ const rejectEntireOrder = async (order: any, updateParameter?: string) => {
     };
     const resp = await OrderService.packOrder(params);
 
-    if (hasError(resp)) {
+    if (commonUtil.hasError(resp)) {
       throw resp.data;
     }
 
@@ -620,7 +620,7 @@ const packOrders = async () => {
               shipments
             });
 
-            if (hasError(resp)) {
+            if (commonUtil.hasError(resp)) {
               throw resp.data;
             }
 
@@ -819,7 +819,7 @@ const fetchPickersInformation = async () => {
 
       resp = await OrderService.fetchPicklists(payload);
 
-      if (!hasError(resp)) {
+      if (!commonUtil.hasError(resp)) {
         resp.data?.forEach((shipment: any) => {
           if (shipment?.order?.statusId === "ORDER_APPROVED" && shipment?.order?.productStoreId === currentEComStore.value.productStoreId) {
             shipment?.picklistShipment?.forEach((picklistShipment: any) => {
@@ -921,7 +921,7 @@ const fetchDefaultShipmentBox = async () => {
       pageSize: 1
     });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       defaultBoxTypeId = resp.data?.[0].systemPropertyValue;
     } else {
       throw resp.data;
@@ -932,7 +932,7 @@ const fetchDefaultShipmentBox = async () => {
       pageSize: 1
     };
     resp = await UtilService.fetchShipmentBoxType(payload);
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       defaultBoxType = resp.data[0];
     }
   } catch (err) {
@@ -978,7 +978,7 @@ const addShipmentBox = async (order: any) => {
   try {
     const resp = await OrderService.addShipmentBox(params);
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Box added successfully"));
       await Promise.all([fetchPickersInformation(), findInProgressOrders()]);
     } else {
@@ -1080,7 +1080,7 @@ const recycleInProgressOrders = async () => {
             reasonId: "INACTIVE_STORE"
           });
 
-          if (!hasError(resp)) {
+          if (!commonUtil.hasError(resp)) {
             commonUtil.showToast(translate("Rejecting has been started. All in progress orders will be rejected shortly."));
           } else {
             throw resp.data;

@@ -1,5 +1,5 @@
 import { api } from '@common';
-import { hasError, jsonParse } from '@common/utils/commonUtil';
+import { commonUtil } from "@common/utils/commonUtil";
 import { useUserStore } from "@/store/user";
 import logger from '@common/core/logger'
 
@@ -27,7 +27,7 @@ const moquiLogin = async (omsRedirectionUrl: string, token: string): Promise<any
       }
     }) as any;
 
-    if (!hasError(resp) && (resp.data.api_key || resp.data.token)) {
+    if (!commonUtil.hasError(resp) && (resp.data.api_key || resp.data.token)) {
       api_key = resp.data.api_key || resp.data.token
     } else {
       throw "Sorry, login failed. Please try again";
@@ -97,7 +97,7 @@ const getPreferredStore = async (token: any): Promise<any> => {
       params: { 'userPrefTypeId': 'SELECTED_BRAND' }
     });
 
-    if (hasError(resp)) {
+    if (commonUtil.hasError(resp)) {
       return Promise.reject(resp.data);
     } else {
       return Promise.resolve(resp.data.userPrefValue);
@@ -133,7 +133,7 @@ const getUserPermissions = async (payload: any, token: any): Promise<any> => {
       method: "post",
       data: params
     })
-    if (resp.status === 200 && resp.data.docs?.length && !hasError(resp)) {
+    if (resp.status === 200 && resp.data.docs?.length && !commonUtil.hasError(resp)) {
       serverPermissions = resp.data.docs.map((permission: any) => permission.permissionId);
       const total = resp.data.count;
       const remainingPermissions = total - serverPermissions.length;
@@ -150,7 +150,7 @@ const getUserPermissions = async (payload: any, token: any): Promise<any> => {
               permissionIds: payload.permissionIds
             }
           })
-          if (!hasError(response)) {
+          if (!commonUtil.hasError(response)) {
             return Promise.resolve(response);
           } else {
             return Promise.reject(response);
@@ -161,7 +161,7 @@ const getUserPermissions = async (payload: any, token: any): Promise<any> => {
           failed: []
         }
         responses.reduce((permissionResponses: any, permissionResponse: any) => {
-          if (permissionResponse.status !== 200 || hasError(permissionResponse) || !permissionResponse.data?.docs) {
+          if (permissionResponse.status !== 200 || commonUtil.hasError(permissionResponse) || !permissionResponse.data?.docs) {
             permissionResponses.failed.push(permissionResponse);
           } else {
             permissionResponses.success.push(permissionResponse);
@@ -195,7 +195,7 @@ const getUserProfile = async (token: any): Promise<any> => {
       url: "user-profile",
       method: "get"
     });
-    if (hasError(resp)) return Promise.reject("Error getting user profile: " + JSON.stringify(resp.data));
+    if (commonUtil.hasError(resp)) return Promise.reject("Error getting user profile: " + JSON.stringify(resp.data));
     return Promise.resolve(resp.data)
   } catch (error: any) {
     return Promise.reject(error)
@@ -238,7 +238,7 @@ const isEnumExists = async (enumId: string): Promise<any> => {
       method: "GET",
       params: { enumId }
     }) as any
-    if (!hasError(resp) && resp.data.length) {
+    if (!commonUtil.hasError(resp) && resp.data.length) {
       return true
     }
     return false
@@ -478,7 +478,7 @@ async function getUserPreference(preferenceKey: string, userId: any): Promise<an
   try {
     resp = await api(params);
 
-    return Promise.resolve(resp.data[0]?.preferenceValue ? jsonParse(resp.data[0]?.preferenceValue) : "")
+    return Promise.resolve(resp.data[0]?.preferenceValue ? commonUtil.jsonParse(resp.data[0]?.preferenceValue) : "")
   } catch (error) {
     return Promise.reject({
       code: "error",

@@ -47,8 +47,7 @@
   import { translate } from "@common";
   import emitter from "@common/core/emitter";
   import { DateTime } from "luxon";
-  import { commonUtil } from "@/utils/commonUtil";
-  import { hasError } from "@common/utils/commonUtil";
+  import { commonUtil } from "@common/utils/commonUtil";
 
   import logger from "@common/core/logger";
   import { CarrierService } from "@/services/CarrierService";
@@ -119,7 +118,7 @@
       if (shipmentMethod.isChecked) {
         resp = await CarrierService.removeCarrierShipmentMethod(payload);
   
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           await removeProductStoreShipmentMethods(shipmentMethod.shipmentMethodTypeId);
         } else {
           throw resp.data;
@@ -135,14 +134,14 @@
   
         resp = await CarrierService.addCarrierShipmentMethod(payload);
   
-        if (hasError(resp)) {
+        if (commonUtil.hasError(resp)) {
           throw resp.data;
         }
   
         currentCarrierShipmentMethods[shipmentMethod.shipmentMethodTypeId] = payload;
       }
   
-      if (!hasError(resp)) {
+      if (!commonUtil.hasError(resp)) {
         commonUtil.showToast(translate("Carrier and shipment method association updated successfully."));
         await useCarrierStore().updateCurrentCarrierShipmentMethods(currentCarrierShipmentMethods);
         await useCarrierStore().checkAssociatedShipmentMethods();

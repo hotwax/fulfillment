@@ -1,5 +1,5 @@
 <template>
-  <ion-card :data-testid="`product-card-btn-${item.orderItemSeqId}`" :id="item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier, getProduct(item.productId))" :class="{ 'scanned-item': lastScannedId && lastScannedId === (item.scannedId || getProductIdentificationValue(barcodeIdentifier, getProduct(item.productId))) }">
+  <ion-card :data-testid="`product-card-btn-${item.orderItemSeqId}`" :id="item.scannedId ? item.scannedId : commonUtil.getProductIdentificationValue(barcodeIdentifier, getProduct(item.productId))" :class="{ 'scanned-item': lastScannedId && lastScannedId === (item.scannedId || commonUtil.getProductIdentificationValue(barcodeIdentifier, getProduct(item.productId))) }">
     <div class="product">
       <div class="product-info">
         <ion-item lines="none">
@@ -7,8 +7,8 @@
             <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" />
           </ion-thumbnail>
           <ion-label class="ion-text-wrap">
-            <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-            {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productId }}
+            <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+            {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productId }}
             <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures)}}</p>
           </ion-label>
         </ion-item>
@@ -79,13 +79,11 @@ import { computed, defineProps, nextTick, ref, watch } from "vue";
 import { caretDownOutline, checkmarkDone, closeCircleOutline, removeCircleOutline } from "ionicons/icons";
 import { DxpShopifyImg, translate } from "@common";
 import emitter from "@common/core/emitter";
-import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import { TransferOrderService } from "@/services/TransferOrderService";
 import { OrderService } from "@/services/OrderService";
 import { useRouter } from "vue-router";
-import { commonUtil } from "@/utils/commonUtil";
-import { hasError } from "@common/utils/commonUtil";
 
 import logger from "@common/core/logger";
 import ShippedHistoryModal from "@/components/ShippedHistoryModal.vue";
@@ -243,7 +241,7 @@ const updateItemQuantity = async (selectedItem: any) => {
 
   try {
     const resp = await TransferOrderService.updateOrderItem({ orderId: currentOrder.value.orderId, orderItemSeqId: selectedItem.orderItemSeqId, quantity: itemQuantity });
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       currentItem.quantity = itemQuantity;
       currentItem.pickedQuantity = itemQuantity;
       await useTransferOrderStore().updateCurrentTransferOrder(currentOrder.value);
@@ -260,7 +258,7 @@ const removeOrderItem = async (selectedItem: any) => {
   if (!selectedItem || !selectedItem.orderItemSeqId) return;
   try {
     const resp = await OrderService.deleteOrderItem({ orderId: currentOrder.value.orderId, orderItemSeqId: selectedItem.orderItemSeqId });
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       currentOrder.value.items = currentOrder.value.items?.filter((i: any) => i.orderItemSeqId !== selectedItem.orderItemSeqId);
       await useTransferOrderStore().updateCurrentTransferOrder(currentOrder.value);
       emitter.emit("clearSearchedProduct");

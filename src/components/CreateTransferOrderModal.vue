@@ -52,13 +52,13 @@ import { IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonCon
 import { closeOutline, saveOutline } from 'ionicons/icons';
 import { computed, ref, onMounted } from 'vue';
 import { translate } from "@common";
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { UtilService } from '@/services/UtilService';
 import { TransferOrderService } from '@/services/TransferOrderService';
 import { useUtilStore } from "@/store/util";
-import { commonUtil } from '@/utils/commonUtil';
 import { DateTime } from 'luxon';
 import router from '@/router';
+import { useUserStore } from "@/store/user";
 import logger from '@common/core/logger';
 const facilityAddresses = computed(() => useUtilStore().getFacilityAddress)
 
@@ -83,8 +83,8 @@ async function loadFacilities() {
 
 async function fetchProductStoreDetails() {
   try {
-    const resp = await UtilService.fetchProductStoreDetails({ productStoreId: commonUtil.getProductStoreId() });
-    if(!hasError(resp)) {
+    const resp = await UtilService.fetchProductStoreDetails({ productStoreId: useUserStore().getCurrentEComStore?.productStoreId });
+    if(!commonUtil.hasError(resp)) {
       currencyUom.value = resp.data.defaultCurrencyUomId;
     } else {
       throw resp.data;
@@ -125,8 +125,8 @@ async function createTransferOrder() {
     return;
   }
   
-  const productStoreId = commonUtil.getProductStoreId() || '';
-  const originFacilityId = commonUtil.getCurrentFacilityId() || '';
+  const productStoreId = useUserStore().getCurrentEComStore?.productStoreId || '';
+  const originFacilityId = useUserStore().getCurrentFacility?.facilityId || '';
   const orderTimestamp = DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000")
 
   if(originFacilityId === selectedDestinationFacilityId.value) {
@@ -174,7 +174,7 @@ async function createTransferOrder() {
 
   try {
     const resp = await TransferOrderService.createTransferOrder({ payload: orderPayload })
-    if(!hasError(resp) && resp.data?.orderId) {
+    if(!commonUtil.hasError(resp) && resp.data?.orderId) {
       const orderId = resp.data.orderId
       router.push(`/create-transfer-order/${orderId}`)
       commonUtil.showToast(translate("Transfer order created successfully."))

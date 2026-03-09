@@ -4,7 +4,7 @@ import { defineStore } from "pinia"
 import { OrderService } from "@/services/OrderService"
 import { UtilService } from "@/services/UtilService"
 import { api } from '@common';
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 
 import logger from "@common/core/logger"
 import { DateTime } from "luxon"
@@ -356,7 +356,7 @@ export const useOrderStore = defineStore("order", {
           pageSize: 50,
           fieldsToSelect: ["orderId", "orderItemseqId", "shipGroupSeqId", "productId"]
         })
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           const allocatedOrderItemSeqIds = [
             ...new Set(otherShipments.flatMap((shipment: any) => shipment.items.map((item: any) => item.orderItemSeqId)))
           ]
@@ -377,7 +377,7 @@ export const useOrderStore = defineStore("order", {
                 facilityId_op: "in",
                 pageSize: 10
               })
-              if (!hasError(facilityResp)) {
+              if (!commonUtil.hasError(facilityResp)) {
                 facilityInfo = facilityResp.data.reduce((facilityDetail: Record<string, any>, facility: any) => {
                   facilityDetail[facility.facilityId] = facility
                   return facilityDetail
@@ -449,7 +449,7 @@ export const useOrderStore = defineStore("order", {
           pageSize: 250
         })
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           giftCardActivations = resp.data
         } else {
           throw resp.data
@@ -494,7 +494,7 @@ export const useOrderStore = defineStore("order", {
           pageSize: 1
         })
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           isGCActivated = true
           gcInfo = resp.data[0]
         } else {
@@ -558,7 +558,7 @@ export const useOrderStore = defineStore("order", {
         }
 
         const resp = await OrderService.fetchShipmentPackageRouteSegDetails({ shipmentId: payload.shipmentId, pageSize: 10 }) as any
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           const responseData = resp.data?.shipmentPackageRouteSegDetails || resp.data
           const shipmentPackageRouteSegDetails = responseData.filter((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.carrierServiceStatusId !== "SHRSCS_VOIDED")
 
@@ -620,7 +620,7 @@ export const useOrderStore = defineStore("order", {
 
       try {
         const resp = await OrderService.fetchOrderDetail(order.orderId)
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           const shipGroupSeqId = order.primaryShipGroupSeqId ? order.primaryShipGroupSeqId : order.shipGroupSeqId
           const currentShipGroup = resp.data.shipGroups.find((shipGroup: any) => shipGroup.shipGroupSeqId === shipGroupSeqId)
           let shippingAddress = resp.data.contactMechs?.find((contactMech: any) => contactMech.contactMechPurposeTypeId === "SHIPPING_LOCATION")?.postalAddress
@@ -629,7 +629,7 @@ export const useOrderStore = defineStore("order", {
           if (currentShipGroup?.shipmentMethodTypeId === "SHIP_TO_STORE") {
             const facilityId = currentShipGroup.orderFacilityId || currentShipGroup.facilityId
             const facilityContactResp = await UtilService.fetchFacilityAddresses({ facilityId })
-            if (!hasError(facilityContactResp)) {
+            if (!commonUtil.hasError(facilityContactResp)) {
               const { data } = facilityContactResp
               const address = data.facilityContactMechs?.find((contactMech: any) => contactMech.contactMechId === (order.destinationContactMechId || currentShipGroup.contactMechId))
               if (address) {

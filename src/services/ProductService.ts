@@ -1,5 +1,5 @@
 import { api } from '@common';
-import { getOmsURL, hasError } from '@common/utils/commonUtil';
+import { commonUtil } from "@common/utils/commonUtil";
 
 import logger from '@common/core/logger';
 
@@ -63,7 +63,7 @@ const fetchProductAverageCost = async (productId: string, facilityId: string): P
       data: payload
     });
 
-    if (!hasError(resp) && resp.data?.entityValueList?.length) {
+    if (!commonUtil.hasError(resp) && resp.data?.entityValueList?.length) {
       const list = resp.data.entityValueList;
       productAverageCost = list[0].averageCost;
     }
@@ -236,10 +236,10 @@ const searchProducts = async (params: { keyword?: string, sort?: string, qf?: st
       url: "solr-query",
       method: "post",
       data: payload,
-      baseURL: getOmsURL()
+      baseURL: commonUtil.getOmsURL()
     }) as any;
 
-    if (resp.status == 200 && !hasError(resp) && resp.data?.response?.numFound > 0) {
+    if (resp.status == 200 && !commonUtil.hasError(resp) && resp.data?.response?.numFound > 0) {
       const product = resp.data.response.docs
       return {
         products: product,

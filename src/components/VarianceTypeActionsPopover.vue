@@ -18,9 +18,8 @@ import { translate } from "@common";
 import { useUtilStore } from "@/store/util";
 import { UtilService } from "@/services/UtilService";
 import logger from "@common/core/logger";
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 
-import { commonUtil } from "@/utils/commonUtil";
 
 const props = defineProps(["reason"]);
 const rejectReasons = computed(() => useUtilStore().getRejectReasons);
@@ -39,7 +38,7 @@ const updateVarianceType = async (selectedType: any) => {
       enumTypeId: selectedType.enumTypeId
     });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Variance type updated successfully."));
       const rejectReason = rejectReasons.value.find((reason: any) => reason.enumId === props.reason.enumId);
       if (rejectReason) {

@@ -1,11 +1,11 @@
 import { api } from '@common';
-import { getOmsURL } from '@common/utils/commonUtil';
+import { commonUtil } from "@common/utils/commonUtil";
 const fetchRejectionStats = async (query: any): Promise<any> => {
   return api({
     url: "solr-query",
     method: "post",
     data: query,
-    baseURL: getOmsURL()
+    baseURL: commonUtil.getOmsURL()
   });
 }
 
@@ -14,7 +14,7 @@ const fetchRejctedOrders = async (query: any): Promise<any> => {
     url: "solr-query",
     method: "post",
     data: query,
-    baseURL: getOmsURL()
+    baseURL: commonUtil.getOmsURL()
   });
 }
 
@@ -23,7 +23,7 @@ const findRejectedOrdersDetail = async (query: any): Promise<any> => {
     url: "solr-query",
     method: "post",
     data: query,
-    baseURL: getOmsURL()
+    baseURL: commonUtil.getOmsURL()
   });
 }
 

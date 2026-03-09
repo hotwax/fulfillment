@@ -60,7 +60,7 @@
                 </div>
 
                 <div class="metadata">
-                  <ion-note>{{ translate("Ordered on") }} {{ commonUtil.formatUtcDate(order.orderDate, "dd LLL yyyy") }}</ion-note>
+                   <ion-note>{{ translate("Ordered on") }} {{ commonUtil.formatUtcDate(order.orderDate, userStore.currentTimeZoneId, "dd LLL yyyy") }}</ion-note>
                   <ion-badge :color="commonUtil.getColorByDesc(order.orderStatusDesc) || commonUtil.getColorByDesc('default')">{{ order.orderStatusDesc }}</ion-badge>
                 </div>
               </section>
@@ -120,16 +120,18 @@ import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonInfin
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { documentTextOutline, filterOutline, pricetag, swapVerticalOutline } from "ionicons/icons";
-import { commonUtil } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { useOrderLookupStore } from "@/store/orderLookup";
 import { useProductStore } from "@/store/product";
 import { useUtilStore } from "@/store/util";
+import { useUserStore } from "@/store/user";
 import OrderLookupFilters from "@/components/OrderLookupFilters.vue";
 import { translate } from "@common";
 import Image from "@/components/Image.vue";
 
 
 
+const userStore = useUserStore();
 const router = useRouter();
 const sort = ref("orderDate desc");
 const showOrderItems = ref(true);

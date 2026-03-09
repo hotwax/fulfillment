@@ -28,9 +28,9 @@
               <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small"/>
             </ion-thumbnail>
             <ion-label>
-              <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+              <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
               <div>
-                {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
+                {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
                 <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
               </div>
               <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures)}}</p>
@@ -57,10 +57,9 @@ import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, I
 import { computed, defineProps, onMounted, ref } from "vue";
 import { cameraOutline, closeOutline, saveOutline } from "ionicons/icons";
 import { DxpShopifyImg, translate } from "@common";
-import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import { useUserStore as useAuthStore } from "@/store/user";
-import { commonUtil } from "@/utils/commonUtil";
 import Scanner from "@/components/Scanner.vue";
 import { orderUtil } from "@/utils/orderUtil";
 import { useProductStore } from "@/store/product";
@@ -103,7 +102,7 @@ const updateProductScannedStatus = async (payload?: any) => {
 
   let currentItem = {} as any;
   const item = orderItems.value.find((orderItem: any) => {
-    const itemVal = getProductIdentificationValue(barcodeIdentifier.value, getProduct(orderItem.productId)) ? getProductIdentificationValue(barcodeIdentifier.value, getProduct(orderItem.productId)) : getProduct(orderItem.productId)?.internalName;
+    const itemVal = commonUtil.getProductIdentificationValue(barcodeIdentifier.value, getProduct(orderItem.productId)) ? commonUtil.getProductIdentificationValue(barcodeIdentifier.value, getProduct(orderItem.productId)) : getProduct(orderItem.productId)?.internalName;
     if (itemVal === payload) currentItem = orderItem;
     return itemVal === payload && !orderItem.isChecked;
   });

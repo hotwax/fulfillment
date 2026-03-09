@@ -1,13 +1,13 @@
 import { defineStore } from "pinia"
 import { RejectionService } from "@/services/RejectionService"
 import { api } from '@common';
-import { hasError } from "@common/utils/commonUtil";
-import { solrUtil } from "@/utils/solrUtil"
+import { commonUtil } from "@common/utils/commonUtil";
+import { solrUtil } from "@common/utils/solrUtil"
 import { UtilService } from "@/services/UtilService"
 import logger from "@common/core/logger"
-import { commonUtil } from "@/utils/commonUtil"
 import { useProductStore } from "@/store/product"
 import { useUtilStore } from "@/store/util"
+import { useUserStore } from "@/store/user"
 
 interface RejectionState {
   stats: {
@@ -99,7 +99,7 @@ export const useRejectionStore = defineStore("rejection", {
         viewSize: "0",
         filters: {
           rejectedAt_dt: { value: rejectionPeriodFilter },
-          rejectedFrom_txt_en: { value: solrUtil.escapeSolrSpecialChars(commonUtil.getCurrentFacilityId()) }
+          rejectedFrom_txt_en: { value: solrUtil.escapeSolrSpecialChars(useUserStore().getCurrentFacility?.facilityId) }
         },
         facet: {
           total: "unique(orderId_s)",
@@ -120,7 +120,7 @@ export const useRejectionStore = defineStore("rejection", {
 
       try {
         const resp = await RejectionService.fetchRejectionStats(query)
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           total = resp.data.facets.total ? resp.data.facets.total : 0
           const usedReasons = resp.data.facets.rejectionReasonIdFacet.buckets
           rejectedItems = resp.data.facets.productIdFacet.buckets
@@ -140,7 +140,7 @@ export const useRejectionStore = defineStore("rejection", {
             }
             const resp = await UtilService.fetchRejectReasons(payload)
 
-            if (!hasError(resp)) {
+            if (!commonUtil.hasError(resp)) {
               const reasonCountDetail = resp.data.reduce((reasonDetail: any, reason: any) => {
                 reasonDetail[reason.enumId] = reason
                 return reasonDetail
@@ -172,7 +172,7 @@ export const useRejectionStore = defineStore("rejection", {
       const rejectedOrderQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
 
       const filters = {
-        rejectedFrom_txt_en: { value: solrUtil.escapeSolrSpecialChars(commonUtil.getCurrentFacilityId()) }
+        rejectedFrom_txt_en: { value: solrUtil.escapeSolrSpecialChars(useUserStore().getCurrentFacility?.facilityId) }
       } as any
 
       if (!rejectedOrderQuery.queryString) {
@@ -201,7 +201,7 @@ export const useRejectionStore = defineStore("rejection", {
 
       try {
         const resp = await RejectionService.fetchRejctedOrders(query)
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           total = resp.data.grouped.orderId_s.ngroups
           orders = resp.data.grouped.orderId_s.groups
 
@@ -272,7 +272,7 @@ export const useRejectionStore = defineStore("rejection", {
         const orderQueryPayload = solrUtil.prepareSolrQuery(params)
 
         resp = await RejectionService.findRejectedOrdersDetail(orderQueryPayload)
-        if (resp.status === 200 && !hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
+        if (resp.status === 200 && !commonUtil.hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
           orders = resp.data.grouped.orderId.groups
           const orderDetails = orders.reduce((orderDetail: any, order: any) => {
             orderDetail[order.doclist.docs[0].orderId] = order.doclist.docs[0]

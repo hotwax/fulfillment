@@ -33,7 +33,7 @@ import { defineProps, onMounted, ref } from "vue";
 import { closeOutline, copyOutline } from "ionicons/icons";
 import { OrderService } from "@/services/OrderService";
 import { translate } from "@common";
-import { commonUtil } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 
 const props = defineProps(["shipmentId"]);
 

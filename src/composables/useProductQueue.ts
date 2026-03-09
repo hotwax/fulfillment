@@ -5,8 +5,7 @@ import { TransferOrderService } from '@/services/TransferOrderService';
 import { ProductService } from '@/services/ProductService';
 import { StockService } from '@/services/StockService';
 import { translate } from "@common";
-import { hasError } from "@common/utils/commonUtil";
-import { commonUtil } from '@/utils/commonUtil';
+import { commonUtil } from "@common/utils/commonUtil";
 import logger from '@common/core/logger';
 
 /**
@@ -154,7 +153,7 @@ export function useProductQueue() {
 
       const resp = await TransferOrderService.addOrderItem(payload);
 
-      if (!hasError(resp)) {
+      if (!commonUtil.hasError(resp)) {
         newItem.orderId = orderId;
         newItem.orderItemSeqId = resp.data?.orderItemSeqId;
 
@@ -184,7 +183,7 @@ export function useProductQueue() {
         productId,
         facilityId
       });
-      if (!hasError(resp)) return resp.data;
+      if (!commonUtil.hasError(resp)) return resp.data;
     } catch (err) {
       logger.error(err);
     }

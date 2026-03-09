@@ -31,9 +31,8 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { arrowForwardOutline } from "ionicons/icons";
 import { translate } from "@common";
-import { commonUtil } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { CarrierService } from "@/services/CarrierService";
-import { hasError } from "@common/utils/commonUtil";
 import logger from "@common/core/logger";
 import { useCarrierStore } from "@/store/carrier";
 
@@ -60,7 +59,7 @@ const createCarrier = async () => {
   };
   try {
     const response = await CarrierService.createCarrier(payload);
-    if (!hasError(response)) {
+    if (!commonUtil.hasError(response)) {
       useCarrierStore().clearShipmentMethodQuery();
       router.replace({ path: `/shipment-methods-setup/${response.data.partyId}` });
     }

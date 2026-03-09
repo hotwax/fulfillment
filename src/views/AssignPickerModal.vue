@@ -52,19 +52,19 @@
 import { IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonRow, IonSearchbar, IonSpinner, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { computed, defineProps, onMounted, ref } from "vue";
 import { closeOutline, closeCircle, saveOutline } from "ionicons/icons";
-import { commonUtil } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { translate } from "@common";
-import { hasError } from "@common/utils/commonUtil";
 import emitter from "@common/core/emitter";
 import { useUserStore as useDxpUserStore } from "@/store/user";
 import { UtilService } from "@/services/UtilService";
 import logger from "@common/core/logger";
 import { OrderService } from "@/services/OrderService";
-import { Actions, hasPermission } from "@/authorization";
+
 import { useOrderStore } from "@/store/order";
 
 const props = defineProps(["order"]);
-const currentFacility = computed(() => useDxpUserStore().getCurrentFacility);
+const userStore = useDxpUserStore();
+const currentFacility = computed(() => userStore.getCurrentFacility);
 const openOrders = computed(() => useOrderStore().getOpenOrders);
 const selectedPickers = ref([]) as any;
 const queryString = ref("");
@@ -113,7 +113,7 @@ const printPicklist = async () => {
       partyId: selectedPicker.id,
       roleTypeId: "WAREHOUSE_PICKER"
     })) || [],
-    orderItems: orderItems.map(({ orderId, orderItemSeqId, shipGroupSeqId, productId, quantity }) => ({
+    orderItems: orderItems.map(({ orderId, orderItemSeqId, shipGroupSeqId, productId, quantity }: any) => ({
       orderId,
       orderItemSeqId,
       shipGroupSeqId,
@@ -124,7 +124,7 @@ const printPicklist = async () => {
 
   try {
     resp = await OrderService.createPicklist(payload);
-    if (resp.status === 200 && !hasError(resp)) {
+    if (resp.status === 200 && !commonUtil.hasError(resp)) {
       closeModal({ picklistId: resp.data.picklistId, shipmentIds: resp.data.shipmentIds });
       commonUtil.showToast(translate("Picklist created successfully"));
 
@@ -163,7 +163,7 @@ const findPickers = async () => {
   }
 
   const facilityFilter: string[] = [];
-  if (!hasPermission(Actions.APP_SHOW_ALL_PICKERS)) {
+  if (!userStore.hasPermission('STOREFULFILLMENT_ADMIN')) {
     facilityFilter.push(`facilityIds:${currentFacility.value.facilityId}`);
   }
 
@@ -182,7 +182,7 @@ const findPickers = async () => {
 
   try {
     const resp = await UtilService.getAvailablePickers(payload);
-    if (resp.status === 200 && !hasError(resp)) {
+    if (resp.status === 200 && !commonUtil.hasError(resp)) {
       pickers.value = resp.data.response.docs.map((picker: any) => ({
         name: picker.groupName ? picker.groupName : (picker.firstName || picker.lastName) ? (picker.firstName ? picker.firstName : "") + (picker.lastName ? " " + picker.lastName : "") : picker.partyId,
         id: picker.partyId,

@@ -1,12 +1,11 @@
 import { defineStore } from "pinia"
 import { CarrierService } from "@/services/CarrierService"
-import { api } from '@common';
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 
 import logger from "@common/core/logger"
 import { translate } from "@common";
-import { commonUtil } from "@/utils/commonUtil";
 import { useUtilStore } from "@/store/util"
+import { useUserStore } from "@/store/user"
 
 interface CarrierState {
   carrier: {
@@ -122,7 +121,7 @@ export const useCarrierStore = defineStore("carrier", {
         }
 
         resp = await CarrierService.fetchCarriers(params)
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           carriers = { list: resp.data, total: resp.data?.length }
           this.setCarriers(carriers)
         } else {
@@ -145,7 +144,7 @@ export const useCarrierStore = defineStore("carrier", {
         }
 
         resp = await CarrierService.fetchCarriers(params)
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           this.setCurrent(resp.data[0])
           await this.fetchCarrierShipmentMethods({ partyId: payload.partyId })
         } else {
@@ -171,7 +170,7 @@ export const useCarrierStore = defineStore("carrier", {
         }
 
         resp = await CarrierService.fetchCarrierShipmentMethods(params)
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           currentCarrier = {
             ...currentCarrier,
             shipmentMethods: resp.data.reduce((shipmentMethodDetail: any, shipmentMethodType: any) => {
@@ -207,7 +206,7 @@ export const useCarrierStore = defineStore("carrier", {
           }
 
           resp = await CarrierService.fetchProductStoreShipmentMethodsByCarrier(params)
-          if (!hasError(resp)) {
+          if (!commonUtil.hasError(resp)) {
             productStoreShipmentMethods = [...productStoreShipmentMethods, ...resp.data.entityValueList]
             viewIndex++
           } else {
@@ -305,7 +304,7 @@ export const useCarrierStore = defineStore("carrier", {
           }
 
           resp = await CarrierService.fetchShipmentMethodTypes(payload)
-          if (!hasError(resp)) {
+          if (!commonUtil.hasError(resp)) {
             shipmentMethodTypes = [...shipmentMethodTypes, ...resp.data]
             viewIndex++
           } else {
@@ -342,7 +341,7 @@ export const useCarrierStore = defineStore("carrier", {
           }
 
           resp = await CarrierService.fetchCarrierFacilities(params)
-          if (!hasError(resp)) {
+          if (!commonUtil.hasError(resp)) {
             carrierFacilities = [...carrierFacilities, ...resp.data.entityValueList]
             docCount = resp.data.entityValueList.length
             viewIndex++
@@ -400,7 +399,7 @@ export const useCarrierStore = defineStore("carrier", {
           [updatedData.fieldName]: updatedData.fieldValue
         })
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           commonUtil.showToast(translate(messages.successMessage))
           const updatedShipmentMethods = JSON.parse(JSON.stringify(shipmentMethods))
           const updatedShipmentMethod = updatedShipmentMethods[shipmentMethod.shipmentMethodTypeId]
@@ -429,7 +428,7 @@ export const useCarrierStore = defineStore("carrier", {
         do {
           const params = {
             customParametersMap: {
-              facilityId: commonUtil.getCurrentFacilityId(),
+              facilityId: useUserStore().getCurrentFacility?.facilityId,
               pageIndex: viewIndex,
               pageSize: 250
             },
@@ -438,7 +437,7 @@ export const useCarrierStore = defineStore("carrier", {
           }
 
           resp = await CarrierService.fetchFacilityCarriers(params)
-          if (!hasError(resp)) {
+          if (!commonUtil.hasError(resp)) {
             facilityCarriers = [...facilityCarriers, ...resp.data.entityValueList]
             docCount = resp.data.entityValueList.length
             viewIndex++
@@ -466,7 +465,7 @@ export const useCarrierStore = defineStore("carrier", {
           fieldsToSelect: ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
         })
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           resp.data.map((doc: any) => {
             trackingUrls[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue
           })
@@ -486,7 +485,7 @@ export const useCarrierStore = defineStore("carrier", {
           fieldsToSelect: ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
         })
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           resp.data.map((doc: any) => {
             logoUrls[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue
           })
@@ -516,7 +515,7 @@ export const useCarrierStore = defineStore("carrier", {
           const params = {
             customParametersMap: {
               roleTypeId: "CARRIER",
-              productStoreId: commonUtil.getProductStoreId(),
+              productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
               shipmentMethodTypeId: "STOREPICKUP",
               shipmentMethodTypeId_op: "equals",
               shipmentMethodTypeId_not: "Y",
@@ -528,7 +527,7 @@ export const useCarrierStore = defineStore("carrier", {
           }
 
           resp = await CarrierService.fetchProductStoreShipmentMethods(params)
-          if (!hasError(resp)) {
+          if (!commonUtil.hasError(resp)) {
             productStoreShipmentMethods = [...productStoreShipmentMethods, ...resp.data.entityValueList]
             viewIndex++
           } else {
@@ -548,7 +547,7 @@ export const useCarrierStore = defineStore("carrier", {
         }
 
         const resp = await CarrierService.fetchShipmentGatewayConfigs(payload)
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           configs = resp.data.reduce((updatedConfigDetail: any, config: any) => {
             updatedConfigDetail[config.shipmentGatewayConfigId] = config
             return updatedConfigDetail

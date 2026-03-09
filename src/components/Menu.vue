@@ -8,7 +8,7 @@
 
     <ion-content>
       <ion-list>
-        <ion-menu-toggle auto-hide="false" v-for="(page, index) in getValidMenuItems(appPages)" :key="index">
+        <ion-menu-toggle :auto-hide="false" v-for="(page, index) in getValidMenuItems(appPages)" :key="index">
           <ion-item-divider color="light" v-if="!page.url">
             <ion-label>
               {{ translate(page.title) }}
@@ -35,13 +35,14 @@ import { IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonL
 import { computed } from "vue";
 import { businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutline, settingsOutline } from "ionicons/icons";
 import { useRouter } from "vue-router";
-import { hasPermission } from "@/authorization";
 import { translate } from "@common";
+import { commonUtil } from "@common/utils/commonUtil";
 import { useUserStore } from "@/store/user";
 import { useAuth } from "@/composables/auth";
 
 const router = useRouter();
-const currentFacility = computed(() => useUserStore().getCurrentFacility);
+const userStore = useUserStore();
+const currentFacility = computed(() => userStore.getCurrentFacility);
 
 const appPages = [
   {
@@ -49,24 +50,21 @@ const appPages = [
     url: "/open",
     iosIcon: mailUnreadOutline,
     mdIcon: mailUnreadOutline,
-    childRoutes: ["/open/"],
-    meta: { permissionId: "APP_OPEN_ORDERS_VIEW" }
+    childRoutes: ["/open/"]
   },
   {
     title: "In Progress",
     url: "/in-progress",
     iosIcon: mailOpenOutline,
     mdIcon: mailOpenOutline,
-    childRoutes: ["/in-progress/"],
-    meta: { permissionId: "APP_IN_PROGRESS_ORDERS_VIEW" }
+    childRoutes: ["/in-progress/"]
   },
   {
     title: "Completed",
     url: "/completed",
     iosIcon: checkmarkDoneOutline,
     mdIcon: checkmarkDoneOutline,
-    childRoutes: ["/completed/"],
-    meta: { permissionId: "APP_COMPLETED_ORDERS_VIEW" }
+    childRoutes: ["/completed/"]
   },
   /* Commenting the Rejection page until Solr indexing for rejections are not properly integrated
   {
@@ -82,7 +80,7 @@ const appPages = [
     iosIcon: businessOutline,
     mdIcon: businessOutline,
     childRoutes: ["/transfer-order-details", "/create-transfer-order", "/ship-transfer-order"],
-    meta: { permissionId: "APP_TRANSFER_ORDERS_VIEW" }
+    meta: { permissionId: "ORD_TRANSFER_ORDER_VIEW OR ORD_TRANSFER_ORDER_ADMIN" }
   },
   {
     title: "Settings",
@@ -93,35 +91,35 @@ const appPages = [
   {
     title: "Organization",
     url: "",
-    meta: { permissionId: "APP_ORGANIZATION_HEADER_VIEW" }
+    meta: { permissionId: "STOREFULFILLMENT_ADMIN" }
   },
   {
     title: "Rejection reasons",
     url: "/rejection-reasons",
     childRoutes: ["/rejection-reasons/"],
-    meta: { permissionId: "APP_REJECTION_REASONS_VIEW" }
+    meta: { permissionId: "STOREFULFILLMENT_ADMIN" }
   },
   {
     title: "Carriers & Shipment Methods",
     url: "/carriers",
     childRoutes: ["/carrier-details"],
-    meta: { permissionId: "APP_CARRIERS_VIEW" }
+    meta: { permissionId: "CARRIER_SETUP_VIEW" }
   },
   {
     title: "Order Lookup",
     url: "/order-lookup",
     childRoutes: ["/order-lookup/"],
-    meta: { permissionId: "APP_ORDER_LOOKUP_VIEW" }
+    meta: { permissionId: "FF_ORDER_LOOKUP_VIEW" }
   }
 ];
 
 const getValidMenuItems = (pages: any) => {
-  return pages.filter((appPage: any) => (!appPage.meta || !appPage.meta.permissionId) || hasPermission(appPage.meta.permissionId));
+  return pages.filter((appPage: any) => (!appPage.meta || !appPage.meta.permissionId) || userStore.hasPermission(appPage.meta.permissionId));
 };
 
 const selectedIndex = computed(() => {
   const path = router.currentRoute.value.path;
-  const validPages = appPages.filter((appPage: any) => (!appPage.meta || !appPage.meta.permissionId) || hasPermission(appPage.meta.permissionId));
+  const validPages = appPages.filter((appPage: any) => (!appPage.meta || !appPage.meta.permissionId) || userStore.hasPermission(appPage.meta.permissionId));
   return validPages.findIndex((screen) => screen.url === path || screen.childRoutes?.includes(path) || screen.childRoutes?.some((route) => path.includes(route)));
 });
 </script>

@@ -44,8 +44,7 @@ import { useUserStore } from "@/store/user";
 import { DateTime } from "luxon";
 import logger from "@common/core/logger";
 import { UtilService } from "@/services/UtilService";
-import { hasError } from "@common/utils/commonUtil";
-import { commonUtil } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 
 const props = defineProps(["selectedCarrierPartyId", "carrierConfiguration"]);
 const currentFacility = computed(() => useUserStore().getCurrentFacility);
@@ -67,7 +66,7 @@ const downloadCarrierManifest = async (manifest: any) => {
   try {
         const resp = await UtilService.downloadCarrierManifest(payload);
 
-        if (!resp || resp.status !== 200 || hasError(resp)) {
+        if (!resp || resp.status !== 200 || commonUtil.hasError(resp)) {
           throw resp.data
         }
 

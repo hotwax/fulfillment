@@ -36,7 +36,7 @@
             <div class="order-primary-info">
               <ion-label>
                 <strong>{{ order.customerName }}</strong>
-                <p>{{ translate("Ordered") }} {{ category === 'open' ? commonUtil.formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') : getTime(order.orderDate) }}</p>
+                <p>{{ translate("Ordered") }} {{ category === 'open' ? commonUtil.formatUtcDate(order.orderDate, userStore.currentTimeZoneId, 'dd MMMM yyyy hh:mm a ZZZZ') : getTime(order.orderDate) }}</p>
               </ion-label>
             </div>
             <div class="order-tags">
@@ -49,7 +49,7 @@
             <div class="order-metadata">
               <ion-label>
                 {{ getShipmentMethodDesc(order.shipmentMethodTypeId) }}
-                <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ commonUtil.formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+                <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ commonUtil.formatUtcDate(order.reservedDatetime, userStore.currentTimeZoneId, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
               </ion-label>
             </div>
           </div>
@@ -80,9 +80,9 @@
                     <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" size="small" />
                   </ion-thumbnail>
                   <ion-label>
-                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                    <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                     <div>
-                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                      {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
                       <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
                     </div>
                     <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
@@ -141,9 +141,9 @@
                     <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" size="small" />
                   </ion-thumbnail>
                   <ion-label>
-                    <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
+                    <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
                     <div>
-                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                      {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
                     </div>
                     <p>{{ commonUtil.getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
                   </ion-label>
@@ -164,7 +164,7 @@
 
           <div v-else-if="category === 'completed'" class="mobile-only">
             <ion-item>
-              <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear">{{ translate("Ship Now") }}</ion-button>
+              <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" fill="clear">{{ translate("Ship Now") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -189,7 +189,7 @@
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Shipped") }}
                 </ion-button>
-                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">
+                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" @click.stop="shipOrder(order)">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Ship order") }}
                 </ion-button>
@@ -207,13 +207,11 @@ import { IonBackButton, IonBadge, IonButton, IonCard, IonCheckbox, IonChip, IonC
 import { computed, defineProps, onMounted, ref } from "vue";
 import { addOutline, archiveOutline, bagCheckOutline, cashOutline, caretDownOutline, chevronUpOutline, closeCircleOutline, cubeOutline, documentTextOutline, ellipsisVerticalOutline, fileTrayOutline, gift, giftOutline, listOutline, personAddOutline, pricetagOutline, ribbonOutline, trashBinOutline } from "ionicons/icons";
 import { DxpShopifyImg, translate } from "@common";
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import emitter from "@common/core/emitter";
-import { getProductIdentificationValue } from "@/utils/commonUtil";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import { useUserStore as useDxpUserStore } from "@/store/user";
-import { commonUtil } from "@/utils/commonUtil";
-import { Actions, hasPermission } from "@/authorization";
+
 import { OrderService } from "@/services/OrderService";
 import logger from "@common/core/logger";
 import { UtilService } from "@/services/UtilService";
@@ -228,7 +226,7 @@ import { orderUtil } from "@/utils/orderUtil";
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import GenerateTrackingCodeModal from "@/components/GenerateTrackingCodeModal.vue";
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
-import { moduleFederationUtil } from "@/utils/moduleFederationUtil";
+import { moduleFederationUtil } from "@common/utils/moduleFederationUtil";
 import { useRouter } from "vue-router";
 import { useOrderStore } from "@/store/order";
 import { useProductStore } from "@/store/product";
@@ -239,6 +237,7 @@ import { useUserStore } from "@/store/user";
 
 const props = defineProps(["category", "orderId", "shipGroupSeqId", "shipmentId"]);
 
+const userStore = useUserStore();
 const router = useRouter();
 const addingBoxForShipmentIds = ref([] as any);
 const defaultShipmentBoxType = ref({} as any);
@@ -276,7 +275,7 @@ const getProductStock = (productId: string, facilityId = "") => useStockStore().
 const inProgressOrders = computed(() => useOrderStore().getInProgressOrders);
 const order = computed(() => useOrderStore().getCurrent);
 const rejectReasonOptions = computed(() => useUtilStore().getRejectReasonOptions);
-const userPreference = computed(() => useUserStore().getUserPreference);
+const userPreference = computed(() => useUserStore().getUserPreferenceState);
 const getPaymentMethodDesc = (paymentMethodTypeId: string) => useUtilStore().getPaymentMethodDesc(paymentMethodTypeId);
 const getStatusDesc = (statusId: string) => useUtilStore().getStatusDesc(statusId);
 const partialOrderRejectionConfig = computed(() => useUtilStore().getPartialOrderRejectionConfig);
@@ -417,7 +416,7 @@ const rejectEntireOrder = async (currentOrder: any, updateParameter?: string) =>
     };
     const resp = await OrderService.packOrder(params);
 
-    if (hasError(resp)) {
+    if (commonUtil.hasError(resp)) {
       throw resp.data;
     }
 
@@ -486,7 +485,7 @@ const executePackOrder = async (currentOrder: any, updateParameter?: string, tra
     };
 
     const resp = await OrderService.packOrder(params);
-    if (hasError(resp)) {
+    if (commonUtil.hasError(resp)) {
       throw resp.data;
     }
     await useOrderStore().updateShipmentPackageDetail(order.value);
@@ -681,7 +680,7 @@ const addShipmentBox = async (currentOrder: any) => {
   try {
     const resp = await OrderService.addShipmentBox(params);
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Box added successfully"));
       await useOrderStore().getInProgressOrder({ orderId: props.orderId, shipmentId: props.shipmentId });
       useOrderStore().updateInProgressOrder(order.value);
@@ -731,7 +730,7 @@ const fetchDefaultShipmentBox = async () => {
       pageSize: 1
     });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       defaultBoxTypeId = resp.data?.[0].systemPropertyValue;
     } else {
       throw resp.data;
@@ -742,7 +741,7 @@ const fetchDefaultShipmentBox = async () => {
       pageSize: 1
     };
     resp = await UtilService.fetchShipmentBoxType(payload);
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       defaultBoxType = resp.data[0];
     }
   } catch (err) {
@@ -837,7 +836,7 @@ const shipOrder = async (currentOrder: any) => {
   emitter.emit("presentLoader");
   try {
     const resp = await OrderService.shipOrder({ shipmentId: currentOrder.shipmentId });
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Order shipped successfully"));
       router.push("/completed");
     } else {
@@ -866,7 +865,7 @@ const fetchOrderInvoicingStatus = async () => {
   try {
     resp = await OrderService.findOrderInvoicingInfo(params);
 
-    if (!hasError(resp) && resp.data?.entityValueList?.length) {
+    if (!commonUtil.hasError(resp) && resp.data?.entityValueList?.length) {
       const response = resp.data?.entityValueList[0];
 
       const content = Object.keys(response.content).length ? JSON.parse(response.content) : {};

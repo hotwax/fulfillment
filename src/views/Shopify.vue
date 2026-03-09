@@ -14,7 +14,7 @@ import {
   IonPage,
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { commonUtil } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { useRouter } from "vue-router";
 import { useUserStore } from '@/store/user'
 import { translate } from "@common";

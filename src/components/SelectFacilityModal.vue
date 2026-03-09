@@ -40,7 +40,7 @@ import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, Ion
 import { defineProps, onMounted, ref } from "vue";
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { translate } from "@common";
-import { commonUtil } from '@/utils/commonUtil';
+import { commonUtil } from "@common/utils/commonUtil";
 
 const props = defineProps(["currentFacilityId", "selectedFacilityId", "facilities"]);
 

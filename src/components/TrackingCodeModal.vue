@@ -44,9 +44,8 @@ import { translate } from "@common";
 import { useOrderStore } from "@/store/order";
 import { useCarrierStore } from "@/store/carrier";
 import { OrderService } from "@/services/OrderService";
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import logger from "@common/core/logger";
-import { commonUtil } from "@/utils/commonUtil";
 
 const props = defineProps(["carrierPartyId"]);
 const trackingCode = ref("");
@@ -66,7 +65,7 @@ const saveTrackingCode = async () => {
       shipmentRouteSegmentId,
       trackingIdNumber: trackingCode.value
     });
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Tracking code added successfully."));
       await useOrderStore().updateShipmentPackageDetail(order.value);
       closeModal();

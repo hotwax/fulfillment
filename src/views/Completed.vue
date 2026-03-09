@@ -49,7 +49,7 @@
 
       <div v-if="completedOrders.total">
         <div class="results">
-          <ion-button :disabled="isShipNowDisabled || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
+          <ion-button :disabled="isShipNowDisabled || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
           <ion-card class="order" v-for="(order, index) in completedOrdersList" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
@@ -133,7 +133,7 @@
 
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" fill="clear">{{ translate("Ship Now") }}</ion-button>
+                <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" fill="clear">{{ translate("Ship Now") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -143,7 +143,7 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
-                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+                <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate(order.missingLabelImage ? "Regenerate Shipping Label" : "Print Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
@@ -155,7 +155,7 @@
               </div>
               <div class="desktop-only">
                 <ion-button v-if="order.missingLabelImage" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
-                <ion-button :disabled="isUnpackDisabled || !hasPermission(Actions.APP_UNPACK_ORDER) || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+                <ion-button :disabled="isUnpackDisabled || !userStore.hasPermission('STOREFULFILLMENT_ADMIN') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -168,7 +168,7 @@
         <ion-spinner name="crescent"></ion-spinner>
       </div>
       <ion-fab v-else-if="completedOrders.total" class="mobile-only" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button :disabled="hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !hasPermission(Actions.APP_FORCE_SHIP_ORDER))" @click="bulkShipOrders()">
+        <ion-fab-button :disabled="hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" @click="bulkShipOrders()">
           <ion-icon :icon="checkmarkDoneOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -201,19 +201,19 @@ import { computed, ref, watch } from "vue";
 import { useRouter, onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, printOutline, gift, giftOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline, timeOutline } from "ionicons/icons";
 import Popover from "@/views/ShippingPopover.vue";
-import { commonUtil } from "@/utils/commonUtil";
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { DxpShopifyImg, translate } from "@common";
 import emitter from "@common/core/emitter";
-import { getProductIdentificationValue } from "@/utils/commonUtil";
 import { useProductIdentificationStore } from "@/store/productIdentification";
-import { useUserStore as useDxpUserStore } from "@/store/user";
+import { useUserStore } from "@/store/user";
+
+const userStore = useUserStore();
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
 import { OrderService } from "@/services/OrderService";
 import { UtilService } from "@/services/UtilService";
 import logger from "@common/core/logger";
 import ShippingLabelErrorModal from "@/components/ShippingLabelErrorModal.vue";
-import { Actions, hasPermission } from "@/authorization";
+
 import OrderActionsPopover from "@/components/OrderActionsPopover.vue";
 import { orderUtil } from "@/utils/orderUtil";
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
@@ -247,8 +247,8 @@ const getProductStock = (productId: string) => useStockStore().getProductStock(p
 const productStoreShipmentMethCount = computed(() => useUtilStore().getProductStoreShipmentMethCount);
 const isShipNowDisabled = computed(() => useUtilStore().isShipNowDisabled);
 const isUnpackDisabled = computed(() => useUtilStore().isUnpackDisabled);
-const currentEComStore = computed(() => useDxpUserStore().getCurrentEComStore);
-const currentFacility = computed(() => useDxpUserStore().getCurrentFacility);
+const currentEComStore = computed(() => userStore.getCurrentEComStore);
+const currentFacility = computed(() => userStore.getCurrentFacility);
 const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
 
 const getTime = (time: any) => {
@@ -320,7 +320,7 @@ const shipOrder = async (order: any) => {
   try {
     const resp = await OrderService.shipOrder({ shipmentId: order.shipmentId });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Order shipped successfully"));
       const completedOrdersQuery = JSON.parse(JSON.stringify(completedOrders.value.query));
       await Promise.all([useOrderStore().updateCompletedQuery({ ...completedOrdersQuery }), fetchShipmentFacets()]);
@@ -368,7 +368,7 @@ const bulkShipOrders = async () => {
           try {
             const resp = await OrderService.bulkShipOrders({ shipmentIds });
 
-            if (!hasError(resp)) {
+            if (!commonUtil.hasError(resp)) {
               !trackingRequiredAndMissingCodeOrders.length
                 ? commonUtil.showToast(translate("Orders shipped successfully"))
                 : commonUtil.showToast(translate("out of cannot be shipped due to missing tracking codes.", { remainingOrders: trackingRequiredAndMissingCodeOrders.length, totalOrders: packedOrdersCount }));
@@ -408,7 +408,7 @@ const fetchShipmentFacets = async () => {
   try {
     const resp = await OrderService.fetchShipmentFacets(params);
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       shipmentMethods.value = resp.data.shipmentMethodTypeIds;
       carrierPartyIds.value = resp.data.carrierPartyIds;
       await useUtilStore().fetchShipmentMethodTypeDesc(resp.data.shipmentMethodTypeIds);
@@ -470,7 +470,7 @@ const unpackOrder = async (order: any) => {
           try {
             const resp = await OrderService.unpackOrder({ shipmentId: order.shipmentId });
 
-            if (resp.status == 200 && !hasError(resp)) {
+            if (resp.status == 200 && !commonUtil.hasError(resp)) {
               commonUtil.showToast(translate("Order unpacked successfully"));
               await Promise.all([useOrderStore().findCompletedOrders(), fetchShipmentFacets()]);
             } else {
@@ -614,7 +614,7 @@ const fetchConfiguredCarrierService = async (carrierIds: Array<string>) => {
   try {
     const resp = await UtilService.fetchConfiguredCarrierService(payload);
 
-    if (!hasError(resp) && resp.data?.length) {
+    if (!commonUtil.hasError(resp) && resp.data?.length) {
       carrierConfiguration.value = resp.data.reduce((carriers: any, carrier: any) => {
         if (!carriers[carrier.carrierPartyId]) {
           carriers[carrier.carrierPartyId] = {
@@ -649,7 +649,7 @@ const fetchCarrierManifestInformation = async (carrierIds: Array<string>) => {
     try {
       const resp = await UtilService.fetchConfiguredCarrierService(payload);
 
-      if (!hasError(resp) && resp.data?.entityValueList?.length) {
+      if (!commonUtil.hasError(resp) && resp.data?.entityValueList?.length) {
         if (carrierConfiguration.value[partyId]) {
           carrierConfiguration.value[partyId]["manifests"] = resp.data.entityValueList;
         } else {

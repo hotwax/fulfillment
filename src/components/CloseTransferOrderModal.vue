@@ -34,7 +34,7 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleToCloseTOItems()" @click="confirmSave">
+    <ion-fab-button :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN') || !isEligibleToCloseTOItems()" @click="confirmSave">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>
@@ -42,18 +42,19 @@
 
 <script setup lang="ts">
 import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonTitle, IonToolbar, IonThumbnail, alertController, modalController } from "@ionic/vue";
-import { Actions, hasPermission } from "@/authorization";
 import { arrowBackOutline, saveOutline } from "ionicons/icons";
 import { computed } from "vue";
-import { translate } from "@common";
+import { translate, DxpShopifyImg } from "@common";
 import { useRouter } from "vue-router";
 import { TransferOrderService } from "@/services/TransferOrderService";
-import { commonUtil } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
+import { useUserStore } from "@/store/user";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useProductStore } from "@/store/product";
 import { useProductIdentificationStore } from "@/store/productIdentification";
-import { getProductIdentificationValue } from "@/utils/commonUtil";
-import { DxpShopifyImg } from "@common"
+
+const userStore = useUserStore();
+const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
 
 const router = useRouter();
 const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);

@@ -38,8 +38,7 @@ import { closeOutline, saveOutline } from "ionicons/icons";
 import { translate } from "@common";
 import logger from "@common/core/logger";
 import { UtilService } from "@/services/UtilService";
-import { hasError } from "@common/utils/commonUtil";
-import { commonUtil } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 
 const props = defineProps(["reason"]);
 const rejectReasons = computed(() => useUtilStore().getRejectReasons);
@@ -66,7 +65,7 @@ const updateRejectionReason = async () => {
 
   try {
     const resp = await UtilService.updateEnumeration(rejectionReason.value);
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Rejection reason updated successfully."));
       const rejectReason = rejectReasons.value.find((reason: any) => reason.enumId === rejectionReason.value.enumId);
       if (rejectReason) {

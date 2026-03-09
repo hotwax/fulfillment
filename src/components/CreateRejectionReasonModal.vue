@@ -53,10 +53,9 @@ import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, Ion
 import { computed, ref } from "vue";
 import { checkmarkDoneOutline, closeOutline } from "ionicons/icons";
 import { translate } from "@common";
-import { commonUtil } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { useUtilStore } from "@/store/util";
 import { UtilService } from "@/services/UtilService";
-import { hasError } from "@common/utils/commonUtil";
 
 import logger from "@common/core/logger";
 
@@ -103,7 +102,7 @@ const createReason = async () => {
 
   try {
     const resp = await UtilService.createEnumeration(formData.value);
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Rejection reason created successfully."));
       rejectReasons.value.push(formData.value);
       await useUtilStore().updateRejectReasons(rejectReasons.value);

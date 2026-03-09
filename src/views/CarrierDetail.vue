@@ -113,8 +113,7 @@ import { translate } from "@common";
 import emitter from "@common/core/emitter";
 import { useRoute } from "vue-router";
 import { DateTime } from "luxon";
-import { commonUtil } from "@/utils/commonUtil";
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import logger from "@common/core/logger";
 import { CarrierService } from "@/services/CarrierService";
 import CreateShipmentMethodModal from "@/components/CreateShipmentMethodModal.vue";
@@ -172,7 +171,7 @@ const updateCarrierName = async () => {
 
           try {
             resp = await CarrierService.updateCarrier(payload);
-            if (!hasError(resp)) {
+            if (!commonUtil.hasError(resp)) {
               commonUtil.showToast(translate("Carrier name updated successfully."));
               await useCarrierStore().updateCurrentCarrier({ ...currentCarrier.value, ...payload });
             } else {
@@ -216,20 +215,20 @@ const updateCarrierFacility = async (event: any, facility: any) => {
         thruDate: DateTime.now().toMillis()
       };
       resp = await CarrierService.removeCarrierFromFacility(params);
-      if (hasError(resp)) {
+      if (commonUtil.hasError(resp)) {
         throw resp.data;
       }
       facility.isChecked = false;
       facility.fromDate = "";
     } else {
       resp = await CarrierService.addCarrierToFacility(payload);
-      if (hasError(resp)) {
+      if (commonUtil.hasError(resp)) {
         throw resp.data;
       }
       facility = { ...facility, ...payload, isChecked: true };
     }
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Facility carrier association updated successfully."));
       useCarrierStore().updateCarrierFacility(facility);
     } else {
@@ -292,7 +291,7 @@ const updateProductStoreShipmentMethod = async (shipmentMethod: any, modifiedDat
       }
       resp = await CarrierService.updateProductStoreShipmentMethod(payload);
 
-      if (!hasError(resp)) {
+      if (!commonUtil.hasError(resp)) {
         commonUtil.showToast(translate(messages.successMessage));
         productStoreShipmentMethods[shipmentMethod.productStoreId][shipmentMethod.shipmentMethodTypeId] = { ...shipmentMethod, [modifiedData.fieldName]: modifiedData.fieldValue };
         await useCarrierStore().updateCurrentCarrierProductStoreShipmentMethods(productStoreShipmentMethods);
@@ -327,7 +326,7 @@ const updateProductStoreShipmentMethodAssociation = async (event: any, shipmentM
         thruDate: DateTime.now().toMillis()
       });
 
-      if (hasError(resp)) {
+      if (commonUtil.hasError(resp)) {
         throw resp.data;
       }
 
@@ -341,7 +340,7 @@ const updateProductStoreShipmentMethodAssociation = async (event: any, shipmentM
 
       resp = await CarrierService.createProductStoreShipmentMethod(params);
 
-      if (hasError(resp)) {
+      if (commonUtil.hasError(resp)) {
         throw resp.data;
       } else {
         params = { ...params, productStoreShipMethId: resp.data.productStoreShipMethId };
@@ -353,7 +352,7 @@ const updateProductStoreShipmentMethodAssociation = async (event: any, shipmentM
       productStoreShipmentMethods[productStore.productStoreId][shipmentMethod.shipmentMethodTypeId] = params;
     }
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Product store and shipment method association updated successfully."));
       await useCarrierStore().updateCurrentCarrierProductStoreShipmentMethods(productStoreShipmentMethods);
       await useCarrierStore().checkAssociatedProductStoreShipmentMethods();

@@ -1,11 +1,9 @@
 import { api } from '@common';
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 
 import logger from "@common/core/logger";
-import { useUserStore as useAppUserStore } from "@/store/user";
 import { useUtilStore } from "@/store/util";
 import { translate } from "@common";
-import { commonUtil } from "@/utils/commonUtil";
 import { cogOutline } from "ionicons/icons";
 import { ZebraPrinterService } from './ZebraPrinterService';
 
@@ -90,7 +88,7 @@ const printTransferOrderPicklist = async (orderId: string): Promise<any> => {
       responseType: "blob",
     })
 
-    if (!resp || resp.status !== 200 || hasError(resp)) {
+    if (!resp || resp.status !== 200 || commonUtil.hasError(resp)) {
       throw resp.data;
     }
 
@@ -148,10 +146,10 @@ const printShippingLabel = async (shipmentIds: Array<string>, shippingLabelPdfUr
           shipmentId: shipmentIds[0]
         },
         responseType: "blob",
-        baseURL: useAppUserStore().getMaargUrl,
+        baseURL: getMaargBaseURL(),
       });
 
-      if (!resp || resp.status !== 200 || hasError(resp)) {
+      if (!resp || resp.status !== 200 || commonUtil.hasError(resp)) {
         throw resp.data;
       }
 

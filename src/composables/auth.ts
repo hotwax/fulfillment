@@ -1,12 +1,11 @@
-import { resetPermissions } from "@/authorization";
 import { api, client, translate } from "@common";
-import { getOmsURL, hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { cookieHelper } from "@common/helpers/cookieHelper";
 import emitter from "@common/core/emitter";
 import logger from "@common/core/logger";
 import { useUserStore } from "@/store/user";
 import { useUtilStore } from "@/store/util";
-import { commonUtil } from "@/utils/commonUtil";
+import { useNotificationStore } from "@common";
 import { DateTime } from "luxon";
 import { computed, ref } from "vue";
 import router from '@/router';
@@ -21,6 +20,7 @@ export function useAuth() {
   const loginOption = ref<LoginOption>({})
 
   const clearAuth = () => {
+    useNotificationStore().clearNotificationState();
     cookieHelper().remove('token');
     cookieHelper().remove('expirationTime');
     cookieHelper().remove('maarg');
@@ -47,9 +47,9 @@ export function useAuth() {
           "USERNAME": username,
           "PASSWORD": password
         },
-        baseURL: getOmsURL()
+        baseURL: commonUtil.getOmsURL()
       });
-      if (hasError(resp)) {
+      if (commonUtil.hasError(resp)) {
         commonUtil.showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
         console.error("error", resp.data._ERROR_MESSAGE_);
         return Promise.reject(new Error(resp.data._ERROR_MESSAGE_));
@@ -64,7 +64,8 @@ export function useAuth() {
       await useUserStore().fetchProductStores()
       await useUserStore().fetchProductStorePreference();
 
-      await useUserStore().fetchAllNotificationPrefs()
+      const notificationStore = useNotificationStore();
+      await notificationStore.fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID, resp.data.userLoginId)
       useUtilStore().findProductStoreShipmentMethCount()
       await useUtilStore().fetchCarrierShipmentBoxTypes()
       await useUtilStore().fetchAutoShippingLabelConfig()
@@ -101,7 +102,7 @@ export function useAuth() {
         resp = await api({
           url: "logout",
           method: "GET",
-          baseURL: getOmsURL()
+          baseURL: commonUtil.getOmsURL()
         });
         resp = JSON.parse(
           resp.data.startsWith("//") ? resp.data.replace("//", "") : resp
@@ -116,7 +117,6 @@ export function useAuth() {
     }
 
     useUserStore().$reset();
-    resetPermissions();
     cookieHelper().remove('token');
     cookieHelper().remove('expirationTime');
 
@@ -130,9 +130,9 @@ export function useAuth() {
       const resp = await client({
         url: "checkLoginOptions",
         method: "GET",
-        baseURL: getOmsURL()
+        baseURL: commonUtil.getOmsURL()
       });
-      if (!hasError(resp)) {
+      if (!commonUtil.hasError(resp)) {
         loginOption.value = resp.data
         cookieHelper().set("maarg", resp.data.maargInstanceUrl)
       }

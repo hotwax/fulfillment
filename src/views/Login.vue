@@ -66,9 +66,8 @@ import { useUserStore } from "@/store/user";
 import Logo from '@/components/Logo.vue';
 import { arrowForwardOutline } from 'ionicons/icons'
 import { translate, api } from "@common";
-import { getMaargURL } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { cookieHelper } from "@common/helpers/cookieHelper";
-import { commonUtil } from "@/utils/commonUtil";
 import { useAuth } from "@/composables/auth";
 import { useRoute, useRouter } from "vue-router";
 
@@ -196,7 +195,7 @@ const basicLogin = async () => {
       const userProfileResp = await api({
         url: "admin/user/profile",
         method: "get",
-        baseUrl: getMaargURL()
+        baseUrl: commonUtil.getMaargURL()
       });
       const current = userProfileResp.data
       userStore.$patch({

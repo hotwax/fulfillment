@@ -36,9 +36,8 @@ import { defineProps } from "vue";
   import EditShipmentMethodSequenceModal from "@/components/EditShipmentMethodSequenceModal.vue";
   import { translate } from "@common";
   import { CarrierService } from "@/services/CarrierService";
-  import { hasError } from "@common/utils/commonUtil";
+  import { commonUtil } from "@common/utils/commonUtil";
 
-  import { commonUtil } from "@/utils/commonUtil";
   import logger from "@common/core/logger";
   import { useCarrierStore } from "@/store/carrier";
   
@@ -131,7 +130,7 @@ import { defineProps } from "vue";
     const currentCarrierShipmentMethods = JSON.parse(JSON.stringify(currentCarrier.value.shipmentMethods));
     try {
       const resp = await CarrierService.removeCarrierShipmentMethod(props.shipmentMethod);
-      if (!hasError(resp)) {
+      if (!commonUtil.hasError(resp)) {
         delete currentCarrierShipmentMethods[props.shipmentMethod.shipmentMethodTypeId];
         commonUtil.showToast(translate("Carrier and shipment method association updated successfully."));
         await useCarrierStore().updateCurrentCarrierShipmentMethods(currentCarrierShipmentMethods);
@@ -156,7 +155,7 @@ import { defineProps } from "vue";
   
       if (updatedShipmentMethodName != shipmentMethod.description) {
         const resp = await CarrierService.updateShipmentMethodType({ shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId, description: updatedShipmentMethodName });
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           commonUtil.showToast(translate("Shipment method renamed."));
           const updatedShipmentMethods = JSON.parse(JSON.stringify(shipmentMethods.value));
           const updatedShipmentMethod = updatedShipmentMethods[shipmentMethod.shipmentMethodTypeId];

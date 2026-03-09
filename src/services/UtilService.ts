@@ -1,14 +1,14 @@
 import { api } from '@common';
-import { getOmsURL, hasError } from '@common/utils/commonUtil';
-import { commonUtil } from '@/utils/commonUtil'
+import { commonUtil } from "@common/utils/commonUtil";
 import logger from '@common/core/logger'
+import { useUserStore } from "@/store/user";
 
 const fetchShipmentMethods = async (query: any): Promise<any> => {
   return api({
     url: "solr-query",
     method: "post",
     data: query,
-    baseURL: getOmsURL()
+    baseURL: commonUtil.getOmsURL()
   });
 }
 
@@ -49,7 +49,7 @@ const getAvailablePickers = async (query: any): Promise<any> => {
     url: "solr-query",
     method: "post",
     data: query,
-    baseURL: getOmsURL()
+    baseURL: commonUtil.getOmsURL()
   })
 }
 
@@ -189,7 +189,7 @@ const fetchFacilities = async (payload: any): Promise<any> => {
 
 const fetchProductStoreFacilities = async (): Promise<any> => {
   try {
-    const productStoreId = commonUtil.getProductStoreId();
+    const productStoreId = useUserStore().getCurrentEComStore?.productStoreId;
 
     if (!productStoreId) {
       logger.error('Product store ID not found');
@@ -213,7 +213,7 @@ const fetchProductStoreFacilities = async (): Promise<any> => {
       params
     });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       return resp.data;
     } else {
       logger.error('Failed to fetch product store facilities:', resp.data);
@@ -276,7 +276,7 @@ const isEnumExists = async (enumId: string): Promise<any> => {
       params: { enumId }
     }) as any
 
-    if (!hasError(resp) && resp.data.length) {
+    if (!commonUtil.hasError(resp) && resp.data.length) {
       return true
     }
     return false
@@ -337,7 +337,7 @@ const fetchFacilityZPLGroupInfo = async (): Promise<any> => {
       data: payload
     });
 
-    if (!hasError(resp) && resp.data?.entityValueList?.length > 0) {
+    if (!commonUtil.hasError(resp) && resp.data?.entityValueList?.length > 0) {
       isFacilityZPLConfigured = true
     } else {
       throw resp.data;

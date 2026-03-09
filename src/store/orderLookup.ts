@@ -1,14 +1,14 @@
 import { defineStore } from "pinia"
 import { OrderLookupService } from "@/services/OrderLookupService"
-import { solrUtil } from "@/utils/solrUtil"
+import { solrUtil } from "@common/utils/solrUtil"
 import { api } from '@common';
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 
-import { commonUtil } from "@/utils/commonUtil"
 import { translate } from "@common";
-import logger from "@common/core/logger"
 import { useProductStore } from "@/store/product"
 import { useUtilStore } from "@/store/util"
+import { useUserStore } from "@/store/user"
+import logger from "@common/core/logger"
 
 interface OrderLookupQuery {
   status: any[]
@@ -149,10 +149,10 @@ export const useOrderLookupStore = defineStore("orderLookup", {
       let stateOrders = JSON.parse(JSON.stringify(this.list.orders))
       const shipmentMethodTypeIds: Array<string> = []
 
-      const query = solrUtil.prepareOrderLookupQuery({ ...this.query, ...params })
+      const query = solrUtil.prepareOrderLookupQuery({ ...this.query, ...params, facilityId: useUserStore().getCurrentFacility?.facilityId })
       try {
         resp = await OrderLookupService.findOrder(query)
-        if (!hasError(resp) && resp.data?.grouped?.orderId?.groups?.length) {
+        if (!commonUtil.hasError(resp) && resp.data?.grouped?.orderId?.groups?.length) {
           const orders = resp.data.grouped.orderId.groups.map((order: any) => {
             order.orderId = order.doclist.docs[0].orderId
             order.customer = {
@@ -227,7 +227,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
           fieldsToSelect: ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
         })
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           resp.data?.map((doc: any) => {
             systemProperties[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue
           })
@@ -267,7 +267,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
           })
         ])
 
-        if (orderResp.status === "fulfilled" && !hasError(orderResp.value)) {
+        if (orderResp.status === "fulfilled" && !commonUtil.hasError(orderResp.value)) {
           order = orderResp.value.data
           await useUtilStore().fetchEnumerations([order.salesChannelEnumId])
           order.salesChannel = useUtilStore().enumerations?.[order.salesChannelEnumId] || "-"
@@ -280,7 +280,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
             fieldsToSelect: ["firstName", "lastName", "groupName"]
           })
 
-          if (!hasError(partyInfo)) {
+          if (!commonUtil.hasError(partyInfo)) {
             const party = partyInfo?.data[0]
             order.partyName = party.groupName ? party.groupName : `${party.firstName ? party.firstName : ""} ${party.lastName ? party.lastName : ""}`
           }
@@ -295,7 +295,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
             order.orderAttributes[attribute.attrName.toLowerCase()] = attribute.attrValue
           })
 
-          if (orderFacilityChangeResp.status === "fulfilled" && !hasError(orderFacilityChangeResp.value)) {
+          if (orderFacilityChangeResp.status === "fulfilled" && !commonUtil.hasError(orderFacilityChangeResp.value)) {
             order.shipGroupFacilityAllocationTime = {}
             order.firstBrokeredDate = orderFacilityChangeResp.value.data[0].changeDatetime
             orderFacilityChangeResp.value.data.map((brokeringInfo: any) => {
@@ -324,7 +324,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
           }
 
           let shipments = [] as any
-          if (shipmentResp.status === "fulfilled" && !hasError(shipmentResp.value)) {
+          if (shipmentResp.status === "fulfilled" && !commonUtil.hasError(shipmentResp.value)) {
             shipments = shipmentResp.value.data.shipments
             shipments.map((shipment: any) => {
               if (shipment.carrierServiceStatusId === "SHRSCS_VOIDED") {
@@ -336,7 +336,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
           const facilityIds = order.shipGroups.map((shipGroup: any) => shipGroup.facilityId)
           const facilityResp = await OrderLookupService.fetchFacilities({ facilityId: facilityIds, pageSize: facilityIds.length })
 
-          if (itemResp.status === "fulfilled" && !hasError(itemResp.value)) {
+          if (itemResp.status === "fulfilled" && !commonUtil.hasError(itemResp.value)) {
             const orderItems = itemResp.value.data
             const shipGroupsWithItems: any[] = []
 

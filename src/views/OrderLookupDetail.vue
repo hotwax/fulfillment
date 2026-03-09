@@ -264,12 +264,11 @@ import { computed, defineProps, ref } from "vue";
 import { translate } from "@common";
 import { callOutline, cashOutline, checkmarkDoneOutline, cubeOutline, ellipsisVerticalOutline, golfOutline, mailOutline, pulseOutline, storefrontOutline, sunnyOutline, ticketOutline, timeOutline, downloadOutline } from "ionicons/icons";
 import { DateTime } from "luxon";
-import { commonUtil } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import OrderLookupLabelActionsPopover from "@/components/OrderLookupLabelActionsPopover.vue";
-import { hasError } from "@common/utils/commonUtil";
 import logger from "@common/core/logger";
 import { OrderLookupService } from "@/services/OrderLookupService";
-import { moduleFederationUtil } from "@/utils/moduleFederationUtil";
+import { moduleFederationUtil } from "@common/utils/moduleFederationUtil";
 import { useOrderLookupStore } from "@/store/orderLookup";
 import { useProductStore } from "@/store/product";
 import { useStockStore } from "@/store/stock";
@@ -343,7 +342,7 @@ const fetchOrderInvoicingFacility = async () => {
   try {
     const resp = await OrderLookupService.findOrderInvoicingInfo(params);
 
-    if (!hasError(resp) && resp.data?.entityValueList?.length) {
+    if (!commonUtil.hasError(resp) && resp.data?.entityValueList?.length) {
       const response = resp.data?.entityValueList[0];
       const content = Object.keys(response.content).length ? JSON.parse(response.content) : {};
       const invoicingFacilityValue = userProfile.value.facilities.find((facility: any) => facility.facilityId === content?.request?.InvoicingStore);

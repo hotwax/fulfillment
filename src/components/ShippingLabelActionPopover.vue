@@ -21,7 +21,7 @@ import { defineProps } from "vue";
   import { translate } from "@common";
   import { useOrderStore } from "@/store/order";
   import { OrderService } from "@/services/OrderService";
-  import { commonUtil } from "@/utils/commonUtil";
+  import { commonUtil } from "@common/utils/commonUtil";
   import logger from "@common/core/logger";
   
   const props = defineProps(["currentOrder"]);

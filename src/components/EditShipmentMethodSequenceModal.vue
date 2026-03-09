@@ -42,7 +42,7 @@
   import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonReorder, IonReorderGroup, IonTitle, IonToolbar, modalController } from "@ionic/vue";
   import { computed, onMounted, ref } from "vue";
   import { close, saveOutline } from "ionicons/icons";
-  import { commonUtil } from "@/utils/commonUtil";
+  import { commonUtil } from "@common/utils/commonUtil";
   import { CarrierService } from "@/services/CarrierService";
   import { translate } from "@common";
   import { useCarrierStore } from "@/store/carrier";

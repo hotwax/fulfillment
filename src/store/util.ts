@@ -1,9 +1,8 @@
 import { defineStore } from "pinia"
 import { UtilService } from "@/services/UtilService"
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 
 import logger from "@common/core/logger"
-import { commonUtil } from "@/utils/commonUtil";
 import { useUserStore } from "@/store/user"
 
 interface UtilState {
@@ -288,7 +287,7 @@ export const useUtilStore = defineStore("util", {
         }
 
         const resp = await UtilService.fetchRejectReasons(payload)
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           rejectReasons = resp.data
         } else {
           throw resp.data
@@ -320,7 +319,7 @@ export const useUtilStore = defineStore("util", {
 
         const resp = await UtilService.fetchFulfillmentRejectReasons(payload)
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           const rejectionsReasons = resp.data.filter((reason: any) => !reason.thruDate).reduce((rejReasons: any, reason: any) => {
             rejReasons[reason.enumerationGroupId][reason.enumId] = reason
             return rejReasons
@@ -358,7 +357,7 @@ export const useUtilStore = defineStore("util", {
         }
 
         const resp = await UtilService.fetchRejectReasonEnumTypes(params)
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           rejectReasonEnumTypes = resp.data
         } else {
           throw resp.data
@@ -385,7 +384,7 @@ export const useUtilStore = defineStore("util", {
 
         const resp = await UtilService.fetchPartyInformation(payload)
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           const partyResp = {} as any
           resp.data.map((partyInformation: any) => {
             let partyName = ""
@@ -424,7 +423,7 @@ export const useUtilStore = defineStore("util", {
 
         const shipmentBoxTypeIds = new Set()
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           const shipmentBoxTypeDetail = resp.data.reduce((shipmentBoxTypes: any, carrierShipmentBoxType: any) => {
             shipmentBoxTypeIds.add(carrierShipmentBoxType.shipmentBoxTypeId)
             if (shipmentBoxTypes[carrierShipmentBoxType.partyId]) {
@@ -463,7 +462,7 @@ export const useUtilStore = defineStore("util", {
 
         const resp = await UtilService.fetchShipmentMethodTypeDesc(payload)
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           const shipmentMethodResp = {} as any
           resp.data.map((shipmentMethodInformation: any) => {
             shipmentMethodResp[shipmentMethodInformation.shipmentMethodTypeId] = shipmentMethodInformation.description
@@ -502,7 +501,7 @@ export const useUtilStore = defineStore("util", {
       try {
         const resp = await UtilService.fetchFacilityTypeInformation(payload)
 
-        if (!hasError(resp) && resp.data?.length > 0) {
+        if (!commonUtil.hasError(resp) && resp.data?.length > 0) {
           resp.data.map((facilityType: any) => {
             facilityTypeDesc[facilityType.facilityTypeId] = facilityType.typeDescription
           })
@@ -532,7 +531,7 @@ export const useUtilStore = defineStore("util", {
 
         const resp = await UtilService.fetchPaymentMethodTypeDesc(payload)
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           const paymentMethodResp = {} as any
           resp.data.map((paymentMethodType: any) => {
             paymentMethodResp[paymentMethodType.paymentMethodTypeId] = paymentMethodType.description
@@ -570,7 +569,7 @@ export const useUtilStore = defineStore("util", {
 
         const resp = await UtilService.fetchStatusDesc(payload)
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           const statusResp = {} as any
           resp.data.map((statusItem: any) => {
             statusResp[statusItem.statusId] = statusItem.description
@@ -598,7 +597,7 @@ export const useUtilStore = defineStore("util", {
         partyId_op: "equals",
         partyId_not: "Y",
         roleTypeId: "CARRIER",
-        productStoreId: commonUtil.getProductStoreId(),
+        productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
         fieldsToSelect: ["roleTypeId", "partyId"],
         pageSize: 1
       }
@@ -606,7 +605,7 @@ export const useUtilStore = defineStore("util", {
       try {
         const resp = await UtilService.findProductStoreShipmentMethCount(params)
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           productStoreShipmentMethCount = resp.data[0]?.shipmentMethodCount
         } else {
           throw resp?.data
@@ -635,7 +634,7 @@ export const useUtilStore = defineStore("util", {
         }
 
         const resp = await UtilService.fetchEnumeration(payload)
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           enumerations = resp.data.reduce((enums: any, enumeration: any) => {
             enums[enumeration.enumId] = enumeration.description
             return enums
@@ -667,7 +666,7 @@ export const useUtilStore = defineStore("util", {
 
         const resp = await UtilService.fetchFacilities(payload)
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           facilities = resp.data
         } else {
           throw resp.data
@@ -686,7 +685,7 @@ export const useUtilStore = defineStore("util", {
         }
 
         const resp = await UtilService.fetchProductStores(payload)
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           stores = resp.data
         } else {
           throw resp.data
@@ -708,7 +707,7 @@ export const useUtilStore = defineStore("util", {
           pageSize: 20
         })
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           resp.data.map((carrier: any) => {
             const personName = [carrier.firstName, carrier.lastName].filter(Boolean).join(" ")
             carrierDesc[carrier.partyId] = (carrier.partyTypeId === "PERSON" && personName) || carrier.groupName || carrier.partyId
@@ -727,7 +726,7 @@ export const useUtilStore = defineStore("util", {
       try {
         const payload = {
           customParametersMap: {
-            productStoreId: commonUtil.getProductStoreId(),
+            productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
             roleTypeId: "CARRIER",
             shipmentMethodTypeId: "STOREPICKUP",
             shipmentMethodTypeId_op: "equals",
@@ -741,7 +740,7 @@ export const useUtilStore = defineStore("util", {
 
         const resp = await UtilService.fetchStoreCarrierAndMethods(payload)
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           const storeCarrierAndMethods = resp.data.entityValueList
           shipmentMethodsByCarrier = storeCarrierAndMethods.reduce((shipmentMethodsByCarrier: any, storeCarrierAndMethod: any) => {
             const { partyId, shipmentMethodTypeId, description } = storeCarrierAndMethod
@@ -777,7 +776,7 @@ export const useUtilStore = defineStore("util", {
             UtilService.fetchFacilityAddresses({
               contactMechPurposeTypeId: "PRIMARY_LOCATION",
               contactMechTypeId: "POSTAL_ADDRESS",
-              facilityId: commonUtil.getCurrentFacilityId()
+              facilityId: useUserStore().getCurrentFacility?.facilityId
             })
           )
         )
@@ -801,7 +800,7 @@ export const useUtilStore = defineStore("util", {
       this.setFacilityAddresses(facilityAddresses)
     },
     async fetchLabelImageType(carrierId: any) {
-      const facilityId = (useDxpUserStore().getCurrentFacility as any).facilityId
+      const facilityId = (useUserStore().getCurrentFacility as any).facilityId
       let labelImageType = "PNG"
       if (this.facilityShippingLabelImageType[facilityId]) {
         return this.facilityShippingLabelImageType[facilityId]
@@ -821,7 +820,7 @@ export const useUtilStore = defineStore("util", {
       try {
         const resp = await UtilService.fetchLabelImageType(carrierId)
 
-        if (hasError(resp) || !resp.data.length) {
+        if (commonUtil.hasError(resp) || !resp.data.length) {
           throw resp.data
         }
 
@@ -856,7 +855,7 @@ export const useUtilStore = defineStore("util", {
               enumName: enumMeta.enumName
             }
             const enumResponse = await UtilService.createEnumeration(enumPayload)
-            if (hasError(enumResponse)) {
+            if (commonUtil.hasError(enumResponse)) {
               throw new Error("Failed to create enumeration")
             }
           }
@@ -865,7 +864,7 @@ export const useUtilStore = defineStore("util", {
         let isSettingAlreadyExists = false
         try {
           const fetchSetting = await UtilService.fetchProductStoreSetting({
-            productStoreId: commonUtil.getProductStoreId(),
+            productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
             settingTypeEnumId: enumId,
             fieldsToSelect: ["settingTypeEnumId"],
             pageSize: 1
@@ -878,19 +877,19 @@ export const useUtilStore = defineStore("util", {
         let response
         if (isSettingAlreadyExists) {
           response = await UtilService.updateProductStoreSetting({
-            productStoreId: commonUtil.getProductStoreId(),
+            productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
             settingTypeEnumId: enumId,
             ...payload
           })
         } else {
           response = await createService({
-            productStoreId: commonUtil.getProductStoreId(),
+            productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
             settingTypeEnumId: enumId,
             ...payload
           })
         }
 
-        if (!hasError(response)) {
+        if (!commonUtil.hasError(response)) {
           this.updateProductStoreSetting({
             key: enumId,
             value: payload.settingValue
@@ -907,7 +906,7 @@ export const useUtilStore = defineStore("util", {
     async fetchAutoShippingLabelConfig() {
       let resp: any
       try {
-        const currentFacility: any = commonUtil.getCurrentFacilityId()
+        const currentFacility: any = useUserStore().getCurrentFacility?.facilityId
         resp = await UtilService.getFacilityGroupAndMemberDetails({
           customParametersMap: {
             facilityId: currentFacility,
@@ -919,7 +918,7 @@ export const useUtilStore = defineStore("util", {
           filterByDate: true
         })
 
-        if (!hasError(resp) && resp.data?.entityValueList?.length > 0) {
+        if (!commonUtil.hasError(resp) && resp.data?.entityValueList?.length > 0) {
           this.setAutoShippingLabelEnabled(true)
         } else {
           this.setAutoShippingLabelEnabled(false)

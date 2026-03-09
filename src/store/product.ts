@@ -1,7 +1,7 @@
 import { defineStore } from "pinia"
 import { ProductService } from "@/services/ProductService"
 import { api } from '@common';
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import logger from "@common/core/logger"
 
 interface ProductState {
@@ -100,7 +100,7 @@ export const useProductStore = defineStore("product", {
           dataDocumentId: "ProductComponent",
           filterByDate: true
         })
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           const productComponents = resp.data.entityValueList
           const componentProductIds = productComponents.map((productComponent: any) => productComponent.productIdTo)
           await this.fetchProducts({ productIds: componentProductIds })

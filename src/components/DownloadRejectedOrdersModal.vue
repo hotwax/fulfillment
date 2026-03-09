@@ -57,12 +57,11 @@
   import emitter from "@common/core/emitter";
   import { RejectionService } from "@/services/RejectionService";
   import { UtilService } from "@/services/UtilService";
-  import { hasError } from "@common/utils/commonUtil";
+  import { commonUtil } from "@common/utils/commonUtil";
   import { useUserStore } from "@/store/user";
 
   import logger from "@common/core/logger";
-  import { commonUtil, getProductIdentificationValue } from "@/utils/commonUtil";
-  import { solrUtil } from "@/utils/solrUtil";
+  import { solrUtil } from "@common/utils/solrUtil";
   import { DateTime } from "luxon";
   import { useProductStore } from "@/store/product";
   import { useRejectionStore } from "@/store/rejection";
@@ -117,7 +116,7 @@
   
       const resp = await UtilService.fetchFacilities(payload);
   
-      if (!hasError(resp)) {
+      if (!commonUtil.hasError(resp)) {
         facilityDetail = resp.data[0];
       } else {
         throw resp.data;
@@ -164,7 +163,7 @@
     try {
       do {
         resp = await RejectionService.fetchRejctedOrders(query);
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           let orders = resp.data.grouped.orderId_s.groups;
   
           await Promise.all(orders.map(async (order: any) => {
@@ -222,9 +221,9 @@
                   if (field.name === "rejectedAt") {
                     details[field.name] = commonUtil.getDateWithOrdinalSuffix(DateTime.fromISO(item.rejectedAt).toMillis());
                   } else if (field.name === "primaryProductId") {
-                    details[field.name] = getProductIdentificationValue(selectedPrimaryProductId.value, product);
+                    details[field.name] = commonUtil.getProductIdentificationValue(selectedPrimaryProductId.value, product);
                   } else if (field.name === "secondaryProductId") {
-                    details[field.name] = getProductIdentificationValue(selectedSecondaryProductId.value, product);
+                    details[field.name] = commonUtil.getProductIdentificationValue(selectedSecondaryProductId.value, product);
                   } else if (field.name === "rejectedFrom") {
                     details[field.name] = facilityDetail[selectedFacilityId.value];
                   } else {

@@ -60,9 +60,8 @@ import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, Ion
 import { computed, defineProps, onMounted, ref } from "vue";
 import { cameraOutline, cardOutline, closeOutline, giftOutline, stopOutline } from "ionicons/icons";
 import { translate } from "@common";
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { OrderService } from "@/services/OrderService";
-import { commonUtil } from "@/utils/commonUtil";
 import logger from "@common/core/logger";
 import { DateTime } from "luxon";
 import { StreamBarcodeReader } from "vue-barcode-reader";
@@ -99,7 +98,7 @@ const activateGitCard = async () => {
       partyId: props.item.customerId
     });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Gift card activated successfully."));
       closeModal({ isGCActivated: true, item: props.item });
     } else {

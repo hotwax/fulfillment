@@ -21,7 +21,7 @@
 
         <div class="scanner">
           <ion-item>
-            <ion-input :disabled="currentOrder.statusId === 'ORDER_COMPLETED'" :label="translate('Scan items')" autofocus :placeholder="translate('Scan barcodes to pick them')" v-model="queryString" @keyup.enter="updateProductCount()" />
+            <ion-input :disabled="currentOrder.statusId === 'ORDER_COMPLETED'" :label="translate('Scan items')" autofocus :placeholder="translate('Scan barcodes to pick them')" v-model="queryString" @keyup.enter="updateProductCount(queryString)" />
           </ion-item>
 
           <ion-button expand="block" fill="outline" :disabled="currentOrder.statusId === 'ORDER_COMPLETED'" @click="scanCode()">
@@ -117,18 +117,18 @@
     <ion-footer v-if="currentOrder.statusId === 'ORDER_APPROVED' && selectedSegment === 'open'">
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button color="dark" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || isCreatingShipment" @click="closeTOItems()">
+          <ion-button color="dark" fill="outline" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN') || isCreatingShipment" @click="closeTOItems()">
             {{ translate("Close Items") }}
           </ion-button>
-          <ion-button v-show="areItemsEligibleForRejection" color="danger" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || isCreatingShipment" @click="rejectItems()">
+          <ion-button v-show="areItemsEligibleForRejection" color="danger" fill="outline" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN') || isCreatingShipment" @click="rejectItems()">
             <ion-icon slot="start" :icon="trashOutline" />
             {{ translate("Reject Items") }}
           </ion-button>
-          <ion-button color="primary" fill="outline" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || isCreatingShipment" @click="printTransferOrderPicklist()">
+          <ion-button color="primary" fill="outline" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN') || isCreatingShipment" @click="printTransferOrderPicklist()">
             <ion-icon slot="start" :icon="printOutline" />
             {{ translate('Picklist') }}
           </ion-button>
-          <ion-button color="primary" fill="solid" :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleForCreatingShipment() || isCreatingShipment" @click="confirmCreateShipment">
+          <ion-button color="primary" fill="solid" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN') || !isEligibleForCreatingShipment() || isCreatingShipment" @click="confirmCreateShipment">
             <ion-spinner v-if="isCreatingShipment" slot="start" name="crescent" />
             {{ translate('Create shipment') }}
           </ion-button>
@@ -144,21 +144,23 @@ import { computed, ref } from "vue";
 import { barcodeOutline, pricetagOutline, printOutline, trashOutline } from "ionicons/icons";
 import { DxpShopifyImg, translate } from "@common";
 import emitter from "@common/core/emitter";
-import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import { useRoute, useRouter } from "vue-router";
 import Scanner from "@/components/Scanner.vue";
-import { Actions, hasPermission } from "@/authorization";
 import { DateTime } from "luxon";
-import { commonUtil } from "@/utils/commonUtil";
 import { TransferOrderService } from "@/services/TransferOrderService";
 import { OrderService } from "@/services/OrderService";
 import TransferOrderItem from "@/components/TransferOrderItem.vue";
 import ShippingLabelErrorModal from "@/components/ShippingLabelErrorModal.vue";
 import CloseTransferOrderModal from "@/components/CloseTransferOrderModal.vue";
+import { useUserStore } from "@/store/user";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useUtilStore } from "@/store/util";
 import { useProductStore } from "@/store/product";
+
+const userStore = useUserStore();
+const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
 
 const route = useRoute();
 const router = useRouter();

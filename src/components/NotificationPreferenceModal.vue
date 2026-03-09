@@ -31,19 +31,16 @@
 import { IonButtons, IonButton, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonList, IonTitle, IonToggle, IonToolbar, modalController, alertController } from "@ionic/vue";
 import { computed, onBeforeMount, ref } from "vue";
 import { closeOutline, save } from "ionicons/icons";
-import { translate } from "@common";
+import { translate, useNotificationStore, firebaseMessaging } from "@common";
 import emitter from "@common/core/emitter";
 import { useUserStore as useDxpUserStore } from "@/store/user";
-import { commonUtil } from "@/utils/commonUtil";
-import { fireBaseUtil } from "@/utils/fireBaseUtil";
-import { NotificationService } from "@/services/NotificationService";
+import { commonUtil } from "@common/utils/commonUtil";
 import logger from "@common/core/logger";
-import { useUserStore } from "@/store/user";
 const notificationPrefState = ref<Record<string, boolean>>({});
 const notificationPrefToUpdate = ref({ subscribe: [] as string[], unsubscribe: [] as string[] });
 const initialNotificationPrefState = ref<Record<string, boolean>>({});
 
-const notificationPrefs = computed(() => useUserStore().getNotificationPrefs);
+const notificationPrefs = computed(() => useNotificationStore().getNotificationPrefs);
 const currentFacility = computed(() => useDxpUserStore().getCurrentFacility);
 
 const isButtonDisabled = computed(() => {
@@ -52,7 +49,10 @@ const isButtonDisabled = computed(() => {
 });
 
 onBeforeMount(async () => {
-  await useUserStore().fetchNotificationPreferences();
+  const userStore = useDxpUserStore();
+  const notificationStore = useNotificationStore();
+  const omsInstanceName = commonUtil.getOMSInstanceName(userStore.getInstanceUrl);
+  await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(omsInstanceName, userStore.getCurrentFacility.facilityId, enumId));
   notificationPrefState.value = notificationPrefs.value.reduce((prefs: any, pref: any) => {
     prefs[pref.enumId] = pref.isEnabled;
     return prefs;
@@ -75,17 +75,20 @@ const toggleNotificationPref = (enumId: string, event: any) => {
 };
 
 const handleTopicSubscription = async () => {
+  const userStore = useDxpUserStore();
+  const omsInstanceName = commonUtil.getOMSInstanceName(userStore.getInstanceUrl);
   const facilityId = (currentFacility.value as any)?.facilityId;
   const subscribeRequests = [] as any;
-  notificationPrefToUpdate.value.subscribe.map(async (enumId: string) => {
-    const topicName = fireBaseUtil.generateTopicName(facilityId, enumId);
-    await subscribeRequests.push(NotificationService.subscribeTopic(topicName, import.meta.env.VITE_NOTIF_APP_ID as any));
+  const notificationStore = useNotificationStore();
+  notificationPrefToUpdate.value.subscribe.map((enumId: string) => {
+    const topicName = firebaseMessaging.generateTopicName(omsInstanceName, facilityId, enumId);
+    subscribeRequests.push(notificationStore.subscribeTopic(topicName, import.meta.env.VITE_NOTIF_APP_ID as any));
   });
 
   const unsubscribeRequests = [] as any;
-  notificationPrefToUpdate.value.unsubscribe.map(async (enumId: string) => {
-    const topicName = fireBaseUtil.generateTopicName(facilityId, enumId);
-    await unsubscribeRequests.push(NotificationService.unsubscribeTopic(topicName, import.meta.env.VITE_NOTIF_APP_ID as any));
+  notificationPrefToUpdate.value.unsubscribe.map((enumId: string) => {
+    const topicName = firebaseMessaging.generateTopicName(omsInstanceName, facilityId, enumId);
+    unsubscribeRequests.push(notificationStore.unsubscribeTopic(topicName, import.meta.env.VITE_NOTIF_APP_ID as any));
   });
 
   const responses = await Promise.allSettled([...subscribeRequests, ...unsubscribeRequests]);

@@ -16,8 +16,8 @@
           <DxpShopifyImg :src="getProduct(item.val).mainImageUrl" size="small"/>
         </ion-thumbnail>
         <ion-label>
-          <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.val)) }}</p>
-          {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.val)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.val)) : item.val }}
+          <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.val)) }}</p>
+          {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.val)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.val)) : item.val }}
         </ion-label>
         <ion-note slot="end">{{ item.count }}</ion-note>
       </ion-item>
@@ -35,7 +35,7 @@ import { useRejectionStore } from "@/store/rejection";
 import { useProductStore } from "@/store/product";
 import { closeOutline } from "ionicons/icons";
 import { DxpShopifyImg, translate } from "@common";
-import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 const rejectedItems = computed(() => useRejectionStore().getRejectedItems);
 const getProduct = (productId: string) => useProductStore().getProduct(productId);

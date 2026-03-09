@@ -22,7 +22,7 @@
 import { defineProps } from "vue";
 import { IonContent, IonIcon, IonItem, IonList, IonListHeader, modalController, popoverController } from "@ionic/vue";
 import { arrowForwardOutline, bagCheckOutline, copyOutline } from "ionicons/icons";
-import { commonUtil } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
 import { translate } from "@common";
 import emitter from "@common/core/emitter";

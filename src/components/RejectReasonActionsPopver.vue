@@ -20,9 +20,8 @@ import { computed, defineProps } from "vue";
 import { translate } from "@common";
 import EditRejectionReasonModal from "@/components/EditRejectionReasonModal.vue";
 import { UtilService } from "@/services/UtilService";
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 
-import { commonUtil } from "@/utils/commonUtil";
 import logger from "@common/core/logger";
 import { useUtilStore } from "@/store/util";
 
@@ -48,7 +47,7 @@ const removeRejectionReason = async () => {
         handler: async () => {
           try {
             const resp = await UtilService.deleteEnumeration({ enumId: props.reason.enumId });
-            if (!hasError(resp)) {
+            if (!commonUtil.hasError(resp)) {
               commonUtil.showToast(translate("Rejection reason removed successfully."));
               const updatedRejectReasons = rejectReasons.value.filter((rejectReason: any) => rejectReason.enumId !== props.reason.enumId);
               await useUtilStore().updateRejectReasons(updatedRejectReasons);

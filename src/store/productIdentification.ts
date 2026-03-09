@@ -1,4 +1,4 @@
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { defineStore } from "pinia";
 import { ProductService } from '@/services/ProductService';
 
@@ -10,7 +10,7 @@ export const useProductIdentificationStore = defineStore('productIdentification'
         secondaryId: ''
       },
       productIdentificationOptions: [] as any,
-      goodIdentificationOptions: [],
+      goodIdentificationOptions: [] as any[],
       sampleProducts: [],
       currentSampleProduct: null
     }
@@ -73,7 +73,7 @@ export const useProductIdentificationStore = defineStore('productIdentification'
       const params = { viewSize: 10 }
       try {
         const products = await ProductService.fetchProducts(params)
-        if (!hasError(products)) {
+        if (!commonUtil.hasError(products)) {
           this.sampleProducts = products.data.response.docs;
           this.shuffleProduct()
         } else {

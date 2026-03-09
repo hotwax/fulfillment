@@ -57,7 +57,7 @@ import { translate } from "@common";
 import logger from "@common/core/logger";
 import { OrderService } from "@/services/OrderService";
 import { UtilService } from "@/services/UtilService";
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 
 
 const props = defineProps(["order", "orderId", "orderAdjustments", "orderHeaderAdjustmentTotal", "adjustmentsByGroup"]);
@@ -79,7 +79,7 @@ const fetchOrderShipGroupInfo = async () => {
       fieldsToSelect: ["orderId", "orderItemseqId", "shipGroupSeqId", "unitPrice"]
     });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       grandTotal.value = props.order.grandTotal;
       currency.value = props.order.currencyUom;
       resp.data.map((item: any) => {
@@ -118,7 +118,7 @@ const fetchAdjustmentTypeDescription = async () => {
       fieldsToSelect: ["orderAdjustmentTypeId", "description"]
     });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       orderAdjustmentTypeDesc.value = resp.data.reduce((adjustments: any, adjustment: any) => {
         adjustments[adjustment.orderAdjustmentTypeId] = adjustment.description;
         return adjustments;

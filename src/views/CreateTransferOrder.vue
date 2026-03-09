@@ -60,9 +60,9 @@
                   <DxpShopifyImg :src="getProduct(searchedProduct.productId)?.mainImageUrl || searchedProduct.mainImageUrl" :key="getProduct(searchedProduct.productId)?.mainImageUrl || searchedProduct.mainImageUrl" />
                 </ion-thumbnail>
                 <ion-label>
-                  {{ getProductIdentificationValue(barcodeIdentifier, getProduct(searchedProduct.productId)) }}
-                  <p>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) : getProduct(searchedProduct.productId)?.internalName }}</p>
-                  <p v-if="getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) !== 'null'">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
+                  {{ commonUtil.getProductIdentificationValue(barcodeIdentifier, getProduct(searchedProduct.productId)) }}
+                  <p>{{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) : getProduct(searchedProduct.productId)?.internalName }}</p>
+                  <p v-if="commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) !== 'null'">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
                 </ion-label>
                 <ion-icon v-if="!pendingProductIds.has(searchedProduct.productId)" :icon="checkmarkDoneOutline" color="success" slot="end" />
                 <ion-spinner v-else name="crescent" slot="end" />
@@ -120,8 +120,8 @@
                     <DxpShopifyImg :src="searchedProduct.mainImageUrl" :key="searchedProduct.mainImageUrl" />
                   </ion-thumbnail>
                   <ion-label>
-                    {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) : getProduct(searchedProduct.productId)?.internalName }}
-                    <p v-if="getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) !== 'null'">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
+                    {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(searchedProduct.productId)) : getProduct(searchedProduct.productId)?.internalName }}
+                    <p v-if="commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) !== 'null'">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(searchedProduct.productId)) }}</p>
                   </ion-label>
                   <template v-if="!productQueue.isProductInOrder(searchedProduct.productId)">
                     <ion-button data-testid="add-to-transfer-btn" :disabled="pendingProductIds.has(searchedProduct.productId)" slot="end" fill="outline" @click="addSearchedOrderItem">
@@ -201,13 +201,11 @@ import { onBeforeRouteLeave, useRoute } from "vue-router";
 import router from "@/router";
 import { DxpShopifyImg, translate } from "@common";
 import emitter from "@common/core/emitter";
-import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import { ProductService } from "@/services/ProductService";
 import { StockService } from "@/services/StockService";
-import { hasError } from "@common/utils/commonUtil";
 import logger from "@common/core/logger";
-import { commonUtil } from "@/utils/commonUtil";
 import { TransferOrderService } from "@/services/TransferOrderService";
 import { UtilService } from "@/services/UtilService";
 import { OrderService } from "@/services/OrderService";
@@ -218,6 +216,7 @@ import { useProductQueue } from "@/composables/useProductQueue";
 import { useProductStore } from "@/store/product";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useUtilStore } from "@/store/util";
+import { useUserStore } from "@/store/user";
 
 const route = useRoute();
 const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
@@ -309,7 +308,7 @@ onBeforeRouteLeave(async () => {
               resp = await TransferOrderService.cancelTransferOrder(orderId);
             }
 
-            if (!hasError(resp)) {
+            if (!commonUtil.hasError(resp)) {
               commonUtil.showToast(translate("Order discarded successfully"));
               canLeave = true;
               alertController.dismiss();
@@ -344,7 +343,7 @@ onIonViewWillLeave(() => {
 async function fetchTransferOrderDetail(orderId: string) {
   try {
     const orderResp = await TransferOrderService.fetchTransferOrderDetail(orderId);
-    if (!hasError(orderResp) && Object.keys(orderResp.data?.order).length) {
+    if (!commonUtil.hasError(orderResp) && Object.keys(orderResp.data?.order).length) {
       const order = orderResp.data.order;
       if (order.statusId !== "ORDER_CREATED") {
         await useTransferOrderStore().updateCurrentTransferOrder(order);
@@ -382,7 +381,7 @@ async function fetchBarcodeIdentificationDesc() {
   try {
     const resp = await ProductService.fetchBarcodeIdentificationDesc({ parentTypeId: "HC_GOOD_ID_TYPE" });
 
-    if (!hasError(resp) && resp.data?.length) {
+    if (!commonUtil.hasError(resp) && resp.data?.length) {
       barcodeIdentificationDesc.value = resp.data.reduce((identifierDesc: any, identifier: any) => {
         identifierDesc[identifier.goodIdentificationTypeId] = identifier.description;
         return identifierDesc;
@@ -456,7 +455,7 @@ async function updateOrderProperty(property: string, value: any) {
 
     const resp = await OrderService.updateOrderHeader(payload);
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       await useTransferOrderStore().updateCurrentTransferOrder({
         ...currentOrder.value,
         [property]: value
@@ -502,7 +501,7 @@ async function updateOrderFacility(facilityId: string) {
 
   try {
     const resp = await OrderService.updateOrderFacility(payload);
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       if (shipGroup) shipGroup.orderFacilityId = facilityId;
       await useTransferOrderStore().updateCurrentTransferOrder(currentOrder.value);
       commonUtil.showToast(translate("Store name updated successfully"));
@@ -659,9 +658,9 @@ async function fetchStock(productId: string) {
   try {
     const resp: any = await StockService.getInventoryAvailableByFacility({
       productId,
-      facilityId: commonUtil.getCurrentFacilityId()
+      facilityId: useUserStore().getCurrentFacility?.facilityId
     });
-    if (!hasError(resp)) return resp.data;
+    if (!commonUtil.hasError(resp)) return resp.data;
   } catch (err) {
     logger.error(err);
   }
@@ -672,7 +671,7 @@ function findAndScrollToExisting(identifier?: string, productId?: string) {
   const items = currentOrder.value.items || [];
   const existing = items.find((item: any) => {
     if (productId && item.productId === productId) return true;
-    const idVal = item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier.value, getProduct(item.productId));
+    const idVal = item.scannedId ? item.scannedId : commonUtil.getProductIdentificationValue(barcodeIdentifier.value, getProduct(item.productId));
     return identifier && idVal === identifier;
   });
 
@@ -684,8 +683,8 @@ function findAndScrollToExisting(identifier?: string, productId?: string) {
 }
 
 function scrollToProduct(item: any) {
-  lastScannedId.value = item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier.value, getProduct(item.productId));
-  const el = document.getElementById(item.scannedId ? item.scannedId : getProductIdentificationValue(barcodeIdentifier.value, getProduct(item.productId)));
+  lastScannedId.value = item.scannedId ? item.scannedId : commonUtil.getProductIdentificationValue(barcodeIdentifier.value, getProduct(item.productId));
+  const el = document.getElementById(item.scannedId ? item.scannedId : commonUtil.getProductIdentificationValue(barcodeIdentifier.value, getProduct(item.productId)));
   if (el) el.scrollIntoView({ behavior: "smooth" });
   setTimeout(() => lastScannedId.value = "", 3000);
 }
@@ -702,7 +701,7 @@ function hasInvalidPickedQuantity() {
 async function approveOrder(orderId: string) {
   try {
     const resp = await TransferOrderService.approveTransferOrder(orderId);
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       currentOrder.value.statusId = "ORDER_APPROVED";
       await useTransferOrderStore().updateCurrentTransferOrder(currentOrder.value);
       return true;
@@ -778,7 +777,7 @@ async function packAndShipOrder() {
     preventLeave.value = true;
 
     const resp = await TransferOrderService.createOutboundTransferShipment(params);
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       shipmentId = resp.data.shipmentId;
       router.replace({ path: `/ship-transfer-order/${shipmentId}` });
     } else {

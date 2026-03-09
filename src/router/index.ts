@@ -12,15 +12,14 @@ import TransferOrders from "@/views/TransferOrders.vue"
 import TransferOrderDetail from "@/views/TransferOrderDetail.vue"
 import CreateCarrier from "@/views/CreateCarrier.vue"
 import CarrierShipmentMethods from "@/views/CarrierShipmentMethods.vue"
-import { hasPermission } from '@/authorization';
-import { commonUtil } from '@/utils/commonUtil'
+import { commonUtil } from "@common/utils/commonUtil"
+import { useUserStore } from '@/store/user'
 import { translate } from "@common";
 import { useUserStore as useDxpUserStore } from "@/store/user";
 import 'vue-router'
 import Notifications from '@/views/Notifications.vue'
 import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
 import ShipTransferOrder from '@/views/ShipTransferOrder.vue';
-import { useUserStore as useAppUserStore } from '@/store/user'
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -63,7 +62,7 @@ const routes: Array<RouteRecordRaw> = [
     component: OpenOrders,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_OPEN_ORDERS_VIEW"
+      permissionId: ""
     }
   },
   {
@@ -72,7 +71,7 @@ const routes: Array<RouteRecordRaw> = [
     component: InProgress,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_IN_PROGRESS_ORDERS_VIEW"
+      permissionId: ""
     }
   },
   {
@@ -81,7 +80,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Completed,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_COMPLETED_ORDERS_VIEW"
+      permissionId: ""
     }
   },
   {
@@ -90,7 +89,7 @@ const routes: Array<RouteRecordRaw> = [
     component: TransferOrders,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_TRANSFER_ORDERS_VIEW"
+      permissionId: "ORD_TRANSFER_ORDER_VIEW OR ORD_TRANSFER_ORDER_ADMIN"
     }
   },
   {
@@ -114,7 +113,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_TRANSFER_ORDER_DETAIL_VIEW"
+      permissionId: "ORD_TRANSFER_ORDER_VIEW OR ORD_TRANSFER_ORDER_ADMIN"
     }
   },
   {
@@ -131,7 +130,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_ORDER_DETAIL_VIEW"
+      permissionId: ""
     }
   },
   {
@@ -141,7 +140,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_ORDER_DETAIL_VIEW"
+      permissionId: ""
     }
   },
   {
@@ -162,7 +161,7 @@ const routes: Array<RouteRecordRaw> = [
     component: RejectionReasons,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_REJECTION_REASONS_VIEW"
+      permissionId: "STOREFULFILLMENT_ADMIN"
     }
   },
   {
@@ -171,7 +170,7 @@ const routes: Array<RouteRecordRaw> = [
     component: OrderLookup,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_ORDER_LOOKUP_VIEW"
+      permissionId: "FF_ORDER_LOOKUP_VIEW"
     }
   },
   {
@@ -181,7 +180,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_ORDER_LOOKUP_VIEW"
+      permissionId: "FF_ORDER_LOOKUP_VIEW"
     }
   },
   {
@@ -190,7 +189,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Carriers,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_CARRIERS_VIEW"
+      permissionId: "CARRIER_SETUP_VIEW"
     }
   },
   {
@@ -199,7 +198,7 @@ const routes: Array<RouteRecordRaw> = [
     component: CreateCarrier,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_CARRIERS_CREATE"
+      permissionId: "CARRIER_SETUP_VIEW"
     }
   },
   {
@@ -209,7 +208,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_CARRIERS_VIEW"
+      permissionId: "CARRIER_SETUP_VIEW"
     }
   },
   {
@@ -219,7 +218,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_CARRIERS_CREATE"
+      permissionId: "CARRIER_SETUP_VIEW"
     }
   },
   {
@@ -234,7 +233,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Rejections,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_REJECTIONS_VIEW"
+      permissionId: "STOREFULFILLMENT_ADMIN"
     }
   },
   {
@@ -250,7 +249,8 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from) => {
-  if (to.meta.permissionId && !hasPermission(to.meta.permissionId)) {
+  const userStore = useUserStore()
+  if (to.meta.permissionId && !userStore.hasPermission(to.meta.permissionId)) {
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
     if (redirectToPath == "/login" || redirectToPath == "/") redirectToPath = "/settings";

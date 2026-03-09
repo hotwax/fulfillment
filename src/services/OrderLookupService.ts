@@ -1,9 +1,7 @@
 import { api } from '@common';
-import { getOmsURL } from '@common/utils/commonUtil';
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { useUtilStore } from "@/store/util";
 import logger from '@common/core/logger';
-import { commonUtil } from '@/utils/commonUtil'
 import { translate } from "@common";
 import { cogOutline } from 'ionicons/icons';
 import { ZebraPrinterService } from './ZebraPrinterService';
@@ -13,7 +11,7 @@ const findOrder = async (payload: any): Promise<any> => {
     url: "/solr-query",
     method: "post",
     data: payload,
-    baseURL: getOmsURL()
+    baseURL: commonUtil.getOmsURL()
   });
 }
 

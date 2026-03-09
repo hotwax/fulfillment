@@ -1,11 +1,11 @@
 import { defineStore } from "pinia"
 import { StockService } from "@/services/StockService"
 import { api } from '@common';
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 
 import logger from "@common/core/logger"
-import { commonUtil } from "@/utils/commonUtil"
 import { translate } from "@common";
+import { useUserStore } from "@/store/user"
 
 interface StockState {
   products: Record<string, any>
@@ -17,7 +17,7 @@ export const useStockStore = defineStore("stock", {
   }),
   getters: {
     getProductStock: (state) => (productId: any, facilityId?: any) => {
-      const id = facilityId ? facilityId : commonUtil.getCurrentFacilityId()
+      const id = facilityId ? facilityId : useUserStore().getCurrentFacility?.facilityId
       return state.products[productId] ? state.products[productId][id] ? state.products[productId][id] : {} : {}
     }
   },
@@ -32,7 +32,7 @@ export const useStockStore = defineStore("stock", {
       }
     },
     async fetchStock({ productId, facilityId = "" }: { productId: any; facilityId?: any }) {
-      const id = facilityId ? facilityId : commonUtil.getCurrentFacilityId()
+      const id = facilityId ? facilityId : useUserStore().getCurrentFacility?.facilityId
       try {
         const payload = {
           productId,
@@ -41,7 +41,7 @@ export const useStockStore = defineStore("stock", {
 
         const resp: any = await StockService.getInventoryAvailableByFacility(payload)
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           this.addProductStock({ productId: payload.productId, facilityId: id, stock: resp.data })
         } else {
           throw resp.data

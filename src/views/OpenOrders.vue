@@ -12,7 +12,7 @@
           <ion-button @click="viewNotifications()">
             <ion-icon slot="icon-only" :icon="notificationsOutline" :color="(unreadNotificationsStatus && notifications.length) ? 'primary' : ''" />
           </ion-button>
-          <ion-button :disabled="!hasPermission(Actions.APP_RECYCLE_ORDER) || !openOrders.total || isRejecting" fill="clear" color="danger" @click="recycleOutstandingOrders()">
+          <ion-button :disabled="!userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN') || !openOrders.total || isRejecting" fill="clear" color="danger" @click="recycleOutstandingOrders()">
             {{ translate("Reject all") }}
           </ion-button>
           <ion-menu-button menu="view-size-selector-open" :disabled="!openOrders.total">
@@ -44,7 +44,7 @@
               <div class="order-primary-info">
                 <ion-label>
                   <strong>{{ order.customerName }}</strong>
-                  <p>{{ translate("Ordered") }} {{ commonUtil.formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+                  <p>{{ translate("Ordered") }} {{ commonUtil.formatUtcDate(order.orderDate, userStore.currentTimeZoneId, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
                 </ion-label>
               </div>
 
@@ -59,7 +59,7 @@
               <div class="order-metadata">
                 <ion-label>
                   {{ getShipmentMethodDesc(order.shipmentMethodTypeId) }}
-                  <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ commonUtil.formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+                  <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ commonUtil.formatUtcDate(order.reservedDatetime, userStore.currentTimeZoneId, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
                 </ion-label>
               </div>
             </div>
@@ -144,27 +144,26 @@ import { useRouter, onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline } from "ionicons/icons";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
 import { DxpShopifyImg } from "@common";
-import { getProductIdentificationValue } from "@/utils/commonUtil";
-import { useProductIdentificationStore } from "@/store/productIdentification";
-import { useUserStore as useDxpUserStore } from "@/store/user";
-import { commonUtil } from "@/utils/commonUtil";
-import { solrUtil } from "@/utils/solrUtil";
-import { hasError } from "@common/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
+import { solrUtil } from "@common/utils/solrUtil";
 import { UtilService } from "@/services/UtilService";
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
 import logger from "@common/core/logger";
-import { Actions, hasPermission } from "@/authorization";
 import { translate } from "@common";
 import emitter from "@common/core/emitter";
 import OrderActionsPopover from "@/components/OrderActionsPopover.vue";
 import { orderUtil } from "@/utils/orderUtil";
 import { OrderService } from "@/services/OrderService";
-import { moduleFederationUtil } from "@/utils/moduleFederationUtil";
+import { moduleFederationUtil } from "@common/utils/moduleFederationUtil";
 import { useOrderStore } from "@/store/order";
 import { useProductStore } from "@/store/product";
 import { useStockStore } from "@/store/stock";
 import { useUtilStore } from "@/store/util";
 import { useUserStore } from "@/store/user";
+import { useProductIdentificationStore } from "@/store/productIdentification";
+
+const userStore = useUserStore();
+const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
 
 const router = useRouter();
 const shipmentMethods = ref([] as Array<any>);
@@ -181,12 +180,12 @@ const infiniteScrollRef = ref();
 const openOrders = computed(() => useOrderStore().getOpenOrders);
 const notifications = computed(() => useUserStore().getNotifications);
 const unreadNotificationsStatus = computed(() => useUserStore().getUnreadNotificationsStatus);
-const instanceUrl = computed(() => useUserStore().getInstanceUrl);
+const instanceUrl = computed(() => userStore.getInstanceUrl);
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
 const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
 const getProductStock = (productId: string) => useStockStore().getProductStock(productId);
-const currentFacility = computed(() => useDxpUserStore().getCurrentFacility);
-const currentEComStore = computed(() => useDxpUserStore().getCurrentEComStore);
+const currentFacility = computed(() => userStore.getCurrentFacility);
+const currentEComStore = computed(() => userStore.getCurrentEComStore);
 const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
 
 const updateOpenQuery = (payload: any) => {
@@ -276,7 +275,7 @@ const fetchShipmentMethods = async () => {
       orderStatusId: { value: "ORDER_APPROVED" },
       orderTypeId: { value: "SALES_ORDER" },
       productStoreId: { value: currentEComStore.value.productStoreId },
-      ...commonUtil.getFacilityFilter(currentFacility.value?.facilityId)
+      ...getFacilityFilter(currentFacility.value?.facilityId)
     },
     solrFilters: [
       "((*:* -fulfillmentStatus: [* TO *]) OR fulfillmentStatus:Created)",
@@ -299,7 +298,7 @@ const fetchShipmentMethods = async () => {
 
   try {
     resp = await UtilService.fetchShipmentMethods(payload);
-    if (resp.status == 200 && !hasError(resp) && resp.data.facets?.count > 0) {
+    if (resp.status == 200 && !commonUtil.hasError(resp) && resp.data.facets?.count > 0) {
       shipmentMethods.value = resp.data.facets.shipmentMethodTypeIdFacet.buckets;
       useUtilStore().fetchShipmentMethodTypeDesc(shipmentMethods.value.map((shipmentMethod: any) => shipmentMethod.val));
     } else {
@@ -309,6 +308,14 @@ const fetchShipmentMethods = async () => {
     logger.error("Failed to fetch shipment methods information", err);
   }
 };
+
+const getFacilityFilter = (value: any): any => {
+const utilStore = useUtilStore();
+const isReservationFacilityFieldEnabled = utilStore.isReservationFacilityFieldEnabled;
+const facilityFilter = {} as any;
+facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value }
+return facilityFilter
+}
 
 const updateQueryString = async (queryString: string) => {
   const openOrdersQuery = JSON.parse(JSON.stringify(openOrders.value.query));
@@ -355,7 +362,7 @@ const recycleOutstandingOrders = async () => {
             reasonId: "INACTIVE_STORE"
           });
 
-          if (!hasError(resp)) {
+          if (!commonUtil.hasError(resp)) {
             commonUtil.showToast(translate("Rejecting has been started. All outstanding orders will be rejected shortly."));
           } else {
             throw resp.data;

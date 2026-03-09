@@ -11,12 +11,12 @@
       {{ 'Choosing a product identifier allows you to view products with your preferred identifiers.' }}
     </ion-card-content>
 
-    <ion-item :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)">
+    <ion-item :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
       <ion-select :label="translate('Primary')" interface="popover" :placeholder="'primary identifier'" :value="productIdentificationPref.primaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'primaryId')">
         <ion-select-option v-for="identification in productIdentificationOptions" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
       </ion-select>
     </ion-item>
-    <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)">
+    <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
       <ion-select :label="translate('Secondary')" interface="popover" :placeholder="'secondary identifier'" :value="productIdentificationPref.secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')">
         <ion-select-option v-for="identification in productIdentificationOptions" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
         <ion-select-option value="">{{ "None" }}</ion-select-option>
@@ -50,13 +50,12 @@ import { computed, onMounted } from 'vue';
 import { DxpShopifyImg } from "@common";
 import { shuffleOutline } from "ionicons/icons";
 import { translate } from '@common';
-import { hasPermission } from '@common/utils/commonUtil';
-import { getProductIdentificationValue } from "@/utils/commonUtil"
-import { Actions } from "@/authorization"
+import { commonUtil } from "@common/utils/commonUtil"
 
 const productIdentificationStore = useProductIdentificationStore();
 const userStore = useUserStore()
 
+const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
 const currentEComStore = computed(() =>  userStore.getCurrentEComStore)
 const productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref);
 const productIdentificationOptions = computed(() => productIdentificationStore.getProductIdentificationOptions);

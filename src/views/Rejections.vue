@@ -43,8 +43,8 @@
                 <DxpShopifyImg :src="getProduct(item.val).mainImageUrl" :key="getProduct(item.val).mainImageUrl" size="small" />
               </ion-thumbnail>
               <ion-label>
-                <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.val)) }}</p>
-                {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.val)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.val)) : item.val }}
+                <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.val)) }}</p>
+                {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.val)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.val)) : item.val }}
               </ion-label>
               <ion-note slot="end">{{ item.count }}</ion-note>
             </ion-item>
@@ -90,7 +90,7 @@
             <div class="order-primary-info">
               <ion-label>
                 <strong>{{ order.customerName }}</strong>
-                <p>{{ translate("Ordered") }} {{ commonUtil.formatUtcDate(order.orderDate, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+                <p>{{ translate("Ordered") }} {{ commonUtil.formatUtcDate(order.orderDate, userStore.currentTimeZoneId, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
               </ion-label>
             </div>
 
@@ -104,7 +104,7 @@
             <div class="order-metadata">
               <ion-label>
                 {{ order.shipmentMethod }}
-                <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ commonUtil.formatUtcDate(order.reservedDatetime, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
+                <p v-if="order.reservedDatetime">{{ translate("Last brokered") }} {{ commonUtil.formatUtcDate(order.reservedDatetime, userStore.currentTimeZoneId, 'dd MMMM yyyy hh:mm a ZZZZ') }}</p>
               </ion-label>
             </div>
           </div>
@@ -115,13 +115,13 @@
                   <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small" />
                 </ion-thumbnail>
                 <ion-label>
-                  <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                  {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
+                  <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                  {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
                 </ion-label>
               </ion-item>
             </div>
             <ion-label>
-              {{ commonUtil.formatUtcDate(item.rejectedAt, 'dd MMMM yyyy hh:mm a ZZZZ')}}
+              {{ commonUtil.formatUtcDate(item.rejectedAt, userStore.currentTimeZoneId, 'dd MMMM yyyy hh:mm a ZZZZ')}}
               <p>{{ translate('rejected time') }}</p>
             </ion-label>
             <ion-label lines="none">
@@ -154,15 +154,17 @@ import { IonButton, IonButtons, IonCard, IonCardHeader, IonCardTitle, IonChip, I
 import { computed, ref } from "vue";
 import { cloudDownloadOutline, filterOutline, personCircleOutline, pricetagOutline } from "ionicons/icons";
 import { DxpShopifyImg, translate } from "@common";
-import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { useProductIdentificationStore } from "@/store/productIdentification";
-import { commonUtil } from "@/utils/commonUtil";
+import { useUserStore } from "@/store/user";
 import RejectedItemsModal from "@/components/RejectedItemsModal.vue";
 import UsedReasonsModal from "@/components/UsedReasonsModal.vue";
 import RejectedOrdersFilters from "@/components/RejectedOrdersFilters.vue";
 import DownloadRejectedOrdersModal from "@/components/DownloadRejectedOrdersModal.vue";
 import { useRejectionStore } from "@/store/rejection";
 import { useProductStore } from "@/store/product";
+
+const userStore = useUserStore();
 
 const queryString = ref("");
 const rejectionPeriods = ref([] as any);

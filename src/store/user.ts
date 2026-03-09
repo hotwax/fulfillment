@@ -1,15 +1,12 @@
+import { commonUtil } from "@common/utils/commonUtil";
 import { defineStore } from "pinia"
 import { UserService } from "@/services/UserService"
-import { NotificationService } from "@/services/NotificationService"
-import { commonUtil } from "@/utils/commonUtil";
 import { translate } from "@common";
-import { hasError, hasPermission, getOmsURL, getMaargURL } from "@common/utils/commonUtil";
 import { UtilService } from "@/services/UtilService"
 import { api } from "@common"
 import { DateTime, Settings } from "luxon"
 import logger from "@common/core/logger"
-import { getServerPermissionsFromRules, prepareAppPermissions, setPermissions } from "@/authorization"
-import { fireBaseUtil } from "@/utils/fireBaseUtil"
+import { i18n } from "../index";
 import { useUtilStore } from "@/store/util"
 import { useAuth } from "@/composables/auth";
 import { useProductIdentificationStore } from "@/store/productIdentification";
@@ -29,15 +26,11 @@ interface UserState {
     updateExists: boolean
     registration: any
   }
-  notifications: any[]
-  notificationPrefs: any[]
-  firebaseDeviceId: string
-  hasUnreadNotifications: boolean
-  allNotificationPrefs: any[],
   timeZones: any[],
   currentTimeZoneId: string,
   localeOptions: any,
-  locale: string
+  locale: string,
+  isEmbedded: boolean
 }
 
 export const useUserStore = defineStore("appUser", {
@@ -55,15 +48,11 @@ export const useUserStore = defineStore("appUser", {
       updateExists: false,
       registration: null
     },
-    notifications: [],
-    notificationPrefs: [],
-    firebaseDeviceId: "",
-    hasUnreadNotifications: true,
-    allNotificationPrefs: [],
     timeZones: [],
     currentTimeZoneId: '',
     localeOptions: import.meta.env.VITE_LOCALES ? JSON.parse(import.meta.env.VITE_LOCALES) : { "en-US": "English" },
-    locale: 'en-US'
+    locale: 'en-US',
+    isEmbedded: false
 
   }),
   getters: {
@@ -92,26 +81,31 @@ export const useUserStore = defineStore("appUser", {
     getPwaState(state: UserState) {
       return state.pwaState
     },
-    getNotifications(state: UserState) {
-      return state.notifications.sort((a: any, b: any) => b.time - a.time)
-    },
-    getNotificationPrefs(state: UserState) {
-      return state.notificationPrefs
-    },
-    getFirebaseDeviceId(state: UserState) {
-      return state.firebaseDeviceId
-    },
-    getUnreadNotificationsStatus(state: UserState) {
-      return state.hasUnreadNotifications
-    },
-    getAllNotificationPrefs(state: UserState) {
-      return state.allNotificationPrefs
-    },
     getCurrentFacility(state: UserState) {
       return state.currentFacility
     },
     getCurrentEComStore(state: UserState) {
       return state.currentEComStore
+    },
+    hasPermission: (state: UserState) => (permissionId: string): boolean => {
+      const permissions = state.permissions;
+
+      if (!permissionId) {
+        return true;
+      }
+
+      // Handle OR/AND logic in permission string
+      if (permissionId.includes(' OR ')) {
+        const parts = permissionId.split(' OR ');
+        return parts.some(part => useUserStore().hasPermission(part.trim()));
+      }
+
+      if (permissionId.includes(' AND ')) {
+        const parts = permissionId.split(' AND ');
+        return parts.every(part => useUserStore().hasPermission(part.trim()));
+      }
+
+      return permissions.includes(permissionId);
     }
   },
   actions: {
@@ -130,21 +124,6 @@ export const useUserStore = defineStore("appUser", {
     setPwaState(payload: any) {
       this.pwaState.registration = payload.registration
       this.pwaState.updateExists = payload.updateExists
-    },
-    setNotifications(payload: any) {
-      this.notifications = payload
-    },
-    setNotificationPrefs(payload: any) {
-      this.notificationPrefs = payload
-    },
-    setFirebaseDeviceId(payload: any) {
-      this.firebaseDeviceId = payload
-    },
-    setUnreadNotificationsStatusState(payload: any) {
-      this.hasUnreadNotifications = payload
-    },
-    setAllNotificationPrefs(payload: any) {
-      this.allNotificationPrefs = payload
     },
     setCurrentFacility(facility: any) {
       this.currentFacility = facility
@@ -166,7 +145,7 @@ export const useUserStore = defineStore("appUser", {
           const userProfileResp = await api({
             url: "admin/user/profile",
             method: "get",
-            baseUrl: getMaargURL()
+            baseUrl: commonUtil.getMaargURL()
           });
           this.current = userProfileResp.data
         } catch (error: any) {
@@ -206,89 +185,38 @@ export const useUserStore = defineStore("appUser", {
     },
     async fetchPermissions() {
       const permissionId = import.meta.env.VITE_VUE_APP_PERMISSION_ID;
-      // Prepare permissions list
-      const serverPermissionsFromRules = [...new Set(getServerPermissionsFromRules())];
-      if (permissionId) serverPermissionsFromRules.push(permissionId);
       let serverPermissions = [] as any;
 
-      // If the server specific permission list doesn't exist, getting server permissions will be of no use
-      // It means there are no rules yet depending upon the server permissions.
-      if (serverPermissionsFromRules && serverPermissionsFromRules.length == 0) return serverPermissions;
-      // TODO pass specific permissionIds
-      let resp;
       // TODO Make it configurable from the environment variables.
       // Though this might not be an server specific configuration, 
       // we will be adding it to environment variable for easy configuration at app level
-      const viewSize = 200;
+      const viewSize = 50;
+
+      let viewIndex = 0;
 
       try {
-        const params = {
-          "viewIndex": 0,
-          viewSize,
-          permissionIds: serverPermissionsFromRules
-        }
-        resp = await api({
-          url: "getPermissions",
-          method: "post",
-          baseURL: getOmsURL(),
-          data: params,
-        })
-        if (resp.status === 200 && resp.data.docs?.length && !hasError(resp)) {
-          serverPermissions = resp.data.docs.map((permission: any) => permission.permissionId);
-          const total = resp.data.count;
-          const remainingPermissions = total - serverPermissions.length;
-          if (remainingPermissions > 0) {
-            // We need to get all the remaining permissions
-            const apiCallsNeeded = Math.floor(remainingPermissions / viewSize) + (remainingPermissions % viewSize != 0 ? 1 : 0);
-            const responses = await Promise.all([...Array(apiCallsNeeded).keys()].map(async (index: any) => {
-              const response = await api({
-                url: "getPermissions",
-                method: "post",
-                baseURL: getOmsURL(),
-                data: {
-                  "viewIndex": index + 1,
-                  viewSize,
-                  permissionIds: serverPermissionsFromRules
-                }
-              })
-              if (!hasError(response)) {
-                return Promise.resolve(response);
-              } else {
-                return Promise.reject(response);
-              }
-            }))
-            const permissionResponses = {
-              success: [],
-              failed: []
-            }
-            responses.reduce((permissionResponses: any, permissionResponse: any) => {
-              if (permissionResponse.status !== 200 || hasError(permissionResponse) || !permissionResponse.data?.docs) {
-                permissionResponses.failed.push(permissionResponse);
-              } else {
-                permissionResponses.success.push(permissionResponse);
-              }
-              return permissionResponses;
-            }, permissionResponses)
+        let resp;
+        do {
+          resp = await api({
+            url: "getPermissions",
+            method: "post",
+            baseURL: commonUtil.getOmsURL(),
+            data: { viewIndex, viewSize }
+          })
 
-            serverPermissions = permissionResponses.success.reduce((serverPermissions: any, response: any) => {
-              serverPermissions.push(...response.data.docs.map((permission: any) => permission.permissionId));
-              return serverPermissions;
-            }, serverPermissions)
-
-            // If partial permissions are received and we still allow user to login, some of the functionality might not work related to the permissions missed.
-            // Show toast to user intimiting about the failure
-            // Allow user to login
-            // TODO Implement Retry or improve experience with show in progress icon and allowing login only if all the data related to user profile is fetched.
-            if (permissionResponses.failed.length > 0) Promise.reject("Something went wrong while getting complete user permissions.");
+          if (resp.status === 200 && resp.data.docs?.length && !commonUtil.hasError(resp)) {
+            serverPermissions.push(...resp.data.docs.map((permission: any) => permission.permissionId));
+            viewIndex++;
+          } else {
+            resp = null;
           }
-        }
-        const appPermissions = prepareAppPermissions(serverPermissions);
+        } while (resp);
 
         // Checking if the user has permission to access the app
         // If there is no configuration, the permission check is not enabled
         if (permissionId) {
-          const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === permissionId);
-          if (!hasPermission) {
+          const hasAppPermission = serverPermissions.includes(permissionId);
+          if (!hasAppPermission) {
             const permissionError = "You do not have permission to access the app.";
             commonUtil.showToast(translate(permissionError));
             logger.error("error", permissionError);
@@ -297,9 +225,7 @@ export const useUserStore = defineStore("appUser", {
         }
 
         // Update the state with the fetched permissions
-        this.permissions = appPermissions;
-        // Set permissions in the authorization module
-        setPermissions(appPermissions);
+        this.permissions = serverPermissions;
       } catch (error: any) {
         return Promise.reject(error);
       }
@@ -308,7 +234,7 @@ export const useUserStore = defineStore("appUser", {
     async fetchFacilities() {
       try {
         this.current.stores = [];
-        const isAdminUser = hasPermission("APP_STOREFULFILLMENT_ADMIN");
+        const isAdminUser = this.hasPermission("STOREFULFILLMENT_ADMIN");
         const facilities = await UserService.getUserFacilities(this.getUserProfile?.partyId, "OMS_FULFILLMENT", isAdminUser, {})
         this.current.facilities = facilities
         this.setCurrentFacility(facilities[0])
@@ -384,8 +310,9 @@ export const useUserStore = defineStore("appUser", {
           fromDate: DateTime.now().toMillis()
         })
 
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           this.updateUserInfo({ userTimeZone: facility.timeZone })
+          this.currentTimeZoneId = facility.timeZone
           Settings.defaultZone = facility.timeZone
         } else {
           throw resp.data
@@ -397,6 +324,7 @@ export const useUserStore = defineStore("appUser", {
     },
     setUserTimeZone(tzId: string) {
       this.updateUserInfo({ userTimeZone: tzId })
+      this.currentTimeZoneId = tzId
     },
     async fetchEComStoreDependencies(productStoreId: string) {
       if (!productStoreId) return
@@ -414,7 +342,7 @@ export const useUserStore = defineStore("appUser", {
     async setUserPreference(payload: any) {
       try {
         const resp = await UserService.setUserPreference(payload)
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           this.setUserPreferenceState(payload)
         } else {
           throw resp.data
@@ -423,70 +351,9 @@ export const useUserStore = defineStore("appUser", {
         logger.error("error", err)
       }
     },
-    async updatePwaState(payload: any) {
-      this.setPwaState(payload)
-    },
-    async addNotification(payload: any) {
-      this.setNotifications([payload, ...this.notifications])
-    },
-    async fetchNotificationPreferences() {
-      let notificationPreferences: any[] = []
-      let enumerationResp: any[] = []
-      let userPrefIds: any[] = []
-      try {
-        let resp: any = await NotificationService.getNotificationEnumIds(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID as any)
-        enumerationResp = resp.docs
-        resp = await NotificationService.getNotificationUserPrefTypeIds(import.meta.env.VITE_NOTIF_APP_ID as any, (this.current as any).userLoginId)
-        userPrefIds = resp.docs.map((userPref: any) => userPref.userPrefTypeId)
-      } catch (error) {
-        logger.error(error)
-      } finally {
-        // checking enumerationResp as we want to show disabled prefs if only getNotificationEnumIds returns
-        // data and getNotificationUserPrefTypeIds fails or returns empty response (all disabled)
-        if (enumerationResp.length) {
-          notificationPreferences = enumerationResp.reduce((notifactionPref: any, pref: any) => {
-            const userPrefTypeIdToSearch = fireBaseUtil.generateTopicName(commonUtil.getCurrentFacilityId(), pref.enumId)
-            notifactionPref.push({ ...pref, isEnabled: userPrefIds.includes(userPrefTypeIdToSearch) })
-            return notifactionPref
-          }, [])
-        }
-        this.setNotificationPrefs(notificationPreferences)
-      }
-    },
-    async storeClientRegistrationToken(registrationToken: string) {
-      const firebaseDeviceId = fireBaseUtil.generateDeviceId()
-      this.setFirebaseDeviceId(firebaseDeviceId)
-
-      try {
-        await NotificationService.storeClientRegistrationToken(registrationToken, firebaseDeviceId, import.meta.env.VITE_NOTIF_APP_ID as any)
-      } catch (error) {
-        logger.error(error)
-      }
-    },
-    async fetchAllNotificationPrefs() {
-      let allNotificationPrefs: any[] = []
-
-      try {
-        const resp = await NotificationService.getNotificationUserPrefTypeIds(import.meta.env.VITE_NOTIF_APP_ID as any, (this.current as any).userLoginId)
-        allNotificationPrefs = resp.docs
-      } catch (error) {
-        logger.error(error)
-      }
-
-      this.setAllNotificationPrefs(allNotificationPrefs)
-    },
-    async updateNotificationPreferences(payload: any) {
-      this.setNotificationPrefs(payload)
-    },
-    clearNotificationState() {
-      this.notifications = []
-      this.notificationPrefs = []
-      this.firebaseDeviceId = ""
-      this.hasUnreadNotifications = true
-      this.allNotificationPrefs = []
-    },
     setUnreadNotificationsStatus(payload: any) {
-      this.setUnreadNotificationsStatusState(payload)
+      // This action is now effectively a placeholder or should be moved to components
+      // Using the new store directly is preferred.
     },
     async setEComStorePreference(payload: any) {
       try {
@@ -508,7 +375,7 @@ export const useUserStore = defineStore("appUser", {
 
       try {
         const resp = await UtilService.getAvailableTimeZones();
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           this.timeZones = resp.data.timeZones.filter((timeZone: any) => DateTime.local().setZone(timeZone.id).isValid);
         }
       } catch (err) {
@@ -536,6 +403,13 @@ export const useUserStore = defineStore("appUser", {
         i18n.global.locale.value = newLocale
         this.locale = newLocale
       }
+    },
+    async logout(payload: any) {
+      const { logout } = useAuth();
+      return await logout(payload);
+    },
+    getUserPreference(key: string) {
+      return (this.preference as any)[key]
     }
   },
   persist: true

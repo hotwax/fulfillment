@@ -34,8 +34,8 @@
                 <Image :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" />
               </ion-thumbnail>
               <ion-label>
-                {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId)?.internalName }}
-                <p v-if="getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) !== 'null'">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId)?.internalName }}
+                <p v-if="commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) !== 'null'">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
               </ion-label>
               <ion-label slot="end">{{ item.quantity }}</ion-label>
             </ion-item>
@@ -150,15 +150,13 @@ import { computed, ref } from "vue";
 import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from "@ionic/vue";
 import { openOutline, pricetagOutline, printOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from "@common";
-import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import { TransferOrderService } from "@/services/TransferOrderService";
 import { OrderService } from "@/services/OrderService";
 import { CarrierService } from "@/services/CarrierService";
 import { UtilService } from "@/services/UtilService";
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
-import { commonUtil } from "@/utils/commonUtil";
-import { hasError } from "@common/utils/commonUtil";
 import Image from "@/components/Image.vue";
 import logger from "@common/core/logger";
 import { useProductStore } from "@/store/product";
@@ -230,7 +228,7 @@ onBeforeRouteLeave(async () => {
           handler: async () => {
             try {
               const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId);
-              if (!hasError(resp)) {
+              if (!commonUtil.hasError(resp)) {
                 commonUtil.showToast(translate("Shipment is discarded."));
                 canLeave = true;
                 alertController.dismiss();
@@ -268,7 +266,7 @@ onBeforeRouteLeave(async () => {
           handler: async () => {
             try {
               const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId);
-              if (!hasError(resp)) {
+              if (!commonUtil.hasError(resp)) {
                 canLeave = true;
                 await useTransferOrderStore().clearCurrentTransferOrder();
                 alertController.dismiss();
@@ -313,7 +311,7 @@ function updateShipmentMethodsForCarrier(carrierPartyId: string, shippingMethodI
 async function fetchShipmentOrderDetail(shipmentId: string) {
   try {
     const resp = await TransferOrderService.fetchTransferShipmentDetails({ shipmentId: shipmentId });
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       shipmentDetails.value = resp.data.shipments[0];
       await fetchCarrierLogos([shipmentDetails.value.actualCarrierCode, shipmentDetails.value.routeSegCarrierPartyId]);
       trackingCode.value = shipmentDetails.value.trackingIdNumber || "";
@@ -373,7 +371,7 @@ async function fetchCarrierLogos(carriers: string[] = []) {
       fieldsToSelect: ["systemResourceId", "systemPropertyValue"]
     });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       const logoMap = { ...carrierLogos.value };
       resp.data.map((doc: any) => {
         logoMap[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue;
@@ -390,7 +388,7 @@ async function fetchCarrierLogos(carriers: string[] = []) {
 async function fetchShippingRates() {
   try {
     const resp = await CarrierService.fetchShippingRates({ shipmentId: shipmentDetails.value.shipmentId });
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       shippingRates.value = resp.data?.shippingRates || [];
       const carriers = shippingRates.value.map((rate: any) => rate.actualCarrier || rate.actualCarrierCode || rate.carrierPartyId);
       if (shipmentDetails.value?.actualCarrierCode) carriers.push(shipmentDetails.value.actualCarrierCode);
@@ -510,7 +508,7 @@ async function updateCarrierAndShippingMethod(shippingRate: any) {
     }
 
     resp = await OrderService.updateRouteShipmentCarrierAndMethod(payload);
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       await generateShippingLabel();
     } else {
       throw resp.data;

@@ -33,9 +33,8 @@
   import { IonButtons, IonButton, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonText, IonTitle, IonToolbar, IonItem, modalController, onIonViewWillEnter } from "@ionic/vue";
   import { computed, ref } from "vue";
   import { close, saveOutline } from "ionicons/icons";
-  import { commonUtil } from "@/utils/commonUtil";
+  import { commonUtil } from "@common/utils/commonUtil";
   import { translate } from "@common";
-import { hasError } from "@common/utils/commonUtil";
   import logger from "@common/core/logger";
 
   import { CarrierService } from "@/services/CarrierService";
@@ -74,7 +73,7 @@ import { hasError } from "@common/utils/commonUtil";
       payload.sequenceNumber = sequenceNumber ? sequenceNumber + 1 : 1;
   
       const resp = await CarrierService.addCarrierShipmentMethod(payload);
-      if (hasError(resp)) {
+      if (commonUtil.hasError(resp)) {
         throw resp.data;
       }
     } catch (err: any) {
@@ -90,7 +89,7 @@ import { hasError } from "@common/utils/commonUtil";
   
     try {
       const resp = await CarrierService.createShipmentMethod(shipmentMethod.value);
-      if (!hasError(resp)) {
+      if (!commonUtil.hasError(resp)) {
         commonUtil.showToast(translate("Shipment method created successfully."));
         await updateCarrierShipmentMethodAssociation();
         await useCarrierStore().fetchShipmentMethodTypes();

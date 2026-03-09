@@ -63,9 +63,8 @@ import RejectReasonActionsPopver from "@/components/RejectReasonActionsPopver.vu
 import VarianceTypeActionsPopover from "@/components/VarianceTypeActionsPopover.vue";
 import { useUtilStore } from "@/store/util";
 import { UtilService } from "@/services/UtilService";
-import { commonUtil } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 import { DateTime } from "luxon";
-import { hasError } from "@common/utils/commonUtil";
 import logger from "@common/core/logger";
 
 const filteredReasons = ref([] as any);
@@ -201,7 +200,7 @@ const updateFulfillmentRejectReasonAssocStatus = async (event: any, reason: any)
       });
     }
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       await useUtilStore().fetchFulfillmentRejectReasons();
     } else {
       throw resp.data;

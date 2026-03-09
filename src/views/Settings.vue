@@ -19,8 +19,8 @@
               <ion-card-title>{{ userProfile?.partyName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" v-if="!useAuthStore().isEmbedded" @click="logout()">{{ translate("Logout") }}</ion-button>
-          <ion-button :standalone-hidden="!hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)" v-if="!useAuthStore().isEmbedded" fill="outline" @click="goToLaunchpad()">
+          <ion-button color="danger" v-if="!useUserStore().isEmbedded" @click="logout()">{{ translate("Logout") }}</ion-button>
+          <ion-button v-if="!useUserStore().isEmbedded" fill="outline" @click="goToLaunchpad()">
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
@@ -49,16 +49,16 @@
           </ion-card-content>
           <ion-item lines="none" v-if="orderLimitType === 'custom'">
             <ion-text>{{ currentFacilityDetails?.orderCount }}</ion-text>
-            <ion-progress-bar class="ion-margin" :value="currentFacilityDetails?.orderCount / fulfillmentOrderLimit"></ion-progress-bar>
-            <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{ currentFacilityDetails?.maximumOrderLimit }}</ion-chip>
+            <ion-progress-bar class="ion-margin" :value="currentFacilityDetails?.orderCount / (fulfillmentOrderLimit as any)"></ion-progress-bar>
+            <ion-chip :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')" :outline="true" @click="changeOrderLimitPopover">{{ currentFacilityDetails?.maximumOrderLimit }}</ion-chip>
           </ion-item>
           <ion-item lines="none" v-else-if="orderLimitType === 'unlimited'">
             <ion-label>{{ translate("orders allocated today", { orderCount: currentFacilityDetails?.orderCount }) }}</ion-label>
-            <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover">{{ translate("Unlimited") }}</ion-chip>
+            <ion-chip :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')" :outline="true" @click="changeOrderLimitPopover">{{ translate("Unlimited") }}</ion-chip>
           </ion-item>
           <ion-item lines="none" v-else>
             <ion-label>{{ translate("orders in fulfillment queue", { orderCount: currentFacilityDetails?.orderCount }) }}</ion-label>
-            <ion-chip :disabled="!hasPermission(Actions.APP_UPDT_STR_FULFLMNT_CONFIG)" :outline="true" @click="changeOrderLimitPopover" color="danger" fill="outline">{{ fulfillmentOrderLimit }}</ion-chip>
+            <ion-chip :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')" :outline="true" @click="changeOrderLimitPopover" color="danger" fill="outline">{{ fulfillmentOrderLimit }}</ion-chip>
           </ion-item>
         </ion-card>
 
@@ -71,7 +71,7 @@
           <ion-card-content>
             {{ translate("Control whether the store's inventory should be made available for online sales or not.") }}
           </ion-card-content>
-          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_UPDT_ECOM_INV_CONFIG) || !facilityGroupDetails?.facilityGroupId">
+          <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN') || !facilityGroupDetails?.facilityGroupId">
             <ion-toggle label-placement="start" v-model="isEComInvEnabled" @click.prevent="updateEComInvStatus($event)">{{ translate("Sell online") }}</ion-toggle>
           </ion-item>
         </ion-card>
@@ -126,10 +126,10 @@
             </ion-card-title>
           </ion-card-header>
           <ion-card-content v-html="barcodeContentMessage"></ion-card-content>
-          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_UPDT_FULFILL_FORCE_SCAN_CONFIG)">
+          <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
             <ion-toggle label-placement="start" :checked="isForceScanEnabled" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
           </ion-item>
-          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_BARCODE_IDENTIFIER_UPDATE)">
+          <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
             <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="barcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
               <ion-select-option v-for="identification in barcodeIdentificationOptions" :key="identification" :value="identification.goodIdentificationTypeId">{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
             </ion-select>
@@ -145,7 +145,7 @@
           <ion-card-content>
             {{ translate("Individual items within an order will be rejected without affecting the other items in the order.") }}
           </ion-card-content>
-          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PARTIAL_ORDER_REJECTION_CONFIG_UPDATE)">
+          <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
             <ion-toggle label-placement="start" :checked="isPartialOrderRejectionEnabled" @click.prevent="confirmPartialOrderRejection($event)">{{ translate("Partial rejections") }}</ion-toggle>
           </ion-item>
         </ion-card>
@@ -158,7 +158,7 @@
           <ion-card-content>
             {{ translate('When rejecting an item, automatically reject all other orders for that item as well.') }}
           </ion-card-content>
-          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_COLLATERAL_REJECTION_CONFIG_UPDATE)">
+          <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
             <ion-toggle label-placement="start" :checked="isCollateralRejectionEnabled" @click.prevent="confirmCollateralRejection($event)">{{ translate("Auto reject related items") }}</ion-toggle>
           </ion-item>
         </ion-card>
@@ -171,7 +171,7 @@
           <ion-card-content>
             {{ translate('Adjust the QOH along with ATP on rejection.') }}
           </ion-card-content>
-          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_AFFECT_QOH_CONFIG_UPDATE)">
+          <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
             <ion-toggle label-placement="start" :checked="affectQoh" @click.prevent="confirmAffectQohConfig($event)">{{ translate("Affect QOH") }}</ion-toggle>
           </ion-item>
         </ion-card>
@@ -185,16 +185,13 @@ import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTi
 import { computed, ref } from "vue";
 import { openOutline } from "ionicons/icons";
 import { UserService } from "@/services/UserService";
-import { commonUtil } from "@/utils/commonUtil";
-import { translate } from "@common";
-import { hasError } from "@common/utils/commonUtil";
-import { NotificationService } from "@/services/NotificationService";
 import emitter from "@common/core/emitter";
 import { useProductIdentificationStore } from "@/store/productIdentification";
-import { useUserStore as useDxpUserStore } from "@/store/user";
-import { useUserStore as useAuthStore } from "@/store/user";
+import { useUserStore } from "@/store/user";
 import logger from "@common/core/logger";
-import { Actions, hasPermission } from "@/authorization";
+
+import { DxpShopifyImg, useNotificationStore, translate, firebaseMessaging } from "@common";
+import { commonUtil } from "@common/utils/commonUtil";
 import { DateTime } from "luxon";
 import Image from "@/components/Image.vue";
 import OrderLimitPopover from "@/components/OrderLimitPopover.vue";
@@ -205,9 +202,9 @@ import DxpAppVersionInfo from "@/components/DxpAppVersionInfo.vue";
 import DxpProductIdentifier from "@/components/DxpProductIdentifier.vue";
 import DxpTimeZoneSwitcher from "@/components/DxpTimeZoneSwitcher.vue";
 import DxpLanguageSwitcher from "@/components/DxpLanguageSwitcher.vue";
-import { fireBaseUtil } from "@/utils/fireBaseUtil";
 import { UtilService } from "@/services/UtilService";
-import { useUserStore } from "@/store/user";
+
+const userStore = useUserStore();
 import { useUtilStore } from "@/store/util";
 import { useOrderStore } from "@/store/order";
 
@@ -219,21 +216,23 @@ const isEComInvEnabled = ref(false);
 const barcodeContentMessage = translate("Only allow shipped quantity to be incremented by scanning the barcode of products. If the identifier is not found, the scan will default to using the internal name.", { space: "<br /><br />" });
 
 const userProfile = computed(() => useUserStore().getUserProfile);
-const userPreference = computed(() => useUserStore().getUserPreference);
-const notificationPrefs = computed(() => useUserStore().getNotificationPrefs);
-const allNotificationPrefs = computed(() => useUserStore().getAllNotificationPrefs);
-const firebaseDeviceId = computed(() => useUserStore().getFirebaseDeviceId);
+const userPreference = computed(() => useUserStore().getUserPreferenceState);
+const notifications = computed(() => useNotificationStore().getNotifications);
+const unreadNotificationsStatus = computed(() => useNotificationStore().getUnreadNotificationsStatus);
+const notificationPrefs = computed(() => useNotificationStore().getNotificationPrefs);
+const allNotificationPrefs = computed(() => useNotificationStore().getAllNotificationPrefs);
+const firebaseDeviceId = computed(() => useNotificationStore().getFirebaseDeviceId);
 const isForceScanEnabled = computed(() => useUtilStore().isForceScanEnabled);
 const isPartialOrderRejectionEnabled = computed(() => useUtilStore().getPartialOrderRejectionConfig);
 const isCollateralRejectionEnabled = computed(() => useUtilStore().getCollateralRejectionConfig);
 const affectQoh = computed(() => useUtilStore().getAffectQohConfig);
 const barcodeIdentificationPref = computed(() => useUtilStore().getBarcodeIdentificationPref);
-const currentFacility = computed(() => useDxpUserStore().getCurrentFacility as any);
-const preferredStore = computed(() => useDxpUserStore().getCurrentEComStore);
+const currentFacility = computed(() => userStore.getCurrentFacility as any);
+const preferredStore = computed(() => userStore.getCurrentEComStore);
 const barcodeIdentificationOptions = computed(() => useProductIdentificationStore().getGoodIdentificationOptions);
 
 const updateEComStore = (selectedProductStore: any) => {
-  useUserStore().fetchEComStoreDependencies(selectedProductStore?.productStoreId);
+  userStore.fetchEComStoreDependencies(selectedProductStore?.productStoreId);
 };
 
 const getCurrentFacilityDetails = async () => {
@@ -245,7 +244,7 @@ const getCurrentFacilityDetails = async () => {
       fieldsToSelect: ["maximumOrderLimit", "facilityId"]
     });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       currentFacilityDetails.value = {
         ...currentFacilityDetails.value,
         ...resp.data
@@ -268,7 +267,7 @@ const getFacilityOrderCount = async () => {
       pageSize: 1,
       fieldsToSelect: ["entryDate", "lastOrderCount"]
     });
-    if (!hasError(resp) && resp.data.length) {
+    if (!commonUtil.hasError(resp) && resp.data.length) {
       currentFacilityDetails.value.orderCount = resp.data[0]?.lastOrderCount;
     } else {
       throw resp.data;
@@ -302,7 +301,7 @@ const getEcomInvStatus = async () => {
       pageSize: 1
     });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       facilityGroupDetails.value.facilityGroupId = resp.data[0].facilityGroupId;
       resp = await UtilService.getFacilityGroupAndMemberDetails({
         customParametersMap: {
@@ -315,7 +314,7 @@ const getEcomInvStatus = async () => {
         filterByDate: true
       });
 
-      if (!hasError(resp)) {
+      if (!commonUtil.hasError(resp)) {
         facilityGroupDetails.value = { ...facilityGroupDetails.value, ...resp.data.entityValueList[0] };
         isEComInvEnabled.value = true;
       } else {
@@ -331,7 +330,8 @@ const getEcomInvStatus = async () => {
 
 const logout = async () => {
   try {
-    await NotificationService.removeClientRegistrationToken(firebaseDeviceId.value, import.meta.env.VITE_NOTIF_APP_ID as any);
+    const notificationStore = useNotificationStore();
+    await notificationStore.unsubscribeTopic(firebaseDeviceId.value, import.meta.env.VITE_NOTIF_APP_ID as any);
   } catch (error) {
     logger.error(error);
   }
@@ -368,7 +368,9 @@ const changeOrderLimitPopover = async (ev: Event) => {
 
 const updateFacility = async (facility: any) => {
   await useUserStore().setFacility({ facility });
-  await useUserStore().fetchNotificationPreferences();
+  const userStore = useUserStore();
+  const notificationStore = useNotificationStore();
+  await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(commonUtil.getOMSInstanceName(userStore.getInstanceUrl), userStore.getCurrentFacility.facilityId, enumId));
   getCurrentFacilityDetails();
   getFacilityOrderCount();
   getEcomInvStatus();
@@ -384,7 +386,7 @@ const updateFacilityMaximumOrderLimit = async (maximumOrderLimit: number | strin
       maximumOrderLimit
     });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       currentFacilityDetails.value.maximumOrderLimit = maximumOrderLimit === "" ? null : maximumOrderLimit;
       commonUtil.showToast(translate("Order fulfillment capacity updated successfully"));
     } else {
@@ -406,7 +408,7 @@ const updateFacilityToGroup = async () => {
       thruDate: DateTime.now().toMillis()
     });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       isEComInvEnabled.value = false;
       commonUtil.showToast(translate("ECom inventory status updated successfully"));
     } else {
@@ -426,7 +428,7 @@ const addFacilityToGroup = async () => {
       facilityGroupId: facilityGroupDetails.value.facilityGroupId
     });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       isEComInvEnabled.value = true;
       commonUtil.showToast(translate("ECom inventory status updated successfully"));
     } else {
@@ -493,25 +495,18 @@ const setPrintPackingSlipPreference = (ev: any) => {
 
 const updateNotificationPref = async (enumId: string) => {
   let isToggledOn = false;
+  const userStore = useUserStore();
+  const notificationStore = useNotificationStore();
 
   try {
-    if (!fireBaseUtil.isFcmConfigured()) {
-      logger.error("FCM is not configured.");
-      commonUtil.showToast(translate("Notification preferences not updated. Please try again."));
-      return;
-    }
-
-    emitter.emit("presentLoader", { backdropDismiss: false });
-    const facilityId = currentFacility.value?.facilityId;
-    const topicName = fireBaseUtil.generateTopicName(facilityId, enumId);
-
-    const notificationPref = notificationPrefs.value.find((pref: any) => pref.enumId === enumId);
+    const notificationPref = notificationStore.getNotificationPrefs.find((pref: any) => pref.enumId === enumId);
+    const topicName = firebaseMessaging.generateTopicName(commonUtil.getOMSInstanceName(userStore.getInstanceUrl), currentFacility.value.facilityId, enumId);
     notificationPref.isEnabled
-      ? await NotificationService.unsubscribeTopic(topicName, import.meta.env.VITE_NOTIF_APP_ID as any)
-      : await NotificationService.subscribeTopic(topicName, import.meta.env.VITE_NOTIF_APP_ID as any);
+      ? await notificationStore.unsubscribeTopic(topicName, import.meta.env.VITE_NOTIF_APP_ID as any)
+      : await notificationStore.subscribeTopic(topicName, import.meta.env.VITE_NOTIF_APP_ID as any);
 
     notificationPref.isEnabled = !notificationPref.isEnabled;
-    await useUserStore().updateNotificationPreferences(notificationPrefs.value);
+    notificationStore.setNotificationPrefs(notificationPrefs.value);
     isToggledOn = notificationPref.isEnabled;
     commonUtil.showToast(translate("Notification preferences updated."));
   } catch (error) {
@@ -521,11 +516,20 @@ const updateNotificationPref = async (enumId: string) => {
   }
   try {
     if (!allNotificationPrefs.value.length && isToggledOn) {
-      await fireBaseUtil.initialiseFirebaseApp(JSON.parse(import.meta.env.VITE_FIREBASE_CONFIG as any), import.meta.env.VITE_FIREBASE_VAPID_KEY, fireBaseUtil.storeClientRegistrationToken, fireBaseUtil.addNotification);
+      await firebaseMessaging.initialiseFirebaseApp(
+        JSON.parse(import.meta.env.VITE_FIREBASE_CONFIG as any),
+        import.meta.env.VITE_FIREBASE_VAPID_KEY,
+        async (token: string) => {
+          await notificationStore.storeClientRegistrationToken(token, firebaseMessaging.generateDeviceId(notificationStore.getFirebaseDeviceId), import.meta.env.VITE_NOTIF_APP_ID);
+        },
+        (notification: any) => {
+          notificationStore.addNotification(notification);
+        }
+      );
     } else if (allNotificationPrefs.value.length == 1 && !isToggledOn) {
-      await NotificationService.removeClientRegistrationToken(firebaseDeviceId.value, import.meta.env.VITE_NOTIF_APP_ID as any);
+      await notificationStore.unsubscribeTopic(firebaseDeviceId.value, import.meta.env.VITE_NOTIF_APP_ID as any);
     }
-    await useUserStore().fetchAllNotificationPrefs();
+    await notificationStore.fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId);
   } catch (error) {
     logger.error(error);
   }
@@ -695,8 +699,10 @@ const setBarcodeIdentificationPref = async (value: string) => {
 onIonViewWillEnter(async () => {
   Promise.all([getCurrentFacilityDetails(), getFacilityOrderCount(), getEcomInvStatus()]);
 
+  const userStore = useUserStore();
+  const notificationStore = useNotificationStore();
   await useUtilStore().fetchProductStoreSettings(preferredStore.value.productStoreId);
-  await useUserStore().fetchNotificationPreferences();
+  await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(commonUtil.getOMSInstanceName(userStore.getInstanceUrl), userStore.getCurrentFacility.facilityId, enumId));
 });
 </script>
 

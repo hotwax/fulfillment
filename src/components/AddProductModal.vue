@@ -26,8 +26,8 @@
           <DxpShopifyImg :src="product.mainImageUrl" />
         </ion-avatar>
         <ion-label>
-          <h2>{{ getProductIdentificationValue(productIdentificationPref.primaryId, product) ? getProductIdentificationValue(productIdentificationPref.primaryId, product) : product?.internalName }}</h2>
-          <p v-if="getProductIdentificationValue(productIdentificationPref.secondaryId, product) !== 'null'">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
+          <h2>{{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, product) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, product) : product?.internalName }}</h2>
+          <p v-if="commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, product) !== 'null'">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
         </ion-label>
 
         <!-- Show Add button if product is NOT in order -->
@@ -61,7 +61,7 @@ import { ProductService } from '@/services/ProductService';
 import { translate, emitter } from "@common";
 import { useProductIdentificationStore } from '@/store/productIdentification';
 import logger from '@common/core/logger';
-import { getProductIdentificationValue } from "@/utils/commonUtil";
+import { commonUtil } from "@common/utils/commonUtil";
 
 const props = defineProps(["query", "addProductToQueue", "isProductInOrder", "pendingProductIds"]);
 const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref)

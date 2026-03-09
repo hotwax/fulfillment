@@ -16,17 +16,19 @@ import emitter from "@common/core/emitter";
 import { Settings } from "luxon";
 import logger from "@common/core/logger";
 import { init } from "@module-federation/runtime";
-import { fireBaseUtil } from "@/utils/fireBaseUtil";
+import { firebaseMessaging, useNotificationStore } from "@common";
 import { useUserStore } from "@/store/user";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import router from './router';
+import { useAuth } from "@/composables/auth";
+
+const { isAuthenticated } = useAuth();
 const loader = ref<any>(null);
 const appFirebaseConfig = JSON.parse(import.meta.env.VITE_FIREBASE_CONFIG as any);
 const appFirebaseVapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
-const userToken = computed(() => useUserStore().getUserToken);
 const userProfile = computed(() => useUserStore().getUserProfile);
-const allNotificationPrefs = computed(() => useUserStore().getAllNotificationPrefs);
+const allNotificationPrefs = computed(() => useNotificationStore().getAllNotificationPrefs);
 
 const presentLoader = async (options = { message: "", backdropDismiss: false }) => {
   if (options.message && loader.value) dismissLoader();
@@ -82,7 +84,7 @@ onMounted(async () => {
     backdropDismiss: false
   });
 
-  emitter.on("presentLoader", presentLoader);
+  emitter.on("presentLoader", (options: any) => presentLoader(options));
   emitter.on("dismissLoader", dismissLoader);
   emitter.on("playAnimation", playAnimation);
 
@@ -91,22 +93,28 @@ onMounted(async () => {
   }
 
   const currentEComStore: any = useUserStore().getCurrentEComStore;
-  if (userToken.value && currentEComStore?.productStoreId) {
-    await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId).catch((error) => logger.error(error));
 
-    if (appFirebaseConfig && appFirebaseConfig.apiKey && allNotificationPrefs.value?.length) {
-      await fireBaseUtil.initialiseFirebaseApp(
-        appFirebaseConfig,
-        appFirebaseVapidKey,
-        fireBaseUtil.storeClientRegistrationToken,
-        fireBaseUtil.addNotification
-      );
+    if (isAuthenticated.value && currentEComStore?.productStoreId) {
+      await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId).catch((error) => logger.error(error));
+
+      if (appFirebaseConfig && appFirebaseConfig.apiKey && allNotificationPrefs.value?.length) {
+        const notificationStore = useNotificationStore();
+        await firebaseMessaging.initialiseFirebaseApp(
+          appFirebaseConfig,
+          appFirebaseVapidKey,
+          async (token: string) => {
+            await notificationStore.storeClientRegistrationToken(token, firebaseMessaging.generateDeviceId(notificationStore.getFirebaseDeviceId), import.meta.env.VITE_NOTIF_APP_ID);
+          },
+          (notification: any) => {
+            notificationStore.addNotification(notification);
+          }
+        );
+      }
     }
-  }
 });
 
 onUnmounted(() => {
-  emitter.off("presentLoader", presentLoader);
+  emitter.off("presentLoader", (options: any) => presentLoader(options));
   emitter.off("dismissLoader", dismissLoader);
   emitter.off("playAnimation", playAnimation);
 });
