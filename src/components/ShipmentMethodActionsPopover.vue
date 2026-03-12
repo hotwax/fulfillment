@@ -35,13 +35,14 @@ import { defineProps } from "vue";
   import { pencilOutline, calendarClearOutline, codeWorkingOutline, listOutline, unlinkOutline } from "ionicons/icons";
   import EditShipmentMethodSequenceModal from "@/components/EditShipmentMethodSequenceModal.vue";
 import { commonUtil, logger, translate } from "@common";
-  import { CarrierService } from "@/services/CarrierService";
-
+  import { useCarrier } from "@/composables/useCarrier";
   import { useCarrierStore } from "@/store/carrier";
   
   const props = defineProps(["shipmentMethod"]);
-  const currentCarrier = computed(() => useCarrierStore().getCurrent);
-  const shipmentMethods = computed(() => useCarrierStore().getShipmentMethods);
+  const { removeCarrierShipmentMethod: removeCarrierShipmentMethodComposable, renameShipmentMethod: renameShipmentMethodComposable } = useCarrier();
+  const carrierStore = useCarrierStore();
+  const currentCarrier = computed(() => carrierStore.getCurrent);
+  const shipmentMethods = computed(() => carrierStore.getShipmentMethods);
   
   const closePopover = () => {
     popoverController.dismiss();
@@ -81,7 +82,7 @@ import { commonUtil, logger, translate } from "@common";
             if (deliveryDays !== currentDeliveryDays) {
               const messages = { successMessage: "Delivery days updated.", errorMessage: "Failed to update delivery days." };
               const updatedData = { fieldName: "deliveryDays", fieldValue: deliveryDays };
-              await useCarrierStore().updateCarrierShipmentMethod({ shipmentMethod: props.shipmentMethod, updatedData, messages });
+              await carrierStore.updateCarrierShipmentMethod({ shipmentMethod: props.shipmentMethod, updatedData, messages });
             }
           }
         }
@@ -106,7 +107,7 @@ import { commonUtil, logger, translate } from "@common";
             if (carrierServiceCode !== currentCarrierServiceCode) {
               const messages = { successMessage: "Carrier code updated.", errorMessage: "Failed to update carrier code." };
               const updatedData = { fieldName: "carrierServiceCode", fieldValue: carrierServiceCode };
-              await useCarrierStore().updateCarrierShipmentMethod({ shipmentMethod: props.shipmentMethod, updatedData, messages });
+              await carrierStore.updateCarrierShipmentMethod({ shipmentMethod: props.shipmentMethod, updatedData, messages });
             }
           }
         }
@@ -125,21 +126,11 @@ import { commonUtil, logger, translate } from "@common";
   };
   
   const removeCarrierShipmentMethod = async () => {
-    const currentCarrierShipmentMethods = JSON.parse(JSON.stringify(currentCarrier.value.shipmentMethods));
     try {
-      const resp = await CarrierService.removeCarrierShipmentMethod(props.shipmentMethod);
-      if (!commonUtil.hasError(resp)) {
-        delete currentCarrierShipmentMethods[props.shipmentMethod.shipmentMethodTypeId];
-        commonUtil.showToast(translate("Carrier and shipment method association updated successfully."));
-        await useCarrierStore().updateCurrentCarrierShipmentMethods(currentCarrierShipmentMethods);
-        await useCarrierStore().checkAssociatedShipmentMethods();
-        closePopover();
-      } else {
-        throw resp.data;
-      }
+      await removeCarrierShipmentMethodComposable(props.shipmentMethod);
+      closePopover();
     } catch (err) {
-      commonUtil.showToast(translate("Failed to update product store and shipment method association."));
-      logger.error(err);
+      // Error handled in composable
     }
   };
   
@@ -152,20 +143,10 @@ import { commonUtil, logger, translate } from "@common";
       }
   
       if (updatedShipmentMethodName != shipmentMethod.description) {
-        const resp = await CarrierService.updateShipmentMethodType({ shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId, description: updatedShipmentMethodName });
-        if (!commonUtil.hasError(resp)) {
-          commonUtil.showToast(translate("Shipment method renamed."));
-          const updatedShipmentMethods = JSON.parse(JSON.stringify(shipmentMethods.value));
-          const updatedShipmentMethod = updatedShipmentMethods[shipmentMethod.shipmentMethodTypeId];
-          updatedShipmentMethod.description = updatedShipmentMethodName;
-          useCarrierStore().updateShipmentMethods(updatedShipmentMethods);
-        } else {
-          throw resp.data;
-        }
+        await renameShipmentMethodComposable(shipmentMethod, updatedShipmentMethodName);
       }
     } catch (error) {
-      commonUtil.showToast(translate("Failed to rename facility group."));
-      logger.error("Failed to rename facility group.", error);
+      logger.error("Failed to rename shipment method.", error);
     }
   };
   </script>

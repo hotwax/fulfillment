@@ -36,17 +36,17 @@
 
 <script setup lang="ts">
 import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonSpinner, IonTitle, IonToolbar, modalController } from "@ionic/vue";
-import ShopifyService from '@/services/ShopifyService';
 import { computed, defineProps, ref } from "vue";
 import { cogOutline, closeOutline, printOutline } from "ionicons/icons";
-import { commonUtil, logger, translate } from "@common";
+import { commonUtil, logger, ShopifyService, translate } from "@common";
 import { useUserStore } from "@/store/user";
 import { DateTime } from "luxon";
-import { UtilService } from "@/services/UtilService";
+import { useCarrier } from "@/composables/useCarrier"
 
 const props = defineProps(["selectedCarrierPartyId", "carrierConfiguration"]);
 const currentFacility = computed(() => useUserStore().getCurrentFacility);
 const loadingContentId = ref(null as any);
+const carrierService = useCarrier();
 
 const closeModal = () => {
   modalController.dismiss({ dismissed: true });
@@ -62,7 +62,7 @@ const downloadCarrierManifest = async (manifest: any) => {
   };
 
   try {
-        const resp = await UtilService.downloadCarrierManifest(payload);
+        const resp = await carrierService.downloadCarrierManifest(payload);
 
         if (!resp || resp.status !== 200 || commonUtil.hasError(resp)) {
           throw resp.data
@@ -77,7 +77,7 @@ const downloadCarrierManifest = async (manifest: any) => {
           if (ShopifyService.getApp()) {
             ShopifyService.redirect(pdfUrl);
           } else {
-            window.open(pdfUrl, "_blank").focus();
+            window.open(pdfUrl, "_blank")?.focus();
           }
         }
         catch {
@@ -87,6 +87,6 @@ const downloadCarrierManifest = async (manifest: any) => {
         logger.error("Failed to print manifest", err)
         commonUtil.showToast(translate("Failed to print manifest"));
       }
-      this.loadingContentId = null;
+      loadingContentId.value = null;
 };
 </script>

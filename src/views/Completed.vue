@@ -143,15 +143,16 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
-                <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate(order.missingLabelImage ? "Regenerate Shipping Label" : "Print Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
                 </ion-button>
-                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="printPackingSlip(order)">
+                <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="localPrintPackingSlip(order)">
                   {{ translate("Print Customer Letter") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingPackingSlip" name="crescent" />
                 </ion-button>
+
               </div>
               <div class="desktop-only">
                 <ion-button v-if="order.missingLabelImage" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
@@ -207,8 +208,9 @@ import { useUserStore } from "@/store/user";
 
 const userStore = useUserStore();
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
-import { OrderService } from "@/services/OrderService";
-import { UtilService } from "@/services/UtilService";
+import useOrder from "@/composables/useOrder";
+import { useCarrier } from "@/composables/useCarrier"
+
 import ShippingLabelErrorModal from "@/components/ShippingLabelErrorModal.vue";
 
 
@@ -223,6 +225,10 @@ import { useStockStore } from "@/store/stock";
 import { useUtilStore } from "@/store/util";
 
 const router = useRouter();
+const orderStore = useOrderStore();
+const { printPackingSlip, printShippingLabel, printCustomDocuments } = useOrder();
+const carrierService = useCarrier();
+
 const shipmentMethods = ref([] as Array<any>);
 const carrierPartyIds = ref([] as Array<any>);
 const searchedQuery = ref("");
@@ -316,7 +322,8 @@ const updateOrderQuery = async (size: any) => {
 
 const shipOrder = async (order: any) => {
   try {
-    const resp = await OrderService.shipOrder({ shipmentId: order.shipmentId });
+    const resp = await orderStore.shipOrder({ shipmentId: order.shipmentId }) as any;
+
 
     if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Order shipped successfully"));
@@ -364,7 +371,8 @@ const bulkShipOrders = async () => {
           const shipmentIds = orderList.map((order: any) => order.shipmentId);
 
           try {
-            const resp = await OrderService.bulkShipOrders({ shipmentIds });
+            const resp = await orderStore.bulkShipOrders({ shipmentIds }) as any;
+
 
             if (!commonUtil.hasError(resp)) {
               !trackingRequiredAndMissingCodeOrders.length
@@ -404,7 +412,8 @@ const fetchShipmentFacets = async () => {
     productStoreId: currentEComStore.value.productStoreId
   };
   try {
-    const resp = await OrderService.fetchShipmentFacets(params);
+    const resp = await orderStore.fetchShipmentFacets(params) as any;
+
 
     if (!commonUtil.hasError(resp)) {
       shipmentMethods.value = resp.data.shipmentMethodTypeIds;
@@ -466,7 +475,8 @@ const unpackOrder = async (order: any) => {
         text: translate("Unpack"),
         handler: async () => {
           try {
-            const resp = await OrderService.unpackOrder({ shipmentId: order.shipmentId });
+            const resp = await orderStore.unpackOrder({ shipmentId: order.shipmentId }) as any;
+
 
             if (resp.status == 200 && !commonUtil.hasError(resp)) {
               commonUtil.showToast(translate("Order unpacked successfully"));
@@ -488,18 +498,18 @@ const hasPackedShipments = (order: any) => {
   return order.statusId === "SHIPMENT_PACKED";
 };
 
-const printPackingSlip = async (order: any) => {
+const localPrintPackingSlip = async (order: any) => {
   if (order.isGeneratingPackingSlip) {
     return;
   }
 
   const shipmentIds = [order.shipmentId];
   order.isGeneratingPackingSlip = true;
-  await OrderService.printPackingSlip(shipmentIds);
+  await printPackingSlip(shipmentIds);
   order.isGeneratingPackingSlip = false;
 };
 
-const printShippingLabel = async (order: any) => {
+const localPrintShippingLabel = async (order: any) => {
   const shipmentIds = [order.shipmentId];
 
   const shippingLabelPdfUrls: string[] = Array.from(
@@ -515,15 +525,17 @@ const printShippingLabel = async (order: any) => {
     return;
   }
 
-  await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
+  await printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
   const internationalInvoiceUrls = order.shipmentPackages
     ?.filter((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl)
     .map((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl) || [];
 
   if (internationalInvoiceUrls.length > 0) {
-    await OrderService.printCustomDocuments(internationalInvoiceUrls);
+    await printCustomDocuments(internationalInvoiceUrls);
   }
 };
+
+
 
 const regenerateShippingLabel = async (order: any) => {
   if (productStoreShipmentMethCount.value <= 0) {
@@ -540,11 +552,12 @@ const regenerateShippingLabel = async (order: any) => {
   if (order.missingLabelImage) {
     const response = await orderUtil.retryShippingLabel(order);
     if (response?.isGenerated) {
-      await printShippingLabel(response.order);
+      await localPrintShippingLabel(response.order);
     }
   } else {
-    await printShippingLabel(order);
+    await localPrintShippingLabel(order);
   }
+
 
   order.isGeneratingShippingLabel = false;
 };
@@ -610,7 +623,7 @@ const fetchConfiguredCarrierService = async (carrierIds: Array<string>) => {
     pageSize: carrierIds.length * 2
   };
   try {
-    const resp = await UtilService.fetchConfiguredCarrierService(payload);
+    const resp = await carrierService.fetchConfiguredCarrierService(payload);
 
     if (!commonUtil.hasError(resp) && resp.data?.length) {
       carrierConfiguration.value = resp.data.reduce((carriers: any, carrier: any) => {
@@ -645,7 +658,7 @@ const fetchCarrierManifestInformation = async (carrierIds: Array<string>) => {
       filterByDate: true
     };
     try {
-      const resp = await UtilService.fetchConfiguredCarrierService(payload);
+      const resp = await carrierService.fetchConfiguredCarrierService(payload);
 
       if (!commonUtil.hasError(resp) && resp.data?.entityValueList?.length) {
         if (carrierConfiguration.value[partyId]) {
@@ -683,7 +696,7 @@ const generateCarrierManifest = async () => {
   };
 
   try {
-    await UtilService.generateManifest(payload);
+    await carrierService.generateManifest(payload);
     commonUtil.showToast(translate("Manifest has been generated successfully"));
     await fetchCarrierManifestInformation([selectedCarrierPartyId.value]);
   } catch (err) {

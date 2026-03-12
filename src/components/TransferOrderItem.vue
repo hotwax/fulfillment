@@ -79,13 +79,11 @@ import { computed, defineProps, nextTick, ref, watch } from "vue";
 import { caretDownOutline, checkmarkDone, closeCircleOutline, removeCircleOutline } from "ionicons/icons";
 import { commonUtil, DxpShopifyImg, emitter, logger, translate } from "@common";
 import { useProductIdentificationStore } from "@/store/productIdentification";
-import { TransferOrderService } from "@/services/TransferOrderService";
-import { OrderService } from "@/services/OrderService";
+import { useTransferOrderStore } from "@/store/transferorder";
 import { useRouter } from "vue-router";
 
 import ShippedHistoryModal from "@/components/ShippedHistoryModal.vue";
 import ReportIssuePopover from "./ReportIssuePopover.vue";
-import { useTransferOrderStore } from "@/store/transferorder";
 import { useProductStore } from "@/store/product";
 import { useUtilStore } from "@/store/util";
 
@@ -192,6 +190,7 @@ const getErrorText = () => {
 };
 
 const openRejectReasonPopover = async (ev: Event, selectedItem: any) => {
+  console.log("===rejectReasons===", rejectReasons.value)
   const reportIssuePopover = await popoverController.create({
     component: ReportIssuePopover,
     componentProps: { rejectReasons: rejectReasons.value },
@@ -237,7 +236,8 @@ const updateItemQuantity = async (selectedItem: any) => {
   if (itemQuantity <= 0) return;
 
   try {
-    const resp = await TransferOrderService.updateOrderItem({ orderId: currentOrder.value.orderId, orderItemSeqId: selectedItem.orderItemSeqId, quantity: itemQuantity });
+    const payload = { orderId: currentOrder.value.orderId, orderItemSeqId: selectedItem.orderItemSeqId, quantity: itemQuantity };
+    const resp = await useTransferOrderStore().updateOrderItem(payload);
     if (!commonUtil.hasError(resp)) {
       currentItem.quantity = itemQuantity;
       currentItem.pickedQuantity = itemQuantity;
@@ -254,7 +254,8 @@ const updateItemQuantity = async (selectedItem: any) => {
 const removeOrderItem = async (selectedItem: any) => {
   if (!selectedItem || !selectedItem.orderItemSeqId) return;
   try {
-    const resp = await OrderService.deleteOrderItem({ orderId: currentOrder.value.orderId, orderItemSeqId: selectedItem.orderItemSeqId });
+    const payload = { orderId: currentOrder.value.orderId, orderItemSeqId: selectedItem.orderItemSeqId };
+    const resp = await useTransferOrderStore().deleteOrderItem(payload);
     if (!commonUtil.hasError(resp)) {
       currentOrder.value.items = currentOrder.value.items?.filter((i: any) => i.orderItemSeqId !== selectedItem.orderItemSeqId);
       await useTransferOrderStore().updateCurrentTransferOrder(currentOrder.value);

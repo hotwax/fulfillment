@@ -59,10 +59,11 @@ import { useTransferOrderStore } from "@/store/transferorder";
 import { modalController } from '@ionic/vue';
 import { translate, emitter, logger, commonUtil } from "@common";
 import { useProductIdentificationStore } from '@/store/productIdentification';
-import { ProductService } from '@/services/ProductService';
+import { useProductStore } from '@/store/product';
 
 const props = defineProps(["query", "addProductToQueue", "isProductInOrder", "pendingProductIds"]);
 const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref)
+const productStore = useProductStore();
 
 const queryString = ref(props.query)
 const products = ref([]) as any;
@@ -118,7 +119,7 @@ async function getProducts(vSize?: any, vIndex?: any) {
   isLoading.value = true;
 
   try {
-    const resp = await ProductService.searchProducts({
+    const resp = await productStore.searchProducts({
       keyword: queryString.value.trim(),
       viewSize, 
       viewIndex,

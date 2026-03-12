@@ -54,8 +54,10 @@ import { IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonHeader, Ion
 import { computed, defineProps, onMounted, ref } from "vue";
 import { close, closeCircle, saveOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
-import { OrderService } from "@/services/OrderService";
-import { UtilService } from "@/services/UtilService";
+import { useOrderStore } from "@/store/order";
+import { useUtil } from "@/composables/useUtil";
+
+const orderStore = useOrderStore();
 import { DateTime } from "luxon";
 import { useUserStore } from "@/store/user";
 
@@ -115,7 +117,7 @@ const findPickers = async (pickerIds?: Array<any>) => {
   };
 
   try {
-    const resp = await UtilService.getAvailablePickers(payload);
+    const resp = await useUtil().getAvailablePickers(payload);
     if (resp.status === 200 && !commonUtil.hasError(resp)) {
       pickers.value = resp.data.response.docs.map((picker: any) => ({
         name: picker.groupName ? picker.groupName : (picker.firstName || picker.lastName) ? (picker.firstName ? picker.firstName : "") + (picker.lastName ? " " + picker.lastName : "") : picker.partyId,
@@ -179,7 +181,7 @@ const resetPicker = async () => {
       }
     });
 
-    const resp = await OrderService.resetPicker({ picklistId: props.selectedPicklist.id, roles });
+    const resp = await orderStore.resetPicker({ picklistId: props.selectedPicklist.id, roles });
     if (resp.status === 200 && !commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Pickers successfully replaced in the picklist with the new selections."));
       editedPicklist.value = {

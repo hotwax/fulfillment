@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from "pinia"
 import piniaPersist from "pinia-plugin-persistedstate"
 import App from './App.vue'
 import router from './router';
-import { logger, createDxpI18n } from '@common';
+import { logger, createDxpI18n, imagePreview } from '@common';
 
 import { IonicVue } from '@ionic/vue';
 
@@ -53,5 +53,6 @@ const app = createApp(App)
 // useUserStore().getUserPermissions;
 
 router.isReady().then(() => {
+  app.directive('image-preview', imagePreview)
   app.mount('#app');
 });

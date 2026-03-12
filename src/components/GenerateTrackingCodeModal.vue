@@ -65,7 +65,7 @@
           <ion-item>
             <template v-if="carrierMethods && carrierMethods.length > 0">
               <ion-select :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE'" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
-                <ion-select-option v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
+                <ion-select-option v-for="method in carrierMethods" :key="carrierPartyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
               </ion-select>
             </template>
             <template v-else>
@@ -99,7 +99,7 @@
           <ion-item>
             <template v-if="carrierMethods && carrierMethods.length > 0">
               <ion-select :disabled="!order.missingLabelImage || shipmentMethodTypeId === 'SHIP_TO_STORE'" :label="translate('Method')" v-model="shipmentMethodTypeId" interface="popover">
-                <ion-select-option v-for="method in carrierMethods" :key="carrierMethods.partyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
+                <ion-select-option v-for="method in carrierMethods" :key="carrierPartyId + method.shipmentMethodTypeId" :value="method.shipmentMethodTypeId">{{ translate(method.description) }}</ion-select-option>
               </ion-select>
             </template>
             <template v-else>
@@ -128,7 +128,7 @@ import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, I
 import { computed, defineProps, onMounted, ref } from "vue";
 import { archiveOutline, closeOutline, copyOutline, informationCircleOutline, openOutline, trashOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
-import { OrderService } from "@/services/OrderService";
+import { useOrderStore } from "@/store/order";
 import { useRouter } from "vue-router";
 import { useCarrierStore } from "@/store/carrier";
 import { useUserStore } from "@/store/user";
@@ -136,6 +136,7 @@ import { useUserStore } from "@/store/user";
 const props = defineProps(["order", "updateCarrierShipmentDetails", "executePackOrder", "rejectEntireOrder", "updateParameter", "documentOptions", "packingError", "isDetailPage", "initialShipmentMethodTypeId"]);
 
 const router = useRouter();
+const orderStore = useOrderStore();
 const shippingRejectionReason = "NO_VARIANCE_LOG";
 const rejectOrder = ref(false);
 const rejectionComment = ref("");
@@ -225,7 +226,7 @@ const confirmSave = async () => {
     isSuccess = await props.rejectEntireOrder(order, "report");
     if (isSuccess) {
       try {
-        OrderService.createCommunicationEvent({ communicationEventTypeId: "FULFILLMENT_ERROR", statusId: "COM_COMPLETE", partyIdFrom: userProfile.value.partyId, content: rejectionComment.value });
+        orderStore.createCommunicationEvent({ communicationEventTypeId: "FULFILLMENT_ERROR", statusId: "COM_COMPLETE", partyIdFrom: userProfile.value.partyId, content: rejectionComment.value });
       } catch (e) {
         logger.log("Error in creating communication event for order rejection due to shipping label error");
       }
@@ -269,7 +270,7 @@ const updateCarrierAndShippingMethod = async (partyId: string, methodTypeId: str
       isTrackingRequired: trackingRequired ? trackingRequired : "Y"
     };
 
-    const resp = await OrderService.updateShipmentCarrierAndMethod(params);
+    const resp = await orderStore.updateShipmentCarrierAndMethod(params);
     if (commonUtil.hasError(resp)) {
       throw resp.data;
     }

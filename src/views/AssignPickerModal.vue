@@ -54,12 +54,14 @@ import { computed, defineProps, onMounted, ref } from "vue";
 import { closeOutline, closeCircle, saveOutline } from "ionicons/icons";
 import { commonUtil, emitter, logger, translate } from "@common";
 import { useUserStore as useDxpUserStore } from "@/store/user";
-import { UtilService } from "@/services/UtilService";
-import { OrderService } from "@/services/OrderService";
-
+import { useUtil } from "@/composables/useUtil";
 import { useOrderStore } from "@/store/order";
+import useOrder from "@/composables/useOrder";
 
 const props = defineProps(["order"]);
+const orderStore = useOrderStore();
+const { printPicklist: printPicklistAction } = useOrder();
+
 const userStore = useDxpUserStore();
 const currentFacility = computed(() => userStore.getCurrentFacility);
 const openOrders = computed(() => useOrderStore().getOpenOrders);
@@ -120,13 +122,13 @@ const printPicklist = async () => {
   };
 
   try {
-    resp = await OrderService.createPicklist(payload);
+    resp = await orderStore.createPicklist(payload);
     if (resp.status === 200 && !commonUtil.hasError(resp)) {
       closeModal({ picklistId: resp.data.picklistId, shipmentIds: resp.data.shipmentIds });
       commonUtil.showToast(translate("Picklist created successfully"));
 
       if (resp.data.picklistId) {
-        await OrderService.printPicklist(resp.data.picklistId);
+        await printPicklistAction(resp.data.picklistId);
       }
 
       await useOrderStore().findOpenOrders();
@@ -178,7 +180,7 @@ const findPickers = async () => {
   };
 
   try {
-    const resp = await UtilService.getAvailablePickers(payload);
+    const resp = await useUtil().getAvailablePickers(payload);
     if (resp.status === 200 && !commonUtil.hasError(resp)) {
       pickers.value = resp.data.response.docs.map((picker: any) => ({
         name: picker.groupName ? picker.groupName : (picker.firstName || picker.lastName) ? (picker.firstName ? picker.firstName : "") + (picker.lastName ? " " + picker.lastName : "") : picker.partyId,

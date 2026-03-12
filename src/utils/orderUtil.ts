@@ -1,10 +1,10 @@
+
 import { useOrderStore } from "@/store/order";
 import { useProductStore } from "@/store/product";
 import { commonUtil, translate } from "@common";
 
-import { OrderService } from '@/services/OrderService';
-
 const orderCategoryParameters = {
+
   'Open': {
     'quantityNotAvailable': {
       'value': 0
@@ -113,8 +113,9 @@ const removeKitComponents = (order: any) => {
 
 const retryShippingLabel = async (order: any, showSuccessToast = true) => {
   let isGenerated = false;
-  await OrderService.retryShippingLabel(order.shipmentId)
+  await useOrderStore().retryShippingLabel(order.shipmentId)
   // Updated shipment package detail is needed if the label pdf url is generated on retrying shipping label generation
+
   // Temporarily handling this in app but should be handled in backend
   // Refetching the order tracking detail irrespective of api response since currently in SHIPHAWK api returns error whether label is generated
   order = await useOrderStore().updateShipmentPackageDetail(order)

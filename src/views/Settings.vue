@@ -33,8 +33,8 @@
 
       <section>
         <DxpOmsInstanceNavigator />
-        <DxpProductStoreSelector @updateEComStore="updateEComStore($event)" />
-        <DxpFacilitySwitcher @updateFacility="updateFacility($event)" />
+        <DxpProductStoreSelector @updateProductStore="refreshProductStoreData($event)" />
+        <DxpFacilitySwitcher @updateFacility="fetchFacilityDependencies($event)" />
 
         <ion-card>
           <ion-card-header>
@@ -184,8 +184,8 @@
 import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonProgressBar, IonSelect, IonSelectOption, IonTitle, IonText, IonToggle, IonToolbar, alertController, popoverController, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { openOutline } from "ionicons/icons";
-import { UserService } from "@/services/UserService";
-import { commonUtil, DxpShopifyImg, emitter, firebaseMessaging, logger, translate, useNotificationStore } from "@common";
+import { useFacility } from "@/composables/useFacility";
+import { commonUtil, DxpShopifyImg, emitter, firebaseMessaging,logger, translate, useNotificationStore } from "@common";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 import { useUserStore } from "@/store/user";
 
@@ -199,11 +199,13 @@ import DxpAppVersionInfo from "@/components/DxpAppVersionInfo.vue";
 import DxpProductIdentifier from "@/components/DxpProductIdentifier.vue";
 import DxpTimeZoneSwitcher from "@/components/DxpTimeZoneSwitcher.vue";
 import DxpLanguageSwitcher from "@/components/DxpLanguageSwitcher.vue";
-import { UtilService } from "@/services/UtilService";
+import { useUtil } from "@/composables/useUtil";
 
 const userStore = useUserStore();
 import { useUtilStore } from "@/store/util";
 import { useOrderStore } from "@/store/order";
+import { useAuth } from "@/composables/auth";
+import router from "@/router";
 
 const currentFacilityDetails = ref({} as any);
 const orderLimitType = ref("unlimited");
@@ -228,14 +230,14 @@ const currentFacility = computed(() => userStore.getCurrentFacility as any);
 const preferredStore = computed(() => userStore.getCurrentEComStore);
 const barcodeIdentificationOptions = computed(() => useProductIdentificationStore().getGoodIdentificationOptions);
 
-const updateEComStore = (selectedProductStore: any) => {
+const refreshProductStoreData = (selectedProductStore: any) => {
   userStore.fetchEComStoreDependencies(selectedProductStore?.productStoreId);
 };
 
 const getCurrentFacilityDetails = async () => {
   let resp: any;
   try {
-    resp = await UserService.getFacilityDetails({
+    resp = await useFacility().getFacilityDetails({
       facilityId: currentFacility.value?.facilityId,
       pageSize: 1,
       fieldsToSelect: ["maximumOrderLimit", "facilityId"]
@@ -258,7 +260,7 @@ const getCurrentFacilityDetails = async () => {
 const getFacilityOrderCount = async () => {
   let resp: any;
   try {
-    resp = await UserService.getFacilityOrderCount({
+    resp = await useFacility().getFacilityOrderCount({
       facilityId: currentFacility.value?.facilityId,
       entryDate: DateTime.now().toFormat("yyyy-MM-dd"),
       pageSize: 1,
@@ -292,7 +294,7 @@ const getEcomInvStatus = async () => {
     isEComInvEnabled.value = false;
     facilityGroupDetails.value = {};
 
-    resp = await UserService.getFacilityGroupDetails({
+    resp = await useFacility().getFacilityGroupDetails({
       facilityGroupTypeId: "SHOPIFY_GROUP_FAC",
       fieldsToSelect: ["facilityGroupId", "facilityGroupTypeId"],
       pageSize: 1
@@ -300,7 +302,7 @@ const getEcomInvStatus = async () => {
 
     if (!commonUtil.hasError(resp)) {
       facilityGroupDetails.value.facilityGroupId = resp.data[0].facilityGroupId;
-      resp = await UtilService.getFacilityGroupAndMemberDetails({
+      resp = await useFacility().getFacilityGroupAndMemberDetails({
         customParametersMap: {
           facilityId: currentFacility.value?.facilityId,
           facilityGroupId: facilityGroupDetails.value.facilityGroupId,
@@ -325,6 +327,7 @@ const getEcomInvStatus = async () => {
   }
 };
 
+
 const logout = async () => {
   try {
     const notificationStore = useNotificationStore();
@@ -333,15 +336,16 @@ const logout = async () => {
     logger.error(error);
   }
 
-  useUserStore().logout({ isUserUnauthorised: false }).then((redirectionUrl: any) => {
+  useAuth().logout({ isUserUnauthorised: false }).then((redirectionUrl) => {
+    // redirectionUrl is only present when SSO enables, thus when not present redirect user to login
     useOrderStore().clearOrders();
-
-    if (!redirectionUrl) {
-      const redirectUrl = window.location.origin + "/login";
-      window.location.href = `${import.meta.env.VITE_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+    if(!redirectionUrl) {
+      router.replace("/login");
+    } else {
+      window.location.href = redirectionUrl
     }
-  });
-};
+  })
+}
 
 const goToLaunchpad = () => {
   window.location.href = `${import.meta.env.VITE_LOGIN_URL}`
@@ -363,11 +367,12 @@ const changeOrderLimitPopover = async (ev: Event) => {
   }
 };
 
-const updateFacility = async (facility: any) => {
-  await useUserStore().setFacility({ facility });
+const fetchFacilityDependencies = async (facility: any) => {
   const userStore = useUserStore();
   const notificationStore = useNotificationStore();
-  await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(commonUtil.getOMSInstanceName(userStore.getInstanceUrl), userStore.getCurrentFacility.facilityId, enumId));
+  await userStore.fetchProductStores()
+  await userStore.fetchEComStoreDependencies(userStore.getCurrentEComStore.productStoreId)
+  await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(commonUtil.getOMSInstanceName(), userStore.getCurrentFacility.facilityId, enumId));
   getCurrentFacilityDetails();
   getFacilityOrderCount();
   getEcomInvStatus();
@@ -378,7 +383,7 @@ const updateFacilityMaximumOrderLimit = async (maximumOrderLimit: number | strin
   let resp;
 
   try {
-    resp = await UserService.updateFacility({
+    resp = await useFacility().updateFacility({
       facilityId: currentFacility.value?.facilityId,
       maximumOrderLimit
     });
@@ -398,11 +403,11 @@ const updateFacilityMaximumOrderLimit = async (maximumOrderLimit: number | strin
 const updateFacilityToGroup = async () => {
   let resp;
   try {
-    resp = await UserService.updateFacilityToGroup({
+    resp = await useFacility().updateFacilityToGroup({
       facilityId: currentFacility.value?.facilityId,
       facilityGroupId: facilityGroupDetails.value.facilityGroupId,
       fromDate: facilityGroupDetails.value.fromDate,
-      thruDate: DateTime.now().toMillis()
+      thruDate: DateTime.now().toFormat("yyyy-MM-dd")
     });
 
     if (!commonUtil.hasError(resp)) {
@@ -420,7 +425,7 @@ const updateFacilityToGroup = async () => {
 const addFacilityToGroup = async () => {
   let resp;
   try {
-    resp = await UserService.addFacilityToGroup({
+    resp = await useFacility().addFacilityToGroup({
       facilityId: currentFacility.value?.facilityId,
       facilityGroupId: facilityGroupDetails.value.facilityGroupId
     });
@@ -473,7 +478,7 @@ const updateForceScanStatus = async (event: any) => {
   await useUtilStore().updateProductStoreSettingConfig({
     enumId: "FULFILL_FORCE_SCAN",
     payload: params,
-    createService: UtilService.createProductStoreSetting,
+    createService: useUtil().createProductStoreSetting,
     requireEnum: true,
     enumMeta: {
       description: "Impose force scanning of items while packing from fulfillment app",
@@ -497,7 +502,7 @@ const updateNotificationPref = async (enumId: string) => {
 
   try {
     const notificationPref = notificationStore.getNotificationPrefs.find((pref: any) => pref.enumId === enumId);
-    const topicName = firebaseMessaging.generateTopicName(commonUtil.getOMSInstanceName(userStore.getInstanceUrl), currentFacility.value.facilityId, enumId);
+    const topicName = firebaseMessaging.generateTopicName(commonUtil.getOMSInstanceName(), currentFacility.value.facilityId, enumId);
     notificationPref.isEnabled
       ? await notificationStore.unsubscribeTopic(topicName, import.meta.env.VITE_NOTIF_APP_ID as any)
       : await notificationStore.subscribeTopic(topicName, import.meta.env.VITE_NOTIF_APP_ID as any);
@@ -589,7 +594,7 @@ const updatePartialOrderRejectionConfig = async (value: any) => {
   await useUtilStore().updateProductStoreSettingConfig({
     enumId: "FULFILL_PART_ODR_REJ",
     payload: params,
-    createService: UtilService.createProductStoreSetting,
+    createService: useUtil().createProductStoreSetting,
     requireEnum: true,
     enumMeta: {
       description: "Fulfillment Partial Order Rejection",
@@ -632,7 +637,7 @@ const updateCollateralRejectionConfig = async (value: any) => {
   await useUtilStore().updateProductStoreSettingConfig({
     enumId: "FF_COLLATERAL_REJ",
     payload: params,
-    createService: UtilService.createProductStoreSetting,
+    createService: useUtil().createProductStoreSetting,
     requireEnum: true,
     enumMeta: {
       description: "Fulfillment Collateral Rejection",
@@ -675,7 +680,7 @@ const updateAffectQohConfig = async (value: any) => {
   await useUtilStore().updateProductStoreSettingConfig({
     enumId: "AFFECT_QOH_ON_REJ",
     payload: params,
-    createService: UtilService.createProductStoreSetting,
+    createService: useUtil().createProductStoreSetting,
     requireEnum: false
   });
 };
@@ -684,7 +689,7 @@ const setBarcodeIdentificationPref = async (value: string) => {
   await useUtilStore().updateProductStoreSettingConfig({
     enumId: "BARCODE_IDEN_PREF",
     payload: { settingValue: value },
-    createService: UtilService.createProductStoreSetting,
+    createService: useUtil().createProductStoreSetting,
     requireEnum: true,
     enumMeta: {
       description: "Identification preference to be used for scanning items.",
@@ -699,7 +704,7 @@ onIonViewWillEnter(async () => {
   const userStore = useUserStore();
   const notificationStore = useNotificationStore();
   await useUtilStore().fetchProductStoreSettings(preferredStore.value.productStoreId);
-  await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(commonUtil.getOMSInstanceName(userStore.getInstanceUrl), userStore.getCurrentFacility.facilityId, enumId));
+  await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(commonUtil.getOMSInstanceName(), userStore.getCurrentFacility.facilityId, enumId));
 });
 </script>
 

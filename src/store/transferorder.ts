@@ -1,5 +1,4 @@
 import { defineStore } from "pinia"
-import { TransferOrderService } from "@/services/TransferOrderService"
 import { api, commonUtil, logger, translate } from "@common";
 
 import { useProductStore } from "@/store/product"
@@ -100,6 +99,90 @@ export const useTransferOrderStore = defineStore("transferorder", {
     setRejectReasons(payload: any) {
       this.rejectReasons = payload
     },
+    async fetchTransferShipmentDetails(params: Record<string, any>) {
+      return api({
+        url: "poorti/transferShipments",
+        method: "get",
+        params,
+      });
+    },
+    async cancelTransferOrderShipment(shipmentId: string) {
+      return api({
+        url: `poorti/shipments/${shipmentId}`,
+        method: "put",
+        data: {
+          "statusId": "SHIPMENT_CANCELLED"
+        }
+      });
+    },
+    async shipTransferOrderShipment(payload: any) {
+      return await api({
+        url: `poorti/transferShipments/${payload.shipmentId}/ship`,
+        method: "post",
+        data: payload
+      });
+    },
+    async createOutboundTransferShipmentAPI(query: any) {
+      return await api({
+        method: "post",
+        url: "poorti/transferShipments",
+        data: query,
+      })
+    },
+    async rejectOrderItems(payload: any) {
+      return api({
+        url: `poorti/transferOrders/${payload.orderId}/reject`,
+        method: "post",
+        data: payload
+      });
+    },
+    async closeOrderItems(payload: any) {
+      return api({
+        url: `poorti/transferOrders/${payload.orderId}/closeFulfillment`,
+        method: "post",
+        data: payload
+      });
+    },
+    async createTransferOrder(payload: any) {
+      return await api({
+        url: 'oms/transferOrders',
+        method: "post",
+        data: payload
+      });
+    },
+    async approveTransferOrder(orderId: any) {
+      return api({
+        url: `oms/transferOrders/${orderId}/approve`,
+        method: "post",
+      });
+    },
+    async addOrderItem(payload: any) {
+      return api({
+        url: 'oms/transferOrders/orderItem',
+        method: "POST",
+        data: payload
+      });
+    },
+    async updateOrderItem(payload: any) {
+      return api({
+        url: 'oms/transferOrders/orderItem',
+        method: "PUT",
+        data: payload
+      });
+    },
+    async deleteOrderItem(payload: any) {
+      return api({
+        url: 'oms/transferOrders/orderItem',
+        method: "DELETE",
+        data: payload
+      });
+    },
+    async cancelTransferOrder(orderId: string) {
+      return api({
+        url: `oms/transferOrders/${orderId}/cancel`,
+        method: "post",
+      });
+    },
     async findTransferOrders() {
       let resp
       const transferOrderQuery = JSON.parse(JSON.stringify(this.transferOrder.query))
@@ -121,11 +204,19 @@ export const useTransferOrderStore = defineStore("transferorder", {
       try {
         if (transferOrderQuery.shipmentStatusId) {
           params.shipmentStatusId = transferOrderQuery.shipmentStatusId
-          resp = await TransferOrderService.fetchCompletedTransferOrders(params)
+          resp = await api({
+            url: "poorti/transferShipments/orders/",
+            method: "get",
+            params,
+          });
         } else {
           params.orderStatusId = orderStatusId
           params.itemStatusId = "ITEM_PENDING_FULFILL"
-          resp = await TransferOrderService.fetchTransferOrders(params)
+          resp = await api({
+            url: "oms/transferOrders/",
+            method: "get",
+            params,
+          });
         }
 
         if (!commonUtil.hasError(resp) && resp.data.ordersCount > 0) {
@@ -152,12 +243,19 @@ export const useTransferOrderStore = defineStore("transferorder", {
       let orderResp, shipmentResp
 
       try {
-        orderResp = await TransferOrderService.fetchTransferOrderDetail(payload.orderId)
+        orderResp = await api({
+          url: `/oms/transferOrders/${payload.orderId}`,
+          method: "get",
+        });
 
         if (!commonUtil.hasError(orderResp)) {
           orderDetail = orderResp.data.order || {}
 
-          shipmentResp = await TransferOrderService.fetchShippedTransferShipments({ orderId: payload.orderId, shipmentStatusId: "SHIPMENT_SHIPPED" })
+          shipmentResp = await api({
+            url: "poorti/transferShipments",
+            method: "get",
+            params: { orderId: payload.orderId, shipmentStatusId: "SHIPMENT_SHIPPED" }
+          })
 
           if (!commonUtil.hasError(shipmentResp)) {
             const shipmentData = shipmentResp.data || {}
@@ -205,6 +303,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
               useUtilStore().fetchStatusDesc([orderDetail.statusId])
             ])
             this.setCurrent(orderDetail)
+            return orderResp;
           } catch (err: any) {
             logger.error("Error fetching product details or status description", err)
             return Promise.reject(new Error(err))
@@ -238,7 +337,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
             packages
           }
         }
-        const resp = await TransferOrderService.createOutboundTransferShipment(params)
+        const resp = await this.createOutboundTransferShipmentAPI(params)
         if (!commonUtil.hasError(resp)) {
           shipmentId = resp.data.shipmentId
         } else {
@@ -286,8 +385,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
     async fetchRejectReasons() {
       let rejectReasons: any[] = []
 
-      const permissions = useUserStore().getUserPermissions
-      const isAdminUser = permissions.some((permission: any) => permission.action === "APP_STOREFULFILLMENT_ADMIN")
+      const isAdminUser =  useUserStore().hasPermission("STOREFULFILLMENT_ADMIN")
 
       if (isAdminUser) {
         try {
@@ -298,7 +396,11 @@ export const useTransferOrderStore = defineStore("transferorder", {
             orderByField: "sequenceNum"
           }
 
-          const resp = await TransferOrderService.fetchRejectReasons(payload)
+          const resp = await api({
+            url: `/admin/enums`,
+            method: "GET",
+            params: payload,
+          });
 
           if (!commonUtil.hasError(resp)) {
             rejectReasons = resp.data
@@ -316,7 +418,11 @@ export const useTransferOrderStore = defineStore("transferorder", {
             orderByField: "sequenceNum"
           }
 
-          const resp = await TransferOrderService.fetchFulfillmentRejectReasons(payload)
+          const resp = await api({
+            url: `/admin/enumGroups/${payload.enumerationGroupId}/members`,
+            method: "GET",
+            params: payload,
+          });
 
           if (!commonUtil.hasError(resp)) {
             rejectReasons = resp.data

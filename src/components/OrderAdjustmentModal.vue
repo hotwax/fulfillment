@@ -54,8 +54,10 @@ import { IonAccordion, IonAccordionGroup, IonButtons, IonButton, IonContent, Ion
 import { defineProps, onMounted, ref } from "vue";
 import { close } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
-import { OrderService } from "@/services/OrderService";
-import { UtilService } from "@/services/UtilService";
+import { useOrderStore } from "@/store/order";
+import { useUtil } from "@/composables/useUtil";
+
+const orderStore = useOrderStore();
 
 
 const props = defineProps(["order", "orderId", "orderAdjustments", "orderHeaderAdjustmentTotal", "adjustmentsByGroup"]);
@@ -71,7 +73,7 @@ const orderItemSeqIds = ref([] as string[]);
 
 const fetchOrderShipGroupInfo = async () => {
   try {
-    const resp = await OrderService.fetchOrderItems({
+    const resp = await orderStore.fetchOrderItems({
       orderId: props.orderId,
       pageSize: 50,
       fieldsToSelect: ["orderId", "orderItemseqId", "shipGroupSeqId", "unitPrice"]
@@ -109,7 +111,7 @@ const fetchOrderShipGroupInfo = async () => {
 
 const fetchAdjustmentTypeDescription = async () => {
   try {
-    const resp = await UtilService.fetchAdjustmentTypeDescription({
+    const resp = await useUtil().fetchAdjustmentTypeDescription({
       orderAdjustmentTypeId: orderAdjustmentTypeIds.value,
       orderAdjustmentTypeId_op: "in",
       pageSize: orderAdjustmentTypeIds.value.length,

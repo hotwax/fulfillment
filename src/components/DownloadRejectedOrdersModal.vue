@@ -53,9 +53,7 @@
   import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonSelect, IonSelectOption, IonTitle, IonToolbar, modalController, alertController } from "@ionic/vue";
   import { computed, ref } from "vue";
   import { closeOutline, cloudDownloadOutline } from "ionicons/icons";
-import { commonUtil, emitter, logger, solrUtil, translate } from "@common";
-  import { RejectionService } from "@/services/RejectionService";
-  import { UtilService } from "@/services/UtilService";
+  import { api, commonUtil, emitter, logger, solrUtil, translate } from "@common";
   import { useUserStore } from "@/store/user";
 
   import { DateTime } from "luxon";
@@ -110,7 +108,11 @@ import { commonUtil, emitter, logger, solrUtil, translate } from "@common";
         pageSize: 1
       };
   
-      const resp = await UtilService.fetchFacilities(payload);
+      const resp = await api({
+        url: "/oms/facilities",
+        method: "GET",
+        params: payload
+      }) as any;
   
       if (!commonUtil.hasError(resp)) {
         facilityDetail = resp.data[0];
@@ -158,7 +160,12 @@ import { commonUtil, emitter, logger, solrUtil, translate } from "@common";
   
     try {
       do {
-        resp = await RejectionService.fetchRejctedOrders(query);
+        resp = await api({
+          url: "solr-query",
+          method: "post",
+          data: query,
+          baseURL: commonUtil.getOmsURL()
+        }) as any;
         if (!commonUtil.hasError(resp)) {
           let orders = resp.data.grouped.orderId_s.groups;
   

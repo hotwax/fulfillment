@@ -31,11 +31,12 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { arrowForwardOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
-import { CarrierService } from "@/services/CarrierService";
 import { useCarrierStore } from "@/store/carrier";
+import { useCarrier } from "@/composables/useCarrier";
 
 const router = useRouter();
 const carrier = ref({} as any);
+const { createCarrier: createCarrierComposable } = useCarrier();
 
 const clearCarrierData = () => {
   carrier.value = {} as any;
@@ -56,7 +57,7 @@ const createCarrier = async () => {
     partyTypeId: "PARTY_GROUP"
   };
   try {
-    const response = await CarrierService.createCarrier(payload);
+    const response = await createCarrierComposable(payload);
     if (!commonUtil.hasError(response)) {
       useCarrierStore().clearShipmentMethodQuery();
       router.replace({ path: `/shipment-methods-setup/${response.data.partyId}` });

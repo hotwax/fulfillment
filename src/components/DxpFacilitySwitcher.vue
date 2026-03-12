@@ -144,7 +144,7 @@ function preventSpecialCharacters($event: any) {
 
 async function updateFacility() {
   const selectedFacility = facilities.value.find((facility: any) => facility.facilityId === selectedFacilityId.value)
-  await userStore.setCurrentFacility(selectedFacility)
+  await userStore.setFacilityPreference(selectedFacility)
   emit('updateFacility', selectedFacility);
   closeModal();
 }

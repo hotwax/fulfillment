@@ -6,7 +6,7 @@
         {{ getCarriersTrackingInfo(shipGroup.carrierPartyId)?.carrierName ? getCarriersTrackingInfo(shipGroup.carrierPartyId).carrierName : shipGroup.carrierPartyId }}
         <ion-icon slot="end" :icon="openOutline" />
       </ion-item>
-      <ion-item button @click="printShippingLabel(shipGroup.shipGroupSeqId)" lines="none">
+      <ion-item button @click="printShippingLabel()" lines="none">
         {{ translate("View Label") }}
         <ion-icon slot="end" :icon="documentOutline" />
       </ion-item>
@@ -20,7 +20,6 @@ import { documentOutline, openOutline } from "ionicons/icons";
 import { translate } from "@common";
 import { defineProps } from "vue";
 import { useOrderLookupStore } from "@/store/orderLookup";
-import { OrderLookupService } from "@/services/OrderLookupService";
 
 const props = defineProps(["shipGroup"]);
 const getCarriersTrackingInfo = (partyId: string) => useOrderLookupStore().getCarriersTrackingInfo(partyId);
@@ -37,7 +36,7 @@ const printShippingLabel = async () => {
 
   const shipmentIds: string[] = Array.from(new Set(shipmentPackageRouteSegDetails.map((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.shipmentId)));
 
-  await OrderLookupService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentPackageRouteSegDetails);
+  await useOrderLookupStore().printShippingLabel(shipmentIds, shippingLabelPdfUrls, shipmentPackageRouteSegDetails);
   popoverController.dismiss();
 };
 

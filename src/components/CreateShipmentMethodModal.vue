@@ -35,11 +35,13 @@
   import { close, saveOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
 
-  import { CarrierService } from "@/services/CarrierService";
+  import { useCarrier } from "@/composables/useCarrier";
   import { useCarrierStore } from "@/store/carrier";
   
-  const shipmentMethods = computed(() => useCarrierStore().getFilteredShipmentMethods);
-  const currentCarrier = computed(() => useCarrierStore().getCurrent);
+  const { createShipmentMethod: createShipmentMethodComposable, updateCarrierShipmentMethodAssociation } = useCarrier();
+  const carrierStore = useCarrierStore();
+  const shipmentMethods = computed(() => carrierStore.getFilteredShipmentMethods);
+  const currentCarrier = computed(() => carrierStore.getCurrent);
   
   const filteredShipmentMethods = ref([] as any[]);
   const shipmentMethod = ref({} as any);
@@ -56,29 +58,6 @@ import { commonUtil, logger, translate } from "@common";
     shipmentMethod.value.shipmentMethodTypeId = commonUtil.generateInternalId(event.target.value);
   };
   
-  const updateCarrierShipmentMethodAssociation = async () => {
-    try {
-      const payload = {
-        shipmentMethodTypeId: shipmentMethod.value.shipmentMethodTypeId,
-        partyId: currentCarrier.value.partyId,
-        roleTypeId: "CARRIER",
-        sequenceNumber: 1
-      } as any;
-  
-      const currentCarrierShipmentMethods = currentCarrier.value.shipmentMethods ? JSON.parse(JSON.stringify(currentCarrier.value.shipmentMethods)) : {};
-      const values = Object.values(currentCarrierShipmentMethods) as any;
-      const sequenceNumber = values[values.length - 1]?.sequenceNumber;
-      payload.sequenceNumber = sequenceNumber ? sequenceNumber + 1 : 1;
-  
-      const resp = await CarrierService.addCarrierShipmentMethod(payload);
-      if (commonUtil.hasError(resp)) {
-        throw resp.data;
-      }
-    } catch (err: any) {
-      logger.log(err);
-    }
-  };
-  
   const createShipmentMethod = async () => {
     if (!shipmentMethod.value.description?.trim() || !shipmentMethod.value.shipmentMethodTypeId?.trim()) {
       commonUtil.showToast(translate("Please fill all the required fields"));
@@ -86,18 +65,11 @@ import { commonUtil, logger, translate } from "@common";
     }
   
     try {
-      const resp = await CarrierService.createShipmentMethod(shipmentMethod.value);
-      if (!commonUtil.hasError(resp)) {
-        commonUtil.showToast(translate("Shipment method created successfully."));
-        await updateCarrierShipmentMethodAssociation();
-        await useCarrierStore().fetchShipmentMethodTypes();
-        await useCarrierStore().fetchCarrierShipmentMethods({ partyId: currentCarrier.value.partyId });
-        await useCarrierStore().checkAssociatedShipmentMethods();
-        await useCarrierStore().checkAssociatedProductStoreShipmentMethods();
-        modalController.dismiss();
-      } else {
-        throw resp.data;
-      }
+      await createShipmentMethodComposable(shipmentMethod.value);
+      await updateCarrierShipmentMethodAssociation(shipmentMethod.value, currentCarrier.value.partyId, true);
+      await carrierStore.fetchShipmentMethodTypes();
+      await carrierStore.checkAssociatedProductStoreShipmentMethods();
+      modalController.dismiss();
     } catch (err: any) {
       let errorMessage = translate("Failed to create shipment method");
       if (err?.response?.data?.error?.message) {

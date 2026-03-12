@@ -51,9 +51,10 @@
 import { IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent, IonInput, IonSearchbar, IonList, IonListHeader, IonItem, IonRadio, IonLabel, IonFab, IonFabButton, modalController } from '@ionic/vue';
 import { closeOutline, saveOutline } from 'ionicons/icons';
 import { computed, ref, onMounted } from 'vue';
+import { useFacility } from "@/composables/useFacility";
 import { commonUtil, logger, translate } from "@common";
-import { UtilService } from '@/services/UtilService';
-import { TransferOrderService } from '@/services/TransferOrderService';
+import { useTransferOrderStore } from "@/store/transferorder";
+import { useUtil } from '@/composables/useUtil';
 import { useUtilStore } from "@/store/util";
 import { DateTime } from 'luxon';
 import router from '@/router';
@@ -75,13 +76,13 @@ onMounted(async () => {
 
 async function loadFacilities() {
   isLoading.value = true;
-  facilities.value = await UtilService.fetchProductStoreFacilities();
+  facilities.value = await useFacility().fetchProductStoreFacilities();
   isLoading.value = false;
 }
 
 async function fetchProductStoreDetails() {
   try {
-    const resp = await UtilService.fetchProductStoreDetails({ productStoreId: useUserStore().getCurrentEComStore?.productStoreId });
+    const resp = await useUtil().fetchProductStoreDetails({ productStoreId: useUserStore().getCurrentEComStore?.productStoreId });
     if(!commonUtil.hasError(resp)) {
       currencyUom.value = resp.data.defaultCurrencyUomId;
     } else {
@@ -171,7 +172,7 @@ async function createTransferOrder() {
   }
 
   try {
-    const resp = await TransferOrderService.createTransferOrder({ payload: orderPayload })
+    const resp = await useTransferOrderStore().createTransferOrder(orderPayload)
     if(!commonUtil.hasError(resp) && resp.data?.orderId) {
       const orderId = resp.data.orderId
       router.push(`/create-transfer-order/${orderId}`)

@@ -1,6 +1,5 @@
-import { commonUtil } from "@common";
+import { commonUtil, api } from "@common";
 import { defineStore } from "pinia";
-import { ProductService } from '@/services/ProductService';
 
 export const useProductIdentificationStore = defineStore('productIdentification', {
   state: () => {
@@ -22,11 +21,11 @@ export const useProductIdentificationStore = defineStore('productIdentification'
     getCurrentSampleProduct: (state) => state.currentSampleProduct
   },
   actions: {
-    async setProductIdentificationPref(id: string, value: string, eComStoreId: string) {
+    async setProductIdentificationPref(id: string, value: string, productStoreId: string) {
       const productIdentificationPref = JSON.parse(JSON.stringify(this.getProductIdentificationPref))
 
-      // When eComStoreId is not available then make the values change to what selected previously
-      if (!eComStoreId) {
+      // When productStoreId is not available then make the values change to what selected previously
+      if (!productStoreId) {
         this.productIdentificationPref = productIdentificationPref
         return;
       }
@@ -34,22 +33,91 @@ export const useProductIdentificationStore = defineStore('productIdentification'
       productIdentificationPref[id] = value
 
       try {
-        this.productIdentificationPref = await ProductService.setProductIdentificationPref(eComStoreId, productIdentificationPref)
+        let resp = {} as any, isSettingExists = false;
+        try {
+          resp = await api({
+            url: `oms/productStores/${productStoreId}/settings`,
+            method: "GET",
+            params: {
+              productStoreId: productStoreId,
+              settingTypeEnumId: "PRDT_IDEN_PREF"
+            }
+          });
+
+          if (resp.data[0]?.settingTypeEnumId) isSettingExists = true
+        } catch (err) {
+          console.error(err)
+        }
+
+        if (!isSettingExists) {
+          throw {
+            code: "error",
+            message: "product store setting is missing",
+            serverResponse: resp.data
+          }
+        }
+
+        await api({
+          url: `oms/productStores/${productStoreId}/settings`,
+          method: "POST",
+          data: {
+            productStoreId: productStoreId,
+            settingTypeEnumId: "PRDT_IDEN_PREF",
+            settingValue: JSON.stringify(productIdentificationPref)
+          }
+        });
+
+        this.productIdentificationPref = productIdentificationPref;
       } catch (err) {
         // TODO: display a toast message in failed scenario
         console.error('error', err)
       }
     },
-    async getIdentificationPref(eComStoreId: string) {
+    async getIdentificationPref(productStoreId: string) {
       // when selecting none as ecom store, not fetching the pref as it returns all the entries with the pref id
-      if (!eComStoreId) {
+      if (!productStoreId) {
         return this.productIdentificationPref = {
           primaryId: 'productId',
           secondaryId: ''
         };
       }
 
-      this.productIdentificationPref = await ProductService.getProductIdentificationPref(eComStoreId)
+      const productIdentifications = {
+        primaryId: "productId",
+        secondaryId: ""
+      }
+
+      const resp = await api({
+        url: `oms/productStores/${productStoreId}/settings`,
+        method: "GET",
+        params: {
+          productStoreId: productStoreId,
+          settingTypeEnumId: "PRDT_IDEN_PREF"
+        }
+      }) as any;
+
+      const settings = resp.data
+      if (settings[0]?.settingValue) {
+        const respValue = JSON.parse(settings[0].settingValue)
+        productIdentifications['primaryId'] = respValue['primaryId']
+        productIdentifications['secondaryId'] = respValue['secondaryId']
+      } else {
+        try {
+          await api({
+            url: `oms/productStores/${productStoreId}/settings`,
+            method: "POST",
+            data: {
+              productStoreId: productStoreId,
+              settingTypeEnumId: "PRDT_IDEN_PREF",
+              settingValue: JSON.stringify(productIdentifications)
+            }
+          });
+        } catch (err) {
+          console.error(err)
+        }
+      }
+
+      this.productIdentificationPref = productIdentifications;
     },
     async prepareProductIdentifierOptions() {
       //static identifications 
@@ -63,8 +131,22 @@ export const useProductIdentificationStore = defineStore('productIdentification'
         { goodIdentificationTypeId: "title", description: "Title" }
       ]
       //good identification types
-      const fetchedGoodIdentificationTypes = await ProductService.fetchGoodIdentificationTypes("HC_GOOD_ID_TYPE");
-      const fetchedGoodIdentificationOptions = fetchedGoodIdentificationTypes || []
+      let fetchedGoodIdentificationOptions = []
+      try {
+        const resp: any = await api({
+          url: "oms/goodIdentificationTypes",
+          method: "get",
+          params: {
+            parentTypeId: "HC_GOOD_ID_TYPE",
+            pageSize: 50
+          }
+        });
+
+        fetchedGoodIdentificationOptions = resp.data
+      } catch (error) {
+        console.error('Failed to fetch good identification types', error)
+      }
+
       // Merge the arrays and remove duplicates
       this.productIdentificationOptions = Array.from(new Set([...productIdentificationOptions, ...fetchedGoodIdentificationOptions])).sort();
       this.goodIdentificationOptions = fetchedGoodIdentificationOptions
@@ -72,7 +154,14 @@ export const useProductIdentificationStore = defineStore('productIdentification'
     async fetchProducts() {
       const params = { viewSize: 10 }
       try {
-        const products = await ProductService.fetchProducts(params)
+        const products = await api({
+          baseURL: commonUtil.getOmsURL(),
+          url: "searchProducts",
+          method: "post",
+          data: params,
+          cache: true
+        }) as any;
+
         if (!commonUtil.hasError(products)) {
           this.sampleProducts = products.data.response.docs;
           this.shuffleProduct()

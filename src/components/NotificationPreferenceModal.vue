@@ -48,7 +48,7 @@ const isButtonDisabled = computed(() => {
 onBeforeMount(async () => {
   const userStore = useDxpUserStore();
   const notificationStore = useNotificationStore();
-  const omsInstanceName = commonUtil.getOMSInstanceName(userStore.getInstanceUrl);
+  const omsInstanceName = commonUtil.getOMSInstanceName();
   await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(omsInstanceName, userStore.getCurrentFacility.facilityId, enumId));
   notificationPrefState.value = notificationPrefs.value.reduce((prefs: any, pref: any) => {
     prefs[pref.enumId] = pref.isEnabled;
@@ -73,7 +73,7 @@ const toggleNotificationPref = (enumId: string, event: any) => {
 
 const handleTopicSubscription = async () => {
   const userStore = useDxpUserStore();
-  const omsInstanceName = commonUtil.getOMSInstanceName(userStore.getInstanceUrl);
+  const omsInstanceName = commonUtil.getOMSInstanceName();
   const facilityId = (currentFacility.value as any)?.facilityId;
   const subscribeRequests = [] as any;
   const notificationStore = useNotificationStore();

@@ -19,9 +19,9 @@ import { IonContent, IonItem, IonList, IonListHeader, alertController, modalCont
 import { computed, defineProps } from "vue";
 import { commonUtil, logger, translate } from "@common";
 import EditRejectionReasonModal from "@/components/EditRejectionReasonModal.vue";
-import { UtilService } from "@/services/UtilService";
-
+import { useUtil } from "@/composables/useUtil";
 import { useUtilStore } from "@/store/util";
+import { DateTime } from "luxon";
 
 const props = defineProps(["reason"]);
 const rejectReasons = computed(() => useUtilStore().getRejectReasons);
@@ -44,7 +44,10 @@ const removeRejectionReason = async () => {
         text: translate("Confirm"),
         handler: async () => {
           try {
-            const resp = await UtilService.deleteEnumeration({ enumId: props.reason.enumId });
+            const resp = await useUtil().updateEnumeration({
+              ...props.reason,
+              thruDate: DateTime.now().toMillis()
+            });
             if (!commonUtil.hasError(resp)) {
               commonUtil.showToast(translate("Rejection reason removed successfully."));
               const updatedRejectReasons = rejectReasons.value.filter((rejectReason: any) => rejectReason.enumId !== props.reason.enumId);

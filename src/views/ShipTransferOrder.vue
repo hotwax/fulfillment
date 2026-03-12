@@ -151,20 +151,26 @@ import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonCardConten
 import { openOutline, pricetagOutline, printOutline, storefrontOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
 import { useProductIdentificationStore } from "@/store/productIdentification";
-import { TransferOrderService } from "@/services/TransferOrderService";
-import { OrderService } from "@/services/OrderService";
-import { CarrierService } from "@/services/CarrierService";
-import { UtilService } from "@/services/UtilService";
+import { useOrderStore } from "@/store/order";
+import { useCarrier } from "@/composables/useCarrier";
+import { useFacility } from "@/composables/useFacility";
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
 import Image from "@/components/Image.vue";
 import { useProductStore } from "@/store/product";
 import { useUtilStore } from "@/store/util";
 import { useCarrierStore } from "@/store/carrier";
 import { useTransferOrderStore } from "@/store/transferorder";
+import { useTransferOrder } from "@/composables/useTransferOrder";
+import { useUserStore } from "@/store/user";
 
 const route = useRoute();
 const router = useRouter();
 const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
+
+const userStore = useUserStore();
+const orderStore = useOrderStore();
+const { printShippingLabel: printShippingLabelComposable, printTransferOrderPicklist } = useTransferOrder();
+const { fetchCarrierLogos: fetchCarrierLogosComposable, fetchShippingRates: fetchShippingRatesComposable } = useCarrier();
 
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
 const shipmentMethodsByCarrier = computed(() => useUtilStore().getShipmentMethodsByCarrier);
@@ -192,7 +198,7 @@ const selectedCarrierService = ref("");
 const carrierLogos = ref<Record<string, string>>({});
 
 onIonViewWillEnter(async () => {
-  facilities.value = await UtilService.fetchProductStoreFacilities();
+  facilities.value = await useFacility().fetchProductStoreFacilities();
   await Promise.allSettled([
     fetchShipmentOrderDetail(route?.params?.shipmentId as any),
     useUtilStore().fetchStoreCarrierAndMethods(),
@@ -225,7 +231,7 @@ onBeforeRouteLeave(async () => {
           text: translate("Discard"),
           handler: async () => {
             try {
-              const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId);
+              const resp = await useTransferOrderStore().cancelTransferOrderShipment(shipmentDetails.value.shipmentId);
               if (!commonUtil.hasError(resp)) {
                 commonUtil.showToast(translate("Shipment is discarded."));
                 canLeave = true;
@@ -263,7 +269,7 @@ onBeforeRouteLeave(async () => {
           text: translate("Ship later"),
           handler: async () => {
             try {
-              const resp = await TransferOrderService.cancelTransferOrderShipment(shipmentDetails.value.shipmentId);
+              const resp = await useTransferOrderStore().cancelTransferOrderShipment(shipmentDetails.value.shipmentId);
               if (!commonUtil.hasError(resp)) {
                 canLeave = true;
                 await useTransferOrderStore().clearCurrentTransferOrder();
@@ -272,7 +278,6 @@ onBeforeRouteLeave(async () => {
                 throw resp.data;
               }
             } catch (err) {
-              commonUtil.showToast(translate("Failed to cancel transfer order shipment"));
               logger.error("Failed to cancel transfer order shipment", err);
               canLeave = false;
             }
@@ -308,7 +313,7 @@ function updateShipmentMethodsForCarrier(carrierPartyId: string, shippingMethodI
 
 async function fetchShipmentOrderDetail(shipmentId: string) {
   try {
-    const resp = await TransferOrderService.fetchTransferShipmentDetails({ shipmentId: shipmentId });
+    const resp = await useTransferOrderStore().fetchTransferShipmentDetails({ shipmentId: shipmentId });
     if (!commonUtil.hasError(resp)) {
       shipmentDetails.value = resp.data.shipments[0];
       await fetchCarrierLogos([shipmentDetails.value.actualCarrierCode, shipmentDetails.value.routeSegCarrierPartyId]);
@@ -361,23 +366,12 @@ async function fetchCarrierLogos(carriers: string[] = []) {
   if (!carrierIdsToFetch.length) return;
 
   try {
-    const resp = await CarrierService.fetchCarrierTrackingUrls({
-      systemResourceId: carrierIdsToFetch,
-      systemResourceId_op: "in",
-      systemPropertyId: "%logo.url%",
-      systemPropertyId_op: "like",
-      fieldsToSelect: ["systemResourceId", "systemPropertyValue"]
+    const logoUrls = await fetchCarrierLogosComposable(carrierIdsToFetch);
+    const logoMap = { ...carrierLogos.value };
+    Object.keys(logoUrls).map((key: any) => {
+      logoMap[key.toUpperCase()] = logoUrls[key];
     });
-
-    if (!commonUtil.hasError(resp)) {
-      const logoMap = { ...carrierLogos.value };
-      resp.data.map((doc: any) => {
-        logoMap[doc.systemResourceId.toUpperCase()] = doc.systemPropertyValue;
-      });
-      carrierLogos.value = logoMap;
-    } else {
-      throw resp.data;
-    }
+    carrierLogos.value = logoMap;
   } catch (error) {
     logger.error("Failed to fetch carrier logos", error);
   }
@@ -385,15 +379,11 @@ async function fetchCarrierLogos(carriers: string[] = []) {
 
 async function fetchShippingRates() {
   try {
-    const resp = await CarrierService.fetchShippingRates({ shipmentId: shipmentDetails.value.shipmentId });
-    if (!commonUtil.hasError(resp)) {
-      shippingRates.value = resp.data?.shippingRates || [];
-      const carriers = shippingRates.value.map((rate: any) => rate.actualCarrier || rate.actualCarrierCode || rate.carrierPartyId);
-      if (shipmentDetails.value?.actualCarrierCode) carriers.push(shipmentDetails.value.actualCarrierCode);
-      await fetchCarrierLogos(carriers);
-    } else {
-      throw resp.data;
-    }
+    const data = await fetchShippingRatesComposable({ shipmentId: shipmentDetails.value.shipmentId });
+    shippingRates.value = data?.shippingRates || [];
+    const carriers = shippingRates.value.map((rate: any) => rate.actualCarrier || rate.actualCarrierCode || rate.carrierPartyId);
+    if (shipmentDetails.value?.actualCarrierCode) carriers.push(shipmentDetails.value.actualCarrierCode);
+    await fetchCarrierLogos(carriers);
   } catch (err) {
     logger.error("Failed to fetch shipment details.", err);
     shippingRates.value = [];
@@ -411,9 +401,21 @@ async function generateShippingLabel() {
   const shipment = shipmentDetails.value;
 
   try {
-    await OrderService.retryShippingLabel(shipment.shipmentId);
+    await orderStore.retryShippingLabel(shipment.shipmentId);
     await fetchShipmentOrderDetail(shipment.shipmentId);
-    await printShippingLabel();
+    if (shipmentDetails.value.trackingIdNumber) {
+      commonUtil.showToast(translate("Shipping Label generated successfully"));
+      const shippingLabelPdfUrls: string[] = Array.from(
+        new Set(
+          (shipmentDetails.value.packages ?? [])
+            .filter((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+            .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
+        )
+      );
+      await printShippingLabelComposable([shipmentDetails.value.shipmentId], shippingLabelPdfUrls, shipmentDetails.value?.packages);
+    } else {
+      commonUtil.showToast(translate("Failed to generate shipping label"));
+    }
   } catch (error) {
     logger.error("Failed to generate shipping label", error);
     commonUtil.showToast(translate("Failed to generate shipping label"));
@@ -431,7 +433,7 @@ async function printShippingLabel() {
             .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
         )
       );
-      await OrderService.printShippingLabel([shipment.shipmentId], shippingLabelPdfUrls, shipment.packages);
+      await printShippingLabelComposable([shipmentDetails.value.shipmentId], shippingLabelPdfUrls, shipmentDetails.value?.packages);
     }
   } catch (err) {
     commonUtil.showToast(translate("Failed to print shipping label"));
@@ -444,7 +446,7 @@ async function voidShippingLabel() {
     const routeSegmentId = shipmentDetails.value?.shipmentRouteSegmentId;
     if (!routeSegmentId) return;
 
-    await OrderService.voidShipmentLabel({
+    await orderStore.voidShipmentLabel({
       shipmentId: shipmentDetails.value.shipmentId,
       shipmentRouteSegmentId: routeSegmentId
     });
@@ -505,7 +507,7 @@ async function updateCarrierAndShippingMethod(shippingRate: any) {
       payload.gatewayRateId = shippingRate.gatewayRateId;
     }
 
-    resp = await OrderService.updateRouteShipmentCarrierAndMethod(payload);
+    resp = await orderStore.updateRouteShipmentCarrierAndMethod(payload);
     if (!commonUtil.hasError(resp)) {
       await generateShippingLabel();
     } else {
@@ -562,7 +564,7 @@ async function shipOrder() {
       });
     }
     isOrderShipped.value = true;
-    await TransferOrderService.shipTransferOrderShipment(payload);
+    await useTransferOrderStore().shipTransferOrderShipment(payload);
     commonUtil.showToast(translate("Shipment shipped successfully."));
     isProcessingShipment.value = false;
     route?.params?.orderId ? router.replace({ path: `/transfer-order-details/${route?.params?.orderId}/open` }) : router.replace({ path: "/transfer-orders" });

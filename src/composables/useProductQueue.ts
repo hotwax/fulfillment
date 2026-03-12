@@ -1,10 +1,7 @@
 import { ref, computed } from 'vue';
 import { useProductStore } from "@/store/product";
 import { useTransferOrderStore } from "@/store/transferorder";
-import { TransferOrderService } from '@/services/TransferOrderService';
-import { ProductService } from '@/services/ProductService';
-import { StockService } from '@/services/StockService';
-import { commonUtil, logger, translate } from "@common";
+import { api, commonUtil, logger, translate } from "@common";
 
 
 /**
@@ -139,8 +136,32 @@ export function useProductQueue() {
     }
 
     try {
-      const unitPrice = facilityId ?
-        await ProductService.fetchProductAverageCost(product.productId, facilityId) : 0;
+      let unitPrice = 0;
+      if (facilityId && product.productId) {
+        try {
+          const resp = await api({
+            url: `/oms/dataDocumentView`,
+            method: "post",
+            data: {
+              customParametersMap: {
+                facilityId,
+                productId: product.productId,
+                orderByField: "-fromDate",
+                pageIndex: 0,
+                pageSize: 1
+              },
+              dataDocumentId: "ProductWeightedAverageCost",
+              filterByDate: true
+            }
+          });
+
+          if (!commonUtil.hasError(resp) && resp.data?.entityValueList?.length) {
+            unitPrice = resp.data.entityValueList[0].averageCost || 0;
+          }
+        } catch (err) {
+          logger.error("Failed to fetch product average cost", err);
+        }
+      }
 
       const payload = {
         orderId,
@@ -150,7 +171,7 @@ export function useProductQueue() {
         unitPrice: unitPrice || 0
       };
 
-      const resp = await TransferOrderService.addOrderItem(payload);
+      const resp = await useTransferOrderStore().addOrderItem(payload);
 
       if (!commonUtil.hasError(resp)) {
         newItem.orderId = orderId;
@@ -178,9 +199,13 @@ export function useProductQueue() {
     if (!facilityId) return null;
 
     try {
-      const resp = await StockService.getInventoryAvailableByFacility({
-        productId,
-        facilityId
+      const resp = await api({
+        url: `/poorti/getInventoryAvailableByFacility`,
+        method: "GET",
+        params: {
+          productId,
+          facilityId
+        }
       });
       if (!commonUtil.hasError(resp)) return resp.data;
     } catch (err) {

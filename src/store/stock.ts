@@ -1,5 +1,4 @@
 import { defineStore } from "pinia"
-import { StockService } from "@/services/StockService"
 import { api, commonUtil, logger, translate } from "@common";
 
 import { useUserStore } from "@/store/user"
@@ -31,15 +30,17 @@ export const useStockStore = defineStore("stock", {
     async fetchStock({ productId, facilityId = "" }: { productId: any; facilityId?: any }) {
       const id = facilityId ? facilityId : useUserStore().getCurrentFacility?.facilityId
       try {
-        const payload = {
-          productId,
-          facilityId: id
-        }
-
-        const resp: any = await StockService.getInventoryAvailableByFacility(payload)
+        const resp: any = await api({
+          url: `/poorti/getInventoryAvailableByFacility`,
+          method: "GET",
+          params: {
+            productId,
+            facilityId: id
+          },
+        });
 
         if (!commonUtil.hasError(resp)) {
-          this.addProductStock({ productId: payload.productId, facilityId: id, stock: resp.data })
+          this.addProductStock({ productId: productId, facilityId: id, stock: resp.data })
         } else {
           throw resp.data
         }

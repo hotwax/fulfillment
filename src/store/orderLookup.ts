@@ -1,9 +1,10 @@
 import { defineStore } from "pinia"
-import { OrderLookupService } from "@/services/OrderLookupService"
 import { api, commonUtil, logger, solrUtil, translate } from "@common";
 import { useProductStore } from "@/store/product"
 import { useUtilStore } from "@/store/util"
 import { useUserStore } from "@/store/user"
+import { cogOutline } from 'ionicons/icons';
+import { useZebraPrinter } from '@/composables/useZebraPrinter';
 
 interface OrderLookupQuery {
   status: any[]
@@ -146,7 +147,12 @@ export const useOrderLookupStore = defineStore("orderLookup", {
 
       const query = solrUtil.prepareOrderLookupQuery({ ...this.query, ...params, facilityId: useUserStore().getCurrentFacility?.facilityId })
       try {
-        resp = await OrderLookupService.findOrder(query)
+        resp = await api({
+          url: "/solr-query",
+          method: "post",
+          data: query,
+          baseURL: commonUtil.getOmsURL()
+        });
         if (!commonUtil.hasError(resp) && resp.data?.grouped?.orderId?.groups?.length) {
           const orders = resp.data.grouped.orderId.groups.map((order: any) => {
             order.orderId = order.doclist.docs[0].orderId
@@ -213,13 +219,17 @@ export const useOrderLookupStore = defineStore("orderLookup", {
       await useUtilStore().fetchPartyInformation(carrierPartyIds)
 
       try {
-        const resp = await OrderLookupService.fetchCarrierTrackingUrls({
-          systemResourceId: carrierPartyIds,
-          systemResourceId_op: "in",
-          systemResourceId_ic: "Y",
-          systemPropertyId: "%trackingUrl%",
-          systemPropertyId_op: "like",
-          fieldsToSelect: ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
+        const resp = await api({
+          url: "/admin/systemProperties",
+          method: "GET",
+          params: {
+            systemResourceId: carrierPartyIds,
+            systemResourceId_op: "in",
+            systemResourceId_ic: "Y",
+            systemPropertyId: "%trackingUrl%",
+            systemPropertyId_op: "like",
+            fieldsToSelect: ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
+          }
         })
 
         if (!commonUtil.hasError(resp)) {
@@ -249,16 +259,40 @@ export const useOrderLookupStore = defineStore("orderLookup", {
 
       try {
         const [orderResp, orderFacilityChangeResp, shipmentResp, itemResp] = await Promise.allSettled([
-          OrderLookupService.fetchOrderDetail(orderId),
-          OrderLookupService.fetchOrderFacilityChange({
-            orderId,
-            pageSize: 250,
-            orderByField: "changeDatetime"
+          api({
+            url: `/poorti/orders/${orderId}`,
+            method: "GET",
           }),
-          OrderLookupService.findShipments(orderId),
-          OrderLookupService.fetchOrderItems({
-            orderId,
-            pageSize: 100
+          api({
+            url: `/oms/orders/${orderId}/facilityChange`,
+            method: "GET",
+            params: {
+              orderId,
+              pageSize: 250,
+              orderByField: "changeDatetime"
+            }
+          }),
+          api({
+            url: `/poorti/shipments`,
+            method: "GET",
+            params: {
+              orderId: orderId,
+              pageSize: 100,
+              customParametersMap: {
+                statusId: ['SHIPMENT_INPUT', 'SHIPMENT_CANCELLED'],
+                statusId_op: "in",
+                statusId_not: "Y",
+              },
+              shipmentTypeId: 'SALES_SHIPMENT',
+            }
+          }),
+          api({
+            url: `/oms/orders/${orderId}/items`,
+            method: "GET",
+            params: {
+              orderId,
+              pageSize: 100
+            }
           })
         ])
 
@@ -269,10 +303,14 @@ export const useOrderLookupStore = defineStore("orderLookup", {
 
           order.billToPartyId = order.roles.find((role: any) => role.roleTypeId === "BILL_TO_CUSTOMER")?.partyId
 
-          const partyInfo = await OrderLookupService.fetchPartyInformation({
-            partyId: order.billToPartyId,
-            pageSize: 1,
-            fieldsToSelect: ["firstName", "lastName", "groupName"]
+          const partyInfo = await api({
+            url: `/oms/parties`,
+            method: "GET",
+            params: {
+              partyId: order.billToPartyId,
+              pageSize: 1,
+              fieldsToSelect: ["firstName", "lastName", "groupName"]
+            }
           })
 
           if (!commonUtil.hasError(partyInfo)) {
@@ -329,7 +367,11 @@ export const useOrderLookupStore = defineStore("orderLookup", {
           }
 
           const facilityIds = order.shipGroups.map((shipGroup: any) => shipGroup.facilityId)
-          const facilityResp = await OrderLookupService.fetchFacilities({ facilityId: facilityIds, pageSize: facilityIds.length })
+          const facilityResp = await api({
+            url: `/oms/facilities`,
+            method: "GET",
+            params: { facilityId: facilityIds, pageSize: facilityIds.length }
+          })
 
           if (itemResp.status === "fulfilled" && !commonUtil.hasError(itemResp.value)) {
             const orderItems = itemResp.value.data
@@ -358,6 +400,64 @@ export const useOrderLookupStore = defineStore("orderLookup", {
     },
     async updateAppliedFilters(payload: any) {
       this.updateFilters(payload)
+    },
+    async findOrderInvoicingInfo(payload: any) {
+      return api({
+        url: "/oms/dataDocumentView",
+        method: "post",
+        data: payload,
+      });
+    },
+    async printShippingLabel(shipmentIds: Array<string>, shippingLabelPdfUrls?: Array<string>, shipmentPackages?: Array<any>, imageType?: string) {
+      try {
+        let pdfUrls = shippingLabelPdfUrls?.filter((pdfUrl: any) => pdfUrl);
+        if (!pdfUrls || pdfUrls.length == 0) {
+          let labelImageType = imageType || "PNG";
+
+          if (!imageType && shipmentPackages?.length && shipmentPackages[0]?.carrierPartyId) {
+            labelImageType = await useUtilStore().fetchLabelImageType(shipmentPackages[0].carrierPartyId);
+          }
+
+          const labelImages = [] as Array<string>
+          if (labelImageType === "ZPLII") {
+            shipmentPackages?.map((shipmentPackage: any) => {
+              shipmentPackage.labelImage && labelImages.push(shipmentPackage.labelImage)
+            })
+            await useZebraPrinter().printZplLabels(labelImages);
+            return;
+          }
+          // Get packing slip from the server
+          const resp = await api({
+            url: "/poorti/Label.pdf",
+            method: "GET",
+            params: {
+              shipmentId: shipmentIds
+            },
+            responseType: "blob"
+          });
+
+          if (!resp || resp.status !== 200 || commonUtil.hasError(resp)) {
+            throw resp.data;
+          }
+
+          // Generate local file URL for the blob received
+          const pdfUrl = window.URL.createObjectURL(resp.data);
+          pdfUrls = [pdfUrl];
+        }
+        // Open the file in new tab
+        pdfUrls.forEach((pdfUrl: string) => {
+          try {
+            (window as any).open(pdfUrl, "_blank").focus();
+          }
+          catch {
+            commonUtil.showToast(translate('Unable to open as browser is blocking pop-ups.', { documentName: 'shipping label' }), { icon: cogOutline });
+          }
+        })
+
+      } catch (err) {
+        commonUtil.showToast(translate('Failed to print shipping label'))
+        logger.error("Failed to load shipping label", err)
+      }
     }
   },
   persist: false

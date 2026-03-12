@@ -1,7 +1,5 @@
 import { api, commonUtil, cookieHelper, logger, translate } from "@common";
 import { defineStore } from "pinia"
-import { UserService } from "@/services/UserService"
-import { UtilService } from "@/services/UtilService"
 import { DateTime, Settings } from "luxon"
 import { i18n } from "../index";
 import { useUtilStore } from "@/store/util"
@@ -27,6 +25,59 @@ interface UserState {
   localeOptions: any,
   locale: string,
   isEmbedded: boolean
+}
+
+async function fetchFacilitiesByGroup(facilityGroupId: string, payload?: any): Promise<any> {
+  const params = {
+    url: "oms/groupFacilities",
+    method: "GET",
+    params: {
+      facilityGroupId,
+      pageSize: 500,
+      ...payload
+    }
+  }
+
+  try {
+    const resp = await api(params) as any;
+
+    // Filtering facilities on which thruDate is set, as we are unable to pass thruDate check in the api payload
+    // Considering that the facilities will always have a thruDate of the past.
+    const facilities = resp.data.filter((facility: any) => !facility.thruDate)
+    return Promise.resolve(facilities)
+  } catch (error) {
+    return Promise.reject({
+      code: "error",
+      message: "Failed to fetch facilities for group",
+      serverResponse: error
+    })
+  }
+}
+
+async function fetchFacilitiesByParty(partyId: string, payload?: any): Promise<Array<any> | Response> {
+  const params = {
+    url: `inventory-cycle-count/user/${partyId}/facilities`,
+    method: "GET",
+    params: {
+      ...payload,
+      pageSize: 500
+    }
+  }
+
+  try {
+    const resp = await api(params) as any;
+
+    // Filtering facilities on which thruDate is set, as we are unable to pass thruDate check in the api payload
+    // Considering that the facilities will always have a thruDate of the past.
+    const facilities = resp.data.filter((facility: any) => !facility.thruDate)
+    return Promise.resolve(facilities)
+  } catch (error) {
+    return Promise.reject({
+      code: "error",
+      message: "Failed to fetch user associated facilities",
+      serverResponse: error
+    })
+  }
 }
 
 export const useUserStore = defineStore("appUser", {
@@ -62,14 +113,10 @@ export const useUserStore = defineStore("appUser", {
     getUserProfile(state: UserState) {
       return state.current
     },
-    getInstanceUrl(state: UserState) {
-      const baseUrl = import.meta.env.VITE_BASE_URL
-      return baseUrl ? baseUrl : state.instanceUrl
-    },
     getBaseUrl(state: UserState): string {
       let baseURL = import.meta.env.VITE_BASE_URL
       if (!baseURL) baseURL = state.instanceUrl
-      return baseURL.startsWith("http") ? baseURL.includes("/api") ? baseURL : `${baseURL} /api/` : `https://${baseURL}.hotwax.io/api/`
+      return baseURL.startsWith("http") ? baseURL.includes("/api") ? baseURL : `${baseURL}/api/` : `https://${baseURL}.hotwax.io/api/`
     },
     getUserPreferenceState(state: UserState) {
       return state.preference
@@ -82,6 +129,9 @@ export const useUserStore = defineStore("appUser", {
     },
     getCurrentEComStore(state: UserState) {
       return state.currentEComStore
+    },
+    getProductStores(state: UserState) {
+      return state.current.stores
     },
     hasPermission: (state: UserState) => (permissionId: string): boolean => {
       const permissions = state.permissions;
@@ -111,9 +161,6 @@ export const useUserStore = defineStore("appUser", {
     setInstanceUrl(payload: any) {
       this.instanceUrl = payload
     },
-    setUserPreferenceState(payload: any) {
-      this.preference = { ...this.preference, ...payload }
-    },
     setPermissionsState(payload: any) {
       this.permissions = payload
     },
@@ -124,14 +171,14 @@ export const useUserStore = defineStore("appUser", {
     setCurrentFacility(facility: any) {
       this.currentFacility = facility
     },
-    getProductStores() {
-      return this.current.stores
-    },
     async setCurrentEComStore(store: any) {
       this.currentEComStore = store
       await this.fetchEComStoreDependencies(store.productStoreId)
     },
-
+    updatePwaState(payload: any) {
+      this.pwaState.registration = payload.registration;
+      this.pwaState.updateExists = payload.updateExists;
+    },
     async samlLogin(token: string, expirationTime: string) {
       try {
         cookieHelper().set("token", token)
@@ -141,8 +188,8 @@ export const useUserStore = defineStore("appUser", {
           const userProfileResp = await api({
             url: "admin/user/profile",
             method: "get",
-            baseUrl: commonUtil.getMaargURL()
-          });
+            baseURL: commonUtil.getMaargURL()
+          }) as any;
           this.current = userProfileResp.data
         } catch (error: any) {
           useAuth().clearAuth();
@@ -166,7 +213,7 @@ export const useUserStore = defineStore("appUser", {
         const userProfileResp = await api({
           url: "admin/user/profile",
           method: "get",
-        });
+        }) as any;
         this.current = userProfileResp.data
 
         if (this.current.timeZone) {
@@ -181,7 +228,7 @@ export const useUserStore = defineStore("appUser", {
     },
     async fetchPermissions() {
       const permissionId = import.meta.env.VITE_VUE_APP_PERMISSION_ID;
-      let serverPermissions = [] as any;
+      const serverPermissions = [] as any;
 
       // TODO Make it configurable from the environment variables.
       // Though this might not be an server specific configuration, 
@@ -198,7 +245,7 @@ export const useUserStore = defineStore("appUser", {
             method: "post",
             baseURL: commonUtil.getOmsURL(),
             data: { viewIndex, viewSize }
-          })
+          }) as any
 
           if (resp.status === 200 && resp.data.docs?.length && !commonUtil.hasError(resp)) {
             serverPermissions.push(...resp.data.docs.map((permission: any) => permission.permissionId));
@@ -228,17 +275,111 @@ export const useUserStore = defineStore("appUser", {
     },
 
     async fetchFacilities() {
+      let facilityIds: Array<string> = [];
+      let filters: any = {};
+      let resp = {} as any
+
+      const partyId = this.getUserProfile?.partyId;
+      const isAdminUser = this.hasPermission("STOREFULFILLMENT_ADMIN");
+      const facilityGroupId = "OMS_FULFILLMENT";
+
       try {
         this.current.stores = [];
-        const isAdminUser = this.hasPermission("STOREFULFILLMENT_ADMIN");
-        const facilities = await UserService.getUserFacilities(this.getUserProfile?.partyId, "OMS_FULFILLMENT", isAdminUser, {})
-        this.current.facilities = facilities
-        this.setCurrentFacility(facilities[0])
+
+        // Fetch the facilities associated with party
+        if (partyId && !isAdminUser) {
+          try {
+            resp = await fetchFacilitiesByParty(partyId)
+
+            facilityIds = resp.map((facility: any) => facility.facilityId);
+            if (!facilityIds.length) {
+              return Promise.reject({
+                code: 'error',
+                message: 'Failed to fetch user facilities',
+                serverResponse: resp.data
+              })
+            }
+          } catch (error) {
+            return Promise.reject({
+              code: 'error',
+              message: 'Failed to fetch user facilities',
+              serverResponse: error
+            })
+          }
+        }
+
+        if (facilityIds.length) {
+          filters = {
+            facilityId: facilityIds.join(","),
+            facilityId_op: "in",
+            pageSize: facilityIds.length
+          }
+        }
+
+        // Fetch the facilities associated with group
+        if (facilityGroupId) {
+          try {
+            resp = await fetchFacilitiesByGroup(facilityGroupId, filters)
+
+            facilityIds = resp.map((facility: any) => facility.facilityId);
+            if (!facilityIds.length) {
+              return Promise.reject({
+                code: 'error',
+                message: 'Failed to fetch user facilities',
+                serverResponse: resp.data
+              })
+            }
+          } catch (error) {
+            return Promise.reject({
+              code: 'error',
+              message: 'Failed to fetch user facilities',
+              serverResponse: error
+            })
+          }
+        }
+
+        if (facilityIds.length) {
+          filters = {
+            facilityId: facilityIds.join(","),
+            facilityId_op: "in",
+            pageSize: facilityIds.length
+          }
+        }
+
+        const params = {
+          url: "oms/facilities",
+          method: "GET",
+          params: {
+            pageSize: 500,
+            ...filters
+          }
+        }
+
+        resp = await api(params);
+        this.current.facilities = resp.data
+        this.setCurrentFacility(resp.data[0])
       } catch (error: any) {
         logger.error("error", error);
         return Promise.reject(new Error(error));
       }
     },
+    async setFacilityPreference(payload: any) {
+      try {
+        await api({
+          url: "admin/user/preferences",
+          method: "PUT",
+          data: {
+            userId: this.getUserProfile.userId,
+            preferenceKey: 'SELECTED_FACILITY',
+            preferenceValue: payload.facilityId,
+          }
+        });
+      } catch (error) {
+        console.error('error', error)
+      }
+      this.currentFacility = payload;
+    },
+
     async fetchFacilityPreference() {
       try {
         const preferredFacilityResp = await api({
@@ -249,7 +390,7 @@ export const useUserStore = defineStore("appUser", {
             userId: this.current.userId,
             preferenceKey: "SELECTED_FACILITY"
           },
-        });
+        }) as any;
         const preferredFacilityId = preferredFacilityResp.data?.[0]?.preferenceValue;
         if (preferredFacilityId) {
           const currentFacility = this.current.facilities.find((facility: any) => facility.facilityId === preferredFacilityId);
@@ -261,11 +402,40 @@ export const useUserStore = defineStore("appUser", {
     },
     async fetchProductStores() {
       try {
-        const productStoresResp = await api({
-          url: "admin/productStores",
-          method: "get",
-        });
-        this.current.stores = productStoresResp.data
+        const facilityId = this.currentFacility.facilityId;
+        const pageSize = 200;
+
+        const resp = await api({
+          url: `oms/facilities/${facilityId}/productStores`,
+          method: "GET",
+          params: {
+            pageSize,
+            facilityId
+          }
+        }) as any;
+
+        const stores = resp.data.filter((store: any) => !store.thruDate)
+
+        if (stores.length) {
+          // Fetching all stores for the store name
+          try {
+            const productStoresResp = await api({
+              url: "oms/productStores",
+              method: "GET",
+              params: {
+                pageSize: 200
+              }
+            }) as any;
+            const productStores = productStoresResp.data;
+            const productStoresMap = {} as any;
+            productStores.map((store: any) => productStoresMap[store.productStoreId] = store.storeName)
+            stores.map((store: any) => store.storeName = productStoresMap[store.productStoreId])
+          } catch (error) {
+            console.error(error);
+          }
+        }
+
+        this.current.stores = stores;
 
         this.current.stores.push({
           productStoreId: "",
@@ -288,8 +458,8 @@ export const useUserStore = defineStore("appUser", {
             userId: this.current.userId,
             preferenceKey: "SELECTED_BRAND"
           },
-        });
-        const preferredStoreId = preferredStoreResp.data
+        }) as any;
+        const preferredStoreId = preferredStoreResp.data?.[0]?.preferenceValue
         if (preferredStoreId) {
           const store = this.current.stores.find((store: any) => store.productStoreId === preferredStoreId);
           store && this.setCurrentEComStore(store)
@@ -299,35 +469,26 @@ export const useUserStore = defineStore("appUser", {
       }
     },
 
-    async setFacility({ facility }: any) {
+    async setUserTimeZone(tzId: string) {
       try {
-        const resp = await UserService.updateFacility({
-          facilityId: facility.facilityId,
-          fromDate: DateTime.now().toMillis()
-        })
-
-        if (!commonUtil.hasError(resp)) {
-          this.updateUserInfo({ userTimeZone: facility.timeZone })
-          this.currentTimeZoneId = facility.timeZone
-          Settings.defaultZone = facility.timeZone
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        logger.error("error", err)
+        await api({
+          url: "admin/user/profile",
+          method: "POST",
+          data: { userId: this.current.userId, userTimeZone: tzId },
+        });
+        this.updateUserInfo({ userTimeZone: tzId })
+        this.currentTimeZoneId = tzId
+      } catch (error: any) {
+        console.error("Failed to set user time zone", error);
+        commonUtil.showToast(translate("Failed to set user time zone"));
       }
-      return facility
     },
-    setUserTimeZone(tzId: string) {
-      this.updateUserInfo({ userTimeZone: tzId })
-      this.currentTimeZoneId = tzId
-    },
+
     async fetchEComStoreDependencies(productStoreId: string) {
-      if (!productStoreId) return
-      // The product store is already persisted by dxp-components.
-      // Fetch dependent data after the product store changes.
       await useProductIdentificationStore().getIdentificationPref(productStoreId)
         .catch((error) => logger.error(error))
+
+      useUtilStore().findProductStoreShipmentMethCount()
 
       try {
         await useUtilStore().fetchProductStoreSettings(productStoreId)
@@ -336,16 +497,7 @@ export const useUserStore = defineStore("appUser", {
       }
     },
     async setUserPreference(payload: any) {
-      try {
-        const resp = await UserService.setUserPreference(payload)
-        if (!commonUtil.hasError(resp)) {
-          this.setUserPreferenceState(payload)
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        logger.error("error", err)
-      }
+      this.preference = { ...this.preference, ...payload }
     },
     setUnreadNotificationsStatus(payload: any) {
       // This action is now effectively a placeholder or should be moved to components
@@ -353,11 +505,15 @@ export const useUserStore = defineStore("appUser", {
     },
     async setEComStorePreference(payload: any) {
       try {
-        await UserService.setUserPreference({
-          userPrefTypeId: 'SELECTED_BRAND',
-          userPrefValue: payload.productStoreId,
-          userId: this.current.userId
-        })
+        await api({
+          url: "admin/user/preferences",
+          method: "PUT",
+          data: {
+            userId: this.current.userId,
+            preferenceKey: 'SELECTED_BRAND',
+            preferenceValue: payload.productStoreId,
+          }
+        });
       } catch (error) {
         console.error('error', error)
       }
@@ -370,8 +526,12 @@ export const useUserStore = defineStore("appUser", {
       }
 
       try {
-        const resp = await UtilService.getAvailableTimeZones();
-        if (!commonUtil.hasError(resp)) {
+        const resp = await api({
+          url: "admin/user/getAvailableTimeZones",
+          method: "get",
+          cache: true
+        }) as any;
+        if (resp.status === 200 && !commonUtil.hasError(resp)) {
           this.timeZones = resp.data.timeZones.filter((timeZone: any) => DateTime.local().setZone(timeZone.id).isValid);
         }
       } catch (err) {
@@ -380,9 +540,9 @@ export const useUserStore = defineStore("appUser", {
     },
 
     async setLocale(locale: string) {
-      let newLocale, matchingLocale
-      newLocale = this.locale
-      // handling if locale is not coming from userProfile
+      let newLocale = this.locale;
+      let matchingLocale: string | undefined;
+
       try {
         const userProfile = this.current
         if (locale) {
@@ -391,12 +551,19 @@ export const useUserStore = defineStore("appUser", {
           matchingLocale = matchingLocale || Object.keys(this.localeOptions).find((option: string) => option.slice(0, 2) === locale.slice(0, 2))
           newLocale = matchingLocale || this.locale
           // update locale in state and globally
-          await UserService.setUserLocale({ userId: userProfile.userId, newLocale })
+          await api({
+            url: "admin/user/profile",
+            method: "POST",
+            data: {
+              userId: userProfile.userId,
+              locale: newLocale
+            },
+          });
         }
       } catch (error) {
         console.error(error)
       } finally {
-        i18n.global.locale.value = newLocale
+        i18n.global.locale.value = newLocale as any
         this.locale = newLocale
       }
     },

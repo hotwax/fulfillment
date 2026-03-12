@@ -18,8 +18,6 @@ import { translate } from '@common';
 import { computed } from 'vue';
 import { useUserStore } from '@/store/user';
 
-declare var process: any;
-
 const userStore = useUserStore();
 
 const pwaState = computed(() => userStore.pwaState)
@@ -30,7 +28,7 @@ const refreshApp = () => {
   pwaState.value.registration.waiting.postMessage({ type: 'SKIP_WAITING' })
 }
 
-const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any;
+const appInfo = (import.meta.env.VUE_APP_VERSION_INFO ? JSON.parse(import.meta.env.VUE_APP_VERSION_INFO) : {}) as any;
 const appVersion = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
 const getDateTime = (time: any) => DateTime.fromMillis(time).setZone(userStore.currentTimeZoneId).toLocaleString(DateTime.DATETIME_MED);
 </script>

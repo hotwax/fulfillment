@@ -1,6 +1,5 @@
 import { defineStore } from "pinia"
-import { UtilService } from "@/services/UtilService"
-import { commonUtil, logger } from "@common";
+import { api, commonUtil, logger } from "@common";
 
 import { useUserStore } from "@/store/user"
 
@@ -257,22 +256,33 @@ export const useUtilStore = defineStore("util", {
     async fetchProductStoreSettings(productStoreId: string) {
       const defaultProductStoreSettings = JSON.parse(import.meta.env.VITE_DEFAULT_PRODUCT_STORE_SETTINGS as any)
       const productStoreSettings: any = { ...defaultProductStoreSettings }
-      const payload = {
-        productStoreId,
-        settingTypeEnumId: Object.keys(defaultProductStoreSettings),
-        settingTypeEnumId_op: "in",
-        pageIndex: 0,
-        pageSize: 50
-      }
-      try {
-        const resp = await UtilService.fetchProductStoreSetting(payload) as any
 
-        resp?.data?.entityValueList?.forEach((productSetting: any) => {
-          return productStoreSettings[productSetting.settingTypeEnumId] = productSetting.settingValue
-        })
-      } catch (error) {
-        logger.error("Failed to fetch settings", error)
+      if (productStoreId) {
+        const payload = {
+          productStoreId,
+          settingTypeEnumId: Object.keys(defaultProductStoreSettings),
+          settingTypeEnumId_op: "in",
+          pageIndex: 0,
+          pageSize: 50
+        }
+        try {
+          const resp = await api({
+            url: `/oms/dataDocumentView`,
+            method: "POST",
+            data: {
+              dataDocumentId: "ProductStoreSetting",
+              customParametersMap: payload
+            }
+          }) as any
+
+          resp?.data?.entityValueList?.forEach((productSetting: any) => {
+            return productStoreSettings[productSetting.settingTypeEnumId] = productSetting.settingValue
+          })
+        } catch (error) {
+          logger.error("Failed to fetch settings", error)
+        }
       }
+
       this.setProductStoreSettings(productStoreSettings)
     },
     async fetchRejectReasons() {
@@ -285,7 +295,12 @@ export const useUtilStore = defineStore("util", {
           orderByField: "sequenceNum"
         }
 
-        const resp = await UtilService.fetchRejectReasons(payload)
+        const resp = await api({
+          url: `/admin/enums`,
+          method: "GET",
+          params: payload,
+        });
+
         if (!commonUtil.hasError(resp)) {
           rejectReasons = resp.data
         } else {
@@ -298,9 +313,7 @@ export const useUtilStore = defineStore("util", {
       this.setRejectReasons(rejectReasons)
     },
     async fetchRejectReasonOptions() {
-      const permissions = useUserStore().getUserPermissions
-
-      const isAdminUser = permissions.some((permission: any) => permission.action === "APP_STOREFULFILLMENT_ADMIN")
+      const isAdminUser = useUserStore().hasPermission("STOREFULFILLMENT_ADMIN")
       const isApiSuccess = isAdminUser ? await this.fetchRejectReasons() : await this.fetchFulfillmentRejectReasons(true)
 
       this.setRejectReasonOptions(((!isAdminUser && isApiSuccess) ? Object.values(this.fulfillmentRejectReasons) : this.rejectReasons))
@@ -316,7 +329,11 @@ export const useUtilStore = defineStore("util", {
           orderByField: "sequenceNum"
         }
 
-        const resp = await UtilService.fetchFulfillmentRejectReasons(payload)
+        const resp = await api({
+          url: `/admin/enumGroups/${payload.enumerationGroupId}/members`,
+          method: "GET",
+          params: payload,
+        });
 
         if (!commonUtil.hasError(resp)) {
           const rejectionsReasons = resp.data.filter((reason: any) => !reason.thruDate).reduce((rejReasons: any, reason: any) => {
@@ -355,7 +372,12 @@ export const useUtilStore = defineStore("util", {
           pageSize: 10
         }
 
-        const resp = await UtilService.fetchRejectReasonEnumTypes(params)
+        const resp = await api({
+          url: `/admin/enumTypes`,
+          method: "GET",
+          params: params
+        });
+
         if (!commonUtil.hasError(resp)) {
           rejectReasonEnumTypes = resp.data
         } else {
@@ -381,7 +403,11 @@ export const useUtilStore = defineStore("util", {
           pageSize: ids.length
         }
 
-        const resp = await UtilService.fetchPartyInformation(payload)
+        const resp = await api({
+          url: `/oms/parties`,
+          method: "GET",
+          params: payload,
+        });
 
         if (!commonUtil.hasError(resp)) {
           const partyResp = {} as any
@@ -414,10 +440,14 @@ export const useUtilStore = defineStore("util", {
     async fetchCarrierShipmentBoxTypes() {
       try {
         const shipmentBoxTypeDesc = {} as any
-        const resp = await UtilService.fetchCarrierShipmentBoxTypes({
-          pageIndex: 0,
-          pageSize: 100,
-          fieldsToSelect: ["shipmentBoxTypeId", "partyId"]
+        const resp = await api({
+          url: "/oms/shippingGateways/carrierShipmentBoxTypes",
+          method: "GET",
+          params: {
+            pageIndex: 0,
+            pageSize: 100,
+            fieldsToSelect: ["shipmentBoxTypeId", "partyId"]
+          }
         })
 
         const shipmentBoxTypeIds = new Set()
@@ -459,7 +489,11 @@ export const useUtilStore = defineStore("util", {
           pageSize: ids.length
         }
 
-        const resp = await UtilService.fetchShipmentMethodTypeDesc(payload)
+        const resp = await api({
+          url: `/oms/shippingGateways/shipmentMethodTypes`,
+          method: "GET",
+          params: payload,
+        });
 
         if (!commonUtil.hasError(resp)) {
           const shipmentMethodResp = {} as any
@@ -498,7 +532,11 @@ export const useUtilStore = defineStore("util", {
       }
 
       try {
-        const resp = await UtilService.fetchFacilityTypeInformation(payload)
+        const resp = await api({
+          url: `/oms/facilities`,
+          method: "GET",
+          params: payload,
+        });
 
         if (!commonUtil.hasError(resp) && resp.data?.length > 0) {
           resp.data.map((facilityType: any) => {
@@ -528,7 +566,11 @@ export const useUtilStore = defineStore("util", {
           pageSize: ids.length
         }
 
-        const resp = await UtilService.fetchPaymentMethodTypeDesc(payload)
+        const resp = await api({
+          url: `/oms/paymentMethodTypes`,
+          method: "GET",
+          params: payload
+        });
 
         if (!commonUtil.hasError(resp)) {
           const paymentMethodResp = {} as any
@@ -566,7 +608,11 @@ export const useUtilStore = defineStore("util", {
           pageSize: ids.length
         }
 
-        const resp = await UtilService.fetchStatusDesc(payload)
+        const resp = await api({
+          url: `/oms/statuses`,
+          method: "GET",
+          params: payload
+        });
 
         if (!commonUtil.hasError(resp)) {
           const statusResp = {} as any
@@ -602,7 +648,11 @@ export const useUtilStore = defineStore("util", {
       }
 
       try {
-        const resp = await UtilService.findProductStoreShipmentMethCount(params)
+        const resp = await api({
+          url: `/oms/productStores/shipmentMethods/counts`,
+          method: "GET",
+          params: params
+        });
 
         if (!commonUtil.hasError(resp)) {
           productStoreShipmentMethCount = resp.data[0]?.shipmentMethodCount
@@ -632,7 +682,12 @@ export const useUtilStore = defineStore("util", {
           fieldsToSelect: ["enumId", "description"]
         }
 
-        const resp = await UtilService.fetchEnumeration(payload)
+        const resp = await api({
+          url: `/admin/enums`,
+          method: "GET",
+          params: payload
+        });
+
         if (!commonUtil.hasError(resp)) {
           enumerations = resp.data.reduce((enums: any, enumeration: any) => {
             enums[enumeration.enumId] = enumeration.description
@@ -663,7 +718,11 @@ export const useUtilStore = defineStore("util", {
           pageSize: 250
         }
 
-        const resp = await UtilService.fetchFacilities(payload)
+        const resp = await api({
+          url: "/oms/facilities",
+          method: "GET",
+          params: payload
+        });
 
         if (!commonUtil.hasError(resp)) {
           facilities = resp.data
@@ -683,7 +742,12 @@ export const useUtilStore = defineStore("util", {
           pageSize: 250
         }
 
-        const resp = await UtilService.fetchProductStores(payload)
+        const resp = await api({
+          url: `/oms/productStores`,
+          method: "GET",
+          params: payload
+        });
+
         if (!commonUtil.hasError(resp)) {
           stores = resp.data
         } else {
@@ -699,12 +763,16 @@ export const useUtilStore = defineStore("util", {
       const carrierDesc = {} as any
 
       try {
-        const resp = await UtilService.fetchCarriers({
-          roleTypeId: "CARRIER",
-          fieldsToSelect: ["partyId", "partyTypeId", "roleTypeId", "firstName", "lastName", "groupName"],
-          distinct: "Y",
-          pageSize: 20
-        })
+        const resp = await api({
+          url: `/oms/shippingGateways/carrierParties`,
+          method: "GET",
+          params: {
+            roleTypeId: "CARRIER",
+            fieldsToSelect: ["partyId", "partyTypeId", "roleTypeId", "firstName", "lastName", "groupName"],
+            distinct: "Y",
+            pageSize: 20
+          },
+        });
 
         if (!commonUtil.hasError(resp)) {
           resp.data.map((carrier: any) => {
@@ -737,7 +805,11 @@ export const useUtilStore = defineStore("util", {
           filterByDate: true
         }
 
-        const resp = await UtilService.fetchStoreCarrierAndMethods(payload)
+        const resp = await api({
+          url: `/oms/dataDocumentView`,
+          method: "POST",
+          data: payload,
+        });
 
         if (!commonUtil.hasError(resp)) {
           const storeCarrierAndMethods = resp.data.entityValueList
@@ -772,10 +844,14 @@ export const useUtilStore = defineStore("util", {
       try {
         const responses = await Promise.all(
           remainingFacilityIds.map((facilityId: any) =>
-            UtilService.fetchFacilityAddresses({
-              contactMechPurposeTypeId: "PRIMARY_LOCATION",
-              contactMechTypeId: "POSTAL_ADDRESS",
-              facilityId: useUserStore().getCurrentFacility?.facilityId
+            api({
+              url: `/oms/facilityContactMechs`,
+              method: "GET",
+              params: {
+                contactMechPurposeTypeId: "PRIMARY_LOCATION",
+                contactMechTypeId: "POSTAL_ADDRESS",
+                facilityId: useUserStore().getCurrentFacility?.facilityId
+              },
             })
           )
         )
@@ -805,7 +881,29 @@ export const useUtilStore = defineStore("util", {
         return this.facilityShippingLabelImageType[facilityId]
       }
 
-      const isFacilityZPLConfigured = await UtilService.fetchFacilityZPLGroupInfo()
+      let isFacilityZPLConfigured = false;
+      try {
+        const resp = await api({
+          url: `/oms/dataDocumentView`,
+          method: "POST",
+          data: {
+            customParametersMap: {
+              facilityGroupId: "ZPL_SHIPPING_LABEL",
+              facilityGroupTypeId: "SHIPPING_LABEL",
+              pageIndex: 0,
+              pageSize: 1
+            },
+            dataDocumentId: "FacilityGroupAndMember",
+            filterByDate: true,
+          }
+        });
+
+        if (!commonUtil.hasError(resp) && resp.data?.entityValueList?.length > 0) {
+          isFacilityZPLConfigured = true
+        }
+      } catch (err) {
+        logger.error(err)
+      }
 
       if (isFacilityZPLConfigured) {
         labelImageType = "ZPLII"
@@ -817,7 +915,11 @@ export const useUtilStore = defineStore("util", {
       }
 
       try {
-        const resp = await UtilService.fetchLabelImageType(carrierId)
+        const resp = await api({
+          url: `/admin/systemProperties`,
+          method: "GET",
+          params: { "systemResourceId": carrierId, "systemPropertyId": "shipment.carrier.labelImageType", "pageSize": 1 }
+        });
 
         if (commonUtil.hasError(resp) || !resp.data.length) {
           throw resp.data
@@ -844,7 +946,21 @@ export const useUtilStore = defineStore("util", {
         } = config
 
         if (requireEnum) {
-          const enumExists = await UtilService.isEnumExists(enumId)
+          let enumExists = false
+          try {
+            const resp = await api({
+              url: `/admin/enums`,
+              method: "GET",
+              params: { enumId }
+            }) as any
+
+            if (!commonUtil.hasError(resp) && resp.data.length) {
+              enumExists = true
+            }
+          } catch (err) {
+            enumExists = false
+          }
+
           if (!enumExists) {
             const enumPayload = {
               enumId,
@@ -853,7 +969,12 @@ export const useUtilStore = defineStore("util", {
               description: enumMeta.description,
               enumName: enumMeta.enumName
             }
-            const enumResponse = await UtilService.createEnumeration(enumPayload)
+            const enumResponse = await api({
+              url: `/admin/enums`,
+              method: "POST",
+              data: enumPayload,
+            });
+
             if (commonUtil.hasError(enumResponse)) {
               throw new Error("Failed to create enumeration")
             }
@@ -862,12 +983,19 @@ export const useUtilStore = defineStore("util", {
 
         let isSettingAlreadyExists = false
         try {
-          const fetchSetting = await UtilService.fetchProductStoreSetting({
-            productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
-            settingTypeEnumId: enumId,
-            fieldsToSelect: ["settingTypeEnumId"],
-            pageSize: 1
-          })
+          const fetchSetting = await api({
+            url: `/oms/dataDocumentView`,
+            method: "POST",
+            data: {
+              dataDocumentId: "ProductStoreSetting",
+              customParametersMap: {
+                productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
+                settingTypeEnumId: enumId,
+                fieldsToSelect: ["settingTypeEnumId"],
+                pageSize: 1
+              }
+            }
+          });
           isSettingAlreadyExists = fetchSetting?.data?.entityValueList?.length > 0
         } catch (err) {
           logger.error(`Unable to check existence for ${enumId}`, err)
@@ -875,11 +1003,15 @@ export const useUtilStore = defineStore("util", {
 
         let response
         if (isSettingAlreadyExists) {
-          response = await UtilService.updateProductStoreSetting({
-            productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
-            settingTypeEnumId: enumId,
-            ...payload
-          })
+          response = await api({
+            url: `/oms/productStores/${useUserStore().getCurrentEComStore?.productStoreId}/settings`,
+            method: "POST",
+            data: {
+              productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
+              settingTypeEnumId: enumId,
+              ...payload
+            }
+          });
         } else {
           response = await createService({
             productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
@@ -906,15 +1038,19 @@ export const useUtilStore = defineStore("util", {
       let resp: any
       try {
         const currentFacility: any = useUserStore().getCurrentFacility?.facilityId
-        resp = await UtilService.getFacilityGroupAndMemberDetails({
-          customParametersMap: {
-            facilityId: currentFacility,
-            facilityGroupId: "AUTO_SHIPPING_LABEL",
-            pageIndex: 0,
-            pageSize: 1
-          },
-          dataDocumentId: "FacilityGroupAndMember",
-          filterByDate: true
+        resp = await api({
+          url: `/oms/dataDocumentView`,
+          method: "post",
+          data: {
+            customParametersMap: {
+              facilityId: currentFacility,
+              facilityGroupId: "AUTO_SHIPPING_LABEL",
+              pageIndex: 0,
+              pageSize: 1
+            },
+            dataDocumentId: "FacilityGroupAndMember",
+            filterByDate: true
+          }
         })
 
         if (!commonUtil.hasError(resp) && resp.data?.entityValueList?.length > 0) {

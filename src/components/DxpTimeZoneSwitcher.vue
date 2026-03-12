@@ -163,9 +163,9 @@ onBeforeMount(async () => {
   isLoading.value = true;
   await userStore.getAvailableTimeZones();
 
-  if(userProfile.value && userProfile.value.userTimeZone) {
-    userStore.currentTimeZoneId = userProfile.value.userTimeZone
-    timeZoneId.value = userProfile.value.userTimeZone
+  if(userProfile.value && userProfile.value.timeZone) {
+    userStore.currentTimeZoneId = userProfile.value.timeZone
+    timeZoneId.value = userProfile.value.timeZone
   }
 
   if(props.showBrowserTimeZone) {

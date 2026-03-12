@@ -1,7 +1,6 @@
 import { defineStore } from "pinia"
-import { RejectionService } from "@/services/RejectionService"
+
 import { api, commonUtil, logger, solrUtil } from "@common";
-import { UtilService } from "@/services/UtilService"
 import { useProductStore } from "@/store/product"
 import { useUtilStore } from "@/store/util"
 import { useUserStore } from "@/store/user"
@@ -116,7 +115,12 @@ export const useRejectionStore = defineStore("rejection", {
       })
 
       try {
-        const resp = await RejectionService.fetchRejectionStats(query)
+        const resp: any = await api({
+          url: "solr-query",
+          method: "post",
+          data: query,
+          baseURL: commonUtil.getOmsURL()
+        })
         if (!commonUtil.hasError(resp)) {
           total = resp.data.facets.total ? resp.data.facets.total : 0
           const usedReasons = resp.data.facets.rejectionReasonIdFacet.buckets
@@ -135,7 +139,11 @@ export const useRejectionStore = defineStore("rejection", {
               pageSize: reasonIds.length,
               orderByField: "sequenceNum"
             }
-            const resp = await UtilService.fetchRejectReasons(payload)
+            const resp = await api({
+              url: `/admin/enums`,
+              method: "GET",
+              params: payload,
+            }) as any
 
             if (!commonUtil.hasError(resp)) {
               const reasonCountDetail = resp.data.reduce((reasonDetail: any, reason: any) => {
@@ -197,7 +205,12 @@ export const useRejectionStore = defineStore("rejection", {
       })
 
       try {
-        const resp = await RejectionService.fetchRejctedOrders(query)
+        const resp: any = await api({
+          url: "solr-query",
+          method: "post",
+          data: query,
+          baseURL: commonUtil.getOmsURL()
+        })
         if (!commonUtil.hasError(resp)) {
           total = resp.data.grouped.orderId_s.ngroups
           orders = resp.data.grouped.orderId_s.groups
@@ -268,7 +281,12 @@ export const useRejectionStore = defineStore("rejection", {
 
         const orderQueryPayload = solrUtil.prepareSolrQuery(params)
 
-        resp = await RejectionService.findRejectedOrdersDetail(orderQueryPayload)
+        resp = await api({
+          url: "solr-query",
+          method: "post",
+          data: orderQueryPayload,
+          baseURL: commonUtil.getOmsURL()
+        }) as any
         if (resp.status === 200 && !commonUtil.hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
           orders = resp.data.grouped.orderId.groups
           const orderDetails = orders.reduce((orderDetail: any, order: any) => {

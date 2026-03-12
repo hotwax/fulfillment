@@ -4,6 +4,7 @@ import { useUtilStore } from "@/store/util";
 import { DateTime } from "luxon";
 import { computed, ref } from "vue";
 import router from '@/router';
+import { useProductIdentificationStore } from "@/store/productIdentification";
 
 interface LoginOption {
   loginAuthType?: string,
@@ -58,10 +59,10 @@ export function useAuth() {
       await useUserStore().fetchFacilityPreference();
       await useUserStore().fetchProductStores()
       await useUserStore().fetchProductStorePreference();
+      await useUserStore().fetchEComStoreDependencies(useUserStore().getCurrentEComStore.productStoreId)
 
       const notificationStore = useNotificationStore();
       await notificationStore.fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID, resp.data.userLoginId)
-      useUtilStore().findProductStoreShipmentMethCount()
       await useUtilStore().fetchCarrierShipmentBoxTypes()
       await useUtilStore().fetchAutoShippingLabelConfig()
 

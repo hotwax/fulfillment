@@ -1,9 +1,10 @@
 import { useUserStore } from "./user"
-import { api, commonUtil, emitter, logger } from "@common";
+import { api, commonUtil, emitter, logger, solrUtil } from "@common";
 import { defineStore } from "pinia"
-import { OrderService } from "@/services/OrderService"
-import { UtilService } from "@/services/UtilService"
+import { orderUtil } from "@/utils/orderUtil";
+
 import { DateTime } from "luxon"
+
 import { useProductStore } from "@/store/product"
 import { useUtilStore } from "@/store/util"
 
@@ -161,29 +162,224 @@ export const useOrderStore = defineStore("order", {
 
       const openOrderQuery = JSON.parse(JSON.stringify(this.open.query))
       openOrderQuery.groupBy = "orderItemShipGroupIdentifier"
-      const resp = await OrderService.findOpenOrders({ openOrderQuery })
+
+      const { orders, total } = await this.searchOpenOrders({ openOrderQuery })
 
       const productIds = [
-        ...new Set(resp.orders.flatMap((order: any) => order.items.map((item: any) => item.productId)))
-      ]
+        ...new Set(orders.flatMap((order: any) => order.items.map((item: any) => item.productId)))
+      ] as string[]
       useProductStore().fetchProducts({ productIds })
 
-      openOrderQuery.viewSize = resp?.orders?.length
+      openOrderQuery.viewSize = orders.length
       this.setOpenQuery({ ...openOrderQuery })
-      this.setOpenOrders({ list: resp?.orders, total: resp?.total })
+      this.setOpenOrders({ list: orders, total: total })
 
       emitter.emit("dismissLoader")
     },
+    async searchOpenOrders(payload: any) {
+      const openOrderQuery = payload.openOrderQuery
+      const shipGroupFilter = openOrderQuery.shipGroupFilter
+
+      const params = {
+        docType: 'ORDER',
+        queryString: openOrderQuery.queryString,
+        queryFields: 'productId productName parentProductName orderId orderName customerEmailId customerPartyId customerPartyName  search_orderIdentifications goodIdentifications',
+        viewSize: openOrderQuery.viewSize,
+        sort: openOrderQuery.sort ? openOrderQuery.sort : "orderDate asc",
+        filters: {
+          '-shipmentMethodTypeId': { value: ['STOREPICKUP', 'POS_COMPLETED'] },
+          orderStatusId: { value: 'ORDER_APPROVED' },
+          orderTypeId: { value: 'SALES_ORDER' },
+          productStoreId: { value: useUserStore().getCurrentEComStore?.productStoreId }
+        },
+        solrFilters: [
+          //it should be explicit what is subtracting the first part of your OR statement from
+          "((*:* -fulfillmentStatus: [* TO *]) OR fulfillmentStatus:Created)",
+          "entryDate:[2025-01-01T00:00:00Z TO *]"
+        ]
+      } as any
+      if (!openOrderQuery.excludeFacilityFilter) {
+        params.filters['facilityId'] = { value: solrUtil.escapeSolrSpecialChars(useUserStore().getCurrentFacility?.facilityId) }
+      }
+      if (shipGroupFilter && Object.keys(shipGroupFilter).length) {
+        Object.assign(params.filters, shipGroupFilter);
+      }
+
+      if (openOrderQuery.orderId) {
+        params.filters['orderId'] = { value: openOrderQuery.orderId }
+      }
+      if (openOrderQuery.shipGroupSeqId) {
+        params.filters['shipGroupSeqId'] = { value: openOrderQuery.shipGroupSeqId }
+      }
+
+      if (openOrderQuery.groupBy) {
+        params.isGroupingRequired = true
+        params.groupBy = openOrderQuery.groupBy
+      } else {
+        params.isGroupingRequired = true
+        params.groupBy = "orderId"
+      }
+
+      // only adding shipmentMethods when a method is selected
+      if (openOrderQuery.selectedShipmentMethods && openOrderQuery.selectedShipmentMethods.length) {
+        params.filters['shipmentMethodTypeId'] = { value: openOrderQuery.selectedShipmentMethods, op: 'OR' }
+      }
+
+      if (openOrderQuery.selectedCategories && openOrderQuery.selectedCategories.length) {
+        params.filters['productCategories'] = { value: openOrderQuery.selectedCategories.map((category: string) => JSON.stringify(category)), op: 'OR' }
+      }
+
+      const orderQueryPayload = solrUtil.prepareSolrQuery(params)
+      let orders = [], total = 0;
+
+      try {
+        const resp = await api({
+          url: "solr-query",
+          method: "post",
+          data: orderQueryPayload,
+          baseURL: commonUtil.getOmsURL()
+        }) as any;
+        if (!commonUtil.hasError(resp) && resp.data.grouped[params.groupBy]?.matches > 0) {
+          total = resp.data.grouped[params.groupBy].ngroups
+          orders = resp.data.grouped[params.groupBy].groups
+
+          orders = orders.map((order: any) => {
+            const orderItem = order.doclist.docs[0];
+
+            return {
+              category: 'open',
+              customerId: orderItem.customerPartyId,
+              customerName: orderItem.customerPartyName,
+              orderId: orderItem.orderId,
+              orderDate: orderItem.orderDate,
+              orderName: orderItem.orderName,
+              groupValue: order.groupValue,
+              items: order.doclist.docs,
+              shipGroupSeqId: orderItem.shipGroupSeqId,
+              shipmentMethodTypeId: orderItem.shipmentMethodTypeId,
+              reservedDatetime: orderItem.reservedDatetime,
+              facilityId: orderItem.facilityId,
+              facilityName: orderItem.facilityName,
+              facilityTypeId: orderItem.facilityTypeId
+            }
+          })
+        }
+      } catch (err) {
+        logger.error('No outstanding orders found', err)
+      }
+
+      return { orders, total }
+    },
+    async findShipments(query: any) {
+      const productStoreShipmentMethCount = useUtilStore().getProductStoreShipmentMethCount;
+      let orders = [], total = 0;
+
+      try {
+        const params = {
+          pageSize: query.viewSize,
+          orderBy: 'orderDate',
+          shipmentTypeId: 'SALES_SHIPMENT',
+          productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
+        } as any
+
+        if (query.queryString) {
+          params.keyword = query.queryString
+        }
+        if (!query.excludeFacilityFilter) {
+          params.originFacilityId = useUserStore().getCurrentFacility?.facilityId
+        }
+        if (query.orderStatusId) {
+          params.orderStatusId = query.orderStatusId
+          if (Array.isArray(query.orderStatusId)) {
+            params.orderStatusId_op = "in"
+          }
+        }
+        if (query.statusId) {
+          params.statusId = query.statusId
+          if (Array.isArray(query.statusId)) {
+            params.statusId_op = "in"
+          }
+        }
+        if (query.orderId) {
+          params.orderId = query.orderId
+        }
+        if (query.shipmentId) {
+          params.shipmentId = query.shipmentId
+        }
+        // preparing filters separately those are based on some condition
+        if (query.selectedPicklist) {
+          params.picklistId = query.selectedPicklist
+        }
+
+        if (query.shippedDateFrom) {
+          params.shippedDateFrom = query.shippedDateFrom
+        }
+
+        if (query.selectedCarrierPartyId) {
+          params.carrierPartyId = query.selectedCarrierPartyId
+        }
+
+        // only adding shipmentMethods when a method is selected
+        if (query.selectedShipmentMethods && query.selectedShipmentMethods.length) {
+          params.shipmentMethodTypeIds = query.selectedShipmentMethods
+        }
+
+        const resp = await api({
+          url: `/poorti/shipments`,
+          method: "GET",
+          params,
+        }) as any;
+        if (!commonUtil.hasError(resp)) {
+          total = resp.data.shipmentCount
+          orders = resp.data.shipments.map((shipment: any) => {
+            const category = shipment.statusId === 'SHIPMENT_APPROVED' ? 'in-progress' : (shipment.statusId === 'SHIPMENT_PACKED' || shipment.statusId === 'SHIPMENT_SHIPPED') ? 'completed' : ""
+            const shipmentPackageRouteSegDetails = shipment?.shipmentPackageRouteSegDetails?.filter((seg: any) => seg.carrierServiceStatusId !== "SHRSCS_VOIDED") || [];
+
+            let missingLabelImage = false;
+            if (productStoreShipmentMethCount > 0) {
+              missingLabelImage = shipmentPackageRouteSegDetails.length === 0 || shipmentPackageRouteSegDetails.some((seg: any) => !seg.trackingCode);
+            }
+
+            shipment.shipmentPackages = shipment.shipmentPackages.map((shipmentPackage: any) => {
+              const shipmentPackageRouteSegDetail = shipmentPackageRouteSegDetails.find(
+                (detail: any) =>
+                  shipmentPackage.shipmentId === detail.shipmentId &&
+                  shipmentPackage.shipmentPackageSeqId === detail.shipmentPackageSeqId
+              );
+              return { ...shipmentPackage, ...shipmentPackageRouteSegDetail };
+            });
+
+            const customerName = (shipment.firstName && shipment.lastName) ? shipment.firstName + " " + shipment.lastName : shipment.firstName ? shipment.firstName : "";
+
+            return {
+              category,
+              ...shipment,
+              customerName,
+              items: orderUtil.removeKitComponents(shipment),
+              missingLabelImage,
+              trackingCode: shipmentPackageRouteSegDetails[0]?.trackingCode,
+            };
+          });
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        logger.error('No shipments found', err)
+      }
+      return { orders, total }
+    },
+
     async findInProgressOrders() {
       const inProgressQuery = JSON.parse(JSON.stringify(this.inProgress.query))
 
       if (!inProgressQuery.hideLoader) emitter.emit("presentLoader")
-      let orders: any[] = []
 
       inProgressQuery.statusId = "SHIPMENT_APPROVED"
       inProgressQuery.orderStatusId = "ORDER_APPROVED"
-      const resp = await OrderService.findShipments(inProgressQuery)
-      orders = (resp.orders || []).map((order: any) => ({
+
+      const { orders: inProgressOrders, total: inProgressTotal } = await this.findShipments(inProgressQuery)
+
+      let orders = (inProgressOrders || []).map((order: any) => ({
         ...order,
         category: "in-progress",
         items: order.items.map((item: any) => {
@@ -198,45 +394,48 @@ export const useOrderStore = defineStore("order", {
         })
       }))
 
-      const productIds = [...new Set(orders.flatMap((order: any) => order.items.map((item: any) => item.productId)))]
-      const shipmentMethodTypeIds = [...new Set(orders.map((order: any) => order.shipmentMethodTypeId))]
+      const productIds = [...new Set(orders.flatMap((order: any) => order.items.map((item: any) => item.productId)))] as string[]
+      const shipmentMethodTypeIds = [...new Set(orders.map((order: any) => order.shipmentMethodTypeId))] as string[]
 
       useProductStore().fetchProducts({ productIds })
       useUtilStore().fetchShipmentMethodTypeDesc(shipmentMethodTypeIds)
       orders = await this.fetchGiftCardActivationDetails({ isDetailsPage: false, currentOrders: orders })
 
-      inProgressQuery.viewSize = orders?.length
+
       this.setInProgressQuery({ ...inProgressQuery })
-      this.setInProgressOrders({ orders, total: resp.total })
+      this.setInProgressOrders({ orders, total: inProgressTotal })
 
       emitter.emit("dismissLoader")
     },
+
     async findCompletedOrders() {
       emitter.emit("presentLoader")
-      let orders: any[] = []
 
       const completedOrderQuery = JSON.parse(JSON.stringify(this.completed.query))
       completedOrderQuery.statusId = ["SHIPMENT_PACKED"]
-      completedOrderQuery.shippedDateFrom = DateTime.now().startOf("day").toMillis()
-      const resp = await OrderService.findShipments(completedOrderQuery)
-      orders = (resp.orders || []).map((order: any) => ({
+      completedOrderQuery.shippedDateFrom = DateTime.now().setZone(useUserStore().getCurrentFacility?.timeZone || DateTime.local().zoneName).startOf("day").toMillis()
+
+      const { orders: completedOrders, total: completedTotal } = await this.findShipments(completedOrderQuery)
+
+      let orders = (completedOrders || []).map((order: any) => ({
         ...order,
         category: "completed"
       }))
 
-      const productIds = [...new Set(orders.flatMap((order: any) => order.items.map((item: any) => item.productId)))]
-      const shipmentMethodTypeIds = [...new Set(orders.map((order: any) => order.shipmentMethodTypeId))]
+      const productIds = [...new Set(orders.flatMap((order: any) => order.items.map((item: any) => item.productId)))] as string[]
+      const shipmentMethodTypeIds = [...new Set(orders.map((order: any) => order.shipmentMethodTypeId))] as string[]
 
       useProductStore().fetchProducts({ productIds })
       useUtilStore().fetchShipmentMethodTypeDesc(shipmentMethodTypeIds)
       orders = await this.fetchGiftCardActivationDetails({ isDetailsPage: false, currentOrders: orders })
 
-      completedOrderQuery.viewSize = orders?.length
+
       this.setCompletedQuery({ ...completedOrderQuery })
-      this.setCompletedOrders({ list: orders, total: resp.total })
+      this.setCompletedOrders({ list: orders, total: completedTotal })
 
       emitter.emit("dismissLoader")
     },
+
     async getOpenOrder(payload: any) {
       emitter.emit("presentLoader")
 
@@ -245,8 +444,8 @@ export const useOrderStore = defineStore("order", {
       openOrderQuery.shipGroupSeqId = payload.shipGroupSeqId
       openOrderQuery.viewSize = 1
 
-      const resp = await OrderService.findOpenOrders({ openOrderQuery })
-      const order = resp?.orders[0]
+      const { orders } = await this.searchOpenOrders({ openOrderQuery })
+      const order = orders[0]
 
       const productIds = order.items.map((item: any) => item.productId)
       useProductStore().fetchProducts({ productIds })
@@ -257,16 +456,16 @@ export const useOrderStore = defineStore("order", {
     },
     async getInProgressOrder(payload: any) {
       emitter.emit("presentLoader")
-      let order: any = {}
 
       const inProgressQuery = JSON.parse(JSON.stringify(this.inProgress.query))
       inProgressQuery.orderId = payload.orderId
       inProgressQuery.shipmentId = payload.shipmentId
       inProgressQuery.statusId = "SHIPMENT_APPROVED"
 
-      const resp = await OrderService.findShipments(inProgressQuery)
+      const { orders: inProgressOrders } = await this.findShipments(inProgressQuery)
 
-      order = resp.orders[0]
+      let order = inProgressOrders[0]
+
       order.category = "in-progress"
 
       order = {
@@ -293,16 +492,15 @@ export const useOrderStore = defineStore("order", {
     },
     async getCompletedOrder(payload: any) {
       emitter.emit("presentLoader")
-      let order: any = {}
 
       const completedOrderQuery = JSON.parse(JSON.stringify(this.completed.query))
       completedOrderQuery.orderId = payload.orderId
       completedOrderQuery.shipmentId = payload.shipmentId
-      completedOrderQuery.statusId = ["SHIPMENT_PACKED"]
-      completedOrderQuery.shippedDateFrom = DateTime.now().startOf("day").toMillis()
 
-      const resp = await OrderService.findShipments(completedOrderQuery)
-      order = resp?.orders[0]
+      const { orders: completedOrders } = await this.findShipments(completedOrderQuery)
+
+      let order = completedOrders[0]
+
       order.category = "completed"
 
       const productIds = order.items.map((item: any) => item.productId)
@@ -326,32 +524,43 @@ export const useOrderStore = defineStore("order", {
       openOrderQuery.viewSize = import.meta.env.VITE_VIEW_SIZE
 
       openOrderQuery.shipGroupFilter = { "-shipGroupSeqId": { value: shipGroupSeqId } }
-      const openOrderResp = await OrderService.findOpenOrders({ openOrderQuery })
-      if (openOrderResp.orders && openOrderResp.orders.length) {
-        otherShipments = openOrderResp.orders
-      }
+
+      const { orders: openOrders } = await this.searchOpenOrders({ openOrderQuery })
+      otherShipments = openOrders
+
 
       const shipmentQuery: any = {}
       shipmentQuery.viewSize = 50
       shipmentQuery.statusId = ["SHIPMENT_APPROVED", "SHIPMENT_PACKED", "SHIPMENT_SHIPPED"]
       shipmentQuery.orderId = currentOrder.orderId
       shipmentQuery.excludeFacilityFilter = true
-      const resp = await OrderService.findShipments(shipmentQuery)
 
-      if (resp.orders && resp.orders.length) {
-        const filteredShipments = resp.orders.filter((order: any) => order.shipmentId !== currentShipmentId)
+      const { orders: shipmentOrders } = await this.findShipments(shipmentQuery)
+
+      if (shipmentOrders && shipmentOrders.length) {
+        const filteredShipments = shipmentOrders.filter((order: any) => order.shipmentId !== currentShipmentId)
         otherShipments = [...otherShipments, ...filteredShipments]
       }
 
+
       try {
-        const resp = await OrderService.fetchOrderItems({
-          orderId: currentOrder.orderId,
-          shipGroupSeqId,
-          shipGroupSeqId_op: "equals",
-          shipGroupSeqId_not: "Y",
-          pageSize: 50,
-          fieldsToSelect: ["orderId", "orderItemseqId", "shipGroupSeqId", "productId"]
-        })
+        const resp = await api({
+          url: "oms/entity-query",
+          method: "post",
+          data: {
+            "entityName": "OrderItemAndShipGroupAssoc",
+            "inputFields": {
+              orderId: currentOrder.orderId,
+              shipGroupSeqId: shipGroupSeqId,
+              shipGroupSeqId_op: "equals",
+              shipGroupSeqId_not: "Y",
+            },
+            "fieldToSelect": ["orderId", "orderItemseqId", "shipGroupSeqId", "productId"],
+            "viewSize": 50,
+            "noConditionFind": "Y"
+          }
+        }) as any;
+
         if (!commonUtil.hasError(resp)) {
           const allocatedOrderItemSeqIds = [
             ...new Set(otherShipments.flatMap((shipment: any) => shipment.items.map((item: any) => item.orderItemSeqId)))
@@ -368,11 +577,15 @@ export const useOrderStore = defineStore("order", {
               )
             ]
             if (facilityIds.length) {
-              const facilityResp = await UtilService.fetchFacilities({
-                facilityId: facilityIds,
-                facilityId_op: "in",
-                pageSize: 10
-              })
+              const facilityResp = await api({
+                url: "/oms/facilities",
+                method: "GET",
+                params: {
+                  facilityId: facilityIds,
+                  facilityId_op: "in",
+                  pageSize: 10
+                }
+              }) as any;
               if (!commonUtil.hasError(facilityResp)) {
                 facilityInfo = facilityResp.data.reduce((facilityDetail: Record<string, any>, facility: any) => {
                   facilityDetail[facility.facilityId] = facility
@@ -438,12 +651,16 @@ export const useOrderStore = defineStore("order", {
       if (!orderIds.length) return orders
 
       try {
-        const resp = await UtilService.fetchGiftCardFulfillmentInfo({
-          orderId: orderIds,
-          orderId_op: "in",
-          fieldsToSelect: ["amount", "cardNumber", "fulfillmentDate", "orderId", "orderItemSeqId"],
-          pageSize: 250
-        })
+        const resp = await api({
+          url: `/poorti/giftCardFulfillments`,
+          method: "GET",
+          params: {
+            orderId: orderIds,
+            orderId_op: "in",
+            fieldsToSelect: ["amount", "cardNumber", "fulfillmentDate", "orderId", "orderItemSeqId"],
+            pageSize: 250
+          }
+        }) as any;
 
         if (!commonUtil.hasError(resp)) {
           giftCardActivations = resp.data
@@ -483,12 +700,16 @@ export const useOrderStore = defineStore("order", {
       let isGCActivated = false
 
       try {
-        const resp = await UtilService.fetchGiftCardFulfillmentInfo({
-          orderId: item.orderId,
-          orderItemSeqId: item.orderItemSeqId,
-          fieldsToSelect: ["amount", "cardNumber", "fulfillmentDate", "orderId", "orderItemSeqId"],
-          pageSize: 1
-        })
+        const resp = await api({
+          url: `/poorti/giftCardFulfillments`,
+          method: "GET",
+          params: {
+            orderId: item.orderId,
+            orderItemSeqId: item.orderItemSeqId,
+            fieldsToSelect: ["amount", "cardNumber", "fulfillmentDate", "orderId", "orderItemSeqId"],
+            pageSize: 1
+          }
+        }) as any;
 
         if (!commonUtil.hasError(resp)) {
           isGCActivated = true
@@ -553,7 +774,12 @@ export const useOrderStore = defineStore("order", {
           return currentOrder
         }
 
-        const resp = await OrderService.fetchShipmentPackageRouteSegDetails({ shipmentId: payload.shipmentId, pageSize: 10 }) as any
+        const resp = await api({
+          url: `/poorti/shipmentPackageRouteSegDetails`,
+          method: "GET",
+          params: { shipmentId: payload.shipmentId, pageSize: 10 },
+        }) as any;
+
         if (!commonUtil.hasError(resp)) {
           const responseData = resp.data?.shipmentPackageRouteSegDetails || resp.data
           const shipmentPackageRouteSegDetails = responseData.filter((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.carrierServiceStatusId !== "SHRSCS_VOIDED")
@@ -611,12 +837,18 @@ export const useOrderStore = defineStore("order", {
       }
       return currentOrder
     },
-    async fetchOrderDetail() {
-      let order = JSON.parse(JSON.stringify(this.current))
+    async fetchOrderDetail(orderId?: string) {
+      const id = orderId || this.current.orderId;
+      if (!id) return;
+      let order = orderId ? { orderId } : JSON.parse(JSON.stringify(this.current))
 
       try {
-        const resp = await OrderService.fetchOrderDetail(order.orderId)
+        const resp = await api({
+          url: `/poorti/orders/${id}`,
+          method: "GET"
+        }) as any;
         if (!commonUtil.hasError(resp)) {
+
           const shipGroupSeqId = order.primaryShipGroupSeqId ? order.primaryShipGroupSeqId : order.shipGroupSeqId
           const currentShipGroup = resp.data.shipGroups.find((shipGroup: any) => shipGroup.shipGroupSeqId === shipGroupSeqId)
           let shippingAddress = resp.data.contactMechs?.find((contactMech: any) => contactMech.contactMechPurposeTypeId === "SHIPPING_LOCATION")?.postalAddress
@@ -624,7 +856,11 @@ export const useOrderStore = defineStore("order", {
 
           if (currentShipGroup?.shipmentMethodTypeId === "SHIP_TO_STORE") {
             const facilityId = currentShipGroup.orderFacilityId || currentShipGroup.facilityId
-            const facilityContactResp = await UtilService.fetchFacilityAddresses({ facilityId })
+            const facilityContactResp = await api({
+              url: `/oms/facilityContactMechs`,
+              method: "GET",
+              params: { facilityId }
+            }) as any;
             if (!commonUtil.hasError(facilityContactResp)) {
               const { data } = facilityContactResp
               const address = data.facilityContactMechs?.find((contactMech: any) => contactMech.contactMechId === (order.destinationContactMechId || currentShipGroup.contactMechId))
@@ -669,6 +905,10 @@ export const useOrderStore = defineStore("order", {
         logger.error("Error in fetching order detail for current order", err)
       }
       this.setCurrent(order)
+      const data = JSON.parse(JSON.stringify(order))
+      delete data.shippingAddress
+      delete data.telecomNumber
+      return { data };
     },
     async updateOpenOrders(payload: any) {
       this.setOpenOrders({ list: payload?.orders, total: payload?.total })
@@ -720,7 +960,245 @@ export const useOrderStore = defineStore("order", {
       this.clearOpenOrders()
       this.clearCompletedOrders()
       this.setCurrent({})
+    },
+    async createPicklist(payload: any) {
+      return api({
+        url: `/poorti/createOrderFulfillmentWave`,
+        method: "POST",
+        data: payload,
+      });
+    },
+    async recycleOutstandingOrders(payload: any) {
+      return api({
+        url: `/poorti/rejectOutstandingOrders`,
+        method: "POST",
+        data: payload,
+      });
+    },
+    async fetchShipmentFacets(params: any) {
+      return api({
+        url: `/poorti/shipmentFacets`,
+        method: "GET",
+        params
+      });
+    },
+    async fetchPicklists(payload: any) {
+      return api({
+        url: `/poorti/shipmentPicklists`,
+        method: "GET",
+        params: payload
+      });
+    },
+    async recycleInProgressOrders(payload: any) {
+      return api({
+        url: `/poorti/rejectInProgressOrders`,
+        method: "POST",
+        data: payload,
+      });
+    },
+    async packOrder(payload: any) {
+      return api({
+        url: `/poorti/shipments/${payload.shipmentId}/pack`,
+        method: "POST",
+        data: payload,
+      });
+    },
+    async packOrders(payload: any) {
+      return api({
+        url: `/poorti/shipments/bulkPack`,
+        method: "POST",
+        data: payload,
+      });
+    },
+    async resetPicker(payload: any) {
+      return api({
+        url: `/poorti/picklists/${payload.picklistId}`,
+        method: "PUT",
+        data: payload,
+      });
+    },
+    async addShipmentBox(payload: any) {
+      return api({
+        url: `/poorti/shipments/${payload.shipmentId}/shipmentPackages`,
+        method: "POST",
+        data: payload,
+      });
+    },
+    async shipOrder(payload: any) {
+      return api({
+        url: `/poorti/shipments/${payload.shipmentId}/ship`,
+        method: "POST",
+        data: payload,
+      });
+    },
+    async bulkShipOrders(payload: any) {
+      return api({
+        url: `/poorti/shipments/bulkShip`,
+        method: "POST",
+        data: payload,
+      });
+    },
+    async unpackOrder(payload: any) {
+      return api({
+        url: `/poorti/shipments/${payload.shipmentId}/unpack`,
+        method: "post",
+        data: payload,
+      });
+    },
+    async retryShippingLabel(shipmentId: string) {
+      try {
+        const resp = await api({
+          url: `/poorti/shipments/retryShippingLabel`,
+          method: "post",
+          data: { shipmentIds: [shipmentId] }
+        }) as any;
+        if (commonUtil.hasError(resp)) {
+          throw resp?.data;
+        }
+      } catch (error) {
+        logger.error(error)
+      }
+    },
+    async fetchShipmentLabelError(shipmentId: string) {
+      let shipmentLabelError = ""
+      try {
+        if (!shipmentId) {
+          return shipmentLabelError
+        }
+        const resp = await api({
+          url: `/poorti/shipmentPackageRouteSegDetails`,
+          method: "GET",
+          params: { shipmentId, pageSize: 10 }
+        }) as any;
+        if (commonUtil.hasError(resp)) {
+          throw resp.data;
+        }
+        const responseData = resp.data?.shipmentPackageRouteSegDetails || resp.data;
+        shipmentLabelError = responseData.find((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.gatewayMessage)?.gatewayMessage;
+      } catch (err) {
+        logger.error('Failed to fetch shipment label error', err)
+      }
+      return shipmentLabelError;
+    },
+    async voidShipmentLabel(payload: any) {
+      return await api({
+        url: `/poorti/shipments/${payload.shipmentId}/shippingLabels/void`,
+        method: "POST",
+        data: payload,
+      });
+    },
+    async updateShipmentCarrierAndMethod(payload: any) {
+      return await api({
+        url: `/poorti/updateShipmentCarrierAndMethod`,
+        method: "PUT",
+        data: payload,
+      });
+    },
+    async updateRouteShipmentCarrierAndMethod(payload: any) {
+      return await api({
+        url: `/poorti/updateRouteShipmentCarrierAndMethod`,
+        method: "PUT",
+        data: payload,
+      });
+    },
+    async findOrderInvoicingInfo(payload: any) {
+      return api({
+        url: "/oms/dataDocumentView",
+        method: "post",
+        data: payload,
+      });
+    },
+    async updateOrderHeader(payload: any) {
+      return api({
+        url: `/oms/orders/${payload.orderId}`,
+        method: "PUT",
+        data: payload
+      });
+    },
+    async updateOrderFacility(payload: any) {
+      return api({
+        url: `/oms/orders/${payload.orderId}/shipGroups/${payload.shipGroupSeqId}`,
+        method: "PUT",
+        data: payload
+      });
+    },
+    async fetchShipmentPackageRouteSegDetails(params: any) {
+      return await api({
+        url: `/poorti/shipmentPackageRouteSegDetails`,
+        method: "GET",
+        params,
+      });
+    },
+    async activateGiftCard(payload: any) {
+      return api({
+        url: `/poorti/giftCardFulfillments`,
+        method: "POST",
+        data: payload,
+      });
+    },
+    async fetchOrderItems(payload: any) {
+      return api({
+        url: `/oms/orders/${payload.orderId}/items`,
+        method: "GET",
+        params: payload
+      });
+    },
+    async createCommunicationEvent(payload: any) {
+      return api({
+        url: "/oms/communicationEvents",
+        method: "POST",
+        data: payload,
+      });
+    },
+    async addTrackingCode(payload: any) {
+      return await api({
+        url: `/poorti/updateShipmentTracking`,
+        method: "PUT",
+        data: payload
+      });
+    },
+    async deleteOrderItem(payload: any) {
+      return api({
+        url: `/oms/orders/${payload.orderId}/items/${payload.orderItemSeqId}`,
+        method: "DELETE",
+      });
+    },
+    async fetchGiftCardItemPriceInfo(payload: any) {
+      const currentOrder = this.getCurrent;
+
+      let resp = {} as any;
+      const itemPriceInfo = {} as any;
+
+      try {
+        if (currentOrder && Object.keys(currentOrder).length) {
+          itemPriceInfo.currencyUom = currentOrder.currencyUom
+        } else {
+          resp = await this.fetchOrderDetail(payload.orderId);
+          if (!commonUtil.hasError(resp)) {
+            itemPriceInfo.currencyUom = resp.data.currencyUom
+          } else {
+            throw resp.data
+          }
+        }
+
+        resp = await api({
+          url: `/oms/orders/${payload.orderId}/items/${payload.orderItemSeqId}`,
+          method: "GET",
+          params: { fieldsToSelect: ["unitPrice"] }
+        });
+        if (!commonUtil.hasError(resp)) {
+          itemPriceInfo.unitPrice = resp.data[0].unitPrice
+        } else {
+          throw resp.data
+        }
+      } catch (error: any) {
+        logger.error(error);
+      }
+
+      return itemPriceInfo;
     }
+
   },
+
   persist: false
 })

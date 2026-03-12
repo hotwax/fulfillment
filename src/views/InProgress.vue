@@ -93,9 +93,9 @@
                       <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small" />
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                      <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                       <div>
-                        {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
+                        {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
                         <ion-badge color="dark" class="kit-badge" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
                       </div>
                       <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
@@ -164,8 +164,8 @@
                       <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small" />
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
-                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                      <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
+                      {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
                       <p>{{ commonUtil.getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
                     </ion-label>
                     <ion-checkbox v-if="item.rejectReason || isEntierOrderRejectionEnabled(order)" :checked="item.kitComponents?.includes(productComponent.productIdTo)" @ionChange="rejectKitComponent(order, item, productComponent.productIdTo)" />
@@ -238,8 +238,8 @@ import PackagingPopover from "@/views/PackagingPopover.vue";
 import { commonUtil, DxpShopifyImg, emitter, logger, solrUtil, translate } from "@common";
 import { orderUtil } from "@/utils/orderUtil";
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
-import { UtilService } from "@/services/UtilService";
 import { DateTime } from "luxon";
+import { useCarrier } from "@/composables/useCarrier";
 
 import EditPickersModal from "@/components/EditPickersModal.vue";
 import ShipmentBoxTypePopover from "@/components/ShipmentBoxTypePopover.vue";
@@ -250,8 +250,10 @@ import ShipmentBoxPopover from "@/components/ShipmentBoxPopover.vue";
 import ScanOrderItemModal from "@/components/ScanOrderItemModal.vue";
 import GenerateTrackingCodeModal from "@/components/GenerateTrackingCodeModal.vue";
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
-import { OrderService } from "@/services/OrderService";
+import useOrder from "@/composables/useOrder";
+
 import { useRouter, onBeforeRouteLeave } from "vue-router";
+
 import { useOrderStore } from "@/store/order";
 import { useProductStore } from "@/store/product";
 import { useUserStore } from "@/store/user";
@@ -260,7 +262,9 @@ import { useStockStore } from "@/store/stock";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 
 const userStore = useUserStore();
-const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
+const orderStore = useOrderStore();
+const carrier = useCarrier();
+const { printPicklist, printPackingSlip, printShippingLabel, printCustomDocuments, printShippingLabelAndPackingSlip } = useOrder();
 
 const router = useRouter();
 const picklists = ref([] as any);
@@ -420,7 +424,8 @@ const rejectEntireOrder = async (order: any, updateParameter?: string) => {
       facilityId: order.originFacilityId,
       rejectedOrderItems: updatedOrderDetail.rejectedOrderItems
     };
-    const resp = await OrderService.packOrder(params);
+      const resp = await orderStore.packOrder(params) as any;
+
 
     if (commonUtil.hasError(resp)) {
       throw resp.data;
@@ -489,7 +494,8 @@ const executePackOrder = async (order: any, updateParameter?: string, trackingCo
       shipmentPackageContents: updatedOrderDetail.shipmentPackageContents,
       trackingCode: manualTrackingCode
     };
-    await OrderService.packOrder(params);
+    await orderStore.packOrder(params);
+
 
     const updatedOrder = await useOrderStore().updateShipmentPackageDetail(order);
 
@@ -507,16 +513,17 @@ const executePackOrder = async (order: any, updateParameter?: string, trackingCo
 
       if (documentOptions.includes("printPackingSlip") && documentOptions.includes("printShippingLabel")) {
         if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
-          await OrderService.printPackingSlip(shipmentIds);
-          await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, updatedOrder.shipmentPackages);
+          await printPackingSlip(shipmentIds);
+          await printShippingLabel(shipmentIds, shippingLabelPdfUrls, updatedOrder.shipmentPackages);
         } else {
-          await OrderService.printShippingLabelAndPackingSlip(shipmentIds, updatedOrder.shipmentPackages);
+          await printShippingLabelAndPackingSlip(shipmentIds, updatedOrder.shipmentPackages);
         }
       } else if (documentOptions.includes("printPackingSlip")) {
-        await OrderService.printPackingSlip(shipmentIds);
+        await printPackingSlip(shipmentIds);
       } else if (documentOptions.includes("printShippingLabel") && !manualTrackingCode && !updatedOrder.missingLabelImage) {
-        await OrderService.printShippingLabel(shipmentIds, shippingLabelPdfUrls, updatedOrder.shipmentPackages);
+        await printShippingLabel(shipmentIds, shippingLabelPdfUrls, updatedOrder.shipmentPackages);
       }
+
 
       const internationalInvoiceUrls: string[] = Array.from(
         new Set(
@@ -527,8 +534,9 @@ const executePackOrder = async (order: any, updateParameter?: string, trackingCo
       );
 
       if (internationalInvoiceUrls.length > 0) {
-        await OrderService.printCustomDocuments(internationalInvoiceUrls);
+        await printCustomDocuments(internationalInvoiceUrls);
       }
+
 
       toast.dismiss();
     } else {
@@ -612,9 +620,10 @@ const packOrders = async () => {
             ).flat() as Array<string>;
 
           try {
-            const resp = await OrderService.packOrders({
+            const resp = await orderStore.packOrders({
               shipments
-            });
+            }) as any;
+
 
             if (commonUtil.hasError(resp)) {
               throw resp.data;
@@ -631,17 +640,18 @@ const packOrders = async () => {
               toast.present();
               if (data.includes("printPackingSlip") && data.includes("printShippingLabel")) {
                 if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
-                  await OrderService.printPackingSlip(packedShipmentIds);
-                  await OrderService.printShippingLabel(packedShipmentIds, shippingLabelPdfUrls, shipmentPackages);
+                  await printPackingSlip(packedShipmentIds);
+                  await printShippingLabel(packedShipmentIds, shippingLabelPdfUrls, shipmentPackages);
                 } else {
-                  await OrderService.printShippingLabelAndPackingSlip(packedShipmentIds, shipmentPackages);
+                  await printShippingLabelAndPackingSlip(packedShipmentIds, shipmentPackages);
                 }
               } else if (data.includes("printPackingSlip")) {
-                await OrderService.printPackingSlip(packedShipmentIds);
+                await printPackingSlip(packedShipmentIds);
               } else if (data.includes("printShippingLabel")) {
-                await OrderService.printShippingLabel(packedShipmentIds, shippingLabelPdfUrls, shipmentPackages);
+                await printShippingLabel(packedShipmentIds, shippingLabelPdfUrls, shipmentPackages);
               }
-              await OrderService.printCustomDocuments(internationalInvoiceUrls);
+              await printCustomDocuments(internationalInvoiceUrls);
+
 
               toast.dismiss();
             } else {
@@ -661,7 +671,8 @@ const packOrders = async () => {
         text: translate("Recycle all"),
         handler: async () => {
           try {
-            await OrderService.recycleInProgressOrders({});
+            await orderStore.recycleInProgressOrders({});
+
             commonUtil.showToast(translate("All orders recycled successfully."));
           } catch (err) {
             commonUtil.showToast(translate("Failed to recycle all orders."));
@@ -813,7 +824,8 @@ const fetchPickersInformation = async () => {
         pageSize: 50
       };
 
-      resp = await OrderService.fetchPicklists(payload);
+      resp = await orderStore.fetchPicklists(payload) as any;
+
 
       if (!commonUtil.hasError(resp)) {
         resp.data?.forEach((shipment: any) => {
@@ -910,7 +922,7 @@ const fetchDefaultShipmentBox = async () => {
   let defaultBoxType = {};
 
   try {
-    let resp = await UtilService.fetchDefaultShipmentBox({
+    let resp = await carrier.fetchDefaultShipmentBox({
       systemResourceId: "shipment",
       systemPropertyId: "shipment.default.boxtype",
       fieldsToSelect: ["systemPropertyValue", "systemResourceId"],
@@ -927,7 +939,7 @@ const fetchDefaultShipmentBox = async () => {
       shipmentBoxTypeId: defaultBoxTypeId,
       pageSize: 1
     };
-    resp = await UtilService.fetchShipmentBoxType(payload);
+    resp = await carrier.fetchShipmentBoxType(payload);
     if (!commonUtil.hasError(resp)) {
       defaultBoxType = resp.data[0];
     }
@@ -972,7 +984,8 @@ const addShipmentBox = async (order: any) => {
   shipmentMethodTypeId && (params["shipmentMethodTypeId"] = shipmentMethodTypeId);
 
   try {
-    const resp = await OrderService.addShipmentBox(params);
+    const resp = await orderStore.addShipmentBox(params) as any;
+
 
     if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Box added successfully"));
@@ -1023,11 +1036,8 @@ const initialiseOrderQuery = async () => {
   await updateOrderQuery(import.meta.env.VITE_VIEW_SIZE, "");
 };
 
-const printPicklist = async (picklist: any) => {
-  picklist.isGeneratingPicklist = true;
-  await OrderService.printPicklist(picklist.id);
-  picklist.isGeneratingPicklist = false;
-};
+// Removed local printPicklist as it is now imported from useOrder
+
 
 const updateShipmentBoxType = async (shipmentPackage: any, order: any, ev: CustomEvent) => {
   const shipmentBoxTypes = getShipmentBoxTypes(order.carrierPartyId);
@@ -1070,11 +1080,12 @@ const recycleInProgressOrders = async () => {
         let resp;
 
         try {
-          resp = await OrderService.recycleInProgressOrders({
+          resp = await orderStore.recycleInProgressOrders({
             facilityId: (currentFacility.value as any)?.facilityId,
             productStoreId: (currentEComStore.value as any).productStoreId,
             reasonId: "INACTIVE_STORE"
-          });
+          }) as any;
+
 
           if (!commonUtil.hasError(resp)) {
             commonUtil.showToast(translate("Rejecting has been started. All in progress orders will be rejected shortly."));

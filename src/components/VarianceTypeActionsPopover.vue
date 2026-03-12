@@ -16,7 +16,8 @@ import { IonContent, IonItem, IonList, IonListHeader, popoverController } from "
 import { computed, defineProps } from "vue";
 import { commonUtil, logger, translate } from "@common";
 import { useUtilStore } from "@/store/util";
-import { UtilService } from "@/services/UtilService";
+import { useUtil } from "@/composables/useUtil";
+import { DateTime } from "luxon";
 
 
 const props = defineProps(["reason"]);
@@ -30,10 +31,14 @@ const updateVarianceType = async (selectedType: any) => {
   }
 
   try {
-    const resp = await UtilService.updateEnumeration({
-      description: props.reason.description,
-      enumId: props.reason.enumId,
-      enumTypeId: selectedType.enumTypeId
+    const resp = await useUtil().updateEnumeration({
+      "enumId": props.reason.enumId,
+      "enumTypeId": selectedType.enumTypeId,
+      "description": props.reason.description,
+      "enumName": props.reason.enumName,
+      "enumCode": props.reason.enumCode,
+      "sequenceNum": props.reason.sequenceNum,
+      "thruDate": DateTime.now().toMillis()
     });
 
     if (!commonUtil.hasError(resp)) {

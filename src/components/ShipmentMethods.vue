@@ -47,11 +47,14 @@
 import { commonUtil, emitter, logger, translate } from "@common";
   import { DateTime } from "luxon";
 
-  import { CarrierService } from "@/services/CarrierService";
-  import ShipmentMethodActionsPopover from "@/components/ShipmentMethodActionsPopover.vue";
+  import { useCarrier } from "@/composables/useCarrier";
   import { useCarrierStore } from "@/store/carrier";
-  const currentCarrier = computed(() => useCarrierStore().getCurrent);
-  const filteredShipmentMethods = computed(() => useCarrierStore().getFilteredShipmentMethods);
+  import ShipmentMethodActionsPopover from "@/components/ShipmentMethodActionsPopover.vue";
+
+  const { updateProductStoreShipmentMethod, updateCarrierShipmentMethodAssociation: updateCarrierShipmentMethodAssociationComposable } = useCarrier();
+  const carrierStore = useCarrierStore();
+  const currentCarrier = computed(() => carrierStore.getCurrent);
+  const filteredShipmentMethods = computed<any[]>(() => carrierStore.getFilteredShipmentMethods);
   
   const editDeliveryDays = async (shipmentMethod: any) => {
     const alert = await alertController.create({
@@ -66,7 +69,7 @@ import { commonUtil, emitter, logger, translate } from "@common";
             if (data.deliveryDays.trim() != currentDeliveryDays) {
               const updatedData = { fieldName: "deliveryDays", fieldValue: data.deliveryDays.trim() };
               const messages = { successMessage: "Delivery days updated.", errorMessage: "Failed to update delivery days." };
-              await useCarrierStore().updateCarrierShipmentMethod({ shipmentMethod, updatedData, messages });
+              await carrierStore.updateCarrierShipmentMethod({ shipmentMethod, updatedData, messages });
             }
           }
         }
@@ -88,7 +91,7 @@ import { commonUtil, emitter, logger, translate } from "@common";
             if (data.carrierServiceCode.trim() != currentCarrierServiceCode) {
               const updatedData = { fieldName: "carrierServiceCode", fieldValue: data.carrierServiceCode.trim() };
               const messages = { successMessage: "Carrier code updated.", errorMessage: "Failed to update carrier code." };
-              await useCarrierStore().updateCarrierShipmentMethod({ shipmentMethod, updatedData, messages });
+              await carrierStore.updateCarrierShipmentMethod({ shipmentMethod, updatedData, messages });
             }
           }
         }
@@ -101,55 +104,15 @@ import { commonUtil, emitter, logger, translate } from "@common";
     event.preventDefault();
     event.stopImmediatePropagation();
   
-    let resp = {} as any;
-    const payload = {
-      shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
-      partyId: currentCarrier.value.partyId,
-      roleTypeId: "CARRIER",
-      sequenceNumber: 1
-    } as any;
-  
-    const currentCarrierShipmentMethods = currentCarrier.value.shipmentMethods ? JSON.parse(JSON.stringify(currentCarrier.value.shipmentMethods)) : {};
-  
     try {
       if (shipmentMethod.isChecked) {
-        resp = await CarrierService.removeCarrierShipmentMethod(payload);
-  
-        if (!commonUtil.hasError(resp)) {
-          await removeProductStoreShipmentMethods(shipmentMethod.shipmentMethodTypeId);
-        } else {
-          throw resp.data;
-        }
-  
-        delete currentCarrierShipmentMethods[shipmentMethod.shipmentMethodTypeId];
-      } else {
-        if (Object.keys(currentCarrierShipmentMethods).length !== 0) {
-          const values = Object.values(currentCarrierShipmentMethods) as any;
-          const sequenceNumber = values[values.length - 1].sequenceNumber;
-          payload.sequenceNumber = sequenceNumber ? sequenceNumber + 1 : 1;
-        }
-  
-        resp = await CarrierService.addCarrierShipmentMethod(payload);
-  
-        if (commonUtil.hasError(resp)) {
-          throw resp.data;
-        }
-  
-        currentCarrierShipmentMethods[shipmentMethod.shipmentMethodTypeId] = payload;
+        await removeProductStoreShipmentMethods(shipmentMethod.shipmentMethodTypeId);
       }
-  
-      if (!commonUtil.hasError(resp)) {
-        commonUtil.showToast(translate("Carrier and shipment method association updated successfully."));
-        await useCarrierStore().updateCurrentCarrierShipmentMethods(currentCarrierShipmentMethods);
-        await useCarrierStore().checkAssociatedShipmentMethods();
-        await useCarrierStore().checkAssociatedProductStoreShipmentMethods();
-        event.target.checked = !shipmentMethod.isChecked;
-      } else {
-        throw resp.data;
-      }
+      
+      await updateCarrierShipmentMethodAssociationComposable(shipmentMethod, currentCarrier.value.partyId, !shipmentMethod.isChecked);
+      event.target.checked = !shipmentMethod.isChecked;
     } catch (err) {
-      commonUtil.showToast(translate("Failed to update carrier and shipment method association."));
-      logger.error(err);
+      // Error handled in composable
     }
   };
   
@@ -162,21 +125,13 @@ import { commonUtil, emitter, logger, translate } from "@common";
         const methodsToRemove = methods.filter((productStoreShipmentMethod: any) => productStoreShipmentMethod.shipmentMethodTypeId === shipmentMethodTypeId);
   
         const responses = await Promise.allSettled(methodsToRemove.map((productStoreShipmentMethod: any) => {
-          const removePromise = CarrierService.removeProductStoreShipmentMethod({
-            productStoreShipMethId: productStoreShipmentMethod.productStoreShipMethId,
-            thruDate: DateTime.now().toMillis()
-          });
-  
-          delete productStoreShipmentMethods[productStoreShipmentMethod.productStoreId][productStoreShipmentMethod.shipmentMethodTypeId];
-          return removePromise;
+          return updateProductStoreShipmentMethod(productStoreShipmentMethod.productStoreId, productStoreShipmentMethod, false);
         }));
   
         const hasFailedResponse = responses.some((response: any) => response.status === "rejected");
         if (hasFailedResponse) {
           logger.error("Failed to update some product store shipment method association(s).");
         }
-        await useCarrierStore().updateCurrentCarrierProductStoreShipmentMethods(productStoreShipmentMethods);
-        await useCarrierStore().checkAssociatedProductStoreShipmentMethods();
       }
     } catch (err) {
       logger.error(err);

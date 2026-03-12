@@ -43,11 +43,14 @@
   import { computed, onMounted, ref } from "vue";
   import { close, saveOutline } from "ionicons/icons";
 import { commonUtil, translate } from "@common";
-  import { CarrierService } from "@/services/CarrierService";
+  import { useCarrier } from "@/composables/useCarrier";
   import { useCarrierStore } from "@/store/carrier";
+
+  const { saveShipmentMethodsOrder: saveShipmentMethodsOrderComposable } = useCarrier();
+  const carrierStore = useCarrierStore();
   const filteredShipmentMethods = ref([] as any[]);
-  const currentCarrier = computed(() => useCarrierStore().getCurrent);
-  const shipmentMethods = computed(() => useCarrierStore().getFilteredShipmentMethods);
+  const currentCarrier = computed(() => carrierStore.getCurrent);
+  const shipmentMethods = computed(() => carrierStore.getFilteredShipmentMethods);
   
   onMounted(() => {
     const methods = shipmentMethods.value.filter((shipmentMethod: any) => shipmentMethod.isChecked);
@@ -87,23 +90,7 @@ import { commonUtil, translate } from "@common";
   };
   
   const saveShipmentMethodsOrder = async () => {
-    const diffShipmentMethods = filteredShipmentMethods.value.filter((filteredShipmentMethod: any) => shipmentMethods.value.some((shipmentMethod: any) => shipmentMethod.shipmentMethodTypeId === filteredShipmentMethod.shipmentMethodTypeId && shipmentMethod.sequenceNumber !== filteredShipmentMethod.sequenceNumber));
-    const currentCarrierShipmentMethods = currentCarrier.value.shipmentMethods ? JSON.parse(JSON.stringify(currentCarrier.value.shipmentMethods)) : {};
-  
-    const responses = await Promise.allSettled(diffShipmentMethods.map(async (method: any) => {
-      await CarrierService.updateCarrierShipmentMethod(method);
-      currentCarrierShipmentMethods[method.shipmentMethodTypeId] = method;
-      await useCarrierStore().updateCurrentCarrierShipmentMethods(currentCarrierShipmentMethods);
-      await useCarrierStore().checkAssociatedShipmentMethods();
-    }));
-  
-    const isFailedToUpdateSomeMethod = responses.some((response) => response.status === "rejected");
-    if (isFailedToUpdateSomeMethod) {
-      commonUtil.showToast(translate("Failed to update sequence for some shipment methods."));
-    } else {
-      commonUtil.showToast(translate("Sequence for shipment methods updated successfully."));
-    }
-  
+    await saveShipmentMethodsOrderComposable(filteredShipmentMethods.value);
     modalController.dismiss();
   };
   </script>

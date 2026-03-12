@@ -60,7 +60,9 @@ import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, Ion
 import { computed, defineProps, onMounted, ref } from "vue";
 import { cameraOutline, cardOutline, closeOutline, giftOutline, stopOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
-import { OrderService } from "@/services/OrderService";
+import { useOrderStore } from "@/store/order";
+
+const orderStore = useOrderStore();
 import { DateTime } from "luxon";
 import { StreamBarcodeReader } from "vue-barcode-reader";
 import { useProductStore } from "@/store/product";
@@ -77,7 +79,7 @@ const productIdentificationPref = computed(() => useProductIdentificationStore()
 
 onMounted(async () => {
   isLoading.value = true;
-  itemPriceInfo.value = await OrderService.fetchGiftCardItemPriceInfo({ orderId: props.item.orderId, orderItemSeqId: props.item.orderItemSeqId });
+  itemPriceInfo.value = await orderStore.fetchGiftCardItemPriceInfo({ orderId: props.item.orderId, orderItemSeqId: props.item.orderItemSeqId });
   isLoading.value = false;
 });
 
@@ -87,7 +89,7 @@ const closeModal = (payload = {}) => {
 
 const activateGitCard = async () => {
   try {
-    const resp = await OrderService.activateGiftCard({
+    const resp = await orderStore.activateGiftCard({
       orderId: props.item.orderId,
       orderItemSeqId: props.item.orderItemSeqId,
       amount: itemPriceInfo.value.unitPrice,

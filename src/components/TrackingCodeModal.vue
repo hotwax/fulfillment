@@ -43,12 +43,11 @@ import { closeOutline, openOutline, saveOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
 import { useOrderStore } from "@/store/order";
 import { useCarrierStore } from "@/store/carrier";
-import { OrderService } from "@/services/OrderService";
-
 const props = defineProps(["carrierPartyId"]);
 const trackingCode = ref("");
 
-const order = computed(() => useOrderStore().getCurrent);
+const orderStore = useOrderStore();
+const order = computed(() => orderStore.getCurrent);
 const facilityCarriers = computed(() => useCarrierStore().getFacilityCarriers);
 
 const closeModal = () => {
@@ -58,14 +57,14 @@ const closeModal = () => {
 const saveTrackingCode = async () => {
   try {
     const shipmentRouteSegmentId = order.value.shipmentPackageRouteSegDetails[0]?.shipmentRouteSegmentId;
-    const resp = await OrderService.addTrackingCode({
+    const resp = await orderStore.addTrackingCode({
       shipmentId: order.value.shipmentId,
       shipmentRouteSegmentId,
       trackingIdNumber: trackingCode.value
     });
     if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Tracking code added successfully."));
-      await useOrderStore().updateShipmentPackageDetail(order.value);
+      await orderStore.updateShipmentPackageDetail(order.value);
       closeModal();
     } else {
       throw resp.data;

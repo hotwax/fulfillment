@@ -53,7 +53,7 @@
                   <ion-card-title>{{ facility.facilityName }}</ion-card-title>
                   <ion-card-subtitle>{{ facility.facilityId }}</ion-card-subtitle>
                 </div>
-                <ion-checkbox :checked="facility.isChecked" @click="updateCarrierFacility($event, facility)" />
+                <ion-checkbox :checked="facility.isChecked" @click="updateCarrierFacilityAssociation($event, facility)" />
               </ion-card-header>
             </ion-card>
           </section>
@@ -86,7 +86,7 @@
                   <ion-note class="config-label">{{ translate("require tracking code") }}</ion-note>
                 </div>
                 <div class="tablet">
-                  <ion-checkbox :checked="shipmentMethod.isChecked" @click="updateProductStoreShipmentMethodAssociation($event, shipmentMethod, productStore)" />
+                  <ion-checkbox :checked="shipmentMethod.isChecked" @click="updateProductStoreShipmentMethodAssociationLocal($event, shipmentMethod, productStore)" />
                 </div>
               </div>
             </template>
@@ -111,23 +111,30 @@ import { computed, onMounted, ref } from "vue";
 import { addCircleOutline, addOutline, peopleOutline, shieldCheckmarkOutline } from "ionicons/icons";
 import { commonUtil, emitter, logger, translate } from "@common";
 import { useRoute } from "vue-router";
-import { DateTime } from "luxon";
-import { CarrierService } from "@/services/CarrierService";
 import CreateShipmentMethodModal from "@/components/CreateShipmentMethodModal.vue";
 import ShipmentMethods from "@/components/ShipmentMethods.vue";
 import { useCarrierStore } from "@/store/carrier";
 import { useUtilStore } from "@/store/util";
+import { useCarrier } from "@/composables/useCarrier";
 
 const route = useRoute();
+const carrierStore = useCarrierStore();
+const utilStore = useUtilStore();
+const { 
+  updateCarrier, 
+  updateCarrierFacility, 
+  updateProductStoreShipmentMethod,
+  updateProductStoreShipmentMethodAssociation 
+} = useCarrier();
 
 const selectedSegment = ref("shipping-methods");
 
-const shipmentMethodQuery = computed(() => useCarrierStore().getShipmentMethodQuery);
-const currentCarrier = computed(() => useCarrierStore().getCurrent);
-const productStores = computed(() => useUtilStore().getProductStores);
-const shipmentMethods = computed(() => useCarrierStore().getShipmentMethods);
-const carrierShipmentMethodsByProductStore = computed(() => useCarrierStore().getCarrierShipmentMethodsByProductStore);
-const shipmentGatewayConfigs = computed(() => useCarrierStore().getShipmentGatewayConfigs);
+const shipmentMethodQuery = computed(() => carrierStore.getShipmentMethodQuery);
+const currentCarrier = computed(() => carrierStore.getCurrent);
+const productStores = computed(() => utilStore.getProductStores);
+const shipmentMethods = computed(() => carrierStore.getShipmentMethods);
+const carrierShipmentMethodsByProductStore = computed(() => carrierStore.getCarrierShipmentMethodsByProductStore);
+const shipmentGatewayConfigs = computed(() => carrierStore.getShipmentGatewayConfigs);
 
 const getGatewayConfigDescription = (shipmentGatewayConfigId: string) => {
   const config = shipmentGatewayConfigs.value[shipmentGatewayConfigId];
@@ -140,7 +147,7 @@ const getShipmentMethodDescription = (shipmentMethodTypeId: string) => {
 };
 
 const updateShipmentMethodQuery = async () => {
-  await useCarrierStore().updateShipmentMethodQuery(shipmentMethodQuery.value);
+  await carrierStore.setShipmentMethodQuery({ query: shipmentMethodQuery.value });
 };
 
 const updateCarrierName = async () => {
@@ -162,18 +169,13 @@ const updateCarrierName = async () => {
           return;
         }
         if (data.groupName.trim() != currentCarrier.value.groupName) {
-          let resp;
           const payload = { partyId: currentCarrier.value.partyId, groupName: data.groupName.trim() };
           emitter.emit("presentLoader");
 
           try {
-            resp = await CarrierService.updateCarrier(payload);
-            if (!commonUtil.hasError(resp)) {
-              commonUtil.showToast(translate("Carrier name updated successfully."));
-              await useCarrierStore().updateCurrentCarrier({ ...currentCarrier.value, ...payload });
-            } else {
-              throw resp.data;
-            }
+            await updateCarrier(payload);
+            commonUtil.showToast(translate("Carrier name updated successfully."));
+            await carrierStore.fetchCarrierDetail({ partyId: currentCarrier.value.partyId });
           } catch (err) {
             logger.error(err);
           }
@@ -193,61 +195,19 @@ const openCreateShipmentMethodModal = async () => {
   return createShipmentMethodModal.present();
 };
 
-const updateCarrierFacility = async (event: any, facility: any) => {
+const updateCarrierFacilityAssociation = async (event: any, facility: any) => {
   event.preventDefault();
   event.stopImmediatePropagation();
-
-  try {
-    const payload = {
-      facilityId: facility.facilityId,
-      partyId: currentCarrier.value.partyId,
-      roleTypeId: "CARRIER",
-      fromDate: DateTime.now().toMillis()
-    };
-    let resp = {} as any;
-    if (facility.isChecked) {
-      const params = {
-        ...payload,
-        fromDate: facility.fromDate,
-        thruDate: DateTime.now().toMillis()
-      };
-      resp = await CarrierService.removeCarrierFromFacility(params);
-      if (commonUtil.hasError(resp)) {
-        throw resp.data;
-      }
-      facility.isChecked = false;
-      facility.fromDate = "";
-    } else {
-      resp = await CarrierService.addCarrierToFacility(payload);
-      if (commonUtil.hasError(resp)) {
-        throw resp.data;
-      }
-      facility = { ...facility, ...payload, isChecked: true };
-    }
-
-    if (!commonUtil.hasError(resp)) {
-      commonUtil.showToast(translate("Facility carrier association updated successfully."));
-      useCarrierStore().updateCarrierFacility(facility);
-    } else {
-      throw resp.data;
-    }
-  } catch (err) {
-    commonUtil.showToast(translate("Failed to update facility carrier association."));
-    logger.error(err);
-  }
+  await updateCarrierFacility(facility, currentCarrier.value.partyId, !facility.isChecked);
 };
 
 const updateShipmentGatewayConfigId = async (shipmentMethod: any) => {
-  const configOptions = [] as any;
-  Object.values(shipmentGatewayConfigs.value).forEach((config: any) => {
-    configOptions.push({
-      name: "shipmentGatewayConfigId",
-      label: config.description,
-      type: "radio",
-      value: config.shipmentGatewayConfigId,
-      checked: shipmentMethod.shipmentGatewayConfigId === config.shipmentGatewayConfigId
-    });
-  });
+  const configOptions = Object.values(shipmentGatewayConfigs.value).map((config: any) => ({
+    type: "radio",
+    label: config.description,
+    value: config.shipmentGatewayConfigId,
+    checked: config.shipmentGatewayConfigId === shipmentMethod.shipmentGatewayConfigId
+  })) as any;
 
   const alert = await alertController.create({
     header: translate("Edit gateway"),
@@ -261,7 +221,7 @@ const updateShipmentGatewayConfigId = async (shipmentMethod: any) => {
       handler: (data) => {
         const modifiedData = { fieldName: "shipmentGatewayConfigId", fieldValue: data };
         const messages = { successMessage: "Shipment gateway updated successfuly.", errorMessage: "Failed to update shipment gateway." };
-        updateProductStoreShipmentMethod(shipmentMethod, modifiedData, messages);
+        updateProductStoreShipmentMethodInternal(shipmentMethod, modifiedData, messages);
       }
     }]
   });
@@ -272,30 +232,16 @@ const updateTrackingRequired = async (event: any, shipmentMethod: any) => {
   event.stopPropagation();
   const modifiedData = { fieldName: "isTrackingRequired", fieldValue: shipmentMethod.isTrackingRequired ? false : true };
   const messages = { successMessage: "Tracking code settings updated successfully.", errorMessage: "Failed to update tracking code settings." };
-  updateProductStoreShipmentMethod(shipmentMethod, modifiedData, messages);
+  updateProductStoreShipmentMethodInternal(shipmentMethod, modifiedData, messages);
 };
 
-const updateProductStoreShipmentMethod = async (shipmentMethod: any, modifiedData: any, messages: any) => {
+const updateProductStoreShipmentMethodInternal = async (shipmentMethod: any, modifiedData: any, messages: any) => {
   if (modifiedData && shipmentMethod[modifiedData.fieldName] !== modifiedData.fieldValue) {
-    let resp = {} as any;
-    const productStoreShipmentMethods = currentCarrier.value.productStoreShipmentMethods ? JSON.parse(JSON.stringify(currentCarrier.value.productStoreShipmentMethods)) : {};
     try {
-      const payload = { productStoreId: shipmentMethod.productStoreId, productStoreShipMethId: shipmentMethod.productStoreShipMethId } as any;
-      if (modifiedData.fieldName === "isTrackingRequired") {
-        payload.isTrackingRequired = modifiedData.fieldValue ? "Y" : "N";
-      } else {
-        payload[modifiedData.fieldName] = modifiedData.fieldValue;
-      }
-      resp = await CarrierService.updateProductStoreShipmentMethod(payload);
-
-      if (!commonUtil.hasError(resp)) {
-        commonUtil.showToast(translate(messages.successMessage));
-        productStoreShipmentMethods[shipmentMethod.productStoreId][shipmentMethod.shipmentMethodTypeId] = { ...shipmentMethod, [modifiedData.fieldName]: modifiedData.fieldValue };
-        await useCarrierStore().updateCurrentCarrierProductStoreShipmentMethods(productStoreShipmentMethods);
-        await useCarrierStore().checkAssociatedProductStoreShipmentMethods();
-      } else {
-        throw resp.data;
-      }
+      const updatedMethod = { ...shipmentMethod, [modifiedData.fieldName]: modifiedData.fieldValue };
+      await updateProductStoreShipmentMethod(shipmentMethod.productStoreId, updatedMethod, true);
+      commonUtil.showToast(translate(messages.successMessage));
+      await carrierStore.checkAssociatedProductStoreShipmentMethods();
     } catch (err) {
       commonUtil.showToast(translate(messages.errorMessage));
       logger.error(err);
@@ -303,77 +249,29 @@ const updateProductStoreShipmentMethod = async (shipmentMethod: any, modifiedDat
   }
 };
 
-const updateProductStoreShipmentMethodAssociation = async (event: any, shipmentMethod: any, productStore: any) => {
+const updateProductStoreShipmentMethodAssociationLocal = async (event: any, shipmentMethod: any, productStore: any) => {
   event.preventDefault();
   event.stopImmediatePropagation();
-
-  let resp = {} as any;
-  const payload = {
-    shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
-    partyId: currentCarrier.value.partyId,
-    roleTypeId: "CARRIER"
-  };
-
-  const productStoreShipmentMethods = currentCarrier.value.productStoreShipmentMethods ? JSON.parse(JSON.stringify(currentCarrier.value.productStoreShipmentMethods)) : {};
-
-  try {
-    if (shipmentMethod.isChecked) {
-      resp = await CarrierService.removeProductStoreShipmentMethod({
-        productStoreShipMethId: shipmentMethod.productStoreShipMethId,
-        thruDate: DateTime.now().toMillis()
-      });
-
-      if (commonUtil.hasError(resp)) {
-        throw resp.data;
-      }
-
-      delete productStoreShipmentMethods[shipmentMethod.productStoreId][shipmentMethod.shipmentMethodTypeId];
-    } else {
-      let params = {
-        ...payload,
-        productStoreId: productStore.productStoreId,
-        fromDate: DateTime.now().toMillis()
-      } as any;
-
-      resp = await CarrierService.createProductStoreShipmentMethod(params);
-
-      if (commonUtil.hasError(resp)) {
-        throw resp.data;
-      } else {
-        params = { ...params, productStoreShipMethId: resp.data.productStoreShipMethId };
-      }
-
-      if (!productStoreShipmentMethods[productStore.productStoreId]) {
-        productStoreShipmentMethods[productStore.productStoreId] = {};
-      }
-      productStoreShipmentMethods[productStore.productStoreId][shipmentMethod.shipmentMethodTypeId] = params;
-    }
-
-    if (!commonUtil.hasError(resp)) {
-      commonUtil.showToast(translate("Product store and shipment method association updated successfully."));
-      await useCarrierStore().updateCurrentCarrierProductStoreShipmentMethods(productStoreShipmentMethods);
-      await useCarrierStore().checkAssociatedProductStoreShipmentMethods();
-    } else {
-      throw resp.data;
-    }
-  } catch (err) {
-    commonUtil.showToast(translate("Failed to update product store and shipment method association."));
-    logger.error(err);
-  }
+  await updateProductStoreShipmentMethodAssociation({
+    productStoreId: productStore.productStoreId,
+    shipmentMethod,
+    isChecked: !shipmentMethod.isChecked
+  });
 };
 
 onMounted(async () => {
   emitter.emit("presentLoader");
-  await useCarrierStore().fetchCarrierDetail({ partyId: route.params.partyId });
+  await carrierStore.fetchCarrierDetail({ partyId: route.params.partyId as string });
   await Promise.all([
-    useCarrierStore().fetchShipmentMethodTypes(),
-    useUtilStore().fetchProductStores(),
-    useCarrierStore().fetchProductStoreShipmentMethods({ partyId: route.params.partyId }),
-    useUtilStore().fetchFacilities()
+    carrierStore.fetchShipmentMethodTypes(),
+    utilStore.fetchProductStores(),
+    carrierStore.fetchProductStoreShipmentMethods({ partyId: route.params.partyId as string }),
+    utilStore.fetchFacilities()
   ]);
-  await useCarrierStore().checkAssociatedShipmentMethods();
-  await useCarrierStore().checkAssociatedProductStoreShipmentMethods();
-  await useCarrierStore().fetchCarrierFacilities();
+  await carrierStore.checkAssociatedShipmentMethods();
+  await carrierStore.checkAssociatedProductStoreShipmentMethods();
+  await carrierStore.fetchCarrierFacilities();
+  await carrierStore.fetchShipmentGatewayConfigs();
 
   emitter.emit("dismissLoader");
 });

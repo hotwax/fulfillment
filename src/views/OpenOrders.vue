@@ -72,9 +72,9 @@
                       <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl" :key="getProduct(item.productId).mainImageUrl" size="small" />
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                      <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
                       <div>
-                        {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
+                        {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}
                         <ion-badge class="kit-badge" color="dark" v-if="orderUtil.isKit(item)">{{ translate("Kit") }}</ion-badge>
                       </div>
                       <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
@@ -107,8 +107,8 @@
                       <DxpShopifyImg :src="getProduct(productComponent.productIdTo).mainImageUrl" :key="getProduct(productComponent.productIdTo).mainImageUrl" size="small" />
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
-                      {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
+                      <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(productComponent.productIdTo)) }}</p>
+                      {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(productComponent.productIdTo)) : productComponent.productIdTo }}
                       <p>{{ commonUtil.getFeatures(getProduct(productComponent.productIdTo).productFeatures) }}</p>
                     </ion-label>
                   </ion-item>
@@ -138,17 +138,17 @@
 </template>
 
 <script setup lang="ts">
-import { IonBadge, IonButton, IonButtons, IonCard, IonChip, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSkeletonText, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
+import { IonBadge, IonButton, IonButtons, IonCard, IonChip, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonMenuButton, IonNote, IonPage, IonSearchbar, IonSkeletonText, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { useRouter, onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline } from "ionicons/icons";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
-import { commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, solrUtil, translate } from "@common";
-import { UtilService } from "@/services/UtilService";
+import { commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, solrUtil, translate, useNotificationStore } from "@common";
+import { useCarrier } from "@/composables/useCarrier";
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
 import OrderActionsPopover from "@/components/OrderActionsPopover.vue";
 import { orderUtil } from "@/utils/orderUtil";
-import { OrderService } from "@/services/OrderService";
+
 import { useOrderStore } from "@/store/order";
 import { useProductStore } from "@/store/product";
 import { useStockStore } from "@/store/stock";
@@ -157,7 +157,7 @@ import { useUserStore } from "@/store/user";
 import { useProductIdentificationStore } from "@/store/productIdentification";
 
 const userStore = useUserStore();
-const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
+const carrier = useCarrier();
 
 const router = useRouter();
 const shipmentMethods = ref([] as Array<any>);
@@ -172,9 +172,8 @@ const contentRef = ref();
 const infiniteScrollRef = ref();
 
 const openOrders = computed(() => useOrderStore().getOpenOrders);
-const notifications = computed(() => useUserStore().getNotifications);
-const unreadNotificationsStatus = computed(() => useUserStore().getUnreadNotificationsStatus);
-const instanceUrl = computed(() => userStore.getInstanceUrl);
+const notifications = computed(() => useNotificationStore().getNotifications);
+const unreadNotificationsStatus = computed(() => useNotificationStore().getUnreadNotificationsStatus);
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
 const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
 const getProductStock = (productId: string) => useStockStore().getProductStock(productId);
@@ -196,6 +195,7 @@ const viewNotifications = () => {
 };
 
 const getOpenOrders = () => {
+  console.log("openOrders.value.list", JSON.parse(JSON.stringify(openOrders.value.list)).slice(0, (openOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any)))
   return JSON.parse(JSON.stringify(openOrders.value.list)).slice(0, (openOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any));
 };
 
@@ -291,7 +291,7 @@ const fetchShipmentMethods = async () => {
   });
 
   try {
-    resp = await UtilService.fetchShipmentMethods(payload);
+    resp = await carrier.fetchShipmentMethods(payload);
     if (resp.status == 200 && !commonUtil.hasError(resp) && resp.data.facets?.count > 0) {
       shipmentMethods.value = resp.data.facets.shipmentMethodTypeIdFacet.buckets;
       useUtilStore().fetchShipmentMethodTypeDesc(shipmentMethods.value.map((shipmentMethod: any) => shipmentMethod.val));
@@ -350,11 +350,12 @@ const recycleOutstandingOrders = async () => {
         let resp;
 
         try {
-          resp = await OrderService.recycleOutstandingOrders({
+          resp = await useOrderStore().recycleOutstandingOrders({
             facilityId: currentFacility.value?.facilityId,
             productStoreId: currentEComStore.value.productStoreId,
             reasonId: "INACTIVE_STORE"
-          });
+          }) as any;
+
 
           if (!commonUtil.hasError(resp)) {
             commonUtil.showToast(translate("Rejecting has been started. All outstanding orders will be rejected shortly."));
@@ -397,7 +398,7 @@ onIonViewWillEnter(async () => {
   } finally {
     isLoadingOrders.value = false;
   }
-  const instance = instanceUrl.value.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "");
+  const instance = commonUtil.getOmsURL().split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "");
   productCategoryFilterExt.value = await moduleFederationUtil.useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_ProductCategoryFilter` });
   emitter.on("updateOrderQuery", updateOrderQuery);
 });

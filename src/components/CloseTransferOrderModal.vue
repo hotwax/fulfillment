@@ -46,7 +46,6 @@ import { arrowBackOutline, saveOutline } from "ionicons/icons";
 import { computed } from "vue";
 import { commonUtil, translate, DxpShopifyImg } from "@common";
 import { useRouter } from "vue-router";
-import { TransferOrderService } from "@/services/TransferOrderService";
 import { useUserStore } from "@/store/user";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useProductStore } from "@/store/product";
@@ -73,7 +72,8 @@ const closeOrderItems = async () => {
     items: eligibleItems.map((item: any) => ({ orderItemSeqId: item.orderItemSeqId }))
   };
   try {
-    await TransferOrderService.closeOrderItems(payload);
+    await useTransferOrderStore().closeOrderItems(payload);
+
     return true;
   } catch (error) {
     commonUtil.showToast(translate("Failed to update the status of transfer order items."));

@@ -1,6 +1,5 @@
 import { defineStore } from "pinia"
-import { CarrierService } from "@/services/CarrierService"
-import { commonUtil, logger, translate } from "@common";
+import { commonUtil, logger, translate, api } from "@common";
 
 import { useUtilStore } from "@/store/util"
 import { useUserStore } from "@/store/user"
@@ -63,6 +62,9 @@ export const useCarrierStore = defineStore("carrier", {
     getProductStoreShipmentMethods(state) {
       return state.productStoreShipmentMethods
     },
+    getCarrierFacilities(state) {
+      return state.current.facilities || {}
+    },
     getFacilityCarriers(state) {
       return state.facilityCarriers
     },
@@ -118,7 +120,12 @@ export const useCarrierStore = defineStore("carrier", {
           orderByField: "groupName"
         }
 
-        resp = await CarrierService.fetchCarriers(params)
+        resp = await api({
+          url: `/oms/shippingGateways/carrierShipmentMethods/counts`,
+          method: "GET",
+          params
+        });
+
         if (!commonUtil.hasError(resp)) {
           carriers = { list: resp.data, total: resp.data?.length }
           this.setCarriers(carriers)
@@ -141,7 +148,12 @@ export const useCarrierStore = defineStore("carrier", {
           pageSize: 1
         }
 
-        resp = await CarrierService.fetchCarriers(params)
+        resp = await api({
+          url: `/oms/shippingGateways/carrierShipmentMethods/counts`,
+          method: "GET",
+          params
+        });
+
         if (!commonUtil.hasError(resp)) {
           this.setCurrent(resp.data[0])
           await this.fetchCarrierShipmentMethods({ partyId: payload.partyId })
@@ -167,7 +179,12 @@ export const useCarrierStore = defineStore("carrier", {
           orderByField: "sequenceNumber"
         }
 
-        resp = await CarrierService.fetchCarrierShipmentMethods(params)
+        resp = await api({
+          url: `/oms/shippingGateways/carrierShipmentMethods`,
+          method: "GET",
+          params
+        });
+
         if (!commonUtil.hasError(resp)) {
           currentCarrier = {
             ...currentCarrier,
@@ -203,7 +220,12 @@ export const useCarrierStore = defineStore("carrier", {
             filterByDate: true
           }
 
-          resp = await CarrierService.fetchProductStoreShipmentMethodsByCarrier(params)
+          resp = await api({
+            url: `/oms/dataDocumentView`,
+            method: "POST",
+            data: params
+          });
+
           if (!commonUtil.hasError(resp)) {
             productStoreShipmentMethods = [...productStoreShipmentMethods, ...resp.data.entityValueList]
             viewIndex++
@@ -301,7 +323,12 @@ export const useCarrierStore = defineStore("carrier", {
             pageSize: 250
           }
 
-          resp = await CarrierService.fetchShipmentMethodTypes(payload)
+          resp = await api({
+            url: `/oms/shippingGateways/shipmentMethodTypes`,
+            method: "GET",
+            params: payload
+          });
+
           if (!commonUtil.hasError(resp)) {
             shipmentMethodTypes = [...shipmentMethodTypes, ...resp.data]
             viewIndex++
@@ -338,7 +365,12 @@ export const useCarrierStore = defineStore("carrier", {
             filterByDate: true
           }
 
-          resp = await CarrierService.fetchCarrierFacilities(params)
+          resp = await api({
+            url: `/oms/dataDocumentView`,
+            method: "POST",
+            data: params
+          });
+
           if (!commonUtil.hasError(resp)) {
             carrierFacilities = [...carrierFacilities, ...resp.data.entityValueList]
             docCount = resp.data.entityValueList.length
@@ -390,12 +422,16 @@ export const useCarrierStore = defineStore("carrier", {
           commonUtil.showToast(translate("Only alphanumeric characters are allowed."))
           return
         }
-        const resp = await CarrierService.updateCarrierShipmentMethod({
-          shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
-          partyId: shipmentMethod.partyId,
-          roleTypeId: shipmentMethod.roleTypeId,
-          [updatedData.fieldName]: updatedData.fieldValue
-        })
+        const resp = await api({
+          url: `/oms/shippingGateways/carrierShipmentMethods`,
+          method: "PUT",
+          data: {
+            shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
+            partyId: shipmentMethod.partyId,
+            roleTypeId: shipmentMethod.roleTypeId,
+            [updatedData.fieldName]: updatedData.fieldValue
+          }
+        });
 
         if (!commonUtil.hasError(resp)) {
           commonUtil.showToast(translate(messages.successMessage))
@@ -434,7 +470,12 @@ export const useCarrierStore = defineStore("carrier", {
             filterByDate: true
           }
 
-          resp = await CarrierService.fetchFacilityCarriers(params)
+          resp = await api({
+            url: `/oms/dataDocumentView`,
+            method: "POST",
+            data: params
+          });
+
           if (!commonUtil.hasError(resp)) {
             facilityCarriers = [...facilityCarriers, ...resp.data.entityValueList]
             docCount = resp.data.entityValueList.length
@@ -455,13 +496,17 @@ export const useCarrierStore = defineStore("carrier", {
       const logoUrls = {} as any
 
       try {
-        resp = await CarrierService.fetchCarrierTrackingUrls({
-          systemResourceId: carrierIds,
-          systemResourceId_op: "in",
-          systemPropertyId: "%trackingUrl%",
-          systemPropertyId_op: "like",
-          fieldsToSelect: ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
-        })
+        resp = await api({
+          url: `/admin/systemProperties`,
+          method: "GET",
+          params: {
+            systemResourceId: carrierIds,
+            systemResourceId_op: "in",
+            systemPropertyId: "%trackingUrl%",
+            systemPropertyId_op: "like",
+            fieldsToSelect: ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
+          }
+        });
 
         if (!commonUtil.hasError(resp)) {
           resp.data.map((doc: any) => {
@@ -475,13 +520,17 @@ export const useCarrierStore = defineStore("carrier", {
       }
 
       try {
-        const resp = await CarrierService.fetchCarrierTrackingUrls({
-          systemResourceId: carrierIds,
-          systemResourceId_op: "in",
-          systemPropertyId: "%logo.url%",
-          systemPropertyId_op: "like",
-          fieldsToSelect: ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
-        })
+        const resp = await api({
+          url: `/admin/systemProperties`,
+          method: "GET",
+          params: {
+            systemResourceId: carrierIds,
+            systemResourceId_op: "in",
+            systemPropertyId: "%logo.url%",
+            systemPropertyId_op: "like",
+            fieldsToSelect: ["systemResourceId", "systemPropertyId", "systemPropertyValue"]
+          }
+        });
 
         if (!commonUtil.hasError(resp)) {
           resp.data.map((doc: any) => {
@@ -524,7 +573,12 @@ export const useCarrierStore = defineStore("carrier", {
             filterByDate: true
           }
 
-          resp = await CarrierService.fetchProductStoreShipmentMethods(params)
+          resp = await api({
+            url: `/oms/dataDocumentView`,
+            method: "POST",
+            data: params
+          });
+
           if (!commonUtil.hasError(resp)) {
             productStoreShipmentMethods = [...productStoreShipmentMethods, ...resp.data.entityValueList]
             viewIndex++
@@ -544,7 +598,12 @@ export const useCarrierStore = defineStore("carrier", {
           pageSize: 50
         }
 
-        const resp = await CarrierService.fetchShipmentGatewayConfigs(payload)
+        const resp = await api({
+          url: `/oms/shippingGateways/config`,
+          method: "GET",
+          params: payload
+        });
+
         if (!commonUtil.hasError(resp)) {
           configs = resp.data.reduce((updatedConfigDetail: any, config: any) => {
             updatedConfigDetail[config.shipmentGatewayConfigId] = config

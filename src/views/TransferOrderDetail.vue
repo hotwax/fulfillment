@@ -147,8 +147,9 @@ import { useProductIdentificationStore } from "@/store/productIdentification";
 import { useRoute, useRouter } from "vue-router";
 import Scanner from "@/components/Scanner.vue";
 import { DateTime } from "luxon";
-import { TransferOrderService } from "@/services/TransferOrderService";
-import { OrderService } from "@/services/OrderService";
+import { useTransferOrder } from "@/composables/useTransferOrder";
+import { useOrderStore } from "@/store/order";
+
 import TransferOrderItem from "@/components/TransferOrderItem.vue";
 import ShippingLabelErrorModal from "@/components/ShippingLabelErrorModal.vue";
 import CloseTransferOrderModal from "@/components/CloseTransferOrderModal.vue";
@@ -158,6 +159,9 @@ import { useUtilStore } from "@/store/util";
 import { useProductStore } from "@/store/product";
 
 const userStore = useUserStore();
+const orderStore = useOrderStore();
+const { printShippingLabel, printTransferOrderPicklist: printTransferOrderPicklistComposable } = useTransferOrder();
+
 const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
 
 const route = useRoute();
@@ -183,7 +187,7 @@ const hasOpenItems = computed(() => {
 });
 
 const printTransferOrderPicklist = async () => {
-  await TransferOrderService.printTransferOrderPicklist(currentOrder.value.orderId);
+  await printTransferOrderPicklistComposable(currentOrder.value.orderId);
 };
 
 const getItemCount = () => {
@@ -305,19 +309,20 @@ const regenerateShippingLabel = async (currentShipment: any) => {
   let shippingLabelPdfUrls = currentShipment?.labelImageUrls;
 
   if (!currentShipment.trackingIdNumber) {
-    await OrderService.retryShippingLabel(currentShipment.shipmentId);
+    await orderStore.retryShippingLabel(currentShipment.shipmentId);
+
     await useTransferOrderStore().fetchTransferOrderDetail({ orderId: currentOrder.value.orderId });
     currentShipment = currentOrder.value?.shipments?.find((shipment: any) => shipment.shipmentId === currentShipment.shipmentId);
     shippingLabelPdfUrls = currentShipment?.labelImageUrls;
 
     if (currentShipment.trackingIdNumber) {
       commonUtil.showToast(translate("Shipping Label generated successfully"));
-      await TransferOrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
+      await printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
     } else {
       commonUtil.showToast(translate("Failed to generate shipping label"));
     }
   } else {
-    await TransferOrderService.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
+    await printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
   }
 
   currentShipment.isGeneratingShippingLabel = false;
@@ -342,7 +347,7 @@ const rejectItems = async () => {
           }))
         };
         try {
-          await TransferOrderService.rejectOrderItems(payload);
+          await useTransferOrderStore().rejectOrderItems(payload);
           commonUtil.showToast(translate("All order items are rejected"));
           router.replace("/transfer-orders");
         } catch (err) {

@@ -42,7 +42,7 @@
           <ion-card class="add-items">
             <div class="mode">
               <h5 class="ion-margin-horizontal">{{ translate("Add items") }}</h5>
-              <ion-segment v-model="mode" @ionChange="segmentChange($event.target.value)">
+              <ion-segment v-model="mode" @ionChange="segmentChange($event.target.value as string)">
                 <ion-segment-button value="scan" content-id="scan">
                   <ion-icon :icon="barcodeOutline" />
                 </ion-segment-button>
@@ -199,13 +199,9 @@ import { IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, Io
 import { barcodeOutline, checkmarkDoneOutline, checkmarkCircle, cloudOfflineOutline, locateOutline, searchOutline, shirtOutline, storefrontOutline } from "ionicons/icons";
 import { onBeforeRouteLeave, useRoute } from "vue-router";
 import router from "@/router";
-import { commonUtil, DxpShopifyImg, emitter, logger, translate } from "@common";
+import { api, commonUtil, DxpShopifyImg, emitter, logger, translate } from "@common";
 import { useProductIdentificationStore } from "@/store/productIdentification";
-import { ProductService } from "@/services/ProductService";
-import { StockService } from "@/services/StockService";
-import { TransferOrderService } from "@/services/TransferOrderService";
-import { UtilService } from "@/services/UtilService";
-import { OrderService } from "@/services/OrderService";
+import { useFacility } from "@/composables/useFacility";
 import TransferOrderItem from "@/components/TransferOrderItem.vue";
 import AddProductModal from "@/components/AddProductModal.vue";
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue";
@@ -214,6 +210,7 @@ import { useProductStore } from "@/store/product";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useUtilStore } from "@/store/util";
 import { useUserStore } from "@/store/user";
+import { useOrderStore } from "@/store/order";
 
 const route = useRoute();
 const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
@@ -265,7 +262,7 @@ onIonViewWillEnter(async () => {
   if (isValidOrder) {
     await productQueue.fetchProductInformation();
     await fetchBarcodeIdentificationDesc();
-    facilities.value = await UtilService.fetchProductStoreFacilities();
+    facilities.value = await useFacility().fetchProductStoreFacilities();
   }
   isOrderLoading.value = false;
 });
@@ -300,9 +297,9 @@ onBeforeRouteLeave(async () => {
           try {
             if (!currentOrder.value?.items?.length) {
               const payload = { orderId, statusId: "ORDER_CANCELLED" };
-              resp = await OrderService.updateOrderHeader(payload);
+              resp = await useOrderStore().updateOrderHeader(payload);
             } else {
-              resp = await TransferOrderService.cancelTransferOrder(orderId);
+              resp = await useTransferOrderStore().cancelTransferOrder(orderId);
             }
 
             if (!commonUtil.hasError(resp)) {
@@ -339,8 +336,8 @@ onIonViewWillLeave(() => {
 
 async function fetchTransferOrderDetail(orderId: string) {
   try {
-    const orderResp = await TransferOrderService.fetchTransferOrderDetail(orderId);
-    if (!commonUtil.hasError(orderResp) && Object.keys(orderResp.data?.order).length) {
+    const orderResp = await useTransferOrderStore().fetchTransferOrderDetail({ orderId });
+    if (orderResp && !commonUtil.hasError(orderResp) && Object.keys(orderResp.data?.order || {}).length) {
       const order = orderResp.data.order;
       if (order.statusId !== "ORDER_CREATED") {
         await useTransferOrderStore().updateCurrentTransferOrder(order);
@@ -376,7 +373,7 @@ async function fetchTransferOrderDetail(orderId: string) {
 
 async function fetchBarcodeIdentificationDesc() {
   try {
-    const resp = await ProductService.fetchBarcodeIdentificationDesc({ parentTypeId: "HC_GOOD_ID_TYPE" });
+    const resp = await useProductStore().fetchBarcodeIdentificationDesc({ parentTypeId: "HC_GOOD_ID_TYPE" });
 
     if (!commonUtil.hasError(resp) && resp.data?.length) {
       barcodeIdentificationDesc.value = resp.data.reduce((identifierDesc: any, identifier: any) => {
@@ -450,7 +447,7 @@ async function updateOrderProperty(property: string, value: any) {
       [property]: value
     };
 
-    const resp = await OrderService.updateOrderHeader(payload);
+    const resp = await useOrderStore().updateOrderHeader(payload);
 
     if (!commonUtil.hasError(resp)) {
       await useTransferOrderStore().updateCurrentTransferOrder({
@@ -497,7 +494,7 @@ async function updateOrderFacility(facilityId: string) {
   };
 
   try {
-    const resp = await OrderService.updateOrderFacility(payload);
+    const resp = await useOrderStore().updateOrderFacility(payload);
     if (!commonUtil.hasError(resp)) {
       if (shipGroup) shipGroup.orderFacilityId = facilityId;
       await useTransferOrderStore().updateCurrentTransferOrder(currentOrder.value);
@@ -630,7 +627,7 @@ async function findProduct(value: string) {
     } else {
       payload.keyword = value;
     }
-    const resp = await ProductService.searchProducts(payload);
+    const resp = await useProductStore().searchProducts(payload);
 
     if (resp.total) {
       productSearchCount.value = resp.total;
@@ -653,9 +650,13 @@ async function findProduct(value: string) {
 
 async function fetchStock(productId: string) {
   try {
-    const resp: any = await StockService.getInventoryAvailableByFacility({
-      productId,
-      facilityId: useUserStore().getCurrentFacility?.facilityId
+    const resp: any = await api({
+      url: `/poorti/getInventoryAvailableByFacility`,
+      method: "GET",
+      params: {
+        productId,
+        facilityId: useUserStore().getCurrentFacility?.facilityId
+      }
     });
     if (!commonUtil.hasError(resp)) return resp.data;
   } catch (err) {
@@ -697,7 +698,7 @@ function hasInvalidPickedQuantity() {
 
 async function approveOrder(orderId: string) {
   try {
-    const resp = await TransferOrderService.approveTransferOrder(orderId);
+    const resp = await useTransferOrderStore().approveTransferOrder(orderId);
     if (!commonUtil.hasError(resp)) {
       currentOrder.value.statusId = "ORDER_APPROVED";
       await useTransferOrderStore().updateCurrentTransferOrder(currentOrder.value);
@@ -773,7 +774,7 @@ async function packAndShipOrder() {
     };
     preventLeave.value = true;
 
-    const resp = await TransferOrderService.createOutboundTransferShipment(params);
+    const resp = await useTransferOrderStore().createOutboundTransferShipmentAPI(params);
     if (!commonUtil.hasError(resp)) {
       shipmentId = resp.data.shipmentId;
       router.replace({ path: `/ship-transfer-order/${shipmentId}` });

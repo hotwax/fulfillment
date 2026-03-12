@@ -15,7 +15,6 @@ import CarrierShipmentMethods from "@/views/CarrierShipmentMethods.vue"
 import { commonUtil, translate } from "@common";
 
 import { useUserStore } from '@/store/user'
-import { useUserStore as useDxpUserStore } from "@/store/user";
 
 import 'vue-router'
 import Notifications from '@/views/Notifications.vue'

@@ -14,9 +14,7 @@ import {
   IonPage,
 } from "@ionic/vue";
 import { defineComponent } from "vue";
-import { commonUtil, emitter, translate } from "@common";
-import { useRouter } from "vue-router";
-import ShopifyService from "@/services/ShopifyService";
+import { commonUtil, emitter, ShopifyService, translate } from "@common";
 
 export default defineComponent({
   name: "Shopify",

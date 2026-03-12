@@ -31,15 +31,16 @@
 import { IonContent, IonHeader, IonIcon, IonTitle, IonToolbar, modalController, IonButton, IonButtons, IonLabel, IonItem, IonList } from "@ionic/vue";
 import { defineProps, onMounted, ref } from "vue";
 import { closeOutline, copyOutline } from "ionicons/icons";
-import { OrderService } from "@/services/OrderService";
+import { useOrderStore } from "@/store/order";
 import { commonUtil, translate } from "@common";
 
 const props = defineProps(["shipmentId"]);
+const orderStore = useOrderStore();
 
 const shipmentLabelErrorMessage = ref("");
 
 onMounted(async () => {
-  shipmentLabelErrorMessage.value = await OrderService.fetchShipmentLabelError(props.shipmentId);
+  shipmentLabelErrorMessage.value = await orderStore.fetchShipmentLabelError(props.shipmentId);
 });
 
 const closeModal = () => {
