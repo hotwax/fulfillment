@@ -43,49 +43,108 @@ export const useCarrier = () => {
     }
   }
 
-  const updateCarrierFacility = async (facility: any, partyId: string, isChecked: boolean) => {
-    const params = {
-      facilityId: facility.facilityId,
-      partyId: partyId,
-      roleTypeId: "CARRIER"
-    }
+  const updateCarrierFacility = async (facility: any, carrierPartyId: any) => {
+    try {
+      const payload = {
+        facilityId: facility.facilityId,
+        partyId: carrierPartyId,
+        roleTypeId: "CARRIER"
+      }
+      let resp = {} as any;
+      if (facility.isChecked) {
+        resp = await api({
+          url: `/oms/facilities/${payload.facilityId}/parties`,
+          method: "PUT",
+          data: {
+            ...payload,
+            fromDate: facility.fromDate,
+            thruDate: DateTime.now().toMillis()
+          }
+        });
+        if (commonUtil.hasError(resp)) {
+          throw resp.data
+        }
+        facility.isChecked = false
+        facility.fromDate = ""
+      } else {
+        resp = await api({
+          url: `/oms/facilities/${payload.facilityId}/parties`,
+          method: "POST",
+          data: {
+            ...payload,
+            fromDate: DateTime.now().toMillis()
+          }
+        });
+        if (commonUtil.hasError(resp)) {
+          throw resp.data;
+        }
+        facility = { ...facility, ...payload, isChecked: true }
+      }
 
+      if (!commonUtil.hasError(resp)) {
+        commonUtil.showToast(translate("Facility carrier association updated successfully."))
+        await carrierStore.updateCarrierFacility(facility)
+      } else {
+        throw resp.data;
+      }
+    } catch (err) {
+      commonUtil.showToast(translate("Failed to update facility carrier association."))
+      logger.error(err)
+    }
+  }
+
+  const updateProductStoreShipmentMethod = async (productStoreId: string, shipmentMethod: any) => {
     try {
       const resp = await api({
-        url: isChecked ? `/ oms / facilities / ${facility.facilityId} /parties` : `/oms / facilities / ${facility.facilityId}/parties`,
-        method: isChecked ? "POST" : "PUT",
-        data: isChecked ? params : { ...params, thruDate: DateTime.now().toMillis() }
+        url: `/oms/productStores/${productStoreId}/shipmentMethods`,
+        method: "PUT",
+        data: {
+          shipmentGatewayConfigId: shipmentMethod.shipmentGatewayConfigId,
+          isTrackingRequired: shipmentMethod.isTrackingRequired,
+          productStoreShipMethId: shipmentMethod.productStoreShipMethId,
+        }
       })
 
       if (!commonUtil.hasError(resp)) {
-        commonUtil.showToast(translate(isChecked ? "Carrier associated with facility successfully" : "Carrier disassociated from facility successfully"))
-        await carrierStore.fetchCarrierFacilities()
+        commonUtil.showToast(translate("Product store shipment method updated successfully"))
+        await carrierStore.fetchProductStoreShipmentMethods({ partyId: shipmentMethod.partyId })
       } else {
         throw resp.data
       }
     } catch (err) {
-      const errorMessage = isChecked ? "Failed to associate carrier with facility" : "Failed to disassociate carrier from facility"
+      const errorMessage = "Failed to update product store shipment method"
       commonUtil.showToast(translate(errorMessage))
       logger.error(errorMessage, err)
     }
   }
 
-  const updateProductStoreShipmentMethod = async (productStoreId: string, shipmentMethod: any, isChecked: boolean) => {
-    const payload = {
-      productStoreId,
-      shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
-      partyId: shipmentMethod.partyId,
-      roleTypeId: shipmentMethod.roleTypeId,
-      shipmentGatewayConfigId: shipmentMethod.shipmentGatewayConfigId,
-      isTrackingRequired: shipmentMethod.isTrackingRequired ? "Y" : "N"
-    }
+  const updateProductStoreShipmentMethodAssociation = async (payload: any) => {
+    const { productStoreId, shipmentMethod, isChecked } = payload
 
     try {
-      const resp = await api({
-        url: isChecked ? `/oms/productStores/${productStoreId}/shipmentMethods` : `/oms/productStores/${productStoreId}/shipmentMethods`,
-        method: isChecked ? "POST" : "PUT",
-        data: isChecked ? payload : { ...payload, thruDate: DateTime.now().toMillis() }
-      })
+      let resp;
+      if (isChecked) {
+        resp = await api({
+          url: `/oms/productStores/${productStoreId}/shipmentMethods`,
+          method: "POST",
+          data: {
+            productStoreId,
+            shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
+            partyId: shipmentMethod.partyId,
+            roleTypeId: shipmentMethod.roleTypeId,
+            fromDate: DateTime.now().toMillis()
+          }
+        })
+      } else {
+        resp = await api({
+          url: `/oms/productStores/${productStoreId}/shipmentMethods`,
+          method: "PUT",
+          data: {
+            productStoreShipMethId: shipmentMethod.productStoreShipMethId,
+            thruDate: DateTime.now().toMillis()
+          }
+        })
+      }
 
       if (!commonUtil.hasError(resp)) {
         commonUtil.showToast(translate(isChecked ? "Shipment method associated with product store successfully" : "Shipment method disassociated from product store successfully"))
@@ -98,11 +157,6 @@ export const useCarrier = () => {
       commonUtil.showToast(translate(errorMessage))
       logger.error(errorMessage, err)
     }
-  }
-
-  const updateProductStoreShipmentMethodAssociation = async (payload: any) => {
-    const { productStoreId, shipmentMethod, isChecked } = payload
-    await updateProductStoreShipmentMethod(productStoreId, shipmentMethod, isChecked)
     carrierStore.checkAssociatedProductStoreShipmentMethods()
   }
 

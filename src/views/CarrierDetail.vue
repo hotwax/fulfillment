@@ -198,7 +198,7 @@ const openCreateShipmentMethodModal = async () => {
 const updateCarrierFacilityAssociation = async (event: any, facility: any) => {
   event.preventDefault();
   event.stopImmediatePropagation();
-  await updateCarrierFacility(facility, currentCarrier.value.partyId, !facility.isChecked);
+  await updateCarrierFacility(facility, currentCarrier.value.partyId);
 };
 
 const updateShipmentGatewayConfigId = async (shipmentMethod: any) => {
@@ -230,7 +230,7 @@ const updateShipmentGatewayConfigId = async (shipmentMethod: any) => {
 
 const updateTrackingRequired = async (event: any, shipmentMethod: any) => {
   event.stopPropagation();
-  const modifiedData = { fieldName: "isTrackingRequired", fieldValue: shipmentMethod.isTrackingRequired ? false : true };
+  const modifiedData = { fieldName: "isTrackingRequired", fieldValue: shipmentMethod.isTrackingRequired ? 'N' : 'Y' };
   const messages = { successMessage: "Tracking code settings updated successfully.", errorMessage: "Failed to update tracking code settings." };
   updateProductStoreShipmentMethodInternal(shipmentMethod, modifiedData, messages);
 };
@@ -239,7 +239,7 @@ const updateProductStoreShipmentMethodInternal = async (shipmentMethod: any, mod
   if (modifiedData && shipmentMethod[modifiedData.fieldName] !== modifiedData.fieldValue) {
     try {
       const updatedMethod = { ...shipmentMethod, [modifiedData.fieldName]: modifiedData.fieldValue };
-      await updateProductStoreShipmentMethod(shipmentMethod.productStoreId, updatedMethod, true);
+      await updateProductStoreShipmentMethod(shipmentMethod.productStoreId, updatedMethod);
       commonUtil.showToast(translate(messages.successMessage));
       await carrierStore.checkAssociatedProductStoreShipmentMethods();
     } catch (err) {
