@@ -1,7 +1,6 @@
-import { api, commonUtil, cookieHelper, logger, translate } from "@common";
+import { api, commonUtil, cookieHelper, i18n, logger, translate } from "@common";
 import { defineStore } from "pinia"
 import { DateTime, Settings } from "luxon"
-import { i18n } from "../index";
 import { useUtilStore } from "@/store/util"
 import { useAuth } from "@/composables/auth";
 import { useProductIdentificationStore } from "@/store/productIdentification";
@@ -9,7 +8,6 @@ import { useProductIdentificationStore } from "@/store/productIdentification";
 interface UserState {
   permissions: any[]
   current: any
-  instanceUrl: string
   currentFacility: any
   currentEComStore: any
   preference: {
@@ -27,64 +25,10 @@ interface UserState {
   isEmbedded: boolean
 }
 
-async function fetchFacilitiesByGroup(facilityGroupId: string, payload?: any): Promise<any> {
-  const params = {
-    url: "oms/groupFacilities",
-    method: "GET",
-    params: {
-      facilityGroupId,
-      pageSize: 500,
-      ...payload
-    }
-  }
-
-  try {
-    const resp = await api(params) as any;
-
-    // Filtering facilities on which thruDate is set, as we are unable to pass thruDate check in the api payload
-    // Considering that the facilities will always have a thruDate of the past.
-    const facilities = resp.data.filter((facility: any) => !facility.thruDate)
-    return Promise.resolve(facilities)
-  } catch (error) {
-    return Promise.reject({
-      code: "error",
-      message: "Failed to fetch facilities for group",
-      serverResponse: error
-    })
-  }
-}
-
-async function fetchFacilitiesByParty(partyId: string, payload?: any): Promise<Array<any> | Response> {
-  const params = {
-    url: `inventory-cycle-count/user/${partyId}/facilities`,
-    method: "GET",
-    params: {
-      ...payload,
-      pageSize: 500
-    }
-  }
-
-  try {
-    const resp = await api(params) as any;
-
-    // Filtering facilities on which thruDate is set, as we are unable to pass thruDate check in the api payload
-    // Considering that the facilities will always have a thruDate of the past.
-    const facilities = resp.data.filter((facility: any) => !facility.thruDate)
-    return Promise.resolve(facilities)
-  } catch (error) {
-    return Promise.reject({
-      code: "error",
-      message: "Failed to fetch user associated facilities",
-      serverResponse: error
-    })
-  }
-}
-
 export const useUserStore = defineStore("appUser", {
   state: (): UserState => ({
     permissions: [],
     current: {},
-    instanceUrl: "",
     currentFacility: {},
     currentEComStore: {},
     preference: {
@@ -112,11 +56,6 @@ export const useUserStore = defineStore("appUser", {
     },
     getUserProfile(state: UserState) {
       return state.current
-    },
-    getBaseUrl(state: UserState): string {
-      let baseURL = import.meta.env.VITE_BASE_URL
-      if (!baseURL) baseURL = state.instanceUrl
-      return baseURL.startsWith("http") ? baseURL.includes("/api") ? baseURL : `${baseURL}/api/` : `https://${baseURL}.hotwax.io/api/`
     },
     getUserPreferenceState(state: UserState) {
       return state.preference
@@ -157,9 +96,6 @@ export const useUserStore = defineStore("appUser", {
   actions: {
     updateUserInfo(payload: any) {
       this.current = { ...this.current, ...payload }
-    },
-    setInstanceUrl(payload: any) {
-      this.instanceUrl = payload
     },
     setPermissionsState(payload: any) {
       this.permissions = payload
@@ -289,9 +225,19 @@ export const useUserStore = defineStore("appUser", {
         // Fetch the facilities associated with party
         if (partyId && !isAdminUser) {
           try {
-            resp = await fetchFacilitiesByParty(partyId)
+            resp = await api({
+              url: `inventory-cycle-count/user/${partyId}/facilities`,
+              method: "GET",
+              params: {
+                pageSize: 500
+              }
+            } as any);
 
-            facilityIds = resp.map((facility: any) => facility.facilityId);
+            // Filtering facilities on which thruDate is set, as we are unable to pass thruDate check in the api payload
+            // Considering that the facilities will always have a thruDate of the past.
+            const facilities = resp.data.filter((facility: any) => !facility.thruDate)
+
+            facilityIds = facilities.map((facility: any) => facility.facilityId);
             if (!facilityIds.length) {
               return Promise.reject({
                 code: 'error',
@@ -302,7 +248,7 @@ export const useUserStore = defineStore("appUser", {
           } catch (error) {
             return Promise.reject({
               code: 'error',
-              message: 'Failed to fetch user facilities',
+              message: 'Failed to fetch user associated facilities',
               serverResponse: error
             })
           }
@@ -319,9 +265,21 @@ export const useUserStore = defineStore("appUser", {
         // Fetch the facilities associated with group
         if (facilityGroupId) {
           try {
-            resp = await fetchFacilitiesByGroup(facilityGroupId, filters)
+            resp = await api({
+              url: "oms/groupFacilities",
+              method: "GET",
+              params: {
+                facilityGroupId,
+                pageSize: 500,
+                ...filters
+              }
+            } as any);
 
-            facilityIds = resp.map((facility: any) => facility.facilityId);
+            // Filtering facilities on which thruDate is set, as we are unable to pass thruDate check in the api payload
+            // Considering that the facilities will always have a thruDate of the past.
+            const facilities = resp.data.filter((facility: any) => !facility.thruDate)
+
+            facilityIds = facilities.map((facility: any) => facility.facilityId);
             if (!facilityIds.length) {
               return Promise.reject({
                 code: 'error',
@@ -332,7 +290,7 @@ export const useUserStore = defineStore("appUser", {
           } catch (error) {
             return Promise.reject({
               code: 'error',
-              message: 'Failed to fetch user facilities',
+              message: 'Failed to fetch facilities for group',
               serverResponse: error
             })
           }

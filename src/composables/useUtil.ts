@@ -64,14 +64,6 @@ const fetchAdjustmentTypeDescription = async (payload: any): Promise<any> => {
   });
 }
 
-const fetchGiftCardFulfillmentInfo = async (payload: any): Promise<any> => {
-  return api({
-    url: `/poorti/giftCardFulfillments`,
-    method: "GET",
-    params: payload,
-  });
-}
-
 const fetchProductStoreDetails = async (payload: any): Promise<any> => {
   return api({
     url: `/oms/productStores/${payload.productStoreId}`,
@@ -135,7 +127,6 @@ export const useUtil = () => {
     deleteEnumeration,
     isEnumExists,
     fetchAdjustmentTypeDescription,
-    fetchGiftCardFulfillmentInfo,
     fetchProductStoreDetails,
     updateProductStoreSetting,
     createProductStoreSetting,
