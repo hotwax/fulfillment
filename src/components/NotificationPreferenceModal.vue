@@ -33,12 +33,13 @@ import { computed, onBeforeMount, ref } from "vue";
 import { closeOutline, save } from "ionicons/icons";
 import { commonUtil, emitter, firebaseMessaging, logger, translate, useNotificationStore } from "@common";
 import { useUserStore as useDxpUserStore } from "@/store/user";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 const notificationPrefState = ref<Record<string, boolean>>({});
 const notificationPrefToUpdate = ref({ subscribe: [] as string[], unsubscribe: [] as string[] });
 const initialNotificationPrefState = ref<Record<string, boolean>>({});
 
 const notificationPrefs = computed(() => useNotificationStore().getNotificationPrefs);
-const currentFacility = computed(() => useDxpUserStore().getCurrentFacility);
+const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
 
 const isButtonDisabled = computed(() => {
   const enumTypeIds = Object.keys(initialNotificationPrefState.value);
@@ -49,7 +50,7 @@ onBeforeMount(async () => {
   const userStore = useDxpUserStore();
   const notificationStore = useNotificationStore();
   const omsInstanceName = commonUtil.getOMSInstanceName();
-  await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(omsInstanceName, userStore.getCurrentFacility.facilityId, enumId));
+  await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(omsInstanceName, useAppProductStore().getCurrentFacility.facilityId, enumId));
   notificationPrefState.value = notificationPrefs.value.reduce((prefs: any, pref: any) => {
     prefs[pref.enumId] = pref.isEnabled;
     return prefs;

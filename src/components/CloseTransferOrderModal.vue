@@ -49,13 +49,13 @@ import { useRouter } from "vue-router";
 import { useUserStore } from "@/store/user";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useProductStore } from "@/store/product";
-import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 
 const userStore = useUserStore();
 const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
 
 const router = useRouter();
-const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
+const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 const order = computed(() => useTransferOrderStore().getCurrent);
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
 

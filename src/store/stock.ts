@@ -1,7 +1,6 @@
 import { defineStore } from "pinia"
 import { api, commonUtil, logger, translate } from "@common";
-
-import { useUserStore } from "@/store/user"
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 
 interface StockState {
   products: Record<string, any>
@@ -13,7 +12,7 @@ export const useStockStore = defineStore("stock", {
   }),
   getters: {
     getProductStock: (state) => (productId: any, facilityId?: any) => {
-      const id = facilityId ? facilityId : useUserStore().getCurrentFacility?.facilityId
+      const id = facilityId ? facilityId : useAppProductStore().getCurrentFacility?.facilityId
       return state.products[productId] ? state.products[productId][id] ? state.products[productId][id] : {} : {}
     }
   },
@@ -28,7 +27,7 @@ export const useStockStore = defineStore("stock", {
       }
     },
     async fetchStock({ productId, facilityId = "" }: { productId: any; facilityId?: any }) {
-      const id = facilityId ? facilityId : useUserStore().getCurrentFacility?.facilityId
+      const id = facilityId ? facilityId : useAppProductStore().getCurrentFacility?.facilityId
       try {
         const resp: any = await api({
           url: `/poorti/getInventoryAvailableByFacility`,

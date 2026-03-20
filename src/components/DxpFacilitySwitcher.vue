@@ -92,13 +92,14 @@ import {
 } from '@ionic/vue';
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { useUserStore } from '@/store/user';
+import { useProductStore } from '@/store/productStore';
 import { computed, ref } from 'vue';
 import { translate } from '@common';
 
 const userStore = useUserStore();
 
-const facilities = computed(() => userStore.getUserProfile.facilities)
-const currentFacility = computed(() => userStore.getCurrentFacility)
+const facilities = computed(() => useProductStore().getFacilities)
+const currentFacility = computed(() => useProductStore().getCurrentFacility)
 
 const facilityModal = ref()
 const queryString = ref('')
@@ -144,7 +145,7 @@ function preventSpecialCharacters($event: any) {
 
 async function updateFacility() {
   const selectedFacility = facilities.value.find((facility: any) => facility.facilityId === selectedFacilityId.value)
-  await userStore.setFacilityPreference(selectedFacility)
+  await useProductStore().setFacilityPreference(selectedFacility)
   emit('updateFacility', selectedFacility);
   closeModal();
 }

@@ -150,7 +150,7 @@ import { computed, ref } from "vue";
 import { IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, IonThumbnail, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from "@ionic/vue";
 import { openOutline, pricetagOutline, printOutline, storefrontOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
-import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useOrderStore } from "@/store/order";
 import { useCarrier } from "@/composables/useCarrier";
 import { useFacility } from "@/composables/useFacility";
@@ -165,7 +165,7 @@ import { useUserStore } from "@/store/user";
 
 const route = useRoute();
 const router = useRouter();
-const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
+const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 
 const userStore = useUserStore();
 const orderStore = useOrderStore();

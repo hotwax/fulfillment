@@ -154,7 +154,7 @@ import { IonButton, IonButtons, IonCard, IonCardHeader, IonCardTitle, IonChip, I
 import { computed, ref } from "vue";
 import { cloudDownloadOutline, filterOutline, personCircleOutline, pricetagOutline } from "ionicons/icons";
 import { commonUtil, DxpShopifyImg, translate } from "@common";
-import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUserStore } from "@/store/user";
 import RejectedItemsModal from "@/components/RejectedItemsModal.vue";
 import UsedReasonsModal from "@/components/UsedReasonsModal.vue";
@@ -176,7 +176,7 @@ const infiniteScrollRef = ref();
 const rejectionStats = computed(() => useRejectionStore().getRejectedStats);
 const rejectedOrders = computed(() => useRejectionStore().getRejectedOrders);
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
-const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
+const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 
 const enableScrolling = () => {
   const parentElement = contentRef.value?.$el;

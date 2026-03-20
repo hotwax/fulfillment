@@ -1,5 +1,5 @@
 import { api, commonUtil, logger } from '@common';
-import { useUserStore } from "@/store/user";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 
 const getFacilityDetails = async (payload: any): Promise<any> => {
   return api({
@@ -59,7 +59,7 @@ const fetchFacilities = async (payload: any): Promise<any> => {
 
 const fetchProductStoreFacilities = async (): Promise<any> => {
   try {
-    const productStoreId = useUserStore().getCurrentEComStore?.productStoreId;
+    const productStoreId = useAppProductStore().getCurrentEComStore?.productStoreId;
 
     if (!productStoreId) {
       logger.error('Product store ID not found');

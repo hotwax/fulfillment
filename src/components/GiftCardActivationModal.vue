@@ -66,7 +66,7 @@ const orderStore = useOrderStore();
 import { DateTime } from "luxon";
 import { StreamBarcodeReader } from "vue-barcode-reader";
 import { useProductStore } from "@/store/product";
-import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 
 const props = defineProps(["item"]);
 const isLoading = ref(false);
@@ -75,7 +75,7 @@ const activationCode = ref("");
 const isCameraEnabled = ref(false);
 
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
-const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
+const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 
 onMounted(async () => {
   isLoading.value = true;

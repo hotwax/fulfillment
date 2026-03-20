@@ -15,7 +15,7 @@ import { translate, emitter, logger, firebaseMessaging, useNotificationStore } f
 import { Settings } from "luxon";
 import { init } from "@module-federation/runtime";
 import { useUserStore } from "@/store/user";
-import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useProductStore } from "@/store/productStore";
 import router from './router';
 import { useAuth } from "@/composables/auth";
 
@@ -89,10 +89,10 @@ onMounted(async () => {
     Settings.defaultZone = userProfile.value.userTimeZone;
   }
 
-  const currentEComStore: any = useUserStore().getCurrentEComStore;
+  const currentEComStore: any = useProductStore().getCurrentEComStore;
 
     if (isAuthenticated.value && currentEComStore?.productStoreId) {
-      await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId).catch((error) => logger.error(error));
+      await useProductStore().fetchProductStoreSettings(currentEComStore.productStoreId).catch((error) => logger.error(error));
 
       if (appFirebaseConfig && appFirebaseConfig.apiKey && allNotificationPrefs.value?.length) {
         const notificationStore = useNotificationStore();

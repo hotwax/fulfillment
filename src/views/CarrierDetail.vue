@@ -114,12 +114,12 @@ import { useRoute } from "vue-router";
 import CreateShipmentMethodModal from "@/components/CreateShipmentMethodModal.vue";
 import ShipmentMethods from "@/components/ShipmentMethods.vue";
 import { useCarrierStore } from "@/store/carrier";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUtilStore } from "@/store/util";
 import { useCarrier } from "@/composables/useCarrier";
 
 const route = useRoute();
 const carrierStore = useCarrierStore();
-const utilStore = useUtilStore();
 const { 
   updateCarrier, 
   updateCarrierFacility, 
@@ -131,7 +131,7 @@ const selectedSegment = ref("shipping-methods");
 
 const shipmentMethodQuery = computed(() => carrierStore.getShipmentMethodQuery);
 const currentCarrier = computed(() => carrierStore.getCurrent);
-const productStores = computed(() => utilStore.getProductStores);
+const productStores = computed(() => useAppProductStore().getAllProductStores);
 const shipmentMethods = computed(() => carrierStore.getShipmentMethods);
 const carrierShipmentMethodsByProductStore = computed(() => carrierStore.getCarrierShipmentMethodsByProductStore);
 const shipmentGatewayConfigs = computed(() => carrierStore.getShipmentGatewayConfigs);
@@ -264,9 +264,9 @@ onMounted(async () => {
   await carrierStore.fetchCarrierDetail({ partyId: route.params.partyId as string });
   await Promise.all([
     carrierStore.fetchShipmentMethodTypes(),
-    utilStore.fetchProductStores(),
+    useAppProductStore().fetchAllProductStores(),
     carrierStore.fetchProductStoreShipmentMethods({ partyId: route.params.partyId as string }),
-    utilStore.fetchFacilities()
+    useAppProductStore().fetchAllFacilities()
   ]);
   await carrierStore.checkAssociatedShipmentMethods();
   await carrierStore.checkAssociatedProductStoreShipmentMethods();

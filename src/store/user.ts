@@ -1,15 +1,11 @@
 import { api, commonUtil, cookieHelper, i18n, logger, translate } from "@common";
 import { defineStore } from "pinia"
 import { DateTime, Settings } from "luxon"
-import { useUtilStore } from "@/store/util"
 import { useAuth } from "@/composables/auth";
-import { useProductIdentificationStore } from "@/store/productIdentification";
 
 interface UserState {
   permissions: any[]
   current: any
-  currentFacility: any
-  currentEComStore: any
   preference: {
     printShippingLabel: boolean
     printPackingSlip: boolean
@@ -22,15 +18,12 @@ interface UserState {
   currentTimeZoneId: string,
   localeOptions: any,
   locale: string,
-  isEmbedded: boolean
 }
 
 export const useUserStore = defineStore("appUser", {
   state: (): UserState => ({
     permissions: [],
     current: {},
-    currentFacility: {},
-    currentEComStore: {},
     preference: {
       printShippingLabel: false,
       printPackingSlip: false
@@ -43,8 +36,6 @@ export const useUserStore = defineStore("appUser", {
     currentTimeZoneId: '',
     localeOptions: import.meta.env.VITE_LOCALES ? JSON.parse(import.meta.env.VITE_LOCALES) : { "en-US": "English" },
     locale: 'en-US',
-    isEmbedded: false
-
   }),
   getters: {
     getTimeZones: (state) => state.timeZones,
@@ -62,15 +53,6 @@ export const useUserStore = defineStore("appUser", {
     },
     getPwaState(state: UserState) {
       return state.pwaState
-    },
-    getCurrentFacility(state: UserState) {
-      return state.currentFacility
-    },
-    getCurrentEComStore(state: UserState) {
-      return state.currentEComStore
-    },
-    getProductStores(state: UserState) {
-      return state.current.stores
     },
     hasPermission: (state: UserState) => (permissionId: string): boolean => {
       const permissions = state.permissions;
@@ -103,13 +85,6 @@ export const useUserStore = defineStore("appUser", {
     setPwaState(payload: any) {
       this.pwaState.registration = payload.registration
       this.pwaState.updateExists = payload.updateExists
-    },
-    setCurrentFacility(facility: any) {
-      this.currentFacility = facility
-    },
-    async setCurrentEComStore(store: any) {
-      this.currentEComStore = store
-      await this.fetchEComStoreDependencies(store.productStoreId)
     },
     updatePwaState(payload: any) {
       this.pwaState.registration = payload.registration;
@@ -210,223 +185,6 @@ export const useUserStore = defineStore("appUser", {
       }
     },
 
-    async fetchFacilities() {
-      let facilityIds: Array<string> = [];
-      let filters: any = {};
-      let resp = {} as any
-
-      const partyId = this.getUserProfile?.partyId;
-      const isAdminUser = this.hasPermission("STOREFULFILLMENT_ADMIN");
-      const facilityGroupId = "OMS_FULFILLMENT";
-
-      try {
-        this.current.stores = [];
-
-        // Fetch the facilities associated with party
-        if (partyId && !isAdminUser) {
-          try {
-            resp = await api({
-              url: `inventory-cycle-count/user/${partyId}/facilities`,
-              method: "GET",
-              params: {
-                pageSize: 500
-              }
-            } as any);
-
-            // Filtering facilities on which thruDate is set, as we are unable to pass thruDate check in the api payload
-            // Considering that the facilities will always have a thruDate of the past.
-            const facilities = resp.data.filter((facility: any) => !facility.thruDate)
-
-            facilityIds = facilities.map((facility: any) => facility.facilityId);
-            if (!facilityIds.length) {
-              return Promise.reject({
-                code: 'error',
-                message: 'Failed to fetch user facilities',
-                serverResponse: resp.data
-              })
-            }
-          } catch (error) {
-            return Promise.reject({
-              code: 'error',
-              message: 'Failed to fetch user associated facilities',
-              serverResponse: error
-            })
-          }
-        }
-
-        if (facilityIds.length) {
-          filters = {
-            facilityId: facilityIds.join(","),
-            facilityId_op: "in",
-            pageSize: facilityIds.length
-          }
-        }
-
-        // Fetch the facilities associated with group
-        if (facilityGroupId) {
-          try {
-            resp = await api({
-              url: "oms/groupFacilities",
-              method: "GET",
-              params: {
-                facilityGroupId,
-                pageSize: 500,
-                ...filters
-              }
-            } as any);
-
-            // Filtering facilities on which thruDate is set, as we are unable to pass thruDate check in the api payload
-            // Considering that the facilities will always have a thruDate of the past.
-            const facilities = resp.data.filter((facility: any) => !facility.thruDate)
-
-            facilityIds = facilities.map((facility: any) => facility.facilityId);
-            if (!facilityIds.length) {
-              return Promise.reject({
-                code: 'error',
-                message: 'Failed to fetch user facilities',
-                serverResponse: resp.data
-              })
-            }
-          } catch (error) {
-            return Promise.reject({
-              code: 'error',
-              message: 'Failed to fetch facilities for group',
-              serverResponse: error
-            })
-          }
-        }
-
-        if (facilityIds.length) {
-          filters = {
-            facilityId: facilityIds.join(","),
-            facilityId_op: "in",
-            pageSize: facilityIds.length
-          }
-        }
-
-        const params = {
-          url: "oms/facilities",
-          method: "GET",
-          params: {
-            pageSize: 500,
-            ...filters
-          }
-        }
-
-        resp = await api(params);
-        this.current.facilities = resp.data
-        this.setCurrentFacility(resp.data[0])
-      } catch (error: any) {
-        logger.error("error", error);
-        return Promise.reject(new Error(error));
-      }
-    },
-    async setFacilityPreference(payload: any) {
-      try {
-        await api({
-          url: "admin/user/preferences",
-          method: "PUT",
-          data: {
-            userId: this.getUserProfile.userId,
-            preferenceKey: 'SELECTED_FACILITY',
-            preferenceValue: payload.facilityId,
-          }
-        });
-      } catch (error) {
-        console.error('error', error)
-      }
-      this.currentFacility = payload;
-    },
-
-    async fetchFacilityPreference() {
-      try {
-        const preferredFacilityResp = await api({
-          url: "admin/user/preferences",
-          method: "GET",
-          params: {
-            pageSize: 1,
-            userId: this.current.userId,
-            preferenceKey: "SELECTED_FACILITY"
-          },
-        }) as any;
-        const preferredFacilityId = preferredFacilityResp.data?.[0]?.preferenceValue;
-        if (preferredFacilityId) {
-          const currentFacility = this.current.facilities.find((facility: any) => facility.facilityId === preferredFacilityId);
-          currentFacility && this.setCurrentFacility(currentFacility)
-        }
-      } catch (err) {
-        logger.error('Favourite facility not found', err)
-      }
-    },
-    async fetchProductStores() {
-      try {
-        const facilityId = this.currentFacility.facilityId;
-        const pageSize = 200;
-
-        const resp = await api({
-          url: `oms/facilities/${facilityId}/productStores`,
-          method: "GET",
-          params: {
-            pageSize,
-            facilityId
-          }
-        }) as any;
-
-        const stores = resp.data.filter((store: any) => !store.thruDate)
-
-        if (stores.length) {
-          // Fetching all stores for the store name
-          try {
-            const productStoresResp = await api({
-              url: "oms/productStores",
-              method: "GET",
-              params: {
-                pageSize: 200
-              }
-            }) as any;
-            const productStores = productStoresResp.data;
-            const productStoresMap = {} as any;
-            productStores.map((store: any) => productStoresMap[store.productStoreId] = store.storeName)
-            stores.map((store: any) => store.storeName = productStoresMap[store.productStoreId])
-          } catch (error) {
-            console.error(error);
-          }
-        }
-
-        this.current.stores = stores;
-
-        this.current.stores.push({
-          productStoreId: "",
-          storeName: "None",
-        });
-
-        this.setCurrentEComStore(this.current.stores[0])
-      } catch (error: any) {
-        logger.error("error", error);
-        return Promise.reject(new Error(error));
-      }
-    },
-    async fetchProductStorePreference() {
-      try {
-        const preferredStoreResp = await api({
-          url: "admin/user/preferences",
-          method: "GET",
-          params: {
-            pageSize: 1,
-            userId: this.current.userId,
-            preferenceKey: "SELECTED_BRAND"
-          },
-        }) as any;
-        const preferredStoreId = preferredStoreResp.data?.[0]?.preferenceValue
-        if (preferredStoreId) {
-          const store = this.current.stores.find((store: any) => store.productStoreId === preferredStoreId);
-          store && this.setCurrentEComStore(store)
-        }
-      } catch (err) {
-        logger.error('Favourite product store not found', err)
-      }
-    },
-
     async setUserTimeZone(tzId: string) {
       try {
         await api({
@@ -442,40 +200,12 @@ export const useUserStore = defineStore("appUser", {
       }
     },
 
-    async fetchEComStoreDependencies(productStoreId: string) {
-      await useProductIdentificationStore().getIdentificationPref(productStoreId)
-        .catch((error) => logger.error(error))
-
-      useUtilStore().findProductStoreShipmentMethCount()
-
-      try {
-        await useUtilStore().fetchProductStoreSettings(productStoreId)
-      } catch (err) {
-        logger.error("error", err)
-      }
-    },
     async setUserPreference(payload: any) {
       this.preference = { ...this.preference, ...payload }
     },
     setUnreadNotificationsStatus(payload: any) {
       // This action is now effectively a placeholder or should be moved to components
       // Using the new store directly is preferred.
-    },
-    async setEComStorePreference(payload: any) {
-      try {
-        await api({
-          url: "admin/user/preferences",
-          method: "PUT",
-          data: {
-            userId: this.current.userId,
-            preferenceKey: 'SELECTED_BRAND',
-            preferenceValue: payload.productStoreId,
-          }
-        });
-      } catch (error) {
-        console.error('error', error)
-      }
-      this.currentEComStore = payload;
     },
     async getAvailableTimeZones() {
       // Do not fetch timeZones information, if already available

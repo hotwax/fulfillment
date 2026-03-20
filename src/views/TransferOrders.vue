@@ -57,7 +57,7 @@ import { useRouter } from "vue-router";
 import { addOutline } from "ionicons/icons";
 import { emitter, translate } from "@common";
 
-import { useUserStore as useDxpUserStore } from "@/store/user";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { DateTime } from "luxon";
 import CreateTransferOrderModal from "@/components/CreateTransferOrderModal.vue";
 import { useTransferOrderStore } from "@/store/transferorder";
@@ -72,7 +72,7 @@ const contentRef = ref();
 const infiniteScrollRef = ref();
 
 const transferOrders = computed(() => useTransferOrderStore().getTransferOrders);
-const currentFacility = computed(() => useDxpUserStore().getCurrentFacility);
+const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
 
 const openCreateTransferOrderModal = async () => {
   const createTransferOrderModal = await modalController.create({

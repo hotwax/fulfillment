@@ -397,7 +397,7 @@ import { IonBackButton, IonBadge, IonButton, IonCard, IonCheckbox, IonChip, IonC
 import { computed, defineProps, onMounted, ref } from "vue";
 import { addOutline, archiveOutline, bagCheckOutline, cashOutline, caretDownOutline, checkmarkCircleOutline, chevronUpOutline, closeCircleOutline, cubeOutline, documentTextOutline, ellipsisVerticalOutline, fileTrayOutline, gift, giftOutline, informationCircleOutline, listOutline, locateOutline, personAddOutline, pricetagOutline, ribbonOutline, trashBinOutline } from "ionicons/icons";
 import { cookieHelper, commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, translate } from "@common";
-import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUserStore as useDxpUserStore } from "@/store/user";
 
 import useOrder from "@/composables/useOrder";
@@ -471,14 +471,14 @@ const rejectReasonOptions = computed(() => useUtilStore().getRejectReasonOptions
 const userPreference = computed(() => useUserStore().getUserPreferenceState);
 const getPaymentMethodDesc = (paymentMethodTypeId: string) => useUtilStore().getPaymentMethodDesc(paymentMethodTypeId);
 const getStatusDesc = (statusId: string) => useUtilStore().getStatusDesc(statusId);
-const partialOrderRejectionConfig = computed(() => useUtilStore().getPartialOrderRejectionConfig);
-const collateralRejectionConfig = computed(() => useUtilStore().getCollateralRejectionConfig);
-const affectQohConfig = computed(() => useUtilStore().getAffectQohConfig);
-const excludeOrderBrokerDays = computed(() => useUtilStore().getExcludeOrderBrokerDays);
-const isForceScanEnabled = computed(() => useUtilStore().isForceScanEnabled);
+const partialOrderRejectionConfig = computed(() => useAppProductStore().isPartialOrderRejectionEnabled);
+const collateralRejectionConfig = computed(() => useAppProductStore().isCollateralRejectionEnabled);
+const affectQohConfig = computed(() => useAppProductStore().isAffectQohEnabled);
+const excludeOrderBrokerDays = computed(() => useAppProductStore().getExcludeOrderBrokerDays);
+const isForceScanEnabled = computed(() => useAppProductStore().isForceScanEnabled);
 const productStoreShipmentMethods = computed(() => useCarrierStore().getProductStoreShipmentMethods);
 const facilityCarriers = computed(() => useCarrierStore().getFacilityCarriers);
-const productStoreShipmentMethCount = computed(() => useUtilStore().getProductStoreShipmentMethCount);
+const productStoreShipmentMethCount = computed(() => useAppProductStore().getProductStoreShipmentMethCount);
 const filteredFacilityCarriers = computed(() => {
   if (initialShipmentMethodTypeId.value === 'SHIP_TO_STORE') {
     const allowedPartyIds = new Set(productStoreShipmentMethods.value
@@ -489,12 +489,12 @@ const filteredFacilityCarriers = computed(() => {
   return facilityCarriers.value;
 })
 const userProfile = computed(() => useUserStore().getUserProfile);
-const isShipNowDisabled = computed(() => useUtilStore().isShipNowDisabled);
+const isShipNowDisabled = computed(() => useAppProductStore().isDisableShipNowEnabled);
 const carrierShipmentBoxTypes = computed(() => useUtilStore().getCarrierShipmentBoxTypes);
 const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
-const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
-const currentFacility = computed(() => useDxpUserStore().getCurrentFacility as any);
-const isUnpackDisabled = computed(() => useUtilStore().isUnpackDisabled);
+const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
+const currentFacility = computed(() => useAppProductStore().getCurrentFacility as any);
+const isUnpackDisabled = computed(() => useAppProductStore().isDisableUnpackEnabled);
 
 const getTime = (time: any) => {
   return DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED);

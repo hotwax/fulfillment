@@ -19,8 +19,8 @@
               <ion-card-title>{{ userProfile?.partyName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" v-if="!useUserStore().isEmbedded" @click="logout()">{{ translate("Logout") }}</ion-button>
-          <ion-button v-if="!useUserStore().isEmbedded" fill="outline" @click="goToLaunchpad()">
+          <ion-button color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
+          <ion-button fill="outline" @click="goToLaunchpad()">
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
@@ -186,7 +186,7 @@ import { computed, ref } from "vue";
 import { openOutline } from "ionicons/icons";
 import { useFacility } from "@/composables/useFacility";
 import { commonUtil, DxpShopifyImg, emitter, firebaseMessaging,logger, translate, useNotificationStore } from "@common";
-import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useProductStore } from "@/store/productStore";
 import { useUserStore } from "@/store/user";
 
 import { DateTime } from "luxon";
@@ -199,13 +199,11 @@ import DxpAppVersionInfo from "@/components/DxpAppVersionInfo.vue";
 import DxpProductIdentifier from "@/components/DxpProductIdentifier.vue";
 import DxpTimeZoneSwitcher from "@/components/DxpTimeZoneSwitcher.vue";
 import DxpLanguageSwitcher from "@/components/DxpLanguageSwitcher.vue";
-import { useUtil } from "@/composables/useUtil";
-
-const userStore = useUserStore();
-import { useUtilStore } from "@/store/util";
 import { useOrderStore } from "@/store/order";
 import { useAuth } from "@/composables/auth";
 import router from "@/router";
+
+const userStore = useUserStore();
 
 const currentFacilityDetails = ref({} as any);
 const orderLimitType = ref("unlimited");
@@ -221,17 +219,17 @@ const unreadNotificationsStatus = computed(() => useNotificationStore().getUnrea
 const notificationPrefs = computed(() => useNotificationStore().getNotificationPrefs);
 const allNotificationPrefs = computed(() => useNotificationStore().getAllNotificationPrefs);
 const firebaseDeviceId = computed(() => useNotificationStore().getFirebaseDeviceId);
-const isForceScanEnabled = computed(() => useUtilStore().isForceScanEnabled);
-const isPartialOrderRejectionEnabled = computed(() => useUtilStore().getPartialOrderRejectionConfig);
-const isCollateralRejectionEnabled = computed(() => useUtilStore().getCollateralRejectionConfig);
-const affectQoh = computed(() => useUtilStore().getAffectQohConfig);
-const barcodeIdentificationPref = computed(() => useUtilStore().getBarcodeIdentificationPref);
-const currentFacility = computed(() => userStore.getCurrentFacility as any);
-const preferredStore = computed(() => userStore.getCurrentEComStore);
-const barcodeIdentificationOptions = computed(() => useProductIdentificationStore().getGoodIdentificationOptions);
+const isForceScanEnabled = computed(() => useProductStore().isForceScanEnabled);
+const isPartialOrderRejectionEnabled = computed(() => useProductStore().isPartialOrderRejectionEnabled);
+const isCollateralRejectionEnabled = computed(() => useProductStore().isCollateralRejectionEnabled);
+const affectQoh = computed(() => useProductStore().isAffectQohEnabled);
+const barcodeIdentificationPref = computed(() => useProductStore().getBarcodeIdentifierPref);
+const currentFacility = computed(() => useProductStore().getCurrentFacility as any);
+const preferredStore = computed(() => useProductStore().getCurrentEComStore);
+const barcodeIdentificationOptions = computed(() => useProductStore().getBarcodeIdentifierOptions);
 
 const refreshProductStoreData = (selectedProductStore: any) => {
-  userStore.fetchEComStoreDependencies(selectedProductStore?.productStoreId);
+  useProductStore().fetchEComStoreDependencies(selectedProductStore?.productStoreId);
 };
 
 const getCurrentFacilityDetails = async () => {
@@ -368,15 +366,15 @@ const changeOrderLimitPopover = async (ev: Event) => {
 };
 
 const fetchFacilityDependencies = async (facility: any) => {
-  const userStore = useUserStore();
+  const productStore = useProductStore();
   const notificationStore = useNotificationStore();
-  await userStore.fetchProductStores()
-  await userStore.fetchEComStoreDependencies(userStore.getCurrentEComStore.productStoreId)
-  await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(commonUtil.getOMSInstanceName(), userStore.getCurrentFacility.facilityId, enumId));
+  await productStore.fetchProductStores(facility?.facilityId)
+  await productStore.fetchEComStoreDependencies(productStore.getCurrentEComStore.productStoreId)
+  await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(commonUtil.getOMSInstanceName(), productStore.getCurrentFacility.facilityId, enumId));
   getCurrentFacilityDetails();
   getFacilityOrderCount();
   getEcomInvStatus();
-  await useUtilStore().fetchAutoShippingLabelConfig();
+  await productStore.fetchAutoShippingLabelConfig();
 };
 
 const updateFacilityMaximumOrderLimit = async (maximumOrderLimit: number | string) => {
@@ -472,19 +470,11 @@ const updateEComInvStatus = async (event: any) => {
 
 const updateForceScanStatus = async (event: any) => {
   event.stopImmediatePropagation();
-  const params = {
-    settingValue: !isForceScanEnabled.value
-  };
-  await useUtilStore().updateProductStoreSettingConfig({
-    enumId: "FULFILL_FORCE_SCAN",
-    payload: params,
-    createService: useUtil().createProductStoreSetting,
-    requireEnum: true,
-    enumMeta: {
-      description: "Impose force scanning of items while packing from fulfillment app",
-      enumName: "Fulfillment Force Scan"
-    }
-  });
+  await useProductStore().setProductStoreSetting(
+    preferredStore.value.productStoreId,
+    "FULFILL_FORCE_SCAN",
+    !isForceScanEnabled.value ? "Y" : "N"
+  );
 };
 
 const setPrintShippingLabelPreference = (ev: any) => {
@@ -563,7 +553,7 @@ const confirmNotificationPrefUpdate = async (enumId: string, event: CustomEvent)
 
 const confirmPartialOrderRejection = async (event: any) => {
   event.stopImmediatePropagation();
-  const isChecked = !event.target.checked;
+  const isChecked = !isPartialOrderRejectionEnabled.value;
   const message = translate("Are you sure you want to perform this action?");
   const header = isChecked ? translate("Allow partial rejections ") : translate("Disallow partial rejections");
 
@@ -579,7 +569,11 @@ const confirmPartialOrderRejection = async (event: any) => {
         text: translate("Confirm"),
         handler: async () => {
           alertController.dismiss();
-          await updatePartialOrderRejectionConfig(isChecked);
+          await useProductStore().setProductStoreSetting(
+            preferredStore.value.productStoreId,
+            "FULFILL_PART_ODR_REJ",
+            isChecked ? "Y" : "N"
+          );
         }
       }
     ]
@@ -587,26 +581,10 @@ const confirmPartialOrderRejection = async (event: any) => {
   return alert.present();
 };
 
-const updatePartialOrderRejectionConfig = async (value: any) => {
-  const params = {
-    settingValue: value
-  };
-  await useUtilStore().updateProductStoreSettingConfig({
-    enumId: "FULFILL_PART_ODR_REJ",
-    payload: params,
-    createService: useUtil().createProductStoreSetting,
-    requireEnum: true,
-    enumMeta: {
-      description: "Fulfillment Partial Order Rejection",
-      enumName: "Fulfillment Partial Order Rejection"
-    }
-  });
-};
-
 const confirmCollateralRejection = async (event: any) => {
   event.stopImmediatePropagation();
 
-  const isChecked = !event.target.checked;
+  const isChecked = !isCollateralRejectionEnabled.value;
   const message = translate("Are you sure you want to perform this action?");
   const header = isChecked ? translate("Allow collateral rejections") : translate("Disallow collateral rejections");
 
@@ -622,7 +600,11 @@ const confirmCollateralRejection = async (event: any) => {
         text: translate("Confirm"),
         handler: async () => {
           alertController.dismiss();
-          await updateCollateralRejectionConfig(!event.target.checked);
+          await useProductStore().setProductStoreSetting(
+            preferredStore.value.productStoreId,
+            "FF_COLLATERAL_REJ",
+            isChecked ? "Y" : "N"
+          );
         }
       }
     ]
@@ -630,26 +612,10 @@ const confirmCollateralRejection = async (event: any) => {
   return alert.present();
 };
 
-const updateCollateralRejectionConfig = async (value: any) => {
-  const params = {
-    settingValue: value
-  };
-  await useUtilStore().updateProductStoreSettingConfig({
-    enumId: "FF_COLLATERAL_REJ",
-    payload: params,
-    createService: useUtil().createProductStoreSetting,
-    requireEnum: true,
-    enumMeta: {
-      description: "Fulfillment Collateral Rejection",
-      enumName: "Fulfillment Collateral Rejection"
-    }
-  });
-};
-
 const confirmAffectQohConfig = async (event: any) => {
   event.stopImmediatePropagation();
 
-  const isChecked = !event.target.checked;
+  const isChecked = !affectQoh.value;
   const message = translate("Are you sure you want to perform this action?");
   const header = isChecked ? translate("Affect QOH on rejection") : translate("Do not affect QOH on rejection");
 
@@ -665,7 +631,11 @@ const confirmAffectQohConfig = async (event: any) => {
         text: translate("Confirm"),
         handler: async () => {
           alertController.dismiss();
-          await updateAffectQohConfig(!event.target.checked);
+          await useProductStore().setProductStoreSetting(
+            preferredStore.value.productStoreId,
+            "AFFECT_QOH_ON_REJ",
+            isChecked ? "Y" : "N"
+          );
         }
       }
     ]
@@ -673,38 +643,21 @@ const confirmAffectQohConfig = async (event: any) => {
   return alert.present();
 };
 
-const updateAffectQohConfig = async (value: any) => {
-  const params = {
-    settingValue: value
-  };
-  await useUtilStore().updateProductStoreSettingConfig({
-    enumId: "AFFECT_QOH_ON_REJ",
-    payload: params,
-    createService: useUtil().createProductStoreSetting,
-    requireEnum: false
-  });
-};
-
 const setBarcodeIdentificationPref = async (value: string) => {
-  await useUtilStore().updateProductStoreSettingConfig({
-    enumId: "BARCODE_IDEN_PREF",
-    payload: { settingValue: value },
-    createService: useUtil().createProductStoreSetting,
-    requireEnum: true,
-    enumMeta: {
-      description: "Identification preference to be used for scanning items.",
-      enumName: "Barcode Identification Preference"
-    }
-  });
+  await useProductStore().setProductStoreSetting(
+    preferredStore.value.productStoreId,
+    "BARCODE_IDEN_PREF",
+    value
+  );
 };
 
 onIonViewWillEnter(async () => {
   Promise.all([getCurrentFacilityDetails(), getFacilityOrderCount(), getEcomInvStatus()]);
 
-  const userStore = useUserStore();
+  const productStore = useProductStore();
   const notificationStore = useNotificationStore();
-  await useUtilStore().fetchProductStoreSettings(preferredStore.value.productStoreId);
-  await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(commonUtil.getOMSInstanceName(), userStore.getCurrentFacility.facilityId, enumId));
+  await useProductStore().fetchProductStoreSettings(preferredStore.value.productStoreId);
+  await notificationStore.fetchNotificationPreferences(import.meta.env.VITE_NOTIF_ENUM_TYPE_ID, import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId, (enumId: string) => firebaseMessaging.generateTopicName(commonUtil.getOMSInstanceName(), productStore.getCurrentFacility.facilityId, enumId));
 });
 </script>
 

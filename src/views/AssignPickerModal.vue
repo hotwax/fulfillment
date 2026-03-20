@@ -54,6 +54,7 @@ import { computed, defineProps, onMounted, ref } from "vue";
 import { closeOutline, closeCircle, saveOutline } from "ionicons/icons";
 import { commonUtil, emitter, logger, translate } from "@common";
 import { useUserStore as useDxpUserStore } from "@/store/user";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUtil } from "@/composables/useUtil";
 import { useOrderStore } from "@/store/order";
 import useOrder from "@/composables/useOrder";
@@ -63,7 +64,7 @@ const orderStore = useOrderStore();
 const { printPicklist: printPicklistAction } = useOrder();
 
 const userStore = useDxpUserStore();
-const currentFacility = computed(() => userStore.getCurrentFacility);
+const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
 const openOrders = computed(() => useOrderStore().getOpenOrders);
 const selectedPickers = ref([]) as any;
 const queryString = ref("");

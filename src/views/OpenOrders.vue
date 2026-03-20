@@ -154,7 +154,7 @@ import { useProductStore } from "@/store/product";
 import { useStockStore } from "@/store/stock";
 import { useUtilStore } from "@/store/util";
 import { useUserStore } from "@/store/user";
-import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 
 const userStore = useUserStore();
 const carrier = useCarrier();
@@ -177,9 +177,9 @@ const unreadNotificationsStatus = computed(() => useNotificationStore().getUnrea
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
 const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
 const getProductStock = (productId: string) => useStockStore().getProductStock(productId);
-const currentFacility = computed(() => userStore.getCurrentFacility);
-const currentEComStore = computed(() => userStore.getCurrentEComStore);
-const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
+const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
+const currentEComStore = computed(() => useAppProductStore().getCurrentEComStore);
+const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 
 const updateOpenQuery = (payload: any) => {
   useOrderStore().updateOpenQuery(payload);
@@ -304,8 +304,7 @@ const fetchShipmentMethods = async () => {
 };
 
 const getFacilityFilter = (value: any): any => {
-const utilStore = useUtilStore();
-const isReservationFacilityFieldEnabled = utilStore.isReservationFacilityFieldEnabled;
+const isReservationFacilityFieldEnabled = useAppProductStore().isUseReservationFacilityEnabled;
 const facilityFilter = {} as any;
 facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value }
 return facilityFilter

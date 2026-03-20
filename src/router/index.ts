@@ -21,12 +21,6 @@ import Notifications from '@/views/Notifications.vue'
 import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
 import ShipTransferOrder from '@/views/ShipTransferOrder.vue';
 
-// Defining types for the meta values
-declare module 'vue-router' {
-  interface RouteMeta {
-    permissionId?: string;
-  }
-}
 import { useAuth } from '@/composables/auth';
 import Login from '@/views/Login.vue';
 import OrderLookup from '@/views/OrderLookup.vue';
@@ -249,8 +243,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from) => {
-  const userStore = useUserStore()
-  if (to.meta.permissionId && !userStore.hasPermission(to.meta.permissionId)) {
+  if (to.meta.permissionId && !useUserStore().hasPermission(to.meta.permissionId as any)) {
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
     if (redirectToPath == "/login" || redirectToPath == "/") redirectToPath = "/settings";

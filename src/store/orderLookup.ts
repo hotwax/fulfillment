@@ -1,8 +1,8 @@
 import { defineStore } from "pinia"
 import { api, commonUtil, logger, solrUtil, translate } from "@common";
 import { useProductStore } from "@/store/product"
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUtilStore } from "@/store/util"
-import { useUserStore } from "@/store/user"
 import { cogOutline } from 'ionicons/icons';
 import { useZebraPrinter } from '@/composables/useZebraPrinter';
 
@@ -145,7 +145,7 @@ export const useOrderLookupStore = defineStore("orderLookup", {
       let stateOrders = JSON.parse(JSON.stringify(this.list.orders))
       const shipmentMethodTypeIds: Array<string> = []
 
-      const query = solrUtil.prepareOrderLookupQuery({ ...this.query, ...params, facilityId: useUserStore().getCurrentFacility?.facilityId })
+      const query = solrUtil.prepareOrderLookupQuery({ ...this.query, ...params, facilityId: useAppProductStore().getCurrentFacility?.facilityId })
       try {
         resp = await api({
           url: "/solr-query",

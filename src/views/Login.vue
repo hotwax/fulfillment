@@ -259,7 +259,7 @@ const initialise = async () => {
   instanceUrl.value = cookieHelper().get("OMS") as string;
   if (cookieHelper().get("OMS")) {
     // If the current URL is available in alias show it for consistency
-    const currentInstanceUrlAlias = Object.keys(alias).find((key) => alias[key] === userStore.oms);
+    const currentInstanceUrlAlias = Object.keys(alias).find((key) => alias[key] === cookieHelper().get("OMS"));
     currentInstanceUrlAlias && (instanceUrl.value = currentInstanceUrlAlias);
   }
   // If there is no current preference set the default one

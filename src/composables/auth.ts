@@ -4,7 +4,7 @@ import { useUtilStore } from "@/store/util";
 import { DateTime } from "luxon";
 import { computed, ref } from "vue";
 import router from '@/router';
-import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 
 interface LoginOption {
   loginAuthType?: string,
@@ -36,6 +36,7 @@ export function useAuth() {
 
   const login = async (username: string, password: string) => {
     try {
+      const productStore = useAppProductStore();
       const resp = await client({
         url: "login",
         method: "post",
@@ -55,16 +56,16 @@ export function useAuth() {
       cookieHelper().set("expirationTime", resp.data.expirationTime)
       await useUserStore().fetchPermissions()
       await useUserStore().fetchUserProfile()
-      await useUserStore().fetchFacilities()
-      await useUserStore().fetchFacilityPreference();
-      await useUserStore().fetchProductStores()
-      await useUserStore().fetchProductStorePreference();
-      await useUserStore().fetchEComStoreDependencies(useUserStore().getCurrentEComStore.productStoreId)
+      await productStore.fetchUserFacilities()
+      await productStore.fetchFacilityPreference();
+      await productStore.fetchProductStores()
+      await productStore.fetchProductStorePreference();
+      await productStore.fetchEComStoreDependencies(productStore.getCurrentEComStore.productStoreId)
 
       const notificationStore = useNotificationStore();
       await notificationStore.fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID, resp.data.userLoginId)
       await useUtilStore().fetchCarrierShipmentBoxTypes()
-      await useUtilStore().fetchAutoShippingLabelConfig()
+      await productStore.fetchAutoShippingLabelConfig()
 
       const facilityId = router.currentRoute.value.query.facilityId
       let isQueryFacilityFound = false
@@ -72,7 +73,7 @@ export function useAuth() {
         const facility = useUserStore().getUserProfile.facilities.find((facility: any) => facility.facilityId === facilityId);
         if (facility) {
           isQueryFacilityFound = true
-          useUserStore().currentFacility = facility
+          productStore.currentFacility = facility
         } else {
           commonUtil.showToast(translate("Redirecting to home page due to incorrect information being passed."))
         }

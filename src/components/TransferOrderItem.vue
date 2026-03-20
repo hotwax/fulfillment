@@ -78,14 +78,13 @@ import { IonButton, IonCard, IonChip, IonIcon, IonItem, IonInput, IonLabel, IonP
 import { computed, defineProps, nextTick, ref, watch } from "vue";
 import { caretDownOutline, checkmarkDone, closeCircleOutline, removeCircleOutline } from "ionicons/icons";
 import { commonUtil, DxpShopifyImg, emitter, logger, translate } from "@common";
-import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useRouter } from "vue-router";
 
 import ShippedHistoryModal from "@/components/ShippedHistoryModal.vue";
 import ReportIssuePopover from "./ReportIssuePopover.vue";
 import { useProductStore } from "@/store/product";
-import { useUtilStore } from "@/store/util";
 
 const props = defineProps(["itemDetail", "isRejectionSupported", "lastScannedId", "orderStatus"]);
 
@@ -96,10 +95,10 @@ const item = ref(props.itemDetail);
 const defaultRejectReasonId = "NO_VARIANCE_LOG";
 
 const currentOrder = computed(() => useTransferOrderStore().getCurrent);
-const isForceScanEnabled = computed(() => useUtilStore().isForceScanEnabled);
+const isForceScanEnabled = computed(() => useAppProductStore().isForceScanEnabled);
 const rejectReasons = computed(() => useTransferOrderStore().getRejectReasons);
-const barcodeIdentifier = computed(() => useUtilStore().getBarcodeIdentificationPref);
-const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
+const barcodeIdentifier = computed(() => useAppProductStore().getBarcodeIdentifierPref);
+const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
 
 watch(() => props.itemDetail, (newItem: any) => {

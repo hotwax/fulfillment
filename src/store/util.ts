@@ -1,6 +1,7 @@
 import { defineStore } from "pinia"
 import { api, commonUtil, logger } from "@common";
 
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUserStore } from "@/store/user"
 
 interface UtilState {
@@ -11,30 +12,15 @@ interface UtilState {
   facilityTypeDesc: Record<string, any>
   paymentMethodTypeDesc: Record<string, any>
   statusDesc: Record<string, any>
-  productStoreShipmentMethCount: number
   rejectReasonEnumTypes: any[]
   enumerations: Record<string, any>
-  productStores: any[]
-  facilities: any[]
-  isForceScanEnabled: boolean
   fulfillmentRejectReasons: Record<string, any>
   rejectReasonOptions: any[]
-  barcodeIdentificationPref: string
   carrierShipmentBoxTypes: Record<string, any>
   carrierDesc: Record<string, any>
   shipmentMethodsByCarrier: Record<string, any>
   facilityAddresses: Record<string, any>
   facilityShippingLabelImageType: Record<string, any>
-  isPicklistDownloadEnabled: boolean
-  excludeOrderBrokerDays: any
-  partialOrderRejectionConfig: any
-  collateralRejectionConfig: any
-  affectQohConfig: any
-  isShipNowDisabled: boolean
-  isUnpackDisabled: boolean
-  isReservationFacilityFieldEnabled: boolean
-  productStoreSettings: Record<string, any>
-  isAutoShippingLabelEnabled: boolean
 }
 
 export const useUtilStore = defineStore("util", {
@@ -46,30 +32,15 @@ export const useUtilStore = defineStore("util", {
     facilityTypeDesc: {},
     paymentMethodTypeDesc: {},
     statusDesc: {},
-    productStoreShipmentMethCount: 0,
     rejectReasonEnumTypes: [],
     enumerations: {},
-    productStores: [],
-    facilities: [],
-    isForceScanEnabled: false,
     fulfillmentRejectReasons: {},
     rejectReasonOptions: [],
-    barcodeIdentificationPref: "internalName",
     carrierShipmentBoxTypes: {},
     carrierDesc: {},
     shipmentMethodsByCarrier: {},
     facilityAddresses: {},
-    facilityShippingLabelImageType: {},
-    isPicklistDownloadEnabled: false,
-    excludeOrderBrokerDays: undefined,
-    partialOrderRejectionConfig: {},
-    collateralRejectionConfig: {},
-    affectQohConfig: {},
-    isShipNowDisabled: false,
-    isUnpackDisabled: false,
-    isReservationFacilityFieldEnabled: false,
-    productStoreSettings: {},
-    isAutoShippingLabelEnabled: false
+    facilityShippingLabelImageType: {}
   }),
   getters: {
     getRejectReasons(state) {
@@ -93,9 +64,6 @@ export const useUtilStore = defineStore("util", {
     getStatusDesc: (state) => (statusId: string) => {
       return state.statusDesc[statusId] ? state.statusDesc[statusId] : statusId
     },
-    getProductStoreShipmentMethCount(state) {
-      return state.productStoreShipmentMethCount
-    },
     getRejectReasonEnumTypes(state) {
       return state.rejectReasonEnumTypes
     },
@@ -105,23 +73,11 @@ export const useUtilStore = defineStore("util", {
     getEnumerationDesc: (state) => (enumId: string) => {
       return state.enumerations[enumId] ? state.enumerations[enumId] : enumId
     },
-    getProductStores(state) {
-      return state.productStores
-    },
-    getFacilities(state) {
-      return state.facilities
-    },
-    isForceScanEnabled(state) {
-      return commonUtil.parseBooleanSetting(state.productStoreSettings.FULFILL_FORCE_SCAN)
-    },
     getFulfillmentRejectReasons(state) {
       return state.fulfillmentRejectReasons
     },
     getRejectReasonOptions(state) {
       return state.rejectReasonOptions
-    },
-    getBarcodeIdentificationPref(state) {
-      return state.productStoreSettings.BARCODE_IDEN_PREF
     },
     getCarrierShipmentBoxTypes(state) {
       return state.carrierShipmentBoxTypes
@@ -131,36 +87,6 @@ export const useUtilStore = defineStore("util", {
     },
     getShipmentMethodsByCarrier(state) {
       return state.shipmentMethodsByCarrier
-    },
-    isPicklistDownloadEnabled(state) {
-      return commonUtil.parseBooleanSetting(state.productStoreSettings.FF_DOWNLOAD_PICKLIST)
-    },
-    getExcludeOrderBrokerDays(state) {
-      return state.productStoreSettings.EXCLUDE_ODR_BKR_DAYS
-    },
-    getPartialOrderRejectionConfig(state) {
-      return state.productStoreSettings.FULFILL_PART_ODR_REJ && JSON.parse(state.productStoreSettings.FULFILL_PART_ODR_REJ)
-    },
-    getCollateralRejectionConfig(state) {
-      return state.productStoreSettings.FF_COLLATERAL_REJ && JSON.parse(state.productStoreSettings.FF_COLLATERAL_REJ)
-    },
-    getAffectQohConfig(state) {
-      return state.productStoreSettings.AFFECT_QOH_ON_REJ && JSON.parse(state.productStoreSettings.AFFECT_QOH_ON_REJ)
-    },
-    isShipNowDisabled(state) {
-      return commonUtil.parseBooleanSetting(state.productStoreSettings.DISABLE_SHIPNOW)
-    },
-    isUnpackDisabled(state) {
-      return commonUtil.parseBooleanSetting(state.productStoreSettings.DISABLE_UNPACK)
-    },
-    isReservationFacilityFieldEnabled(state) {
-      return commonUtil.parseBooleanSetting(state.productStoreSettings.USE_RES_FACILITY_ID)
-    },
-    getProductStoreSetting(state) {
-      return state.productStoreSettings
-    },
-    isAutoShippingLabelEnabled(state) {
-      return state.isAutoShippingLabelEnabled
     },
     getFacilityAddress: (state) => (facilityId: string) => {
       return state.facilityAddresses?.[facilityId] || {}
@@ -188,20 +114,11 @@ export const useUtilStore = defineStore("util", {
     setStatusDesc(payload: any) {
       this.statusDesc = payload
     },
-    setProductStoreShipmentMethCount(payload: any) {
-      this.productStoreShipmentMethCount = payload
-    },
     setRejectReasonEnumTypes(payload: any) {
       this.rejectReasonEnumTypes = payload
     },
     setEnumerations(payload: any) {
       this.enumerations = payload
-    },
-    setFacilities(payload: any) {
-      this.facilities = payload
-    },
-    setProductStores(payload: any) {
-      this.productStores = payload
     },
     setFulfillmentRejectReasons(payload: any) {
       this.fulfillmentRejectReasons = payload
@@ -222,68 +139,16 @@ export const useUtilStore = defineStore("util", {
       this.facilityAddresses = payload
     },
     clearUtilState() {
-      this.productStoreShipmentMethCount = 0
-      this.isForceScanEnabled = false
-      this.barcodeIdentificationPref = "internalName"
       this.carrierDesc = {}
       this.facilityAddresses = {}
       this.facilityShippingLabelImageType = {}
-      this.isPicklistDownloadEnabled = false
       this.shipmentBoxTypeDesc = {}
       this.carrierShipmentBoxTypes = {}
-      this.excludeOrderBrokerDays = undefined
-      this.productStoreSettings = JSON.parse(import.meta.env.VITE_DEFAULT_PRODUCT_STORE_SETTINGS as any)
-      this.isAutoShippingLabelEnabled = false
     },
     updateFacilityShippingLabelImageType(payload: any) {
       if (payload.facilityId) {
         this.facilityShippingLabelImageType[payload.facilityId] = payload.labelImageType
       }
-    },
-    setProductStoreSettings(payload: any) {
-      this.productStoreSettings = payload
-    },
-    updateProductStoreSetting(payload: any) {
-      const { key, value } = payload
-      this.productStoreSettings = {
-        ...this.productStoreSettings,
-        [key]: value
-      }
-    },
-    setAutoShippingLabelEnabled(payload: any) {
-      this.isAutoShippingLabelEnabled = payload
-    },
-    async fetchProductStoreSettings(productStoreId: string) {
-      const defaultProductStoreSettings = JSON.parse(import.meta.env.VITE_DEFAULT_PRODUCT_STORE_SETTINGS as any)
-      const productStoreSettings: any = { ...defaultProductStoreSettings }
-
-      if (productStoreId) {
-        const payload = {
-          productStoreId,
-          settingTypeEnumId: Object.keys(defaultProductStoreSettings),
-          settingTypeEnumId_op: "in",
-          pageIndex: 0,
-          pageSize: 50
-        }
-        try {
-          const resp = await api({
-            url: `/oms/dataDocumentView`,
-            method: "POST",
-            data: {
-              dataDocumentId: "ProductStoreSetting",
-              customParametersMap: payload
-            }
-          }) as any
-
-          resp?.data?.entityValueList?.forEach((productSetting: any) => {
-            return productStoreSettings[productSetting.settingTypeEnumId] = productSetting.settingValue
-          })
-        } catch (error) {
-          logger.error("Failed to fetch settings", error)
-        }
-      }
-
-      this.setProductStoreSettings(productStoreSettings)
     },
     async fetchRejectReasons() {
       let rejectReasons = []
@@ -344,7 +209,7 @@ export const useUtilStore = defineStore("util", {
             FF_REJ_RSN_RES_GRP: {}
           })
 
-          fulfillmentRejectReasons = (useUserStore().getCurrentFacility as any).facilityTypeId === "WAREHOUSE" && Object.keys(rejectionsReasons.FF_REJ_RSN_RES_GRP).length ? rejectionsReasons.FF_REJ_RSN_RES_GRP : rejectionsReasons.FF_REJ_RSN_GRP
+          fulfillmentRejectReasons = (useAppProductStore().getCurrentFacility as any).facilityTypeId === "WAREHOUSE" && Object.keys(rejectionsReasons.FF_REJ_RSN_RES_GRP).length ? rejectionsReasons.FF_REJ_RSN_RES_GRP : rejectionsReasons.FF_REJ_RSN_GRP
         } else {
           throw resp.data
         }
@@ -635,36 +500,6 @@ export const useUtilStore = defineStore("util", {
 
       return statusDesc
     },
-    async findProductStoreShipmentMethCount() {
-      let productStoreShipmentMethCount = 0
-      const params = {
-        partyId: "_NA_",
-        partyId_op: "equals",
-        partyId_not: "Y",
-        roleTypeId: "CARRIER",
-        productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
-        fieldsToSelect: ["roleTypeId", "partyId"],
-        pageSize: 1
-      }
-
-      try {
-        const resp = await api({
-          url: `/oms/productStores/shipmentMethods/counts`,
-          method: "GET",
-          params: params
-        });
-
-        if (!commonUtil.hasError(resp)) {
-          productStoreShipmentMethCount = resp.data[0]?.shipmentMethodCount
-        } else {
-          throw resp?.data
-        }
-      } catch (err) {
-        logger.error("Failed to find shipment method count for product store", err)
-      }
-
-      this.setProductStoreShipmentMethCount(productStoreShipmentMethCount)
-    },
     async fetchEnumerations(ids: string[]) {
       let enumerations = JSON.parse(JSON.stringify(this.enumerations)) as any
 
@@ -705,59 +540,6 @@ export const useUtilStore = defineStore("util", {
     async updateRejectReasons(payload: any) {
       this.setRejectReasons(payload)
     },
-    async fetchFacilities() {
-      let facilities = []
-      try {
-        const payload = {
-          parentTypeId: "VIRTUAL_FACILITY",
-          parentTypeId_op: "equals",
-          parentTypeId_not: "Y",
-          facilityTypeId: "VIRTUAL_FACILITY",
-          facilityTypeId_op: "equals",
-          facilityTypeId_not: "Y",
-          pageSize: 250
-        }
-
-        const resp = await api({
-          url: "/oms/facilities",
-          method: "GET",
-          params: payload
-        });
-
-        if (!commonUtil.hasError(resp)) {
-          facilities = resp.data
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        logger.error("Failed to fetch facilities", err)
-      }
-      this.setFacilities(facilities)
-    },
-    async fetchProductStores() {
-      let stores = []
-      try {
-        const payload = {
-          fieldsToSelect: ["productStoreId", "storeName"],
-          pageSize: 250
-        }
-
-        const resp = await api({
-          url: `/oms/productStores`,
-          method: "GET",
-          params: payload
-        });
-
-        if (!commonUtil.hasError(resp)) {
-          stores = resp.data
-        } else {
-          throw resp.data
-        }
-      } catch (err) {
-        logger.error("Failed to fetch product stores", err)
-      }
-      this.setProductStores(stores)
-    },
     async fetchCarriersDetail() {
       if (Object.keys(this.carrierDesc)?.length) return
       const carrierDesc = {} as any
@@ -793,7 +575,7 @@ export const useUtilStore = defineStore("util", {
       try {
         const payload = {
           customParametersMap: {
-            productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
+            productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId,
             roleTypeId: "CARRIER",
             shipmentMethodTypeId: "STOREPICKUP",
             shipmentMethodTypeId_op: "equals",
@@ -850,7 +632,7 @@ export const useUtilStore = defineStore("util", {
               params: {
                 contactMechPurposeTypeId: "PRIMARY_LOCATION",
                 contactMechTypeId: "POSTAL_ADDRESS",
-                facilityId: useUserStore().getCurrentFacility?.facilityId
+                facilityId: useAppProductStore().getCurrentFacility?.facilityId
               },
             })
           )
@@ -875,7 +657,7 @@ export const useUtilStore = defineStore("util", {
       this.setFacilityAddresses(facilityAddresses)
     },
     async fetchLabelImageType(carrierId: any) {
-      const facilityId = (useUserStore().getCurrentFacility as any).facilityId
+      const facilityId = (useAppProductStore().getCurrentFacility as any).facilityId
       let labelImageType = "PNG"
       if (this.facilityShippingLabelImageType[facilityId]) {
         return this.facilityShippingLabelImageType[facilityId]
@@ -989,7 +771,7 @@ export const useUtilStore = defineStore("util", {
             data: {
               dataDocumentId: "ProductStoreSetting",
               customParametersMap: {
-                productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
+                productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId,
                 settingTypeEnumId: enumId,
                 fieldsToSelect: ["settingTypeEnumId"],
                 pageSize: 1
@@ -1004,27 +786,23 @@ export const useUtilStore = defineStore("util", {
         let response
         if (isSettingAlreadyExists) {
           response = await api({
-            url: `/oms/productStores/${useUserStore().getCurrentEComStore?.productStoreId}/settings`,
+            url: `/oms/productStores/${useAppProductStore().getCurrentEComStore?.productStoreId}/settings`,
             method: "POST",
             data: {
-              productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
+              productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId,
               settingTypeEnumId: enumId,
               ...payload
             }
           });
         } else {
           response = await createService({
-            productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
+            productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId,
             settingTypeEnumId: enumId,
             ...payload
           })
         }
 
         if (!commonUtil.hasError(response)) {
-          this.updateProductStoreSetting({
-            key: enumId,
-            value: payload.settingValue
-          })
           commonUtil.showToast("Configuration updated")
         } else {
           commonUtil.showToast("Failed to update configuration")
@@ -1033,49 +811,14 @@ export const useUtilStore = defineStore("util", {
         commonUtil.showToast("Failed to update configuration")
         logger.error("Error updating product store setting:", error)
       }
-    },
-    async fetchAutoShippingLabelConfig() {
-      let resp: any
-      try {
-        const currentFacility: any = useUserStore().getCurrentFacility?.facilityId
-        resp = await api({
-          url: `/oms/dataDocumentView`,
-          method: "post",
-          data: {
-            customParametersMap: {
-              facilityId: currentFacility,
-              facilityGroupId: "AUTO_SHIPPING_LABEL",
-              pageIndex: 0,
-              pageSize: 1
-            },
-            dataDocumentId: "FacilityGroupAndMember",
-            filterByDate: true
-          }
-        })
-
-        if (!commonUtil.hasError(resp) && resp.data?.entityValueList?.length > 0) {
-          this.setAutoShippingLabelEnabled(true)
-        } else {
-          this.setAutoShippingLabelEnabled(false)
-        }
-      } catch (err) {
-        logger.error("Failed to check auto shipping label group", err)
-        this.setAutoShippingLabelEnabled(false)
-      }
     }
   },
   persist: {
     paths: [
-      "productStoreShipmentMethCount",
-      "isForceScanEnabled",
-      "isPicklistDownloadEnabled",
-      "barcodeIdentificationPref",
       "carrierDesc",
       "facilityAddresses",
       "shipmentBoxTypeDesc",
-      "carrierShipmentBoxTypes",
-      "excludeOrderBrokerDays",
-      "productStoreSettings"
+      "carrierShipmentBoxTypes"
     ]
   }
 })

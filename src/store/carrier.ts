@@ -1,8 +1,7 @@
 import { defineStore } from "pinia"
 import { commonUtil, logger, translate, api } from "@common";
 
-import { useUtilStore } from "@/store/util"
-import { useUserStore } from "@/store/user"
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 
 interface CarrierState {
   carrier: {
@@ -277,7 +276,7 @@ export const useCarrierStore = defineStore("carrier", {
       const currentCarrier = this.current
       const carrierShipmentMethods = currentCarrier.shipmentMethods
       const carrierProductStoreShipmentMethods = currentCarrier.productStoreShipmentMethods
-      const productStores = useUtilStore().getProductStores
+      const productStores = useAppProductStore().getAllProductStores
       const carrierShipmentMethodsByProductStore = {} as any
       const productStoreShipmentMethodFields = ["description", "productStoreId", "isTrackingRequired", "shipmentGatewayConfigId", "productStoreShipMethId"]
 
@@ -385,7 +384,7 @@ export const useCarrierStore = defineStore("carrier", {
           return facilityDetail
         }, {})
 
-        let allFacilities = useUtilStore().getFacilities
+        let allFacilities = useAppProductStore().getAllFacilities
         allFacilities = allFacilities.map((facility: any) => {
           if (facilityInfo?.[facility.facilityId]) {
             facility.fromDate = facilityInfo?.[facility.facilityId].fromDate
@@ -462,7 +461,7 @@ export const useCarrierStore = defineStore("carrier", {
         do {
           const params = {
             customParametersMap: {
-              facilityId: useUserStore().getCurrentFacility?.facilityId,
+              facilityId: useAppProductStore().getCurrentFacility?.facilityId,
               pageIndex: viewIndex,
               pageSize: 250
             },
@@ -562,7 +561,7 @@ export const useCarrierStore = defineStore("carrier", {
           const params = {
             customParametersMap: {
               roleTypeId: "CARRIER",
-              productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
+              productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId,
               shipmentMethodTypeId: "STOREPICKUP",
               shipmentMethodTypeId_op: "equals",
               shipmentMethodTypeId_not: "Y",

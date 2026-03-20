@@ -200,7 +200,7 @@ import { barcodeOutline, checkmarkDoneOutline, checkmarkCircle, cloudOfflineOutl
 import { onBeforeRouteLeave, useRoute } from "vue-router";
 import router from "@/router";
 import { api, commonUtil, DxpShopifyImg, emitter, logger, translate } from "@common";
-import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useFacility } from "@/composables/useFacility";
 import TransferOrderItem from "@/components/TransferOrderItem.vue";
 import AddProductModal from "@/components/AddProductModal.vue";
@@ -208,12 +208,11 @@ import SelectFacilityModal from "@/components/SelectFacilityModal.vue";
 import { useProductQueue } from "@/composables/useProductQueue";
 import { useProductStore } from "@/store/product";
 import { useTransferOrderStore } from "@/store/transferorder";
-import { useUtilStore } from "@/store/util";
 import { useUserStore } from "@/store/user";
 import { useOrderStore } from "@/store/order";
 
 const route = useRoute();
-const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
+const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 
 const productQueue = useProductQueue();
 const { pendingProductIds } = productQueue;
@@ -233,10 +232,10 @@ const facilities = ref([]) as any;
 const preventLeave = ref(false);
 const barcodeIdentificationDesc = ref({}) as any;
 
-const barcodeIdentifier = computed(() => useUtilStore().getBarcodeIdentificationPref);
+const barcodeIdentifier = computed(() => useAppProductStore().getBarcodeIdentifierPref);
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
 const currentOrder = computed(() => useTransferOrderStore().getCurrent);
-const isForceScanEnabled = computed(() => useUtilStore().isForceScanEnabled);
+const isForceScanEnabled = computed(() => useAppProductStore().isForceScanEnabled);
 
 watch(queryString, (value) => {
   if (mode.value === "scan") return;
@@ -655,7 +654,7 @@ async function fetchStock(productId: string) {
       method: "GET",
       params: {
         productId,
-        facilityId: useUserStore().getCurrentFacility?.facilityId
+        facilityId: useAppProductStore().getCurrentFacility?.facilityId
       }
     });
     if (!commonUtil.hasError(resp)) return resp.data;

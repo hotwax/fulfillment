@@ -1,6 +1,7 @@
 import { api, commonUtil, logger, translate } from "@common";
 import { useOrderStore } from "@/store/order";
 import { useUtilStore } from "@/store/util";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { cogOutline } from 'ionicons/icons';
 import { useZebraPrinter } from '@/composables/useZebraPrinter';
 import { ShopifyService } from '@common';
@@ -22,7 +23,7 @@ export default function useOrder() {
 
   const printPicklist = async (picklistId: string) => {
     try {
-      const isPicklistDownloadEnabled = utilStore.isPicklistDownloadEnabled
+      const isPicklistDownloadEnabled = useAppProductStore().isDownloadPicklistEnabled
       if (isPicklistDownloadEnabled) {
         await downloadPicklist(picklistId)
         return;

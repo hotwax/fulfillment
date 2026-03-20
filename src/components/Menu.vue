@@ -37,11 +37,12 @@ import { businessOutline, mailUnreadOutline, mailOpenOutline, checkmarkDoneOutli
 import { useRouter } from "vue-router";
 import { commonUtil, translate } from "@common";
 import { useUserStore } from "@/store/user";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useAuth } from "@/composables/auth";
 
 const router = useRouter();
 const userStore = useUserStore();
-const currentFacility = computed(() => userStore.getCurrentFacility);
+const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
 
 const appPages = [
   {

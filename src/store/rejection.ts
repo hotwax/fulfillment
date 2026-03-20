@@ -2,8 +2,8 @@ import { defineStore } from "pinia"
 
 import { api, commonUtil, logger, solrUtil } from "@common";
 import { useProductStore } from "@/store/product"
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUtilStore } from "@/store/util"
-import { useUserStore } from "@/store/user"
 
 interface RejectionState {
   stats: {
@@ -95,7 +95,7 @@ export const useRejectionStore = defineStore("rejection", {
         viewSize: "0",
         filters: {
           rejectedAt_dt: { value: rejectionPeriodFilter },
-          rejectedFrom_txt_en: { value: solrUtil.escapeSolrSpecialChars(useUserStore().getCurrentFacility?.facilityId) }
+          rejectedFrom_txt_en: { value: solrUtil.escapeSolrSpecialChars(useAppProductStore().getCurrentFacility?.facilityId) }
         },
         facet: {
           total: "unique(orderId_s)",
@@ -177,7 +177,7 @@ export const useRejectionStore = defineStore("rejection", {
       const rejectedOrderQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
 
       const filters = {
-        rejectedFrom_txt_en: { value: solrUtil.escapeSolrSpecialChars(useUserStore().getCurrentFacility?.facilityId) }
+        rejectedFrom_txt_en: { value: solrUtil.escapeSolrSpecialChars(useAppProductStore().getCurrentFacility?.facilityId) }
       } as any
 
       if (!rejectedOrderQuery.queryString) {

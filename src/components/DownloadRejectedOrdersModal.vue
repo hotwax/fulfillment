@@ -54,12 +54,12 @@
   import { computed, ref } from "vue";
   import { closeOutline, cloudDownloadOutline } from "ionicons/icons";
   import { api, commonUtil, emitter, logger, solrUtil, translate } from "@common";
-  import { useUserStore } from "@/store/user";
+  import { useProductStore as useAppProductStore } from "@/store/productStore";
 
   import { DateTime } from "luxon";
   import { useProductStore } from "@/store/product";
   import { useRejectionStore } from "@/store/rejection";
-  const currentFacility = computed(() => useUserStore().getCurrentFacility);
+  const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
   const rejectedOrders = computed(() => useRejectionStore().getRejectedOrders);
   const getProduct = (productId: string) => useProductStore().getProduct(productId);
   

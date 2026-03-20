@@ -35,10 +35,10 @@ import { useRejectionStore } from "@/store/rejection";
 import { useProductStore } from "@/store/product";
 import { closeOutline } from "ionicons/icons";
 import { commonUtil, DxpShopifyImg, translate } from "@common";
-import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 const rejectedItems = computed(() => useRejectionStore().getRejectedItems);
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
-const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
+const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 
 const closeModal = () => {
   modalController.dismiss({ dismissed: true });

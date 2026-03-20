@@ -44,32 +44,34 @@
 
 <script setup lang="ts">
 import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonThumbnail } from '@ionic/vue';
-import { useProductIdentificationStore } from '@/store/productIdentification';
+import { useProductStore } from '@/store/productStore';
 import { useUserStore } from '@/store/user'
 import { computed, onMounted } from 'vue';
 import { commonUtil, DxpShopifyImg, translate } from "@common";
 import { shuffleOutline } from "ionicons/icons";
 
-const productIdentificationStore = useProductIdentificationStore();
+const productStore = useProductStore();
 const userStore = useUserStore()
 
 const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
-const currentEComStore = computed(() =>  userStore.getCurrentEComStore)
-const productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref);
-const productIdentificationOptions = computed(() => productIdentificationStore.getProductIdentificationOptions);
-const currentSampleProduct = computed(() => productIdentificationStore.getCurrentSampleProduct) as any
+const currentEComStore = computed(() =>  productStore.getCurrentEComStore)
+const productIdentificationPref = computed(() => productStore.getProductIdentificationPref);
+const productIdentificationOptions = computed(() => productStore.getProductIdentificationOptions);
+const currentSampleProduct = computed(() => productStore.getCurrentSampleProduct) as any
 onMounted(() => {
-  productIdentificationStore.prepareProductIdentifierOptions();
-  productIdentificationStore.getIdentificationPref(currentEComStore.value.productStoreId);
-  productIdentificationStore.fetchProducts(); 
+  productStore.prepareProductIdentifierOptions();
+  productStore.fetchProductStoreSettings(currentEComStore.value.productStoreId);
+  productStore.fetchProducts(); 
 })
 
 function setProductIdentificationPref(value: string | any, id: string) {
-  productIdentificationStore.setProductIdentificationPref(id, value, currentEComStore.value.productStoreId)
+  const updatedPreference = JSON.parse(JSON.stringify(productIdentificationPref.value)) as any
+  updatedPreference[id] = value
+  productStore.setProductStoreSetting(currentEComStore.value.productStoreId, "PRDT_IDEN_PREF", updatedPreference)
 }
 
 function shuffle() {
-  productIdentificationStore.shuffleProduct()
+  productStore.shuffleProduct()
 }
 
 </script>

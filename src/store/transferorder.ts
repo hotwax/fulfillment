@@ -2,8 +2,9 @@ import { defineStore } from "pinia"
 import { api, commonUtil, logger, translate } from "@common";
 
 import { useProductStore } from "@/store/product"
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUtilStore } from "@/store/util"
-import { useUserStore } from "@/store/user"
+import { useUserStore } from "@/store/user";
 
 interface TransferOrderState {
   transferOrder: {
@@ -189,7 +190,7 @@ export const useTransferOrderStore = defineStore("transferorder", {
       const orderStatusId = transferOrderQuery.orderStatusId ?? "ORDER_APPROVED"
 
       const params: any = {
-        originFacilityId: useUserStore().getCurrentFacility?.facilityId,
+        originFacilityId: useAppProductStore().getCurrentFacility?.facilityId,
         limit: transferOrderQuery.viewSize,
         pageIndex: transferOrderQuery.viewIndex
       }
@@ -351,9 +352,8 @@ export const useTransferOrderStore = defineStore("transferorder", {
     },
     async updateOrderProductCount(payload: any) {
       const productStore = useProductStore()
-      const utilStore = useUtilStore()
       const getProduct = productStore.getProduct
-      const barcodeIdentifier = utilStore.getBarcodeIdentificationPref
+      const barcodeIdentifier = useAppProductStore().getBarcodeIdentifierPref
 
       const item = this.current.items.find((orderItem: any) => {
         const itemVal = commonUtil.getProductIdentificationValue(barcodeIdentifier, getProduct(orderItem.productId)) ? commonUtil.getProductIdentificationValue(barcodeIdentifier, getProduct(orderItem.productId)) : getProduct(orderItem.productId)?.internalName

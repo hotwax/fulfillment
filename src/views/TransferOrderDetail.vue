@@ -143,7 +143,7 @@ import { IonBadge, IonBackButton, IonButton, IonButtons, IonCard, IonChip, IonCo
 import { computed, ref } from "vue";
 import { barcodeOutline, pricetagOutline, printOutline, trashOutline } from "ionicons/icons";
 import { commonUtil, DxpShopifyImg, emitter, translate } from "@common";
-import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useRoute, useRouter } from "vue-router";
 import Scanner from "@/components/Scanner.vue";
 import { DateTime } from "luxon";
@@ -175,8 +175,8 @@ const defaultRejectReasonId = "NO_VARIANCE_LOG";
 const currentOrder = computed(() => useTransferOrderStore().getCurrent);
 const getStatusDesc = (statusId: string) => useUtilStore().getStatusDesc(statusId);
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
-const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
-const productStoreShipmentMethCount = computed(() => useUtilStore().getProductStoreShipmentMethCount);
+const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
+const productStoreShipmentMethCount = computed(() => useAppProductStore().getProductStoreShipmentMethCount);
 
 const areItemsEligibleForRejection = computed(() => {
   return currentOrder.value.items?.some((item: any) => item.rejectReasonId);

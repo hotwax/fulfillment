@@ -268,6 +268,7 @@ import OrderLookupLabelActionsPopover from "@/components/OrderLookupLabelActions
 import { useOrderLookupStore } from "@/store/orderLookup";
 import { useProductStore } from "@/store/product";
 import { useStockStore } from "@/store/stock";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUtilStore } from "@/store/util";
 import { useUserStore } from "@/store/user";
 
@@ -286,7 +287,7 @@ const getProductStock = (productId: string, facilityId?: string) => useStockStor
 const getStatusDesc = (statusId: string) => useUtilStore().getStatusDesc(statusId);
 const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
 const getPaymentMethodDesc = (paymentMethodTypeId: string) => useUtilStore().getPaymentMethodDesc(paymentMethodTypeId);
-const productStores = computed(() => useUtilStore().getProductStores);
+const productStores = computed(() => useAppProductStore().getAllProductStores);
 const getEnumerationDesc = (enumId: string) => useUtilStore().getEnumerationDesc(enumId);
 const userProfile = computed(() => useUserStore().getUserProfile);
 const instanceUrl = computed(() => useUserStore().getInstanceUrl);
@@ -360,7 +361,7 @@ const getProductStoreName = (productStoreId: string) => {
 onIonViewWillEnter(async () => {
   isFetchingOrderInfo.value = true;
   await useOrderLookupStore().getOrderDetails(props.orderId);
-  await useUtilStore().fetchProductStores();
+  await useAppProductStore().fetchAllProductStores();
   await fetchOrderInvoicingFacility();
   const instance = instanceUrl.value.split("-")[0].replace(new RegExp("^(https|http)://"), "").replace(new RegExp("/api.*"), "").replace(new RegExp(":.*"), "");
   additionalDetailItemExt.value = await moduleFederationUtil.useDynamicImport({ scope: "fulfillment_extensions", module: `${instance}_OrderLookupAdditionalDetailItem` });

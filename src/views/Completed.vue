@@ -203,7 +203,7 @@ import { useRouter, onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, printOutline, gift, giftOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline, timeOutline } from "ionicons/icons";
 import Popover from "@/views/ShippingPopover.vue";
 import { commonUtil, DxpShopifyImg, emitter, logger, translate } from "@common";
-import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUserStore } from "@/store/user";
 
 const userStore = useUserStore();
@@ -248,12 +248,12 @@ const getProduct = (productId: string) => useProductStore().getProduct(productId
 const getPartyName = (partyId: string) => useUtilStore().getPartyName(partyId);
 const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
 const getProductStock = (productId: string) => useStockStore().getProductStock(productId);
-const productStoreShipmentMethCount = computed(() => useUtilStore().getProductStoreShipmentMethCount);
-const isShipNowDisabled = computed(() => useUtilStore().isShipNowDisabled);
-const isUnpackDisabled = computed(() => useUtilStore().isUnpackDisabled);
-const currentEComStore = computed(() => userStore.getCurrentEComStore);
-const currentFacility = computed(() => userStore.getCurrentFacility);
-const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
+const productStoreShipmentMethCount = computed(() => useAppProductStore().getProductStoreShipmentMethCount);
+const isShipNowDisabled = computed(() => useAppProductStore().isDisableShipNowEnabled);
+const isUnpackDisabled = computed(() => useAppProductStore().isDisableUnpackEnabled);
+const currentEComStore = computed(() => useAppProductStore().getCurrentEComStore);
+const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
+const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 
 const getTime = (time: any) => {
   return time ? DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED) : "";

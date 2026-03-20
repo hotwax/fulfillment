@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
-import { createPinia, setActivePinia } from "pinia"
-import piniaPersist from "pinia-plugin-persistedstate"
+import { createPinia } from "pinia"
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import App from './App.vue'
 import router from './router';
 import { logger, createDxpI18n, imagePreview } from '@common';
@@ -29,9 +29,8 @@ import "@hotwax/apps-theme";
 
 import localeMessages from '@/locales'
 
-const pinia = createPinia()
-pinia.use(piniaPersist)
-setActivePinia(pinia)
+const pinia = createPinia();
+pinia.use(piniaPluginPersistedstate)
 
 export const i18n = createDxpI18n(localeMessages)
 
@@ -44,8 +43,8 @@ const app = createApp(App)
   .use(logger as any, {
     level: import.meta.env.VITE_DEFAULT_LOG_LEVEL
   })
-  .use(router)
   .use(pinia)
+  .use(router)
   .use(i18n)
 
 // Setting permission before router ready, as router checks for permissions, if not set before ready,

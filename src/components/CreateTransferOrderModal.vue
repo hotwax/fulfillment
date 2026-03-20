@@ -56,9 +56,9 @@ import { commonUtil, logger, translate } from "@common";
 import { useTransferOrderStore } from "@/store/transferorder";
 import { useUtil } from '@/composables/useUtil';
 import { useUtilStore } from "@/store/util";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { DateTime } from 'luxon';
 import router from '@/router';
-import { useUserStore } from "@/store/user";
 const facilityAddresses = computed(() => useUtilStore().getFacilityAddress)
 
 const transferOrderName = ref('');
@@ -82,7 +82,7 @@ async function loadFacilities() {
 
 async function fetchProductStoreDetails() {
   try {
-    const resp = await useUtil().fetchProductStoreDetails({ productStoreId: useUserStore().getCurrentEComStore?.productStoreId });
+    const resp = await useUtil().fetchProductStoreDetails({ productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId });
     if(!commonUtil.hasError(resp)) {
       currencyUom.value = resp.data.defaultCurrencyUomId;
     } else {
@@ -124,8 +124,8 @@ async function createTransferOrder() {
     return;
   }
   
-  const productStoreId = useUserStore().getCurrentEComStore?.productStoreId || '';
-  const originFacilityId = useUserStore().getCurrentFacility?.facilityId || '';
+  const productStoreId = useAppProductStore().getCurrentEComStore?.productStoreId || '';
+  const originFacilityId = useAppProductStore().getCurrentFacility?.facilityId || '';
   const orderTimestamp = DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000")
 
   if(originFacilityId === selectedDestinationFacilityId.value) {

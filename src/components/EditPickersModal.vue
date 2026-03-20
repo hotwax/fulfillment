@@ -56,6 +56,7 @@ import { close, closeCircle, saveOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
 import { useOrderStore } from "@/store/order";
 import { useUtil } from "@/composables/useUtil";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 
 const orderStore = useOrderStore();
 import { DateTime } from "luxon";
@@ -63,7 +64,7 @@ import { useUserStore } from "@/store/user";
 
 const props = defineProps(["selectedPicklist"]);
 const userStore = useUserStore();
-const currentFacility = computed(() => userStore.getCurrentFacility);
+const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
 
 const selectedPickers = ref([] as any[]);
 const queryString = ref("");

@@ -57,20 +57,19 @@ import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, I
 import { computed, defineProps, onMounted, ref } from "vue";
 import { cameraOutline, closeOutline, saveOutline } from "ionicons/icons";
 import { commonUtil, DxpShopifyImg, translate } from "@common";
-import { useProductIdentificationStore } from "@/store/productIdentification";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUserStore as useAuthStore } from "@/store/user";
 import Scanner from "@/components/Scanner.vue";
 import { orderUtil } from "@/utils/orderUtil";
 import { useProductStore } from "@/store/product";
-import { useUtilStore } from "@/store/util";
 
 const props = defineProps(["order"]);
 const orderItems = ref([] as any[]);
 const queryString = ref("");
 const lastScannedId = ref("");
 
-const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
-const barcodeIdentifier = computed(() => useUtilStore().getBarcodeIdentificationPref);
+const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
+const barcodeIdentifier = computed(() => useAppProductStore().getBarcodeIdentifierPref);
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
 
 onMounted(() => {

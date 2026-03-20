@@ -1,11 +1,11 @@
-import { useUserStore } from "./user"
 import { api, commonUtil, emitter, logger, solrUtil } from "@common";
 import { defineStore } from "pinia"
 import { orderUtil } from "@/utils/orderUtil";
 
 import { DateTime } from "luxon"
 
-import { useProductStore } from "@/store/product"
+import { useProductStore as useProduct } from "@/store/product"
+import { useProductStore as useProductStore } from "@/store/productStore";
 import { useUtilStore } from "@/store/util"
 
 interface OrderState {
@@ -168,7 +168,7 @@ export const useOrderStore = defineStore("order", {
       const productIds = [
         ...new Set(orders.flatMap((order: any) => order.items.map((item: any) => item.productId)))
       ] as string[]
-      useProductStore().fetchProducts({ productIds })
+      useProduct().fetchProducts({ productIds })
 
       openOrderQuery.viewSize = orders.length
       this.setOpenQuery({ ...openOrderQuery })
@@ -190,7 +190,7 @@ export const useOrderStore = defineStore("order", {
           '-shipmentMethodTypeId': { value: ['STOREPICKUP', 'POS_COMPLETED'] },
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
-          productStoreId: { value: useUserStore().getCurrentEComStore?.productStoreId }
+          productStoreId: { value: useProductStore().getCurrentEComStore?.productStoreId }
         },
         solrFilters: [
           //it should be explicit what is subtracting the first part of your OR statement from
@@ -199,7 +199,7 @@ export const useOrderStore = defineStore("order", {
         ]
       } as any
       if (!openOrderQuery.excludeFacilityFilter) {
-        params.filters['facilityId'] = { value: solrUtil.escapeSolrSpecialChars(useUserStore().getCurrentFacility?.facilityId) }
+        params.filters['facilityId'] = { value: solrUtil.escapeSolrSpecialChars(useProductStore().getCurrentFacility?.facilityId) }
       }
       if (shipGroupFilter && Object.keys(shipGroupFilter).length) {
         Object.assign(params.filters, shipGroupFilter);
@@ -271,7 +271,7 @@ export const useOrderStore = defineStore("order", {
       return { orders, total }
     },
     async findShipments(query: any) {
-      const productStoreShipmentMethCount = useUtilStore().getProductStoreShipmentMethCount;
+      const productStoreShipmentMethCount = useProductStore().getProductStoreShipmentMethCount;
       let orders = [], total = 0;
 
       try {
@@ -279,14 +279,14 @@ export const useOrderStore = defineStore("order", {
           pageSize: query.viewSize,
           orderBy: 'orderDate',
           shipmentTypeId: 'SALES_SHIPMENT',
-          productStoreId: useUserStore().getCurrentEComStore?.productStoreId,
+          productStoreId: useProductStore().getCurrentEComStore?.productStoreId,
         } as any
 
         if (query.queryString) {
           params.keyword = query.queryString
         }
         if (!query.excludeFacilityFilter) {
-          params.originFacilityId = useUserStore().getCurrentFacility?.facilityId
+          params.originFacilityId = useProductStore().getCurrentFacility?.facilityId
         }
         if (query.orderStatusId) {
           params.orderStatusId = query.orderStatusId
@@ -397,7 +397,7 @@ export const useOrderStore = defineStore("order", {
       const productIds = [...new Set(orders.flatMap((order: any) => order.items.map((item: any) => item.productId)))] as string[]
       const shipmentMethodTypeIds = [...new Set(orders.map((order: any) => order.shipmentMethodTypeId))] as string[]
 
-      useProductStore().fetchProducts({ productIds })
+      useProduct().fetchProducts({ productIds })
       useUtilStore().fetchShipmentMethodTypeDesc(shipmentMethodTypeIds)
       orders = await this.fetchGiftCardActivationDetails({ isDetailsPage: false, currentOrders: orders })
 
@@ -413,7 +413,7 @@ export const useOrderStore = defineStore("order", {
 
       const completedOrderQuery = JSON.parse(JSON.stringify(this.completed.query))
       completedOrderQuery.statusId = ["SHIPMENT_PACKED"]
-      completedOrderQuery.shippedDateFrom = DateTime.now().setZone(useUserStore().getCurrentFacility?.timeZone || DateTime.local().zoneName).startOf("day").toMillis()
+      completedOrderQuery.shippedDateFrom = DateTime.now().setZone(useProductStore().getCurrentFacility?.timeZone || DateTime.local().zoneName).startOf("day").toMillis()
 
       const { orders: completedOrders, total: completedTotal } = await this.findShipments(completedOrderQuery)
 
@@ -425,7 +425,7 @@ export const useOrderStore = defineStore("order", {
       const productIds = [...new Set(orders.flatMap((order: any) => order.items.map((item: any) => item.productId)))] as string[]
       const shipmentMethodTypeIds = [...new Set(orders.map((order: any) => order.shipmentMethodTypeId))] as string[]
 
-      useProductStore().fetchProducts({ productIds })
+      useProduct().fetchProducts({ productIds })
       useUtilStore().fetchShipmentMethodTypeDesc(shipmentMethodTypeIds)
       orders = await this.fetchGiftCardActivationDetails({ isDetailsPage: false, currentOrders: orders })
 
@@ -448,7 +448,7 @@ export const useOrderStore = defineStore("order", {
       const order = orders[0]
 
       const productIds = order.items.map((item: any) => item.productId)
-      useProductStore().fetchProducts({ productIds })
+      useProduct().fetchProducts({ productIds })
       useUtilStore().fetchShipmentMethodTypeDesc([order.shipmentMethodTypeId])
 
       await this.updateCurrent(order)
@@ -483,7 +483,7 @@ export const useOrderStore = defineStore("order", {
       }
 
       const productIds = order.items.map((item: any) => item.productId)
-      useProductStore().fetchProducts({ productIds })
+      useProduct().fetchProducts({ productIds })
       useUtilStore().fetchShipmentMethodTypeDesc([order.shipmentMethodTypeId])
       order = await this.fetchGiftCardActivationDetails({ isDetailsPage: true, currentOrders: [order] })
 
@@ -504,7 +504,7 @@ export const useOrderStore = defineStore("order", {
       order.category = "completed"
 
       const productIds = order.items.map((item: any) => item.productId)
-      useProductStore().fetchProducts({ productIds })
+      useProduct().fetchProducts({ productIds })
       useUtilStore().fetchShipmentMethodTypeDesc([order.shipmentMethodTypeId])
       order = await this.fetchGiftCardActivationDetails({ isDetailsPage: true, currentOrders: [order] })
       await this.updateCurrent(order)
@@ -619,7 +619,7 @@ export const useOrderStore = defineStore("order", {
 
       if (otherShipments.length) {
         const productIds = [...new Set(otherShipments.flatMap((shipment: any) => shipment.items?.map((item: any) => item.productId) || []))]
-        useProductStore().fetchProducts({ productIds })
+        useProduct().fetchProducts({ productIds })
       }
 
       const facilityTypeIds = otherShipments.map((shipment: any) => shipment.facilityTypeId)
@@ -785,7 +785,7 @@ export const useOrderStore = defineStore("order", {
           const shipmentPackageRouteSegDetails = responseData.filter((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.carrierServiceStatusId !== "SHRSCS_VOIDED")
 
           let missingLabelImage = false
-          if (useUtilStore().productStoreShipmentMethCount > 0) {
+          if (useProductStore().productStoreShipmentMethCount > 0) {
             missingLabelImage = shipmentPackageRouteSegDetails.length === 0 || shipmentPackageRouteSegDetails.some((seg: any) => !seg.trackingCode)
           }
 
