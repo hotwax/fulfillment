@@ -152,15 +152,12 @@ import { openOutline, pricetagOutline, printOutline, storefrontOutline } from "i
 import { commonUtil, logger, translate } from "@common";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useOrderStore } from "@/store/order";
-import { useCarrier } from "@/composables/useCarrier";
-import { useFacility } from "@/composables/useFacility";
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
 import Image from "@/components/Image.vue";
 import { useProductStore } from "@/store/product";
 import { useUtilStore } from "@/store/util";
 import { useCarrierStore } from "@/store/carrier";
 import { useTransferOrderStore } from "@/store/transferorder";
-import { useTransferOrder } from "@/composables/useTransferOrder";
 import { useUserStore } from "@/store/user";
 
 const route = useRoute();
@@ -169,8 +166,8 @@ const productIdentificationPref = computed(() => useAppProductStore().getProduct
 
 const userStore = useUserStore();
 const orderStore = useOrderStore();
-const { printShippingLabel: printShippingLabelComposable, printTransferOrderPicklist } = useTransferOrder();
-const { fetchCarrierLogos: fetchCarrierLogosComposable, fetchShippingRates: fetchShippingRatesComposable } = useCarrier();
+const transferOrderStore = useTransferOrderStore();
+const carrierStore = useCarrierStore();
 
 const getProduct = (productId: string) => useProductStore().getProduct(productId);
 const shipmentMethodsByCarrier = computed(() => useUtilStore().getShipmentMethodsByCarrier);
@@ -198,7 +195,7 @@ const selectedCarrierService = ref("");
 const carrierLogos = ref<Record<string, string>>({});
 
 onIonViewWillEnter(async () => {
-  facilities.value = await useFacility().fetchProductStoreFacilities();
+  facilities.value = await useAppProductStore().fetchProductStoreFacilities();
   await Promise.allSettled([
     fetchShipmentOrderDetail(route?.params?.shipmentId as any),
     useUtilStore().fetchStoreCarrierAndMethods(),
@@ -366,7 +363,7 @@ async function fetchCarrierLogos(carriers: string[] = []) {
   if (!carrierIdsToFetch.length) return;
 
   try {
-    const logoUrls = await fetchCarrierLogosComposable(carrierIdsToFetch);
+    const logoUrls = await carrierStore.fetchCarrierLogos(carrierIdsToFetch);
     const logoMap = { ...carrierLogos.value };
     Object.keys(logoUrls).map((key: any) => {
       logoMap[key.toUpperCase()] = logoUrls[key];
@@ -379,7 +376,7 @@ async function fetchCarrierLogos(carriers: string[] = []) {
 
 async function fetchShippingRates() {
   try {
-    const data = await fetchShippingRatesComposable({ shipmentId: shipmentDetails.value.shipmentId });
+    const data = await carrierStore.fetchShippingRates({ shipmentId: shipmentDetails.value.shipmentId });
     shippingRates.value = data?.shippingRates || [];
     const carriers = shippingRates.value.map((rate: any) => rate.actualCarrier || rate.actualCarrierCode || rate.carrierPartyId);
     if (shipmentDetails.value?.actualCarrierCode) carriers.push(shipmentDetails.value.actualCarrierCode);
@@ -412,7 +409,7 @@ async function generateShippingLabel() {
             .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
         )
       );
-      await printShippingLabelComposable([shipmentDetails.value.shipmentId], shippingLabelPdfUrls, shipmentDetails.value?.packages);
+      await transferOrderStore.printShippingLabel([shipmentDetails.value.shipmentId], shippingLabelPdfUrls, shipmentDetails.value?.packages);
     } else {
       commonUtil.showToast(translate("Failed to generate shipping label"));
     }
@@ -433,7 +430,7 @@ async function printShippingLabel() {
             .map((shipmentPackage: any) => shipmentPackage.labelImageUrl)
         )
       );
-      await printShippingLabelComposable([shipmentDetails.value.shipmentId], shippingLabelPdfUrls, shipmentDetails.value?.packages);
+      await transferOrderStore.printShippingLabel([shipmentDetails.value.shipmentId], shippingLabelPdfUrls, shipmentDetails.value?.packages);
     }
   } catch (err) {
     commonUtil.showToast(translate("Failed to print shipping label"));

@@ -41,12 +41,12 @@ import { cogOutline, closeOutline, printOutline } from "ionicons/icons";
 import { commonUtil, logger, ShopifyService, translate } from "@common";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { DateTime } from "luxon";
-import { useCarrier } from "@/composables/useCarrier"
+import { useCarrierStore } from "@/store/carrier";
 
 const props = defineProps(["selectedCarrierPartyId", "carrierConfiguration"]);
 const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
 const loadingContentId = ref(null as any);
-const carrierService = useCarrier();
+const carrierStore = useCarrierStore();
 
 const closeModal = () => {
   modalController.dismiss({ dismissed: true });
@@ -62,7 +62,7 @@ const downloadCarrierManifest = async (manifest: any) => {
   };
 
   try {
-        const resp = await carrierService.downloadCarrierManifest(payload);
+        const resp = await carrierStore.downloadCarrierManifest(payload);
 
         if (!resp || resp.status !== 200 || commonUtil.hasError(resp)) {
           throw resp.data

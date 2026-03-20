@@ -46,7 +46,7 @@
                 <ion-segment-button value="scan" content-id="scan">
                   <ion-icon :icon="barcodeOutline" />
                 </ion-segment-button>
-                <ion-segment-button :disabled="isForceScanEnabled" value="search" content-id="search">
+                <ion-segment-button :disabled="isProductStoreSettingEnabled('FULFILL_FORCE_SCAN')" value="search" content-id="search">
                   <ion-icon :icon="searchOutline" />
                 </ion-segment-button>
               </ion-segment>
@@ -161,7 +161,7 @@
             <ion-icon :icon="barcodeOutline" slot="start" />
             {{ translate("Start scanning") }}
           </ion-button>
-          <ion-button :disabled="isForceScanEnabled" :color="mode === 'search' ? 'primary' : 'medium'" :fill="mode === 'search' ? 'solid' : 'outline'" @click="enableSearch">
+          <ion-button :disabled="isProductStoreSettingEnabled('FULFILL_FORCE_SCAN')" :color="mode === 'search' ? 'primary' : 'medium'" :fill="mode === 'search' ? 'solid' : 'outline'" @click="enableSearch">
             <ion-icon :icon="searchOutline" slot="start" />
             {{ translate("Search products") }}
           </ion-button>
@@ -200,19 +200,17 @@ import { barcodeOutline, checkmarkDoneOutline, checkmarkCircle, cloudOfflineOutl
 import { onBeforeRouteLeave, useRoute } from "vue-router";
 import router from "@/router";
 import { api, commonUtil, DxpShopifyImg, emitter, logger, translate } from "@common";
-import { useProductStore as useAppProductStore } from "@/store/productStore";
-import { useFacility } from "@/composables/useFacility";
+import { useProductStore as useProductStore } from "@/store/productStore";
 import TransferOrderItem from "@/components/TransferOrderItem.vue";
 import AddProductModal from "@/components/AddProductModal.vue";
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue";
 import { useProductQueue } from "@/composables/useProductQueue";
-import { useProductStore } from "@/store/product";
+import { useProductStore as useProduct } from "@/store/product";
 import { useTransferOrderStore } from "@/store/transferorder";
-import { useUserStore } from "@/store/user";
 import { useOrderStore } from "@/store/order";
 
 const route = useRoute();
-const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
+const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
 
 const productQueue = useProductQueue();
 const { pendingProductIds } = productQueue;
@@ -232,10 +230,10 @@ const facilities = ref([]) as any;
 const preventLeave = ref(false);
 const barcodeIdentificationDesc = ref({}) as any;
 
-const barcodeIdentifier = computed(() => useAppProductStore().getBarcodeIdentifierPref);
-const getProduct = (productId: string) => useProductStore().getProduct(productId);
+const barcodeIdentifier = computed(() => useProductStore().getBarcodeIdentifierPref);
+const getProduct = (productId: string) => useProduct().getProduct(productId);
 const currentOrder = computed(() => useTransferOrderStore().getCurrent);
-const isForceScanEnabled = computed(() => useAppProductStore().isForceScanEnabled);
+const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) => useProductStore().isProductStoreSettingEnabled(settingTypeEnumId));
 
 watch(queryString, (value) => {
   if (mode.value === "scan") return;
@@ -261,7 +259,7 @@ onIonViewWillEnter(async () => {
   if (isValidOrder) {
     await productQueue.fetchProductInformation();
     await fetchBarcodeIdentificationDesc();
-    facilities.value = await useFacility().fetchProductStoreFacilities();
+    facilities.value = await useProductStore().fetchProductStoreFacilities();
   }
   isOrderLoading.value = false;
 });
@@ -372,7 +370,7 @@ async function fetchTransferOrderDetail(orderId: string) {
 
 async function fetchBarcodeIdentificationDesc() {
   try {
-    const resp = await useProductStore().fetchBarcodeIdentificationDesc({ parentTypeId: "HC_GOOD_ID_TYPE" });
+    const resp = await useProduct().fetchBarcodeIdentificationDesc({ parentTypeId: "HC_GOOD_ID_TYPE" });
 
     if (!commonUtil.hasError(resp) && resp.data?.length) {
       barcodeIdentificationDesc.value = resp.data.reduce((identifierDesc: any, identifier: any) => {
@@ -626,12 +624,12 @@ async function findProduct(value: string) {
     } else {
       payload.keyword = value;
     }
-    const resp = await useProductStore().searchProducts(payload);
+    const resp = await useProduct().searchProducts(payload);
 
     if (resp.total) {
       productSearchCount.value = resp.total;
       const item = resp.products[0];
-      useProductStore().addProductToCached(item);
+      useProduct().addProductToCached(item);
       searchedProduct.value = { productId: item.productId, mainImageUrl: item.mainImageUrl };
       isSearchingProduct.value = false;
       return item;
@@ -654,7 +652,7 @@ async function fetchStock(productId: string) {
       method: "GET",
       params: {
         productId,
-        facilityId: useAppProductStore().getCurrentFacility?.facilityId
+        facilityId: useProductStore().getCurrentFacility?.facilityId
       }
     });
     if (!commonUtil.hasError(resp)) return resp.data;

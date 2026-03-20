@@ -21,7 +21,7 @@ import Notifications from '@/views/Notifications.vue'
 import CreateTransferOrder from '@/views/CreateTransferOrder.vue';
 import ShipTransferOrder from '@/views/ShipTransferOrder.vue';
 
-import { useAuth } from '@/composables/auth';
+import { useAuth } from '@/composables/useAuth';
 import Login from '@/views/Login.vue';
 import OrderLookup from '@/views/OrderLookup.vue';
 import OrderLookupDetail from '@/views/OrderLookupDetail.vue';

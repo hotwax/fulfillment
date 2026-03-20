@@ -144,12 +144,12 @@ import { useRouter, onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline } from "ionicons/icons";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
 import { commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, solrUtil, translate, useNotificationStore } from "@common";
-import { useCarrier } from "@/composables/useCarrier";
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
 import OrderActionsPopover from "@/components/OrderActionsPopover.vue";
 import { orderUtil } from "@/utils/orderUtil";
 
 import { useOrderStore } from "@/store/order";
+import { useCarrierStore } from "@/store/carrier";
 import { useProductStore } from "@/store/product";
 import { useStockStore } from "@/store/stock";
 import { useUtilStore } from "@/store/util";
@@ -157,7 +157,7 @@ import { useUserStore } from "@/store/user";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 
 const userStore = useUserStore();
-const carrier = useCarrier();
+const carrierStore = useCarrierStore();
 
 const router = useRouter();
 const shipmentMethods = ref([] as Array<any>);
@@ -291,7 +291,7 @@ const fetchShipmentMethods = async () => {
   });
 
   try {
-    resp = await carrier.fetchShipmentMethods(payload);
+    resp = await carrierStore.fetchShipmentMethods(payload);
     if (resp.status == 200 && !commonUtil.hasError(resp) && resp.data.facets?.count > 0) {
       shipmentMethods.value = resp.data.facets.shipmentMethodTypeIdFacet.buckets;
       useUtilStore().fetchShipmentMethodTypeDesc(shipmentMethods.value.map((shipmentMethod: any) => shipmentMethod.val));
@@ -304,9 +304,8 @@ const fetchShipmentMethods = async () => {
 };
 
 const getFacilityFilter = (value: any): any => {
-const isReservationFacilityFieldEnabled = useAppProductStore().isUseReservationFacilityEnabled;
 const facilityFilter = {} as any;
-facilityFilter[isReservationFacilityFieldEnabled ? "reservationFacilityId" : "facilityId"] = { value }
+facilityFilter[useAppProductStore().isProductStoreSettingEnabled("USE_RES_FACILITY_ID") ? "reservationFacilityId" : "facilityId"] = { value }
 return facilityFilter
 }
 

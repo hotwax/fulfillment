@@ -147,7 +147,6 @@ import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useRoute, useRouter } from "vue-router";
 import Scanner from "@/components/Scanner.vue";
 import { DateTime } from "luxon";
-import { useTransferOrder } from "@/composables/useTransferOrder";
 import { useOrderStore } from "@/store/order";
 
 import TransferOrderItem from "@/components/TransferOrderItem.vue";
@@ -160,7 +159,7 @@ import { useProductStore } from "@/store/product";
 
 const userStore = useUserStore();
 const orderStore = useOrderStore();
-const { printShippingLabel, printTransferOrderPicklist: printTransferOrderPicklistComposable } = useTransferOrder();
+const transferOrderStore = useTransferOrderStore();
 
 const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
 
@@ -187,7 +186,7 @@ const hasOpenItems = computed(() => {
 });
 
 const printTransferOrderPicklist = async () => {
-  await printTransferOrderPicklistComposable(currentOrder.value.orderId);
+  await transferOrderStore.printTransferOrderPicklist(currentOrder.value.orderId);
 };
 
 const getItemCount = () => {
@@ -317,12 +316,12 @@ const regenerateShippingLabel = async (currentShipment: any) => {
 
     if (currentShipment.trackingIdNumber) {
       commonUtil.showToast(translate("Shipping Label generated successfully"));
-      await printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
+      await transferOrderStore.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
     } else {
       commonUtil.showToast(translate("Failed to generate shipping label"));
     }
   } else {
-    await printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
+    await transferOrderStore.printShippingLabel([currentShipment.shipmentId], shippingLabelPdfUrls, currentShipment?.shipmentPackages);
   }
 
   currentShipment.isGeneratingShippingLabel = false;

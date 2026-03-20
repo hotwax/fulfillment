@@ -16,11 +16,11 @@ import { IonContent, IonItem, IonList, IonListHeader, popoverController } from "
 import { computed, defineProps } from "vue";
 import { commonUtil, logger, translate } from "@common";
 import { useUtilStore } from "@/store/util";
-import { useUtil } from "@/composables/useUtil";
 import { DateTime } from "luxon";
 
 
 const props = defineProps(["reason"]);
+const utilStore = useUtilStore();
 const rejectReasons = computed(() => useUtilStore().getRejectReasons);
 const rejectReasonEnumTypes = computed(() => useUtilStore().getRejectReasonEnumTypes);
 
@@ -31,7 +31,7 @@ const updateVarianceType = async (selectedType: any) => {
   }
 
   try {
-    const resp = await useUtil().updateEnumeration({
+    const resp = await utilStore.updateEnumeration({
       "enumId": props.reason.enumId,
       "enumTypeId": selectedType.enumTypeId,
       "description": props.reason.description,

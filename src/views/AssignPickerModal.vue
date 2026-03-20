@@ -55,13 +55,12 @@ import { closeOutline, closeCircle, saveOutline } from "ionicons/icons";
 import { commonUtil, emitter, logger, translate } from "@common";
 import { useUserStore as useDxpUserStore } from "@/store/user";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
-import { useUtil } from "@/composables/useUtil";
+import { useUtilStore } from "@/store/util";
 import { useOrderStore } from "@/store/order";
-import useOrder from "@/composables/useOrder";
 
 const props = defineProps(["order"]);
 const orderStore = useOrderStore();
-const { printPicklist: printPicklistAction } = useOrder();
+const utilStore = useUtilStore();
 
 const userStore = useDxpUserStore();
 const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
@@ -129,7 +128,7 @@ const printPicklist = async () => {
       commonUtil.showToast(translate("Picklist created successfully"));
 
       if (resp.data.picklistId) {
-        await printPicklistAction(resp.data.picklistId);
+        await orderStore.printPicklist(resp.data.picklistId);
       }
 
       await useOrderStore().findOpenOrders();
@@ -181,7 +180,7 @@ const findPickers = async () => {
   };
 
   try {
-    const resp = await useUtil().getAvailablePickers(payload);
+    const resp = await utilStore.getAvailablePickers(payload);
     if (resp.status === 200 && !commonUtil.hasError(resp)) {
       pickers.value = resp.data.response.docs.map((picker: any) => ({
         name: picker.groupName ? picker.groupName : (picker.firstName || picker.lastName) ? (picker.firstName ? picker.firstName : "") + (picker.lastName ? " " + picker.lastName : "") : picker.partyId,

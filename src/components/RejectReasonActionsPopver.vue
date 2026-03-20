@@ -19,11 +19,11 @@ import { IonContent, IonItem, IonList, IonListHeader, alertController, modalCont
 import { computed, defineProps } from "vue";
 import { commonUtil, logger, translate } from "@common";
 import EditRejectionReasonModal from "@/components/EditRejectionReasonModal.vue";
-import { useUtil } from "@/composables/useUtil";
 import { useUtilStore } from "@/store/util";
 import { DateTime } from "luxon";
 
 const props = defineProps(["reason"]);
+const utilStore = useUtilStore();
 const rejectReasons = computed(() => useUtilStore().getRejectReasons);
 
 const openEditRejectionReasonModal = async () => {
@@ -44,7 +44,7 @@ const removeRejectionReason = async () => {
         text: translate("Confirm"),
         handler: async () => {
           try {
-            const resp = await useUtil().updateEnumeration({
+            const resp = await utilStore.updateEnumeration({
               ...props.reason,
               thruDate: DateTime.now().toMillis()
             });

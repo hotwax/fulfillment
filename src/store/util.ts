@@ -138,6 +138,111 @@ export const useUtilStore = defineStore("util", {
     setFacilityAddresses(payload: any) {
       this.facilityAddresses = payload
     },
+    async createEnumerationGroupMember(payload: any): Promise<any> {
+      return api({
+        url: `/admin/enumGroups/${payload.enumerationGroupId}/members`,
+        method: "POST",
+        data: payload,
+      });
+    },
+    async updateEnumerationGroupMember(payload: any): Promise<any> {
+      return api({
+        url: `/admin/enumGroups/${payload.enumerationGroupId}/members`,
+        method: "POST",
+        data: payload,
+      });
+    },
+    async createEnumeration(payload: any): Promise<any> {
+      return api({
+        url: `/admin/enums`,
+        method: "POST",
+        data: payload,
+      });
+    },
+    async updateEnumeration(payload: any): Promise<any> {
+      return api({
+        url: `/admin/enums/${payload.enumId}`,
+        method: "PUT",
+        data: payload,
+      });
+    },
+    async deleteEnumeration(payload: any): Promise<any> {
+      return api({
+        url: `/admin/enums/${payload.enumId}`,
+        method: "DELETE",
+      });
+    },
+    async isEnumExists(enumId: string): Promise<any> {
+      try {
+        const resp = await api({
+          url: `/admin/enums`,
+          method: "GET",
+          params: { enumId }
+        }) as any
+
+        if (!commonUtil.hasError(resp) && resp.data.length) {
+          return true
+        }
+        return false
+      } catch (err) {
+        return false
+      }
+    },
+    async fetchAdjustmentTypeDescription(payload: any): Promise<any> {
+      return api({
+        url: `/oms/orderAdjustmentTypes`,
+        method: "GET",
+        params: payload,
+      });
+    },
+    async fetchProductStoreDetails(payload: any): Promise<any> {
+      return api({
+        url: `/oms/productStores/${payload.productStoreId}`,
+        method: "GET",
+      });
+    },
+    async updateProductStoreSetting(payload: any): Promise<any> {
+      return api({
+        url: `/oms/productStores/${payload.productStoreId}/settings`,
+        method: "POST",
+        data: payload
+      });
+    },
+    async createProductStoreSetting(payload: any): Promise<any> {
+      return api({
+        url: `/oms/productStores/${payload.productStoreId}/settings`,
+        method: "POST",
+        data: payload
+      });
+    },
+    async fetchShopifyShopLocation(omsRedirectionUrl: string, token: any, payload: any): Promise<any> {
+      const baseURL = omsRedirectionUrl.startsWith("http") ? omsRedirectionUrl.includes("/rest/s1/oms") ? omsRedirectionUrl : `${omsRedirectionUrl}/rest/s1/oms/` : `https://${omsRedirectionUrl}.hotwax.io/rest/s1/oms/`;
+      return await api({
+        url: "shopifyShops/locations",
+        method: "GET",
+        baseURL,
+        headers: {
+          "Authorization": "Bearer " + token,
+          "Content-Type": "application/json"
+        },
+        params: payload
+      });
+    },
+    async getAvailablePickers(query: any): Promise<any> {
+      return api({
+        url: "solr-query",
+        method: "post",
+        data: query,
+        baseURL: commonUtil.getOmsURL()
+      })
+    },
+    async getAvailableTimeZones(): Promise<any> {
+      return api({
+        url: "admin/user/getAvailableTimeZones",
+        method: "get",
+        cache: true
+      });
+    },
     clearUtilState() {
       this.carrierDesc = {}
       this.facilityAddresses = {}

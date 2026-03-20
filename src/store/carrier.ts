@@ -1,5 +1,6 @@
 import { defineStore } from "pinia"
 import { commonUtil, logger, translate, api } from "@common";
+import { DateTime } from "luxon";
 
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 
@@ -106,7 +107,51 @@ export const useCarrierStore = defineStore("carrier", {
     setShipmentGatewayConfigs(payload: any) {
       this.shipmentGatewayConfigs = payload
     },
-    async fetchCarriers() {
+    async createCarrier(payload: any) {
+      try {
+        const resp = await api({
+          url: "/oms/shippingGateways/carrierParties",
+          method: "POST",
+          data: payload
+        })
+
+        if (!commonUtil.hasError(resp)) {
+          return Promise.resolve(resp.data?.partyId)
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        logger.error("Failed to create carrier", err)
+        return Promise.reject(err)
+      }
+    },
+    async updateCarrier(payload: any) {
+      try {
+        const resp = await api({
+          url: `/ admin / organizations / ${payload.partyId} `,
+          method: "POST",
+          data: payload
+        })
+
+        if (!commonUtil.hasError(resp)) {
+          return Promise.resolve(resp.data)
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        logger.error("Failed to update carrier", err)
+        return Promise.reject(err)
+      }
+    },
+    async fetchCarriers(params?: any) {
+      if (params) {
+        return api({
+          url: `/oms/shippingGateways/carrierParties`,
+          method: "GET",
+          params,
+        });
+      }
+
       let carriers = {} as any
       let resp
       try {
@@ -250,6 +295,365 @@ export const useCarrierStore = defineStore("carrier", {
         logger.error(error)
       }
       this.setCurrent(currentCarrier)
+    },
+    async updateCarrierFacilityAssociation(facility: any, carrierPartyId: any) {
+      try {
+        const payload = {
+          facilityId: facility.facilityId,
+          partyId: carrierPartyId,
+          roleTypeId: "CARRIER"
+        }
+        let resp = {} as any;
+        if (facility.isChecked) {
+          resp = await api({
+            url: `/oms/facilities/${payload.facilityId}/parties`,
+            method: "PUT",
+            data: {
+              ...payload,
+              fromDate: facility.fromDate,
+              thruDate: DateTime.now().toMillis()
+            }
+          });
+          if (commonUtil.hasError(resp)) {
+            throw resp.data
+          }
+          facility.isChecked = false
+          facility.fromDate = ""
+        } else {
+          resp = await api({
+            url: `/oms/facilities/${payload.facilityId}/parties`,
+            method: "POST",
+            data: {
+              ...payload,
+              fromDate: DateTime.now().toMillis()
+            }
+          });
+          if (commonUtil.hasError(resp)) {
+            throw resp.data;
+          }
+          facility = { ...facility, ...payload, isChecked: true }
+        }
+
+        if (!commonUtil.hasError(resp)) {
+          commonUtil.showToast(translate("Facility carrier association updated successfully."))
+          await this.updateCarrierFacilityState(facility)
+        } else {
+          throw resp.data;
+        }
+      } catch (err) {
+        commonUtil.showToast(translate("Failed to update facility carrier association."))
+        logger.error(err)
+      }
+    },
+    async updateProductStoreShipmentMethod(productStoreId: string, shipmentMethod: any) {
+      try {
+        const resp = await api({
+          url: `/oms/productStores/${productStoreId}/shipmentMethods`,
+          method: "PUT",
+          data: {
+            shipmentGatewayConfigId: shipmentMethod.shipmentGatewayConfigId,
+            isTrackingRequired: shipmentMethod.isTrackingRequired,
+            productStoreShipMethId: shipmentMethod.productStoreShipMethId,
+          }
+        })
+
+        if (!commonUtil.hasError(resp)) {
+          commonUtil.showToast(translate("Product store shipment method updated successfully"))
+          await this.fetchProductStoreShipmentMethods({ partyId: shipmentMethod.partyId })
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        const errorMessage = "Failed to update product store shipment method"
+        commonUtil.showToast(translate(errorMessage))
+        logger.error(errorMessage, err)
+      }
+    },
+    async updateProductStoreShipmentMethodAssociation(payload: any) {
+      const { productStoreId, shipmentMethod, isChecked } = payload
+
+      try {
+        let resp;
+        if (isChecked) {
+          resp = await api({
+            url: `/oms/productStores/${productStoreId}/shipmentMethods`,
+            method: "POST",
+            data: {
+              productStoreId,
+              shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
+              partyId: shipmentMethod.partyId,
+              roleTypeId: shipmentMethod.roleTypeId,
+              fromDate: DateTime.now().toMillis()
+            }
+          })
+        } else {
+          resp = await api({
+            url: `/oms/productStores/${productStoreId}/shipmentMethods`,
+            method: "PUT",
+            data: {
+              productStoreShipMethId: shipmentMethod.productStoreShipMethId,
+              thruDate: DateTime.now().toMillis()
+            }
+          })
+        }
+
+        if (!commonUtil.hasError(resp)) {
+          commonUtil.showToast(translate(isChecked ? "Shipment method associated with product store successfully" : "Shipment method disassociated from product store successfully"))
+          await this.fetchProductStoreShipmentMethods({ partyId: shipmentMethod.partyId })
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        const errorMessage = isChecked ? "Failed to associate shipment method with product store" : "Failed to disassociate shipment method from product store"
+        commonUtil.showToast(translate(errorMessage))
+        logger.error(errorMessage, err)
+      }
+      this.checkAssociatedProductStoreShipmentMethods()
+    },
+    async updateCarrierShipmentMethodAssociation(shipmentMethod: any, partyId: string, isChecked: boolean) {
+      const payload = {
+        shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
+        partyId: partyId,
+        roleTypeId: "CARRIER"
+      }
+
+      try {
+        const resp = await api({
+          url: "/oms/shippingGateways/carrierShipmentMethods",
+          method: isChecked ? "POST" : "DELETE",
+          data: isChecked ? payload : { ...payload, thruDate: DateTime.now().toMillis() }
+        })
+
+        if (!commonUtil.hasError(resp)) {
+          commonUtil.showToast(translate(isChecked ? "Shipment method associated with carrier successfully" : "Shipment method disassociated from carrier successfully"))
+          await this.fetchCarrierShipmentMethods({ partyId })
+          this.checkAssociatedShipmentMethods()
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        const errorMessage = isChecked ? "Failed to associate shipment method with carrier" : "Failed to disassociate shipment method from carrier"
+        commonUtil.showToast(translate(errorMessage))
+        logger.error(errorMessage, err)
+      }
+    },
+    async createShipmentMethod(payload: any) {
+      try {
+        const resp = await api({
+          url: "/oms/shippingGateways/shipmentMethodTypes",
+          method: "POST",
+          data: payload
+        })
+
+        if (!commonUtil.hasError(resp)) {
+          commonUtil.showToast(translate("Shipment method created successfully"))
+          return Promise.resolve(resp.data)
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        commonUtil.showToast(translate("Failed to create shipment method"))
+        logger.error("Failed to create shipment method", err)
+        return Promise.reject(err)
+      }
+    },
+    async renameShipmentMethod(shipmentMethod: any, description: string) {
+      const payload = {
+        shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
+        description
+      }
+
+      try {
+        const resp = await api({
+          url: `/oms/shippingGateways/shipmentMethodTypes/${payload.shipmentMethodTypeId}`,
+          method: "PUT",
+          data: payload
+        })
+
+        if (!commonUtil.hasError(resp)) {
+          commonUtil.showToast(translate("Shipment method renamed successfully"))
+          await this.fetchShipmentMethodTypes()
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        commonUtil.showToast(translate("Failed to rename shipment method"))
+        logger.error("Failed to rename shipment method", err)
+      }
+    },
+    async removeCarrierShipmentMethod(shipmentMethod: any) {
+      try {
+        const resp = await api({
+          url: "/oms/shippingGateways/carrierShipmentMethods",
+          method: "DELETE",
+          data: {
+            shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
+            partyId: shipmentMethod.partyId,
+            roleTypeId: shipmentMethod.roleTypeId,
+            thruDate: DateTime.now().toMillis()
+          }
+        })
+
+        if (!commonUtil.hasError(resp)) {
+          commonUtil.showToast(translate("Shipment method removed successfully"))
+          await this.fetchCarrierShipmentMethods({ partyId: shipmentMethod.partyId })
+          this.checkAssociatedShipmentMethods()
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        commonUtil.showToast(translate("Failed to remove shipment method"))
+        logger.error("Failed to remove shipment method", err)
+      }
+    },
+    async saveShipmentMethodsOrder(shipmentMethods: any) {
+      const partyId = this.getCurrent.partyId
+      const roleTypeId = this.getCurrent.roleTypeId
+
+      const responses = await Promise.allSettled(shipmentMethods.map((shipmentMethod: any, index: number) => {
+        return api({
+          url: "/oms/shippingGateways/carrierShipmentMethods",
+          method: "PUT",
+          data: {
+            shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
+            partyId,
+            roleTypeId,
+            sequenceNumber: index + 1
+          }
+        })
+      }))
+
+      const failed = responses.some((response: any) => response.status === "rejected" || commonUtil.hasError(response.value))
+
+      if (failed) {
+        commonUtil.showToast(translate("Failed to update sequence for some shipment methods"))
+      } else {
+        commonUtil.showToast(translate("Shipment methods sequence updated successfully"))
+      }
+
+      await this.fetchCarrierShipmentMethods({ partyId })
+      this.checkAssociatedShipmentMethods()
+    },
+    async fetchCarrierLogos(carrierIds: string[]) {
+      const logoUrls = {} as any
+      try {
+        const resp = await api({
+          url: "/admin/systemProperties",
+          method: "GET",
+          params: {
+            systemResourceId: carrierIds,
+            systemResourceId_op: "in",
+            systemPropertyId: "%logo.url%",
+            systemPropertyId_op: "like",
+            fieldsToSelect: ["systemResourceId", "systemPropertyValue"]
+          }
+        })
+
+        if (!commonUtil.hasError(resp)) {
+          resp.data.map((doc: any) => {
+            logoUrls[doc.systemResourceId] = doc.systemPropertyValue
+          })
+        }
+      } catch (err) {
+        logger.error("Failed to fetch carrier logos", err)
+      }
+      return logoUrls
+    },
+    async fetchShippingRates(payload: any) {
+      try {
+        const resp = await api({
+          url: "poorti/shippingRate/",
+          method: "GET",
+          params: payload
+        })
+
+        if (!commonUtil.hasError(resp)) {
+          return Promise.resolve(resp.data)
+        } else {
+          throw resp.data
+        }
+      } catch (err) {
+        logger.error("Failed to fetch shipping rates", err)
+        return Promise.reject(err)
+      }
+    },
+    async fetchShipmentMethods(query: any): Promise<any> {
+      return api({
+        url: "solr-query",
+        method: "post",
+        data: query,
+        baseURL: commonUtil.getOmsURL()
+      });
+    },
+    async fetchCarrierShipmentBoxTypes(params: any): Promise<any> {
+      return api({
+        url: "/oms/shippingGateways/carrierShipmentBoxTypes",
+        method: "GET",
+        params
+      });
+    },
+    async fetchDefaultShipmentBox(query: any): Promise<any> {
+      return api({
+        url: `/admin/systemProperties`,
+        method: "GET",
+        params: query,
+      });
+    },
+    async fetchShipmentMethodTypeDesc(payload: any): Promise<any> {
+      return api({
+        url: `/oms/shippingGateways/shipmentMethodTypes`,
+        method: "GET",
+        params: payload,
+      });
+    },
+    async fetchShipmentBoxType(query: any): Promise<any> {
+      return api({
+        url: `/oms/shippingGateways/shipmentBoxTypes`,
+        method: "GET",
+        params: query,
+      });
+    },
+    async fetchConfiguredCarrierService(payload: any): Promise<any> {
+      return api({
+        url: `/poorti/shipmentRequests`,
+        method: "get",
+        params: payload,
+      });
+    },
+    async generateManifest(payload: any): Promise<any> {
+      return api({
+        url: `/poorti/generateManifest`,
+        method: "POST",
+        data: payload,
+      });
+    },
+    async downloadCarrierManifest(params: any): Promise<any> {
+      return api({
+        url: `/poorti/Manifest.pdf`,
+        method: "GET",
+        params
+      });
+    },
+    async findProductStoreShipmentMethCount(query: any): Promise<any> {
+      return api({
+        url: `/oms/productStores/shipmentMethods/counts`,
+        method: "GET",
+        params: query
+      });
+    },
+    async fetchStoreCarrierAndMethods(payload: any): Promise<any> {
+      return api({
+        url: `/oms/dataDocumentView`,
+        method: "POST",
+        data: payload,
+      });
+    },
+    async fetchLabelImageType(carrierId: string): Promise<any> {
+      return api({
+        url: `/admin/systemProperties`,
+        method: "GET",
+        params: { "systemResourceId": carrierId, "systemPropertyId": "shipment.carrier.labelImageType", "pageSize": 1 }
+      });
     },
     async checkAssociatedShipmentMethods() {
       const shipmentMethods = this.shipmentMethods
@@ -637,7 +1041,7 @@ export const useCarrierStore = defineStore("carrier", {
     clearShipmentMethodQuery() {
       this.setShipmentMethodQuery({ query: { showSelected: false } })
     },
-    async updateCarrierFacility(payload: any) {
+    async updateCarrierFacilityState(payload: any) {
       const currentCarrier = this.current
       currentCarrier.facilities[payload.facilityId] = payload
       this.setCurrent(currentCarrier)

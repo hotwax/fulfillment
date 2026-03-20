@@ -116,16 +116,9 @@ import ShipmentMethods from "@/components/ShipmentMethods.vue";
 import { useCarrierStore } from "@/store/carrier";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUtilStore } from "@/store/util";
-import { useCarrier } from "@/composables/useCarrier";
 
 const route = useRoute();
 const carrierStore = useCarrierStore();
-const { 
-  updateCarrier, 
-  updateCarrierFacility, 
-  updateProductStoreShipmentMethod,
-  updateProductStoreShipmentMethodAssociation 
-} = useCarrier();
 
 const selectedSegment = ref("shipping-methods");
 
@@ -173,7 +166,7 @@ const updateCarrierName = async () => {
           emitter.emit("presentLoader");
 
           try {
-            await updateCarrier(payload);
+            await carrierStore.updateCarrier(payload);
             commonUtil.showToast(translate("Carrier name updated successfully."));
             await carrierStore.fetchCarrierDetail({ partyId: currentCarrier.value.partyId });
           } catch (err) {
@@ -198,7 +191,7 @@ const openCreateShipmentMethodModal = async () => {
 const updateCarrierFacilityAssociation = async (event: any, facility: any) => {
   event.preventDefault();
   event.stopImmediatePropagation();
-  await updateCarrierFacility(facility, currentCarrier.value.partyId);
+  await carrierStore.updateCarrierFacilityAssociation(facility, currentCarrier.value.partyId);
 };
 
 const updateShipmentGatewayConfigId = async (shipmentMethod: any) => {
@@ -239,7 +232,7 @@ const updateProductStoreShipmentMethodInternal = async (shipmentMethod: any, mod
   if (modifiedData && shipmentMethod[modifiedData.fieldName] !== modifiedData.fieldValue) {
     try {
       const updatedMethod = { ...shipmentMethod, [modifiedData.fieldName]: modifiedData.fieldValue };
-      await updateProductStoreShipmentMethod(shipmentMethod.productStoreId, updatedMethod);
+      await carrierStore.updateProductStoreShipmentMethod(shipmentMethod.productStoreId, updatedMethod);
       commonUtil.showToast(translate(messages.successMessage));
       await carrierStore.checkAssociatedProductStoreShipmentMethods();
     } catch (err) {
@@ -252,7 +245,7 @@ const updateProductStoreShipmentMethodInternal = async (shipmentMethod: any, mod
 const updateProductStoreShipmentMethodAssociationLocal = async (event: any, shipmentMethod: any, productStore: any) => {
   event.preventDefault();
   event.stopImmediatePropagation();
-  await updateProductStoreShipmentMethodAssociation({
+  await carrierStore.updateProductStoreShipmentMethodAssociation({
     productStoreId: productStore.productStoreId,
     shipmentMethod,
     isChecked: !shipmentMethod.isChecked

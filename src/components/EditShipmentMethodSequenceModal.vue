@@ -39,14 +39,12 @@
   </template>
   
   <script setup lang="ts">
-  import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonReorder, IonReorderGroup, IonTitle, IonToolbar, modalController } from "@ionic/vue";
-  import { computed, onMounted, ref } from "vue";
-  import { close, saveOutline } from "ionicons/icons";
+import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonReorder, IonReorderGroup, IonTitle, IonToolbar, modalController } from "@ionic/vue";
+import { computed, onMounted, ref } from "vue";
+import { close, saveOutline } from "ionicons/icons";
 import { commonUtil, translate } from "@common";
-  import { useCarrier } from "@/composables/useCarrier";
   import { useCarrierStore } from "@/store/carrier";
 
-  const { saveShipmentMethodsOrder: saveShipmentMethodsOrderComposable } = useCarrier();
   const carrierStore = useCarrierStore();
   const filteredShipmentMethods = ref([] as any[]);
   const currentCarrier = computed(() => carrierStore.getCurrent);
@@ -90,7 +88,7 @@ import { commonUtil, translate } from "@common";
   };
   
   const saveShipmentMethodsOrder = async () => {
-    await saveShipmentMethodsOrderComposable(filteredShipmentMethods.value);
+    await carrierStore.saveShipmentMethodsOrder(filteredShipmentMethods.value);
     modalController.dismiss();
   };
   </script>

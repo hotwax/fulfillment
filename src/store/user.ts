@@ -1,7 +1,7 @@
 import { api, commonUtil, cookieHelper, i18n, logger, translate } from "@common";
 import { defineStore } from "pinia"
 import { DateTime, Settings } from "luxon"
-import { useAuth } from "@/composables/auth";
+import { useAuth } from "@/composables/useAuth";
 
 interface UserState {
   permissions: any[]

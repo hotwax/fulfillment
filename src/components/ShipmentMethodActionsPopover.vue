@@ -31,15 +31,13 @@
   <script setup lang="ts">
 import { defineProps } from "vue";
   import { IonContent, IonIcon, IonItem, IonList, IonListHeader, modalController, popoverController, alertController } from "@ionic/vue";
-  import { computed } from "vue";
+import { computed } from "vue";
   import { pencilOutline, calendarClearOutline, codeWorkingOutline, listOutline, unlinkOutline } from "ionicons/icons";
   import EditShipmentMethodSequenceModal from "@/components/EditShipmentMethodSequenceModal.vue";
 import { commonUtil, logger, translate } from "@common";
-  import { useCarrier } from "@/composables/useCarrier";
   import { useCarrierStore } from "@/store/carrier";
   
   const props = defineProps(["shipmentMethod"]);
-  const { removeCarrierShipmentMethod: removeCarrierShipmentMethodComposable, renameShipmentMethod: renameShipmentMethodComposable } = useCarrier();
   const carrierStore = useCarrierStore();
   const currentCarrier = computed(() => carrierStore.getCurrent);
   const shipmentMethods = computed(() => carrierStore.getShipmentMethods);
@@ -127,7 +125,7 @@ import { commonUtil, logger, translate } from "@common";
   
   const removeCarrierShipmentMethod = async () => {
     try {
-      await removeCarrierShipmentMethodComposable(props.shipmentMethod);
+      await carrierStore.removeCarrierShipmentMethod(props.shipmentMethod);
       closePopover();
     } catch (err) {
       // Error handled in composable
@@ -143,7 +141,7 @@ import { commonUtil, logger, translate } from "@common";
       }
   
       if (updatedShipmentMethodName != shipmentMethod.description) {
-        await renameShipmentMethodComposable(shipmentMethod, updatedShipmentMethodName);
+        await carrierStore.renameShipmentMethod(shipmentMethod, updatedShipmentMethodName);
       }
     } catch (error) {
       logger.error("Failed to rename shipment method.", error);

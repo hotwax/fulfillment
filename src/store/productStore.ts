@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { api, commonUtil, logger, translate } from '@common'
 import { useUserStore } from '@/store/user'
+const defaultProductStoreSettings = JSON.parse(import.meta.env.VITE_DEFAULT_PRODUCT_STORE_SETTINGS as string || '{}')
 
 export const useProductStore = defineStore('productStore', {
   state: () => ({
@@ -56,42 +57,16 @@ export const useProductStore = defineStore('productStore', {
     getProductIdentificationOptions: (state) => state.settings.productIdentifier.productIdentificationOptions,
     getBarcodeIdentifierOptions: (state) => state.settings.barcodeIdentifier.barcodeIdentifierOptions,
     getCurrentSampleProduct: (state) => state.settings.productIdentifier.currentSampleProduct,
-    isProductStoreSettingEnabled: (state) => (settingName: string) => state.settings[settingName] === "Y",
-    isForceScanEnabled(): boolean {
-      return this.isProductStoreSettingEnabled('forceScan')
+    isProductStoreSettingEnabled: (state) => (settingTypeEnumId: string) => {
+      const stateKey = defaultProductStoreSettings[settingTypeEnumId]?.stateKey || settingTypeEnumId
+      return state.settings[stateKey] === "Y"
     },
-    isPartialOrderRejectionEnabled(): boolean {
-      return this.isProductStoreSettingEnabled('partialOrderRejection')
-    },
-    isCollateralRejectionEnabled(): boolean {
-      return this.isProductStoreSettingEnabled('collateralRejection')
-    },
-    isAutoShippingLabelEnabled(): boolean {
-      return this.isProductStoreSettingEnabled('autoShippingLabel')
-    },
-    isDownloadPicklistEnabled(): boolean {
-      return this.isProductStoreSettingEnabled('downloadPicklist')
-    },
-    getExcludeOrderBrokerDays: (state) => state.settings.excludeOrderBrokerDays,
     isExcludeOrderBrokerDaysEnabled(): boolean {
-      return this.isProductStoreSettingEnabled('excludeOrderBrokerDays')
-    },
-    isAffectQohEnabled(): boolean {
-      return this.isProductStoreSettingEnabled('affectQoh')
-    },
-    isDisableShipNowEnabled(): boolean {
-      return this.isProductStoreSettingEnabled('disableShipNow')
-    },
-    isDisableUnpackEnabled(): boolean {
-      return this.isProductStoreSettingEnabled('disableUnpack')
-    },
-    isUseReservationFacilityEnabled(): boolean {
-      return this.isProductStoreSettingEnabled('useReservationFacility')
+      return this.isProductStoreSettingEnabled('EXCLUDE_ODR_BKR_DAYS')
     },
     isRerouteSettingEnabled: (state) => (settingName: string) => state.settings.rerouteFulfillment[settingName] === "Y",
     getRerouteShipmentMethod: (state) => state.settings.rerouteFulfillment.shippingMethod,
     getFacilityName: (state) => (facilityId: string) => state.userFacilities[facilityId] ? state.userFacilities[facilityId] : facilityId,
-    
   },
 
   actions: {
@@ -335,6 +310,142 @@ export const useProductStore = defineStore('productStore', {
       }
       this.facilities = facilities
     },
+    async getFacilityDetails(payload: any): Promise<any> {
+      return api({
+        url: `/oms/facilities/${payload.facilityId}`,
+        method: "GET",
+        params: payload
+      });
+    },
+    async getFacilityOrderCount(payload: any): Promise<any> {
+      return api({
+        url: `/oms/facilities/facilityOrderCounts`,
+        method: "GET",
+        params: payload
+      });
+    },
+    async updateFacility(payload: any): Promise<any> {
+      return api({
+        url: `/oms/facilities/${payload.facilityId}`,
+        method: "PUT",
+        data: payload
+      });
+    },
+    async updateFacilityToGroup(payload: any): Promise<any> {
+      return api({
+        url: `/oms/facilities/${payload.facilityId}/groups`,
+        method: "POST",
+        data: payload
+      });
+    },
+    async addFacilityToGroup(payload: any): Promise<any> {
+      return api({
+        url: `/oms/facilities/${payload.facilityId}/groups`,
+        method: "POST",
+        data: payload
+      });
+    },
+    async getFacilityGroupDetails(payload: any): Promise<any> {
+      return api({
+        url: `/oms/facilityGroups`,
+        method: "get",
+        params: payload
+      });
+    },
+    async fetchFacilitiesList(payload: any): Promise<any> {
+      return api({
+        url: "/oms/facilities",
+        method: "GET",
+        params: payload
+      });
+    },
+    async fetchProductStoreFacilities(): Promise<any> {
+      try {
+        const productStoreId = this.getCurrentEComStore?.productStoreId;
+
+        if (!productStoreId) {
+          logger.error('Product store ID not found');
+          return [];
+        }
+
+        const params = {
+          facilityTypeId: 'VIRTUAL_FACILITY',
+          facilityTypeId_op: 'equals',
+          facilityTypeId_not: 'Y',
+          parentFacilityTypeId: 'VIRTUAL_FACILITY',
+          parentFacilityTypeId_op: 'equals',
+          parentFacilityTypeId_not: 'Y',
+          pageSize: 250,
+        };
+
+        const resp = await api({
+          url: `/oms/productStores/${productStoreId}/facilities`,
+          method: "GET",
+          params
+        });
+
+        if (!commonUtil.hasError(resp)) {
+          return resp.data;
+        } else {
+          logger.error('Failed to fetch product store facilities:', resp.data);
+          return [];
+        }
+      } catch (err) {
+        logger.error('Failed to fetch product store facilities:', err);
+        return [];
+      }
+    },
+    async fetchFacilityAddresses(payload: any): Promise<any> {
+      return api({
+        url: `/oms/facilityContactMechs`,
+        method: "GET",
+        params: payload,
+      });
+    },
+    async fetchFacilityZPLGroupInfo(): Promise<any> {
+      let isFacilityZPLConfigured = false;
+      const payload = {
+        customParametersMap: {
+          facilityGroupId: "ZPL_SHIPPING_LABEL",
+          facilityGroupTypeId: "SHIPPING_LABEL",
+          pageIndex: 0,
+          pageSize: 1
+        },
+        dataDocumentId: "FacilityGroupAndMember",
+        filterByDate: true,
+      }
+
+      try {
+        const resp = await api({
+          url: `/oms/dataDocumentView`,
+          method: "POST",
+          data: payload
+        });
+
+        if (!commonUtil.hasError(resp) && resp.data?.entityValueList?.length > 0) {
+          isFacilityZPLConfigured = true
+        } else {
+          throw resp.data;
+        }
+      } catch (err) {
+        logger.error(err)
+      }
+      return isFacilityZPLConfigured;
+    },
+    async getFacilityGroupAndMemberDetails(payload: any): Promise<any> {
+      return api({
+        url: `/oms/dataDocumentView`,
+        method: "post",
+        data: payload
+      });
+    },
+    async fetchFacilityTypeInformation(query: any): Promise<any> {
+      return api({
+        url: `/oms/facilities`,
+        method: "GET",
+        params: query,
+      });
+    },
     async fetchAllProductStores() {
       let stores = []
       try {
@@ -437,7 +548,6 @@ export const useProductStore = defineStore('productStore', {
       this.currentEComStore = payload;
     },
     async fetchProductStoreSettings(productStoreId: string) {
-      const defaultProductStoreSettings = JSON.parse(import.meta.env.VITE_DEFAULT_PRODUCT_STORE_SETTINGS as string || '{}')
       const productStoreSettings = {} as any
 
       if (productStoreId) {
@@ -521,8 +631,6 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async setProductStoreSetting(productStoreId: string, settingTypeEnumId: string, settingValue: any) {
-      const defaultProductStoreSettings = JSON.parse(import.meta.env.VITE_DEFAULT_PRODUCT_STORE_SETTINGS as string || '{}')
-
       try {
         const payloadSettingValue = typeof settingValue === 'object' ? JSON.stringify(settingValue) : settingValue;
         const resp = await api({

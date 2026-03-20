@@ -42,16 +42,14 @@
 </template>  
   <script setup lang="ts">
   import { IonButton, IonCheckbox, IonChip, IonIcon, IonItem, IonLabel, IonNote, alertController, popoverController } from "@ionic/vue";
-  import { computed } from "vue";
-  import { addCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
+import { computed } from "vue";
+import { addCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { commonUtil, emitter, logger, translate } from "@common";
   import { DateTime } from "luxon";
 
-  import { useCarrier } from "@/composables/useCarrier";
   import { useCarrierStore } from "@/store/carrier";
   import ShipmentMethodActionsPopover from "@/components/ShipmentMethodActionsPopover.vue";
 
-  const { updateProductStoreShipmentMethod, updateCarrierShipmentMethodAssociation: updateCarrierShipmentMethodAssociationComposable } = useCarrier();
   const carrierStore = useCarrierStore();
   const currentCarrier = computed(() => carrierStore.getCurrent);
   const filteredShipmentMethods = computed<any[]>(() => carrierStore.getFilteredShipmentMethods);
@@ -109,7 +107,7 @@ import { commonUtil, emitter, logger, translate } from "@common";
         await removeProductStoreShipmentMethods(shipmentMethod.shipmentMethodTypeId);
       }
       
-      await updateCarrierShipmentMethodAssociationComposable(shipmentMethod, currentCarrier.value.partyId, !shipmentMethod.isChecked);
+      await carrierStore.updateCarrierShipmentMethodAssociation(shipmentMethod, currentCarrier.value.partyId, !shipmentMethod.isChecked);
       event.target.checked = !shipmentMethod.isChecked;
     } catch (err) {
       // Error handled in composable
@@ -125,7 +123,7 @@ import { commonUtil, emitter, logger, translate } from "@common";
         const methodsToRemove = methods.filter((productStoreShipmentMethod: any) => productStoreShipmentMethod.shipmentMethodTypeId === shipmentMethodTypeId);
   
         const responses = await Promise.allSettled(methodsToRemove.map((productStoreShipmentMethod: any) => {
-          return updateProductStoreShipmentMethod(productStoreShipmentMethod.productStoreId, productStoreShipmentMethod, false);
+          return carrierStore.updateProductStoreShipmentMethod(productStoreShipmentMethod.productStoreId, productStoreShipmentMethod);
         }));
   
         const hasFailedResponse = responses.some((response: any) => response.status === "rejected");

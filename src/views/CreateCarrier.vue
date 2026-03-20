@@ -32,11 +32,10 @@ import { useRouter } from "vue-router";
 import { arrowForwardOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
 import { useCarrierStore } from "@/store/carrier";
-import { useCarrier } from "@/composables/useCarrier";
 
 const router = useRouter();
 const carrier = ref({} as any);
-const { createCarrier: createCarrierComposable } = useCarrier();
+const carrierStore = useCarrierStore();
 
 const clearCarrierData = () => {
   carrier.value = {} as any;
@@ -57,10 +56,10 @@ const createCarrier = async () => {
     partyTypeId: "PARTY_GROUP"
   };
   try {
-    const response = await createCarrierComposable(payload);
-    if (!commonUtil.hasError(response)) {
+    const partyId = await carrierStore.createCarrier(payload);
+    if (partyId) {
       useCarrierStore().clearShipmentMethodQuery();
-      router.replace({ path: `/shipment-methods-setup/${response.data.partyId}` });
+      router.replace({ path: `/shipment-methods-setup/${partyId}` });
     }
   } catch (err: any) {
     logger.error("error", err);

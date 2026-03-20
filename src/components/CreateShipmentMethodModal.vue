@@ -31,14 +31,11 @@
   
   <script setup lang="ts">
   import { IonButtons, IonButton, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonText, IonTitle, IonToolbar, IonItem, modalController, onIonViewWillEnter } from "@ionic/vue";
-  import { computed, ref } from "vue";
-  import { close, saveOutline } from "ionicons/icons";
+import { computed, ref } from "vue";
+import { close, saveOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
-
-  import { useCarrier } from "@/composables/useCarrier";
   import { useCarrierStore } from "@/store/carrier";
   
-  const { createShipmentMethod: createShipmentMethodComposable, updateCarrierShipmentMethodAssociation } = useCarrier();
   const carrierStore = useCarrierStore();
   const shipmentMethods = computed(() => carrierStore.getFilteredShipmentMethods);
   const currentCarrier = computed(() => carrierStore.getCurrent);
@@ -65,8 +62,8 @@ import { commonUtil, logger, translate } from "@common";
     }
   
     try {
-      await createShipmentMethodComposable(shipmentMethod.value);
-      await updateCarrierShipmentMethodAssociation(shipmentMethod.value, currentCarrier.value.partyId, true);
+      await carrierStore.createShipmentMethod(shipmentMethod.value);
+      await carrierStore.updateCarrierShipmentMethodAssociation(shipmentMethod.value, currentCarrier.value.partyId, true);
       await carrierStore.fetchShipmentMethodTypes();
       await carrierStore.checkAssociatedProductStoreShipmentMethods();
       modalController.dismiss();

@@ -36,9 +36,9 @@ import { computed, defineProps, onBeforeMount, ref } from "vue";
 import { useUtilStore } from "@/store/util";
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
-import { useUtil } from "@/composables/useUtil";
 
 const props = defineProps(["reason"]);
+const utilStore = useUtilStore();
 const rejectReasons = computed(() => useUtilStore().getRejectReasons);
 
 const rejectionReason = ref({} as any);
@@ -62,7 +62,7 @@ const updateRejectionReason = async () => {
   }
 
   try {
-    const resp = await useUtil().updateEnumeration(rejectionReason.value);
+    const resp = await utilStore.updateEnumeration(rejectionReason.value);
     if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Rejection reason updated successfully."));
       const rejectReason = rejectReasons.value.find((reason: any) => reason.enumId === rejectionReason.value.enumId);

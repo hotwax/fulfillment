@@ -17,7 +17,7 @@ import { init } from "@module-federation/runtime";
 import { useUserStore } from "@/store/user";
 import { useProductStore } from "@/store/productStore";
 import router from './router';
-import { useAuth } from "@/composables/auth";
+import { useAuth } from "@/composables/useAuth";
 
 const { isAuthenticated } = useAuth();
 const loader = ref<any>(null);

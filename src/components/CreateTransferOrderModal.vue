@@ -51,14 +51,13 @@
 import { IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent, IonInput, IonSearchbar, IonList, IonListHeader, IonItem, IonRadio, IonLabel, IonFab, IonFabButton, modalController } from '@ionic/vue';
 import { closeOutline, saveOutline } from 'ionicons/icons';
 import { computed, ref, onMounted } from 'vue';
-import { useFacility } from "@/composables/useFacility";
 import { commonUtil, logger, translate } from "@common";
 import { useTransferOrderStore } from "@/store/transferorder";
-import { useUtil } from '@/composables/useUtil';
 import { useUtilStore } from "@/store/util";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { DateTime } from 'luxon';
 import router from '@/router';
+const utilStore = useUtilStore();
 const facilityAddresses = computed(() => useUtilStore().getFacilityAddress)
 
 const transferOrderName = ref('');
@@ -76,13 +75,13 @@ onMounted(async () => {
 
 async function loadFacilities() {
   isLoading.value = true;
-  facilities.value = await useFacility().fetchProductStoreFacilities();
+  facilities.value = await useAppProductStore().fetchProductStoreFacilities();
   isLoading.value = false;
 }
 
 async function fetchProductStoreDetails() {
   try {
-    const resp = await useUtil().fetchProductStoreDetails({ productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId });
+    const resp = await utilStore.fetchProductStoreDetails({ productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId });
     if(!commonUtil.hasError(resp)) {
       currencyUom.value = resp.data.defaultCurrencyUomId;
     } else {

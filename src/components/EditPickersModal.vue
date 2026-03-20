@@ -55,10 +55,11 @@ import { computed, defineProps, onMounted, ref } from "vue";
 import { close, closeCircle, saveOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
 import { useOrderStore } from "@/store/order";
-import { useUtil } from "@/composables/useUtil";
+import { useUtilStore } from "@/store/util";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 
 const orderStore = useOrderStore();
+const utilStore = useUtilStore();
 import { DateTime } from "luxon";
 import { useUserStore } from "@/store/user";
 
@@ -118,7 +119,7 @@ const findPickers = async (pickerIds?: Array<any>) => {
   };
 
   try {
-    const resp = await useUtil().getAvailablePickers(payload);
+    const resp = await utilStore.getAvailablePickers(payload);
     if (resp.status === 200 && !commonUtil.hasError(resp)) {
       pickers.value = resp.data.response.docs.map((picker: any) => ({
         name: picker.groupName ? picker.groupName : (picker.firstName || picker.lastName) ? (picker.firstName ? picker.firstName : "") + (picker.lastName ? " " + picker.lastName : "") : picker.partyId,

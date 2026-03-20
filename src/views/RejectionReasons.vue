@@ -62,9 +62,9 @@ import CreateRejectionReasonModal from "@/components/CreateRejectionReasonModal.
 import RejectReasonActionsPopver from "@/components/RejectReasonActionsPopver.vue";
 import VarianceTypeActionsPopover from "@/components/VarianceTypeActionsPopover.vue";
 import { useUtilStore } from "@/store/util";
-import { useUtil } from "@/composables/useUtil";
 import { DateTime } from "luxon";
 
+const utilStore = useUtilStore();
 const filteredReasons = ref([] as any);
 const toast = ref(null as any);
 
@@ -163,7 +163,7 @@ const saveReasonsOrder = async () => {
   const diffReasons = filteredReasons.value.filter((reason: any) => rejectReasons.value.some((rejectReason: any) => rejectReason.enumId === reason.enumId && rejectReason.sequenceNum !== reason.sequenceNum));
 
   const responses = await Promise.allSettled(diffReasons.map(async (reason: any) => {
-    await useUtil().updateEnumeration(reason);
+    await utilStore.updateEnumeration(reason);
   }));
 
   const isFailedToUpdateSomeReason = responses.some((response) => response.status === "rejected");
@@ -186,13 +186,13 @@ const updateFulfillmentRejectReasonAssocStatus = async (event: any, reason: any)
 
   try {
     if (fulfillmentRejectReasons.value[reason.enumId]?.fromDate) {
-      resp = await useUtil().updateEnumerationGroupMember({
+      resp = await utilStore.updateEnumerationGroupMember({
         ...payload,
         fromDate: fulfillmentRejectReasons.value[reason.enumId]?.fromDate,
         thruDate: DateTime.now().toMillis()
       });
     } else {
-      resp = await useUtil().createEnumerationGroupMember({
+      resp = await utilStore.createEnumerationGroupMember({
         ...payload,
         fromDate: DateTime.now().toMillis()
       });

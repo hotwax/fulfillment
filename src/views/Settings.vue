@@ -127,7 +127,7 @@
           </ion-card-header>
           <ion-card-content v-html="barcodeContentMessage"></ion-card-content>
           <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
-            <ion-toggle label-placement="start" :checked="isForceScanEnabled" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="isProductStoreSettingEnabled('FULFILL_FORCE_SCAN')" @click.prevent="updateForceScanStatus($event)">{{ translate("Require scan") }}</ion-toggle>
           </ion-item>
           <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
             <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="barcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
@@ -146,7 +146,7 @@
             {{ translate("Individual items within an order will be rejected without affecting the other items in the order.") }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
-            <ion-toggle label-placement="start" :checked="isPartialOrderRejectionEnabled" @click.prevent="confirmPartialOrderRejection($event)">{{ translate("Partial rejections") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="isProductStoreSettingEnabled('FULFILL_PART_ODR_REJ')" @click.prevent="confirmPartialOrderRejection($event)">{{ translate("Partial rejections") }}</ion-toggle>
           </ion-item>
         </ion-card>
         <ion-card>
@@ -159,7 +159,7 @@
             {{ translate('When rejecting an item, automatically reject all other orders for that item as well.') }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
-            <ion-toggle label-placement="start" :checked="isCollateralRejectionEnabled" @click.prevent="confirmCollateralRejection($event)">{{ translate("Auto reject related items") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="isProductStoreSettingEnabled('FF_COLLATERAL_REJ')" @click.prevent="confirmCollateralRejection($event)">{{ translate("Auto reject related items") }}</ion-toggle>
           </ion-item>
         </ion-card>
         <ion-card>
@@ -172,7 +172,7 @@
             {{ translate('Adjust the QOH along with ATP on rejection.') }}
           </ion-card-content>
           <ion-item lines="none" :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN')">
-            <ion-toggle label-placement="start" :checked="affectQoh" @click.prevent="confirmAffectQohConfig($event)">{{ translate("Affect QOH") }}</ion-toggle>
+            <ion-toggle label-placement="start" :checked="isProductStoreSettingEnabled('AFFECT_QOH_ON_REJ')" @click.prevent="confirmAffectQohConfig($event)">{{ translate("Affect QOH") }}</ion-toggle>
           </ion-item>
         </ion-card>
       </section>
@@ -184,7 +184,6 @@
 import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonProgressBar, IonSelect, IonSelectOption, IonTitle, IonText, IonToggle, IonToolbar, alertController, popoverController, onIonViewWillEnter } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { openOutline } from "ionicons/icons";
-import { useFacility } from "@/composables/useFacility";
 import { commonUtil, DxpShopifyImg, emitter, firebaseMessaging,logger, translate, useNotificationStore } from "@common";
 import { useProductStore } from "@/store/productStore";
 import { useUserStore } from "@/store/user";
@@ -200,7 +199,7 @@ import DxpProductIdentifier from "@/components/DxpProductIdentifier.vue";
 import DxpTimeZoneSwitcher from "@/components/DxpTimeZoneSwitcher.vue";
 import DxpLanguageSwitcher from "@/components/DxpLanguageSwitcher.vue";
 import { useOrderStore } from "@/store/order";
-import { useAuth } from "@/composables/auth";
+import { useAuth } from "@/composables/useAuth";
 import router from "@/router";
 
 const userStore = useUserStore();
@@ -219,10 +218,7 @@ const unreadNotificationsStatus = computed(() => useNotificationStore().getUnrea
 const notificationPrefs = computed(() => useNotificationStore().getNotificationPrefs);
 const allNotificationPrefs = computed(() => useNotificationStore().getAllNotificationPrefs);
 const firebaseDeviceId = computed(() => useNotificationStore().getFirebaseDeviceId);
-const isForceScanEnabled = computed(() => useProductStore().isForceScanEnabled);
-const isPartialOrderRejectionEnabled = computed(() => useProductStore().isPartialOrderRejectionEnabled);
-const isCollateralRejectionEnabled = computed(() => useProductStore().isCollateralRejectionEnabled);
-const affectQoh = computed(() => useProductStore().isAffectQohEnabled);
+const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) => useProductStore().isProductStoreSettingEnabled(settingTypeEnumId));
 const barcodeIdentificationPref = computed(() => useProductStore().getBarcodeIdentifierPref);
 const currentFacility = computed(() => useProductStore().getCurrentFacility as any);
 const preferredStore = computed(() => useProductStore().getCurrentEComStore);
@@ -235,7 +231,7 @@ const refreshProductStoreData = (selectedProductStore: any) => {
 const getCurrentFacilityDetails = async () => {
   let resp: any;
   try {
-    resp = await useFacility().getFacilityDetails({
+    resp = await useProductStore().getFacilityDetails({
       facilityId: currentFacility.value?.facilityId,
       pageSize: 1,
       fieldsToSelect: ["maximumOrderLimit", "facilityId"]
@@ -258,7 +254,7 @@ const getCurrentFacilityDetails = async () => {
 const getFacilityOrderCount = async () => {
   let resp: any;
   try {
-    resp = await useFacility().getFacilityOrderCount({
+    resp = await useProductStore().getFacilityOrderCount({
       facilityId: currentFacility.value?.facilityId,
       entryDate: DateTime.now().toFormat("yyyy-MM-dd"),
       pageSize: 1,
@@ -292,7 +288,7 @@ const getEcomInvStatus = async () => {
     isEComInvEnabled.value = false;
     facilityGroupDetails.value = {};
 
-    resp = await useFacility().getFacilityGroupDetails({
+    resp = await useProductStore().getFacilityGroupDetails({
       facilityGroupTypeId: "SHOPIFY_GROUP_FAC",
       fieldsToSelect: ["facilityGroupId", "facilityGroupTypeId"],
       pageSize: 1
@@ -300,7 +296,7 @@ const getEcomInvStatus = async () => {
 
     if (!commonUtil.hasError(resp)) {
       facilityGroupDetails.value.facilityGroupId = resp.data[0].facilityGroupId;
-      resp = await useFacility().getFacilityGroupAndMemberDetails({
+      resp = await useProductStore().getFacilityGroupAndMemberDetails({
         customParametersMap: {
           facilityId: currentFacility.value?.facilityId,
           facilityGroupId: facilityGroupDetails.value.facilityGroupId,
@@ -381,7 +377,7 @@ const updateFacilityMaximumOrderLimit = async (maximumOrderLimit: number | strin
   let resp;
 
   try {
-    resp = await useFacility().updateFacility({
+    resp = await useProductStore().updateFacility({
       facilityId: currentFacility.value?.facilityId,
       maximumOrderLimit
     });
@@ -401,7 +397,7 @@ const updateFacilityMaximumOrderLimit = async (maximumOrderLimit: number | strin
 const updateFacilityToGroup = async () => {
   let resp;
   try {
-    resp = await useFacility().updateFacilityToGroup({
+    resp = await useProductStore().updateFacilityToGroup({
       facilityId: currentFacility.value?.facilityId,
       facilityGroupId: facilityGroupDetails.value.facilityGroupId,
       fromDate: facilityGroupDetails.value.fromDate,
@@ -423,7 +419,7 @@ const updateFacilityToGroup = async () => {
 const addFacilityToGroup = async () => {
   let resp;
   try {
-    resp = await useFacility().addFacilityToGroup({
+    resp = await useProductStore().addFacilityToGroup({
       facilityId: currentFacility.value?.facilityId,
       facilityGroupId: facilityGroupDetails.value.facilityGroupId
     });
@@ -473,7 +469,7 @@ const updateForceScanStatus = async (event: any) => {
   await useProductStore().setProductStoreSetting(
     preferredStore.value.productStoreId,
     "FULFILL_FORCE_SCAN",
-    !isForceScanEnabled.value ? "Y" : "N"
+    !isProductStoreSettingEnabled.value("FULFILL_FORCE_SCAN") ? "Y" : "N"
   );
 };
 
@@ -553,7 +549,7 @@ const confirmNotificationPrefUpdate = async (enumId: string, event: CustomEvent)
 
 const confirmPartialOrderRejection = async (event: any) => {
   event.stopImmediatePropagation();
-  const isChecked = !isPartialOrderRejectionEnabled.value;
+  const isChecked = !isProductStoreSettingEnabled.value("FULFILL_PART_ODR_REJ");
   const message = translate("Are you sure you want to perform this action?");
   const header = isChecked ? translate("Allow partial rejections ") : translate("Disallow partial rejections");
 
@@ -584,7 +580,7 @@ const confirmPartialOrderRejection = async (event: any) => {
 const confirmCollateralRejection = async (event: any) => {
   event.stopImmediatePropagation();
 
-  const isChecked = !isCollateralRejectionEnabled.value;
+  const isChecked = !isProductStoreSettingEnabled.value("FF_COLLATERAL_REJ");
   const message = translate("Are you sure you want to perform this action?");
   const header = isChecked ? translate("Allow collateral rejections") : translate("Disallow collateral rejections");
 
@@ -615,7 +611,7 @@ const confirmCollateralRejection = async (event: any) => {
 const confirmAffectQohConfig = async (event: any) => {
   event.stopImmediatePropagation();
 
-  const isChecked = !affectQoh.value;
+  const isChecked = !isProductStoreSettingEnabled.value("AFFECT_QOH_ON_REJ");
   const message = translate("Are you sure you want to perform this action?");
   const header = isChecked ? translate("Affect QOH on rejection") : translate("Do not affect QOH on rejection");
 

@@ -20,11 +20,9 @@ import { defineProps } from "vue";
   import { documentOutline, trashOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
   import { useOrderStore } from "@/store/order";
-import useOrder from "@/composables/useOrder";
 
 const props = defineProps(["currentOrder"]);
 const orderStore = useOrderStore();
-const { printShippingLabel: printShippingLabelAction } = useOrder();
 
   const printShippingLabel = async (order: any) => {
     const shipmentIds = [order.shipmentId];
@@ -36,7 +34,7 @@ const { printShippingLabel: printShippingLabelAction } = useOrder();
       )
     );
   
-    await printShippingLabelAction(shipmentIds, shippingLabelPdfUrls, order.shipmentPackageRouteSegDetails);
+    await orderStore.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackageRouteSegDetails);
     popoverController.dismiss();
   };
   

@@ -49,7 +49,7 @@
 
       <div v-if="completedOrders.total">
         <div class="results">
-          <ion-button :disabled="isShipNowDisabled || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
+          <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || hasAnyMissingInfo() || (hasAnyShipmentTrackingInfoMissing() && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" expand="block" class="bulk-action desktop-only" fill="outline" size="large" @click="bulkShipOrders()">{{ translate("Ship") }}</ion-button>
           <ion-card class="order" v-for="(order, index) in completedOrdersList" :key="index">
             <div class="order-header">
               <div class="order-primary-info">
@@ -133,7 +133,7 @@
 
             <div class="mobile-only">
               <ion-item>
-                <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" fill="clear">{{ translate("Ship Now") }}</ion-button>
+                <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" fill="clear">{{ translate("Ship Now") }}</ion-button>
                 <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                 </ion-button>
@@ -143,7 +143,7 @@
             <div class="actions">
               <div class="desktop-only">
                 <ion-button v-if="!hasPackedShipments(order)" :disabled="true">{{ translate("Shipped") }}</ion-button>
-                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
+                <ion-button v-else :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" @click.stop="shipOrder(order)">{{ translate("Ship Now") }}</ion-button>
                 <ion-button :disabled="order.hasMissingShipmentInfo || order.hasMissingPackageInfo" fill="outline" @click.stop="regenerateShippingLabel(order)">
                   {{ translate(order.missingLabelImage ? "Regenerate Shipping Label" : "Print Shipping Label") }}
                   <ion-spinner color="primary" slot="end" v-if="order.isGeneratingShippingLabel" name="crescent" />
@@ -156,7 +156,7 @@
               </div>
               <div class="desktop-only">
                 <ion-button v-if="order.missingLabelImage" fill="outline" @click.stop="showShippingLabelErrorModal(order)">{{ translate("Shipping label error") }}</ion-button>
-                <ion-button :disabled="isUnpackDisabled || !userStore.hasPermission('STOREFULFILLMENT_ADMIN') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+                <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_UNPACK') || !userStore.hasPermission('STOREFULFILLMENT_ADMIN') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
               </div>
             </div>
           </ion-card>
@@ -203,13 +203,11 @@ import { useRouter, onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, printOutline, gift, giftOutline, listOutline, pricetagOutline, ellipsisVerticalOutline, checkmarkDoneOutline, optionsOutline, timeOutline } from "ionicons/icons";
 import Popover from "@/views/ShippingPopover.vue";
 import { commonUtil, DxpShopifyImg, emitter, logger, translate } from "@common";
-import { useProductStore as useAppProductStore } from "@/store/productStore";
+import { useProductStore as useProductStore } from "@/store/productStore";
 import { useUserStore } from "@/store/user";
 
 const userStore = useUserStore();
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
-import useOrder from "@/composables/useOrder";
-import { useCarrier } from "@/composables/useCarrier"
 
 import ShippingLabelErrorModal from "@/components/ShippingLabelErrorModal.vue";
 
@@ -220,14 +218,14 @@ import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
 import { DateTime } from "luxon";
 import HistoricalManifestModal from "@/components/HistoricalManifestModal.vue";
 import { useOrderStore } from "@/store/order";
-import { useProductStore } from "@/store/product";
+import { useCarrierStore } from "@/store/carrier";
+import { useProductStore as useProduct } from "@/store/product";
 import { useStockStore } from "@/store/stock";
 import { useUtilStore } from "@/store/util";
 
 const router = useRouter();
 const orderStore = useOrderStore();
-const { printPackingSlip, printShippingLabel, printCustomDocuments } = useOrder();
-const carrierService = useCarrier();
+const carrierStore = useCarrierStore();
 
 const shipmentMethods = ref([] as Array<any>);
 const carrierPartyIds = ref([] as Array<any>);
@@ -244,16 +242,15 @@ const contentRef = ref();
 const infiniteScrollRef = ref();
 
 const completedOrders = computed(() => useOrderStore().getCompletedOrders);
-const getProduct = (productId: string) => useProductStore().getProduct(productId);
+const getProduct = (productId: string) => useProduct().getProduct(productId);
 const getPartyName = (partyId: string) => useUtilStore().getPartyName(partyId);
 const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
 const getProductStock = (productId: string) => useStockStore().getProductStock(productId);
-const productStoreShipmentMethCount = computed(() => useAppProductStore().getProductStoreShipmentMethCount);
-const isShipNowDisabled = computed(() => useAppProductStore().isDisableShipNowEnabled);
-const isUnpackDisabled = computed(() => useAppProductStore().isDisableUnpackEnabled);
-const currentEComStore = computed(() => useAppProductStore().getCurrentEComStore);
-const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
-const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
+const productStoreShipmentMethCount = computed(() => useProductStore().getProductStoreShipmentMethCount);
+const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) => useProductStore().isProductStoreSettingEnabled(settingTypeEnumId));
+const currentEComStore = computed(() => useProductStore().getCurrentEComStore);
+const currentFacility = computed(() => useProductStore().getCurrentFacility);
+const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
 
 const getTime = (time: any) => {
   return time ? DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED) : "";
@@ -270,7 +267,7 @@ const hasAnyMissingInfo = () => {
 };
 
 const fetchKitComponents = async (orderItem: any) => {
-  await useProductStore().fetchProductComponents({ productId: orderItem.productId });
+  await useProduct().fetchProductComponents({ productId: orderItem.productId });
   const updatedOrder = completedOrders.value.list.find((order: any) => order.shipmentId === orderItem.shipmentId);
   const updatedItem = updatedOrder.items.find((item: any) => item.orderItemSeqId === orderItem.orderItemSeqId);
   updatedItem.showKitComponents = orderItem.showKitComponents ? false : true;
@@ -505,7 +502,7 @@ const localPrintPackingSlip = async (order: any) => {
 
   const shipmentIds = [order.shipmentId];
   order.isGeneratingPackingSlip = true;
-  await printPackingSlip(shipmentIds);
+  await orderStore.printPackingSlip(shipmentIds);
   order.isGeneratingPackingSlip = false;
 };
 
@@ -525,13 +522,13 @@ const localPrintShippingLabel = async (order: any) => {
     return;
   }
 
-  await printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
+  await orderStore.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages);
   const internationalInvoiceUrls = order.shipmentPackages
     ?.filter((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl)
     .map((shipmentPackage: any) => shipmentPackage.internationalInvoiceUrl) || [];
 
   if (internationalInvoiceUrls.length > 0) {
-    await printCustomDocuments(internationalInvoiceUrls);
+    await orderStore.printCustomDocuments(internationalInvoiceUrls);
   }
 };
 
@@ -623,7 +620,7 @@ const fetchConfiguredCarrierService = async (carrierIds: Array<string>) => {
     pageSize: carrierIds.length * 2
   };
   try {
-    const resp = await carrierService.fetchConfiguredCarrierService(payload);
+    const resp = await carrierStore.fetchConfiguredCarrierService(payload);
 
     if (!commonUtil.hasError(resp) && resp.data?.length) {
       carrierConfiguration.value = resp.data.reduce((carriers: any, carrier: any) => {
@@ -658,7 +655,7 @@ const fetchCarrierManifestInformation = async (carrierIds: Array<string>) => {
       filterByDate: true
     };
     try {
-      const resp = await carrierService.fetchConfiguredCarrierService(payload);
+      const resp = await carrierStore.fetchConfiguredCarrierService(payload);
 
       if (!commonUtil.hasError(resp) && resp.data?.entityValueList?.length) {
         if (carrierConfiguration.value[partyId]) {
@@ -696,7 +693,7 @@ const generateCarrierManifest = async () => {
   };
 
   try {
-    await carrierService.generateManifest(payload);
+    await carrierStore.generateManifest(payload);
     commonUtil.showToast(translate("Manifest has been generated successfully"));
     await fetchCarrierManifestInformation([selectedCarrierPartyId.value]);
   } catch (err) {

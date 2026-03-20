@@ -164,7 +164,7 @@
 
           <div v-else-if="category === 'completed'" class="mobile-only">
             <ion-item>
-              <ion-button :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" fill="clear">{{ translate("Ship Now") }}</ion-button>
+              <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" fill="clear">{{ translate("Ship Now") }}</ion-button>
               <ion-button slot="end" fill="clear" color="medium" @click.stop="shippingPopover">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
@@ -189,7 +189,7 @@
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Shipped") }}
                 </ion-button>
-                <ion-button v-else :disabled="isShipNowDisabled || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" @click.stop="shipOrder(order)">
+                <ion-button v-else :disabled="isProductStoreSettingEnabled('DISABLE_SHIPNOW') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || ((isTrackingRequiredForAnyShipmentPackage(order) && !order.trackingCode) && !userStore.hasPermission('COMMON_ADMIN OR STOREFULFILLMENT_ADMIN'))" @click.stop="shipOrder(order)">
                   <ion-icon slot="start" :icon="bagCheckOutline" />
                   {{ translate("Ship order") }}
                 </ion-button>
@@ -200,7 +200,7 @@
               </div>
             </div>
             <div class="desktop-only" v-if="category === 'completed'">
-              <ion-button :disabled="isUnpackDisabled || !useUserStore().hasPermission('COMMON_ADMIN OR SF_UNLOCK_ORDER') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
+              <ion-button :disabled="isProductStoreSettingEnabled('DISABLE_UNPACK') || !useUserStore().hasPermission('COMMON_ADMIN OR SF_UNLOCK_ORDER') || order.hasMissingShipmentInfo || order.hasMissingPackageInfo || !hasPackedShipments(order)" fill="outline" color="danger" @click.stop="unpackOrder(order)">{{ translate("Unpack") }}</ion-button>
             </div>
           </div>
         </ion-card>
@@ -397,11 +397,8 @@ import { IonBackButton, IonBadge, IonButton, IonCard, IonCheckbox, IonChip, IonC
 import { computed, defineProps, onMounted, ref } from "vue";
 import { addOutline, archiveOutline, bagCheckOutline, cashOutline, caretDownOutline, checkmarkCircleOutline, chevronUpOutline, closeCircleOutline, cubeOutline, documentTextOutline, ellipsisVerticalOutline, fileTrayOutline, gift, giftOutline, informationCircleOutline, listOutline, locateOutline, personAddOutline, pricetagOutline, ribbonOutline, trashBinOutline } from "ionicons/icons";
 import { cookieHelper, commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, translate } from "@common";
-import { useProductStore as useAppProductStore } from "@/store/productStore";
-import { useUserStore as useDxpUserStore } from "@/store/user";
+import { useProductStore } from "@/store/productStore";
 
-import useOrder from "@/composables/useOrder";
-import { useCarrier } from "@/composables/useCarrier";
 import { DateTime } from "luxon";
 import Popover from "@/views/ShippingPopover.vue";
 import PackagingPopover from "@/views/PackagingPopover.vue";
@@ -415,7 +412,7 @@ import GenerateTrackingCodeModal from "@/components/GenerateTrackingCodeModal.vu
 import GiftCardActivationModal from "@/components/GiftCardActivationModal.vue";
 import { useRouter } from "vue-router";
 import { useOrderStore } from "@/store/order";
-import { useProductStore } from "@/store/product";
+import { useProductStore as useProduct } from "@/store/product";
 import { useStockStore } from "@/store/stock";
 import { useUtilStore } from "@/store/util";
 import { useCarrierStore } from "@/store/carrier";
@@ -428,7 +425,7 @@ const props = defineProps(["category", "orderId", "shipGroupSeqId", "shipmentId"
 
 const userStore = useUserStore();
 const orderStore = useOrderStore();
-const carrier = useCarrier();
+const carrierStore = useCarrierStore();
 const router = useRouter();
 
 const addingBoxForShipmentIds = ref([] as any);
@@ -463,7 +460,7 @@ const productCategoryFilter = ref("" as any);
 const shippingManifest = ref("" as any);
 
 const boxTypeDesc = (id: string) => useUtilStore().getShipmentBoxDesc(id);
-const getProduct = (productId: string) => useProductStore().getProduct(productId);
+const getProduct = (productId: string) => useProduct().getProduct(productId);
 const getProductStock = (productId: string, facilityId = "") => useStockStore().getProductStock(productId, facilityId);
 const inProgressOrders = computed(() => useOrderStore().getInProgressOrders);
 const order = computed(() => useOrderStore().getCurrent);
@@ -471,14 +468,11 @@ const rejectReasonOptions = computed(() => useUtilStore().getRejectReasonOptions
 const userPreference = computed(() => useUserStore().getUserPreferenceState);
 const getPaymentMethodDesc = (paymentMethodTypeId: string) => useUtilStore().getPaymentMethodDesc(paymentMethodTypeId);
 const getStatusDesc = (statusId: string) => useUtilStore().getStatusDesc(statusId);
-const partialOrderRejectionConfig = computed(() => useAppProductStore().isPartialOrderRejectionEnabled);
-const collateralRejectionConfig = computed(() => useAppProductStore().isCollateralRejectionEnabled);
-const affectQohConfig = computed(() => useAppProductStore().isAffectQohEnabled);
-const excludeOrderBrokerDays = computed(() => useAppProductStore().getExcludeOrderBrokerDays);
-const isForceScanEnabled = computed(() => useAppProductStore().isForceScanEnabled);
+const isProductStoreSettingEnabled = computed(() => (settingTypeEnumId: string) => useProductStore().isProductStoreSettingEnabled(settingTypeEnumId));
+const excludeOrderBrokerDays = computed(() => useProductStore().getSettings.excludeOrderBrokerDays);
 const productStoreShipmentMethods = computed(() => useCarrierStore().getProductStoreShipmentMethods);
 const facilityCarriers = computed(() => useCarrierStore().getFacilityCarriers);
-const productStoreShipmentMethCount = computed(() => useAppProductStore().getProductStoreShipmentMethCount);
+const productStoreShipmentMethCount = computed(() => useProductStore().getProductStoreShipmentMethCount);
 const filteredFacilityCarriers = computed(() => {
   if (initialShipmentMethodTypeId.value === 'SHIP_TO_STORE') {
     const allowedPartyIds = new Set(productStoreShipmentMethods.value
@@ -489,12 +483,10 @@ const filteredFacilityCarriers = computed(() => {
   return facilityCarriers.value;
 })
 const userProfile = computed(() => useUserStore().getUserProfile);
-const isShipNowDisabled = computed(() => useAppProductStore().isDisableShipNowEnabled);
 const carrierShipmentBoxTypes = computed(() => useUtilStore().getCarrierShipmentBoxTypes);
 const getShipmentMethodDesc = (shipmentMethodId: string) => useUtilStore().getShipmentMethodDesc(shipmentMethodId);
-const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
-const currentFacility = computed(() => useAppProductStore().getCurrentFacility as any);
-const isUnpackDisabled = computed(() => useAppProductStore().isDisableUnpackEnabled);
+const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
+const currentFacility = computed(() => useProductStore().getCurrentFacility as any);
 
 const getTime = (time: any) => {
   return DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED);
@@ -521,7 +513,7 @@ const updateCarrierShipmentDetails = async (carrierPartyIdValue: string, shipmen
 };
 
 const fetchKitComponent = async (orderItem: any, isOtherShipment = false) => {
-  await useProductStore().fetchProductComponents({ productId: orderItem.productId });
+  await useProduct().fetchProductComponents({ productId: orderItem.productId });
 
   if (isOtherShipment) {
     const updatedShipGroup = order.value?.shipGroups.find((shipGroup: any) => shipGroup.shipGroupSeqId === orderItem.shipGroupSeqId);
@@ -544,11 +536,8 @@ const getRejectionReasonDescription = (rejectionReasonId: string) => {
 };
 
 const isEntierOrderRejectionEnabled = (currentOrder: any) => {
-  return !partialOrderRejectionConfig.value && currentOrder.hasRejectedItem;
+  return !isProductStoreSettingEnabled.value("FULFILL_PART_ODR_REJ") && currentOrder.hasRejectedItem;
 };
-
-// Removed local printPicklist as it is now imported from useOrder
-
 
 const openShipmentBoxPopover = async (ev: Event, item: any, currentOrder: any) => {
   const popover = await popoverController.create({
@@ -588,7 +577,7 @@ const packOrder = async (currentOrder: any) => {
 };
 
 const initiatePackOrder = async (currentOrder: any, updateParameter?: string) => {
-  let forceScan = isForceScanEnabled.value;
+  let forceScan = isProductStoreSettingEnabled.value("FULFILL_FORCE_SCAN");
   if (isEntierOrderRejectionEnabled(currentOrder)) {
     forceScan = false;
   } else if (forceScan) {
@@ -710,18 +699,18 @@ const executePackOrder = async (currentOrder: any, updateParameter?: string, tra
 
       if (documentOptions.includes("printPackingSlip") && documentOptions.includes("printShippingLabel")) {
         if (shippingLabelPdfUrls && shippingLabelPdfUrls.length > 0) {
-          await useOrder().printPackingSlip(shipmentIds);
-          await useOrder().printShippingLabel(shipmentIds, shippingLabelPdfUrls, currentOrder.shipmentPackages);
+          await orderStore.printPackingSlip(shipmentIds);
+          await orderStore.printShippingLabel(shipmentIds, shippingLabelPdfUrls, currentOrder.shipmentPackages);
         } else {
-          await useOrder().printShippingLabelAndPackingSlip(shipmentIds, currentOrder.shipmentPackages);
+          await orderStore.printShippingLabelAndPackingSlip(shipmentIds, currentOrder.shipmentPackages);
         }
       } else if (documentOptions.includes("printPackingSlip")) {
-        await useOrder().printPackingSlip(shipmentIds);
+        await orderStore.printPackingSlip(shipmentIds);
       } else if (documentOptions.includes("printShippingLabel") && !manualTrackingCode && !order.value.missingLabelImage) {
-        await useOrder().printShippingLabel(shipmentIds, shippingLabelPdfUrls, currentOrder.shipmentPackages);
+        await orderStore.printShippingLabel(shipmentIds, shippingLabelPdfUrls, currentOrder.shipmentPackages);
       }
       if (currentOrder.shipmentPackages?.[0].internationalInvoiceUrl) {
-        await useOrder().printCustomDocuments([currentOrder.shipmentPackages?.[0].internationalInvoiceUrl]);
+        await orderStore.printCustomDocuments([currentOrder.shipmentPackages?.[0].internationalInvoiceUrl]);
       }
 
 
@@ -930,7 +919,7 @@ const fetchDefaultShipmentBox = async () => {
   let defaultBoxType = {};
 
   try {
-    let resp = await carrier.fetchDefaultShipmentBox({
+    let resp = await carrierStore.fetchDefaultShipmentBox({
       systemResourceId: "shipment",
       systemPropertyId: "shipment.default.boxtype",
       fieldsToSelect: ["systemPropertyValue", "systemResourceId"],
@@ -947,7 +936,7 @@ const fetchDefaultShipmentBox = async () => {
       shipmentBoxTypeId: defaultBoxTypeId,
       pageSize: 1
     };
-    resp = await carrier.fetchShipmentBoxType(payload);
+    resp = await carrierStore.fetchShipmentBoxType(payload);
     if (!commonUtil.hasError(resp)) {
       defaultBoxType = resp.data[0];
     }
@@ -965,7 +954,7 @@ const reportIssue = async (currentOrder: any, itemsToReject: any) => {
 
   let ordersCount = 0;
 
-  if (collateralRejectionConfig.value) {
+  if (isProductStoreSettingEnabled.value("FF_COLLATERAL_REJ")) {
     ordersCount = inProgressOrders.value.list.map((inProgressOrder: any) => inProgressOrder.items.filter((item: any) => itemsToReject.some((itemToReject: any) => itemToReject.productId === item.productId) && item.shipmentId !== currentOrder.shipmentId))?.filter((item: any) => item.length).length;
   }
 
@@ -1011,9 +1000,9 @@ const getUpdatedOrderDetail = async (currentOrder: any, updateParameter?: string
         shipmentItemSeqId: item.shipmentItemSeqId,
         productId: item.productId,
         facilityId: currentFacility.value?.facilityId,
-        updateQOH: affectQohConfig.value || false,
+        updateQOH: isProductStoreSettingEnabled.value("AFFECT_QOH_ON_REJ") || false,
         maySplit: isEntierOrderRejectionEnabled(currentOrder) ? "N" : "Y",
-        cascadeRejectByProduct: collateralRejectionConfig.value ? "Y" : "N",
+        cascadeRejectByProduct: isProductStoreSettingEnabled.value("FF_COLLATERAL_REJ") ? "Y" : "N",
         rejectionReasonId: item.rejectReason,
         kitComponents: item.kitComponents,
         comments: "Store Rejected Inventory"
@@ -1329,9 +1318,9 @@ const printShippingLabel = async (order: any) => {
     return;
   }
 
-  await useOrder().printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages)
+  await orderStore.printShippingLabel(shipmentIds, shippingLabelPdfUrls, order.shipmentPackages)
   if (internationalInvoiceUrls.length) {
-    await useOrder().printCustomDocuments([internationalInvoiceUrls[0]]);
+    await orderStore.printCustomDocuments([internationalInvoiceUrls[0]]);
   }
 }
 
@@ -1354,12 +1343,12 @@ const regenerateShippingLabel = async (order: any) => {
   if(order.missingLabelImage) {
     const response = await orderUtil.retryShippingLabel(order)
     if(response?.isGenerated) {
-      await useOrder().printShippingLabel(response.order)
+      await printShippingLabel(response.order)
     } else {
       fetchShipmentLabelError()
     }
   } else {
-    await useOrder().printShippingLabel(order)
+    await printShippingLabel(order)
   }
 
   order.isGeneratingShippingLabel = false;
@@ -1414,11 +1403,11 @@ const printPackingSlip = async (order: any) => {
   }
 
   order.isGeneratingPackingSlip = true;
-  await useOrder().printPackingSlip([order.shipmentId]);
+  await orderStore.printPackingSlip([order.shipmentId]);
   order.isGeneratingPackingSlip = false;
 }
 const printPicklist = async(order: any) => {
-  await useOrder().printPicklist(order.picklistId)
+  await orderStore.printPicklist(order.picklistId)
 }
 
 onIonViewDidEnter(async () => {

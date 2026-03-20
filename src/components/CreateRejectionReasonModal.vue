@@ -54,9 +54,9 @@ import { computed, ref } from "vue";
 import { checkmarkDoneOutline, closeOutline } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
 import { useUtilStore } from "@/store/util";
-import { useUtil } from "@/composables/useUtil";
 
 
+const utilStore = useUtilStore();
 const rejectReasons = computed(() => useUtilStore().getRejectReasons);
 const rejectReasonEnumTypes = computed(() => useUtilStore().getRejectReasonEnumTypes);
 
@@ -99,7 +99,7 @@ const createReason = async () => {
   formData.value["sequenceNum"] = sequenceNum ? sequenceNum + 5 : 5;
 
   try {
-    const resp = await useUtil().createEnumeration(formData.value);
+    const resp = await utilStore.createEnumeration(formData.value);
     if (!commonUtil.hasError(resp)) {
       commonUtil.showToast(translate("Rejection reason created successfully."));
       rejectReasons.value.push(formData.value);

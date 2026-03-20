@@ -55,9 +55,10 @@ import { defineProps, onMounted, ref } from "vue";
 import { close } from "ionicons/icons";
 import { commonUtil, logger, translate } from "@common";
 import { useOrderStore } from "@/store/order";
-import { useUtil } from "@/composables/useUtil";
+import { useUtilStore } from "@/store/util";
 
 const orderStore = useOrderStore();
+const utilStore = useUtilStore();
 
 
 const props = defineProps(["order", "orderId", "orderAdjustments", "orderHeaderAdjustmentTotal", "adjustmentsByGroup"]);
@@ -111,7 +112,7 @@ const fetchOrderShipGroupInfo = async () => {
 
 const fetchAdjustmentTypeDescription = async () => {
   try {
-    const resp = await useUtil().fetchAdjustmentTypeDescription({
+    const resp = await utilStore.fetchAdjustmentTypeDescription({
       orderAdjustmentTypeId: orderAdjustmentTypeIds.value,
       orderAdjustmentTypeId_op: "in",
       pageSize: orderAdjustmentTypeIds.value.length,
