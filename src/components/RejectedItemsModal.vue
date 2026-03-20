@@ -16,8 +16,8 @@
           <DxpShopifyImg :src="getProduct(item.val).mainImageUrl" size="small"/>
         </ion-thumbnail>
         <ion-label>
-          <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.val)) }}</p>
-          {{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.val)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.val)) : item.val }}
+          <p class="overline">{{ commonUtil.getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.val)) }}</p>
+          {{ commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.val)) ? commonUtil.getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.val)) : item.val }}
         </ion-label>
         <ion-note slot="end">{{ item.count }}</ion-note>
       </ion-item>
@@ -28,67 +28,19 @@
   </ion-content>
 </template>
 
-<script>
-import { 
-  IonButtons,
-  IonButton,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonNote,
-  IonTitle,
-  IonThumbnail,
-  IonToolbar,
-  modalController } from "@ionic/vue";
-import { computed, defineComponent } from "vue";
-import { mapGetters } from 'vuex';
-import { closeOutline, pricetag } from "ionicons/icons";
-import { getProductIdentificationValue, DxpShopifyImg, translate, useProductIdentificationStore } from '@hotwax/dxp-components';
-  
+<script setup lang="ts">
+import { IonButtons, IonButton, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonTitle, IonThumbnail, IonToolbar, modalController } from "@ionic/vue";
+import { computed } from "vue";
+import { useRejectionStore } from "@/store/rejection";
+import { useProductStore } from "@/store/product";
+import { closeOutline } from "ionicons/icons";
+import { commonUtil, DxpShopifyImg, translate } from "@common";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
+const rejectedItems = computed(() => useRejectionStore().getRejectedItems);
+const getProduct = (productId: string) => useProductStore().getProduct(productId);
+const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
 
-export default defineComponent({
-  name: "RejectedItemsModal",
-  components: { 
-      DxpShopifyImg,
-      IonButtons,
-      IonButton,
-      IonContent,
-      IonHeader,
-      IonIcon,
-      IonItem,
-      IonLabel,
-      IonList,
-      IonNote,
-      IonTitle,
-      IonThumbnail,
-      IonToolbar
-  },
-  computed: {
-    ...mapGetters({
-      rejectedItems: 'rejection/getRejectedItems',
-      getProduct: 'product/getProduct'
-    })
-  },
-  methods: {
-    closeModal() {
-      modalController.dismiss({ dismissed: true });
-    },
-  },
-  setup() {
-    const productIdentificationStore = useProductIdentificationStore();
-    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
-
-    return {
-      closeOutline,
-      pricetag,
-      productIdentificationPref,
-      productIdentificationStore,
-      getProductIdentificationValue,
-      translate
-    };
-  },
-});
+const closeModal = () => {
+  modalController.dismiss({ dismissed: true });
+};
 </script>

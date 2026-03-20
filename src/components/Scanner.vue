@@ -14,31 +14,16 @@
   </div> 
 </template>
 
-<script>
+<script setup lang="ts">
 import { StreamBarcodeReader } from "vue-barcode-reader";
-import { IonButton,IonButtons, IonIcon, IonToolbar, modalController } from '@ionic/vue';
-import { closeOutline } from 'ionicons/icons';
-export default {
-  name: 'Scanner',
-  components: {
-    IonButton,
-    IonButtons,
-    IonIcon, 
-    IonToolbar,
-    StreamBarcodeReader,
-  },   
-  methods: {
-    onDecode (result) {
-      modalController.dismiss({dismissed: true}, result);
-    },
-    closeScanner(){
-      modalController.dismiss({dismissed: true});
-    }
-  },
-  setup() {
-    return {
-      closeOutline
-    }
-  }
-}
+import { IonButton, IonButtons, IonIcon, IonToolbar, modalController } from "@ionic/vue";
+import { closeOutline } from "ionicons/icons";
+
+const onDecode = (result: any) => {
+  modalController.dismiss({ dismissed: true }, result);
+};
+
+const closeScanner = () => {
+  modalController.dismiss({ dismissed: true });
+};
 </script>

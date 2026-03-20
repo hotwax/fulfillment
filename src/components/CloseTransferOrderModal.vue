@@ -23,7 +23,7 @@
         <ion-label>
           <h2>{{ getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationPref.primaryId, getProduct(item.productId)) : getProduct(item.productId).productName }}</h2>
           <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-          <p>{{ getFeatures(getProduct(item.productId).productFeatures) }}</p>
+          <p>{{ commonUtil.getFeatures(getProduct(item.productId).productFeatures) }}</p>
           <p>
             <ion-text> {{ translate('Fulfilled qty') }}: {{ Number(item.totalIssuedQuantity) }} </ion-text> | <ion-text color="danger"> {{ translate('Cancel qty') }}: {{ Number(item.orderedQuantity) - Number(item.totalIssuedQuantity) }} </ion-text>
           </p>
@@ -34,141 +34,82 @@
   </ion-content>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button :disabled="!hasPermission(Actions.APP_TRANSFER_ORDER_UPDATE) || !isEligibleToCloseTOItems()" @click="confirmSave">
+    <ion-fab-button :disabled="!userStore.hasPermission('STOREFULFILLMENT_ADMIN') || !isEligibleToCloseTOItems()" @click="confirmSave">
       <ion-icon :icon="saveOutline" />
     </ion-fab-button>
   </ion-fab>
 </template>
 
-<script lang="ts">
-import {
-  IonButton,
-  IonButtons,
-  IonCheckbox,
-  IonContent,
-  IonFab,
-  IonFabButton,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonTitle,
-  IonToolbar,
-  IonThumbnail,
-  alertController,
-  modalController
-} from '@ionic/vue';
-import { Actions, hasPermission } from '@/authorization'
-import { arrowBackOutline, saveOutline } from 'ionicons/icons';
-import { defineComponent, computed } from 'vue';
-import { mapGetters, useStore } from 'vuex'
-import { DxpShopifyImg, translate, getProductIdentificationValue, useProductIdentificationStore, useUserStore } from '@hotwax/dxp-components';
-import { useRouter } from 'vue-router';
-import { TransferOrderService } from '@/services/TransferOrderService';
-import { getFeatures, showToast } from '@/utils';
+<script setup lang="ts">
+import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonTitle, IonToolbar, IonThumbnail, alertController, modalController } from "@ionic/vue";
+import { arrowBackOutline, saveOutline } from "ionicons/icons";
+import { computed } from "vue";
+import { commonUtil, translate, DxpShopifyImg } from "@common";
+import { useRouter } from "vue-router";
+import { useUserStore } from "@/store/user";
+import { useTransferOrderStore } from "@/store/transferorder";
+import { useProductStore } from "@/store/product";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 
-export default defineComponent({
-  name: "CloseTransferOrderModal",
-  components: {
-    IonButton,
-    IonButtons,
-    IonCheckbox,
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonListHeader,
-    IonTitle,
-    IonThumbnail,
-    IonToolbar,
-    DxpShopifyImg
-  },
-  computed: {
-    ...mapGetters({
-      getProduct: 'product/getProduct',
-      order: 'transferorder/getCurrent'
-    })
-  },
-  methods: {
-    closeModal() {
-      modalController.dismiss({ dismissed: true });
-    },
-    async confirmSave() {
-      const alert = await alertController.create({
-        header: translate('Close transfer order items'),
-        message: translate("The selected items won't be available for receiving later."),
-        buttons: [{
-          text: translate('Cancel'),
-          role: 'cancel'
-        },
-        {
-          text: translate('Proceed'),
-          role: 'proceed',
-          handler: async () => {
-            const success = await this.closeOrderItems();
-            if (success) {
-              modalController.dismiss();
-              this.router.push('/transfer-orders');
-            }
-          }
-        }]
-      });
-      return alert.present();
-    },
-    async closeOrderItems() {
-      // Get only checked and pending items
-      const eligibleItems = this.order.items.filter((item: any) => item.isChecked);
-      if (!eligibleItems.length) return false;
+const userStore = useUserStore();
+const getProductIdentificationValue = commonUtil.getProductIdentificationValue;
 
-      // Prepare payload for API, always sending quantityAccepted (default 0)&& this.isTOItemStatusPending(item)
-      const payload = {
-        orderId: this.order.orderId,
-        items: eligibleItems.map((item: any) => ({
-          orderItemSeqId: item.orderItemSeqId,
-        }))
-      };
-      try {
-        await TransferOrderService.closeOrderItems(payload);
-        return true;
-      } catch (error) {
-        showToast(translate("Failed to update the status of transfer order items."));
-        return false;
-      }
-    },
-    isEligibleToCloseTOItems() {
-      return this.order.items.some((item: any) => item.isChecked)
-    },
-    selectAllItems() {
-      this.order.items.map((item:any) => {
-          item.isChecked = true;
-    })
-    }
-  },
-  setup() {
-    const router = useRouter()
-    const store = useStore()
-    const userStore = useUserStore()
-    const productIdentificationStore = useProductIdentificationStore();
-    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
+const router = useRouter();
+const productIdentificationPref = computed(() => useAppProductStore().getProductIdentificationPref);
+const order = computed(() => useTransferOrderStore().getCurrent);
+const getProduct = (productId: string) => useProductStore().getProduct(productId);
 
-    return {
-      arrowBackOutline,
-      Actions,
-      getFeatures,
-      hasPermission,
-      router,
-      saveOutline,
-      store,
-      translate,
-      getProductIdentificationValue,
-      productIdentificationPref
-    };
+const closeModal = () => {
+  modalController.dismiss({ dismissed: true });
+};
+
+const closeOrderItems = async () => {
+  const eligibleItems = order.value.items.filter((item: any) => item.isChecked);
+  if (!eligibleItems.length) return false;
+
+  const payload = {
+    orderId: order.value.orderId,
+    items: eligibleItems.map((item: any) => ({ orderItemSeqId: item.orderItemSeqId }))
+  };
+  try {
+    await useTransferOrderStore().closeOrderItems(payload);
+
+    return true;
+  } catch (error) {
+    commonUtil.showToast(translate("Failed to update the status of transfer order items."));
+    return false;
   }
-});
+};
+
+const confirmSave = async () => {
+  const alert = await alertController.create({
+    header: translate("Close transfer order items"),
+    message: translate("The selected items won't be available for receiving later."),
+    buttons: [
+      { text: translate("Cancel"), role: "cancel" },
+      {
+        text: translate("Proceed"),
+        role: "proceed",
+        handler: async () => {
+          const success = await closeOrderItems();
+          if (success) {
+            modalController.dismiss();
+            router.push("/transfer-orders");
+          }
+        }
+      }
+    ]
+  });
+  return alert.present();
+};
+
+const isEligibleToCloseTOItems = () => {
+  return order.value.items.some((item: any) => item.isChecked);
+};
+
+const selectAllItems = () => {
+  order.value.items.map((item: any) => {
+    item.isChecked = true;
+  });
+};
 </script>

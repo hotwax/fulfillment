@@ -51,19 +51,14 @@
 import { IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent, IonInput, IonSearchbar, IonList, IonListHeader, IonItem, IonRadio, IonLabel, IonFab, IonFabButton, modalController } from '@ionic/vue';
 import { closeOutline, saveOutline } from 'ionicons/icons';
 import { computed, ref, onMounted } from 'vue';
-import { translate } from '@hotwax/dxp-components';
-import { UtilService } from '@/services/UtilService';
-import { TransferOrderService } from '@/services/TransferOrderService';
-import { hasError } from '@/adapter';
-import { useStore } from 'vuex';
-import { getCurrentFacilityId, getProductStoreId, showToast } from '@/utils';
+import { commonUtil, logger, translate } from "@common";
+import { useTransferOrderStore } from "@/store/transferorder";
+import { useUtilStore } from "@/store/util";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { DateTime } from 'luxon';
 import router from '@/router';
-import logger from '@/logger';
-
-const store = useStore();
-
-const facilityAddresses = computed(() => store.getters['util/getFacilityAddress'])
+const utilStore = useUtilStore();
+const facilityAddresses = computed(() => useUtilStore().getFacilityAddress)
 
 const transferOrderName = ref('');
 const queryString = ref('');
@@ -80,14 +75,14 @@ onMounted(async () => {
 
 async function loadFacilities() {
   isLoading.value = true;
-  facilities.value = await UtilService.fetchProductStoreFacilities();
+  facilities.value = await useAppProductStore().fetchProductStoreFacilities();
   isLoading.value = false;
 }
 
 async function fetchProductStoreDetails() {
   try {
-    const resp = await UtilService.fetchProductStoreDetails({ productStoreId: getProductStoreId() });
-    if(!hasError(resp)) {
+    const resp = await utilStore.fetchProductStoreDetails({ productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId });
+    if(!commonUtil.hasError(resp)) {
       currencyUom.value = resp.data.defaultCurrencyUomId;
     } else {
       throw resp.data;
@@ -119,21 +114,21 @@ function closeModal() {
 async function createTransferOrder() {
   if(saving.value) return;
   if(!transferOrderName.value?.trim()) {
-    showToast(translate('Please give some valid transfer order name.'));
+    commonUtil.showToast(translate('Please give some valid transfer order name.'));
     return;
   }
 
   if(!selectedDestinationFacilityId.value) {
-    showToast(translate('Please select a destination facility.'));
+    commonUtil.showToast(translate('Please select a destination facility.'));
     return;
   }
   
-  const productStoreId = getProductStoreId() || '';
-  const originFacilityId = getCurrentFacilityId() || '';
+  const productStoreId = useAppProductStore().getCurrentEComStore?.productStoreId || '';
+  const originFacilityId = useAppProductStore().getCurrentFacility?.facilityId || '';
   const orderTimestamp = DateTime.now().toFormat("yyyy-MM-dd 23:59:59.000")
 
   if(originFacilityId === selectedDestinationFacilityId.value) {
-    showToast(translate('Origin and destination facility cannot be the same.'));
+    commonUtil.showToast(translate('Origin and destination facility cannot be the same.'));
     return;
   }
   saving.value = true;
@@ -159,7 +154,7 @@ async function createTransferOrder() {
   };
   
   // Fetch origin and destination facility addresses directly from the store getter and assign them to the order payload.
-  await store.dispatch("util/fetchFacilityAddresses", [originFacilityId, selectedDestinationFacilityId.value])
+  await useUtilStore().fetchFacilityAddresses([originFacilityId, selectedDestinationFacilityId.value])
   const originAddress = facilityAddresses.value(originFacilityId)
   const destinationAddress = facilityAddresses.value(selectedDestinationFacilityId.value)
 
@@ -176,17 +171,17 @@ async function createTransferOrder() {
   }
 
   try {
-    const resp = await TransferOrderService.createTransferOrder({ payload: orderPayload })
-    if(!hasError(resp) && resp.data?.orderId) {
+    const resp = await useTransferOrderStore().createTransferOrder(orderPayload)
+    if(!commonUtil.hasError(resp) && resp.data?.orderId) {
       const orderId = resp.data.orderId
       router.push(`/create-transfer-order/${orderId}`)
-      showToast(translate("Transfer order created successfully."))
+      commonUtil.showToast(translate("Transfer order created successfully."))
     } else {
       throw resp.data;
     }
   } catch(error: any) {
     logger.error(error)
-    showToast(translate("Failed to create order."))
+    commonUtil.showToast(translate("Failed to create order."))
   }
   closeModal();
 }
