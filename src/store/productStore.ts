@@ -593,7 +593,7 @@ export const useProductStore = defineStore('productStore', {
 
       // Merge the arrays and remove duplicates
       this.settings.productIdentifier.productIdentificationOptions = Array.from(new Set([...productIdentificationOptions, ...fetchedGoodIdentificationOptions])).sort();
-      this.settings.productIdentifier.goodIdentificationOptions = fetchedGoodIdentificationOptions
+      this.settings.barcodeIdentifier.barcodeIdentifierOptions = fetchedGoodIdentificationOptions
     },
 
     async fetchProducts() {
