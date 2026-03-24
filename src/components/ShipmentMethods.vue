@@ -40,264 +40,111 @@
   </div>
 
 </template>  
-  <script lang="ts">
-  import {
-    IonButton,
-    IonCheckbox,
-    IonChip,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonNote,
-    alertController,
-    popoverController
-  } from '@ionic/vue';
-  import { defineComponent } from 'vue';
-  import { add, checkmarkDone, barcodeOutline, pricetagOutline, addCircleOutline, addOutline, ellipsisVerticalOutline, peopleOutline, shieldCheckmarkOutline } from 'ionicons/icons';
-  import { mapGetters, useStore } from "vuex";
-  import { translate } from '@hotwax/dxp-components';
+  <script setup lang="ts">
+  import { IonButton, IonCheckbox, IonChip, IonIcon, IonItem, IonLabel, IonNote, alertController, popoverController } from "@ionic/vue";
+import { computed } from "vue";
+import { addCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
+import { commonUtil, emitter, logger, translate } from "@common";
+  import { DateTime } from "luxon";
 
-  import { DateTime } from 'luxon';
-  import { useRouter } from 'vue-router';
-  import { showToast } from '@/utils';
-  import emitter from "@/event-bus";
-  import { hasError } from '@/adapter';
-  import logger from '@/logger';
-  import { Actions } from '@/authorization'
-  import { CarrierService } from '@/services/CarrierService';
-  import ShipmentMethodActionsPopover from '@/components/ShipmentMethodActionsPopover.vue'
+  import { useCarrierStore } from "@/store/carrier";
+  import ShipmentMethodActionsPopover from "@/components/ShipmentMethodActionsPopover.vue";
+
+  const carrierStore = useCarrierStore();
+  const currentCarrier = computed(() => carrierStore.getCurrent);
+  const filteredShipmentMethods = computed<any[]>(() => carrierStore.getFilteredShipmentMethods);
   
+  const editDeliveryDays = async (shipmentMethod: any) => {
+    const alert = await alertController.create({
+      header: translate("Edit delivery days"),
+      inputs: [{ name: "deliveryDays", value: shipmentMethod.deliveryDays }],
+      buttons: [
+        { text: translate("Cancel"), role: "cancel" },
+        {
+          text: translate("Apply"),
+          handler: async (data) => {
+            const currentDeliveryDays = shipmentMethod.deliveryDays ? shipmentMethod.deliveryDays : "";
+            if (data.deliveryDays.trim() != currentDeliveryDays) {
+              const updatedData = { fieldName: "deliveryDays", fieldValue: data.deliveryDays.trim() };
+              const messages = { successMessage: "Delivery days updated.", errorMessage: "Failed to update delivery days." };
+              await carrierStore.updateCarrierShipmentMethod({ shipmentMethod, updatedData, messages });
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
+  };
   
-  export default defineComponent({
-    name: "ShipmentMethods",
-    components: {
-      IonButton,
-      IonCheckbox,
-      IonChip,
-      IonIcon,
-      IonItem,
-      IonLabel,
-      IonNote
-    },
-    computed: {
-      ...mapGetters({
-        currentCarrier: 'carrier/getCurrent',
-        filteredShipmentMethods: "carrier/getFilteredShipmentMethods",
-        shipmentMethods: "carrier/getShipmentMethods",
-      }),
-    },
-    methods: {
-      async editDeliveryDays(shipmentMethod: any) {
-        const alert = await alertController.create({
-          header: translate('Edit delivery days'),
-          inputs: [{
-            name: "deliveryDays",
-            value: shipmentMethod.deliveryDays
-          }],
-          buttons: [{
-            text: translate('Cancel'),
-            role: "cancel"
-          },
-          {
-            text: translate('Apply'),
-            handler: async (data) => {
-              const currentDeliveryDays = shipmentMethod.deliveryDays ? shipmentMethod.deliveryDays : "";
-              if (data.deliveryDays.trim() != currentDeliveryDays) {
-                const updatedData = {"fieldName": "deliveryDays", "fieldValue": data.deliveryDays.trim()}
-                const messages = {"successMessage": "Delivery days updated.", "errorMessage": "Failed to update delivery days."}
-                await this.store.dispatch('carrier/updateCarrierShipmentMethod', {shipmentMethod, updatedData, messages});
-              }
+  const editCarrierCode = async (shipmentMethod: any) => {
+    const alert = await alertController.create({
+      header: translate("Edit carrier code"),
+      inputs: [{ name: "carrierServiceCode", value: shipmentMethod.carrierServiceCode }],
+      buttons: [
+        { text: translate("Cancel"), role: "cancel" },
+        {
+          text: translate("Apply"),
+          handler: async (data) => {
+            const currentCarrierServiceCode = shipmentMethod.carrierServiceCode ? shipmentMethod.carrierServiceCode : "";
+            if (data.carrierServiceCode.trim() != currentCarrierServiceCode) {
+              const updatedData = { fieldName: "carrierServiceCode", fieldValue: data.carrierServiceCode.trim() };
+              const messages = { successMessage: "Carrier code updated.", errorMessage: "Failed to update carrier code." };
+              await carrierStore.updateCarrierShipmentMethod({ shipmentMethod, updatedData, messages });
             }
-          }]
-        })
-        await alert.present()
-      },
-      async editCarrierCode(shipmentMethod: any) {
-        const alert = await alertController.create({
-          header: translate('Edit carrier code'),
-          inputs: [{
-            name: "carrierServiceCode",
-            value: shipmentMethod.carrierServiceCode
-          }],
-          buttons: [{
-            text: translate('Cancel'),
-            role: "cancel"
-          },
-          {
-            text: translate('Apply'),
-            handler: async (data) => {
-              const currentCarrierServiceCode = shipmentMethod.carrierServiceCode ? shipmentMethod.carrierServiceCode : "";
-              if (data.carrierServiceCode.trim() != currentCarrierServiceCode) {
-                const updatedData = {"fieldName": "carrierServiceCode", "fieldValue": data.carrierServiceCode.trim()}
-                const messages = {"successMessage": "Carrier code updated.", "errorMessage": "Failed to update carrier code."}
-                await this.store.dispatch('carrier/updateCarrierShipmentMethod', {shipmentMethod, updatedData, messages});
-              }
-            }
-          }]
-        })
-        await alert.present()
-      },
-      async updateCarrierName() {
-        const alert = await alertController.create({
-          header: translate('Edit carrier detail'),
-          inputs: [{
-            name: "groupName",
-            value: this.currentCarrier.groupName
-          }],
-          buttons: [{
-            text: translate('Cancel'),
-            role: "cancel"
-          },
-          {
-            text: translate('Confim'),
-            handler: async (data: any) => {
-              if (data.groupName) {
-                let resp;
-                const payload = { partyId: this.currentCarrier.partyId, ...data }
-                emitter.emit('presentLoader')
-
-                try {
-                  resp = await CarrierService.updateCarrier(payload)
-                  if (!hasError(resp)) {
-                    showToast(translate("Carrier name updated successfully."))
-                    await this.store.dispatch("carrier/updateCurrentCarrier", { ...this.currentCarrier, ...payload });
-                  } else {
-                    throw resp.data;
-                  }
-                } catch(err) {
-                  logger.error(err)
-                }
-                emitter.emit('dismissLoader')
-              }
-            }
-          }]
-        })
-        await alert.present()
-      },
-            
-      async updateCarrierShipmentMethodAssociation(event: any, shipmentMethod: any) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-
-        let resp = {} as any;
-        const payload = {
-          shipmentMethodTypeId: shipmentMethod.shipmentMethodTypeId,
-          partyId: this.currentCarrier.partyId,
-          roleTypeId: "CARRIER",
-          sequenceNumber: 1 //starting sequencing from 1
-        } as any
-
-        let currentCarrierShipmentMethods = this.currentCarrier.shipmentMethods ? JSON.parse(JSON.stringify(this.currentCarrier.shipmentMethods)) : {}
-
-        try {
-          if (shipmentMethod.isChecked) {
-            resp = await CarrierService.removeCarrierShipmentMethod(payload)
-
-            if (!hasError(resp)) {
-              await this.removeProductStoreShipmentMethods(shipmentMethod.shipmentMethodTypeId)
-            } else {
-              throw resp.data;
-            }
-
-            delete currentCarrierShipmentMethods[shipmentMethod.shipmentMethodTypeId]
-          } else {
-            if (Object.keys(currentCarrierShipmentMethods).length !== 0) {
-              const values = Object.values(currentCarrierShipmentMethods) as any
-
-              //calculating next sequence number by adding one to sequence number of last shipment methods in the list
-              const sequenceNumber = values[values.length - 1].sequenceNumber
-              payload.sequenceNumber = sequenceNumber ? sequenceNumber + 1 : 1
-            }
-
-            resp = await CarrierService.addCarrierShipmentMethod(payload)
-
-            if (hasError(resp)) {
-              throw resp.data;
-            }
-
-            currentCarrierShipmentMethods[shipmentMethod.shipmentMethodTypeId] = payload
           }
-
-          if (!hasError(resp)) {
-            showToast(translate("Carrier and shipment method association updated successfully."))
-            await this.store.dispatch('carrier/updateCurrentCarrierShipmentMethods', currentCarrierShipmentMethods)
-            await this.store.dispatch('carrier/checkAssociatedShipmentMethods')
-            await this.store.dispatch('carrier/checkAssociatedProductStoreShipmentMethods')
-            event.target.checked = !shipmentMethod.isChecked
-          } else {
-            throw resp.data
-          }
-        } catch(err) {
-          showToast(translate("Failed to update carrier and shipment method association."))
-          logger.error(err)
         }
-      },
-      async removeProductStoreShipmentMethods(shipmentMethodTypeId: string) {
-        try {
-          let productStoreShipmentMethods = this.currentCarrier.productStoreShipmentMethods ? JSON.parse(JSON.stringify(this.currentCarrier.productStoreShipmentMethods)) : {}
-
-          if (productStoreShipmentMethods) {
-            const methods = Object.values(productStoreShipmentMethods).flatMap((store:any) => Object.values(store));
-            const methodsToRemove = methods.filter((productStoreShipmentMethod:any) => productStoreShipmentMethod.shipmentMethodTypeId === shipmentMethodTypeId)
-
-            const responses = await Promise.allSettled(methodsToRemove.map((productStoreShipmentMethod: any) => {
-              const removePromise = CarrierService.removeProductStoreShipmentMethod({
-                productStoreShipMethId: productStoreShipmentMethod.productStoreShipMethId,
-                thruDate: DateTime.now().toMillis(),
-              });
-
-              // Delete the entry after calling the service
-              delete productStoreShipmentMethods[productStoreShipmentMethod.productStoreId][productStoreShipmentMethod.shipmentMethodTypeId];
-
-              // Return the promise
-              return removePromise;
-            }));
-
-            const hasFailedResponse = responses.some((response: any) => response.status === 'rejected')
-            if (hasFailedResponse) {
-              logger.error('Failed to update some product store shipment method association(s).')
-            }
-            await this.store.dispatch('carrier/updateCurrentCarrierProductStoreShipmentMethods', productStoreShipmentMethods)
-            await this.store.dispatch('carrier/checkAssociatedProductStoreShipmentMethods')
-          }
-        } catch (err) {
-          logger.error(err)
-        }
-      },
-      
-      async openShipmentMethodActionsPopover(event: Event, shipmentMethod: any) {
-        const popover = await popoverController.create({
-          component: ShipmentMethodActionsPopover,
-          componentProps: {
-            shipmentMethod
-          },
-          showBackdrop: false,
-          event: event
-        });
-        popover.present();
+      ]
+    });
+    await alert.present();
+  };
+  
+  const updateCarrierShipmentMethodAssociation = async (event: any, shipmentMethod: any) => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  
+    try {
+      if (shipmentMethod.isChecked) {
+        await removeProductStoreShipmentMethods(shipmentMethod.shipmentMethodTypeId);
       }
-    }, 
-    setup() {
-      const store = useStore(); 
-      const router = useRouter();
+      
+      await carrierStore.updateCarrierShipmentMethodAssociation(shipmentMethod, currentCarrier.value.partyId, !shipmentMethod.isChecked);
+      event.target.checked = !shipmentMethod.isChecked;
+    } catch (err) {
+      // Error handled in composable
+    }
+  };
   
-      return {
-        Actions,
-        add,
-        addCircleOutline,
-        addOutline,
-        barcodeOutline,
-        checkmarkDone,
-        ellipsisVerticalOutline,
-        pricetagOutline,
-        peopleOutline,
-        shieldCheckmarkOutline,
-        store,
-        router,
-        translate
-      };
-    },
-  });
+  const removeProductStoreShipmentMethods = async (shipmentMethodTypeId: string) => {
+    try {
+      const productStoreShipmentMethods = currentCarrier.value.productStoreShipmentMethods ? JSON.parse(JSON.stringify(currentCarrier.value.productStoreShipmentMethods)) : {};
+  
+      if (productStoreShipmentMethods) {
+        const methods = Object.values(productStoreShipmentMethods).flatMap((store: any) => Object.values(store));
+        const methodsToRemove = methods.filter((productStoreShipmentMethod: any) => productStoreShipmentMethod.shipmentMethodTypeId === shipmentMethodTypeId);
+  
+        const responses = await Promise.allSettled(methodsToRemove.map((productStoreShipmentMethod: any) => {
+          return carrierStore.updateProductStoreShipmentMethod(productStoreShipmentMethod.productStoreId, productStoreShipmentMethod);
+        }));
+  
+        const hasFailedResponse = responses.some((response: any) => response.status === "rejected");
+        if (hasFailedResponse) {
+          logger.error("Failed to update some product store shipment method association(s).");
+        }
+      }
+    } catch (err) {
+      logger.error(err);
+    }
+  };
+  
+  const openShipmentMethodActionsPopover = async (event: Event, shipmentMethod: any) => {
+    const popover = await popoverController.create({
+      component: ShipmentMethodActionsPopover,
+      componentProps: { shipmentMethod },
+      showBackdrop: false,
+      event: event
+    });
+    popover.present();
+  };
   </script>
   
   <style scoped>
