@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 import { computed, ref } from "vue";
 import router from '@/router';
 import { useProductStore as useAppProductStore } from "@/store/productStore";
+import { firebaseUtil } from "@/utils/firebaseUtil";
 
 interface LoginOption {
   loginAuthType?: string,
@@ -62,10 +63,13 @@ export function useAuth() {
       await productStore.fetchProductStorePreference();
       await productStore.fetchEComStoreDependencies(productStore.getCurrentEComStore.productStoreId)
 
-      const notificationStore = useNotificationStore();
-      await notificationStore.fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID, resp.data.userLoginId)
       await useUtilStore().fetchCarrierShipmentBoxTypes()
       await productStore.fetchAutoShippingLabelConfig()
+
+      const notificationStore = useNotificationStore();
+      await notificationStore.fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID, useUserStore().getUserProfile.userId)
+      await firebaseUtil.initialiseFirebaseMessaging();
+
 
       const facilityId = router.currentRoute.value.query.facilityId
       let isQueryFacilityFound = false

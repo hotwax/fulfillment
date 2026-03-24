@@ -195,7 +195,6 @@ const viewNotifications = () => {
 };
 
 const getOpenOrders = () => {
-  console.log("openOrders.value.list", JSON.parse(JSON.stringify(openOrders.value.list)).slice(0, (openOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any)))
   return JSON.parse(JSON.stringify(openOrders.value.list)).slice(0, (openOrders.value.query.viewIndex + 1) * (import.meta.env.VITE_VIEW_SIZE as any));
 };
 

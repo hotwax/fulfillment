@@ -201,6 +201,7 @@ import DxpLanguageSwitcher from "@/components/DxpLanguageSwitcher.vue";
 import { useOrderStore } from "@/store/order";
 import { useAuth } from "@/composables/useAuth";
 import router from "@/router";
+import { firebaseUtil } from "@/utils/firebaseUtil"
 
 const userStore = useUserStore();
 
@@ -325,7 +326,7 @@ const getEcomInvStatus = async () => {
 const logout = async () => {
   try {
     const notificationStore = useNotificationStore();
-    await notificationStore.unsubscribeTopic(firebaseDeviceId.value, import.meta.env.VITE_NOTIF_APP_ID as any);
+    await notificationStore.removeClientRegistrationToken(firebaseDeviceId.value, import.meta.env.VITE_NOTIF_APP_ID as any);
   } catch (error) {
     logger.error(error);
   }
@@ -504,20 +505,11 @@ const updateNotificationPref = async (enumId: string) => {
   }
   try {
     if (!allNotificationPrefs.value.length && isToggledOn) {
-      await firebaseMessaging.initialiseFirebaseApp(
-        JSON.parse(import.meta.env.VITE_FIREBASE_CONFIG as any),
-        import.meta.env.VITE_FIREBASE_VAPID_KEY,
-        async (token: string) => {
-          await notificationStore.storeClientRegistrationToken(token, firebaseMessaging.generateDeviceId(notificationStore.getFirebaseDeviceId), import.meta.env.VITE_NOTIF_APP_ID);
-        },
-        (notification: any) => {
-          notificationStore.addNotification(notification);
-        }
-      );
+      await firebaseUtil.initialiseFirebaseMessaging();
     } else if (allNotificationPrefs.value.length == 1 && !isToggledOn) {
-      await notificationStore.unsubscribeTopic(firebaseDeviceId.value, import.meta.env.VITE_NOTIF_APP_ID as any);
+      await notificationStore.unsubscribeTopic(firebaseDeviceId.value, import.meta.env.VITE_NOTIF_APP_ID)
     }
-    await notificationStore.fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID, userStore.getUserProfile.userLoginId);
+    await notificationStore.fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID, userProfile.value?.userId);
   } catch (error) {
     logger.error(error);
   }

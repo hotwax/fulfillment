@@ -18,11 +18,10 @@ import { useUserStore } from "@/store/user";
 import { useProductStore } from "@/store/productStore";
 import router from './router';
 import { useAuth } from "@/composables/useAuth";
+import { firebaseUtil } from "@/utils/firebaseUtil";
 
 const { isAuthenticated } = useAuth();
 const loader = ref<any>(null);
-const appFirebaseConfig = JSON.parse(import.meta.env.VITE_FIREBASE_CONFIG as any);
-const appFirebaseVapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
 const userProfile = computed(() => useUserStore().getUserProfile);
 const allNotificationPrefs = computed(() => useNotificationStore().getAllNotificationPrefs);
@@ -94,18 +93,8 @@ onMounted(async () => {
     if (isAuthenticated.value && currentEComStore?.productStoreId) {
       await useProductStore().fetchProductStoreSettings(currentEComStore.productStoreId).catch((error) => logger.error(error));
 
-      if (appFirebaseConfig && appFirebaseConfig.apiKey && allNotificationPrefs.value?.length) {
-        const notificationStore = useNotificationStore();
-        await firebaseMessaging.initialiseFirebaseApp(
-          appFirebaseConfig,
-          appFirebaseVapidKey,
-          async (token: string) => {
-            await notificationStore.storeClientRegistrationToken(token, firebaseMessaging.generateDeviceId(notificationStore.getFirebaseDeviceId), import.meta.env.VITE_NOTIF_APP_ID);
-          },
-          (notification: any) => {
-            notificationStore.addNotification(notification);
-          }
-        );
+      if (allNotificationPrefs.value?.length) {
+        await firebaseUtil.initialiseFirebaseMessaging();
       }
     }
 });
