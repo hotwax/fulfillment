@@ -15,6 +15,9 @@ const getters: GetterTree<OrderLookupState, RootState> = {
   getCurrentOrder(state) {
     return state.current
   },
+  getFacilityOptions: (state) => {
+    return state.facilities || [];
+  },
   getProductStoreOptions: (state) => {
     return state.productStores || [];
   },

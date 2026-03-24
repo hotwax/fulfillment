@@ -8,6 +8,7 @@ export default interface OrderLookupState {
   current: any;
   channels: any;
   productStores: any;
+  facilities: any;
   orderStatuses: any;
   carriersTrackingInfo: any
 }
