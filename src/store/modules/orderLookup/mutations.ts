@@ -23,6 +23,9 @@ const mutations: MutationTree <OrderLookupState> = {
   [types.ORDERLOOKUP_PRODUCT_STORE_OPTIONS_UPDATED] (state, payload) {
     state.productStores = payload
   },
+  [types.ORDERLOOKUP_FACILITY_OPTIONS_UPDATED] (state, payload) {
+    state.facilities = payload
+  },
   [types.ORDERLOOKUP_STATUS_OPTIONS_UPDATED] (state, payload) {
     state.orderStatuses = payload
   },
@@ -52,6 +55,7 @@ const mutations: MutationTree <OrderLookupState> = {
     state.current = {}
     state.channels = []
     state.productStores = []
+    state.facilities = []
     state.orderStatuses = []
   }
 }

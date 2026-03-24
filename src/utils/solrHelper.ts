@@ -1,5 +1,4 @@
 /* eslint-disable */
-import { getCurrentFacilityId } from ".";
 const prepareOrderQuery = (params: any) => {
   const viewSize = params.viewSize ? params.viewSize : process.env.VUE_APP_VIEW_SIZE;
   const viewIndex = params.viewIndex ? params.viewIndex : 0;
@@ -143,7 +142,7 @@ const prepareOrderLookupQuery = (query: any) => {
         "q.op": "AND"
       } as any,
       "query": "*:*",
-      "filter": ["docType: ORDER", "orderTypeId: SALES_ORDER", "facilityId: " + getCurrentFacilityId()]
+      "filter": ["docType: ORDER", "orderTypeId: SALES_ORDER"]
     }
   } as any
 
@@ -152,6 +151,16 @@ const prepareOrderLookupQuery = (query: any) => {
       "productStoreIdFacet":{
         "excludeTags":"orderLookupFilter",
         "field":"productStoreName",
+        "mincount":1,
+        "limit":-1,
+        "type":"terms",
+        "facet":{
+          "groups":"unique(orderId)"
+        }
+      },
+      "facilityNameFacet":{
+        "excludeTags":"orderLookupFilter",
+        "field":"facilityName",
         "mincount":1,
         "limit":-1,
         "type":"terms",
@@ -201,6 +210,10 @@ const prepareOrderLookupQuery = (query: any) => {
 
   if (shipmentMethodTypeIdValues.length) {
     payload.json.filter.push(`{!tag=orderLookupFilter}shipmentMethodTypeId: (${shipmentMethodTypeIdValues.join(" OR ")})`)
+  }
+
+  if (query.facility?.length) {
+    payload.json.filter.push(`{!tag=orderLookupFilter}facilityName: (\"${query.facility.join('\" OR \"')}\")`)
   }
 
   if (query.productStore?.length) {
