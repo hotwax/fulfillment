@@ -171,7 +171,7 @@ const actions: ActionTree<OrderLookupState, RootState> = {
         // preparing brokering information for order
         if (orderFacilityChangeResp.status === 'fulfilled' && !hasError(orderFacilityChangeResp.value)) {
           order["shipGroupFacilityAllocationTime"] = {}
-          order["firstBrokeredDate"] = orderFacilityChangeResp.value.data[0].changeDatetime
+          order["firstBrokeredDate"] = orderFacilityChangeResp.value.data[0] ? orderFacilityChangeResp.value.data[0].changeDatetime : ""
           orderFacilityChangeResp.value.data.map((brokeringInfo: any) => {
             order["shipGroupFacilityAllocationTime"][brokeringInfo.shipGroupSeqId] = brokeringInfo.changeDatetime
           })
