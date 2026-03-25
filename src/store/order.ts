@@ -1,4 +1,4 @@
-import { api, commonUtil, emitter, logger, ShopifyService, solrUtil, translate } from "@common";
+import { api, commonUtil, emitter, logger, ShopifyService, useSolrSearch, translate } from "@common";
 import { defineStore } from "pinia"
 import { orderUtil } from "@/utils/orderUtil";
 
@@ -6,7 +6,7 @@ import { DateTime } from "luxon"
 import { cogOutline } from "ionicons/icons";
 
 import { useProductStore as useProduct } from "@/store/product"
-import { useProductStore as useProductStore } from "@/store/productStore";
+import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUtilStore } from "@/store/util"
 import { useZebraPrinter } from "@/composables/useZebraPrinter";
 
@@ -192,7 +192,7 @@ export const useOrderStore = defineStore("order", {
           '-shipmentMethodTypeId': { value: ['STOREPICKUP', 'POS_COMPLETED'] },
           orderStatusId: { value: 'ORDER_APPROVED' },
           orderTypeId: { value: 'SALES_ORDER' },
-          productStoreId: { value: useProductStore().getCurrentEComStore?.productStoreId }
+          productStoreId: { value: useAppProductStore().getCurrentEComStore?.productStoreId }
         },
         solrFilters: [
           //it should be explicit what is subtracting the first part of your OR statement from
@@ -201,7 +201,7 @@ export const useOrderStore = defineStore("order", {
         ]
       } as any
       if (!openOrderQuery.excludeFacilityFilter) {
-        params.filters['facilityId'] = { value: solrUtil.escapeSolrSpecialChars(useProductStore().getCurrentFacility?.facilityId) }
+        params.filters['facilityId'] = { value: useSolrSearch().escapeSolrSpecialChars(useAppProductStore().getCurrentFacility?.facilityId) }
       }
       if (shipGroupFilter && Object.keys(shipGroupFilter).length) {
         Object.assign(params.filters, shipGroupFilter);
@@ -231,16 +231,11 @@ export const useOrderStore = defineStore("order", {
         params.filters['productCategories'] = { value: openOrderQuery.selectedCategories.map((category: string) => JSON.stringify(category)), op: 'OR' }
       }
 
-      const orderQueryPayload = solrUtil.prepareSolrQuery(params)
+      const orderQueryPayload = useSolrSearch().prepareSolrQuery(params)
       let orders = [], total = 0;
 
       try {
-        const resp = await api({
-          url: "solr-query",
-          method: "post",
-          data: orderQueryPayload,
-          baseURL: commonUtil.getOmsURL()
-        }) as any;
+        const resp = await useSolrSearch().runSolrQuery(orderQueryPayload)
         if (!commonUtil.hasError(resp) && resp.data.grouped[params.groupBy]?.matches > 0) {
           total = resp.data.grouped[params.groupBy].ngroups
           orders = resp.data.grouped[params.groupBy].groups
@@ -273,7 +268,7 @@ export const useOrderStore = defineStore("order", {
       return { orders, total }
     },
     async findShipments(query: any) {
-      const productStoreShipmentMethCount = useProductStore().getProductStoreShipmentMethCount;
+      const productStoreShipmentMethCount = useAppProductStore().getProductStoreShipmentMethCount;
       let orders = [], total = 0;
 
       try {
@@ -281,14 +276,14 @@ export const useOrderStore = defineStore("order", {
           pageSize: query.viewSize,
           orderBy: 'orderDate',
           shipmentTypeId: 'SALES_SHIPMENT',
-          productStoreId: useProductStore().getCurrentEComStore?.productStoreId,
+          productStoreId: useAppProductStore().getCurrentEComStore?.productStoreId,
         } as any
 
         if (query.queryString) {
           params.keyword = query.queryString
         }
         if (!query.excludeFacilityFilter) {
-          params.originFacilityId = useProductStore().getCurrentFacility?.facilityId
+          params.originFacilityId = useAppProductStore().getCurrentFacility?.facilityId
         }
         if (query.orderStatusId) {
           params.orderStatusId = query.orderStatusId
@@ -415,7 +410,7 @@ export const useOrderStore = defineStore("order", {
 
       const completedOrderQuery = JSON.parse(JSON.stringify(this.completed.query))
       completedOrderQuery.statusId = ["SHIPMENT_PACKED"]
-      completedOrderQuery.shippedDateFrom = DateTime.now().setZone(useProductStore().getCurrentFacility?.timeZone || DateTime.local().zoneName).startOf("day").toMillis()
+      completedOrderQuery.shippedDateFrom = DateTime.now().setZone(useAppProductStore().getCurrentFacility?.timeZone || DateTime.local().zoneName).startOf("day").toMillis()
 
       const { orders: completedOrders, total: completedTotal } = await this.findShipments(completedOrderQuery)
 
@@ -787,7 +782,7 @@ export const useOrderStore = defineStore("order", {
           const shipmentPackageRouteSegDetails = responseData.filter((shipmentPackageRouteSegDetail: any) => shipmentPackageRouteSegDetail.carrierServiceStatusId !== "SHRSCS_VOIDED")
 
           let missingLabelImage = false
-          if (useProductStore().productStoreShipmentMethCount > 0) {
+          if (useAppProductStore().productStoreShipmentMethCount > 0) {
             missingLabelImage = shipmentPackageRouteSegDetails.length === 0 || shipmentPackageRouteSegDetails.some((seg: any) => !seg.trackingCode)
           }
 

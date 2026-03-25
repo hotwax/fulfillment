@@ -1,7 +1,7 @@
 import { defineStore } from "pinia"
 
-import { api, commonUtil, logger, solrUtil } from "@common";
-import { useProductStore } from "@/store/product"
+import { api, commonUtil, logger, useSolrSearch } from "@common";
+import { useProductStore as useProduct } from "@/store/product"
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUtilStore } from "@/store/util"
 
@@ -88,14 +88,14 @@ export const useRejectionStore = defineStore("rejection", {
       if (rejectedOrderQuery.rejectionPeriodId === "LAST_SEVEN_DAYS") {
         rejectionPeriodFilter = "[NOW-7DAYS TO NOW]"
       }
-      const query = solrUtil.prepareSolrQuery({
+      const query = useSolrSearch().prepareSolrQuery({
         coreName: "logInsights",
         docType: "FULFILLMENT_REJECTION",
         sort: "orderId_s desc",
         viewSize: "0",
         filters: {
           rejectedAt_dt: { value: rejectionPeriodFilter },
-          rejectedFrom_txt_en: { value: solrUtil.escapeSolrSpecialChars(useAppProductStore().getCurrentFacility?.facilityId) }
+          rejectedFrom_txt_en: { value: useSolrSearch().escapeSolrSpecialChars(useAppProductStore().getCurrentFacility?.facilityId) }
         },
         facet: {
           total: "unique(orderId_s)",
@@ -115,19 +115,14 @@ export const useRejectionStore = defineStore("rejection", {
       })
 
       try {
-        const resp: any = await api({
-          url: "solr-query",
-          method: "post",
-          data: query,
-          baseURL: commonUtil.getOmsURL()
-        })
+        const resp: any = await useSolrSearch().runSolrQuery(query)
         if (!commonUtil.hasError(resp)) {
           total = resp.data.facets.total ? resp.data.facets.total : 0
           const usedReasons = resp.data.facets.rejectionReasonIdFacet.buckets
           rejectedItems = resp.data.facets.productIdFacet.buckets
           if (rejectedItems) {
             const productIds = rejectedItems.map((rejectedItem: any) => rejectedItem.val)
-            await useProductStore().fetchProducts({ productIds })
+            await useProduct().fetchProducts({ productIds })
           }
 
           if (usedReasons) {
@@ -177,7 +172,7 @@ export const useRejectionStore = defineStore("rejection", {
       const rejectedOrderQuery = JSON.parse(JSON.stringify(this.rejectedOrders.query))
 
       const filters = {
-        rejectedFrom_txt_en: { value: solrUtil.escapeSolrSpecialChars(useAppProductStore().getCurrentFacility?.facilityId) }
+        rejectedFrom_txt_en: { value: useSolrSearch().escapeSolrSpecialChars(useAppProductStore().getCurrentFacility?.facilityId) }
       } as any
 
       if (!rejectedOrderQuery.queryString) {
@@ -191,7 +186,7 @@ export const useRejectionStore = defineStore("rejection", {
         filters.rejectionReasonId_s = { value: rejectedOrderQuery.rejectionReasons }
       }
 
-      const query = solrUtil.prepareSolrQuery({
+      const query = useSolrSearch().prepareSolrQuery({
         coreName: "logInsights",
         docType: "FULFILLMENT_REJECTION",
         queryString: rejectedOrderQuery.queryString,
@@ -205,12 +200,7 @@ export const useRejectionStore = defineStore("rejection", {
       })
 
       try {
-        const resp: any = await api({
-          url: "solr-query",
-          method: "post",
-          data: query,
-          baseURL: commonUtil.getOmsURL()
-        })
+        const resp: any = await useSolrSearch().runSolrQuery(query)
         if (!commonUtil.hasError(resp)) {
           total = resp.data.grouped.orderId_s.ngroups
           orders = resp.data.grouped.orderId_s.groups
@@ -279,14 +269,9 @@ export const useRejectionStore = defineStore("rejection", {
           }
         }
 
-        const orderQueryPayload = solrUtil.prepareSolrQuery(params)
+        const orderQueryPayload = useSolrSearch().prepareSolrQuery(params)
 
-        resp = await api({
-          url: "solr-query",
-          method: "post",
-          data: orderQueryPayload,
-          baseURL: commonUtil.getOmsURL()
-        }) as any
+        resp = await useSolrSearch().runSolrQuery(orderQueryPayload)
         if (resp.status === 200 && !commonUtil.hasError(resp) && resp.data.grouped?.orderId.matches > 0) {
           orders = resp.data.grouped.orderId.groups
           const orderDetails = orders.reduce((orderDetail: any, order: any) => {

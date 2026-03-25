@@ -52,7 +52,7 @@
 import { IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonRow, IonSearchbar, IonSpinner, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { computed, defineProps, onMounted, ref } from "vue";
 import { closeOutline, closeCircle, saveOutline } from "ionicons/icons";
-import { commonUtil, emitter, logger, translate } from "@common";
+import { commonUtil, emitter, logger, translate, useSolrSearch } from "@common";
 import { useUserStore as useDxpUserStore } from "@/store/user";
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUtilStore } from "@/store/util";
@@ -180,7 +180,7 @@ const findPickers = async () => {
   };
 
   try {
-    const resp = await utilStore.getAvailablePickers(payload);
+    const resp = await useSolrSearch().runSolrQuery(payload);
     if (resp.status === 200 && !commonUtil.hasError(resp)) {
       pickers.value = resp.data.response.docs.map((picker: any) => ({
         name: picker.groupName ? picker.groupName : (picker.firstName || picker.lastName) ? (picker.firstName ? picker.firstName : "") + (picker.lastName ? " " + picker.lastName : "") : picker.partyId,

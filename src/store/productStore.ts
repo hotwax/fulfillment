@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { api, commonUtil, logger, translate } from '@common'
+import { api, commonUtil, logger, translate, useSolrSearch } from '@common'
 import { useUserStore } from '@/store/user'
 const defaultProductStoreSettings = JSON.parse(import.meta.env.VITE_DEFAULT_PRODUCT_STORE_SETTINGS as string || '{}')
 
@@ -705,21 +705,16 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async fetchProducts() {
-      const params = { viewSize: 10 }
       try {
-        const products = await api({
-          baseURL: commonUtil.getOmsURL(),
-          url: "searchProducts",
-          method: "post",
-          data: params,
-          cache: true
-        }) as any;
+        const resp = await useSolrSearch().searchProducts({
+          viewSize: 10
+        })
 
-        if (!commonUtil.hasError(products)) {
-          this.settings.productIdentifier.sampleProducts = products.data.response.docs;
+        if (resp.products.length) {
+          this.settings.productIdentifier.sampleProducts = resp.products;
           this.shuffleProduct()
         } else {
-          throw products.data
+          throw resp
         }
       } catch (error: any) {
         console.error(error)
@@ -753,13 +748,12 @@ export const useProductStore = defineStore('productStore', {
 
       try {
         const resp = await api({
-          url: "performFind",
-          method: "post",
-          baseURL: commonUtil.getOmsURL(),
+          url: "/admin/facilities",
+          method: "GET",
           data: payload
         });
-        if (!commonUtil.hasError(resp) && resp.data?.docs.length > 0) {
-          resp.data.docs.map((facility: any) => {
+        if (!commonUtil.hasError(resp) && resp.data.length > 0) {
+          resp.data.map((facility: any) => {
             this.userFacilities[facility.facilityId] = facility["facilityName"]
           })
         } else {
@@ -772,7 +766,7 @@ export const useProductStore = defineStore('productStore', {
     clearFacilities() {
       this.userFacilities = {};
     },
-    
+
     async updateRerouteFulfillmentConfig(payload: any): Promise<any> {
       return api({
         url: `admin/productStores/${payload.productStoreId}/settings`,

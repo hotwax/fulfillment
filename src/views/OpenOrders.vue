@@ -143,7 +143,7 @@ import { computed, ref } from "vue";
 import { useRouter, onBeforeRouteLeave } from "vue-router";
 import { caretDownOutline, chevronUpOutline, cubeOutline, listOutline, notificationsOutline, optionsOutline, pricetagOutline, printOutline } from "ionicons/icons";
 import AssignPickerModal from "@/views/AssignPickerModal.vue";
-import { commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, solrUtil, translate, useNotificationStore } from "@common";
+import { commonUtil, DxpShopifyImg, emitter, logger, moduleFederationUtil, useSolrSearch, translate, useNotificationStore } from "@common";
 import ViewSizeSelector from "@/components/ViewSizeSelector.vue";
 import OrderActionsPopover from "@/components/OrderActionsPopover.vue";
 import { orderUtil } from "@/utils/orderUtil";
@@ -259,7 +259,7 @@ const assignPickers = async () => {
 const fetchShipmentMethods = async () => {
   let resp: any;
 
-  const payload = solrUtil.prepareSolrQuery({
+  const payload = useSolrSearch().prepareSolrQuery({
     docType: "ORDER",
     viewSize: "0",
     isGroupingRequired: false,
@@ -290,7 +290,7 @@ const fetchShipmentMethods = async () => {
   });
 
   try {
-    resp = await carrierStore.fetchShipmentMethods(payload);
+    resp = await useSolrSearch().runSolrQuery(payload);
     if (resp.status == 200 && !commonUtil.hasError(resp) && resp.data.facets?.count > 0) {
       shipmentMethods.value = resp.data.facets.shipmentMethodTypeIdFacet.buckets;
       useUtilStore().fetchShipmentMethodTypeDesc(shipmentMethods.value.map((shipmentMethod: any) => shipmentMethod.val));

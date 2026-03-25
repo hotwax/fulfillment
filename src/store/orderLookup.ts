@@ -1,5 +1,5 @@
 import { defineStore } from "pinia"
-import { api, commonUtil, logger, solrUtil, translate } from "@common";
+import { api, commonUtil, logger, useSolrSearch, translate } from "@common";
 import { useProductStore } from "@/store/product"
 import { useProductStore as useAppProductStore } from "@/store/productStore";
 import { useUtilStore } from "@/store/util"
@@ -145,14 +145,9 @@ export const useOrderLookupStore = defineStore("orderLookup", {
       let stateOrders = JSON.parse(JSON.stringify(this.list.orders))
       const shipmentMethodTypeIds: Array<string> = []
 
-      const query = solrUtil.prepareOrderLookupQuery({ ...this.query, ...params, facilityId: useAppProductStore().getCurrentFacility?.facilityId })
+      const query = useSolrSearch().prepareOrderLookupQuery({ ...this.query, ...params, facilityId: useAppProductStore().getCurrentFacility?.facilityId })
       try {
-        resp = await api({
-          url: "/solr-query",
-          method: "post",
-          data: query,
-          baseURL: commonUtil.getOmsURL()
-        });
+        resp = await useSolrSearch().runSolrQuery(query)
         if (!commonUtil.hasError(resp) && resp.data?.grouped?.orderId?.groups?.length) {
           const orders = resp.data.grouped.orderId.groups.map((order: any) => {
             order.orderId = order.doclist.docs[0].orderId

@@ -228,14 +228,6 @@ export const useUtilStore = defineStore("util", {
         params: payload
       });
     },
-    async getAvailablePickers(query: any): Promise<any> {
-      return api({
-        url: "solr-query",
-        method: "post",
-        data: query,
-        baseURL: commonUtil.getOmsURL()
-      })
-    },
     async getAvailableTimeZones(): Promise<any> {
       return api({
         url: "admin/user/getAvailableTimeZones",

@@ -1,5 +1,5 @@
 import { defineStore } from "pinia"
-import { api, commonUtil, logger } from "@common";
+import { api, commonUtil, logger, useSolrSearch } from "@common";
 
 
 interface ProductState {
@@ -148,12 +148,7 @@ export const useProductStore = defineStore("product", {
       }
 
       try {
-        const resp = await api({
-          url: "solr-query",
-          method: "post",
-          data: payload,
-          baseURL: commonUtil.getOmsURL()
-        }) as any;
+        const resp = await useSolrSearch().runSolrQuery(payload)
 
         if (resp.status == 200 && !commonUtil.hasError(resp) && resp.data?.response?.numFound > 0) {
           const product = resp.data.response.docs

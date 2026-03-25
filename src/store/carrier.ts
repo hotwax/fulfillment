@@ -577,14 +577,6 @@ export const useCarrierStore = defineStore("carrier", {
         return Promise.reject(err)
       }
     },
-    async fetchShipmentMethods(query: any): Promise<any> {
-      return api({
-        url: "solr-query",
-        method: "post",
-        data: query,
-        baseURL: commonUtil.getOmsURL()
-      });
-    },
     async fetchCarrierShipmentBoxTypes(params: any): Promise<any> {
       return api({
         url: "/oms/shippingGateways/carrierShipmentBoxTypes",

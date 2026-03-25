@@ -53,15 +53,15 @@
   import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonSelect, IonSelectOption, IonTitle, IonToolbar, modalController, alertController } from "@ionic/vue";
   import { computed, ref } from "vue";
   import { closeOutline, cloudDownloadOutline } from "ionicons/icons";
-  import { api, commonUtil, emitter, logger, solrUtil, translate } from "@common";
-  import { useProductStore as useAppProductStore } from "@/store/productStore";
+  import { api, commonUtil, emitter, logger, useSolrSearch, translate } from "@common";
+  import { useProductStore } from "@/store/productStore";
 
   import { DateTime } from "luxon";
-  import { useProductStore } from "@/store/product";
+  import { useProductStore as useProduct } from "@/store/product";
   import { useRejectionStore } from "@/store/rejection";
-  const currentFacility = computed(() => useAppProductStore().getCurrentFacility);
+  const currentFacility = computed(() => useProductStore().getCurrentFacility);
   const rejectedOrders = computed(() => useRejectionStore().getRejectedOrders);
-  const getProduct = (productId: string) => useProductStore().getProduct(productId);
+  const getProduct = (productId: string) => useProduct().getProduct(productId);
   
   const selectedFacilityId = ref("facilityId");
   const selectedPrimaryProductId = ref("productId");
@@ -128,7 +128,7 @@
   const bulkFetchRejectedItems = async () => {
     const rejectedOrderQuery = rejectedOrders.value.query;
     const filters = {
-      rejectedFrom_txt_en: { value: solrUtil.escapeSolrSpecialChars(currentFacility.value.facilityId) }
+      rejectedFrom_txt_en: { value: useSolrSearch().escapeSolrSpecialChars(currentFacility.value.facilityId) }
     } as any;
   
     if (!rejectedOrderQuery.queryString) {
@@ -142,7 +142,7 @@
       filters.rejectionReasonId_s = { value: rejectedOrderQuery.rejectionReasons };
     }
   
-    const query = solrUtil.prepareSolrQuery({
+    const query = useSolrSearch().prepareSolrQuery({
       coreName: "logInsights",
       docType: "FULFILLMENT_REJECTION",
       queryString: rejectedOrderQuery.queryString,
@@ -160,12 +160,7 @@
   
     try {
       do {
-        resp = await api({
-          url: "solr-query",
-          method: "post",
-          data: query,
-          baseURL: commonUtil.getOmsURL()
-        }) as any;
+        resp = await useSolrSearch().runSolrQuery(query);
         if (!commonUtil.hasError(resp)) {
           let orders = resp.data.grouped.orderId_s.groups;
   
@@ -185,7 +180,7 @@
               brokeredBy: doc.brokeredBy_txt_en
             }));
             allItems = allItems.concat(orderItemDocs);
-            await useProductStore().fetchProducts({ productIds: [...new Set(orderItemDocs.map((item: any) => item.productId))] });
+            await useProduct().fetchProducts({ productIds: [...new Set(orderItemDocs.map((item: any) => item.productId))] });
           }));
           query.viewIndex++;
         } else {
