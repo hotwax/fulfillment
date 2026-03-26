@@ -1,4 +1,4 @@
-import { api, client, commonUtil, cookieHelper, emitter, logger, translate, useNotificationStore } from "@common";
+import { api, client, commonUtil, cookieHelper, embeddedApp, emitter, logger, translate, useNotificationStore } from "@common";
 import { useUserStore } from "@/store/user";
 import { useUtilStore } from "@/store/util";
 import { DateTime } from "luxon";
@@ -26,8 +26,8 @@ export function useAuth() {
 
   const isAuthenticated = computed(() => {
     let isTokenExpired = false;
-    const token = cookieHelper().get("token");
-    const expirationTime = Number(cookieHelper().get("expirationTime"));
+    const token = commonUtil.getToken();
+    const expirationTime = Number(commonUtil.getTokenExpiration());
     if (expirationTime) {
       const currTime = DateTime.now().toMillis();
       isTokenExpired = expirationTime < currTime;
@@ -116,7 +116,12 @@ export function useAuth() {
         redirectionUrl = resp.logoutUrl;
       }
     }
-
+    // This only runs when token gets expired, since embedded app user can't logout on it's own,
+    // token expiry on navigation is handled on the auth guard.
+    if (commonUtil.isAppEmbedded()) {
+      redirectionUrl = window.location.origin + `/shopify?shop=${embeddedApp().shop}&host=${embeddedApp().host}&embedded=1`;
+      embeddedApp().$reset();
+    }
     useUserStore().$reset();
     cookieHelper().remove('token');
     cookieHelper().remove('expirationTime');

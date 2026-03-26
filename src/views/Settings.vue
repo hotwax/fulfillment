@@ -15,12 +15,12 @@
               <Image :src="userProfile.partyImageUrl" />
             </ion-avatar>
             <ion-card-header class="ion-no-padding ion-padding-vertical">
-              <ion-card-subtitle>{{ userProfile?.userLoginId }}</ion-card-subtitle>
+              <ion-card-subtitle>{{ userProfile?.username }}</ion-card-subtitle>
               <ion-card-title>{{ userProfile?.partyName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
-          <ion-button fill="outline" @click="goToLaunchpad()">
+          <ion-button v-if="!commonUtil.isAppEmbedded()" color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
+          <ion-button v-if="!commonUtil.isAppEmbedded()" fill="outline" @click="goToLaunchpad()">
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
@@ -32,7 +32,7 @@
       </div>
 
       <section>
-        <DxpOmsInstanceNavigator />
+        <DxpOmsInstanceNavigator :is-embedded="commonUtil.isAppEmbedded()" />
         <DxpProductStoreSelector @updateProductStore="refreshProductStoreData($event)" />
         <DxpFacilitySwitcher @updateFacility="fetchFacilityDependencies($event)" />
 

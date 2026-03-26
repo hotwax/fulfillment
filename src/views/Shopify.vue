@@ -2,76 +2,71 @@
   <ion-page>
     <ion-content>
       <div class="center-div">
-        <p>{{ $t("Installing...") }}</p>
+        <p>{{ $t("Logging in...") }}</p>
       </div>
     </ion-content>
   </ion-page>
 </template>
 
-<script>
-import {
-  IonContent,
-  IonPage,
-} from "@ionic/vue";
-import { defineComponent } from "vue";
-import { commonUtil, emitter, ShopifyService, translate } from "@common";
+<script setup lang="ts">
+import { IonContent, IonPage, onIonViewDidEnter, onIonViewDidLeave } from "@ionic/vue";
+import { ref } from "vue";
+import router from "@/router";
+import { commonUtil, emitter, translate, useNotificationStore, useShopify } from "@common";
+import { useUserStore } from "@/store/user";
+import { useProductStore } from "@/store/productStore";
+import { useUtilStore } from "@/store/util";
+import { firebaseUtil } from "@/utils/firebaseUtil";
 
-export default defineComponent({
-  name: "Shopify",
-  components: {
-    IonContent,
-    IonPage,
-  },
-  data() {
-    return {
-      apiKey: import.meta.env.VITE_SHOPIFY_API_KEY,
-      shopConfigs: JSON.parse(import.meta.env.VITE_SHOPIFY_SHOP_CONFIG),
-      shopOrigin: '',
-      session: this.$route.query['session'],
-      shop: this.$route.query['shop'],
-      host: this.$route.query['host'],
-      locale: this.$route.query['locale'] || import.meta.env.VITE_I18N_LOCALE || import.meta.env.VITE_I18N_FALLBACK_LOCALE,
-    };
-  },
-  async mounted () {
-    const shop = this.shop || this.shopOrigin
-    const shopConfig = this.shopConfigs[shop];
-    const apiKey = shopConfig ? shopConfig.apiKey : '';
-    if (this.shop || this.host) {
-      this.authorise(shop, this.host, apiKey);
-      this.$router.push("/home");
-    } else {
-      this.$router.push("/error");
-    }
-  },
-  methods: {
-    authorise(shop, host, apiKey) {
-      const scopes = import.meta.env.VITE_SHOPIFY_SCOPES
-      emitter.emit("presentLoader");
-      const shopConfig = this.shopConfigs[shop];
-      if (!apiKey) apiKey = shopConfig ? shopConfig.apiKey : '';
-      const redirectUri = import.meta.env.VITE_SHOPIFY_REDIRECT_URI;
-      const permissionUrl = `https://${shop}/admin/oauth/authorize?client_id=${apiKey}&scope=${scopes}&redirect_uri=${redirectUri}`;
+const { appBridgeLogin } = useShopify();
 
-      if (window.top == window.self) {
-        window.location.assign(permissionUrl);
-      } else {
-        ShopifyService.initialize(apiKey, host);
-        ShopifyService.redirect(permissionUrl);
+onIonViewDidEnter(async () => {
+  console.log("=-=-=-=- On Shopify Page")
+  emitter.emit("presentLoader");
+
+  let { shop, host } = router.currentRoute.value.query;
+  
+  const success = await appBridgeLogin(shop as string, host as string);
+  
+  if (success) {
+      await useUserStore().fetchPermissions()
+      await useUserStore().fetchUserProfile()
+      const productStore = useProductStore()
+      await productStore.fetchUserFacilities()
+      await productStore.fetchFacilityPreference()
+      await productStore.fetchProductStores()
+      await productStore.fetchProductStorePreference()
+      await productStore.fetchEComStoreDependencies(productStore.getCurrentEComStore.productStoreId)
+
+      await useUtilStore().fetchCarrierShipmentBoxTypes()
+      await productStore.fetchAutoShippingLabelConfig()
+
+      const notificationStore = useNotificationStore();
+      await notificationStore.fetchAllNotificationPrefs(import.meta.env.VITE_NOTIF_APP_ID, useUserStore().getUserProfile.userId)
+      await firebaseUtil.initialiseFirebaseMessaging();
+
+
+      const facilityId = router.currentRoute.value.query.facilityId
+      let isQueryFacilityFound = false
+      if (facilityId) {
+        const facility = useUserStore().getUserProfile.facilities.find((facility: any) => facility.facilityId === facilityId);
+        if (facility) {
+          isQueryFacilityFound = true
+          productStore.currentFacility = facility
+        } else {
+          commonUtil.showToast(translate("Redirecting to home page due to incorrect information being passed."))
+        }
       }
-      emitter.emit("dismissLoader");
-    }
-  },
-  beforeUnmount () {
-    emitter.emit("dismissLoader")
-  },
-  setup() {
-    const router = useRouter();
-    return {
-      router,
-      showToast: commonUtil.showToast,
-    };
-  },
+    router.push("/");
+  } else {
+    router.push("/error");
+  }
+  
+  emitter.emit("dismissLoader");
+});
+
+onIonViewDidLeave(() => {
+  emitter.emit("dismissLoader");
 });
 </script>
 

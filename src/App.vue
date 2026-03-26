@@ -11,7 +11,7 @@
 import { createAnimation, IonApp, IonRouterOutlet, IonSplitPane, loadingController } from "@ionic/vue";
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import Menu from "@/components/Menu.vue";
-import { translate, emitter, logger, firebaseMessaging, useNotificationStore } from "@common";
+import { translate, emitter, logger, firebaseMessaging, useNotificationStore, initialise } from "@common";
 import { Settings } from "luxon";
 import { init } from "@module-federation/runtime";
 import { useUserStore } from "@/store/user";
@@ -19,12 +19,26 @@ import { useProductStore } from "@/store/productStore";
 import router from './router';
 import { useAuth } from "@/composables/useAuth";
 import { firebaseUtil } from "@/utils/firebaseUtil";
+import { useOrderStore } from "./store/order";
 
 const { isAuthenticated } = useAuth();
 const loader = ref<any>(null);
 
 const userProfile = computed(() => useUserStore().getUserProfile);
 const allNotificationPrefs = computed(() => useNotificationStore().getAllNotificationPrefs);
+const maxAge = import.meta.env.VITE_VUE_APP_CACHE_MAX_AGE ? parseInt(import.meta.env.VITE_VUE_APP_CACHE_MAX_AGE) : 0
+initialise({
+  cacheMaxAge: maxAge,
+  events: {
+    unauthorised: unauthorized,
+    responseError: () => {
+      setTimeout(() => dismissLoader(), 100);
+    },
+    queueTask: (payload: any) => {
+      emitter.emit("queueTask", payload);
+    }
+  }
+})
 
 const presentLoader = async (options = { message: "", backdropDismiss: false }) => {
   if (options.message && loader.value) dismissLoader();
@@ -104,4 +118,16 @@ onUnmounted(() => {
   emitter.off("dismissLoader", dismissLoader);
   emitter.off("playAnimation", playAnimation);
 });
+
+async function unauthorized() {
+  useAuth().logout({ isUserUnauthorised: true }).then((redirectionUrl) => {
+    // redirectionUrl is only present when SSO enables, thus when not present redirect user to login
+    useOrderStore().clearOrders();
+    if(!redirectionUrl) {
+      router.replace("/login");
+    } else {
+      window.location.href = redirectionUrl
+    }
+  })
+}
 </script>

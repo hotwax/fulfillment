@@ -31,7 +31,8 @@ import Shopify from '@/views/Shopify.vue';
 const authGuard = async (to: any, from: any, next: any) => {
   const { isAuthenticated } = useAuth()
   if (!isAuthenticated.value) {
-    next('/login');
+    if (!commonUtil.isAppEmbedded()) next('/login')
+    else next('/shopify')
   } else {
     next()
   }
