@@ -59,7 +59,7 @@
 import { IonButton, IonButtons, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonSpinner, IonTitle, IonToolbar, alertController, modalController } from "@ionic/vue";
 import { computed, defineProps, onMounted, ref } from "vue";
 import { cameraOutline, cardOutline, closeOutline, giftOutline, stopOutline } from "ionicons/icons";
-import { commonUtil, logger, translate } from "@common";
+import { commonUtil, logger, translate, useShopify, embeddedApp } from "@common";
 import { useOrderStore } from "@/store/order";
 
 const orderStore = useOrderStore();
@@ -137,11 +137,20 @@ const getCreatedDateTime = () => {
 };
 
 const scan = async () => {
-  if (!(await commonUtil.hasWebcamAccess())) {
-    commonUtil.showToast(translate("Camera access not allowed, please check permissons."));
-    return;
+  if (embeddedApp().posContext.locationId) {
+    try {
+      const scannedCode = await useShopify().openPosScanner();
+      if (scannedCode) activationCode.value = scannedCode;
+    } catch(err) {
+      console.error("POS Scanner error:", err);
+    }
+  } else {
+    if (!(await commonUtil.hasWebcamAccess())) {
+      commonUtil.showToast(translate("Camera access not allowed, please check permissons."));
+      return;
+    }
+    isCameraEnabled.value = true;
   }
-  isCameraEnabled.value = true;
 };
 
 const stopScan = () => {
